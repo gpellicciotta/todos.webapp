@@ -1,0 +1,9 @@
+work/
+sessions/
+logs/
+tmp/
+.plan.lock
+run-work-loop.cmd
+__pycache__/
+*.py[cod]
+*.log
