@@ -1,37 +1,35 @@
 ---
 id: T0005
-owner: ~
-needs: [T0002]
+owner: "@claude-code"
+needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
+status: suspended
+started_at: "2026-11-03T21:28:15Z"
 ended_at: —
 review: human
 preview: none
 protocol: standard
+review_status: pending
+review_round: 1
 ---
 # T0005: Draw a low-fidelity SVG wireframe per screen of docs/specs/ui-design.md, showing 390 px and 1440 px side by side
 
 ## Goals
 Draw one low-fidelity SVG wireframe per screen of docs/specs/ui-design.md under docs/img/ui/.
 Each SVG shows the 390 px compact and the 1440 px wide layout side by side.
-Use gray boxes and labels only, no colors or fonts from the design system.
-Link each wireframe from its screen section in ui-design.md and add a CHANGELOG.md entry.
-Completion check: `python ../dev-guidelines/scripts/lint-markdown.py check docs`, then human review of the SVGs.
-
-### Declared Files
-- docs/specs/ui-design.md
-- CHANGELOG.md
-- docs/img/ui/*.svg, one per screen: about 10 files.
-
-Size estimate: 12 files, 900 lines
-Size note: SVG files count as hand-edited; above the typical line, since splitting screens adds no value.
+A committed script draws all SVGs, so redesigns regenerate them instead of hand edits.
+Link each wireframe from ui-design.md and add a CHANGELOG.md entry.
+See technical-spec.md for files, size, screens, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read docs/specs/ui-design.md and docs/specs/visual-style-guide.md.
-- [ ] **[Doc]**       Draw one SVG wireframe per screen, compact and wide layouts side by side.
-- [ ] **[Doc]**       Link each wireframe from ui-design.md and update CHANGELOG.md.
+- [x] **[Read]**      Read docs/specs/ui-design.md and docs/specs/visual-style-guide.md.
+- [x] **[Implement]** Write tests/test_draw_wireframes.py for the output checks listed in technical-spec.md.
+- [x] **[Verify]**    Run the tests and confirm they fail because the script is missing.
+- [x] **[Implement]** Write scripts/draw-wireframes.py drawing every screen in both layouts.
+- [x] **[Verify]**    Run the tests, ruff, and the markdown linter, and confirm all pass.
+- [x] **[Visual]**    Render every SVG to PNG and inspect each for overlaps and clipping.
+- [x] **[Doc]**       Link each wireframe from ui-design.md, document the command, and update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -40,4 +38,28 @@ Size note: SVG files count as hand-edited; above the typical line, since splitti
 
 - [2026-11-03] **[Review]**
   Review raised from agent to human.
+
+- [2026-11-03] **[Verify]**
+  Red phase: all 38 tests errored because scripts/draw-wireframes.py did not exist yet.
+
+- [2026-11-03] **[Implement]**
+  Wrote the wireframe script; the frame bounds test caught four overflows, fixed before review.
+
+- [2026-11-03] **[Visual]**
+  Rendered all 12 SVGs with Chromium without console errors and inspected each render.
+  - Renders: renders/ beside this task file.
+
+- [2026-11-03] **[Doc]**
+  Size note: 1212 changed lines pass the large line, below three times the 800-line estimate.
+  - Undeclared files: ruff.toml and .gitignore.
+  - Ruff format expanded the script to 1028 lines.
+
+- [2026-11-03] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 7.
+  - Lines touched: 1212.
+  - Reopenings: 0.
+
+- [2026-11-03] **[Review]**
+  Round 1 requested (mode: human).
 
