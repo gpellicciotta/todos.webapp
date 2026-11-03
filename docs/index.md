@@ -9,6 +9,7 @@ Overview of all documentation for the `todos.webapp` project.
 - [PLAN.md](../PLAN.md): Task index for planned, active, and backlog work.
 - [LICENSE.md](../LICENSE.md): MIT License.
 - [devops.md](devops.md): Prerequisites, plan store setup, and task workflow.
+- [requirements.md](requirements.md): Functional and technical requirements for local and connected modes.
 
 ---
 

@@ -5,4 +5,5 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Docs: Wrote the functional and technical requirements for local and connected modes.
 - Build: Created the repository with standard project files and a plan branch store.
