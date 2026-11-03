@@ -11,7 +11,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0003 Support several accounts or servers on one device, each with its own data set and sync state.
 
 ## v0.1.0
-- [ ] T0006 Set up the web app project: src web root, npm tooling, ESLint, Vitest, Playwright, and a local static server.
+- [!] T0006 [reason: awaiting human review] [owner: @claude-code] Set up the web app project: src web root, npm tooling, ESLint, Vitest, Playwright, and a local static server.
 - [ ] T0007 [needs: T0006] Build the design tokens, self-hosted Inter font faces, the style.css entry point, and the gallery token sections.
 - [ ] T0008 [needs: T0007] Build the basic control components with every state, and their gallery sections.
 - [ ] T0009 [needs: T0008] Build the app components with every state, and their gallery sections: task row, status button, navigation, and more.

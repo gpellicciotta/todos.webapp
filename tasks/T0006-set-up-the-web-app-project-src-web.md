@@ -1,15 +1,17 @@
 ---
 id: T0006
-owner: ~
+owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
+status: suspended
+started_at: "2026-11-03T23:16:57Z"
 ended_at: —
 review: human
 preview: none
 protocol: standard
+review_status: pending
+review_round: 1
 ---
 # T0006: Set up the web app project: src web root, npm tooling, ESLint, Vitest, Playwright, and a local static server
 
@@ -22,12 +24,12 @@ Document the commands in docs/devops.md.
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read docs/devops.md, the requirements' technical section, and the JavaScript guidelines.
-- [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
-- [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Add package.json, the lint, test, and Playwright configs, serve.mjs, and a minimal index.html.
-- [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Doc]**       Document the npm commands in docs/devops.md and update CHANGELOG.md.
+- [x] **[Read]**      Read docs/devops.md, the requirements' technical section, and the JavaScript guidelines.
+- [x] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
+- [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
+- [x] **[Implement]** Add package.json, the lint, test, and Playwright configs, serve.mjs, and a minimal index.html.
+- [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
+- [x] **[Doc]**       Document the npm commands in docs/devops.md and update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -36,4 +38,25 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Review]**
   Review raised from agent to human.
+
+- [2026-11-04] **[Verify]**
+  Red phase: unit suite failed on the missing serve.mjs, and Playwright's web server could not start.
+
+- [2026-11-04] **[Implement]**
+  Added package.json, ESLint, Vitest, and Playwright configs, serve.mjs, and a placeholder index.html; all checks pass.
+  - 23 unit tests and 2 end-to-end tests pass.
+
+- [2026-11-04] **[Doc]**
+  Size note: 437 lines in 12 files pass the typical line; the tooling pieces only merge together.
+  - Undeclared files: .gitignore, README.md, CHANGELOG.md.
+  - npm audit: 6 moderate advisories in ESLint's minimatch.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 12.
+  - Lines touched: 437.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: human).
 
