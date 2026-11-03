@@ -20,6 +20,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Breakpoints
 - Compact layout below 64rem (1024 px): one column, a top bar, and a bottom navigation bar.
 - Wide layout from 64rem: a left sidebar, the main column, and an optional editor panel on the right.
+- The editor panel holds the task editor or the list editor, never both at once.
 - The main column caps its width, so task rows stay readable on 1440 px screens.
 
 ### Compact Layout
@@ -43,14 +44,14 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Wide Layout
 ```text
 +--------------+-------------------------------+---------------------+
-| ToDo's       | All tasks              [Sort] | Task editor         |
+| ToDo's       | All tasks              [Sort] | Task or list editor |
 |              | [search] [Lists] [Status] ... | Description         |
 | All tasks 24 +-------------------------------+ Status              |
-| Lists        | ( ) Buy paint      Tomorrow   | Due time            |
-|  Home     8  | (/) Call plumber   Overdue !  | Lists               |
-|  Work    12  | ( ) Book flights              | Notes               |
-|  + New list  |                               |                     |
-|              | [Add a task.............] [+] |                     |
+| Lists        | [Add a task.............] [+] | Due time            |
+|  Home     8  | ( ) Buy paint      Tomorrow   | Lists               |
+|  Work    12  | (/) Call plumber   Overdue !  | Notes               |
+|  + New list  | ( ) Book flights              |                     |
+|              |                               |                     |
 | Recycle bin  |                               |                     |
 | Settings     |                               |                     |
 | [sync state] |                               |                     |
@@ -71,6 +72,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - `#/lists`: lists overview.
 - `#/lists/{{list-id}}`: one list.
 - `#/lists/{{list-id}}/tasks/{{task-id}}`: one list with the task editor open.
+- `#/lists/{{list-id}}/edit`: one list with the list editor open.
+- `#/lists/new`: the list editor for a new list.
 - `#/bin`: recycle bin.
 - `#/settings`: settings.
 - `#/settings/sync-log`: sync log.
@@ -87,18 +90,18 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 | [status] Description text, truncated...  [due] [list] [list] [+1] [notes] [more] |
 ```
 - The row is 48 px high and shows one line; the whole row opens the task editor.
-- The status button marks the task `completed`, or back to `todo` from `completed` or `cancelled`.
+- The status button opens a status menu listing the four statuses; picking one sets it (`TSK-4`).
+- The menu marks the current status and opens on Enter or Space, with arrow keys to choose.
 - The status icons differ in shape, not only in color:
   - `todo`: an empty circle.
   - `in-progress`: a half-filled circle.
-  - `completed`: a filled circle with a check, and struck-through muted text.
-  - `cancelled`: a circle with a slash, and struck-through muted text.
+  - `completed`: a filled circle with a check, and muted text.
+  - `cancelled`: a circle with a dash, and struck-through muted text.
 - The due chip shows a relative time, such as "Tomorrow 18:00"; overdue tasks show "Overdue" in the signal color (`OVD-2`).
 - List chips show at most two list names and a "+n" count; the list view leaves out its own list.
 - A note icon with a count appears when the task has notes; a people icon marks tasks in shared lists.
 - Compact layouts show only the status, the description, and the due chip.
 - The More button opens the row menu:
-  - Set status: the four statuses (`TSK-4`).
   - Add to list and Remove from this list (`TSK-8`).
   - Move up and Move down, in a list view with manual order only (`LV-3`).
   - Delete, which moves the task to the recycle bin and shows an Undo toast (`TSK-11`).
@@ -108,7 +111,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - One text field and an Add button; Enter adds the task and keeps the field focused (`TSK-1`).
 - In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
 - In All tasks, the new task joins the lists of the active list filter, or no list.
-- Compact layouts pin the add bar above the bottom navigation; wide layouts place it under the rows.
+- Compact layouts pin the add bar above the bottom navigation; wide layouts place it above the rows.
 - A counter appears from 450 characters; the field stops at 500.
 
 ### View Controls
@@ -127,7 +130,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   - Sync error: the popover names the error and offers Retry.
 - A dot marks unseen sync log entries, such as overwritten values or rejected changes.
 - Its popover shows the state, the last sync time, a Sync now button, and a Sync log link.
-- Compact layouts place it in the top bar; wide layouts at the sidebar bottom.
+- Compact layouts place it in the top bar; wide layouts at the sidebar bottom, left-aligned with its items.
 
 ### Toasts and Banners
 - Toasts confirm actions, offer Undo for 8 seconds, and never hold the only copy of an error.
@@ -171,7 +174,7 @@ Wireframe: [lists.svg](../img/ui/lists.svg).
 
 - Each list row shows its name, description start, "4 open · 10 total", and sharing state (`LST-5`).
 - Shared lists show the owner's name when owned by someone else.
-- A New list button opens the list editor.
+- A New list button opens the list editor for a new list.
 - Wide layouts keep this screen for managing lists, though the sidebar also lists them.
 
 ### Task Editor
@@ -185,9 +188,9 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
   - Due: a date field, an optional time field, and Clear (`TSK-5`, `TSK-6`).
   - Overdue behavior: Keep open or Cancel automatically, shown once a due time is set (`TSK-7`).
   - Lists: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
-  - Notes: the note thread, newest last, with an add note field (`NOT-1` to `NOT-5`).
+  - Notes: an add note field, then the note thread, newest first (`NOT-1` to `NOT-5`).
   - Details: created, last updated, last activity, and owner when connected (`TSK-12`).
-  - Delete task, at the bottom, away from the other actions.
+  - Delete task, at the bottom, after a divider and extra space, away from the notes.
 - Each note shows its author when connected, its time, and "edited" after a change.
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
 - A viewer sees all fields read-only and a banner naming the list owner (`SHR-4`).
@@ -196,8 +199,14 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
 ### List Editor
 Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
 
-- A dialog with name and description fields, and Save and Cancel (`LST-1`, `LST-2`, `LST-4`).
-- A duplicate name shows a field error and keeps the dialog open (`LST-3`).
+- **[Decided]** The list editor opens where the task editor opens, and behaves the same way.
+- Wide layouts open it as the right panel; compact layouts open it as a full screen.
+- Edit list in the list header and New list open it (`LST-1`, `LST-2`, `LST-4`).
+- Name and description save on change, like the task editor; there are no Save or Cancel buttons.
+- A duplicate or empty name shows a field error and is not saved (`LST-3`).
+- A new list is created once its name is valid; closing the editor before that creates nothing.
+- Details show the creation time and, when connected, the owner and sharing state.
+- Delete list sits at the bottom, after a divider, like Delete task.
 - Deleting a list asks for confirmation and states that its tasks stay (`LST-6`, `LST-7`).
 
 ### Sharing Dialog
@@ -225,7 +234,7 @@ Settings is one page with these sections:
 - Data: Export backup and Import backup (`BAK-1`, `BAK-5`).
 - Connection, when local: a short explanation of connected mode and a Connect button.
 - Connection, when connected: account name and email, server, sync state, Sync log, and Disconnect.
-- Advanced: the server URL, changeable only while disconnected (`CON-12`).
+- Connection also holds the server URL, changeable only while disconnected (`CON-12`).
 - About: app version, build date, and a link to the requirements and source.
 
 ### Sync Log

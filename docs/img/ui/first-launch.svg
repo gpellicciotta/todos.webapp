@@ -72,21 +72,21 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <line x1="16" y1="724" x2="248" y2="724" class="rule"/>
     <text x="28" y="758" font-size="14">Recycle bin</text>
     <text x="28" y="802" font-size="14">Settings</text>
-    <rect x="136.8" y="844" width="103.2" height="32" rx="16" class="control"/>
-    <circle cx="150.8" cy="860" r="5" class="icon"/>
-    <text x="162.8" y="865" font-size="12">Local only</text>
+    <rect x="12" y="844" width="103.2" height="32" rx="16" class="control"/>
+    <circle cx="26" cy="860" r="5" class="icon"/>
+    <text x="38" y="865" font-size="12">Local only</text>
     <text x="304" y="60" font-size="28" class="bold">All tasks</text>
-    <circle cx="704" cy="256" r="32" class="icon"/>
-    <text x="704" y="328" font-size="20" class="bold" text-anchor="middle">No tasks yet.</text>
-    <text x="704" y="356" font-size="15" class="muted" text-anchor="middle">Your tasks stay on this device.</text>
-    <rect x="514" y="388" width="149.6" height="44" rx="6" class="control"/>
-    <text x="588.8" y="414.9" font-size="14" text-anchor="middle">Import a backup</text>
-    <rect x="744.4" y="388" width="149.6" height="44" rx="6" class="control"/>
-    <text x="819.2" y="414.9" font-size="14" text-anchor="middle">Connect to sync</text>
-    <rect x="304" y="520" width="800" height="60" rx="8" class="bar"/>
-    <rect x="1040.48" y="528" width="55.52" height="44" rx="6" class="primary"/>
-    <text x="1068.24" y="554.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
-    <rect x="312" y="528" width="720.48" height="44" rx="6" class="control"/>
-    <text x="324" y="555" font-size="14" class="muted">Add a task</text>
+    <rect x="304" y="100" width="800" height="60" rx="8" class="bar"/>
+    <rect x="1040.48" y="108" width="55.52" height="44" rx="6" class="primary"/>
+    <text x="1068.24" y="134.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
+    <rect x="312" y="108" width="720.48" height="44" rx="6" class="control"/>
+    <text x="324" y="135" font-size="14" class="muted">Add a task</text>
+    <circle cx="704" cy="276" r="32" class="icon"/>
+    <text x="704" y="348" font-size="20" class="bold" text-anchor="middle">No tasks yet.</text>
+    <text x="704" y="376" font-size="15" class="muted" text-anchor="middle">Your tasks stay on this device.</text>
+    <rect x="514" y="408" width="149.6" height="44" rx="6" class="control"/>
+    <text x="588.8" y="434.9" font-size="14" text-anchor="middle">Import a backup</text>
+    <rect x="744.4" y="408" width="149.6" height="44" rx="6" class="control"/>
+    <text x="819.2" y="434.9" font-size="14" text-anchor="middle">Connect to sync</text>
   </g>
 </svg>

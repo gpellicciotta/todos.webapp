@@ -95,9 +95,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <line x1="16" y1="724" x2="248" y2="724" class="rule"/>
     <text x="28" y="758" font-size="14">Recycle bin</text>
     <text x="28" y="802" font-size="14">Settings</text>
-    <rect x="163.68" y="844" width="76.32" height="32" rx="16" class="control"/>
-    <circle cx="177.68" cy="860" r="5" class="icon"/>
-    <text x="189.68" y="865" font-size="12">Synced</text>
+    <rect x="12" y="844" width="76.32" height="32" rx="16" class="control"/>
+    <circle cx="26" cy="860" r="5" class="icon"/>
+    <text x="38" y="865" font-size="12">Synced</text>
     <rect x="1009.28" y="28" width="94.72" height="44" rx="6" class="primary"/>
     <text x="1056.64" y="54.9" font-size="14" class="on-primary" text-anchor="middle">New list</text>
     <text x="304" y="60" font-size="28" class="bold">Lists</text>

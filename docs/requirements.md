@@ -65,7 +65,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ### Notes
 - NOT-1: Users add notes to a task; each note holds 1 to 2000 characters of plain text.
 - NOT-2: Each note records its creation time, its last edit time, and, when connected, its author.
-- NOT-3: A task shows its notes in creation order, newest last.
+- NOT-3: A task shows its notes in creation order, newest first.
 - NOT-4: Users edit or delete their own notes.
 - NOT-5: Adding, editing, or deleting a note updates the task's last activity time.
 

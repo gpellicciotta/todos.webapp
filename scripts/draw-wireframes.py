@@ -93,7 +93,11 @@ HOME_TASKS = [
     {"text": "Replace the smoke detector batteries", "status": "todo"},
     {"text": "Sort the winter clothes", "status": "in-progress", "notes": 1},
     {"text": "Fix the squeaky door", "status": "todo"},
+    {"text": "Paint the garden fence", "status": "completed"},
+    {"text": "Buy a new lawn mower", "status": "cancelled"},
 ]
+
+STATUSES = [("todo", "To do"), ("in-progress", "In progress"), ("completed", "Completed"), ("cancelled", "Cancelled")]
 
 
 def text_width(text, size):
@@ -236,7 +240,7 @@ def status_icon(f, cx, cy, status, r=9):
     if status == "in-progress":
         f.path(f"M{cx} {cy - r} A{r} {r} 0 0 1 {cx} {cy + r} Z", "icon-fill")
     elif status == "cancelled":
-        f.line(cx - r * 0.7, cy + r * 0.7, cx + r * 0.7, cy - r * 0.7, "icon-line")
+        f.line(cx - r * 0.55, cy, cx + r * 0.55, cy, "icon-line")
 
 
 def banner(f, x, y, width, message, action=None):
@@ -328,7 +332,7 @@ def sidebar(f, current, lists=LISTS, sync="Local only"):
     f.line(16, y - 8, SIDEBAR_WIDTH - 16, y - 8)
     item("Recycle bin", None, current == "Recycle bin")
     item("Settings", None, current == "Settings")
-    sync_pill(f, SIDEBAR_WIDTH - 24, f.height - 56, sync)
+    sync_pill(f, 12 + text_width(sync, 12) + 36, f.height - 56, sync)
 
 
 def page_header(f, x, y, right, title, subtitle=None, actions=()):
@@ -397,8 +401,23 @@ def task_row(f, x, y, width, task, wide, handle=False, selected=False):
         label = "! Overdue" if overdue else task["due"]
         right = chip(f, right, y + 12, label, "signal" if overdue else "chip") - 8
     done = task["status"] in ("completed", "cancelled")
-    f.text(text_left, y + 30, fit(task["text"], right - text_left - 4, 15), 15, "muted" if done else "")
+    label = fit(task["text"], right - text_left - 4, 15)
+    f.text(text_left, y + 30, label, 15, "muted" if done else "")
+    if task["status"] == "cancelled":
+        f.line(text_left, y + 25, text_left + text_width(label, 15) * 0.9, y + 25, "icon-line")
     return y + ROW_HEIGHT
+
+
+def status_menu(f, x, y, current):
+    """Draw the status menu that the status button opens, marking the current status."""
+    f.rect(x, y, 200, 192, "frame", radius=8)
+    for index, (status, label) in enumerate(STATUSES):
+        top = y + 8 + index * 44
+        if status == current:
+            f.rect(x + 6, top, 188, 44, "selected", radius=4)
+            f.text(x + 180, top + 27, "✓", 14, "bold", "end")
+        status_icon(f, x + 26, top + 22, status)
+        f.text(x + 48, top + 27, label, 14, "bold" if status == current else "")
 
 
 def task_rows(f, x, y, width, tasks, wide, bottom, handle=False, selected=None):
@@ -460,11 +479,11 @@ def wide_all_tasks(f, sync="Local only", selected=None, right=MAIN_RIGHT):
     if sync != "Local only":
         chips.append(("Shared", False))
     view_controls_wide(f, MAIN_LEFT, 92, right, chips)
-    bottom = task_rows(f, MAIN_LEFT, 152, right - MAIN_LEFT, TASKS, True, f.height - 100, selected=selected)
-    add_bar(f, MAIN_LEFT, bottom + 16, right - MAIN_LEFT)
+    add_bar(f, MAIN_LEFT, 152, right - MAIN_LEFT)
+    task_rows(f, MAIN_LEFT, 228, right - MAIN_LEFT, TASKS, True, f.height - 24, selected=selected)
 
 
-def wide_list(f, sync="Synced"):
+def wide_list(f, sync="Synced", right=MAIN_RIGHT):
     """Draw the wide Home list screen as a background or main view."""
     sidebar(f, "Home", sync=sync)
     actions = [("Edit list", "control"), ("Share", "control"), ("⋯", "control")]
@@ -472,24 +491,24 @@ def wide_list(f, sync="Synced"):
         f,
         MAIN_LEFT,
         28,
-        MAIN_RIGHT,
+        right,
         "Home",
         "Chores and repairs around the house · Shared with 2 people · You own this list",
         actions,
     )
     segmented(f, MAIN_LEFT, 112, 520, ["Manual", "Due", "Created", "Activity", "Status", "A–Z"], 0, 13, 40)
     f.rect(MAIN_LEFT + 536, 114, 136, 36, "selected", radius=18)
-    f.text(MAIN_LEFT + 604, 137, "Status: open", 13, "bold", "middle")
-    width = MAIN_RIGHT - MAIN_LEFT
-    y = 172
+    f.text(MAIN_LEFT + 604, 137, "Status: all", 13, "bold", "middle")
+    width = right - MAIN_LEFT
+    add_bar(f, MAIN_LEFT, 168, width)
+    y = 244
     for index, task in enumerate(HOME_TASKS):
         if index == 3:
-            f.line(MAIN_LEFT, y, MAIN_RIGHT, y, "drop")
+            f.line(MAIN_LEFT, y, right, y, "drop")
         y = task_row(f, MAIN_LEFT, y, width, task, True, handle=True)
-    add_bar(f, MAIN_LEFT, y + 16, width)
     f.text(
         MAIN_LEFT,
-        y + 112,
+        y + 32,
         "Drag a handle or use Move up and Move down in the row menu; the black line marks the drop spot.",
         13,
         "muted",
@@ -521,8 +540,8 @@ def first_launch():
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "All tasks", lists=[])
     page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "All tasks")
-    empty_state(wide, (MAIN_LEFT + MAIN_RIGHT) / 2, 220, 380)
-    add_bar(wide, MAIN_LEFT, 520, MAIN_RIGHT - MAIN_LEFT)
+    add_bar(wide, MAIN_LEFT, 100, MAIN_RIGHT - MAIN_LEFT)
+    empty_state(wide, (MAIN_LEFT + MAIN_RIGHT) / 2, 240, 380)
     return "First launch", "Local mode with no data: no sign-in, straight to a usable empty state.", compact, wide
 
 
@@ -530,11 +549,13 @@ def all_tasks():
     """All tasks with the default open filter."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     compact_task_screen(compact, "All tasks", TASKS)
+    status_menu(compact, 12, 216, "todo")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_all_tasks(wide)
+    status_menu(wide, MAIN_LEFT + 8, 324, "todo")
     return (
         "All tasks",
-        "Every open task, filtered and sorted; the status button completes a task in one click.",
+        "Every open task, filtered and sorted; the status button opens a menu with the four statuses.",
         compact,
         wide,
     )
@@ -555,7 +576,7 @@ def list_view():
     wide_list(wide)
     return (
         "List",
-        "One list in its manual order; other order buttons sort the view without changing that order.",
+        "Manual order, shown with all statuses; other order buttons sort the view without changing that order.",
         compact,
         wide,
     )
@@ -625,9 +646,12 @@ def editor_fields(f, x, y, width, compact):
     y += 64
     f.text(x, y + 14, "Notes", 13, "muted")
     y += 24
+    add_left = button_right(f, x + width, y, "Add note")
+    field(f, x, y, add_left - x - 8, "Add a note", muted=True)
+    y += 52
     notes = [
-        ("Ann · 2 Nov 14:05", "Get the matte white, not the gloss."),
         ("You · 3 Nov 09:12 · edited", "Hardware store closes at 18:00."),
+        ("Ann · 2 Nov 14:05", "Get the matte white, not the gloss."),
     ]
     for meta, body in notes:
         f.rect(x, y, width, 60, "box")
@@ -635,14 +659,25 @@ def editor_fields(f, x, y, width, compact):
         f.text(x + 12, y + 46, fit(body, width - 64, 14), 14)
         f.text(x + width - 20, y + 22, "⋯", 14, "", "middle")
         y += 68
-    add_left = button_right(f, x + width, y, "Add note")
-    field(f, x, y, add_left - x - 8, "Add a note", muted=True)
-    y += 60
     if not compact:
         f.text(x, y + 14, "Created 1 Nov · Last activity 3 Nov 09:12 · Owner: you", 12, "muted")
-        y += 32
-    button(f, x, y, "Delete task", "control")
-    return y + 44
+        y += 24
+    return danger_zone(f, x, y, width, "Delete task")
+
+
+def danger_zone(f, x, y, width, label):
+    """Draw a divider with extra space, then the editor's delete button; return the bottom edge."""
+    f.line(x, y + 20, x + width, y + 20)
+    button(f, x, y + 40, label, "control")
+    return y + 84
+
+
+def editor_panel(f, title):
+    """Draw the wide right editor panel with its title and close button; return the content left and width."""
+    f.rect(EDITOR_LEFT, 0, WIDE_WIDTH - EDITOR_LEFT, WIDE_HEIGHT, "frame", radius=0)
+    f.text(EDITOR_LEFT + 24, 46, title, 20, "bold")
+    icon_button(f, WIDE_WIDTH - 60, 16, "×")
+    return EDITOR_LEFT + 24, WIDE_WIDTH - EDITOR_LEFT - 48
 
 
 def task_editor():
@@ -652,10 +687,8 @@ def task_editor():
     editor_fields(compact, 16, 76, compact.width - 32, True)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_all_tasks(wide, "Synced", selected=1, right=EDITOR_LEFT - 20)
-    wide.rect(EDITOR_LEFT, 0, WIDE_WIDTH - EDITOR_LEFT, WIDE_HEIGHT, "frame", radius=0)
-    wide.text(EDITOR_LEFT + 24, 46, "Task", 20, "bold")
-    icon_button(wide, WIDE_WIDTH - 60, 16, "×")
-    editor_fields(wide, EDITOR_LEFT + 24, 76, WIDE_WIDTH - EDITOR_LEFT - 48, False)
+    left, width = editor_panel(wide, "Task")
+    editor_fields(wide, left, 76, width, False)
     return (
         "Task editor",
         "Every field saves on change; a full screen on phones and a right panel on wide screens.",
@@ -665,34 +698,31 @@ def task_editor():
 
 
 def list_editor_fields(f, x, y, width):
-    """Draw the list editor fields and actions; return the bottom edge."""
+    """Draw the list editor fields, details, and delete button; return the bottom edge."""
     y = field(f, x, y, width, "Home", "Name") + 16
     f.text(x, y + 14, "Description", 13, "muted")
     f.rect(x, y + 22, width, 88, "control")
-    f.text(x + 12, y + 50, "Chores and repairs around the house", 14)
+    f.text(x + 12, y + 50, fit("Chores and repairs around the house", width - 24, 14), 14)
     f.text(x + width, y + 132, "36 / 1000", 12, "muted", "end")
     y += 148
-    left = button(f, x, y, "Save", "primary") + 8
-    button(f, left, y, "Cancel")
-    button_right(f, x + width, y, "Delete list")
-    y += 60
-    f.text(x, y + 14, "Deleting a list never deletes its tasks.", 13, "muted")
-    return y + 24
+    f.text(x, y + 14, "Created 1 Oct · Owner: you · Shared with 2 people", 12, "muted")
+    y = danger_zone(f, x, y + 16, width, "Delete list")
+    f.text(x, y + 22, "Deleting a list never deletes its tasks.", 13, "muted")
+    return y + 32
 
 
 def list_editor():
-    """The list editor dialog."""
+    """The list editor, opening where the task editor opens."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    compact_task_screen(compact, "Home", HOME_TASKS, "Synced", back=True, nav="Lists")
-    top = compact_sheet(compact, "Edit list")
-    list_editor_fields(compact, 20, top, compact.width - 40)
+    top_bar(compact, "List", "Synced", back=True)
+    list_editor_fields(compact, 16, 76, compact.width - 32)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    wide_list(wide)
-    left, top, right = wide_dialog(wide, "Edit list", 560, 400)
-    list_editor_fields(wide, left, top, right - left)
+    wide_list(wide, right=EDITOR_LEFT - 20)
+    left, width = editor_panel(wide, "List")
+    list_editor_fields(wide, left, 76, width)
     return (
         "List editor",
-        "Name and description; a duplicate name shows a field error and keeps the dialog open.",
+        "Opens where the task editor opens: a full screen on phones and a right panel on wide screens.",
         compact,
         wide,
     )
@@ -828,12 +858,11 @@ def settings_sections(f, x, y, width):
     top = section("Data", 100)
     left = button(f, x + 16, top, "Export backup") + 8
     button(f, left, top, "Import backup")
-    top = section("Connection", 152)
+    top = section("Connection", 232)
     f.text(x + 16, top + 14, "Not connected. Your data stays on this device.", 13)
     f.text(x + 16, top + 36, "Connect to sync devices and share lists.", 13, "muted")
     button(f, x + 16, top + 52, "Connect", "primary")
-    top = section("Advanced", 112)
-    field(f, x + 16, top, width - 32, "https://todos.pellicciotta.com", "Server URL")
+    field(f, x + 16, top + 112, width - 32, "https://todos.pellicciotta.com", "Server URL")
     top = section("About", 72)
     f.text(x + 16, top + 4, "Version 1.0.0 · Built 3 Nov 2026", 13, "muted")
     return y

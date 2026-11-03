@@ -88,9 +88,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="28" y="758" font-size="14">Recycle bin</text>
     <rect x="12" y="776" width="240" height="40" rx="6" class="selected"/>
     <text x="28" y="802" font-size="14" class="bold">Settings</text>
-    <rect x="156.96" y="844" width="83.04" height="32" rx="16" class="control"/>
-    <circle cx="170.96" cy="860" r="5" class="icon"/>
-    <text x="182.96" y="865" font-size="12">Syncing</text>
+    <rect x="12" y="844" width="83.04" height="32" rx="16" class="control"/>
+    <circle cx="26" cy="860" r="5" class="icon"/>
+    <text x="38" y="865" font-size="12">Syncing</text>
     <text x="304" y="60" font-size="28" class="bold">Connect</text>
     <text x="304" y="114" font-size="14">Connecting syncs your data across devices</text>
     <text x="304" y="136" font-size="14">and lets you share lists.</text>

@@ -107,9 +107,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="12" y="732" width="240" height="40" rx="6" class="selected"/>
     <text x="28" y="758" font-size="14" class="bold">Recycle bin</text>
     <text x="28" y="802" font-size="14">Settings</text>
-    <rect x="136.8" y="844" width="103.2" height="32" rx="16" class="control"/>
-    <circle cx="150.8" cy="860" r="5" class="icon"/>
-    <text x="162.8" y="865" font-size="12">Local only</text>
+    <rect x="12" y="844" width="103.2" height="32" rx="16" class="control"/>
+    <circle cx="26" cy="860" r="5" class="icon"/>
+    <text x="38" y="865" font-size="12">Local only</text>
     <text x="304" y="60" font-size="28" class="bold">Recycle bin</text>
     <text x="304" y="88" font-size="14" class="muted">Deleted items stay here for 30 days.</text>
     <line x1="304" y1="180" x2="1104" y2="180" class="rule"/>

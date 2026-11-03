@@ -60,7 +60,8 @@ Token names follow the two-tier rule: primitives hold raw values, and components
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
 - Text scale: `--text-xs` to `--text-xl`; task rows use `--text-base`, chips use `--text-sm`.
 - Weights: regular for body, medium for task descriptions and labels, semibold for headings.
-- Open tasks use medium weight; done tasks use regular weight, the muted color, and a strike-through.
+- Open tasks use medium weight; done tasks use regular weight and the muted color.
+- Cancelled tasks also get a strike-through, so they differ from completed ones beyond the icon.
 
 ### Space, Shape, and Size
 - `--space-1` to `--space-8`: a 4 px based scale; rows use `--space-2` inside and no gap between.
@@ -82,11 +83,11 @@ Each component gets a gallery section with every state: default, hover, focus-vi
 - Button: `.button` in the signal color for the one main action of a view, `--secondary` in gray for others.
   Never place two signal buttons side by side.
 - Icon button: a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
-- Status button: the four status icons of the task row; the icon shapes are:
+- Status button: the status icon of the task row, opening a status menu; the icon shapes are:
   - `todo`: an empty circle.
   - `in-progress`: a half-filled circle.
-  - `completed`: a filled circle with a check.
-  - `cancelled`: a circle with a slash.
+  - `completed`: a filled circle with a check, with muted text.
+  - `cancelled`: a circle with a dash, with struck-through muted text.
 - Task row: status button, description, chips, and a More button at `--row-height`.
   States: default, hover, focus-visible, selected, dragging, drop target, done, and read-only.
 - Chip: a small sunken label for due times, lists, and note counts; the overdue chip uses the signal color and an icon.
@@ -105,11 +106,12 @@ Each component gets a gallery section with every state: default, hover, focus-vi
 ---
 
 ## Patterns
-- Task list: task rows in a `<ul>`, with the add bar below; done tasks stay in place until a filter hides them.
+- Task list: task rows in a `<ul>`; the add bar sits above them in wide layouts and pinned below in compact ones.
 - Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
 - View controls: search, filter chips, and the sort menu in one bar above the task list.
-- Editor panel: a right panel in wide layouts and a full screen in compact layouts.
-- Note thread: notes in a `<ol>`, each with author, time, an "edited" mark, and a More menu.
+- Editor panel: the task or list editor; a right panel in wide layouts, a full screen in compact ones.
+- Note thread: an add note field above an `<ol>` of notes, newest first.
+  Each note shows its author, its time, an "edited" mark, and a More menu.
 - In-place confirmation: a destructive row action swaps its buttons for a question with Delete and Keep.
 
 ---
