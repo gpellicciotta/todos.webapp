@@ -27,5 +27,18 @@ Confirm this list against docs/requirements.md; requirements win on any differen
 - The alternative is a new design system for this app; the user decided on 2026-11-03 to choose between these two.
 - The todos [spa-spec.md](https://github.com/gpellicciotta/todos/blob/main/docs/specs/spa-spec.md) and `docs/tour` screenshots are prior art, not constraints.
 
+### Decisions
+Answered by the user on 2026-11-03:
+- A new design system for this app; the family-portal system is not reused.
+- Palette: monochrome with one signal color, such as electric violet.
+- Typography: Inter, self-hosted as one variable font.
+- Density: compact one-line task rows of about 48 px.
+
+Decided by the agent on 2026-11-03, open to change in review:
+- Danger and errors reuse the signal color with an icon; no second hue.
+- Hash routes, since GitHub Pages has no route rewrites.
+- All tasks defaults to the open status filter, like the list view.
+- Wireframes move to task T0005 to keep this task below the large line.
+
 ### Out of Scope
 - `style.css` and `visual-style-gallery.html` arrive with the first code task, once the technology stack is chosen.
