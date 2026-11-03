@@ -1,0 +1,256 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1970" height="1050" viewBox="0 0 1970 1050">
+  <title>Sharing wireframe</title>
+  <style>
+text { font-family: sans-serif; fill: #222222; }
+.muted { fill: #666666; }
+.on-primary { fill: #ffffff; }
+.bold { font-weight: bold; }
+rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
+.bar { fill: #eeeeee; stroke: #bbbbbb; }
+.box { fill: #f5f5f5; stroke: #bbbbbb; }
+.control { fill: #ffffff; stroke: #888888; }
+.disabled { fill: #f5f5f5; stroke: #cccccc; }
+.primary { fill: #444444; stroke: #444444; }
+.selected { fill: #dddddd; stroke: #999999; }
+.chip { fill: #eeeeee; stroke: #cccccc; }
+.signal { fill: #ffffff; stroke: #222222; stroke-width: 2; }
+.scrim { fill: #888888; fill-opacity: 0.5; }
+.rule { stroke: #cccccc; }
+.drop { stroke: #222222; stroke-width: 3; }
+.icon { fill: #ffffff; stroke: #444444; stroke-width: 2; }
+.icon-fill { fill: #444444; stroke: #444444; stroke-width: 2; }
+.icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
+.icon-line { stroke: #444444; stroke-width: 2; }
+  </style>
+  <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
+  <text x="40" y="44" font-size="28" class="bold">Sharing</text>
+  <text x="40" y="72" font-size="16" class="muted">The owner invites people by email with a role, and changes or removes their access.</text>
+  <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
+  <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
+  <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
+    <rect x="0" y="0" width="390" height="844" rx="0" class="frame"/>
+    <rect x="0" y="0" width="390" height="60" rx="0" class="bar"/>
+    <rect x="8" y="8" width="44" height="44" rx="6" class="control"/>
+    <text x="30" y="35" font-size="16" text-anchor="middle">&lt;</text>
+    <rect x="338" y="8" width="44" height="44" rx="6" class="control"/>
+    <text x="360" y="35" font-size="16" text-anchor="middle">⋮</text>
+    <rect x="253.68" y="14" width="76.32" height="32" rx="16" class="control"/>
+    <circle cx="267.68" cy="30" r="5" class="icon"/>
+    <text x="279.68" y="35" font-size="12">Synced</text>
+    <text x="60" y="37" font-size="20" class="bold">Home</text>
+    <rect x="0" y="60" width="390" height="60" rx="0" class="box"/>
+    <rect x="310.64" y="68" width="63.36" height="44" rx="6" class="control"/>
+    <text x="342.32" y="94.9" font-size="14" text-anchor="middle">Sort</text>
+    <rect x="200.08" y="68" width="102.56" height="44" rx="6" class="control"/>
+    <text x="251.36" y="94.9" font-size="14" text-anchor="middle">Filters 1</text>
+    <rect x="16" y="68" width="176.08" height="44" rx="6" class="control"/>
+    <text x="28" y="95" font-size="14" class="muted">Search</text>
+    <line x1="0" y1="168" x2="390" y2="168" class="rule"/>
+    <circle cx="22" cy="144" r="9" class="icon"/>
+    <path d="M22 135.0 A9 9 0 0 1 22 153.0 Z" class="icon-fill"/>
+    <rect x="309.52" y="132" width="76.48" height="24" rx="12" class="signal"/>
+    <text x="347.76" y="148" font-size="12" text-anchor="middle">! Overdue</text>
+    <text x="44" y="150" font-size="15">Call the plumber about the le…</text>
+    <line x1="0" y1="216" x2="390" y2="216" class="rule"/>
+    <circle cx="22" cy="192" r="9" class="icon"/>
+    <rect x="296.08" y="180" width="89.92" height="24" rx="12" class="chip"/>
+    <text x="341.04" y="196" font-size="12" text-anchor="middle">Today 18:00</text>
+    <text x="44" y="198" font-size="15">Buy paint for the hallway</text>
+    <line x1="0" y1="264" x2="390" y2="264" class="rule"/>
+    <circle cx="22" cy="240" r="9" class="icon"/>
+    <rect x="349.84" y="228" width="36.16" height="24" rx="12" class="chip"/>
+    <text x="367.92" y="244" font-size="12" text-anchor="middle">Sat</text>
+    <text x="44" y="246" font-size="15">Clean the gutters</text>
+    <line x1="0" y1="312" x2="390" y2="312" class="rule"/>
+    <circle cx="22" cy="288" r="9" class="icon"/>
+    <text x="44" y="294" font-size="15">Replace the smoke detector batteries</text>
+    <line x1="0" y1="360" x2="390" y2="360" class="rule"/>
+    <circle cx="22" cy="336" r="9" class="icon"/>
+    <path d="M22 327.0 A9 9 0 0 1 22 345.0 Z" class="icon-fill"/>
+    <text x="44" y="342" font-size="15">Sort the winter clothes</text>
+    <line x1="0" y1="408" x2="390" y2="408" class="rule"/>
+    <circle cx="22" cy="384" r="9" class="icon"/>
+    <text x="44" y="390" font-size="15">Fix the squeaky door</text>
+    <rect x="0" y="720" width="390" height="60" rx="0" class="bar"/>
+    <rect x="326.48" y="728" width="55.52" height="44" rx="6" class="primary"/>
+    <text x="354.24" y="754.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
+    <rect x="8" y="728" width="310.48" height="44" rx="6" class="control"/>
+    <text x="20" y="755" font-size="14" class="muted">Add a task</text>
+    <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
+    <rect x="39.75" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="48.75" y="828" font-size="12" text-anchor="middle">Tasks</text>
+    <rect x="106.25" y="788" width="80" height="48" rx="24" class="selected"/>
+    <rect x="137.25" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="146.25" y="828" font-size="12" class="bold" text-anchor="middle">Lists</text>
+    <rect x="234.75" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="243.75" y="828" font-size="12" text-anchor="middle">Bin</text>
+    <rect x="332.25" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="341.25" y="828" font-size="12" text-anchor="middle">Settings</text>
+    <rect x="0" y="0" width="390" height="844" rx="0" class="scrim"/>
+    <rect x="0" y="48" width="390" height="796" rx="16" class="frame"/>
+    <text x="20" y="88" font-size="20" class="bold">Share Home</text>
+    <rect x="334" y="60" width="44" height="44" rx="6" class="control"/>
+    <text x="356" y="87" font-size="16" text-anchor="middle">×</text>
+    <text x="20" y="134" font-size="13" class="muted">People with access</text>
+    <text x="20" y="174" font-size="15" class="bold">You</text>
+    <text x="370" y="174" font-size="14" class="muted" text-anchor="end">Owner</text>
+    <line x1="20" y1="192" x2="370" y2="192" class="rule"/>
+    <rect x="326" y="198" width="44" height="44" rx="6" class="control"/>
+    <text x="348" y="225" font-size="16" text-anchor="middle">×</text>
+    <rect x="192.08" y="198" width="125.92" height="44" rx="6" class="control"/>
+    <text x="204.08" y="225" font-size="14">Task editor ▾</text>
+    <text x="20" y="225" font-size="15">ann@example.com</text>
+    <line x1="20" y1="248" x2="370" y2="248" class="rule"/>
+    <rect x="326" y="254" width="44" height="44" rx="6" class="control"/>
+    <text x="348" y="281" font-size="16" text-anchor="middle">×</text>
+    <rect x="231.28" y="254" width="86.72" height="44" rx="6" class="control"/>
+    <text x="243.28" y="281" font-size="14">Viewer ▾</text>
+    <text x="20" y="281" font-size="15">ben@example.com</text>
+    <text x="20" y="334" font-size="13" class="muted">Invite</text>
+    <rect x="20" y="342" width="350" height="44" rx="6" class="control"/>
+    <text x="32" y="369" font-size="14" class="muted">Email address</text>
+    <rect x="20" y="394" width="250" height="44" rx="6" class="control"/>
+    <text x="32" y="421" font-size="14">Task editor ▾</text>
+    <rect x="290.96" y="394" width="79.04" height="44" rx="6" class="primary"/>
+    <text x="330.48" y="420.9" font-size="14" class="on-primary" text-anchor="middle">Invite</text>
+    <text x="20" y="468" font-size="13" class="muted">Viewer: can read the list and its tasks.</text>
+    <text x="20" y="490" font-size="13" class="muted">Task editor: can add, edit, and reorder tasks.</text>
+    <text x="20" y="512" font-size="13" class="muted">Editor: can also rename and describe the list.</text>
+    <text x="20" y="558" font-size="12" class="muted">Offline variant, with every control disabled:</text>
+    <rect x="20" y="570" width="350" height="52" rx="6" class="box"/>
+    <rect x="20" y="570" width="4" height="52" rx="0" class="primary"/>
+    <text x="40" y="601" font-size="16" class="bold">!</text>
+    <text x="60" y="601" font-size="14">Sharing needs a connection.</text>
+  </g>
+  <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
+    <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
+    <rect x="0" y="0" width="264" height="900" rx="0" class="bar"/>
+    <text x="24" y="46" font-size="22" class="bold">ToDo's</text>
+    <text x="28" y="106" font-size="14">All tasks</text>
+    <text x="236" y="106" font-size="13" class="muted" text-anchor="end">24</text>
+    <text x="28" y="150" font-size="14">Lists</text>
+    <rect x="12" y="168" width="240" height="40" rx="6" class="selected"/>
+    <text x="44" y="194" font-size="14" class="bold">Home</text>
+    <text x="236" y="194" font-size="13" class="muted" text-anchor="end">8</text>
+    <text x="44" y="238" font-size="14">Work</text>
+    <text x="236" y="238" font-size="13" class="muted" text-anchor="end">12</text>
+    <text x="44" y="282" font-size="14">Travel</text>
+    <text x="236" y="282" font-size="13" class="muted" text-anchor="end">3</text>
+    <text x="44" y="326" font-size="14">Errands</text>
+    <text x="236" y="326" font-size="13" class="muted" text-anchor="end">5</text>
+    <text x="44" y="370" font-size="14">Reading</text>
+    <text x="236" y="370" font-size="13" class="muted" text-anchor="end">2</text>
+    <text x="44" y="414" font-size="14">+ New list</text>
+    <line x1="16" y1="724" x2="248" y2="724" class="rule"/>
+    <text x="28" y="758" font-size="14">Recycle bin</text>
+    <text x="28" y="802" font-size="14">Settings</text>
+    <rect x="163.68" y="844" width="76.32" height="32" rx="16" class="control"/>
+    <circle cx="177.68" cy="860" r="5" class="icon"/>
+    <text x="189.68" y="865" font-size="12">Synced</text>
+    <rect x="1064.16" y="28" width="39.84" height="44" rx="6" class="control"/>
+    <text x="1084.08" y="54.9" font-size="14" text-anchor="middle">⋯</text>
+    <rect x="984.96" y="28" width="71.2" height="44" rx="6" class="control"/>
+    <text x="1020.56" y="54.9" font-size="14" text-anchor="middle">Share</text>
+    <rect x="874.4" y="28" width="102.56" height="44" rx="6" class="control"/>
+    <text x="925.68" y="54.9" font-size="14" text-anchor="middle">Edit list</text>
+    <text x="304" y="60" font-size="28" class="bold">Home</text>
+    <text x="304" y="88" font-size="14" class="muted">Chores and repairs around the house · Shared with 2 people · You own this list</text>
+    <rect x="304" y="112" width="520" height="40" rx="6" class="control"/>
+    <rect x="306" y="114" width="82.6667" height="36" rx="4" class="selected"/>
+    <text x="347.333" y="136.55" font-size="13" class="bold" text-anchor="middle">Manual</text>
+    <text x="434" y="136.55" font-size="13" text-anchor="middle">Due</text>
+    <text x="520.667" y="136.55" font-size="13" text-anchor="middle">Created</text>
+    <text x="607.333" y="136.55" font-size="13" text-anchor="middle">Activity</text>
+    <text x="694" y="136.55" font-size="13" text-anchor="middle">Status</text>
+    <text x="780.667" y="136.55" font-size="13" text-anchor="middle">A–Z</text>
+    <rect x="840" y="114" width="136" height="36" rx="18" class="selected"/>
+    <text x="908" y="137" font-size="13" class="bold" text-anchor="middle">Status: open</text>
+    <line x1="304" y1="220" x2="1104" y2="220" class="rule"/>
+    <text x="316" y="202" font-size="14" class="muted">⋮⋮</text>
+    <circle cx="354" cy="196" r="9" class="icon"/>
+    <path d="M354 187.0 A9 9 0 0 1 354 205.0 Z" class="icon-fill"/>
+    <rect x="1056" y="174" width="44" height="44" rx="6" class="control"/>
+    <text x="1078" y="201" font-size="16" text-anchor="middle">⋯</text>
+    <rect x="1011.84" y="184" width="36.16" height="24" rx="12" class="chip"/>
+    <text x="1029.92" y="200" font-size="12" text-anchor="middle">✎ 2</text>
+    <rect x="929.36" y="184" width="76.48" height="24" rx="12" class="signal"/>
+    <text x="967.6" y="200" font-size="12" text-anchor="middle">! Overdue</text>
+    <text x="376" y="202" font-size="15">Call the plumber about the leak</text>
+    <line x1="304" y1="268" x2="1104" y2="268" class="rule"/>
+    <text x="316" y="250" font-size="14" class="muted">⋮⋮</text>
+    <circle cx="354" cy="244" r="9" class="icon"/>
+    <rect x="1056" y="222" width="44" height="44" rx="6" class="control"/>
+    <text x="1078" y="249" font-size="16" text-anchor="middle">⋯</text>
+    <rect x="984.96" y="232" width="63.04" height="24" rx="12" class="chip"/>
+    <text x="1016.48" y="248" font-size="12" text-anchor="middle">Errands</text>
+    <rect x="889.04" y="232" width="89.92" height="24" rx="12" class="chip"/>
+    <text x="934" y="248" font-size="12" text-anchor="middle">Today 18:00</text>
+    <text x="376" y="250" font-size="15">Buy paint for the hallway</text>
+    <line x1="304" y1="316" x2="1104" y2="316" class="rule"/>
+    <text x="316" y="298" font-size="14" class="muted">⋮⋮</text>
+    <circle cx="354" cy="292" r="9" class="icon"/>
+    <rect x="1056" y="270" width="44" height="44" rx="6" class="control"/>
+    <text x="1078" y="297" font-size="16" text-anchor="middle">⋯</text>
+    <rect x="1011.84" y="280" width="36.16" height="24" rx="12" class="chip"/>
+    <text x="1029.92" y="296" font-size="12" text-anchor="middle">Sat</text>
+    <text x="376" y="298" font-size="15">Clean the gutters</text>
+    <line x1="304" y1="316" x2="1104" y2="316" class="drop"/>
+    <line x1="304" y1="364" x2="1104" y2="364" class="rule"/>
+    <text x="316" y="346" font-size="14" class="muted">⋮⋮</text>
+    <circle cx="354" cy="340" r="9" class="icon"/>
+    <rect x="1056" y="318" width="44" height="44" rx="6" class="control"/>
+    <text x="1078" y="345" font-size="16" text-anchor="middle">⋯</text>
+    <text x="376" y="346" font-size="15">Replace the smoke detector batteries</text>
+    <line x1="304" y1="412" x2="1104" y2="412" class="rule"/>
+    <text x="316" y="394" font-size="14" class="muted">⋮⋮</text>
+    <circle cx="354" cy="388" r="9" class="icon"/>
+    <path d="M354 379.0 A9 9 0 0 1 354 397.0 Z" class="icon-fill"/>
+    <rect x="1056" y="366" width="44" height="44" rx="6" class="control"/>
+    <text x="1078" y="393" font-size="16" text-anchor="middle">⋯</text>
+    <rect x="1011.84" y="376" width="36.16" height="24" rx="12" class="chip"/>
+    <text x="1029.92" y="392" font-size="12" text-anchor="middle">✎ 1</text>
+    <text x="376" y="394" font-size="15">Sort the winter clothes</text>
+    <line x1="304" y1="460" x2="1104" y2="460" class="rule"/>
+    <text x="316" y="442" font-size="14" class="muted">⋮⋮</text>
+    <circle cx="354" cy="436" r="9" class="icon"/>
+    <rect x="1056" y="414" width="44" height="44" rx="6" class="control"/>
+    <text x="1078" y="441" font-size="16" text-anchor="middle">⋯</text>
+    <text x="376" y="442" font-size="15">Fix the squeaky door</text>
+    <rect x="304" y="476" width="800" height="60" rx="8" class="bar"/>
+    <rect x="1040.48" y="484" width="55.52" height="44" rx="6" class="primary"/>
+    <text x="1068.24" y="510.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
+    <rect x="312" y="484" width="720.48" height="44" rx="6" class="control"/>
+    <text x="324" y="511" font-size="14" class="muted">Add a task</text>
+    <text x="304" y="572" font-size="13" class="muted">Drag a handle or use Move up and Move down in the row menu; the black line marks the drop spot.</text>
+    <rect x="0" y="0" width="1440" height="900" rx="0" class="scrim"/>
+    <rect x="400" y="220" width="640" height="460" rx="12" class="frame"/>
+    <text x="428" y="264" font-size="22" class="bold">Share Home</text>
+    <rect x="980" y="236" width="44" height="44" rx="6" class="control"/>
+    <text x="1002" y="263" font-size="16" text-anchor="middle">×</text>
+    <text x="428" y="310" font-size="13" class="muted">People with access</text>
+    <text x="428" y="350" font-size="15" class="bold">You</text>
+    <text x="1012" y="350" font-size="14" class="muted" text-anchor="end">Owner</text>
+    <line x1="428" y1="368" x2="1012" y2="368" class="rule"/>
+    <rect x="968" y="374" width="44" height="44" rx="6" class="control"/>
+    <text x="990" y="401" font-size="16" text-anchor="middle">×</text>
+    <rect x="834.08" y="374" width="125.92" height="44" rx="6" class="control"/>
+    <text x="846.08" y="401" font-size="14">Task editor ▾</text>
+    <text x="428" y="401" font-size="15">ann@example.com</text>
+    <line x1="428" y1="424" x2="1012" y2="424" class="rule"/>
+    <rect x="968" y="430" width="44" height="44" rx="6" class="control"/>
+    <text x="990" y="457" font-size="16" text-anchor="middle">×</text>
+    <rect x="873.28" y="430" width="86.72" height="44" rx="6" class="control"/>
+    <text x="885.28" y="457" font-size="14">Viewer ▾</text>
+    <text x="428" y="457" font-size="15">ben@example.com</text>
+    <text x="428" y="510" font-size="13" class="muted">Invite</text>
+    <rect x="932.96" y="518" width="79.04" height="44" rx="6" class="primary"/>
+    <text x="972.48" y="544.9" font-size="14" class="on-primary" text-anchor="middle">Invite</text>
+    <rect x="764.96" y="518" width="160" height="44" rx="6" class="control"/>
+    <text x="776.96" y="545" font-size="14">Task editor ▾</text>
+    <rect x="428" y="518" width="328.96" height="44" rx="6" class="control"/>
+    <text x="440" y="545" font-size="14" class="muted">Email address</text>
+    <text x="428" y="592" font-size="13" class="muted">Viewer: can read the list and its tasks.</text>
+    <text x="428" y="614" font-size="13" class="muted">Task editor: can add, edit, and reorder tasks.</text>
+    <text x="428" y="636" font-size="13" class="muted">Editor: can also rename and describe the list.</text>
+  </g>
+</svg>

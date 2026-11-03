@@ -6,8 +6,24 @@ Development environment, planning workflow, and operational procedures for `todo
 ## Prerequisites
 - Git, with access to the `gpellicciotta/todos.webapp` GitHub repository.
 - The [plan](https://github.com/gpellicciotta/plan) CLI.
+- Python 3.10 or later, with pytest and Ruff 0.17, for the documentation scripts.
 
 Build, test, and run commands arrive once the technology stack is chosen.
+
+---
+
+## Wireframes
+[draw-wireframes.py](../scripts/draw-wireframes.py) draws the UI wireframes of [ui-design.md](specs/ui-design.md).
+Regenerate them after changing a screen, then check the script and its output:
+
+```bash
+python scripts/draw-wireframes.py docs/img/ui
+python -m pytest tests
+ruff check scripts tests
+ruff format --check scripts tests
+```
+
+The tests fail when a shape leaves its frame, so overflow at 390 px shows up before review.
 
 ---
 

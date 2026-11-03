@@ -1,0 +1,6 @@
+# Ruff configuration for the documentation scripts and their tests.
+# The rule set is the Ruff 0.17 default, pinned through required-version so a Ruff upgrade cannot change it silently.
+required-version = ">=0.17,<0.18"
+# Matches the Python 3.10+ prerequisite in docs/devops.md.
+target-version = "py310"
+line-length = 120

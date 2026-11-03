@@ -10,3 +10,8 @@ work/
 
 # Ignore env files
 **/*.env
+
+# Ignore Python caches
+__pycache__/
+.pytest_cache/
+.ruff_cache/

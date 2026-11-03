@@ -143,6 +143,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 ## Screens
 
 ### All Tasks
+Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
+
 - Shows every non-deleted task, in any list or none (`TV-1`).
 - Filters: Lists, Status, Due, Created, and Shared when connected (`TV-2` to `TV-7`).
 - The Lists filter offers every list plus "In no list"; the Due filter offers Overdue, Today, This week, a range, and No due time.
@@ -152,6 +154,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - An empty result names the active filters and offers Clear all.
 
 ### List
+Wireframe: [list.svg](../img/ui/list.svg).
+
 - The header shows the list name, its description, the owner and role when shared, and the actions.
 - Actions: Edit list, Share when connected and owner, and Delete list in a More menu.
 - Order buttons form one segmented control: Manual, Due, Created, Activity, Status, and A–Z (`LV-6`).
@@ -163,12 +167,16 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - A deleted or unknown list redirects to All tasks with a toast.
 
 ### Lists Overview
+Wireframe: [lists.svg](../img/ui/lists.svg).
+
 - Each list row shows its name, description start, "4 open · 10 total", and sharing state (`LST-5`).
 - Shared lists show the owner's name when owned by someone else.
 - A New list button opens the list editor.
 - Wide layouts keep this screen for managing lists, though the sidebar also lists them.
 
 ### Task Editor
+Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
+
 - Wide layouts open it as a right panel next to the rows; compact layouts open it as a full screen.
 - Fields save on change, with no Save button; invalid values show a field error and are not saved.
 - Sections, in order:
@@ -186,17 +194,23 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - A deleted task opens read-only with a Restore button (`BIN-6`).
 
 ### List Editor
+Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
+
 - A dialog with name and description fields, and Save and Cancel (`LST-1`, `LST-2`, `LST-4`).
 - A duplicate name shows a field error and keeps the dialog open (`LST-3`).
 - Deleting a list asks for confirmation and states that its tasks stay (`LST-6`, `LST-7`).
 
 ### Sharing Dialog
+Wireframe: [sharing.svg](../img/ui/sharing.svg).
+
 - Shows the owner and every person with access, each with a role select and a Remove button (`SHR-1`, `SHR-2`).
 - An invite row has an email field, a role select defaulting to Task editor, and an Invite button.
 - Each role option has a one-line explanation, such as "Can add, edit, and reorder tasks".
 - Offline, every control is disabled and a banner says sharing needs a connection (`SHR-6`).
 
 ### Recycle Bin
+Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
+
 - Rows show a type icon, the name or description, and "Deleted 5 days ago · 25 days left" (`BIN-1`).
 - Each row has Restore and Delete permanently (`BIN-2`, `BIN-4`).
 - Delete permanently asks in the row first, with Delete and Keep buttons.
@@ -204,6 +218,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - An empty bin says that deleted items stay here for 30 days.
 
 ### Settings
+Wireframe: [settings.svg](../img/ui/settings.svg).
+
 Settings is one page with these sections:
 - Appearance: theme as System, Light, or Dark.
 - Data: Export backup and Import backup (`BAK-1`, `BAK-5`).
@@ -213,6 +229,8 @@ Settings is one page with these sections:
 - About: app version, build date, and a link to the requirements and source.
 
 ### Sync Log
+Wireframe: [sync-log.svg](../img/ui/sync-log.svg).
+
 - Lists sync events of the last 30 days, newest first (`SYN-8`).
 - Entry kinds: overwritten value, rejected change, lost access, and sync error.
 - Overwritten value entries show the item, the field, the lost value, and the kept value.
@@ -225,6 +243,8 @@ Settings is one page with these sections:
 ## Key Flows
 
 ### First Launch
+Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
+
 1. The app opens All tasks in local mode, with no sign-in prompt (`LOC-1`).
 2. The empty state reads "No tasks yet. Your tasks stay on this device."
 3. It offers the add bar, an Import a backup link, and a Connect to sync across devices link.
@@ -239,6 +259,8 @@ Settings is one page with these sections:
 5. Every step works offline; the sync indicator stays at Local only.
 
 ### Connecting
+Wireframe: [connect.svg](../img/ui/connect.svg).
+
 1. The user opens Settings and selects Connect, or the Local only indicator.
 2. The connect screen explains the gains, the loss of anonymity, and the invitation-only access (`CON-2`).
 3. Sign in sends the browser to the Auth service; it returns to `#/connect` with a session.
@@ -285,6 +307,8 @@ Settings is one page with these sections:
 3. A toast names the file and its counts of lists and tasks.
 
 ### Importing a Backup
+Wireframe: [import.svg](../img/ui/import.svg).
+
 1. The user selects Import backup and picks a file.
 2. An invalid file shows the reason and changes nothing (`BAK-13`).
 3. A valid file shows its export date and counts, and the mode choice: Merge or Overwrite (`BAK-5`).
@@ -308,4 +332,6 @@ Settings is one page with these sections:
 ---
 
 ## Wireframes
-Task T0005 draws one low-fidelity SVG wireframe per screen, at 390 px and 1440 px side by side.
+The [ui wireframes](../img/ui/) show each screen at 390 px and 1440 px side by side.
+They are low fidelity: gray boxes and placeholder text, without the design system's colors or fonts.
+[draw-wireframes.py](../../scripts/draw-wireframes.py) draws them; regenerate them after changing a screen, as [devops.md](../devops.md) describes.
