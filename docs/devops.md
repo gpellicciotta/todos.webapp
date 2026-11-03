@@ -6,9 +6,31 @@ Development environment, planning workflow, and operational procedures for `todo
 ## Prerequisites
 - Git, with access to the `gpellicciotta/todos.webapp` GitHub repository.
 - The [plan](https://github.com/gpellicciotta/plan) CLI.
+- Node.js 22.13 or later, with npm.
 - Python 3.10 or later, with pytest and Ruff 0.17, for the documentation scripts.
 
-Build, test, and run commands arrive once the technology stack is chosen.
+---
+
+## Web App
+The app has no build step: [src](../src/) is the web root and the deployed folder.
+Install the development tools once, plus the Chromium build that Playwright drives:
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+Day-to-day commands:
+
+```bash
+npm run serve        # serve src/ at http://127.0.0.1:8080/
+npm test             # unit tests with Vitest, from tests/unit/
+npm run lint         # ESLint, including Stroustrup brace style
+npm run test:e2e     # Playwright end-to-end tests, from tests/e2e/
+```
+
+- [serve.mjs](../scripts/serve.mjs) uses Node.js built-ins only and disables caching; pass `--port` or `--root` to change them.
+- Playwright starts and stops its own server on port 8754; set `E2E_PORT` to use another port.
 
 ---
 

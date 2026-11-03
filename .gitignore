@@ -15,3 +15,7 @@ work/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+
+# Ignore Playwright output
+test-results/
+playwright-report/

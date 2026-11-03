@@ -12,5 +12,5 @@ See also:
 - [Documentation Index](docs/index.md)
 
 ## Status
-The project is gathering requirements and designing the UI; no application code exists yet.
+Requirements and UI design are done; the v0.1.0 build has started with the project tooling.
 Work is tracked in [PLAN.md](PLAN.md); see [devops.md](docs/devops.md) to attach the plan store.
