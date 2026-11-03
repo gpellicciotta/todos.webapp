@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
-- Docs: Moved the list editor into the editor panel, added a status menu, and ordered notes newest first.
+- Docs: Moved the list editor and sharing into the editor panel, added a status menu, and ordered notes newest first.
 - Docs: Added low-fidelity wireframes for every screen, drawn by a tested script at phone and desktop widths.
 - Docs: Designed the UI screens, navigation, and key flows, and a new monochrome design system.
 - Docs: Wrote the functional and technical requirements for local and connected modes.

@@ -19,7 +19,6 @@ SCREENS = {
     "lists.svg",
     "task-editor.svg",
     "list-editor.svg",
-    "sharing.svg",
     "recycle-bin.svg",
     "settings.svg",
     "sync-log.svg",

@@ -160,7 +160,8 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 Wireframe: [list.svg](../img/ui/list.svg).
 
 - The header shows the list name, its description, the owner and role when shared, and the actions.
-- Actions: Edit list, Share when connected and owner, and Delete list in a More menu.
+- Actions: Edit list, Share, and Delete list in a More menu.
+- Share opens the list editor scrolled to its Sharing section.
 - Order buttons form one segmented control: Manual, Due, Created, Activity, Status, and A–Z (`LV-6`).
 - Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
 - Keyboard users move a focused row with Alt+Up and Alt+Down, and focus stays on the moved row.
@@ -205,17 +206,20 @@ Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
 - Name and description save on change, like the task editor; there are no Save or Cancel buttons.
 - A duplicate or empty name shows a field error and is not saved (`LST-3`).
 - A new list is created once its name is valid; closing the editor before that creates nothing.
-- Details show the creation time and, when connected, the owner and sharing state.
+- Details show the creation time and, when connected, the owner.
+- A Sharing section follows the details; see below.
 - Delete list sits at the bottom, after a divider, like Delete task.
 - Deleting a list asks for confirmation and states that its tasks stay (`LST-6`, `LST-7`).
 
-### Sharing Dialog
-Wireframe: [sharing.svg](../img/ui/sharing.svg).
-
-- Shows the owner and every person with access, each with a role select and a Remove button (`SHR-1`, `SHR-2`).
-- An invite row has an email field, a role select defaulting to Task editor, and an Invite button.
+### Sharing Section
+- **[Decided]** Sharing is a section of the list editor, not a separate dialog.
+- It shows the owner and every person with access (`SHR-1`, `SHR-2`).
+- For the owner, each person has a role select and a Remove button, and an invite row follows.
+- The invite row has an email field, a role select defaulting to Task editor, and an Invite button.
 - Each role option has a one-line explanation, such as "Can add, edit, and reorder tasks".
+- Other users see the owner and their own role, read-only (`SHR-3`).
 - Offline, every control is disabled and a banner says sharing needs a connection (`SHR-6`).
+- In local mode, the section only says "Connect to share this list" and links to the connect flow.
 
 ### Recycle Bin
 Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).

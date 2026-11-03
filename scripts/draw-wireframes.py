@@ -243,17 +243,6 @@ def status_icon(f, cx, cy, status, r=9):
         f.line(cx - r * 0.55, cy, cx + r * 0.55, cy, "icon-line")
 
 
-def banner(f, x, y, width, message, action=None):
-    """Draw a banner with an alert mark, a message, and an optional action button."""
-    f.rect(x, y, width, 52, "box")
-    f.rect(x, y, 4, 52, "primary", radius=0)
-    f.text(x + 20, y + 31, "!", 16, "bold")
-    right = x + width - 8
-    if action:
-        right = button_right(f, right, y + 8, action, size=13, height=36) - 8
-    f.text(x + 40, y + 31, fit(message, right - x - 48, 14), 14)
-
-
 def scrim(f):
     """Dim the whole frame behind a dialog."""
     f.rect(0, 0, f.width, f.height, "scrim", radius=0)
@@ -698,15 +687,16 @@ def task_editor():
 
 
 def list_editor_fields(f, x, y, width):
-    """Draw the list editor fields, details, and delete button; return the bottom edge."""
+    """Draw the list editor fields, details, sharing section, and delete button; return the bottom edge."""
     y = field(f, x, y, width, "Home", "Name") + 16
     f.text(x, y + 14, "Description", 13, "muted")
     f.rect(x, y + 22, width, 88, "control")
     f.text(x + 12, y + 50, fit("Chores and repairs around the house", width - 24, 14), 14)
     f.text(x + width, y + 132, "36 / 1000", 12, "muted", "end")
     y += 148
-    f.text(x, y + 14, "Created 1 Oct · Owner: you · Shared with 2 people", 12, "muted")
-    y = danger_zone(f, x, y + 16, width, "Delete list")
+    f.text(x, y + 14, "Created 1 Oct · Owner: you", 12, "muted")
+    y = sharing_fields(f, x, y + 30, width)
+    y = danger_zone(f, x, y, width, "Delete list")
     f.text(x, y + 22, "Deleting a list never deletes its tasks.", 13, "muted")
     return y + 32
 
@@ -722,15 +712,15 @@ def list_editor():
     list_editor_fields(wide, left, 76, width)
     return (
         "List editor",
-        "Opens where the task editor opens: a full screen on phones and a right panel on wide screens.",
+        "Name, description, and sharing; opens where the task editor opens, as a full screen or a right panel.",
         compact,
         wide,
     )
 
 
-def sharing_fields(f, x, y, width, compact):
-    """Draw the sharing dialog content; return the bottom edge."""
-    f.text(x, y + 14, "People with access", 13, "muted")
+def sharing_fields(f, x, y, width):
+    """Draw the Sharing section of the list editor; return the bottom edge."""
+    f.text(x, y + 16, "Sharing", 16, "bold")
     y += 28
     f.text(x, y + 26, "You", 15, "bold")
     f.text(x + width, y + 26, "Owner", 14, "muted", "end")
@@ -745,49 +735,15 @@ def sharing_fields(f, x, y, width, compact):
         f.text(role_left + 12, y + 33, role, 14)
         f.text(x, y + 33, fit(email, role_left - x - 8, 15), 15)
         y += 56
-    y += 16
+    y += 8
     f.text(x, y + 14, "Invite", 13, "muted")
     y += 22
-    if compact:
-        field(f, x, y, width, "Email address", muted=True)
-        y += 52
-        f.rect(x, y, width - 100, 44, "control")
-        f.text(x + 12, y + 27, "Task editor ▾", 14)
-        button_right(f, x + width, y, "Invite", "primary")
-    else:
-        invite_left = button_right(f, x + width, y, "Invite", "primary")
-        f.rect(invite_left - 168, y, 160, 44, "control")
-        f.text(invite_left - 156, y + 27, "Task editor ▾", 14)
-        field(f, x, y, invite_left - x - 176, "Email address", muted=True)
-    y += 60
-    for line in [
-        "Viewer: can read the list and its tasks.",
-        "Task editor: can add, edit, and reorder tasks.",
-        "Editor: can also rename and describe the list.",
-    ]:
-        f.text(x, y + 14, line, 13, "muted")
-        y += 22
-    return y
-
-
-def sharing():
-    """The sharing dialog of a list."""
-    compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    compact_task_screen(compact, "Home", HOME_TASKS, "Synced", back=True, nav="Lists")
-    top = compact_sheet(compact, "Share Home")
-    y = sharing_fields(compact, 20, top, compact.width - 40, True)
-    compact.text(20, y + 38, "Offline variant, with every control disabled:", 12, "muted")
-    banner(compact, 20, y + 50, compact.width - 40, "Sharing needs a connection.")
-    wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    wide_list(wide)
-    left, top, right = wide_dialog(wide, "Share Home", 640, 460)
-    sharing_fields(wide, left, top, right - left, False)
-    return (
-        "Sharing",
-        "The owner invites people by email with a role, and changes or removes their access.",
-        compact,
-        wide,
-    )
+    field(f, x, y, width, "Email address", muted=True)
+    y += 52
+    f.rect(x, y, width - 100, 44, "control")
+    f.text(x + 12, y + 27, "Task editor ▾", 14)
+    button_right(f, x + width, y, "Invite", "primary")
+    return y + 44
 
 
 BIN_ROWS = [
@@ -1012,7 +968,6 @@ SCREENS = {
     "lists.svg": lists,
     "task-editor.svg": task_editor,
     "list-editor.svg": list_editor,
-    "sharing.svg": sharing,
     "recycle-bin.svg": recycle_bin,
     "settings.svg": settings,
     "sync-log.svg": sync_log,

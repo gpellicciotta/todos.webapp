@@ -24,7 +24,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">List editor</text>
-  <text x="40" y="72" font-size="16" class="muted">Opens where the task editor opens: a full screen on phones and a right panel on wide screens.</text>
+  <text x="40" y="72" font-size="16" class="muted">Name, description, and sharing; opens where the task editor opens, as a full screen or a right panel.</text>
   <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
   <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
   <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
@@ -45,11 +45,33 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="16" y="180" width="358" height="88" rx="6" class="control"/>
     <text x="28" y="208" font-size="14">Chores and repairs around the house</text>
     <text x="374" y="290" font-size="12" class="muted" text-anchor="end">36 / 1000</text>
-    <text x="16" y="320" font-size="12" class="muted">Created 1 Oct · Owner: you · Shared with 2 people</text>
-    <line x1="16" y1="342" x2="374" y2="342" class="rule"/>
-    <rect x="16" y="362" width="118.24" height="44" rx="6" class="control"/>
-    <text x="75.12" y="388.9" font-size="14" text-anchor="middle">Delete list</text>
-    <text x="16" y="428" font-size="13" class="muted">Deleting a list never deletes its tasks.</text>
+    <text x="16" y="320" font-size="12" class="muted">Created 1 Oct · Owner: you</text>
+    <text x="16" y="352" font-size="16" class="bold">Sharing</text>
+    <text x="16" y="390" font-size="15" class="bold">You</text>
+    <text x="374" y="390" font-size="14" class="muted" text-anchor="end">Owner</text>
+    <line x1="16" y1="408" x2="374" y2="408" class="rule"/>
+    <rect x="330" y="414" width="44" height="44" rx="6" class="control"/>
+    <text x="352" y="441" font-size="16" text-anchor="middle">×</text>
+    <rect x="196.08" y="414" width="125.92" height="44" rx="6" class="control"/>
+    <text x="208.08" y="441" font-size="14">Task editor ▾</text>
+    <text x="16" y="441" font-size="15">ann@example.com</text>
+    <line x1="16" y1="464" x2="374" y2="464" class="rule"/>
+    <rect x="330" y="470" width="44" height="44" rx="6" class="control"/>
+    <text x="352" y="497" font-size="16" text-anchor="middle">×</text>
+    <rect x="235.28" y="470" width="86.72" height="44" rx="6" class="control"/>
+    <text x="247.28" y="497" font-size="14">Viewer ▾</text>
+    <text x="16" y="497" font-size="15">ben@example.com</text>
+    <text x="16" y="542" font-size="13" class="muted">Invite</text>
+    <rect x="16" y="550" width="358" height="44" rx="6" class="control"/>
+    <text x="28" y="577" font-size="14" class="muted">Email address</text>
+    <rect x="16" y="602" width="258" height="44" rx="6" class="control"/>
+    <text x="28" y="629" font-size="14">Task editor ▾</text>
+    <rect x="294.96" y="602" width="79.04" height="44" rx="6" class="primary"/>
+    <text x="334.48" y="628.9" font-size="14" class="on-primary" text-anchor="middle">Invite</text>
+    <line x1="16" y1="666" x2="374" y2="666" class="rule"/>
+    <rect x="16" y="686" width="118.24" height="44" rx="6" class="control"/>
+    <text x="75.12" y="712.9" font-size="14" text-anchor="middle">Delete list</text>
+    <text x="16" y="752" font-size="13" class="muted">Deleting a list never deletes its tasks.</text>
   </g>
   <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
     <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
@@ -177,10 +199,32 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="1044" y="180" width="372" height="88" rx="6" class="control"/>
     <text x="1056" y="208" font-size="14">Chores and repairs around the house</text>
     <text x="1416" y="290" font-size="12" class="muted" text-anchor="end">36 / 1000</text>
-    <text x="1044" y="320" font-size="12" class="muted">Created 1 Oct · Owner: you · Shared with 2 people</text>
-    <line x1="1044" y1="342" x2="1416" y2="342" class="rule"/>
-    <rect x="1044" y="362" width="118.24" height="44" rx="6" class="control"/>
-    <text x="1103.12" y="388.9" font-size="14" text-anchor="middle">Delete list</text>
-    <text x="1044" y="428" font-size="13" class="muted">Deleting a list never deletes its tasks.</text>
+    <text x="1044" y="320" font-size="12" class="muted">Created 1 Oct · Owner: you</text>
+    <text x="1044" y="352" font-size="16" class="bold">Sharing</text>
+    <text x="1044" y="390" font-size="15" class="bold">You</text>
+    <text x="1416" y="390" font-size="14" class="muted" text-anchor="end">Owner</text>
+    <line x1="1044" y1="408" x2="1416" y2="408" class="rule"/>
+    <rect x="1372" y="414" width="44" height="44" rx="6" class="control"/>
+    <text x="1394" y="441" font-size="16" text-anchor="middle">×</text>
+    <rect x="1238.08" y="414" width="125.92" height="44" rx="6" class="control"/>
+    <text x="1250.08" y="441" font-size="14">Task editor ▾</text>
+    <text x="1044" y="441" font-size="15">ann@example.com</text>
+    <line x1="1044" y1="464" x2="1416" y2="464" class="rule"/>
+    <rect x="1372" y="470" width="44" height="44" rx="6" class="control"/>
+    <text x="1394" y="497" font-size="16" text-anchor="middle">×</text>
+    <rect x="1277.28" y="470" width="86.72" height="44" rx="6" class="control"/>
+    <text x="1289.28" y="497" font-size="14">Viewer ▾</text>
+    <text x="1044" y="497" font-size="15">ben@example.com</text>
+    <text x="1044" y="542" font-size="13" class="muted">Invite</text>
+    <rect x="1044" y="550" width="372" height="44" rx="6" class="control"/>
+    <text x="1056" y="577" font-size="14" class="muted">Email address</text>
+    <rect x="1044" y="602" width="272" height="44" rx="6" class="control"/>
+    <text x="1056" y="629" font-size="14">Task editor ▾</text>
+    <rect x="1336.96" y="602" width="79.04" height="44" rx="6" class="primary"/>
+    <text x="1376.48" y="628.9" font-size="14" class="on-primary" text-anchor="middle">Invite</text>
+    <line x1="1044" y1="666" x2="1416" y2="666" class="rule"/>
+    <rect x="1044" y="686" width="118.24" height="44" rx="6" class="control"/>
+    <text x="1103.12" y="712.9" font-size="14" text-anchor="middle">Delete list</text>
+    <text x="1044" y="752" font-size="13" class="muted">Deleting a list never deletes its tasks.</text>
   </g>
 </svg>
