@@ -14,6 +14,7 @@ ERROR tests/test_draw_wireframes.py::test_output_is_reproducible - subprocess...
 ```
 
 ### Green Phase
+After review round 1, the rework reran every check.
 
 Command: `python scripts/draw-wireframes.py docs/img/ui` (exit code 0)
 
@@ -25,7 +26,7 @@ Command: `python -m pytest tests -q` (exit code 0)
 
 ```text
 ......................................                                   [100%]
-38 passed in 1.59s
+38 passed in 0.41s
 ```
 
 Command: `ruff check scripts tests` (exit code 0)
@@ -50,9 +51,9 @@ Starting lint-markdown v1.12.9-pre+5f5408e with configuration:
 - Verbose: false
 - Working directory: C:\Dev-Projects\todos.webapp
 All 5 markdown files passed linting.
-Finished lint-markdown check in 0.3s with status: succeeded
+Finished lint-markdown check in 0.1s with status: succeeded
 ```
 
 ### Visual Check
 Chromium rendered every SVG from a file URL with no console errors; renders are in [renders](renders/).
-Each render was inspected for overlaps, clipping, and truncation at both widths.
+Each render was inspected for overlaps, clipping, and truncation at both widths, before and after the rework.

@@ -11,7 +11,7 @@ review: human
 preview: none
 protocol: standard
 review_status: pending
-review_round: 1
+review_round: 2
 ---
 # T0005: Draw a low-fidelity SVG wireframe per screen of docs/specs/ui-design.md, showing 390 px and 1440 px side by side
 
@@ -62,4 +62,22 @@ See technical-spec.md for files, size, screens, and tests.
 
 - [2026-11-03] **[Review]**
   Round 1 requested (mode: human).
+
+- [2026-11-03] **[Review]**
+  Round 1 rejected by @gpellicciotta: Approve after remarks: list editor as right panel and full screen, status popup and icons, sidebar sync alignment, add bar on top, notes order, settings card.
+
+- [2026-11-03] **[Implement]**
+  Applied review round 1 remarks to the specs and the script, and regenerated all wireframes.
+  - List editor uses the editor panel.
+  - Status menu, dash icon, cancelled strike-through.
+  - Notes newest first; NOT-3 updated.
+
+- [2026-11-03] **[Visual]**
+  Re-rendered all 12 SVGs without console errors and inspected the reworked screens.
+
+- [2026-11-03] **[Doc]**
+  Size note: rework added about 220 counted lines, plus requirements.md and visual-style-guide.md as undeclared files.
+
+- [2026-11-03] **[Review]**
+  Round 2 requested (mode: human).
 
