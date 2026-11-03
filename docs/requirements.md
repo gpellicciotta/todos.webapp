@@ -138,7 +138,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - CON-8: Disconnecting keeps the user's own lists and tasks as local data.
 - CON-9: Disconnecting removes lists owned by other users, with their tasks owned by others.
 - CON-10: Disconnecting with unsynced changes warns the user and offers to sync first.
-- CON-11: The app connects to one account and one server at a time.
+- CON-11: Version 1.0.0 connects to one account and one server at a time.
 - CON-12: The server URL defaults to the production service and can be changed in the settings.
 - CON-13: An expired session keeps the app usable, queues changes, and asks the user to sign in again.
 
@@ -178,7 +178,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ### Implementation
 - TEC-6: The app uses native ES modules, HTML, and CSS, with no UI framework.
 - TEC-7: The app needs no build step; the repository files are the deployed files.
-- TEC-8: The app uses the [support.js](https://github.com/gpellicciotta/support.js) design tokens and modules.
+- TEC-8: The app uses a new design system, or reuses the [family-portal](https://github.com/gpellicciotta/family-portal) design system.
 - TEC-9: Clients generate UUIDv7 identifiers for lists, tasks, and notes.
 - TEC-10: The REST API is the only contract between the app and the service.
 
@@ -196,11 +196,19 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 
 ---
 
+## Planned After v1.0.0
+Version 1.0.0 leaves these out; later versions add them:
+- Several accounts or servers on one device, each with its own data set and sync state.
+- Service broadcasts and the notification inbox.
+
+Designs for v1.0.0 must not block these additions, for example by assuming one global data set.
+
+---
+
 ## Out of Scope
-- The admin console, broadcasts, and the service's notification inbox.
+- The admin console, which stays outside this project.
 - CSV export and import; the JSON backup covers data portability.
 - Account profile management, which stays in the Auth service.
-- Several simultaneous accounts or servers on one device.
 
 ---
 
