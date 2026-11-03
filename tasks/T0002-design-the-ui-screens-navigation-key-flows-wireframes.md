@@ -15,7 +15,7 @@ protocol: standard
 
 ## Goals
 Design the web app UI from the approved docs/requirements.md.
-Decide whether to reuse the support.js product family design system, as the UI guidelines prefer, and record why.
+Decide between creating a new design system and reusing the family-portal one, and record why.
 Write docs/specs/ui-design.md with screens, navigation, and key flows, including offline use, connecting, syncing, and conflicts.
 Draw a low-fidelity SVG wireframe per screen at 390 px and 1440 px widths under docs/img/ui/.
 Write docs/specs/visual-style-guide.md naming the design system, its version, and planned local additions.
@@ -31,8 +31,8 @@ Completion check: `python ../dev-guidelines/scripts/lint-markdown.py check docs`
 Size estimate: 4 files, 400 lines, plus wireframes
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read docs/requirements.md, the UI guidelines, and the support.js visual style guide.
-- [ ] **[Decide]**    Decide between reusing the support.js design system and creating a new one.
+- [ ] **[Read]**      Read docs/requirements.md, the UI guidelines, and the family-portal visual style guide.
+- [ ] **[Decide]**    Decide between reusing the family-portal design system and creating a new one.
 - [ ] **[Doc]**       Write ui-design.md with screens, navigation, and the flows listed in technical-spec.md.
 - [ ] **[Doc]**       Draw a wireframe for every screen at 390 px and 1440 px widths.
 - [ ] **[Doc]**       Write visual-style-guide.md, link both specs from docs/index.md, and update CHANGELOG.md.

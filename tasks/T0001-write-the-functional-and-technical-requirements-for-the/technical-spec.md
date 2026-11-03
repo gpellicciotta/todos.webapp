@@ -63,11 +63,17 @@ Answered by the user on 2026-11-03:
 - Targets the latest Chrome, Edge, Firefox, and Safari on desktop, Android, and iOS.
 - GitHub Pages hosting; US English UI with strings in one module.
 
+Review remarks by the user on 2026-11-03:
+- The design system is new, or reused from family-portal; not support.js.
+- Several accounts or servers per device come after v1.0.0.
+- Broadcasts and notifications come after v1.0.0.
+- The admin console stays outside this project.
+- Out of scope: CSV import and export, and profile management.
+
 Decided by the agent on 2026-11-03, open to change in review:
 - One account and one server at a time; the server URL is configurable.
 - Local lists merge into account lists with the same name on first connect.
 - Disconnecting removes lists owned by other users.
 - Sharing actions are disabled while offline.
 - A date-only due time means 23:59 local time.
-- Out of scope: admin console, broadcasts, notification inbox, CSV, and profile management.
 - Performance target of 200 ms per view with 5000 tasks is an estimate.

@@ -57,3 +57,6 @@ Size estimate: 3 files, 250 lines
 - [2026-11-03] **[Review]**
   Round 1 requested (mode: human).
 
+- [2026-11-03] **[Doc]**
+  Applied review remarks: design system choice, post-v1.0.0 features, and admin console outside the project.
+

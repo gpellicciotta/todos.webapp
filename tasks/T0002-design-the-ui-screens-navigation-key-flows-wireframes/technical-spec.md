@@ -23,7 +23,8 @@ Confirm this list against docs/requirements.md; requirements win on any differen
 - Follow the UI guidelines: mobile-first from 360 px to 1440 px, 44 px touch targets, and WCAG 2.2 AA.
 - Support light and dark themes through `prefers-color-scheme` with a `data-theme` override.
 - Honor `prefers-reduced-motion`.
-- The [support.js visual style guide](https://github.com/gpellicciotta/support.js/blob/main/docs/specs/visual-style-guide.md) is the family design system to evaluate first.
+- The [family-portal visual style guide](https://github.com/gpellicciotta/family-portal/blob/main/docs/specs/visual-style-guide.md) is the design system to evaluate for reuse.
+- The alternative is a new design system for this app; the user decided on 2026-11-03 to choose between these two.
 - The todos [spa-spec.md](https://github.com/gpellicciotta/todos/blob/main/docs/specs/spa-spec.md) and `docs/tour` screenshots are prior art, not constraints.
 
 ### Out of Scope
