@@ -11,7 +11,7 @@ review: human
 preview: none
 protocol: standard
 review_status: pending
-review_round: 2
+review_round: 3
 ---
 # T0005: Draw a low-fidelity SVG wireframe per screen of docs/specs/ui-design.md, showing 390 px and 1440 px side by side
 
@@ -80,4 +80,17 @@ See technical-spec.md for files, size, screens, and tests.
 
 - [2026-11-03] **[Review]**
   Round 2 requested (mode: human).
+
+- [2026-11-03] **[Review]**
+  Round 2 rejected by @gpellicciotta: Round 2: keep completed muted without strike-through; move sharing into the list editor panel.
+
+- [2026-11-03] **[Implement]**
+  Moved sharing into the list editor panel and dropped sharing.svg; completed tasks stay muted without strike-through.
+  - Tests now expect 11 wireframes.
+
+- [2026-11-03] **[Visual]**
+  Re-rendered all 11 SVGs without console errors and inspected the list editor.
+
+- [2026-11-03] **[Review]**
+  Round 3 requested (mode: human).
 

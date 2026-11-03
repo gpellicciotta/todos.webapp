@@ -13,8 +13,7 @@
 - `list.svg`: one list in manual order, with order buttons and drag handles.
 - `lists.svg`: lists overview.
 - `task-editor.svg`: the task editor, full screen and as a right panel.
-- `list-editor.svg`: the list editor dialog.
-- `sharing.svg`: the sharing dialog.
+- `list-editor.svg`: the list editor panel, with its Sharing section.
 - `recycle-bin.svg`: the recycle bin with an in-row confirmation.
 - `settings.svg`: settings in local mode.
 - `sync-log.svg`: the sync log.
@@ -29,10 +28,10 @@
 - CHANGELOG.md
 
 Mechanical command: `python scripts/draw-wireframes.py docs/img/ui`
-Size estimate: 5 files, 800 lines, plus 12 generated SVG files
+Size estimate: 5 files, 800 lines, plus 11 generated SVG files
 
 ### Tests
-- Unit: the script writes exactly the 12 listed SVG files into a given directory.
+- Unit: the script writes exactly the 11 listed SVG files into a given directory.
 - Unit: each SVG parses as XML, with a white background and the two labeled frames.
 - Unit: every shape and text box of a frame lies inside that frame, so nothing overflows 390 px.
 - Unit: each SVG uses only gray fill and stroke colors.
