@@ -18,6 +18,8 @@ import { createToaster } from './ui/toast.js';
 import { mountAllTasks } from './views/all-tasks.js';
 import { createEditorPanel } from './views/editor-panel.js';
 import { mountList } from './views/list.js';
+import { mountListEditor } from './views/list-editor.js';
+import { mountLists } from './views/lists.js';
 import { mountRecycleBin } from './views/recycle-bin.js';
 import { mountSettings } from './views/settings.js';
 import { mountTaskEditor } from './views/task-editor.js';
@@ -31,10 +33,10 @@ const MESSAGES = Object.freeze({
 });
 
 /** Screens that fill a view, by view name; the other views stay empty until their tasks land. */
-const SCREENS = { tasks: mountAllTasks, list: mountList, bin: mountRecycleBin, settings: mountSettings };
+const SCREENS = { tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings };
 
 /** Editors of the editor panel, by the editor name of their routes. */
-const EDITORS = { task: mountTaskEditor };
+const EDITORS = { task: mountTaskEditor, list: mountListEditor };
 
 let shell = null;
 
@@ -82,7 +84,7 @@ async function start() {
   let screen = null;
   let shownViewKey = null;
   const editorPanel = createEditorPanel({
-    slot: shell.editor, editors: EDITORS, context: { store, toaster },
+    slot: shell.editor, editors: EDITORS, context: { store, toaster, navigate: (hash) => router.navigate(hash) },
     close: () => router.navigate(formatRoute(router.current().view, router.current().params)),
     fallbackFocus: () => shell.main.querySelector('[data-shortcut="add"]') ?? shell.main,
   });

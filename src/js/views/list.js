@@ -11,12 +11,12 @@
 import { readPreference, writePreference } from '../core/preferences.js';
 import { DEFAULT_FILTER, filterTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks } from '../core/query.js';
 import { STATUSES } from '../store/tasks.js';
-import { confirmDialog } from '../ui/dialog.js';
 import { createLiveRegion } from '../ui/live-region.js';
 import { attachMenu } from '../ui/menu.js';
 import { attachPopover } from '../ui/popover.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
 import { createAddBar } from './add-bar.js';
+import { confirmListDelete } from './list-editor.js';
 import { attachReorder } from './reorder.js';
 import { createTaskList, make, spriteIcon, STATUS_LABELS } from './task-list.js';
 import { describeFilters } from './view-controls.js';
@@ -46,10 +46,6 @@ const STRINGS = Object.freeze({
   edit: 'Edit list',
   share: 'Share',
   delete: 'Delete list',
-  deleteTitle: (name) => `Delete the list ${name}?`,
-  deleteText: 'The list moves to the recycle bin. Its tasks stay in your other lists.',
-  keep: 'Keep',
-  deleted: 'List moved to the recycle bin.',
   notFound: 'That list was not found. Showing All tasks.',
   moved: (description, position, count) => `${description} moved to position ${position} of ${count}.`,
   empty: 'This list has no tasks yet.',
@@ -113,6 +109,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
   let data = null;
   let pending = null;
   let gone = false;
+  let deletedHere = false;
 
   /**
    * Report a change that failed, in the console and in a toast.
@@ -190,16 +187,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
   });
   const reorder = attachReorder(taskList.element, { enabled: moves.enabled, onMove: move });
   const empty = make(doc, 'p', 'empty-state empty-state__text');
-  const dialog = make(doc, 'dialog', 'dialog');
-  dialog.setAttribute('aria-labelledby', `${id}-delete-title`);
-  dialog.innerHTML = `<div class="dialog__header"><h2 class="dialog__title" id="${id}-delete-title"></h2></div>
-    <div class="dialog__body"><p></p></div>
-    <div class="dialog__actions"><button class="button button--secondary" type="button" data-dialog-close="cancel"></button>
-    <button class="button" type="button" data-dialog-close="delete"></button></div>`;
-  dialog.querySelector('p').textContent = STRINGS.deleteText;
-  dialog.querySelector('[data-dialog-close="cancel"]').textContent = STRINGS.keep;
-  dialog.querySelector('[data-dialog-close="delete"]').textContent = STRINGS.delete;
-  root.append(header, controls, note, addBar.element, taskList.element, empty, dialog);
+  root.append(header, controls, note, addBar.element, taskList.element, empty);
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });
   const behaviors = [attachPopover(chip, panel), attachMenu(more, menu, { onSelect: act })];
@@ -236,26 +224,13 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
    * Run a list action of the header menu; Edit list and Share open the list editor.
    * @param {HTMLElement} item the picked menu item
    */
-  async function act(item) {
+  function act(item) {
     if (item.dataset.action !== 'delete') {
       navigate(formatRoute('list-edit', { listId }));
-      return;
     }
-    dialog.querySelector('h2').textContent = STRINGS.deleteTitle(data?.list?.name ?? '');
-    if (!(await confirmDialog(dialog, { opener: more }))) {
-      return;
+    else if (data?.list) {
+      confirmListDelete({ parent: root, opener: more, list: data.list, store, toaster, navigate });
     }
-    gone = true;
-    try {
-      await store.deleteList(listId);
-    }
-    catch (error) {
-      gone = false;
-      fail(error);
-      return;
-    }
-    navigate(DEFAULT_HASH);
-    toaster.show(STRINGS.deleted, { undo: true, onAction: () => store.restoreList(listId).catch(fail) });
   }
 
   /** Keep the state on this device and render it. */
@@ -296,11 +271,15 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
   function refresh() {
     pending ??= Promise.resolve().then(async () => {
       pending = null;
+      const local = deletedHere;
+      deletedHere = false;
       data = await readData(store, listId);
       if (!data.list && !gone) {
         gone = true;
-        toaster.show(STRINGS.notFound);
-        navigate(DEFAULT_HASH, { replace: true });
+        if (!local) {
+          toaster.show(STRINGS.notFound);
+          navigate(DEFAULT_HASH, { replace: true });
+        }
       }
       render();
     }).catch((error) => console.error('The list failed to render:', error));
@@ -319,7 +298,11 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
     state.statuses = [];
     save();
   });
-  const unsubscribe = store.subscribe(refresh);
+  // A delete in this tab, here or in the list editor, opens All tasks itself; only other deletes toast here.
+  const unsubscribe = store.subscribe((change) => {
+    deletedHere ||= change?.operation === 'deleteList' && !change.remote;
+    refresh();
+  });
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`).
   const timer = setInterval(render, REDRAW_MS);
   const first = refresh();

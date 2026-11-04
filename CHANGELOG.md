@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Added the Lists overview and the list editor panel with name, description, details, and delete.
 - Feature: Added the Export backup button and the Import backup dialog with mode choice, counts, and confirmation.
 - Feature: Added the List screen with manual ordering, order buttons, drag and keyboard moves, and the status filter.
 - Feature: Added the Recycle bin and Settings screens with theme selection and the local connection card.

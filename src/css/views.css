@@ -435,3 +435,86 @@
 .import-dialog [hidden] {
   display: none;
 }
+
+/*
+ * Lists overview: New list, then one row per list with its name, description start, and task counts.
+ * The counts end the first line; the description takes one line below the name.
+ */
+.lists-view {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.lists-view [hidden] {
+  display: none;
+}
+
+.lists-view__new {
+  margin-inline-start: auto;
+}
+
+.lists-view__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  gap: 0 var(--space-3);
+  min-block-size: var(--row-height);
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.list-row:hover {
+  background-color: var(--color-hover-bg);
+}
+
+/* The ring sits inside the row, so the rows around it never cover it. */
+.list-row:focus-visible {
+  outline-offset: var(--focus-ring-offset-inset);
+}
+
+.list-row__name,
+.list-row__description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-row__name {
+  font-weight: var(--weight-medium);
+}
+
+.list-row__description {
+  grid-column: 1;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.list-row__counts {
+  grid-area: 1 / 2;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A new list hides its later sections, so the fields end the editor without a divider. */
+.list-editor > .editor-panel__section:has(+ [hidden]) {
+  border-block-end: 0;
+}
+
+/* The list editor's Sharing section holds one line in local mode, a link to the connect flow. */
+.list-editor__sharing {
+  margin: 0;
+}
+
+.list-editor__connect {
+  color: var(--color-link);
+}

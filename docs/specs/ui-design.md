@@ -75,8 +75,9 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - The main column scrolls; the bars and the sidebar stay in place.
 - Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
   List views also carry `data-list-id`; the screen tasks fill these views.
-  [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`,
-  and [settings.js](../../src/js/views/settings.js) `settings`; the others stay empty until their tasks land.
+  [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [lists.js](../../src/js/views/lists.js) `lists`,
+  [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`, and [settings.js](../../src/js/views/settings.js) `settings`.
+  The others stay empty until their tasks land.
 - A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
 - Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
@@ -234,6 +235,9 @@ Wireframe: [lists.svg](../img/ui/lists.svg).
 - Shared lists show the owner's name when owned by someone else.
 - A New list button opens the list editor for a new list.
 - Wide layouts keep this screen for managing lists, though the sidebar also lists them.
+- Each row links to its list; without lists, the screen says that a list groups tasks.
+- Sharing state and the owner's name arrive with sharing (`SHR-3`); local lists show neither.
+- [lists.js](../../src/js/views/lists.js) builds the screen.
 
 ### Task Editor
 Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
@@ -277,6 +281,12 @@ Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
 - A Sharing section follows the details; see below.
 - Delete list sits at the bottom, after a divider, like Delete task.
 - Deleting a list asks for confirmation and states that its tasks stay (`LST-6`, `LST-7`).
+  A line under Delete list reads "Deleting a list never deletes its tasks."
+- The description shows a counter, such as "36 / 1000" (`LST-2`).
+- **[Decided]** A created new list keeps the editor on `#/lists/new`, so typing goes on without a reload of the panel.
+- Details, Sharing, and Delete list appear once the new list exists.
+- Closing the editor, also with Back, saves a typed valid name or description first, like the task editor.
+- [list-editor.js](../../src/js/views/list-editor.js) builds it; the List screen's Delete list uses its dialog.
 
 ### Sharing Section
 - **[Decided]** Sharing is a section of the list editor, not a separate dialog.

@@ -119,8 +119,11 @@ test('every route renders its title and its view, and the sidebar follows the li
       location.hash = target;
     }, hash);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
-    // All tasks, the List screen, the Recycle bin, and Settings fill their views; the other screens' tasks fill theirs later.
-    if (view === 'tasks' || view === 'list') {
+    // All tasks, Lists, the List screen, the Recycle bin, and Settings fill their views; the others fill theirs later.
+    if (view === 'lists') {
+      await expect(page.locator('main [data-view="lists"] .list-row')).toHaveCount(1);
+    }
+    else if (view === 'tasks' || view === 'list') {
       await expect(page.locator(`main [data-view="${view}"] .task-row`)).toHaveCount(1);
     }
     else if (view === 'bin' || view === 'settings') {
