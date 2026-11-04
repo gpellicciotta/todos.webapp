@@ -2,30 +2,29 @@
 
 ### Declared Files
 - src/index.html
-- src/manifest.webmanifest
-- src/service-worker.js
 - src/js/app.js
 - src/js/ui/router.js
 - src/js/ui/layout.js
+- src/css/app-shell.css
 - tests/unit/router.test.js
 - tests/e2e/shell.spec.js
+- tests/e2e/index.spec.js
+- docs/specs/ui-design.md
 
-Size estimate: 8 files, 450 lines
-Size note: the PWA pieces, router, and layout only work together.
+Size estimate: 9 files, 450 lines
+Size note: split on 2026-11-04 after reaching 1692 lines; about 1050 lines stay here.
 
 ### Tests
-- Unit: the router parses every documented route, and unknown routes fall back to All tasks.
+- Unit: the router parses and formats every documented route, and unknown routes fall back to All tasks.
 - Unit: navigating back restores the previous route's scroll position.
-- Integration: after one online visit, the app reloads and navigates with the network disabled.
 - Integration: the layout switches between compact and wide at 64rem, at 390 and 1440 px.
-- Integration: the app passes a Lighthouse-style installability check through the manifest and service worker.
+- Integration: navigation marks the current route with `aria-current`, and the sidebar lists the stored lists.
+- Integration: the shell loads without console errors, failed requests, or horizontal scrolling.
 
 Completion check: `npm test && npm run lint && npm run test:e2e`
 
-### Follow-Ups From Earlier Reviews
-- From T0012: handle IndexedDB `versionchange` by closing old connections, and turn `blocked` into a `StoreError`.
-- From T0014: on start, run overdue handling, then `purgeExpired`, like the service; start the overdue timer.
-- From T0031: give the current nav item a logical inset edge plus hover and active feedback; replace unitless token math.
-- From T0031: match the sync dot's ring to its actual ground, and add a bottom bar active specimen.
-- From T0030: show toasts only after a modal closes (body is inert meanwhile), and give keyboard users a quick way to reach Undo.
-- From T0030: use the existing `.visually-hidden` class for the live region instead of inline styles.
+### Follow-Ups Moved Out
+- Store `versionchange`, `blocked`, and subscriptions: T0032.
+- Design system follow-ups from T0030 and T0031: T0033.
+- Manifest, service worker, icons, and offline tests: T0034.
+- From T0014, kept here: on start, run overdue handling, then `purgeExpired`, then start the overdue timer.
