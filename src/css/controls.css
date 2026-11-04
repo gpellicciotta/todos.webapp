@@ -513,6 +513,12 @@ textarea.field__control {
   padding: var(--space-1);
 }
 
+/* Closed menus and popovers set `hidden`, which their display rules would otherwise override. */
+.menu[hidden],
+.popover[hidden] {
+  display: none;
+}
+
 .menu__item {
   display: flex;
   align-items: center;

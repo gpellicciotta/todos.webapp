@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="visual-style-gallery.css">
     <script type="module" src="visual-style-gallery.js"></script>
+    <script type="module" src="visual-style-gallery-behaviors.js"></script>
   </head>
   <body>
     <header class="gallery-header">
@@ -526,7 +527,7 @@
 
       <section class="gallery-section" id="menu" aria-labelledby="menu-title" data-gallery-group="controls">
         <h2 id="menu-title">Menu</h2>
-        <p>Anchored lists of actions at level 1 elevation; keyboard behavior arrives with the menu module.</p>
+        <p>Anchored lists of actions at level 1 elevation; the working menu below runs the menu module.</p>
         <div class="stage">
           <div class="menu" role="menu" aria-label="Status of Water the plants">
             <button class="menu__item" type="button" role="menuitemradio" aria-checked="true"><svg class="icon menu__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5 9-10"/></svg>To do</button>
@@ -543,6 +544,21 @@
             <div class="menu__separator" role="separator"></div>
             <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Delete</button>
           </div>
+        </div>
+        <h3 id="menu-demo-title">Working menu</h3>
+        <p>Enter, Space, or an arrow key opens it; the arrows skip the disabled Move down; Escape, Tab, or a click outside closes it.</p>
+        <div class="stage">
+          <button class="button button--secondary" type="button" id="menu-demo-trigger">Actions for Buy oat milk</button>
+          <div class="menu" id="menu-demo" aria-label="Actions for Buy oat milk" hidden>
+            <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Add to list</button>
+            <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg>Remove from this list</button>
+            <div class="menu__separator" role="separator"></div>
+            <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 15 6-6 6 6"/></svg>Move up</button>
+            <button class="menu__item" type="button" role="menuitem" aria-disabled="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>Move down</button>
+            <div class="menu__separator" role="separator"></div>
+            <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Delete</button>
+          </div>
+          <p id="menu-demo-result">Last action: none</p>
         </div>
       </section>
 
@@ -561,6 +577,23 @@
             </div>
             <div class="popover__actions">
               <button class="button button--quiet is-focus" type="button">Clear</button>
+            </div>
+          </div>
+        </div>
+        <h3 id="popover-demo-title">Working popover</h3>
+        <p>The Status filter chip opens the panel; Escape, a click outside, or tabbing away closes it.</p>
+        <div class="stage">
+          <button class="filter-chip" type="button" id="popover-demo-trigger" aria-pressed="false">Status<span class="filter-chip__value"></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="popover" id="popover-demo" role="group" aria-labelledby="popover-demo-panel-title" hidden>
+            <h4 class="popover__title" id="popover-demo-panel-title">Status</h4>
+            <div class="choice-group">
+              <label class="choice"><input type="checkbox" value="To do"> To do</label>
+              <label class="choice"><input type="checkbox" value="In progress"> In progress</label>
+              <label class="choice"><input type="checkbox" value="Completed"> Completed</label>
+              <label class="choice"><input type="checkbox" value="Cancelled"> Cancelled</label>
+            </div>
+            <div class="popover__actions">
+              <button class="button button--quiet" type="button" data-popover-clear>Clear</button>
             </div>
           </div>
         </div>

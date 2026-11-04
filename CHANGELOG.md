@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Added accessible menu and popover behavior modules with keyboard and focus handling.
 - Feature: Added the app chrome components: navigation, sync indicator, editor panel, note thread, and empty state.
 - Feature: Added the task row, status button, and status menu components and the icon sprite to the design system.
 - Feature: Defined the JSON backup format and added export, and import in merge and overwrite modes with a preview.

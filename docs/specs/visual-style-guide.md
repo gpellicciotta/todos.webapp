@@ -124,7 +124,8 @@ Each component gets a gallery section with every state: default, hover, focus-vi
 Gallery specimens force hover, active, and focus with `.is-hover`, `.is-active`, and `.is-focus`; app markup never uses them.
 
 ### Controls
-Defined in [controls.css](../../src/css/controls.css); keyboard behavior for menus, dialogs, and toasts comes later.
+Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/js/ui](../../src/js/ui/) add keyboard and focus handling.
+Keyboard behavior for dialogs and toasts comes later.
 
 - [Button](../../src/demo/visual-style-gallery.html#button): `.button` in the signal color for the one main action of a view.
   Use `--secondary` in gray for other actions and `--quiet` for low-emphasis ones, such as Clear all and Undo.
@@ -143,6 +144,10 @@ Defined in [controls.css](../../src/css/controls.css); keyboard behavior for men
   The checked option adds a signal outline and semibold text, so it never relies on color alone.
 - [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored panels at `--elevation-1` that close on Escape and outside clicks.
   Choice menus use `menuitemradio` items with a check icon on the current one.
+  `attachMenu(trigger, menu, { onSelect })` in [menu.js](../../src/js/ui/menu.js) makes a menu button.
+  Enter, Space, or ArrowDown open it at the first item; arrows wrap and skip `aria-disabled` items.
+  `attachPopover(trigger, panel)` in [popover.js](../../src/js/ui/popover.js) anchors a non-modal panel.
+  Both return a controller with `open`, `close`, and `destroy`, and return focus to the trigger on close.
 - [Dialog](../../src/demo/visual-style-gallery.html#dialog): a native `<dialog>` with a title, a body, and actions at the end.
   Below 64rem it is a full-width sheet, and full height when opened as a modal.
 - [Banner](../../src/demo/visual-style-gallery.html#banner): a full-width notice above the content with an icon, one or two sentences, and an optional action.
