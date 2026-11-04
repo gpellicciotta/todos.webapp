@@ -1,0 +1,139 @@
+import { expect, test } from '@playwright/test';
+
+// The List screen: manual order, drag and keyboard moves, order buttons, and the status filter.
+
+const WIDE = { width: 1440, height: 900 };
+
+/**
+ * Collect console errors and page errors of a page.
+ * @param {import('@playwright/test').Page} page the page to watch
+ * @returns {string[]} the problems, filled as they happen
+ */
+function watch(page) {
+  const problems = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      problems.push(`console: ${message.text()}`);
+    }
+  });
+  page.on('pageerror', (error) => problems.push(`page: ${error.message}`));
+  return problems;
+}
+
+/**
+ * Open the app, store a list with tasks of every status, and open that list.
+ * @param {import('@playwright/test').Page} page the page
+ * @returns {Promise<string>} the list identifier
+ */
+async function openList(page) {
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/tasks');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  const listId = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const home = await store.createList({ name: 'Home', description: 'Chores and repairs around the house' });
+    const hours = (count) => new Date(Date.now() + count * 3_600_000).toISOString();
+    await store.createTask({ description: 'Clean the gutters', 'due-time': hours(50) }, { lists: [home.id] });
+    await store.createTask({ description: 'Buy paint', 'due-time': hours(5) }, { lists: [home.id] });
+    await store.createTask({ description: 'Water the plants', status: 'completed' }, { lists: [home.id] });
+    await store.createTask({ description: 'Fix the door', status: 'in-progress', 'due-time': hours(20) }, { lists: [home.id] });
+    store.close();
+    return home.id;
+  });
+  await page.goto(`/#/lists/${listId}`);
+  await expect(page.locator('.list-view .task-row')).toHaveCount(3);
+  return listId;
+}
+
+/**
+ * Read the descriptions of the shown rows, top to bottom.
+ * @param {import('@playwright/test').Page} page the page
+ * @returns {Promise<string[]>} the descriptions
+ */
+function rows(page) {
+  return page.locator('.list-view .task-row__description').allTextContents();
+}
+
+test.describe('List screen', () => {
+  test('shows the header, the open tasks in manual order, and the status filter (LV-1, LV-2, LV-10)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    await expect(page.locator('#app-title')).toHaveText('Home');
+    await expect(page.locator('.list-view__description')).toHaveText('Chores and repairs around the house');
+    expect(await rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);
+    await expect(page.locator('.list-view__status')).toHaveText(/Status: open/);
+    await expect(page.getByRole('radio', { name: 'Manual' })).toBeChecked();
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
+    expect(problems).toEqual([]);
+  });
+
+  test('dragging a row by its handle stores the new order, which survives a reload (LV-3)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    const handle = page.locator('.list-view .task-row').first().locator('.task-row__handle');
+    const target = await page.locator('.list-view .task-row').nth(2).boundingBox();
+    await handle.hover();
+    await page.mouse.down();
+    await page.mouse.move(target.x + 20, target.y + target.height * 0.5, { steps: 8 });
+    await expect(page.locator('.list-view .task-row[data-dragging="true"]')).toHaveCount(1);
+    await page.mouse.move(target.x + 20, target.y + target.height * 0.9, { steps: 4 });
+    await expect(page.locator('.list-view .task-row').nth(2)).toHaveAttribute('data-drop', 'after');
+    await page.mouse.up();
+    await expect.poll(() => rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
+    await expect(page.locator('.list-view .task-row[data-dragging], .list-view .task-row[data-drop]')).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator('.list-view .task-row')).toHaveCount(3);
+    expect(await rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
+    expect(problems).toEqual([]);
+  });
+
+  test('Alt+Down moves the focused row, keeps focus on it, and announces the move (LV-3)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    await page.locator('.list-view .task-row__open').first().focus();
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect.poll(() => rows(page)).toEqual(['Buy paint', 'Clean the gutters', 'Fix the door']);
+    await expect(page.locator('.list-view .task-row').nth(1).locator('.task-row__open')).toBeFocused();
+    await expect(page.locator('[data-live-region="polite"]').filter({ hasText: 'Clean the gutters moved to position 2 of 3.' }))
+      .toHaveCount(1);
+    await page.keyboard.press('Alt+ArrowUp');
+    await expect.poll(() => rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);
+    await expect(page.locator('.list-view .task-row').first().locator('.task-row__open')).toBeFocused();
+
+    await page.locator('.list-view .task-row').nth(1).locator('.task-row__more').click();
+    await expect(page.getByRole('menuitem', { name: 'Move up' })).toBeVisible();
+    await page.getByRole('menuitem', { name: 'Move down' }).click();
+    await expect.poll(() => rows(page)).toEqual(['Clean the gutters', 'Fix the door', 'Buy paint']);
+
+    // On a status button, Alt+Down moves the row instead of opening the status menu.
+    await page.locator('.list-view .status-button').first().focus();
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect.poll(() => rows(page)).toEqual(['Fix the door', 'Clean the gutters', 'Buy paint']);
+    await expect(page.locator('.list-view .task-row').nth(1).locator('.status-button')).toBeFocused();
+    await expect(page.locator('.list-view .status-menu')).toBeHidden();
+    expect(problems).toEqual([]);
+  });
+
+  test('a sorted view hides the move controls and leaves the stored order unchanged (LV-7, LV-8)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    await page.getByRole('radio', { name: 'Due' }).check();
+    expect(await rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
+    await expect(page.locator('.list-view__note')).toHaveText('Sorted by due time. Manual order is kept.');
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(0);
+    await page.locator('.list-view .task-row__open').first().focus();
+    await page.keyboard.press('Alt+ArrowDown');
+    expect(await rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
+    await page.locator('.list-view .task-row__more').first().click();
+    await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /Move/ })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('radio', { name: 'Manual' }).check();
+    await expect(page.locator('.list-view__note')).toBeHidden();
+    expect(await rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
+    expect(problems).toEqual([]);
+  });
+});

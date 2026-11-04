@@ -132,7 +132,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - The due chip shows a relative time, such as "Tomorrow 18:00"; overdue tasks show "Overdue" in the signal color (`OVD-2`).
 - List chips show at most two list names and a "+n" count; the list view leaves out its own list.
 - A note icon with a count appears when the task has notes; a people icon marks tasks in shared lists.
-- Compact layouts show only the status, the description, and the due chip.
+- Compact layouts show only the status, the description, and the due chip, plus the More button in a list view.
 - The More button opens the row menu; it has no status entry, since the status button sets it:
   - Add to list and Remove from this list (`TSK-8`).
     Add to list swaps the menu for the lists that do not hold the task yet, and appears only while one is left.
@@ -207,15 +207,25 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 Wireframe: [list.svg](../img/ui/list.svg).
 
 - The header shows the list name, its description, the owner and role when shared, and the actions.
+  The top bar holds the name; the owner and role arrive with sharing (`SHR-3`).
 - Actions: Edit list, Share, and Delete list in a More menu.
-- Share opens the list editor scrolled to its Sharing section.
+- Edit list and Share open the list editor route; Share scrolls to its Sharing section.
+- Delete list asks for confirmation, then opens All tasks with an Undo toast (`LST-6`).
 - Order buttons form one segmented control: Manual, Due, Created, Activity, Status, and A–Z (`LV-6`).
+  Below 36rem of width they wrap into two rows of three.
+- **[Decided]** Due, Status, and A–Z sort ascending; Created and Activity show the newest first.
+- **[Decided]** The order and the status filter persist per device, shared by every list view (`TV-12`).
 - Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
 - Keyboard users move a focused row with Alt+Up and Alt+Down, and focus stays on the moved row.
+  This works from any control of the row; on the status and More buttons it never opens a menu.
+- A polite live region announces each move, such as "Buy paint moved to position 2 of 5."
+- Moves place a task next to its shown neighbor, so tasks the status filter hides keep their places.
+- **[Decided]** Compact rows keep the More button in the list view, since touch screens show no drag handle.
 - Another order button sorts the view only and shows a note: "Sorted by due time. Manual order is kept." (`LV-7`).
 - While sorted, drag handles and move entries are hidden; Manual restores the stored order (`LV-8`).
 - A status filter chip defaults to "open" (`LV-10`).
 - A deleted or unknown list redirects to All tasks with a toast.
+- [list.js](../../src/js/views/list.js) builds the screen; [reorder.js](../../src/js/views/reorder.js) turns moves into neighbors.
 
 ### Lists Overview
 Wireframe: [lists.svg](../img/ui/lists.svg).

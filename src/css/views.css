@@ -319,3 +319,54 @@
 .settings [hidden] {
   display: none;
 }
+
+/*
+ * List view: the description and the list actions, then the order buttons and the status chip.
+ * The order buttons take one row from 36rem of view width and two rows of three below.
+ */
+.list-view__description {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.list-view__more {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.list-view__orders {
+  flex: 1 1 100%;
+}
+
+.list-view__orders .segmented__options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (width >= 36rem) {
+  .list-view__orders {
+    flex-basis: 0;
+  }
+
+  .list-view__orders .segmented__options {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .list-view__orders .segmented__option {
+    padding-inline: var(--space-2);
+  }
+}
+
+.list-view__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Compact rows keep the More button in the list view, since it holds Move up and Move down on touch screens. */
+@container task-list (width < 36rem) {
+  .list-view .task-row > .task-row__more {
+    display: inline-grid;
+  }
+}

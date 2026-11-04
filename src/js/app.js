@@ -17,6 +17,7 @@ import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { createToaster } from './ui/toast.js';
 import { mountAllTasks } from './views/all-tasks.js';
 import { createEditorPanel } from './views/editor-panel.js';
+import { mountList } from './views/list.js';
 import { mountRecycleBin } from './views/recycle-bin.js';
 import { mountSettings } from './views/settings.js';
 import { mountTaskEditor } from './views/task-editor.js';
@@ -30,7 +31,7 @@ const MESSAGES = Object.freeze({
 });
 
 /** Screens that fill a view, by view name; the other views stay empty until their tasks land. */
-const SCREENS = { tasks: mountAllTasks, bin: mountRecycleBin, settings: mountSettings };
+const SCREENS = { tasks: mountAllTasks, list: mountList, bin: mountRecycleBin, settings: mountSettings };
 
 /** Editors of the editor panel, by the editor name of their routes. */
 const EDITORS = { task: mountTaskEditor };
@@ -120,7 +121,8 @@ async function start() {
     if (screen?.element !== element) {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
-      screen = { element, controller: mount ? mount(element, { store, toaster, memory: router.memory() }) : null };
+      const options = { store, toaster, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
+      screen = { element, controller: mount ? mount(element, options) : null };
     }
     screen.controller?.update(route);
     editorPanel.update(route);

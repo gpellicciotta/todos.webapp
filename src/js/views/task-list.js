@@ -5,6 +5,8 @@
  * The open link fills the row and opens the task editor route; the status button opens the status menu
  * (`TSK-4`), and the More button offers Add to list and Delete, which moves the task to the recycle bin
  * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu; the status button sets it.
+ * In a list view, the More menu adds Remove from this list, and Move up and Move down while moves are on,
+ * when rows also show a drag handle (`LV-3`).
  * One status menu and one More menu serve every row: each opening attaches the menu to that row's button.
  * Rendering again keeps an open menu open on the same row and item, and keeps focus on the same row control.
  * The menus live outside the list, since the list is a size container, which would anchor fixed menus.
@@ -31,6 +33,9 @@ const STRINGS = Object.freeze({
   moreFor: 'More actions for ',
   addToList: 'Add to list',
   addTo: 'Add to a list: ',
+  removeFromList: 'Remove from this list',
+  moveUp: 'Move up',
+  moveDown: 'Move down',
   delete: 'Delete',
   deleted: 'Task moved to the recycle bin.',
   failed: 'That change could not be saved.',
@@ -150,6 +155,12 @@ function renderRow(doc, task, ctx, options) {
   const row = make(doc, 'li', 'task-row');
   row.dataset.status = task.status;
   row.dataset.taskId = task.id;
+  if (options.moves?.enabled()) {
+    const handle = make(doc, 'span', 'task-row__handle');
+    handle.setAttribute('aria-hidden', 'true');
+    handle.append(spriteIcon(doc, 'grip'));
+    row.append(handle);
+  }
   const status = make(doc, 'button', 'icon-button status-button');
   status.type = 'button';
   status.dataset.role = 'status';
@@ -233,10 +244,12 @@ function menuItem(doc, role, text, data, { icon, checked } = {}) {
  * @param {string|null} [options.listId] the list a list view shows, left out of the list chips
  * @param {(error: unknown) => void} [options.onError] reports a failed change
  * @param {() => HTMLElement|null} [options.fallbackFocus] the control that gets focus when the last row leaves
+ * @param {{enabled: () => boolean, step: (taskId: string, step: -1|1) => void}} [options.moves] the moves
+ *   of a list view: whether they are on, and the move of a task one row up or down
  * @returns {{element: HTMLElement, render: Function, setSelected: Function, destroy: Function}} the list
  */
 export function createTaskList({
-  document: doc = globalThis.document, store, toaster, label, hrefOf, listId = null, onError, fallbackFocus,
+  document: doc = globalThis.document, store, toaster, label, hrefOf, listId = null, onError, fallbackFocus, moves = null,
 }) {
   const id = `task-list-${(instances += 1)}`;
   const element = make(doc, 'div', 'task-list-frame');
@@ -249,7 +262,7 @@ export function createTaskList({
   moreMenu.id = `${id}-more`;
   moreMenu.hidden = true;
   element.append(list, statusMenu, moreMenu);
-  const options = { hrefOf, listId, selected: null };
+  const options = { hrefOf, listId, moves, selected: null };
   const byId = new Map();
   let ctx = {};
   let active = null;
@@ -341,20 +354,34 @@ export function createTaskList({
   }
 
   /**
-   * Open the More menu of a task: Add to list when a list is left, and Delete.
+   * Open the More menu of a task: Add to list when a list is left, Remove from this list in a list view,
+   * Move up and Move down while moves are on and a row is left that way, and Delete.
    * @param {HTMLElement} trigger the More button
    * @param {object} task the task
    * @param {'first'|'last'} at the item that gets focus
    */
   function openMore(trigger, task, at) {
+    const index = [...list.children].indexOf(trigger.closest('.task-row'));
+    const movable = moves?.enabled() ?? false;
+    const entries = [
+      [freeLists(task).length > 0, STRINGS.addToList, 'add-to-list', 'plus'],
+      [listId !== null, STRINGS.removeFromList, 'remove-from-list'],
+      [movable && index > 0, STRINGS.moveUp, 'move-up'],
+      [movable && index < list.children.length - 1, STRINGS.moveDown, 'move-down'],
+      [true, STRINGS.delete, 'delete', 'bin'],
+    ];
     moreMenu.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
-    moreMenu.replaceChildren(
-      ...(freeLists(task).length > 0 ? [menuItem(doc, 'menuitem', STRINGS.addToList, { action: 'add-to-list' }, { icon: 'plus' })] : []),
-      menuItem(doc, 'menuitem', STRINGS.delete, { action: 'delete' }, { icon: 'bin' }),
-    );
+    moreMenu.replaceChildren(...entries.filter(([shown]) => shown)
+      .map(([, text, action, icon]) => menuItem(doc, 'menuitem', text, { action }, { icon })));
     openMenu(trigger, moreMenu, (item) => {
       if (item.dataset.action === 'add-to-list') {
         openAddToList(trigger, task);
+      }
+      else if (item.dataset.action === 'remove-from-list') {
+        store.removeFromList(task.id, listId).catch(fail);
+      }
+      else if (item.dataset.action === 'move-up' || item.dataset.action === 'move-down') {
+        moves.step(task.id, item.dataset.action === 'move-up' ? -1 : 1);
       }
       else if (item.dataset.action === 'delete') {
         store.deleteTask(task.id).then(() => toaster.show(STRINGS.deleted, {
@@ -455,7 +482,8 @@ export function createTaskList({
   });
   list.addEventListener('keydown', (event) => {
     const trigger = menuButton(event);
-    if (trigger && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+    // Alt+Up and Alt+Down move the row in a list view, so they never open a menu.
+    if (trigger && !event.altKey && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
       event.preventDefault();
       openFor(trigger, event.key === 'ArrowUp' ? 'last' : 'first');
     }
