@@ -21,3 +21,6 @@ Size note: the sharing section needs the permission rules it displays.
 - Integration: offline, the sharing controls are disabled and the banner shows.
 
 Completion check: `npm test && npm run lint && npm run test:e2e`
+
+### Follow-Ups From Earlier Reviews
+- From T0017: the list header's Share must open the list editor scrolled to its Sharing section.

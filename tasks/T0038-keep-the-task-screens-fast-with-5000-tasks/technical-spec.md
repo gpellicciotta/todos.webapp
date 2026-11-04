@@ -30,3 +30,5 @@ Completion check: `npm test && npm run lint && npm run test:e2e && npm run check
 - From T0020: accept a plain `light` or `dark` stored theme before the JSON fallback.
 - From T0018: Escape after an edit saves the value twice; record saved values in `shown` inside the save helpers.
 - From T0018 reviews: the gallery-controls focus-ring e2e test nears its 30 s timeout under parallel load; make it faster or raise its timeout.
+- From T0017: autoscroll during a drag and recompute row midpoints; end the drag cleanly when a re-render drops pointer capture.
+- From T0017: close the Delete list dialog when the list view unmounts.
