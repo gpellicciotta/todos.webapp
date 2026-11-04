@@ -21,3 +21,6 @@ Size note: the PWA pieces, router, and layout only work together.
 - Integration: the app passes a Lighthouse-style installability check through the manifest and service worker.
 
 Completion check: `npm test && npm run lint && npm run test:e2e`
+
+### Follow-Ups From Earlier Reviews
+- From T0012: handle IndexedDB `versionchange` by closing old connections, and turn `blocked` into a `StoreError`.

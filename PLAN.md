@@ -13,12 +13,12 @@ An overview of all tasks and their planning, possibly split by milestone.
 ## v0.1.0
 - [x] T0006 Set up the web app project: src web root, npm tooling, ESLint, Vitest, Playwright, and a local static server.
 - [x] T0007 Build the design tokens, self-hosted Inter font faces, the style.css entry point, and the gallery token sections.
-- [ ] T0008 Build the basic control components with every state, and their gallery sections.
+- [~] T0008 [owner: @claude-code] Build the basic control components with every state, and their gallery sections.
 - [ ] T0009 [needs: T0008] Build the app components with every state, and their gallery sections: task row, status button, navigation, and more.
 - [ ] T0010 [needs: T0008] Build accessible menu, popover, dialog, and toast behavior modules with keyboard and focus handling.
 - [x] T0011 Build the IndexedDB data store for lists, tasks, and memberships, with UUIDv7 identifiers and validation.
 - [x] T0012 Add timestamped task notes to the data store, updating each task's last activity time.
-- [~] T0013 [owner: @claude-code] Add fractional-index manual ordering per list, and the task query functions for filters and sorting.
+- [!] T0013 [reason: Diff of 1469 lines passes the large line and three times the 450-line estimate; needs a human size sign-off. Work parked on branch wip/T0013-ordering.] [owner: @claude-code] Add fractional-index manual ordering per list, and the task query functions for filters and sorting.
 - [ ] T0014 Add overdue handling and the recycle bin with restore, permanent delete, and the 30-day purge.
 - [ ] T0015 [needs: T0009, T0010] Build the app shell: service worker, manifest, hash router, compact and wide layouts, and navigation.
 - [ ] T0016 [needs: T0015, T0013, T0014] Build the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.

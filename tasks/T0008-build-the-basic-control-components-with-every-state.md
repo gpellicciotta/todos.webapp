@@ -1,11 +1,11 @@
 ---
 id: T0008
-owner: ~
-needs: [T0007]
+owner: "@claude-code"
+needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
+status: active
+started_at: "2026-11-04T01:35:11Z"
 ended_at: —
 review: agent
 preview: none
@@ -21,7 +21,7 @@ Add a gallery section per control showing every variant and state.
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the Components section of visual-style-guide.md and the tokens task's gallery.
+- [x] **[Read]**      Read the Components section of visual-style-guide.md and the tokens task's gallery.
 - [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
 - [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
 - [ ] **[Implement]** Write controls.css with every state, import it from style.css, and add the gallery sections.

@@ -26,3 +26,6 @@ Size note: queue, upload, and adoption share one ordering and retry contract.
 - Integration: against a mocked REST API, a first connect uploads 5 lists and 34 tasks and reports progress.
 
 Completion check: `npm test && npm run lint`
+
+### Follow-Ups From Earlier Reviews
+- From T0012: enforce that users edit or delete only their own notes once notes carry authors (`NOT-4`).
