@@ -82,12 +82,26 @@ function checkField(field, value) {
  * @param {string} id the task identifier
  * @returns {Promise<object>} the task
  */
-async function mustGetTask(tx, id) {
+export async function mustGetTask(tx, id) {
   const task = await request(tx.objectStore(STORES.tasks).get(id));
   if (!task) {
     throw new StoreError('not-found', `No task ${id}.`);
   }
   return task;
+}
+
+/**
+ * Set a task's last activity time inside a transaction, leaving its last update time unchanged.
+ * @param {IDBTransaction} tx a read-write transaction covering the tasks store
+ * @param {string} id the task identifier
+ * @param {string} time the ISO time of the activity
+ * @returns {Promise<object>} the updated task
+ */
+export async function markActivity(tx, id, time) {
+  const task = await mustGetTask(tx, id);
+  const updated = { ...task, 'last-activity-time': time };
+  await request(tx.objectStore(STORES.tasks).put(updated));
+  return updated;
 }
 
 /**

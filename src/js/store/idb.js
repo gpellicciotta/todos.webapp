@@ -7,6 +7,7 @@ export const STORES = {
   lists: 'lists',
   tasks: 'tasks',
   memberships: 'memberships',
+  notes: 'notes',
 };
 
 /** A store operation failed; `code` names the reason, such as `not-found`. */

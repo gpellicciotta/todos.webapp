@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Added timestamped task notes to the local store, newest first, updating each task's last activity time.
 - Feature: Added the IndexedDB store for lists, tasks, and memberships, with UUIDv7 identifiers and validation.
 - Build: Added the npm project with ESLint, Vitest, Playwright, and a dependency-free static server for src.
 - Docs: Moved the list editor and sharing into the editor panel, added a status menu, and ordered notes newest first.

@@ -1,18 +1,19 @@
 /**
  * Local data store on IndexedDB: schema, transactions, errors, and the store facade.
  *
- * Records use the field names of the ToDo's service `List` and `Task` schemas, in kebab-case.
+ * Records use the field names of the ToDo's service `List`, `Task`, and `Note` schemas, in kebab-case.
  * See docs/specs/local-store.md for the stores and their records.
  */
 
 import { request, STORES } from './idb.js';
 import * as lists from './lists.js';
+import * as notes from './notes.js';
 import * as tasks from './tasks.js';
 
 export { StoreError, ValidationError } from './idb.js';
 
 export const DB_NAME = 'todos';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 /**
  * Create or upgrade the schema.
@@ -25,6 +26,10 @@ function upgrade(db, oldVersion) {
     db.createObjectStore(STORES.tasks, { keyPath: 'id' });
     // Out-of-line keys [list-id, task-id]: IndexedDB key paths cannot hold the dashed field names.
     db.createObjectStore(STORES.memberships);
+  }
+  if (oldVersion < 2) {
+    // Out-of-line keys [task-id, id], for the same reason; one key range reads the notes of a task.
+    db.createObjectStore(STORES.notes);
   }
 }
 
@@ -47,7 +52,7 @@ export function openDatabase(factory, name) {
  * @param {string} [options.name] the database name
  * @param {typeof IDBKeyRange} [options.keyRange] the IDBKeyRange class of the same IndexedDB implementation
  * @param {() => Date} [options.now] the clock
- * @returns {Promise<object>} the store facade with list, task, and membership operations
+ * @returns {Promise<object>} the store facade with list, task, membership, and note operations
  */
 export async function openStore({
   indexedDB = globalThis.indexedDB,
@@ -71,5 +76,9 @@ export async function openStore({
     removeFromList: (taskId, listId) => tasks.removeFromList(ctx, taskId, listId),
     listsOfTask: (taskId) => tasks.listsOfTask(ctx, taskId),
     tasksOfList: (listId) => tasks.tasksOfList(ctx, listId),
+    addNote: (taskId, input) => notes.addNote(ctx, taskId, input),
+    editNote: (id, text) => notes.editNote(ctx, id, text),
+    deleteNote: (id) => notes.deleteNote(ctx, id),
+    notesOfTask: (taskId) => notes.notesOfTask(ctx, taskId),
   };
 }
