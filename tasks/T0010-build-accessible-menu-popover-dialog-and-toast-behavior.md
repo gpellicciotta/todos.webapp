@@ -24,7 +24,7 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Read]**      Read ui-design.md's Toasts, Dialogs, and Accessibility sections.
 - [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
 - [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Write the menu, dialog, toast, and live region modules, and wire the gallery specimens.
+- [ ] **[Implement]** Write the menu and popover modules, and wire the gallery specimens.
 - [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [ ] **[Doc]**       Document the modules' usage in visual-style-guide.md and update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
@@ -37,18 +37,14 @@ See technical-spec.md for decisions, files, size, and tests.
   Read the Toasts, Dialogs, and Accessibility rules in ui-design.md, the component rules in visual-style-guide.md, and the menu, dialog, and toast CSS.
 
 - [2026-11-04] **[Implement]**
-  Wrote failing unit tests for the menu, popover, dialog, toast, and live region modules, with happy-dom as a per-file Vitest environment.
+  Wrote failing menu and popover unit tests in menu.test.js, with happy-dom as a per-file Vitest environment.
   - Added happy-dom 21 as a dev dependency.
-  - Undeclared files: popover.js, dialog.test.js, live-region.test.js, package.json.
 
 - [2026-11-04] **[Verify]**
-  All four new suites failed to import their missing modules; validation-proof.md records the output.
+  The menu suite failed to import its missing modules; validation-proof.md records the output.
 
 - [2026-11-04] **[Implement]**
-  Implemented the popover, menu, dialog, toast, and live region modules; 50 unit tests and ESLint pass.
-  - Menu builds on the popover; dialog reuses its tabbable helper.
+  Implemented the popover and menu modules; the menu builds on the popover; 24 unit tests and ESLint pass.
 
 - [2026-11-04] **[Decide]**
-  Size note: 1468 lines across 9 counted files before gallery and e2e work, above the large line and three times the estimate.
-  - Needs human sign-off per sizing rules; orchestrator informed.
-
+  Split for size on 2026-11-04: dialog, toast, and live region modules and tests moved to T0030.

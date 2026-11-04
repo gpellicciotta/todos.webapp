@@ -11,22 +11,21 @@ review: agent
 preview: none
 protocol: standard
 ---
-# T0009: Build the app components with every state, and their gallery sections: task row, status button, navigation, and more
+# T0009: Build the task row, status button, and status menu components with every state, and their gallery sections
 
 ## Goals
-Style the app-specific components in `src/css/app-components.css`, imported by style.css.
-Cover the task row, status button and its four icons, sidebar, bottom navigation, sync indicator, editor panel, note thread, and empty state.
-Draw the status and navigation icons as inline stroke SVGs on one 24 px grid.
-Add gallery sections for each component, plus the task list and editor panel patterns.
+Style the task row, status button with its four icons, and status menu in `src/css/app-components.css`.
+Add the shared icon sprite, and gallery sections for these components and the task list pattern.
+Split on 2026-11-04 for size: navigation, sync indicator, editor panel, note thread, and empty state moved to T0031.
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read ui-design.md's Shared Components and the wireframes in docs/img/ui/.
-- [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
-- [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Write app-components.css and the icon sprite, and add the app gallery sections.
-- [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.
+- [x] **[Read]**      Read ui-design.md's Shared Components and the wireframes in docs/img/ui/.
+- [x] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
+- [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
+- [x] **[Implement]** Write app-components.css and the icon sprite, and add the app gallery sections.
+- [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
+- [x] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.
 - [ ] **[Doc]**       Link each component's gallery section from visual-style-guide.md and update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
@@ -39,4 +38,24 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Review]**
   Review lowered from human to agent by @gpellicciotta: The user authorized agent review for all v0.1.0 tasks on 2026-11-04, to work without waiting for each review..
+
+- [2026-11-04] **[Decided]**
+  Icons use one sprite, src/img/icons.svg, via external use references; task rows respond to their list width through a container query.
+
+- [2026-11-04] **[Implement]**
+  Added app-components.css, the icon sprite, three non-color tokens, and seven component plus two pattern gallery sections.
+  - Tokens: --radius-round, --width-chip-max, --duration-spin.
+  - Undeclared files: tokens.css, tokens.test.js, visual-style-gallery.css.
+
+- [2026-11-04] **[Verify]**
+  npm test, lint, and all 35 end-to-end tests pass, including the 17 new app gallery tests.
+
+- [2026-11-04] **[Visual]**
+  Captured the gallery at 390 and 1440 px in light and dark, before and after, with motion enabled.
+  - [gallery-390-light-before.png](T0009-build-the-app-components-with-every-state-and/screenshots/gallery-390-light-before.png).
+  - [gallery-390-light-after.png](T0009-build-the-app-components-with-every-state-and/screenshots/gallery-390-light-after.png).
+
+- [2026-11-04] **[Review]**
+  Size note: 9 counted files, 2161 lines, above the large line and three times the 700-line estimate; human sign-off needed.
+  - Gallery markup adds 755 lines; app-components.css adds 766 lines.
 
