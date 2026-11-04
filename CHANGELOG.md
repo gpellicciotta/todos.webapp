@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Added the shared task list rows and the add bar for the task screens.
 - Feature: Applied review follow-ups to the store, toasts, shell, and task row styles.
 - Build: Added a GitHub Pages workflow that tests and publishes src, and a service worker version check.
 - Feature: Made the app an installable offline PWA with a manifest, app icons, and a versioned service worker precache.

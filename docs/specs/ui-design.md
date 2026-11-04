@@ -127,11 +127,15 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - List chips show at most two list names and a "+n" count; the list view leaves out its own list.
 - A note icon with a count appears when the task has notes; a people icon marks tasks in shared lists.
 - Compact layouts show only the status, the description, and the due chip.
-- The More button opens the row menu:
+- The More button opens the row menu; it has no status entry, since the status button sets it:
   - Add to list and Remove from this list (`TSK-8`).
+    Add to list swaps the menu for the lists that do not hold the task yet, and appears only while one is left.
   - Move up and Move down, in a list view with manual order only (`LV-3`).
   - Delete, which moves the task to the recycle bin and shows an Undo toast (`TSK-11`).
 - Menu entries the user's role does not allow are left out (`SHR-4`).
+- [task-list.js](../../src/js/views/task-list.js) renders the rows and their menus for All tasks and the list view.
+  The status menu opens with focus on the current status; after a change, focus stays on that row's button.
+  A row that leaves the view after a change passes focus to the row now at its place.
 
 ### Add Bar
 - One text field and an Add button; Enter adds the task and keeps the field focused (`TSK-1`).

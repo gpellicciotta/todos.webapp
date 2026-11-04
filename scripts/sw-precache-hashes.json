@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-04.3",
+  "version": "2026-11-04.7",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -34,6 +34,8 @@
     "js/ui/menu.js": "d3edd40e8d1e744f7c0ccdc00034ece466b03a61cda5d182927ee404cad1f38f",
     "js/ui/popover.js": "40a7896bbc1c6e84195bb17902ee7ffbd43711e2d28a30efd965b1a4f7223203",
     "js/ui/router.js": "1480a92ea6e00d171757ab5a12787381b5270ab48ef48cd28a90765bbca12b67",
-    "js/ui/toast.js": "710efe7eb4baf7b9191ff5165b8dc0198925af26d499a7435b18fc68d08af59b"
+    "js/ui/toast.js": "710efe7eb4baf7b9191ff5165b8dc0198925af26d499a7435b18fc68d08af59b",
+    "js/views/add-bar.js": "2af0cf3820d81b4b3dde0bffe7431086f70ba195972f7a31e40882e2426d7bc9",
+    "js/views/task-list.js": "68223ab3ca9b663545c9f73ea82874ede1e07fc9b74505d9bebe26f9c2782003"
   }
 }
