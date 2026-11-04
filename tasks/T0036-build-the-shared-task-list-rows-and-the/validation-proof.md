@@ -71,3 +71,82 @@ Command: `E2E_PORT=8822 npm run test:e2e` (exit code 0)
   73 passed (38.5s)
 ```
 
+### Review Rework
+Round 1 found that `render()` always detached the open menu, so any store change closed it and dropped focus.
+Rendering now reopens an open status or More menu on the same row and item, and keeps focus on the same row control.
+A row that leaves passes focus to the row at its place, or to a `fallbackFocus` control once no row is left.
+Stage 2 now carries VERSION 2026-11-04.7, since `task-list.js` changed after the first stage 2 hashes.
+
+The new tests ran against the first stage 2 in a fresh tree, before the fix.
+
+Command: `npx vitest run tests/unit/task-list.test.js` (exit code 1)
+
+```text
+[... 5 lines omitted ...]
+     × keeps an open status menu open, on the same item, when rows render again 16ms
+     × keeps an open More menu open when rows render again 7ms
+     × closes the menu and passes focus on when its row leaves 7ms
+     × moves focus to the fallback control when the last row leaves 11ms
+[... 3 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > keeps an open status menu open, on the same item, when rows render again
+AssertionError: expected true to be false // Object.is equality
+[... 17 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > keeps an open More menu open when rows render again
+AssertionError: expected true to be false // Object.is equality
+[... 17 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > closes the menu and passes focus on when its row leaves
+[... 11 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > moves focus to the fallback control when the last row leaves
+AssertionError: expected <body><div …(1)>…(3)</div>
+[... 288 lines omitted ...]
+ Test Files  1 failed (1)
+      Tests  4 failed | 8 passed (12)
+[... 2 lines omitted ...]
+```
+
+The fixed stage 2, in a fresh tree with regenerated hashes:
+
+Command: `npm test` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre test
+> vitest run
+
+
+[... 1 lines omitted ...]
+
+
+ Test Files  21 passed (21)
+      Tests  508 passed (508)
+   Start at  19:01:16
+   Duration  4.69s (environment 56%, tests 21%, import 13%, transform 8%, worker 2%)
+
+    Isolate  21 workers spawned · ~837ms startup each (spawn + environment, per file)
+             at least ~1.67s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+Command: `npm run lint` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre lint
+> eslint .
+```
+
+Command: `npm run check:sw` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre check:sw
+> node scripts/check-sw-version.mjs
+
+OK: 36 precached files match VERSION 2026-11-04.7.
+```
+
+Command: `E2E_PORT=8822 npm run test:e2e` (exit code 0)
+
+```text
+[... 81 lines omitted ...]
+  73 passed (49.7s)
+```

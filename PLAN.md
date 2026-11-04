@@ -41,6 +41,6 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0033 Apply design system review follow-ups: nav item edge, token math, sync dot ring, live region class, toast hold and Undo.
 - [x] T0034 Make the app an installable offline PWA: manifest, app icons, versioned service worker precache, and offline tests.
 - [x] T0035 Apply the review follow-ups from T0009, T0015, T0032, and T0033 to the store, toasts, shell, and task row styles.
-- [ ] T0036 Build the shared task list rows and the add bar for the task screens.
-- [ ] T0037 [needs: T0036] Build the task view controls: search, filter chips with popovers, the sort menu, and per-device preferences.
+- [x] T0036 Build the shared task list rows and the add bar for the task screens.
+- [ ] T0037 Build the task view controls: search, filter chips with popovers, the sort menu, and per-device preferences.
 - [ ] T0038 [needs: T0016] Keep the task screens fast with 5000 tasks: keyed row reuse, debounced search, and due chip updates.
