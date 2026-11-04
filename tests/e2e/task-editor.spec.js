@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// The task editor: fields that save on change, lists, delete, and the read-only deleted task.
+// The task editor: fields that save on change, lists, notes, delete, and the read-only deleted task.
 
 const COMPACT = { width: 390, height: 844 };
 const WIDE = { width: 1440, height: 900 };
@@ -167,6 +167,38 @@ test('the Add to list box adds the task to an existing list or a new one, and ch
   await expect(chips).toHaveText(['Garden']);
   await page.reload();
   await expect(panel.locator('.chip-list .chip')).toHaveText(['Garden']);
+  expect(problems).toEqual([]);
+});
+
+test('a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await seed(page);
+  const panel = await openEditor(page);
+  const field = panel.getByRole('textbox', { name: 'Add note' });
+  await field.fill('Two coats should be enough.');
+  await panel.getByRole('button', { name: 'Add note' }).click();
+  await expect(field).toHaveValue('');
+  await field.fill('Get the matte white.');
+  await panel.getByRole('button', { name: 'Add note' }).click();
+  const notes = panel.locator('.note');
+  await expect(notes.locator('.note__text')).toHaveText(['Get the matte white.', 'Two coats should be enough.']);
+  await notes.first().getByRole('button', { name: /More actions for your note/ }).click();
+  await page.getByRole('menuitem', { name: 'Edit' }).click();
+  const edit = notes.first().getByRole('textbox', { name: 'Edit note' });
+  await expect(edit).toBeFocused();
+  await edit.fill('Get the matte white, not the gloss.');
+  await notes.first().getByRole('button', { name: 'Save note' }).click();
+  await expect(notes.first().locator('.note__text')).toHaveText('Get the matte white, not the gloss.');
+  await expect(notes.first().locator('.note__meta')).toContainText('edited');
+  await expect(notes.nth(1).locator('.note__meta')).not.toContainText('edited');
+  await notes.nth(1).getByRole('button', { name: /More actions for your note/ }).click();
+  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  await expect(notes.nth(1).getByText('Delete this note?')).toBeVisible();
+  await notes.nth(1).getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(notes).toHaveCount(1);
+  await page.reload();
+  await expect(panel.locator('.note .note__text')).toHaveText(['Get the matte white, not the gloss.']);
   expect(problems).toEqual([]);
 });
 

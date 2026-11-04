@@ -242,12 +242,13 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
 - A viewer sees all fields read-only and a banner naming the list owner (`SHR-4`).
 - A deleted task opens read-only with a Restore button (`BIN-6`).
-  It hides Clear, Add to list, the chip remove buttons, and Delete task.
-- [task-editor.js](../../src/js/views/task-editor.js) builds it; the Notes section is not built yet.
+  It hides Clear, Add to list, the chip remove buttons, the add note field, and Delete task.
+- [task-editor.js](../../src/js/views/task-editor.js) and [notes.js](../../src/js/views/notes.js) build it.
 - Escape closes the editor, also from a text field, whose change saves first.
 - A due time without a date shows "Enter a date to set a time." on the date field.
 - The due date and time save once focus leaves both, not per digit; a year below 1000 is an error.
   A due time of exactly 23:59 shows as date-only (`TSK-6`); field errors also go to a polite live region.
+- Escape in a note's edit field cancels that edit only; a typed new note stays as a draft for the session.
 - Add to list matches lists by name, and offers Create list "{{name}}" for a new name.
 - Clear wraps below the date and time fields in the panel's width.
 - Deleting from the editor closes it and shows the Undo toast; focus returns to the rows or the add bar.

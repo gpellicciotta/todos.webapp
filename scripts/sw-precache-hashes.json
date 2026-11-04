@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-04.10",
+  "version": "2026-11-04.12",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -40,7 +40,8 @@
     "js/views/add-bar.js": "2af0cf3820d81b4b3dde0bffe7431086f70ba195972f7a31e40882e2426d7bc9",
     "js/views/all-tasks.js": "8235ef59947ba90c6e64ade9f6d408830199be35f55695fd72a76c3698e944cb",
     "js/views/editor-panel.js": "685b67670f5968437da817081eb464bb95d2c20a57962c751548944511343959",
-    "js/views/task-editor.js": "75b3601ca5cfc36fd92280b768cd28b2829d0db78adf5286816ae457d7bb6f41",
+    "js/views/notes.js": "86cad0fc11a4e23c8ac70eb11fa8475b248871c503c28b998136b9a0961c53ab",
+    "js/views/task-editor.js": "1a598a5faa36daae3c9fbfaaf5d3f4960c6386c0b044ac7f4e92d1cfb7bac3fa",
     "js/views/task-list.js": "3019be8aa2631837cd42df5af78adb80ca65c3431d1f822909cccb610bdbbe01",
     "js/views/view-controls.js": "89ebf557c299de95015c436eb1a598ec2c536fc7a76c665a36ad4318d7ec8df9"
   }

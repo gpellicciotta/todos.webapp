@@ -10,7 +10,7 @@ const TASK = {
 };
 
 /**
- * Create a store stand-in that holds one task in no list.
+ * Create a store stand-in that holds one task in no list and without notes.
  * @returns {object} the store
  */
 function fakeStore() {
@@ -20,7 +20,9 @@ function fakeStore() {
     getTask: vi.fn(async () => ({ ...TASK })),
     listLists: vi.fn(async () => []),
     listsOfTask: vi.fn(async () => []),
+    notesOfTask: vi.fn(async () => []),
     updateTask: vi.fn(async () => ({ ...TASK })),
+    addNote: vi.fn(async () => ({})),
     subscribe: (listener) => {
       listeners.push(listener);
       return () => {};
@@ -215,6 +217,34 @@ describe('mountTaskEditor', () => {
     expect(description.value).toBe('Buy paint, changed in another tab');
   });
 
+  it('cancels only the note edit on Escape in its field', async () => {
+    store.notesOfTask.mockImplementation(async () => [{
+      id: 'n1', 'task-id': 't1', text: 'Two coats', author: null, 'creation-time': TASK['creation-time'], 'edit-time': null,
+    }]);
+    store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
+    await vi.waitFor(() => expect(document.querySelector('.note')).not.toBeNull());
+    document.querySelector('.note [data-role="more"]').click();
+    document.querySelector('.note [data-role="menu-edit"]').click();
+    const edit = document.querySelector('textarea[name="edit-note"]');
+    expect(document.activeElement).toBe(edit);
+    edit.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(document.querySelector('textarea[name="edit-note"]')).toBeNull();
+    expect(close).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(document.querySelector('.note [data-role="more"]'));
+  });
+
+  it('keeps a typed note draft when the editor closes, and shows it again on reopening', async () => {
+    const note = document.querySelector('textarea[name="new-note"]');
+    note.value = 'Ask about the primer';
+    note.dispatchEvent(new Event('input', { bubbles: true }));
+    note.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(close).toHaveBeenCalledTimes(1);
+    panel.update({ name: 'tasks', view: 'tasks', editor: null, params: {} });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+    expect(document.querySelector('textarea[name="new-note"]').value).toBe('Ask about the primer');
+  });
+
   it('neither fills nor closes the panel when a read finishes after the editor was destroyed', async () => {
     let finish;
     store.getTask.mockImplementation(() => new Promise((resolve) => {
@@ -239,5 +269,13 @@ describe('mountTaskEditor', () => {
     expect(store.updateTask).toHaveBeenCalledWith('t1', { description: 'Buy blue paint' });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(store.updateTask).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows a field error for an empty note and adds nothing (NOT-1)', () => {
+    const note = document.querySelector('textarea[name="new-note"]');
+    note.value = '  ';
+    document.querySelector('.note-thread__actions button').click();
+    expect(errorOf(note)).toBe('Enter a note.');
+    expect(store.addNote).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@
  * Task editor: every field of one task, saved on change, with no Save button.
  *
  * Sections, in order: description (`TSK-1`), status (`TSK-3`, `TSK-4`), due date and time (`TSK-5`, `TSK-6`),
- * overdue behavior once a due time is set (`TSK-7`), lists (`TSK-8`),
+ * overdue behavior once a due time is set (`TSK-7`), lists (`TSK-8`), notes (`NOT-1` to `NOT-5`),
  * details (`TSK-12`), and Delete task (`TSK-11`). An invalid value shows a field error and saves nothing.
  * A deleted task opens read-only with a Restore banner (`BIN-6`); an unknown task closes with a toast.
  * Store changes, also from other tabs, fill the fields again, except a focused or invalid one;
@@ -12,6 +12,7 @@
 
 import { DESCRIPTION_MAX, STATUSES } from '../store/tasks.js';
 import { createField } from './editor-panel.js';
+import { createNoteThread } from './notes.js';
 import { make as el, spriteIcon, STATUS_LABELS } from './task-list.js';
 
 /** Editor strings, for the strings module of TEC-13 to absorb. */
@@ -20,7 +21,7 @@ const STRINGS = Object.freeze({
   clear: 'Clear', clearLabel: 'Clear the due date', overdue: 'Overdue behavior',
   keep: 'Keep open', cancel: 'Cancel when overdue', lists: 'Lists',
   addToList: 'Add to list', createList: (name) => `Create list "${name}"`,
-  removeFrom: 'Remove from ', details: 'Details', created: 'Created ',
+  removeFrom: 'Remove from ', notes: 'Notes', details: 'Details', created: 'Created ',
   updated: 'Last updated ', activity: 'Last activity ', delete: 'Delete task',
   deleted: 'Task moved to the recycle bin.', inBin: 'This task is in the recycle bin.',
   restore: 'Restore', notFound: 'That task was not found.', failed: 'That change could not be saved.',
@@ -326,6 +327,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     }
   });
 
+  const thread = createNoteThread({ document: doc, store, taskId, onError: fail, locale });
+  section('notes', STRINGS.notes).append(thread.element);
   const details = el(doc, 'p', 'editor-panel__details');
   section('details', STRINGS.details).append(details);
   const danger = el(doc, 'div', 'editor-panel__danger');
@@ -347,9 +350,10 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   const busy = (control) => control === doc.activeElement || control.getAttribute('aria-invalid') === 'true';
 
   /**
-   * Fill the fields from the stored task and its lists.
+   * Fill the fields from the stored task, its lists, and its notes.
+   * @param {object[]} notes the notes, newest first
    */
-  function fill() {
+  function fill(notes) {
     const deleted = Boolean(task['deletion-time']);
     const wasDeleted = fields.disabled;
     banner.hidden = !deleted;
@@ -380,6 +384,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       return item;
     }));
     showOptions(!listbox.hidden);
+    thread.render(notes, deleted);
     details.textContent = [[STRINGS.created, 'creation-time'], [STRINGS.updated, 'last-update-time'],
       [STRINGS.activity, 'last-activity-time']].map(([label, key]) => `${label}${format.format(new Date(task[key]))}`).join(' · ');
     if (wasDeleted && !deleted) {
@@ -404,14 +409,14 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
         panel.close();
         return;
       }
-      const [all, ids] = await Promise.all([store.listLists(), store.listsOfTask(taskId)]);
+      const [all, ids, notes] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId)]);
       if (destroyed) {
         return;
       }
       task = next;
       lists = [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
       members = ids;
-      fill();
+      fill(notes);
       if (first) {
         (task['deletion-time'] ? restore : description.control).focus();
       }
@@ -438,6 +443,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       }
       destroyed = true;
       unsubscribe();
+      thread.destroy();
     },
   };
 }
