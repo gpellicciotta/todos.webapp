@@ -26,7 +26,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0017 Build the List screen with manual ordering, order buttons, drag and keyboard moves, and the status filter.
 - [~] T0018 [owner: @claude-code] Build the task editor panel with description, status, due time, overdue behavior, lists, notes, and delete.
 - [ ] T0019 [needs: T0018] Build the Lists overview and the list editor panel with name, description, details, and delete.
-- [~] T0020 [needs: T0039] [owner: @claude-code] Build the Recycle bin and Settings screens with theme selection and the local connection card.
+- [~] T0020 [needs: T0040] [owner: @claude-code] Build the Recycle bin and Settings screens with theme selection and the local connection card.
 - [x] T0021 Define the JSON backup file format and implement export, and import in merge and overwrite modes.
 - [ ] T0022 [needs: T0020] Add the Export backup button and the Import backup dialog with mode choice, counts, and confirmation.
 - [x] T0023 Add a GitHub Pages workflow that tests and publishes the src folder under the app's custom domain.

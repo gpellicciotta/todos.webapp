@@ -21,7 +21,7 @@ Build the task editor per docs/specs/ui-design.md and its wireframe task-editor.
 Open it as the right panel in wide layouts and as a full screen in compact layouts.
 Save every field on change, with field errors for invalid values (`TSK-1` to `TSK-12`).
 Add the notes thread with the add note field on top, newest first (`NOT-1` to `NOT-5`).
-Split on 2026-11-04 for size: the notes thread moved to T0039.
+Split on 2026-11-04 for size: the notes thread moved to T0040.
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
