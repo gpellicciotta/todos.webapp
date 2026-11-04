@@ -1,15 +1,19 @@
 ---
 id: T0030
-owner: ~
-needs: [T0010]
+owner: "@claude-code"
+needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
-ended_at: —
+status: completed
+started_at: "2026-11-04T15:34:15Z"
+ended_at: "2026-11-04T15:34:17Z"
 review: agent
 preview: none
 protocol: standard
+review_status: approved
+review_round: 1
+reviewed_by: "@claude-review-agent"
+completion-commit: dd87b9118130d8b33a66e9101b8d8fe03f028aec
 ---
 # T0030: Build accessible dialog, toast, and live region behavior modules with focus handling, split from T0010 for size
 
@@ -27,7 +31,7 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Implement]** Take over dialog.js, toast.js, and live-region.js, and wire the gallery specimens.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [x] **[Doc]**       Document the modules' usage in visual-style-guide.md and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -69,4 +73,16 @@ See technical-spec.md for decisions, files, size, and tests.
   - Files touched: 12.
   - Lines touched: 989.
   - Reopenings: 0.
+
+- [2026-11-04] **[Doc]**
+  Started late: the work was written during T0010 before the split, and committed as dd87b91 before this start.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 1 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 
