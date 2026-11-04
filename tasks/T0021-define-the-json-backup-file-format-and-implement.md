@@ -4,15 +4,16 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T14:43:25Z"
-ended_at: —
+ended_at: "2026-11-04T14:58:17Z"
 review: agent
 preview: none
 protocol: standard
-review_status: rejected
-review_round: 1
+review_status: approved
+review_round: 2
 reviewed_by: "@claude-review-agent"
+completion-commit: fa6822335f2c3f7df1b1e78fcbcc31d503248a7f
 ---
 # T0021: Define the JSON backup file format and implement export, and import in merge and overwrite modes
 
@@ -29,8 +30,8 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
 - [x] **[Implement]** Write backup-format.md and backup.js with export, import preview, merge, and overwrite.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Doc]**       Link backup-format.md from docs/index.md and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Doc]**       Link backup-format.md from docs/index.md and update CHANGELOG.md.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -59,4 +60,32 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Review]**
   Round 1 rejected by @claude-review-agent: Import trims list descriptions, breaking the BAK-14 round trip; invalid fractional-index positions are accepted (BAK-13); minor: impossible dates, name clash with binned lists, owner id types.
+
+- [2026-11-04] **[Implement]**
+  Reworked review round 1: exact list descriptions, fractional-index position checks, real calendar times, binned-name handover, and string owner ids; about 1500 lines in 10 files now.
+  - Rework: about 210 changed lines in 7 files, 26 new tests.
+  - Size: backup.js 651, tests 431, spec 137, fixture 102, bulk.js 67.
+  - fractional-index.js now exports validateKey and isValidKey.
+  - Spec notes that preview counts can differ from a later import.
+
+- [2026-11-04] **[Review]**
+  Round 1 rejected for description trimming and invalid positions; round 2 approved with no new findings.
+
+- [2026-11-04] **[Doc]**
+  Size note: 1451 lines in 11 files pass the large line; review rework added about 210 lines.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 11.
+  - Lines touched: 1451.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 2 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 2 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 
