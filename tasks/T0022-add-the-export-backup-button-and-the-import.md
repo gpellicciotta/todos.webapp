@@ -4,15 +4,16 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T20:24:06Z"
-ended_at: —
+ended_at: "2026-11-04T20:50:46Z"
 review: agent
 preview: none
 protocol: standard
 review_status: approved
 review_round: 1
 reviewed_by: "@claude-review-agent"
+completion-commit: a994e120820e5c4fe91022cf5ad1f33c3883a812
 ---
 # T0022: Add the Export backup button and the Import backup dialog with mode choice, counts, and confirmation
 
@@ -85,4 +86,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Review]**
   Round 1 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 

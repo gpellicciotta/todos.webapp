@@ -19,13 +19,7 @@ The tests ran before the dialog existed and while both backup buttons were disab
 Command: `E2E_PORT=8853 npx playwright test tests/e2e/backup.spec.js tests/e2e/bin-settings.spec.js` (exit code 1)
 
 ```text
-
-Running 9 tests using 4 workers
-
-  x  2 [chromium] › tests\e2e\backup.spec.js:109:1 › Export backup downloads todos-backup-{{date}}.json holding the stored data, and a toast names it (30.1s)
-  x  3 [chromium] › tests\e2e\backup.spec.js:169:1 › an invalid file shows its reason, keeps Import disabled, and changes nothing (30.1s)
-  x  1 [chromium] › tests\e2e\backup.spec.js:149:1 › Overwrite updates the counts, and Import restores the missing task and bins the extra one (30.2s)
-  x  4 [chromium] › tests\e2e\backup.spec.js:129:1 › importing an export in Merge mode shows its counts, and Cancel changes nothing (30.1s)
+[... 7 lines omitted ...]
   ok 5 [chromium] › tests\e2e\bin-settings.spec.js:58:1 › restoring a task brings it back into its lists, with a toast linking to it (1.1s)
   ok 7 [chromium] › tests\e2e\bin-settings.spec.js:103:1 › choosing Dark sets data-theme at once and keeps it after a reload (1.2s)
   ok 6 [chromium] › tests\e2e\bin-settings.spec.js:82:1 › Delete permanently asks in the row, Keep leaves the entry, and Delete removes it (1.5s)
