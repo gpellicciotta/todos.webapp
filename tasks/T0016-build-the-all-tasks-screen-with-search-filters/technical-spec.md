@@ -9,7 +9,7 @@
 - tests/e2e/all-tasks.spec.js
 
 Size estimate: 6 files, 550 lines
-Size note: the screen and its shared row and control modules merge together.
+Size note: split on 2026-11-04 after reaching about 2580 lines; about 710 lines stay here.
 
 ### Tests
 - Unit: filter and sort state round-trips through the per-device settings (`TV-12`).
@@ -20,12 +20,5 @@ Size note: the screen and its shared row and control modules merge together.
 
 Completion check: `npm test && npm run lint && npm run test:e2e`
 
-### Follow-Ups From Earlier Reviews
-- From T0009: read-only rows must not hover the disabled status button; selected rows need pressed feedback.
-- From T0009: use a logical inset for the selected-row edge, and replace unitless token math with tokens.
-- From T0009: the task list pattern shows completed rows under a "Status: open" filter; fix the specimen.
-- From T0032: catch subscriber errors after commit, and test that every write operation notifies.
-- From T0033: Ctrl or Cmd+Z must only run Undo actions, never a Reload, and not while a modal is open.
-- From T0015: show the version-change Reload as a persistent banner, and run purge before starting the overdue timer.
-- From T0015: catch start-up failures, and move focus to main or announce the route on navigation.
-- From T0015: make the `theme-color` meta follow the stored theme preference.
+### Follow-Ups Moved Out
+- The review follow-ups moved to T0035, the rows and add bar to T0036, and the controls to T0037.

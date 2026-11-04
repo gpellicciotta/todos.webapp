@@ -21,7 +21,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0013 Add fractional-index manual ordering per list, and the task query functions for filters and sorting.
 - [x] T0014 Add overdue handling and the recycle bin with restore, permanent delete, and the 30-day purge.
 - [x] T0015 Build the app shell: service worker, manifest, hash router, compact and wide layouts, and navigation.
-- [~] T0016 [owner: @claude-code] Build the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.
+- [~] T0016 [needs: T0037] [owner: @claude-code] Build the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.
 - [ ] T0017 [needs: T0016] Build the List screen with manual ordering, order buttons, drag and keyboard moves, and the status filter.
 - [ ] T0018 [needs: T0016] Build the task editor panel with description, status, due time, overdue behavior, lists, notes, and delete.
 - [ ] T0019 [needs: T0018] Build the Lists overview and the list editor panel with name, description, details, and delete.
@@ -40,3 +40,6 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0032 Handle IndexedDB version changes and blocked upgrades, and add change subscriptions to the store facade.
 - [x] T0033 Apply design system review follow-ups: nav item edge, token math, sync dot ring, live region class, toast hold and Undo.
 - [x] T0034 Make the app an installable offline PWA: manifest, app icons, versioned service worker precache, and offline tests.
+- [ ] T0035 [needs: T0015] Apply the review follow-ups from T0009, T0015, T0032, and T0033 to the store, toasts, shell, and task row styles.
+- [ ] T0036 [needs: T0035] Build the shared task list rows and the add bar for the task screens.
+- [ ] T0037 [needs: T0036] Build the task view controls: search, filter chips with popovers, the sort menu, and per-device preferences.
