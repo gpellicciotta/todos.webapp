@@ -1,0 +1,102 @@
+{
+  "format": "todos-backup",
+  "format-version": 1,
+  "app-version": "0.1.0-pre",
+  "export-time": "2026-11-03T18:00:00.000Z",
+  "lists": [
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000001",
+      "name": "Groceries",
+      "description": "Weekly shopping\n  - fruit first\n",
+      "owner": null,
+      "creation-time": "2026-11-01T08:00:00.000Z",
+      "last-update-time": "2026-11-02T08:00:00.000Z",
+      "deletion-time": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000002",
+      "name": "Old projects",
+      "description": "  Archive  ",
+      "owner": null,
+      "creation-time": "2026-11-01T08:00:00.000Z",
+      "last-update-time": "2026-11-03T08:00:00.000Z",
+      "deletion-time": "2026-11-03T08:00:00.000Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000101",
+      "description": "Almond milk\n\nunsweetened",
+      "status": "todo",
+      "due-time": "2026-11-05T22:59:00.000Z",
+      "overdue-handling": "keep",
+      "owner-id": null,
+      "creation-time": "2026-11-01T09:00:00.000Z",
+      "last-update-time": "2026-11-01T09:00:00.000Z",
+      "last-activity-time": "2026-11-02T10:00:00.000Z",
+      "deletion-time": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000102",
+      "description": "Bread",
+      "status": "completed",
+      "due-time": null,
+      "overdue-handling": "cancel",
+      "owner-id": null,
+      "creation-time": "2026-11-01T09:01:00.000Z",
+      "last-update-time": "2026-11-02T09:00:00.000Z",
+      "last-activity-time": "2026-11-02T09:00:00.000Z",
+      "deletion-time": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000103",
+      "description": "Paint the shed",
+      "status": "in-progress",
+      "due-time": null,
+      "overdue-handling": "keep",
+      "owner-id": null,
+      "creation-time": "2026-11-01T09:02:00.000Z",
+      "last-update-time": "2026-11-03T07:00:00.000Z",
+      "last-activity-time": "2026-11-03T07:00:00.000Z",
+      "deletion-time": "2026-11-03T07:00:00.000Z"
+    }
+  ],
+  "memberships": [
+    {
+      "list-id": "0192f1a2-0000-7000-8000-000000000001",
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "position": "a0",
+      "added-time": "2026-11-01T09:01:00.000Z"
+    },
+    {
+      "list-id": "0192f1a2-0000-7000-8000-000000000001",
+      "task-id": "0192f1a2-0000-7000-8000-000000000101",
+      "position": "a0V",
+      "added-time": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "list-id": "0192f1a2-0000-7000-8000-000000000002",
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "position": "a0",
+      "added-time": "2026-11-01T09:02:00.000Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000201",
+      "task-id": "0192f1a2-0000-7000-8000-000000000101",
+      "text": "The unsweetened one",
+      "author": null,
+      "creation-time": "2026-11-02T10:00:00.000Z",
+      "edit-time": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000202",
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "text": "Needs two coats\n  of paint",
+      "author": null,
+      "creation-time": "2026-11-02T11:00:00.000Z",
+      "edit-time": "2026-11-02T12:00:00.000Z"
+    }
+  ]
+}

@@ -94,6 +94,7 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 - The keys match the service's `FractionalIndex` class, so local and service positions mix.
 - `keyBetween(a, b)` returns a key strictly between two keys; null stands for an open end.
 - `keysBetween(a, b, n)` returns `n` evenly spread keys between two keys.
+- `validateKey(key)` throws a `RangeError` for a malformed key; `isValidKey(key)` returns a boolean instead.
 - A task added to a list, also through `createTask(..., {lists})`, goes after its last task (`LV-5`).
 - `moveInList(taskId, listId, {before | after})` places a task directly before or after a neighbor.
   - Exactly one neighbor is required; it must be another member of the same list.
@@ -132,3 +133,14 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 - `DEFAULT_FILTER` keeps open tasks; `DEFAULT_ORDER` is due time ascending.
 - `sortByPosition(tasks, positionsOfList(memberships, listId))` restores the manual order (`LV-8`).
 - Filtering and sorting 5000 tasks takes under 50 ms in Node, per the unit test.
+
+---
+
+## Bulk Operations
+[bulk.js](../../src/js/store/bulk.js) serves backup export and import; see [backup-format.md](backup-format.md).
+- `snapshot()` returns `{lists, tasks, memberships, notes}` with every record, in key order, from one transaction.
+- `applyChanges(planner)` reads the same snapshot and passes it, with the store time, to `planner`.
+  - The planner runs synchronously and returns `{changes, result}`; `applyChanges` resolves with `result`.
+  - `changes.put` holds records to store per store name; `changes.delete` holds `memberships` and `notes` keys.
+  - Reading, planning, and writing share one transaction, so nothing changes in between and a failure stores nothing.
+  - The writes skip the store's validation; the backup module validates every record first.

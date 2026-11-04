@@ -49,10 +49,11 @@ function integerPart(key) {
 }
 
 /**
- * Check that a key is well formed.
- * @param {string} key the key
+ * Check that a key is well formed, with the rules of the service's FractionalIndex class.
+ * @param {unknown} key the key
+ * @throws {RangeError} when the key is malformed
  */
-function validateKey(key) {
+export function validateKey(key) {
   if (typeof key !== 'string' || key === '') {
     throw new RangeError('A key must be a non-empty string.');
   }
@@ -67,6 +68,21 @@ function validateKey(key) {
   const integer = integerPart(key);
   if (key.length > integer.length && key[key.length - 1] === ZERO) {
     throw new RangeError(`Key cannot end with a zero fraction digit: '${key}'.`);
+  }
+}
+
+/**
+ * Tell whether a key is well formed; it does not check the 128-character storage limit.
+ * @param {unknown} key the key
+ * @returns {boolean} true when `validateKey` accepts it
+ */
+export function isValidKey(key) {
+  try {
+    validateKey(key);
+    return true;
+  }
+  catch {
+    return false;
   }
 }
 

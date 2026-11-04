@@ -6,6 +6,7 @@
  */
 
 import * as bin from './bin.js';
+import * as bulk from './bulk.js';
 import { request, STORES } from './idb.js';
 import * as lists from './lists.js';
 import * as notes from './notes.js';
@@ -58,7 +59,7 @@ export function openDatabase(factory, name) {
  * @param {string} [options.name] the database name
  * @param {typeof IDBKeyRange} [options.keyRange] the IDBKeyRange class of the same IndexedDB implementation
  * @param {() => Date} [options.now] the clock
- * @returns {Promise<object>} the store facade with list, task, membership, note, and recycle bin operations
+ * @returns {Promise<object>} the store facade with list, task, membership, note, recycle bin, and bulk operations
  */
 export async function openStore({
   indexedDB = globalThis.indexedDB,
@@ -95,5 +96,7 @@ export async function openStore({
     purgeForever: (type, id) => bin.purgeForever(ctx, type, id),
     listBin: () => bin.listBin(ctx),
     purgeExpired: (now) => bin.purgeExpired(ctx, now),
+    snapshot: () => bulk.snapshot(ctx),
+    applyChanges: (planner) => bulk.applyChanges(ctx, planner),
   };
 }

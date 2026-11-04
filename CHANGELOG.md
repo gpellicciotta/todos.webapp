@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Defined the JSON backup format and added export, and import in merge and overwrite modes with a preview.
 - Feature: Added the task query functions for the filters, search, and sorting of All tasks and the list view.
 - Feature: Added the basic control components with every state and their visual style gallery sections.
 - Feature: Added per-list manual ordering with fractional-index positions compatible with the service.

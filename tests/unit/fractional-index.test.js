@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keyBetween, keysBetween, MAX_KEY_LENGTH } from '../../src/js/lib/fractional-index.js';
+import { isValidKey, keyBetween, keysBetween, MAX_KEY_LENGTH, validateKey } from '../../src/js/lib/fractional-index.js';
 
 /**
  * Assert that keys sort strictly ascending by code unit order.
@@ -123,5 +123,25 @@ describe('keysBetween', () => {
     expect(() => keysBetween(null, null, -1)).toThrow(RangeError);
     expect(() => keysBetween('a1', 'a0', 0)).toThrow(RangeError);
     expect(() => keysBetween('a1', 'a0', 5)).toThrow(RangeError);
+  });
+});
+
+describe('validateKey and isValidKey', () => {
+  it.each(['a0', 'a0V', 'Zz', 'b00', 'c000', 'a1zzzV', `A${'0'.repeat(25)}1`])('accept %s', (key) => {
+    expect(isValidKey(key)).toBe(true);
+    expect(() => validateKey(key)).not.toThrow();
+  });
+
+  it.each([
+    ['a key with a digit head', '0zz'],
+    ['a key ending with a zero fraction digit', 'a00'],
+    ['a key shorter than its integer part', 'a'],
+    ['an empty key', ''],
+    ['the smallest integer', `A${'0'.repeat(26)}`],
+    ['a key with an invalid character', 'a0-'],
+    ['a non-string', 42],
+  ])('reject %s', (_, key) => {
+    expect(isValidKey(key)).toBe(false);
+    expect(() => validateKey(key)).toThrow(RangeError);
   });
 });

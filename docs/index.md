@@ -13,6 +13,7 @@ Overview of all documentation for the `todos.webapp` project.
 - [ui-design.md](specs/ui-design.md): Screens, navigation, and key flows of the web app.
 - [visual-style-guide.md](specs/visual-style-guide.md): Principles, decisions, and usage rules of the design system.
 - [local-store.md](specs/local-store.md): IndexedDB schema and rules of the local data store.
+- [backup-format.md](specs/backup-format.md): JSON backup file format, and the merge and overwrite import rules.
 
 ---
 
