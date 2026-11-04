@@ -21,14 +21,14 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0013 Add fractional-index manual ordering per list, and the task query functions for filters and sorting.
 - [x] T0014 Add overdue handling and the recycle bin with restore, permanent delete, and the 30-day purge.
 - [x] T0015 Build the app shell: service worker, manifest, hash router, compact and wide layouts, and navigation.
-- [ ] T0016 Build the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.
+- [~] T0016 [owner: @claude-code] Build the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.
 - [ ] T0017 [needs: T0016] Build the List screen with manual ordering, order buttons, drag and keyboard moves, and the status filter.
 - [ ] T0018 [needs: T0016] Build the task editor panel with description, status, due time, overdue behavior, lists, notes, and delete.
 - [ ] T0019 [needs: T0018] Build the Lists overview and the list editor panel with name, description, details, and delete.
 - [ ] T0020 Build the Recycle bin and Settings screens with theme selection and the local connection card.
 - [x] T0021 Define the JSON backup file format and implement export, and import in merge and overwrite modes.
 - [ ] T0022 [needs: T0020] Add the Export backup button and the Import backup dialog with mode choice, counts, and confirmation.
-- [ ] T0023 Add a GitHub Pages workflow that tests and publishes the src folder under the app's custom domain.
+- [~] T0023 [owner: @claude-code] Add a GitHub Pages workflow that tests and publishes the src folder under the app's custom domain.
 - [ ] T0024 [needs: T0020] Add the connect flow: Auth sign-in, session token handling, server URL setting, and disconnect.
 - [ ] T0025 [needs: T0024] Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes.
 - [ ] T0026 [needs: T0025] Build sync download: the change feed client, per-field merge, lost access handling, and the sync log store.

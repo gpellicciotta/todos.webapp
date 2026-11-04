@@ -1,11 +1,11 @@
 ---
 id: T0016
-owner: ~
-needs: ['T0015', 'T0013', 'T0029']
+owner: "@claude-code"
+needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
+status: active
+started_at: "2026-11-04T16:27:05Z"
 ended_at: —
 review: agent
 preview: none

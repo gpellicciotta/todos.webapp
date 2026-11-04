@@ -1,11 +1,11 @@
 ---
 id: T0023
-owner: ~
-needs: ['T0015', 'T0034']
+owner: "@claude-code"
+needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
+status: active
+started_at: "2026-11-04T17:13:10Z"
 ended_at: —
 review: agent
 preview: none
@@ -24,7 +24,7 @@ See technical-spec.md for decisions, files, size, and tests.
 - [ ] **[Read]**      Read docs/devops.md and the GitHub Pages documentation for custom domains.
 - [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
 - [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Write the Pages workflow and the CNAME file.
+- [ ] **[Implement]** Write the Pages workflow for the default GitHub Pages address.
 - [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [ ] **[Doc]**       Document the deployment in docs/devops.md and update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.

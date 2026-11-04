@@ -24,3 +24,8 @@ Completion check: `npm test && npm run lint && npm run test:e2e`
 - From T0009: read-only rows must not hover the disabled status button; selected rows need pressed feedback.
 - From T0009: use a logical inset for the selected-row edge, and replace unitless token math with tokens.
 - From T0009: the task list pattern shows completed rows under a "Status: open" filter; fix the specimen.
+- From T0032: catch subscriber errors after commit, and test that every write operation notifies.
+- From T0033: Ctrl or Cmd+Z must only run Undo actions, never a Reload, and not while a modal is open.
+- From T0015: show the version-change Reload as a persistent banner, and run purge before starting the overdue timer.
+- From T0015: catch start-up failures, and move focus to main or announce the route on navigation.
+- From T0015: make the `theme-color` meta follow the stored theme preference.
