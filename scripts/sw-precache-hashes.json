@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-04.9",
+  "version": "2026-11-04.10",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -10,13 +10,13 @@
     "css/app-components.css": "0ed814f119d45b32488de964f5afd84aca30b7ed2113aa8c870f7e649f42866c",
     "css/app-chrome.css": "0d85b6f1f40d0be8b46cf74aac4219426f3eab63f72ed0fc8e01eb863d248784",
     "css/app-shell.css": "274c9db7962b55c8f7ca57e77e0718e377a50cd8210b351e198944a9448e23ed",
-    "css/views.css": "d78906dd0e760672c22a4c4ca7ac87d04af041f5613f1cf158f1a31f637566c9",
+    "css/views.css": "2863d6d6d9aecca24118fafdc7f1a12b7bce077516b609e0246564bd795b4a3d",
     "fonts/InterVariable.woff2": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
     "img/icons.svg": "803361e4f0f575ccbaa647002ced2b4271bf05847481208b8d2cb6c6d55c6a1e",
     "img/app-icon.svg": "3259815b5d76003f67015bf0f6bbfebc2516912cda5d4544d4f759ed3e1c0398",
     "img/app-icon-192.png": "91a278a7d848683f2157db808d90e814e4d99a753114f3c8396a3b70791d05dd",
     "img/app-icon-512.png": "368525b00ed73ff4e0b3067d9c422097cc0db9f8cdc97ec9edc1e922e1b79845",
-    "js/app.js": "d2e9cec85f9517848a3f6f2701100a6585188ebad790629c1d5cd86b0d61a7a3",
+    "js/app.js": "dfa2f47aab5c2e0a64303cee337d48cbb140a5064d7705a4903eb90aa67d2945",
     "js/core/backup.js": "570e01f616f150b8657628bbe85c56979ae0a7d3396a3a30b2e39ae49baa7a75",
     "js/core/overdue.js": "16a1330fad43034dfab93b14df05571ca04f4718d68c3cc0c909ea376a5761f3",
     "js/core/preferences.js": "6b5cda65390357888d4114222534051ad77f0089c178c794982868f5bc989cf6",
@@ -39,7 +39,9 @@
     "js/ui/toast.js": "710efe7eb4baf7b9191ff5165b8dc0198925af26d499a7435b18fc68d08af59b",
     "js/views/add-bar.js": "2af0cf3820d81b4b3dde0bffe7431086f70ba195972f7a31e40882e2426d7bc9",
     "js/views/all-tasks.js": "8235ef59947ba90c6e64ade9f6d408830199be35f55695fd72a76c3698e944cb",
-    "js/views/task-list.js": "68223ab3ca9b663545c9f73ea82874ede1e07fc9b74505d9bebe26f9c2782003",
+    "js/views/editor-panel.js": "685b67670f5968437da817081eb464bb95d2c20a57962c751548944511343959",
+    "js/views/task-editor.js": "75b3601ca5cfc36fd92280b768cd28b2829d0db78adf5286816ae457d7bb6f41",
+    "js/views/task-list.js": "3019be8aa2631837cd42df5af78adb80ca65c3431d1f822909cccb610bdbbe01",
     "js/views/view-controls.js": "89ebf557c299de95015c436eb1a598ec2c536fc7a76c665a36ad4318d7ec8df9"
   }
 }

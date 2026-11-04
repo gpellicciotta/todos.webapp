@@ -67,7 +67,7 @@ export function spriteIcon(doc, id, className = 'icon') {
  * @param {string} [text] the text content
  * @returns {HTMLElement} the element
  */
-function make(doc, tag, className, text) {
+export function make(doc, tag, className, text) {
   const element = doc.createElement(tag);
   element.className = className;
   if (text !== undefined) {

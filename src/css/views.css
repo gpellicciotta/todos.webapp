@@ -112,3 +112,53 @@
       + env(safe-area-inset-bottom));
   }
 }
+
+/* The editor panel keeps its full width beside the rows; compact layouts fill the slot, as a full screen. */
+@media (width >= 64rem) {
+  .app__editor > .editor-panel {
+    inline-size: var(--width-editor);
+  }
+}
+
+/* The task editor's sections sit in one fieldset, which disables them all for a deleted task. */
+.task-editor__fields {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* A deleted task keeps its values readable and hides the controls it cannot use (BIN-6). */
+.task-editor__fields:disabled .field__control {
+  color: var(--color-text-muted);
+}
+
+.task-editor__fields:disabled :is(.combo-box, .editor-panel__row > .button, .chip--removable .icon-button) {
+  display: none;
+}
+
+.editor-panel__body > .banner {
+  margin-block-start: var(--space-4);
+}
+
+.editor-panel [hidden] {
+  display: none;
+}
+
+/* The Add to list box opens its options under the field. */
+.combo-box {
+  position: relative;
+}
+
+.combo-box__list {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline: 0;
+  margin: 0;
+  margin-block-start: var(--space-1);
+  list-style: none;
+}
+
+.combo-box__list > [aria-selected='true'] {
+  background-color: var(--color-hover-bg);
+}

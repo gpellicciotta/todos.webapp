@@ -80,7 +80,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
 - The `[data-editor-slot]` element names the open editor in `data-editor`: `task`, `list`, or empty.
-  It stays hidden until the editor tasks fill it; it covers the main column in compact layouts.
+  [editor-panel.js](../../src/js/views/editor-panel.js) mounts the editor of the route and unhides the slot.
+  It covers the main column in compact layouts; an editor not built yet leaves the slot hidden.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
 - Scroll positions and a memory object are kept per view, for the session; it keeps the search text.
 - Filters and sort persist per device in `localStorage`, such as `todos.view.tasks` (`TV-12`).
@@ -109,6 +110,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - An unknown route toast reads "Nothing found at #/{{route}}. Showing All tasks."
 - A missing or deleted list reads "That list was not found. Showing All tasks."
 - The shell checks list identifiers; the editor tasks check task identifiers.
+- An unknown task reads "That task was not found." and closes the editor.
 
 ---
 
@@ -240,6 +242,15 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
 - A viewer sees all fields read-only and a banner naming the list owner (`SHR-4`).
 - A deleted task opens read-only with a Restore button (`BIN-6`).
+  It hides Clear, Add to list, the chip remove buttons, and Delete task.
+- [task-editor.js](../../src/js/views/task-editor.js) builds it; the Notes section is not built yet.
+- Escape closes the editor, also from a text field, whose change saves first.
+- A due time without a date shows "Enter a date to set a time." on the date field.
+- The due date and time save once focus leaves both, not per digit; a year below 1000 is an error.
+  A due time of exactly 23:59 shows as date-only (`TSK-6`); field errors also go to a polite live region.
+- Add to list matches lists by name, and offers Create list "{{name}}" for a new name.
+- Clear wraps below the date and time fields in the panel's width.
+- Deleting from the editor closes it and shows the Undo toast; focus returns to the rows or the add bar.
 
 ### List Editor
 Wireframe: [list-editor.svg](../img/ui/list-editor.svg).

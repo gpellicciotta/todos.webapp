@@ -16,6 +16,8 @@ import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } fro
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { createToaster } from './ui/toast.js';
 import { mountAllTasks } from './views/all-tasks.js';
+import { createEditorPanel } from './views/editor-panel.js';
+import { mountTaskEditor } from './views/task-editor.js';
 
 /** Start-up strings, for the strings module of TEC-13 to absorb. */
 const MESSAGES = Object.freeze({
@@ -27,6 +29,9 @@ const MESSAGES = Object.freeze({
 
 /** Screens that fill a view, by view name; the other views stay empty until their tasks land. */
 const SCREENS = { tasks: mountAllTasks };
+
+/** Editors of the editor panel, by the editor name of their routes. */
+const EDITORS = { task: mountTaskEditor };
 
 let shell = null;
 
@@ -73,6 +78,11 @@ async function start() {
   }
   let screen = null;
   let shownViewKey = null;
+  const editorPanel = createEditorPanel({
+    slot: shell.editor, editors: EDITORS, context: { store, toaster },
+    close: () => router.navigate(formatRoute(router.current().view, router.current().params)),
+    fallbackFocus: () => shell.main.querySelector('[data-shortcut="add"]') ?? shell.main,
+  });
 
   /**
    * Show the lists and open counts in the sidebar, and keep the title of a renamed list current.
@@ -111,6 +121,7 @@ async function start() {
       screen = { element, controller: mount ? mount(element, { store, toaster, memory: router.memory() }) : null };
     }
     screen.controller?.update(route);
+    editorPanel.update(route);
     if (shownViewKey !== null && shownViewKey !== route.viewKey) {
       shell.main.focus({ preventScroll: true });
     }
