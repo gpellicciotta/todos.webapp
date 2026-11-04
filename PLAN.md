@@ -26,7 +26,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0017 Build the List screen with manual ordering, order buttons, drag and keyboard moves, and the status filter.
 - [x] T0018 Build the task editor panel with description, status, due time, overdue behavior, lists, notes, and delete.
 - [ ] T0019 Build the Lists overview and the list editor panel with name, description, details, and delete.
-- [~] T0020 [needs: T0040] [owner: @claude-code] Build the Recycle bin and Settings screens with theme selection and the local connection card.
+- [~] T0020 [owner: @claude-code] Build the Recycle bin and Settings screens with theme selection and the local connection card.
 - [x] T0021 Define the JSON backup file format and implement export, and import in merge and overwrite modes.
 - [ ] T0022 [needs: T0020] Add the Export backup button and the Import backup dialog with mode choice, counts, and confirmation.
 - [x] T0023 Add a GitHub Pages workflow that tests and publishes the src folder under the app's custom domain.
@@ -45,4 +45,4 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0036 Build the shared task list rows and the add bar for the task screens.
 - [x] T0037 Build the task view controls: search, filter chips with popovers, the sort menu, and per-device preferences.
 - [ ] T0038 Keep the task screens fast with 5000 tasks: keyed row reuse, debounced search, and due chip updates.
-- [ ] T0040 Add the notes thread to the task editor: add field on top, newest first, edit and delete own notes.
+- [x] T0040 Add the notes thread to the task editor: add field on top, newest first, edit and delete own notes.
