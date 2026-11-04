@@ -73,6 +73,29 @@ describe('mountRecycleBin', () => {
     return { store, toaster, navigate };
   }
 
+  it('renders the rows again on the minute tick only once the local date changed', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      let time = new Date(2026, 10, 4, 23, 58);
+      document.body.innerHTML = '<div data-view="bin"></div>';
+      screen = mountRecycleBin(document.querySelector('[data-view]'), {
+        store: fakeStore([entry(new Date(2026, 10, 4, 8, 0))]), toaster: { show: vi.fn() }, navigate: vi.fn(), now: () => time,
+      });
+      await screen.idle();
+      const row = document.querySelector('.bin-row');
+      time = new Date(2026, 10, 4, 23, 59);
+      vi.advanceTimersByTime(60_000);
+      expect(document.querySelector('.bin-row')).toBe(row);
+      time = new Date(2026, 10, 5, 0, 0);
+      vi.advanceTimersByTime(60_000);
+      expect(document.querySelector('.bin-row')).not.toBe(row);
+      expect(document.querySelector('.bin-row__meta').textContent).toBe('Deleted yesterday · 29 days left');
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('asks in the row before deleting, and Keep or Escape leave the entry', async () => {
     const { store } = await mount([entry(new Date())]);
     // Rows render again on every change, so each step looks the row up again.

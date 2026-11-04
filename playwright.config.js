@@ -11,8 +11,10 @@ const NETWORK_GUARD = {
 };
 
 // End-to-end tests run against the static server, which Playwright starts and stops itself.
+// The performance spec runs alone through playwright.perf.config.js, since parallel tests would skew its timings.
 export default defineConfig({
   testDir: 'tests/e2e',
+  testIgnore: 'performance.spec.js',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

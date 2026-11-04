@@ -17,6 +17,7 @@ import { spriteIcon, STATUS_LABELS } from './task-list.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const OPEN = DEFAULT_FILTER.statuses;
+const SEARCH_DELAY_MS = 150;
 let instances = 0;
 
 /** Control strings, for the strings module of TEC-13 to absorb. */
@@ -225,6 +226,7 @@ export function createViewControls({ document: doc = globalThis.document, state:
   const id = `view-controls-${(instances += 1)}`;
   let state = copy(initial);
   let lists = initialLists;
+  let searchTimer = null;
   const behaviors = [];
 
   /**
@@ -470,8 +472,10 @@ export function createViewControls({ document: doc = globalThis.document, state:
     }
   }
 
-  /** Show the new state and report it. */
+  /** Show the new state and report it, with any search text still waiting. */
   function emit() {
+    clearTimeout(searchTimer);
+    searchTimer = null;
     sync();
     onChange(copy(state));
   }
@@ -528,9 +532,17 @@ export function createViewControls({ document: doc = globalThis.document, state:
     }
     emit();
   });
+  // Typing reports the search text once it pauses or on Enter, so a word runs one query, not one per key (`TEC-16`).
   searchInput.addEventListener('input', () => {
     setFilter('text', searchInput.value);
-    emit();
+    sync();
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(emit, SEARCH_DELAY_MS);
+  });
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && searchTimer !== null) {
+      emit();
+    }
   });
   sync();
 
@@ -542,6 +554,8 @@ export function createViewControls({ document: doc = globalThis.document, state:
      * @param {{filter: object, order: object}} next the view state
      */
     setState(next) {
+      clearTimeout(searchTimer);
+      searchTimer = null;
       state = copy(next);
       sync();
     },
@@ -556,8 +570,11 @@ export function createViewControls({ document: doc = globalThis.document, state:
       sync();
     },
 
-    /** Close the popovers and the menu. */
+    /** Close the popovers and the menu, and report search text still waiting, so the session memory keeps it. */
     destroy() {
+      if (searchTimer !== null) {
+        emit();
+      }
       behaviors.forEach((behavior) => behavior.destroy());
     },
   };

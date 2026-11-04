@@ -131,11 +131,47 @@ describe('createViewControls', () => {
     expect(onChange.mock.lastCall[0].filter.created).toEqual({ from: null, to: '2026-11-30' });
   });
 
-  it('filters by search text as the user types', () => {
-    const search = document.querySelector('[data-shortcut="search"]');
-    search.value = 'paint';
-    search.dispatchEvent(new Event('input', { bubbles: true }));
-    expect(onChange.mock.lastCall[0].filter.text).toBe('paint');
+  it('filters by search text once typing pauses, with one query for the whole word (TEC-16)', () => {
+    vi.useFakeTimers();
+    try {
+      const search = document.querySelector('[data-shortcut="search"]');
+      const calls = onChange.mock.calls.length;
+      for (const text of ['p', 'pa', 'pai', 'paint']) {
+        search.value = text;
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+        vi.advanceTimersByTime(100);
+      }
+      expect(onChange.mock.calls.length).toBe(calls);
+      vi.advanceTimersByTime(50);
+      expect(onChange.mock.calls.length).toBe(calls + 1);
+      expect(onChange.mock.lastCall[0].filter.text).toBe('paint');
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reports waiting search text at once on Enter, and once more on destroy', () => {
+    vi.useFakeTimers();
+    try {
+      const search = document.querySelector('[data-shortcut="search"]');
+      const calls = onChange.mock.calls.length;
+      search.value = 'paint';
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+      search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      expect(onChange.mock.calls.length).toBe(calls + 1);
+      expect(onChange.mock.lastCall[0].filter.text).toBe('paint');
+      search.value = 'paints';
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+      controls.destroy();
+      expect(onChange.mock.calls.length).toBe(calls + 2);
+      expect(onChange.mock.lastCall[0].filter.text).toBe('paints');
+      vi.advanceTimersByTime(150);
+      expect(onChange.mock.calls.length).toBe(calls + 2);
+    }
+    finally {
+      vi.useRealTimers();
+    }
   });
 
   it('clears every filter with Clear all, which shows only while a filter is active', () => {

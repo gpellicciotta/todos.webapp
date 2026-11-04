@@ -120,6 +120,7 @@ export function mountRecycleBin(view, {
   let entries = [];
   let asking = null;
   let pending = null;
+  let shownDay = null;
 
   const root = make(doc, 'div', 'bin');
   const note = make(doc, 'p', 'bin__note', STRINGS.note);
@@ -275,6 +276,7 @@ export function mountRecycleBin(view, {
       asking = null;
     }
     const time = now();
+    shownDay = time.toDateString();
     list.replaceChildren(...entries.map((entry) => rowOf(entry, time)));
     list.hidden = entries.length === 0;
     note.hidden = entries.length === 0;
@@ -302,8 +304,12 @@ export function mountRecycleBin(view, {
   }
 
   const unsubscribe = store.subscribe(refresh);
-  // Days ago and days left follow the clock past midnight.
-  const timer = setInterval(render, REDRAW_MS);
+  // Days ago and days left follow the clock past midnight, so the rows render again only on a new local date.
+  const timer = setInterval(() => {
+    if (now().toDateString() !== shownDay) {
+      render();
+    }
+  }, REDRAW_MS);
   const first = refresh();
 
   return {

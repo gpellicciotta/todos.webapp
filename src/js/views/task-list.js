@@ -9,6 +9,9 @@
  * when rows also show a drag handle (`LV-3`).
  * One status menu and one More menu serve every row: each opening attaches the menu to that row's button.
  * Rendering again keeps an open menu open on the same row and item, and keeps focus on the same row control.
+ * Rows are kept by task id: a render builds only the rows whose content changed and moves as few rows as it can,
+ * a render builds at most 60 new rows and the rest in batches after each paint, and the clock tick redraws only
+ * due chips, so 5000 tasks open faster (`TEC-16`). Rows not yet added wait, detached, for their batch.
  * The menus live outside the list, since the list is a size container, which would anchor fixed menus.
  */
 
@@ -20,6 +23,9 @@ const ICONS = 'img/icons.svg';
 const SVG = 'http://www.w3.org/2000/svg';
 const DAY_MS = 86_400_000;
 const MAX_LIST_CHIPS = 2;
+/** New rows a render builds at once; the rest follow in batches, each after a frame painted the last one. */
+const FIRST_ROWS = 60;
+const BATCH_ROWS = 250;
 let instances = 0;
 
 /** Status names, in lifecycle order. */
@@ -90,6 +96,22 @@ function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
+const formats = new Map();
+
+/**
+ * Return a shared date and time format, since creating one costs far more than using it.
+ * @param {string|undefined} locale the locale, the user's when undefined
+ * @param {object} settings the format settings
+ * @returns {Intl.DateTimeFormat} the format
+ */
+function dateFormat(locale, settings) {
+  const key = `${locale}|${JSON.stringify(settings)}`;
+  if (!formats.has(key)) {
+    formats.set(key, new Intl.DateTimeFormat(locale, settings));
+  }
+  return formats.get(key);
+}
+
 /**
  * Format a task's due time for its chip: Overdue, Today or Tomorrow, a weekday within the week, or a date.
  * A due time of 23:59 is a date-only due time (`TSK-6`), so it shows no time of day.
@@ -109,18 +131,18 @@ export function formatDue(task, now = new Date(), locale = undefined) {
   const current = new Date(now);
   const days = Math.round((startOfDay(due) - startOfDay(current)) / DAY_MS);
   const time = due.getHours() === 23 && due.getMinutes() === 59
-    ? '' : ` ${new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(due)}`;
+    ? '' : ` ${dateFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(due)}`;
   if (days === 0 || days === 1) {
     return { text: `${days === 0 ? STRINGS.today : STRINGS.tomorrow}${time}`, overdue: false };
   }
   if (days > 1 && days < 7) {
-    return { text: `${new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(due)}${time}`, overdue: false };
+    return { text: `${dateFormat(locale, { weekday: 'short' }).format(due)}${time}`, overdue: false };
   }
   const format = { day: 'numeric', month: 'short' };
   if (due.getFullYear() !== current.getFullYear()) {
     format.year = 'numeric';
   }
-  return { text: new Intl.DateTimeFormat(locale, format).format(due), overdue: false };
+  return { text: dateFormat(locale, format).format(due), overdue: false };
 }
 
 /**
@@ -144,68 +166,189 @@ function chip(doc, className, text, { icon, hidden } = {}) {
 }
 
 /**
- * Render the row of a task.
- * @param {Document} doc the document
+ * Compute what the row of a task shows, with a key that changes whenever the row must be built again.
+ * The due chip has a key of its own, since the clock changes it without any change to the task.
  * @param {object} task the task
  * @param {object} ctx the render context of `render`
  * @param {object} options the list options
+ * @returns {{key: string, dueKey: string, due: object|null, href: string, handle: boolean, names: string[],
+ *   notes: number}} the row content
+ */
+function viewOf(task, ctx, options) {
+  const ids = ctx.listsByTask?.get(task.id) ?? [];
+  const names = ids.length === 0 ? [] : [...(ctx.lists?.values() ?? [])]
+    .filter((list) => list.id !== options.listId && ids.includes(list.id)).map((list) => list.name);
+  const notes = ctx.notesByTask?.get(task.id)?.length ?? 0;
+  const href = options.hrefOf(task);
+  const handle = Boolean(options.moves?.enabled());
+  const due = formatDue(task, ctx.now);
+  return {
+    key: JSON.stringify([task.status, task.description, href, handle, names, notes]),
+    dueKey: due ? `${due.overdue}|${due.text}` : '', due, href, handle, names, notes,
+  };
+}
+
+/**
+ * Create the chips of a row: the due chip, up to two list chips, and the note count.
+ * @param {Document} doc the document
+ * @param {{due: object|null, names: string[], notes: number}} view the row content of `viewOf`
+ * @returns {HTMLElement|null} the chips, or null without any
+ */
+function metaOf(doc, { due, names, notes }) {
+  const meta = make(doc, 'span', 'task-row__meta');
+  if (due) {
+    meta.append(chip(doc, due.overdue ? 'chip chip--overdue' : 'chip', due.text, { icon: due.overdue ? 'alert' : 'clock' }));
+  }
+  for (const name of names.slice(0, MAX_LIST_CHIPS)) {
+    const listChip = make(doc, 'span', 'chip task-row__list');
+    listChip.append(make(doc, 'span', 'task-row__chip-text', name));
+    meta.append(listChip);
+  }
+  if (names.length > MAX_LIST_CHIPS) {
+    meta.append(chip(doc, 'chip task-row__more-lists', `+${names.length - MAX_LIST_CHIPS}`, { hidden: STRINGS.moreLists }));
+  }
+  if (notes > 0) {
+    meta.append(chip(doc, 'chip task-row__notes', String(notes), { icon: 'note', hidden: STRINGS.notes }));
+  }
+  return meta.childElementCount > 0 ? meta : null;
+}
+
+/**
+ * Create the empty row that the rows of a list are cloned from, since cloning beats building each element.
+ * @param {Document} doc the document
+ * @param {boolean} handle whether the row has a drag handle
  * @returns {HTMLLIElement} the row
  */
-function renderRow(doc, task, ctx, options) {
+function rowTemplate(doc, handle) {
   const row = make(doc, 'li', 'task-row');
-  row.dataset.status = task.status;
-  row.dataset.taskId = task.id;
-  if (options.moves?.enabled()) {
-    const handle = make(doc, 'span', 'task-row__handle');
-    handle.setAttribute('aria-hidden', 'true');
-    handle.append(spriteIcon(doc, 'grip'));
-    row.append(handle);
+  if (handle) {
+    const grip = make(doc, 'span', 'task-row__handle');
+    grip.setAttribute('aria-hidden', 'true');
+    grip.append(spriteIcon(doc, 'grip'));
+    row.append(grip);
   }
   const status = make(doc, 'button', 'icon-button status-button');
   status.type = 'button';
   status.dataset.role = 'status';
   status.setAttribute('aria-haspopup', 'menu');
-  status.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}: ${STATUS_LABELS[task.status]}`);
-  status.append(spriteIcon(doc, `status-${task.status}`));
-
+  status.append(spriteIcon(doc, 'status-todo'));
   const open = make(doc, 'a', 'task-row__open');
-  open.href = options.hrefOf(task);
   open.dataset.role = 'open';
-  if (task.id === options.selected) {
-    open.setAttribute('aria-current', 'page');
-  }
-  open.append(make(doc, 'span', 'task-row__description', task.description));
-  const meta = make(doc, 'span', 'task-row__meta');
-  const due = formatDue(task, ctx.now);
-  if (due) {
-    meta.append(chip(doc, due.overdue ? 'chip chip--overdue' : 'chip', due.text, { icon: due.overdue ? 'alert' : 'clock' }));
-  }
-  const ids = ctx.listsByTask?.get(task.id) ?? [];
-  const lists = [...(ctx.lists?.values() ?? [])].filter((list) => list.id !== options.listId && ids.includes(list.id));
-  for (const list of lists.slice(0, MAX_LIST_CHIPS)) {
-    const listChip = make(doc, 'span', 'chip task-row__list');
-    listChip.append(make(doc, 'span', 'task-row__chip-text', list.name));
-    meta.append(listChip);
-  }
-  if (lists.length > MAX_LIST_CHIPS) {
-    meta.append(chip(doc, 'chip task-row__more-lists', `+${lists.length - MAX_LIST_CHIPS}`, { hidden: STRINGS.moreLists }));
-  }
-  const notes = ctx.notesByTask?.get(task.id)?.length ?? 0;
-  if (notes > 0) {
-    meta.append(chip(doc, 'chip task-row__notes', String(notes), { icon: 'note', hidden: STRINGS.notes }));
-  }
-  if (meta.childElementCount > 0) {
-    open.append(meta);
-  }
-
+  open.append(make(doc, 'span', 'task-row__description'));
   const more = make(doc, 'button', 'icon-button task-row__more');
   more.type = 'button';
   more.dataset.role = 'more';
   more.setAttribute('aria-haspopup', 'menu');
-  more.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
   more.append(spriteIcon(doc, 'more'));
   row.append(status, open, more);
   return row;
+}
+
+/**
+ * Render the row of a task from the row template.
+ * @param {Document} doc the document
+ * @param {object} task the task
+ * @param {object} view the row content of `viewOf`
+ * @param {HTMLLIElement} template the row template of `rowTemplate`
+ * @param {string|null} selected the task whose editor is open
+ * @returns {HTMLLIElement} the row
+ */
+function renderRow(doc, task, view, template, selected) {
+  const row = template.cloneNode(true);
+  row.dataset.status = task.status;
+  row.dataset.taskId = task.id;
+  const more = row.lastElementChild;
+  const open = more.previousElementSibling;
+  const status = open.previousElementSibling;
+  status.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}: ${STATUS_LABELS[task.status]}`);
+  status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${task.status}`);
+  open.href = view.href;
+  if (task.id === selected) {
+    open.setAttribute('aria-current', 'page');
+  }
+  open.firstElementChild.textContent = task.description;
+  const meta = metaOf(doc, view);
+  if (meta) {
+    open.append(meta);
+  }
+  more.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
+  return row;
+}
+
+/**
+ * Show the chips of a row anew, such as a due chip the clock changed, keeping the rest of the row.
+ * @param {Document} doc the document
+ * @param {HTMLLIElement} row the row
+ * @param {object} view the row content of `viewOf`
+ */
+function updateMeta(doc, row, view) {
+  const open = row.querySelector('.task-row__open');
+  const meta = metaOf(doc, view);
+  const old = open.querySelector('.task-row__meta');
+  if (old && meta) {
+    old.replaceWith(meta);
+  }
+  else if (old) {
+    old.remove();
+  }
+  else if (meta) {
+    open.append(meta);
+  }
+}
+
+/**
+ * Return the indexes of the longest run of entries whose old places increase: those rows can stay put.
+ * @param {number[]} places the old place of each entry, or -1 for a new entry
+ * @returns {Set<number>} the indexes of the entries that stay
+ */
+function stayers(places) {
+  const tails = [];
+  const previous = new Array(places.length);
+  for (let index = 0; index < places.length; index += 1) {
+    if (places[index] < 0) {
+      continue;
+    }
+    let low = 0;
+    let high = tails.length;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if (places[tails[middle]] < places[index]) {
+        low = middle + 1;
+      }
+      else {
+        high = middle;
+      }
+    }
+    previous[index] = low > 0 ? tails[low - 1] : -1;
+    tails[low] = index;
+  }
+  const stay = new Set();
+  for (let index = tails.at(-1) ?? -1; index >= 0; index = previous[index]) {
+    stay.add(index);
+  }
+  return stay;
+}
+
+/**
+ * Put rows into a list in the given order, moving as few of the rows already there as possible.
+ * The list must hold no rows other than the given ones.
+ * @param {HTMLElement} list the list
+ * @param {HTMLElement[]} rows the rows, in order
+ */
+function placeRows(list, rows) {
+  if (list.childElementCount === 0) {
+    list.append(...rows);
+    return;
+  }
+  const old = new Map([...list.children].map((row, index) => [row, index]));
+  const stay = stayers(rows.map((row) => old.get(row) ?? -1));
+  let anchor = null;
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    if (!stay.has(index)) {
+      list.insertBefore(rows[index], anchor);
+    }
+    anchor = rows[index];
+  }
 }
 
 /**
@@ -246,7 +389,7 @@ function menuItem(doc, role, text, data, { icon, checked } = {}) {
  * @param {() => HTMLElement|null} [options.fallbackFocus] the control that gets focus when the last row leaves
  * @param {{enabled: () => boolean, step: (taskId: string, step: -1|1) => void}} [options.moves] the moves
  *   of a list view: whether they are on, and the move of a task one row up or down
- * @returns {{element: HTMLElement, render: Function, setSelected: Function, destroy: Function}} the list
+ * @returns {{element: HTMLElement, render: Function, tick: Function, setSelected: Function, destroy: Function}} the list
  */
 export function createTaskList({
   document: doc = globalThis.document, store, toaster, label, hrefOf, listId = null, onError, fallbackFocus, moves = null,
@@ -264,6 +407,13 @@ export function createTaskList({
   element.append(list, statusMenu, moreMenu);
   const options = { hrefOf, listId, moves, selected: null };
   const byId = new Map();
+  const templates = new Map();
+  let rows = new Map();
+  let spare = new Map();
+  let backlog = [];
+  let backlogAt = 0;
+  let frameId = null;
+  let timeoutId = null;
   let ctx = {};
   let active = null;
   let justClosed = null;
@@ -402,6 +552,97 @@ export function createTaskList({
   }
 
   /**
+   * Build the row of a task.
+   * @param {object} task the task
+   * @param {object} view the row content of `viewOf`
+   * @returns {{row: HTMLLIElement, key: string, dueKey: string}} the row entry
+   */
+  function build(task, view) {
+    if (!templates.has(view.handle)) {
+      templates.set(view.handle, rowTemplate(doc, view.handle));
+    }
+    return { row: renderRow(doc, task, view, templates.get(view.handle), options.selected), key: view.key, dueKey: view.dueKey };
+  }
+
+  /**
+   * Take the row entries of tasks in order, reusing current rows and building new ones until the budget runs out.
+   * @param {object[]} tasks the tasks
+   * @param {number} from the index of the first task
+   * @param {Map<string, object>} pool the row entries that can be reused, by task id
+   * @param {number} budget the most new rows to build
+   * @returns {{entries: Map<string, object>, end: number}} the entries by task id, and the index after the last one
+   */
+  function take(tasks, from, pool, budget) {
+    const entries = new Map();
+    let built = 0;
+    let end = from;
+    for (; end < tasks.length; end += 1) {
+      const task = tasks[end];
+      const view = viewOf(task, ctx, options);
+      let entry = pool.get(task.id);
+      if (entry?.key !== view.key) {
+        if (built === budget) {
+          break;
+        }
+        built += 1;
+        entry = build(task, view);
+      }
+      else if (entry.dueKey !== view.dueKey) {
+        updateMeta(doc, entry.row, view);
+        entry.dueKey = view.dueKey;
+      }
+      entries.set(task.id, entry);
+    }
+    return { entries, end };
+  }
+
+  /** Add the next batch of rows that a render left for later frames. */
+  function fill() {
+    timeoutId = null;
+    const { entries, end } = take(backlog, backlogAt, spare, BATCH_ROWS);
+    backlogAt = end;
+    for (const [taskId, entry] of entries) {
+      spare.delete(taskId);
+      rows.set(taskId, entry);
+    }
+    list.append(...[...entries.values()].map((entry) => entry.row));
+    later();
+  }
+
+  /** Add the next batch once the next frame painted, since a timeout set in a frame callback runs after its paint. */
+  function later() {
+    if (backlogAt < backlog.length) {
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        timeoutId = setTimeout(fill);
+      });
+    }
+    else {
+      spare = new Map();
+    }
+  }
+
+  /**
+   * Stop adding rows, and hand back every row entry a render can reuse: the shown rows and those still waiting.
+   * @returns {Map<string, object>} the row entries by task id
+   */
+  function cancel() {
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId);
+      frameId = null;
+    }
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    const pool = new Map([...spare, ...rows]);
+    spare = new Map();
+    backlog = [];
+    backlogAt = 0;
+    return pool;
+  }
+
+  /**
    * Remember what has focus in the list or its open menu, before the rows render again.
    * @returns {{id: string, role: string, index: number, kind?: string, item?: string}|null} the memo
    */
@@ -502,14 +743,46 @@ export function createTaskList({
      */
     render(tasks, context) {
       ctx = context;
+      const pool = cancel();
       const memo = remember();
       detach();
       byId.clear();
       for (const task of tasks) {
         byId.set(task.id, task);
       }
-      list.replaceChildren(...tasks.map((task) => renderRow(doc, task, ctx, options)));
+      // The rows up to the first 60 new ones show at once; the rest follow in later frames, so the list paints early.
+      const { entries, end } = take(tasks, 0, pool, FIRST_ROWS);
+      for (const [taskId, entry] of rows) {
+        if (entries.get(taskId) !== entry) {
+          entry.row.remove();
+        }
+      }
+      rows = entries;
+      for (const [taskId, entry] of pool) {
+        if (!rows.has(taskId) && byId.has(taskId)) {
+          spare.set(taskId, entry);
+        }
+      }
+      placeRows(list, [...rows.values()].map((entry) => entry.row));
       restore(memo);
+      backlog = tasks;
+      backlogAt = end;
+      later();
+    },
+
+    /**
+     * Show the due chips at a new time, such as on the minute tick, keeping every row, menu, and focus (`OVD-2`).
+     * @param {Date} now the current time
+     */
+    tick(now) {
+      ctx = { ...ctx, now };
+      for (const [taskId, entry] of rows) {
+        const view = viewOf(byId.get(taskId), ctx, options);
+        if (view.dueKey !== entry.dueKey) {
+          updateMeta(doc, entry.row, view);
+          entry.dueKey = view.dueKey;
+        }
+      }
     },
 
     /**
@@ -517,19 +790,16 @@ export function createTaskList({
      * @param {string|null} taskId the task identifier, or null
      */
     setSelected(taskId) {
-      options.selected = taskId;
-      for (const link of list.querySelectorAll('.task-row__open')) {
-        if (link.closest('.task-row').dataset.taskId === taskId) {
-          link.setAttribute('aria-current', 'page');
-        }
-        else {
-          link.removeAttribute('aria-current');
-        }
+      for (const entries of [rows, spare]) {
+        entries.get(options.selected)?.row.querySelector('.task-row__open').removeAttribute('aria-current');
+        entries.get(taskId)?.row.querySelector('.task-row__open').setAttribute('aria-current', 'page');
       }
+      options.selected = taskId;
     },
 
-    /** Close any open menu. */
+    /** Close any open menu, and stop adding rows. */
     destroy() {
+      cancel();
       detach();
     },
   };

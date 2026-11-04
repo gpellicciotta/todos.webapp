@@ -27,10 +27,14 @@ npm run serve        # serve src/ at http://127.0.0.1:8080/
 npm test             # unit tests with Vitest, from tests/unit/
 npm run lint         # ESLint, including Stroustrup brace style
 npm run test:e2e     # Playwright end-to-end tests, from tests/e2e/
+npm run test:perf    # Playwright performance spec with 5000 tasks, alone
 ```
 
 - [serve.mjs](../scripts/serve.mjs) uses Node.js built-ins only and disables caching; pass `--port` or `--root` to change them.
 - Playwright starts and stops its own server on port 8754; set `E2E_PORT` to use another port.
+- `test:e2e` leaves out [performance.spec.js](../tests/e2e/performance.spec.js), since parallel tests skew its timings.
+- `test:perf` runs it through [playwright.perf.config.js](../playwright.perf.config.js), in one worker.
+  It asserts first rows within 400 ms and a one-task update within 200 ms, on desktop Chromium.
 
 ### Service Worker and Offline Use
 [service-worker.js](../src/service-worker.js) precaches the app shell and serves it cache first.

@@ -171,6 +171,93 @@ describe('createTaskList', () => {
     expect(document.activeElement.closest('.task-row').dataset.taskId).toBe('t3');
   });
 
+  it('keeps the other row elements when one task changes (TEC-16)', () => {
+    const before = [...document.querySelectorAll('.task-row')];
+    list.render([tasks[0], { ...tasks[1], description: 'Buy blue paint' }, tasks[2]], ctx);
+    const after = [...document.querySelectorAll('.task-row')];
+    expect(after[0]).toBe(before[0]);
+    expect(after[2]).toBe(before[2]);
+    expect(after[1]).not.toBe(before[1]);
+    expect(after[1].querySelector('.task-row__description').textContent).toBe('Buy blue paint');
+    expect(before[1].isConnected).toBe(false);
+  });
+
+  it('moves the existing row elements when the order changes, and drops the rows that left', () => {
+    const before = [...document.querySelectorAll('.task-row')];
+    list.render([tasks[2], tasks[0]], ctx);
+    const moved = [...document.querySelectorAll('.task-row')];
+    expect(moved.length).toBe(2);
+    expect(moved[0]).toBe(before[2]);
+    expect(moved[1]).toBe(before[0]);
+    list.render([tasks[1], tasks[2], tasks[0]], ctx);
+    const after = [...document.querySelectorAll('.task-row')];
+    expect(after.map((row) => row.dataset.taskId)).toEqual(['t2', 't3', 't1']);
+    expect(after[1]).toBe(before[2]);
+    expect(after[2]).toBe(before[0]);
+  });
+
+  it('updates only the due chips on the clock tick, keeping rows, an open menu, and focus', () => {
+    const due = { id: 't4', description: 'Pay the rent', status: 'todo', 'due-time': at(4, 10) };
+    list.render([...tasks, due], ctx);
+    const before = [...document.querySelectorAll('.task-row')];
+    expect(before[3].querySelector('.chip').textContent).toMatch(/^Today /);
+    before[3].querySelector('.status-button').click();
+    const focused = document.activeElement;
+    list.tick(new Date(2026, 10, 4, 10, 1));
+    [...document.querySelectorAll('.task-row')].forEach((row, index) => expect(row).toBe(before[index]));
+    expect(before[3].querySelector('.chip--overdue').textContent).toBe('Overdue');
+    expect(document.querySelector('.status-menu').hidden).toBe(false);
+    expect(document.activeElement).toBe(focused);
+  });
+
+  it('shows the first rows of an empty list at once and adds the rest in later frames', async () => {
+    const many = Array.from({ length: 400 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    const other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
+    document.body.append(other.element);
+    other.render(many, ctx);
+    const count = () => other.element.querySelectorAll('.task-row').length;
+    expect(count()).toBe(60);
+    await vi.waitFor(() => expect(count()).toBe(400));
+    expect(other.element.querySelector('.task-row:last-child').dataset.taskId).toBe('m399');
+    other.render(many.slice(0, 2), ctx);
+    expect(count()).toBe(2);
+    other.destroy();
+  });
+
+  it('keeps a render during the fill progressive, reusing the rows already built', async () => {
+    const many = Array.from({ length: 400 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    const other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
+    document.body.append(other.element);
+    other.render(many, ctx);
+    const first = other.element.querySelector('.task-row');
+    other.render([{ ...many[0] }, ...many.slice(1)], ctx);
+    const count = () => other.element.querySelectorAll('.task-row').length;
+    expect(count()).toBe(120);
+    expect(other.element.querySelector('.task-row')).toBe(first);
+    await vi.waitFor(() => expect(count()).toBe(400));
+    expect([...other.element.querySelectorAll('.task-row')].map((row) => row.dataset.taskId)).toEqual(many.map((task) => task.id));
+    other.destroy();
+  });
+
+  it('cancels a waiting batch with the frame and timeout functions of their own identifiers', () => {
+    const frames = vi.spyOn(globalThis, 'requestAnimationFrame').mockReturnValue(7);
+    const cancelFrame = vi.spyOn(globalThis, 'cancelAnimationFrame');
+    const clear = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      const many = Array.from({ length: 100 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+      const other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
+      other.render(many, ctx);
+      other.destroy();
+      expect(cancelFrame).toHaveBeenCalledWith(7);
+      expect(clear).not.toHaveBeenCalledWith(7);
+    }
+    finally {
+      frames.mockRestore();
+      cancelFrame.mockRestore();
+      clear.mockRestore();
+    }
+  });
+
   it('moves focus to the fallback control when the last row leaves', () => {
     const fallback = document.createElement('input');
     document.body.append(fallback);

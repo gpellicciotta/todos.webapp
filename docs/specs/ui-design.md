@@ -154,6 +154,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 
 ### View Controls
 - A search field filters by text in descriptions and notes (`TV-6`).
+- **[Decided]** Search filters once typing pauses for 150 ms or on Enter, so a word runs one query (`TEC-16`).
 - Filter chips open popovers with checkboxes or date ranges; compact layouts group them behind one Filters button.
 - An active filter chip shows its value, such as "Status: open"; Clear all removes every filter.
 - The Sort button opens a menu of order fields with an ascending or descending toggle.
@@ -203,6 +204,15 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
 - A new task joins the lists of the active Lists filter, leaving out "In no list".
 - Overdue chips refresh every minute, also for tasks that keep their status.
+  The minute tick redraws only due chips; a Due filter also updates which tasks show.
+- **[Decided]** A render builds at most 60 new rows at once and adds the rest after each paint (`TEC-16`).
+  With 5000 tasks, the view opens in about 250 ms on desktop; all rows follow within about 1.4 s.
+- `TEC-16` is not met yet: it asks for 200 ms on a mid-range phone, and only desktop was measured.
+  T0042 virtualizes long lists and verifies 200 ms under 4x CPU throttling.
+- Known limitations while rows are still being added, about 1.4 s with 5000 tasks:
+  - Find in page and screen reader row counts see only the rows added so far.
+  - Move down and drag stop at the last added row.
+  - A restored scroll position is clamped to the rows added so far.
 
 ### List
 Wireframe: [list.svg](../img/ui/list.svg).

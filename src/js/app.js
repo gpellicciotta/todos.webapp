@@ -171,9 +171,10 @@ async function start() {
     }
   });
 
-  await refreshNav();
+  // The sidebar and the first view read the store side by side, so the view opens sooner (`TEC-16`).
+  const nav = refreshNav();
   router.start();
-  await router.idle();
+  await Promise.all([nav, router.idle()]);
   document.documentElement.dataset.shell = 'ready';
 }
 

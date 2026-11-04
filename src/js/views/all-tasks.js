@@ -100,6 +100,7 @@ export function mountAllTasks(view, {
   let pending = null;
   let controls = null;
   let listsKey = '';
+  let destroyed = false;
 
   const root = doc.createElement('div');
   root.className = 'task-view';
@@ -196,7 +197,7 @@ export function mountAllTasks(view, {
 
   /** Render the current data with the current filters and order. */
   function render() {
-    if (!data) {
+    if (!data || destroyed) {
       return;
     }
     const firstLaunch = data.tasks.length === 0;
@@ -247,9 +248,21 @@ export function mountAllTasks(view, {
     return pending;
   }
 
+  /**
+   * Follow the clock: a Due filter can change which tasks show, so it renders again; otherwise only due chips change.
+   */
+  function tick() {
+    if (state.filter.due?.length) {
+      render();
+    }
+    else {
+      taskList.tick(now());
+    }
+  }
+
   const unsubscribe = store.subscribe(refresh);
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`).
-  const timer = setInterval(render, REDRAW_MS);
+  const timer = setInterval(tick, REDRAW_MS);
   const first = refresh();
 
   return {
@@ -267,12 +280,13 @@ export function mountAllTasks(view, {
      */
     idle: () => first,
 
-    /** Stop following the store and the clock. */
+    /** Stop following the store and the clock; search text still waiting reaches the session memory. */
     destroy() {
+      destroyed = true;
+      controls?.destroy();
       unsubscribe();
       clearInterval(timer);
       taskList.destroy();
-      controls?.destroy();
     },
   };
 }

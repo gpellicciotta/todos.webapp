@@ -303,8 +303,8 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
     deletedHere ||= change?.operation === 'deleteList' && !change.remote;
     refresh();
   });
-  // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`).
-  const timer = setInterval(render, REDRAW_MS);
+  // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`); the rows stay.
+  const timer = setInterval(() => taskList.tick(now()), REDRAW_MS);
   const first = refresh();
 
   return {
