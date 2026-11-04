@@ -208,14 +208,26 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - A new task joins the lists of the active Lists filter, leaving out "In no list".
 - Overdue chips refresh every minute, also for tasks that keep their status.
   The minute tick redraws only due chips; a Due filter also updates which tasks show.
-- **[Decided]** A render builds at most 60 new rows at once and adds the rest after each paint (`TEC-16`).
-  With 5000 tasks, the view opens in about 250 ms on desktop; all rows follow within about 1.4 s.
-- `TEC-16` is not met yet: it asks for 200 ms on a mid-range phone, and only desktop was measured.
-  T0042 virtualizes long lists and verifies 200 ms under 4x CPU throttling.
-- Known limitations while rows are still being added, about 1.4 s with 5000 tasks:
-  - Find in page and screen reader row counts see only the rows added so far.
-  - Move down and drag stop at the last added row.
-  - A restored scroll position is clamped to the rows added so far.
+- **[Decided]** Lists of up to 200 tasks render every row; longer lists render only the rows in view (`TEC-16`).
+  Rows past the view, 20 on each side, follow once the first rows painted, and scrolling renders rows as they enter.
+  Padding and row margins stand in for the rows left out, so the scroll height and scrollbar stay true.
+  Rows keep the 48 px row height in compact and wide layouts, which the row offsets rely on.
+- The focused row, the row of an open menu, the dragged row, and the selected row stay rendered when scrolled away.
+  Their neighbors stay too, so Tab reaches the next row; menus stay open, and drags keep their row.
+- Rows carry `aria-setsize` and `aria-posinset`, so screen readers count every task, rendered or not.
+- Move up, Move down, Alt+Up, Alt+Down, and drag targets cover the whole list; a moved row scrolls into view.
+- `TEC-16` is met for opening a view under 4x CPU throttling, the stand-in for a mid-range phone.
+  With 5000 tasks, All tasks paints its first rows about 175 ms after the route change, down from about 265 ms.
+  Desktop Chromium without throttling takes about 55 ms.
+  [performance.spec.js](../../tests/e2e/performance.spec.js) asserts 200 ms, and the Pages workflow runs it.
+- Measured but not covered by `TEC-16`, under 4x throttling with 5000 tasks:
+  - A cold app start takes about 900 ms until the first rows, mostly module loading and store reads.
+  - A one-task update takes about 195 ms, since the view reads the whole store again.
+  - Scrolling 400 px per frame runs at a median frame of 50 ms, down from 100 ms with every row rendered.
+- Known limitations of lists over 200 tasks:
+  - Find in page sees only the rendered rows; the search field finds every task.
+  - Returning to the view restores the scroll position before the rows render, so it opens at the top.
+    This predates the windowing: main behaves the same.
 
 ### List
 Wireframe: [list.svg](../img/ui/list.svg).

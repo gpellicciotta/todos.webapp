@@ -185,7 +185,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
     hrefOf: (task) => formatRoute('list-task', { listId, taskId: task.id }),
   });
-  const reorder = attachReorder(taskList.element, { enabled: moves.enabled, onMove: move });
+  const reorder = attachReorder(taskList.element, { enabled: moves.enabled, onMove: move, ids: taskList.ids });
   const empty = make(doc, 'p', 'empty-state empty-state__text');
   root.append(header, controls, note, addBar.element, taskList.element, empty);
   view.replaceChildren(root);
@@ -214,7 +214,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
    * @param {{placement: object, index: number}} next the neighbor and the new index among the shown rows
    */
   function move(taskId, next) {
-    const count = taskList.element.querySelectorAll('.task-row').length;
+    const count = taskList.ids().length;
     const task = data?.tasks.find((candidate) => candidate.id === taskId);
     store.moveInList(taskId, listId, next.placement)
       .then(() => announcer.announce(STRINGS.moved(task?.description ?? '', next.index + 1, count)), fail);

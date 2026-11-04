@@ -53,6 +53,12 @@ jobs:
       - name: Run the end-to-end tests
         run: npm run test:e2e
 
+      # 5000 tasks under 4x CPU throttling. The throttle scales the runner's own CPU, so slow runners
+      # can miss the 200 ms budget; the step reports numbers without blocking deploys. Gate locally.
+      - name: Run the performance test (report only)
+        run: npm run test:perf
+        continue-on-error: true
+
   deploy:
     name: Deploy
     needs: test

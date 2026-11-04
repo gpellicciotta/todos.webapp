@@ -10,8 +10,11 @@
  * One status menu and one More menu serve every row: each opening attaches the menu to that row's button.
  * Rendering again keeps an open menu open on the same row and item, and keeps focus on the same row control.
  * Rows are kept by task id: a render builds only the rows whose content changed and moves as few rows as it can,
- * a render builds at most 60 new rows and the rest in batches after each paint, and the clock tick redraws only
- * due chips, so 5000 tasks open faster (`TEC-16`). Rows not yet added wait, detached, for their batch.
+ * and the clock tick redraws only due chips (`TEC-16`).
+ * A list of more than 200 tasks renders only the rows in view plus a buffer, so 5000 tasks open fast (`TEC-16`).
+ * Padding on the list and a margin on a row after a gap stand in for the rows left out, so the scroll height holds.
+ * The focused row, the row of an open menu, the dragged row, and the selected row stay rendered with their
+ * neighbors, so focus, menus, Tab order, and drags survive a scroll. Rows carry `aria-setsize` and `aria-posinset`.
  * The menus live outside the list, since the list is a size container, which would anchor fixed menus.
  */
 
@@ -23,9 +26,15 @@ const ICONS = 'img/icons.svg';
 const SVG = 'http://www.w3.org/2000/svg';
 const DAY_MS = 86_400_000;
 const MAX_LIST_CHIPS = 2;
-/** New rows a render builds at once; the rest follow in batches, each after a frame painted the last one. */
-const FIRST_ROWS = 60;
-const BATCH_ROWS = 250;
+/** Lists up to this many tasks render every row; longer lists render the rows in view plus a buffer. */
+const FULL_ROWS = 200;
+/**
+ * The rows rendered past each edge of the view, so a scroll shows built rows before the next update.
+ * A list's first render leaves them out and adds them once its rows painted, so the view opens sooner.
+ */
+const BUFFER_ROWS = 20;
+/** The row height until a row was measured: the 48 px of the `--row-height` token. */
+const ROW_PX = 48;
 let instances = 0;
 
 /** Status names, in lifecycle order. */
@@ -389,10 +398,13 @@ function menuItem(doc, role, text, data, { icon, checked } = {}) {
  * @param {() => HTMLElement|null} [options.fallbackFocus] the control that gets focus when the last row leaves
  * @param {{enabled: () => boolean, step: (taskId: string, step: -1|1) => void}} [options.moves] the moves
  *   of a list view: whether they are on, and the move of a task one row up or down
- * @returns {{element: HTMLElement, render: Function, tick: Function, setSelected: Function, destroy: Function}} the list
+ * @param {() => HTMLElement|null} [options.scroller] the element the list scrolls in, the main column by default
+ * @returns {{element: HTMLElement, render: Function, tick: Function, setSelected: Function, ids: Function,
+ *   destroy: Function}} the list
  */
 export function createTaskList({
   document: doc = globalThis.document, store, toaster, label, hrefOf, listId = null, onError, fallbackFocus, moves = null,
+  scroller = null,
 }) {
   const id = `task-list-${(instances += 1)}`;
   const element = make(doc, 'div', 'task-list-frame');
@@ -408,12 +420,12 @@ export function createTaskList({
   const options = { hrefOf, listId, moves, selected: null };
   const byId = new Map();
   const templates = new Map();
+  const places = new Map();
   let rows = new Map();
-  let spare = new Map();
-  let backlog = [];
-  let backlogAt = 0;
-  let frameId = null;
-  let timeoutId = null;
+  let order = [];
+  let rowPx = ROW_PX;
+  let fillFrame = null;
+  let fillTimer = null;
   let ctx = {};
   let active = null;
   let justClosed = null;
@@ -518,13 +530,13 @@ export function createTaskList({
    * @param {'first'|'last'} at the item that gets focus
    */
   function openMore(trigger, task, at) {
-    const index = [...list.children].indexOf(trigger.closest('.task-row'));
+    const index = places.get(task.id);
     const movable = moves?.enabled() ?? false;
     const entries = [
       [freeLists(task).length > 0, STRINGS.addToList, 'add-to-list', 'plus'],
       [listId !== null, STRINGS.removeFromList, 'remove-from-list'],
       [movable && index > 0, STRINGS.moveUp, 'move-up'],
-      [movable && index < list.children.length - 1, STRINGS.moveDown, 'move-down'],
+      [movable && index < order.length - 1, STRINGS.moveDown, 'move-down'],
       [true, STRINGS.delete, 'delete', 'bin'],
     ];
     moreMenu.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
@@ -572,81 +584,155 @@ export function createTaskList({
   }
 
   /**
-   * Take the row entries of tasks in order, reusing current rows and building new ones until the budget runs out.
-   * @param {object[]} tasks the tasks
-   * @param {number} from the index of the first task
-   * @param {Map<string, object>} pool the row entries that can be reused, by task id
-   * @param {number} budget the most new rows to build
-   * @returns {{entries: Map<string, object>, end: number}} the entries by task id, and the index after the last one
+   * Compute the rows in view plus a buffer, measuring the row height once a row shows.
+   * The view is the part of the scroller inside the window; row `i` starts `i` row heights below the list's top.
+   * @param {number} buffer the rows to add past each edge of the view
+   * @returns {{first: number, last: number}} the indexes of the first and last row to render
    */
-  function take(tasks, from, pool, budget) {
-    const entries = new Map();
-    let built = 0;
-    let end = from;
-    for (; end < tasks.length; end += 1) {
-      const task = tasks[end];
-      const view = viewOf(task, ctx, options);
-      let entry = pool.get(task.id);
-      if (entry?.key !== view.key) {
-        if (built === budget) {
-          break;
-        }
-        built += 1;
-        entry = build(task, view);
-      }
-      else if (entry.dueKey !== view.dueKey) {
-        updateMeta(doc, entry.row, view);
-        entry.dueKey = view.dueKey;
-      }
-      entries.set(task.id, entry);
+  function windowOf(buffer) {
+    if (list.firstElementChild?.offsetHeight > 0) {
+      rowPx = list.firstElementChild.offsetHeight;
     }
-    return { entries, end };
+    const box = list.getBoundingClientRect();
+    const view = (scroller?.() ?? element.closest('.app__main'))?.getBoundingClientRect();
+    const top = Math.max(view?.top ?? 0, 0) - box.top;
+    const bottom = Math.min(view?.bottom ?? Infinity, doc.defaultView?.innerHeight ?? Infinity) - box.top;
+    return {
+      first: Math.max(0, Math.floor(top / rowPx) - buffer),
+      last: Math.min(order.length - 1, Math.ceil(bottom / rowPx) - 1 + buffer),
+    };
   }
 
-  /** Add the next batch of rows that a render left for later frames. */
-  function fill() {
-    timeoutId = null;
-    const { entries, end } = take(backlog, backlogAt, spare, BATCH_ROWS);
-    backlogAt = end;
-    for (const [taskId, entry] of entries) {
-      spare.delete(taskId);
-      rows.set(taskId, entry);
+  /**
+   * List the tasks whose rows stay rendered out of view: the focused row, the row of the open menu, the dragged row,
+   * and the selected row, which gets focus back when its editor closes.
+   * @param {Array<string|undefined>} extra more task identifiers, such as those a render keeps for focus
+   * @returns {Set<string>} the task identifiers
+   */
+  function pinned(extra) {
+    const ids = new Set([...extra, options.selected]);
+    const focused = doc.activeElement?.closest?.('.task-row');
+    for (const row of [focused, active?.trigger.closest('.task-row'), list.querySelector('.task-row[data-dragging]')]) {
+      if (row && list.contains(row)) {
+        ids.add(row.dataset.taskId);
+      }
     }
-    list.append(...[...entries.values()].map((entry) => entry.row));
-    later();
+    return ids;
   }
 
-  /** Add the next batch once the next frame painted, since a timeout set in a frame callback runs after its paint. */
-  function later() {
-    if (backlogAt < backlog.length) {
-      frameId = requestAnimationFrame(() => {
-        frameId = null;
-        timeoutId = setTimeout(fill);
-      });
+  /**
+   * List the indexes of the rows to render: every row of a short list, or the rows in view plus the buffer and each
+   * pinned row with its neighbors, so Tab reaches the next row from a pinned one.
+   * @param {Array<string|undefined>} extra more tasks to keep rendered
+   * @param {number} buffer the rows to add past each edge of the view
+   * @returns {number[]} the indexes, in increasing order
+   */
+  function wanted(extra, buffer) {
+    if (order.length <= FULL_ROWS) {
+      return [...order.keys()];
     }
-    else {
-      spare = new Map();
+    const { first, last } = windowOf(buffer);
+    const indexes = new Set();
+    for (let index = first; index <= last; index += 1) {
+      indexes.add(index);
+    }
+    for (const taskId of pinned(extra)) {
+      const at = places.get(taskId) ?? -2;
+      for (let index = Math.max(0, at - 1); index <= Math.min(order.length - 1, at + 1); index += 1) {
+        indexes.add(index);
+      }
+    }
+    return [...indexes].sort((a, b) => a - b);
+  }
+
+  /**
+   * Set where a row sits: its place in the set, and the margin that stands in for the rows left out above it.
+   * @param {object} entry the row entry
+   * @param {number} index the row's index in the order
+   * @param {number} gap the height of the rows left out between it and the rendered row above, in pixels
+   */
+  function locate(entry, index, gap) {
+    if (entry.index !== index || entry.size !== order.length) {
+      entry.row.setAttribute('aria-posinset', String(index + 1));
+      entry.row.setAttribute('aria-setsize', String(order.length));
+      Object.assign(entry, { index, size: order.length });
+    }
+    if (entry.gap !== gap) {
+      entry.row.style.marginBlockStart = gap > 0 ? `${gap}px` : '';
+      entry.gap = gap;
     }
   }
 
   /**
-   * Stop adding rows, and hand back every row entry a render can reuse: the shown rows and those still waiting.
-   * @returns {Map<string, object>} the row entries by task id
+   * Render the rows that show, reusing the rendered rows by task id; padding on the list holds the rest of the height.
+   * @param {boolean} fresh whether the tasks changed, so reused rows check their content
+   * @param {Array<string|undefined>} [extra] more tasks to keep rendered
+   * @param {number} [buffer] the rows to add past each edge of the view
    */
-  function cancel() {
-    if (frameId !== null) {
-      cancelAnimationFrame(frameId);
-      frameId = null;
+  function draw(fresh, extra = [], buffer = BUFFER_ROWS) {
+    const indexes = wanted(extra, buffer);
+    const entries = new Map();
+    let previous = indexes[0] - 1;
+    for (const index of indexes) {
+      const task = order[index];
+      let entry = rows.get(task.id);
+      if (!entry || fresh) {
+        const view = viewOf(task, ctx, options);
+        if (entry?.key !== view.key) {
+          entry = build(task, view);
+        }
+        else if (entry.dueKey !== view.dueKey) {
+          updateMeta(doc, entry.row, view);
+          entry.dueKey = view.dueKey;
+        }
+      }
+      locate(entry, index, (index - previous - 1) * rowPx);
+      previous = index;
+      entries.set(task.id, entry);
     }
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
+    for (const [taskId, entry] of rows) {
+      if (entries.get(taskId) !== entry) {
+        entry.row.remove();
+      }
     }
-    const pool = new Map([...spare, ...rows]);
-    spare = new Map();
-    backlog = [];
-    backlogAt = 0;
-    return pool;
+    rows = entries;
+    placeRows(list, [...entries.values()].map((entry) => entry.row));
+    list.style.paddingBlockStart = `${(indexes[0] ?? 0) * rowPx}px`;
+    list.style.paddingBlockEnd = `${(order.length - 1 - (indexes.at(-1) ?? -1)) * rowPx}px`;
+  }
+
+  /** Stop a waiting buffer fill. */
+  function cancelFill() {
+    if (fillFrame !== null) {
+      cancelAnimationFrame(fillFrame);
+      fillFrame = null;
+    }
+    if (fillTimer !== null) {
+      clearTimeout(fillTimer);
+      fillTimer = null;
+    }
+  }
+
+  /** Add the buffer rows once the next frame painted, since a timeout set in a frame callback runs after its paint. */
+  function fillLater() {
+    fillFrame = requestAnimationFrame(() => {
+      fillFrame = null;
+      fillTimer = setTimeout(() => {
+        fillTimer = null;
+        draw(false);
+      });
+    });
+  }
+
+  /**
+   * Render the rows that came into view after a scroll of the list's scroller or a resize of the window.
+   * @param {Event} event the scroll or resize event
+   */
+  function onScroll(event) {
+    const target = event.target;
+    if (order.length > FULL_ROWS && list.isConnected && (target === doc.defaultView || target.contains?.(list))) {
+      draw(false);
+    }
   }
 
   /**
@@ -654,47 +740,50 @@ export function createTaskList({
    * @returns {{id: string, role: string, index: number, kind?: string, item?: string}|null} the memo
    */
   function remember() {
-    const rows = [...list.children];
     if (active?.controller.isOpen()) {
       const row = active.trigger.closest('.task-row');
       const menu = active.kind === 'status' ? statusMenu : moreMenu;
       const item = doc.activeElement?.closest?.('.menu__item');
       return {
-        id: row.dataset.taskId, role: active.trigger.dataset.role, index: rows.indexOf(row),
+        id: row.dataset.taskId, role: active.trigger.dataset.role, index: places.get(row.dataset.taskId),
         kind: active.kind, item: item && menu.contains(item) ? itemKey(item) : undefined,
       };
     }
     const focused = doc.activeElement?.closest?.('.task-row');
     return focused && list.contains(focused)
-      ? { id: focused.dataset.taskId, role: doc.activeElement.dataset.role ?? 'open', index: rows.indexOf(focused) }
+      ? { id: focused.dataset.taskId, role: doc.activeElement.dataset.role ?? 'open', index: places.get(focused.dataset.taskId) }
       : null;
   }
 
   /**
    * Restore focus after the rows rendered again: the open menu on the same row and item, the same row control,
    * the control of the row now at the old place, or the fallback control once no row is left.
+   * A row that moved, such as with Alt+Down, scrolls into view.
    * @param {object|null} memo the memo of `remember`
    */
   function restore(memo) {
     if (!memo) {
       return;
     }
-    const rows = [...list.children];
-    if (rows.length === 0) {
+    if (order.length === 0) {
       fallbackFocus?.()?.focus();
       return;
     }
-    const same = rows.find((candidate) => candidate.dataset.taskId === memo.id);
-    const trigger = (same ?? rows[Math.min(memo.index, rows.length - 1)]).querySelector(`[data-role="${memo.role}"]`);
+    const same = rows.get(memo.id)?.row;
+    const row = same ?? rows.get(order[Math.min(memo.index, order.length - 1)].id)?.row;
+    const trigger = row?.querySelector(`[data-role="${memo.role}"]`);
     if (same && memo.kind) {
-      const task = byId.get(memo.id);
       const reopen = { status: openStatus, more: openMore, 'add-to-list': openAddToList }[memo.kind];
-      reopen(trigger, task, 'first');
+      reopen(trigger, byId.get(memo.id), 'first');
       const menu = memo.kind === 'status' ? statusMenu : moreMenu;
       [...menu.querySelectorAll('.menu__item')].find((item) => itemKey(item) === memo.item)?.focus();
-      return;
     }
-    trigger?.focus();
+    else {
+      trigger?.focus();
+    }
+    if (same && places.get(memo.id) !== memo.index) {
+      same.scrollIntoView?.({ block: 'nearest' });
+    }
   }
 
   /**
@@ -736,6 +825,8 @@ export function createTaskList({
       openFor(trigger, event.key === 'ArrowUp' ? 'last' : 'first');
     }
   });
+  doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
+  doc.defaultView?.addEventListener('resize', onScroll);
 
   return {
     element,
@@ -750,31 +841,23 @@ export function createTaskList({
      */
     render(tasks, context) {
       ctx = context;
-      const pool = cancel();
       const memo = remember();
       detach();
+      cancelFill();
+      const lean = rows.size === 0 && tasks.length > FULL_ROWS;
+      order = tasks;
       byId.clear();
-      for (const task of tasks) {
+      places.clear();
+      tasks.forEach((task, index) => {
         byId.set(task.id, task);
-      }
-      // The rows up to the first 60 new ones show at once; the rest follow in later frames, so the list paints early.
-      const { entries, end } = take(tasks, 0, pool, FIRST_ROWS);
-      for (const [taskId, entry] of rows) {
-        if (entries.get(taskId) !== entry) {
-          entry.row.remove();
-        }
-      }
-      rows = entries;
-      for (const [taskId, entry] of pool) {
-        if (!rows.has(taskId) && byId.has(taskId)) {
-          spare.set(taskId, entry);
-        }
-      }
-      placeRows(list, [...rows.values()].map((entry) => entry.row));
+        places.set(task.id, index);
+      });
+      // The focused row stays rendered, or the row now at its place when it left, so focus can stay or pass on.
+      draw(true, memo ? [memo.id, tasks[Math.min(memo.index, tasks.length - 1)]?.id] : [], lean ? 0 : BUFFER_ROWS);
       restore(memo);
-      backlog = tasks;
-      backlogAt = end;
-      later();
+      if (lean) {
+        fillLater();
+      }
     },
 
     /**
@@ -797,17 +880,23 @@ export function createTaskList({
      * @param {string|null} taskId the task identifier, or null
      */
     setSelected(taskId) {
-      for (const entries of [rows, spare]) {
-        entries.get(options.selected)?.row.querySelector('.task-row__open').removeAttribute('aria-current');
-        entries.get(taskId)?.row.querySelector('.task-row__open').setAttribute('aria-current', 'page');
-      }
+      rows.get(options.selected)?.row.querySelector('.task-row__open').removeAttribute('aria-current');
+      rows.get(taskId)?.row.querySelector('.task-row__open').setAttribute('aria-current', 'page');
       options.selected = taskId;
     },
 
-    /** Close any open menu, and stop adding rows. */
+    /**
+     * List the shown tasks, rendered or not, for moves and drags across the whole list.
+     * @returns {string[]} the task identifiers, in order
+     */
+    ids: () => order.map((task) => task.id),
+
+    /** Close any open menu, and stop adding rows and following scrolls. */
     destroy() {
-      cancel();
+      cancelFill();
       detach();
+      doc.removeEventListener('scroll', onScroll, { capture: true });
+      doc.defaultView?.removeEventListener('resize', onScroll);
     },
   };
 }

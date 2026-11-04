@@ -136,4 +136,47 @@ test.describe('List screen', () => {
     await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
     expect(problems).toEqual([]);
   });
+
+  test('a list of 300 tasks renders the rows in view, and moves and drags reach rows past them (TEC-16)', async ({ page }) => {
+    test.setTimeout(60_000);
+    const problems = watch(page);
+    const listId = await openList(page);
+    await page.evaluate(async (id) => {
+      const { openStore } = await import('/js/store/db.js');
+      const store = await openStore({ broadcast: true });
+      for (let index = 0; index < 296; index += 1) {
+        await store.createTask({ description: `Step ${String(index).padStart(3, '0')}` }, { lists: [id] });
+      }
+      store.close();
+    }, listId);
+    const shown = page.locator('.list-view .task-row');
+    await expect(shown.first()).toHaveAttribute('aria-setsize', '299');
+    expect(await shown.count()).toBeLessThan(80);
+    expect(await page.locator('.list-view .task-list').evaluate((list) => list.scrollHeight)).toBeGreaterThan(299 * 47);
+
+    // Alt+Down past the rendered rows keeps focus on the moved row, in view.
+    await shown.first().locator('.task-row__open').focus();
+    for (let position = 2; position <= 40; position += 1) {
+      await page.keyboard.press('Alt+ArrowDown');
+      await expect(page.locator('.list-view .task-row:focus-within')).toHaveAttribute('aria-posinset', String(position));
+    }
+    await expect(page.locator('.list-view .task-row:focus-within .task-row__description')).toHaveText('Clean the gutters');
+    await expect(page.locator('.list-view .task-row:focus-within')).toBeInViewport();
+
+    // A drag held at the bottom edge scrolls, renders the rows it reaches, and drops past the first rendered rows.
+    const scroller = page.locator('.app__main');
+    const main = await scroller.boundingBox();
+    const top = await scroller.evaluate((element) => element.scrollTop);
+    const rendered = Math.max(...(await shown.evaluateAll((rows) => rows.map((row) => Number(row.getAttribute('aria-posinset'))))));
+    await page.locator('.list-view .task-row:focus-within .task-row__handle').hover();
+    await page.mouse.down();
+    await page.mouse.move(main.x + 200, main.y + main.height - 10, { steps: 8 });
+    await expect(page.locator('.list-view .task-row[data-dragging="true"]')).toHaveCount(1);
+    await expect.poll(() => scroller.evaluate((element) => element.scrollTop), { timeout: 15_000 }).toBeGreaterThan(top + 40 * 48);
+    await page.mouse.up();
+    const moved = page.locator('.list-view .task-row').filter({ hasText: 'Clean the gutters' });
+    await expect.poll(async () => Number(await moved.getAttribute('aria-posinset'))).toBeGreaterThan(rendered);
+    await expect(page.locator('.list-view .task-row[data-dragging], .list-view .task-row[data-drop]')).toHaveCount(0);
+    expect(problems).toEqual([]);
+  });
 });

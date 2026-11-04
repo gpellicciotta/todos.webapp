@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { attachReorder } from '../../src/js/views/reorder.js';
 import { createTaskList, formatDue } from '../../src/js/views/task-list.js';
 
 const NOW = new Date(2026, 10, 4, 9, 0); // Wednesday 4 November 2026, 09:00 local time
@@ -220,52 +221,152 @@ describe('createTaskList', () => {
     expect(document.activeElement).toBe(focused);
   });
 
-  it('shows the first rows of an empty list at once and adds the rest in later frames', async () => {
-    const many = Array.from({ length: 400 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
-    const other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
-    document.body.append(other.element);
-    other.render(many, ctx);
-    const count = () => other.element.querySelectorAll('.task-row').length;
-    expect(count()).toBe(60);
-    await vi.waitFor(() => expect(count()).toBe(400));
-    expect(other.element.querySelector('.task-row:last-child').dataset.taskId).toBe('m399');
-    other.render(many.slice(0, 2), ctx);
-    expect(count()).toBe(2);
-    other.destroy();
+  it('renders every row of a list up to 200 tasks at once, with its place in the set', () => {
+    const many = Array.from({ length: 200 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    list.render(many, ctx);
+    const rows = [...document.querySelectorAll('.task-row')];
+    expect(rows).toHaveLength(200);
+    expect(rows.map((row) => row.getAttribute('aria-posinset'))).toEqual(many.map((_, index) => String(index + 1)));
+    expect(rows.every((row) => row.getAttribute('aria-setsize') === '200')).toBe(true);
   });
 
-  it('keeps a render during the fill progressive, reusing the rows already built', async () => {
-    const many = Array.from({ length: 400 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
-    const other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
-    document.body.append(other.element);
-    other.render(many, ctx);
-    const first = other.element.querySelector('.task-row');
-    other.render([{ ...many[0] }, ...many.slice(1)], ctx);
-    const count = () => other.element.querySelectorAll('.task-row').length;
-    expect(count()).toBe(120);
-    expect(other.element.querySelector('.task-row')).toBe(first);
-    await vi.waitFor(() => expect(count()).toBe(400));
-    expect([...other.element.querySelectorAll('.task-row')].map((row) => row.dataset.taskId)).toEqual(many.map((task) => task.id));
-    other.destroy();
+  it('keeps every row of a render that changes more than 60 rows, replacing each in place', () => {
+    const many = Array.from({ length: 150 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    list.render(many, ctx);
+    list.render(many.map((task) => ({ ...task, status: 'completed' })), ctx);
+    const rows = [...document.querySelectorAll('.task-row')];
+    expect(rows).toHaveLength(150);
+    expect(rows.every((row) => row.dataset.status === 'completed')).toBe(true);
   });
 
-  it('cancels a waiting batch with the frame and timeout functions of their own identifiers', () => {
-    const frames = vi.spyOn(globalThis, 'requestAnimationFrame').mockReturnValue(7);
-    const cancelFrame = vi.spyOn(globalThis, 'cancelAnimationFrame');
-    const clear = vi.spyOn(globalThis, 'clearTimeout');
-    try {
-      const many = Array.from({ length: 100 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
-      const other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
+  describe('with a long list', () => {
+    const ROW = 48;
+    const many = Array.from({ length: 5000 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    let other;
+    let scrolled;
+    let reorder;
+    let onMove;
+    const step = (taskId, delta) => reorder.step(taskId, delta);
+
+    /**
+     * List the rendered rows.
+     * @returns {HTMLElement[]} the rows, top to bottom
+     */
+    const shown = () => [...other.element.querySelectorAll('.task-row')];
+
+    /**
+     * Find the rendered row of a task.
+     * @param {string} taskId the task identifier
+     * @returns {HTMLElement|undefined} the row
+     */
+    const rowOf = (taskId) => shown().find((row) => row.dataset.taskId === taskId);
+
+    /**
+     * Scroll the list so that a pixel offset of it sits at the top of the viewport, and fire the scroll event.
+     * @param {number} offset the offset from the list's top
+     */
+    function scrollTo(offset) {
+      scrolled = offset;
+      document.dispatchEvent(new Event('scroll'));
+    }
+
+    beforeEach(async () => {
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(10 * ROW);
+      scrolled = 0;
+      onMove = vi.fn();
+      other = createTaskList({
+        document, store, toaster, label: 'Tasks', hrefOf: () => '#', moves: { enabled: () => true, step },
+      });
+      document.body.append(other.element);
+      for (const element of [other.element, other.element.querySelector('.task-list')]) {
+        element.getBoundingClientRect = () => ({ top: -scrolled, bottom: many.length * ROW - scrolled, height: many.length * ROW });
+      }
+      reorder = attachReorder(other.element, { enabled: () => true, onMove, ids: other.ids });
       other.render(many, ctx);
+      // The first render shows the rows in view; the buffer rows follow once they painted.
+      expect(shown()).toHaveLength(10);
+      await vi.waitFor(() => expect(shown()).toHaveLength(30));
+    });
+
+    afterEach(() => {
+      reorder.destroy();
       other.destroy();
-      expect(cancelFrame).toHaveBeenCalledWith(7);
-      expect(clear).not.toHaveBeenCalledWith(7);
-    }
-    finally {
-      frames.mockRestore();
-      cancelFrame.mockRestore();
-      clear.mockRestore();
-    }
+      vi.restoreAllMocks();
+    });
+
+    it('renders only the visible rows plus a buffer, with spacers that keep the full height (TEC-16)', () => {
+      expect(shown().map((row) => row.dataset.taskId)).toEqual(many.slice(0, 30).map((task) => task.id));
+      const ul = other.element.querySelector('.task-list');
+      expect(ul.style.paddingBlockStart).toBe('0px');
+      expect(ul.style.paddingBlockEnd).toBe(`${(5000 - 30) * ROW}px`);
+      expect(shown()[29].getAttribute('aria-posinset')).toBe('30');
+      expect(shown()[29].getAttribute('aria-setsize')).toBe('5000');
+      expect(other.ids()).toEqual(many.map((task) => task.id));
+    });
+
+    it('renders the rows that scroll into view and keeps the rows that stay', () => {
+      scrollTo(1000 * ROW);
+      expect(shown().map((row) => row.dataset.taskId)).toEqual(many.slice(980, 1030).map((task) => task.id));
+      const ul = other.element.querySelector('.task-list');
+      expect(ul.style.paddingBlockStart).toBe(`${980 * ROW}px`);
+      expect(ul.style.paddingBlockEnd).toBe(`${(5000 - 1030) * ROW}px`);
+      expect(shown()[0].getAttribute('aria-posinset')).toBe('981');
+      const kept = rowOf('m1010');
+      scrollTo(1005 * ROW);
+      expect(rowOf('m1010')).toBe(kept);
+      expect(shown()[0].dataset.taskId).toBe('m985');
+    });
+
+    it('keeps the focused row, its neighbors, and an open menu rendered while they scroll away', () => {
+      rowOf('m5').querySelector('.status-button').click();
+      const menu = other.element.querySelector('.status-menu');
+      expect(menu.hidden).toBe(false);
+      scrollTo(2000 * ROW);
+      expect(shown().slice(0, 3).map((row) => row.dataset.taskId)).toEqual(['m4', 'm5', 'm6']);
+      expect(shown()[3].dataset.taskId).toBe('m1980');
+      expect(shown()[3].style.marginBlockStart).toBe(`${(1980 - 7) * ROW}px`);
+      expect(other.element.querySelector('.task-list').style.paddingBlockStart).toBe(`${4 * ROW}px`);
+      expect(menu.hidden).toBe(false);
+      expect(menu.contains(document.activeElement)).toBe(true);
+    });
+
+    it('offers Move down on the last rendered row, and scrolls a moved row into view with focus kept', () => {
+      const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+      const more = rowOf('m29').querySelector('.task-row__more');
+      more.click();
+      const menu = document.getElementById(more.getAttribute('aria-controls'));
+      menu.querySelector('[data-action="move-down"]').click();
+      expect(onMove).toHaveBeenCalledWith('m29', { placement: { after: 'm30' }, index: 30 });
+      more.focus();
+      const moved = [...many.slice(0, 29), many[30], many[29], ...many.slice(31)];
+      other.render(moved, ctx);
+      const row = rowOf('m29');
+      expect(row.getAttribute('aria-posinset')).toBe('31');
+      expect(document.activeElement).toBe(row.querySelector('.task-row__more'));
+      expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
+      expect(scroll.mock.contexts.at(-1)).toBe(row);
+    });
+
+    it('moves the focused last rendered row with Alt+Down past the rendered rows', () => {
+      const link = rowOf('m29').querySelector('.task-row__open');
+      link.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true, cancelable: true }));
+      expect(onMove).toHaveBeenCalledWith('m29', { placement: { after: 'm30' }, index: 30 });
+    });
+
+    it('drops a dragged row on a slot that was not rendered when the drag started, keeping the row rendered', () => {
+      const handle = rowOf('m2').querySelector('.task-row__handle');
+      const pointer = (target, type, clientY) => target.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, button: 0, pointerId: 1, clientY,
+      }));
+      pointer(handle, 'pointerdown', 2 * ROW + 20);
+      scrollTo(1000 * ROW);
+      expect(rowOf('m2').dataset.dragging).toBe('true');
+      pointer(other.element, 'pointermove', 5 * ROW);
+      expect(rowOf('m1005').dataset.drop).toBe('before');
+      pointer(other.element, 'pointerup', 5 * ROW);
+      expect(onMove).toHaveBeenCalledWith('m2', { placement: { before: 'm1005' }, index: 1004 });
+      expect(other.element.querySelector('[data-drop], [data-dragging]')).toBeNull();
+    });
   });
 
   it('moves focus to the fallback control when the last row leaves', () => {

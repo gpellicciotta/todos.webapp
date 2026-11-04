@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-04.19",
+  "version": "2026-11-04.20",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -45,14 +45,14 @@
     "js/views/editor-panel.js": "dcbdd378d350044e711e35790ece3340ba71d7bab54a74172d9552c544c4d02c",
     "js/views/import-dialog.js": "f8fdf6dffc3ba6de879b27f908c252e59ce0ea66c00b5f5a0b91d34d8109852f",
     "js/views/list-editor.js": "5fb1189825fb8e17a15af8223af0c122a3e54d4cbfa37b3e184441d86eeda66f",
-    "js/views/list.js": "e4d2c8b5de29bd5b2d343be628241d264b05890d00c9987a356d6e0a5b6b55db",
+    "js/views/list.js": "7743a2d069193ac0ad6ffa874fe97e1cdf2fa8948701820352a994565f8d54ad",
     "js/views/lists.js": "b8869625f730335fab36affbaa524d8ce81d6985334d047664458e9d826fe4a5",
     "js/views/notes.js": "86cad0fc11a4e23c8ac70eb11fa8475b248871c503c28b998136b9a0961c53ab",
     "js/views/recycle-bin.js": "2b36efbd9350ac27f6bf30c3a76a024275d5099193aa58dc09ad582a51a8729a",
-    "js/views/reorder.js": "ec7433e11895f6824f3520caa1af8eb85c38dad177c9dd71e4e158a8d79df0b2",
+    "js/views/reorder.js": "93e2d3fb769bc4300a3496509b8849894af4027ee16d3b008ac8b544f72800df",
     "js/views/settings.js": "b0c2a418b56b250add0f6dd5c465bc3e823a5412fcd743d48ee26b0207721677",
     "js/views/task-editor.js": "9f9c15bf101dfdbb48bae62c33a6bbac3b9cb2eb7658d1e8606ab285d5b55e01",
-    "js/views/task-list.js": "afcb8d821380f4cc4c85192e8663317f363a8b9f3f28f28f359a1749aeca64d0",
+    "js/views/task-list.js": "e761445610157a6d33c74afc084db33c7f4d97d8e0b84fe1ac9314772d93a7a7",
     "js/views/view-controls.js": "f7269f19592ec1985838e602beedc78314b1d5dad4c8be802972d28ce35fa334",
     "js/version.js": "85cb21e7ee735eb85d37a439facaf834ac4eec10c17f84b8a890d5cc39af5c09"
   }

@@ -2,15 +2,17 @@
  * Reordering of the list view rows: drag by the handle, Alt+Up and Alt+Down, and Move up and Move down (`LV-3`).
  *
  * Every move turns into one before or after neighbor for the store's `moveInList`.
- * Neighbors come from the shown rows, so a move skips the tasks the status filter hides.
+ * Neighbors come from the shown tasks, rendered or not, so a move skips the tasks the status filter hides.
  * A drag marks the dragged row with `data-dragging` and the drop spot with `data-drop`, as app-components.css draws.
  * A pointer within 48 px of the scroller's top or bottom edge scrolls it each frame; row midpoints count from the
- * list's top, so the drop spot follows the scrolled rows.
+ * list's top in row heights, so the drop spot follows the scrolled rows, also those rendered during the drag.
  * Escape, a lost pointer capture, or a render that replaces the dragged row cancels a drag.
  */
 
 const EDGE_PX = 48;
 const SCROLL_PX = 12;
+/** The row height when the dragged row has no layout: the 48 px of the `--row-height` token. */
+const ROW_PX = 48;
 
 /**
  * Compute the placement of a task dropped at a slot of the shown order.
@@ -66,13 +68,14 @@ export function slotAt(midpoints, y) {
  * @param {() => boolean} options.enabled tells whether moves are on, in manual order only
  * @param {(taskId: string, move: {placement: object, index: number}) => void} options.onMove stores a move
  * @param {() => HTMLElement|null} [options.scroller] the element a drag scrolls, the main column by default
+ * @param {() => string[]} [options.ids] the shown task identifiers in order, rendered or not; the rows by default
  * @returns {{step: (taskId: string, step: -1|1) => void, destroy: () => void}} the controller
  */
-export function attachReorder(list, { enabled, onMove, scroller = () => list.closest('.app__main') }) {
+export function attachReorder(list, { enabled, onMove, scroller = () => list.closest('.app__main'), ids = null }) {
   let drag = null;
 
   /**
-   * List the shown rows.
+   * List the rendered rows.
    * @returns {HTMLElement[]} the rows, top to bottom
    */
   const rowsOf = () => [...list.querySelectorAll('.task-row')];
@@ -81,7 +84,10 @@ export function attachReorder(list, { enabled, onMove, scroller = () => list.clo
    * List the shown task identifiers.
    * @returns {string[]} the identifiers, in order
    */
-  const idsOf = () => rowsOf().map((row) => row.dataset.taskId);
+  const idsOf = ids ?? (() => rowsOf().map((row) => row.dataset.taskId));
+
+  /** Clear the drop spot. */
+  const unmark = () => list.querySelectorAll('.task-row[data-drop]').forEach((row) => row.removeAttribute('data-drop'));
 
   /**
    * Move a task one row, when moves are on and a row is left in that direction.
@@ -100,11 +106,15 @@ export function attachReorder(list, { enabled, onMove, scroller = () => list.clo
    * @returns {{placement: object, index: number}|null} the move of the current slot
    */
   function mark() {
-    const move = placementAt(drag.ids, drag.row.dataset.taskId, drag.slot);
-    drag.rows.forEach((row) => row.removeAttribute('data-drop'));
+    const move = placementAt(drag.ids, drag.taskId, drag.slot);
+    unmark();
     if (move) {
-      const below = drag.slot < drag.rows.length;
-      drag.rows[below ? drag.slot : drag.rows.length - 1].dataset.drop = below ? 'before' : 'after';
+      const below = drag.slot < drag.ids.length;
+      const target = drag.ids[below ? drag.slot : drag.ids.length - 1];
+      const row = rowsOf().find((candidate) => candidate.dataset.taskId === target);
+      if (row) {
+        row.dataset.drop = below ? 'before' : 'after';
+      }
     }
     return move;
   }
@@ -123,11 +133,11 @@ export function attachReorder(list, { enabled, onMove, scroller = () => list.clo
     if (current.frame !== null) {
       cancelAnimationFrame(current.frame);
     }
-    current.rows.forEach((row) => row.removeAttribute('data-drop'));
+    unmark();
     current.row.removeAttribute('data-dragging');
     current.row.style.removeProperty('translate');
     if (commit && move) {
-      onMove(current.row.dataset.taskId, move);
+      onMove(current.taskId, move);
     }
   }
 
@@ -141,16 +151,13 @@ export function attachReorder(list, { enabled, onMove, scroller = () => list.clo
       return;
     }
     event.preventDefault();
-    const rows = rowsOf();
     const row = handle.closest('.task-row');
-    const top = list.getBoundingClientRect().top;
+    const ids = idsOf();
+    const height = row.getBoundingClientRect().height || ROW_PX;
     drag = {
-      row, rows, ids: rows.map((candidate) => candidate.dataset.taskId), slot: rows.indexOf(row),
-      startY: event.clientY - top, y: event.clientY, frame: null,
-      midpoints: rows.map((candidate) => {
-        const box = candidate.getBoundingClientRect();
-        return box.top - top + box.height / 2;
-      }),
+      row, taskId: row.dataset.taskId, ids, slot: ids.indexOf(row.dataset.taskId),
+      startY: event.clientY - list.getBoundingClientRect().top, y: event.clientY, frame: null,
+      midpoints: ids.map((_, index) => (index + 0.5) * height),
     };
     handle.setPointerCapture?.(event.pointerId);
     row.dataset.dragging = 'true';
