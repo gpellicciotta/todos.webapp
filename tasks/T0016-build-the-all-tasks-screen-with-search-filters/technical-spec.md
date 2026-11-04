@@ -19,3 +19,8 @@ Size note: the screen and its shared row and control modules merge together.
 - Integration: filters, search, and sort change the rows as specified, at 390 and 1440 px.
 
 Completion check: `npm test && npm run lint && npm run test:e2e`
+
+### Follow-Ups From Earlier Reviews
+- From T0009: read-only rows must not hover the disabled status button; selected rows need pressed feedback.
+- From T0009: use a logical inset for the selected-row edge, and replace unitless token math with tokens.
+- From T0009: the task list pattern shows completed rows under a "Status: open" filter; fix the specimen.

@@ -25,3 +25,7 @@ Completion check: `npm test && npm run lint && npm run test:e2e`
 ### Follow-Ups From Earlier Reviews
 - From T0012: handle IndexedDB `versionchange` by closing old connections, and turn `blocked` into a `StoreError`.
 - From T0014: on start, run overdue handling, then `purgeExpired`, like the service; start the overdue timer.
+- From T0031: give the current nav item a logical inset edge plus hover and active feedback; replace unitless token math.
+- From T0031: match the sync dot's ring to its actual ground, and add a bottom bar active specimen.
+- From T0030: show toasts only after a modal closes (body is inert meanwhile), and give keyboard users a quick way to reach Undo.
+- From T0030: use the existing `.visually-hidden` class for the live region instead of inline styles.
