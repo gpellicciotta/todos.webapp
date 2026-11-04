@@ -22,8 +22,8 @@ See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
 - [x] **[Read]**      Read the Components section of visual-style-guide.md and the tokens task's gallery.
-- [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
-- [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
+- [x] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
+- [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
 - [ ] **[Implement]** Write controls.css with every state, import it from style.css, and add the gallery sections.
 - [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [ ] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.

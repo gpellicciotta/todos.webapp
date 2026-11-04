@@ -24,3 +24,4 @@ Completion check: `npm test && npm run lint && npm run test:e2e`
 
 ### Follow-Ups From Earlier Reviews
 - From T0012: handle IndexedDB `versionchange` by closing old connections, and turn `blocked` into a `StoreError`.
+- From T0014: on start, run overdue handling, then `purgeExpired`, like the service; start the overdue timer.

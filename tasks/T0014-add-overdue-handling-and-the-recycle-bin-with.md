@@ -72,3 +72,6 @@ See technical-spec.md for decisions, files, size, and tests.
 - [2026-11-04] **[Complete]**
   Task completed successfully.
 
+- [2026-11-04] **[Doc]**
+  Size note: 891 lines in 9 files passed the typical line, below the large line; tests are half of it.
+
