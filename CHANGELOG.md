@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Made the app an installable offline PWA with a manifest, app icons, and a versioned service worker precache.
 - Feature: Added the app shell with the hash router, compact and wide layouts, navigation, and app start-up.
 - Feature: Applied design system review follow-ups: nav item edge, token math, sync dot ring, live region class, and toast Undo.
 - Feature: Handled IndexedDB version changes and blocked upgrades, and added change subscriptions to the store.

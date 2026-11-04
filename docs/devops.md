@@ -32,6 +32,31 @@ npm run test:e2e     # Playwright end-to-end tests, from tests/e2e/
 - [serve.mjs](../scripts/serve.mjs) uses Node.js built-ins only and disables caching; pass `--port` or `--root` to change them.
 - Playwright starts and stops its own server on port 8754; set `E2E_PORT` to use another port.
 
+### Service Worker and Offline Use
+[service-worker.js](../src/service-worker.js) precaches the app shell and serves it cache first.
+- Keep its `PRECACHE` list complete: add every new file under `src/`, outside `src/demo/`.
+- [precache.test.js](../tests/unit/precache.test.js) fails on a missing or a stale entry.
+- Bump `VERSION` with every change to a precached file, or installed apps keep the old files.
+- The new worker installs on the next visit, then deletes the old cache.
+- During development, the worker also serves stale files: tick Update on reload or Bypass for network.
+  Both sit under Application, then Service workers, in Chrome DevTools.
+
+Test offline use by hand:
+1. Run `npm run serve` and open `http://127.0.0.1:8080/` once.
+2. In DevTools, under Network, switch the throttling to Offline.
+3. Reload; the app must start and navigate without network.
+
+[pwa.spec.js](../tests/e2e/pwa.spec.js) runs the same check with `context.setOffline(true)`.
+It also checks the manifest type and fields, and Chromium's installability errors.
+
+### App Icons
+[app-icon.svg](../src/img/app-icon.svg) is the source; the PNG icons of the manifest are rendered from it.
+Render them again after changing the SVG:
+
+```bash
+node scripts/render-app-icons.mjs
+```
+
 ---
 
 ## Wireframes

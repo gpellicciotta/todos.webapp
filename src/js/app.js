@@ -1,5 +1,5 @@
 /**
- * App entry point: theme, local store, start-up maintenance, shell, routes, and shortcuts.
+ * App entry point: theme, service worker, local store, start-up maintenance, shell, routes, and shortcuts.
  *
  * On start the app cancels overdue `cancel` tasks, then purges expired recycle bin entries,
  * and then keeps the overdue timer running (`OVD-4`, `OVD-5`, `BIN-5`).
@@ -13,6 +13,15 @@ import { openStore } from './store/db.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { createToaster } from './ui/toast.js';
+
+/**
+ * Register the service worker that precaches the app shell, so the app starts offline (`TEC-1`).
+ */
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').catch((error) => console.error('Service worker failed:', error));
+  }
+}
 
 /**
  * Tell whether a key event comes from a text field, where shortcuts never fire.
@@ -122,4 +131,5 @@ async function start() {
 }
 
 applyTheme(document, readThemePreference());
+registerServiceWorker();
 start();
