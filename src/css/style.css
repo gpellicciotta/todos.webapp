@@ -1,13 +1,14 @@
 /*
  * The stylesheet entry point: the only stylesheet a page links.
  *
- * It imports the font faces and the design tokens, then sets page-wide base styles.
- * Component styles join it as partials in later tasks.
+ * It imports the font faces, the design tokens, and the controls, then sets page-wide base styles.
+ * Later component partials join the import list after controls.css.
  * Rules here use semantic tokens only; raw values belong in tokens.css.
  */
 
 @import url('fonts.css');
 @import url('tokens.css');
+@import url('controls.css');
 
 /* Base: box model, page ground, and body text. */
 *,

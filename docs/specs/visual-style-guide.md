@@ -5,12 +5,13 @@ The [ui-design.md](ui-design.md) spec defines screens and behavior; this guide d
 ---
 
 ## Status of the System
-The tokens, the font, and the gallery's token sections exist; components follow in later tasks.
+The tokens, the font, the basic controls, and their gallery sections exist; app components follow later.
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
 - [tokens.css](../../src/css/tokens.css): primitive and semantic tokens and both themes.
 - [fonts.css](../../src/css/fonts.css): the self-hosted Inter font face.
-- [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token group, with a theme switch.
-- `src/css/components.css`: base components and patterns, added with the first component task.
+- [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
+- [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token group and control, with a theme switch.
+- `src/css/app-components.css`: the task row, navigation, and other app components, added in a later task.
 
 Serve the gallery with `npm run serve`, then open `/demo/visual-style-gallery.html`.
 Change the stylesheets first, then the gallery and this guide in the same commit.
@@ -57,22 +58,25 @@ Definitions live in [tokens.css](../../src/css/tokens.css); the gallery's Color 
 - Violet ramp: `--violet-50` to `--violet-950`, the one signal hue.
 - Grounds: `--color-bg` for the page, `--color-surface` for panels and dialogs, `--color-surface-sunken` for wells and chips.
 - Hover and selection: `--color-hover-bg` for hovered rows, `--color-selected-bg` for the current row, route, and pressed toggles.
+- Pressed: `--color-active-bg` for gray controls while pressed; only text and link colors sit on it.
 - Text: `--color-text`, `--color-text-muted` for secondary lines and done tasks, `--color-text-disabled` for disabled controls only.
 - Borders: `--color-border` for dividers, `--color-border-strong` for controls that need 3:1 contrast.
 - Signal: `--color-signal` for the main action and overdue chips, `--color-on-signal` for text on it.
-- Signal states: `--color-signal-hover` for the hovered main action, `--color-link` for links.
+- Signal states: `--color-signal-hover` and `--color-signal-active` for the hovered and pressed main action.
+- Links: `--color-link` for links and quiet buttons.
 - Focus: `--focus-ring` on every interactive element, drawn in `--color-focus` with a gap to the element.
-- Shadow: `--color-shadow` tints both elevation levels.
+- Shadow and scrim: `--color-shadow` tints both elevation levels, `--color-backdrop` dims the page behind modal dialogs.
 
 Signal values and their lowest contrast ratios, checked by [tokens.test.js](../../tests/unit/tokens.test.js):
 
-| Token                  | Light               | Dark                | Lowest ratio, light / dark |
-| :--------------------- | :------------------ | :------------------ | :------------------------- |
-| `--color-signal`       | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds     |
-| `--color-signal-hover` | violet 700, #6d28d9 | violet 300, #c0a9fa | 7.10 / 9.18 with on-signal |
-| `--color-on-signal`    | gray 0, #ffffff     | gray 950, #111216   | 5.70 / 6.88 on signal      |
-| `--color-link`         | violet 700, #6d28d9 | violet 300, #c0a9fa | 6.14 / 6.60 on grounds     |
-| `--color-focus`        | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds     |
+| Token                   | Light               | Dark                | Lowest ratio, light / dark  |
+| :---------------------- | :------------------ | :------------------ | :-------------------------- |
+| `--color-signal`        | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds      |
+| `--color-signal-hover`  | violet 700, #6d28d9 | violet 300, #c0a9fa | 7.10 / 9.18 with on-signal  |
+| `--color-signal-active` | violet 800, #5b21b6 | violet 200, #d9cbfc | 8.98 / 12.39 with on-signal |
+| `--color-on-signal`     | gray 0, #ffffff     | gray 950, #111216   | 5.70 / 6.88 on signal       |
+| `--color-link`          | violet 700, #6d28d9 | violet 300, #c0a9fa | 6.14 / 6.60 on grounds      |
+| `--color-focus`         | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds      |
 
 ### Typography
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
@@ -88,9 +92,13 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - `--space-1` to `--space-8`: a 4 px based scale; rows use `--space-2` inside and no gap between.
 - `--radius-sm` for chips, `--radius-md` for controls and rows, `--radius-lg` for dialogs and panels.
 - `--border-width` for every border; `--focus-ring-width` and `--focus-ring-offset` size the focus ring.
+- `--border-width-strong`: the leading edge of error banners.
 - `--target-min`: 44 px, the minimum size of every control.
+- `--icon-size` and `--icon-stroke`: every icon is 20 px with one stroke width.
 - `--row-height`: 48 px, the task row height.
 - Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-editor` size the side panels.
+- Control minimums: `--width-menu` for menus and popovers, `--width-segment-min` for segmented options.
+- Text minimums: `--width-text-min` before a banner's action wraps, `--height-textarea-min` for textareas.
 
 ### Elevation, Layers, and Motion
 - `--elevation-1` for popovers and menus, `--elevation-2` for dialogs and the wide editor panel.
@@ -101,10 +109,36 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 
 ## Components
 Each component gets a gallery section with every state: default, hover, focus-visible, active, disabled, and error.
+Gallery specimens force hover, active, and focus with `.is-hover`, `.is-active`, and `.is-focus`; app markup never uses them.
 
-- Button: `.button` in the signal color for the one main action of a view, `--secondary` in gray for others.
+### Controls
+Defined in [controls.css](../../src/css/controls.css); keyboard behavior for menus, dialogs, and toasts comes later.
+
+- [Button](../../src/demo/visual-style-gallery.html#button): `.button` in the signal color for the one main action of a view.
+  Use `--secondary` in gray for other actions and `--quiet` for low-emphasis ones, such as Clear all and Undo.
   Never place two signal buttons side by side.
-- Icon button: a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
+- [Icon button](../../src/demo/visual-style-gallery.html#icon-button): a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
+  Toggles set `aria-pressed`; the pressed state adds the signal outline and keeps hover and active grounds.
+- [Field](../../src/demo/visual-style-gallery.html#field): label, control, optional hint, character counter, and error message.
+  Use it for text, search, date, and time inputs, textareas, and selects.
+  Invalid controls set `aria-invalid="true"` and `aria-describedby`; the error line adds an alert icon and text.
+- [Checkbox and radio](../../src/demo/visual-style-gallery.html#checkbox-radio): native inputs in the signal accent, inside a label row of `--target-min`.
+  Group them in a `fieldset` with a `legend`.
+- [Chip](../../src/demo/visual-style-gallery.html#chip): a small sunken label for due times, lists, and note counts; the overdue chip uses the signal color and an icon.
+  Chips are not buttons; a removable chip holds a separate remove icon button.
+- [Filter chip](../../src/demo/visual-style-gallery.html#filter-chip): a toggle chip with `aria-pressed` that opens a popover and shows its active value.
+- [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row, for status in the editor and order buttons in the list view.
+  The checked option adds a signal outline and semibold text, so it never relies on color alone.
+- [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored panels at `--elevation-1` that close on Escape and outside clicks.
+  Choice menus use `menuitemradio` items with a check icon on the current one.
+- [Dialog](../../src/demo/visual-style-gallery.html#dialog): a native `<dialog>` with a title, a body, and actions at the end.
+  Below 64rem it is a full-width sheet, and full height when opened as a modal.
+- [Banner](../../src/demo/visual-style-gallery.html#banner): a full-width notice above the content with an icon, one or two sentences, and an optional action.
+  Errors use `--error`, `role="alert"`, the signal outline, and an alert icon, never a second hue.
+- [Toast](../../src/demo/visual-style-gallery.html#toast): a short message at the bottom with an optional Undo, announced through a live region.
+  Never use a toast as the only place an error appears.
+
+### App Components
 - Status button: the status icon of the task row, opening a status menu; the icon shapes are:
   - `todo`: an empty circle.
   - `in-progress`: a half-filled circle.
@@ -112,15 +146,6 @@ Each component gets a gallery section with every state: default, hover, focus-vi
   - `cancelled`: a circle with a dash, with struck-through muted text.
 - Task row: status button, description, chips, and a More button at `--row-height`.
   States: default, hover, focus-visible, selected, dragging, drop target, done, and read-only.
-- Chip: a small sunken label for due times, lists, and note counts; the overdue chip uses the signal color and an icon.
-- Filter chip: a toggle chip with `aria-pressed` that opens a popover and shows its active value.
-- Segmented control: radio buttons in one row, used for status in the editor and order buttons in the list view.
-- Field: label, control, optional hint, character counter, and error message.
-  Invalid controls set `aria-invalid="true"` and `aria-describedby`; the border change is never the only cue.
-- Menu and popover: anchored panels at `--elevation-1` that close on Escape and outside clicks.
-- Dialog: a native `<dialog>` with a title, a body, and actions at the end; a full-height sheet in compact layouts.
-- Banner: a full-width notice above the content with an icon, one or two sentences, and an optional action.
-- Toast: a short message at the bottom with an optional Undo, announced through a live region.
 - Sync indicator: an icon and label per sync state, plus a dot for unseen sync log entries.
 - Navigation: the compact bottom bar and the wide sidebar, both marking the current route with `aria-current`.
 - Empty state: a short sentence, an optional icon, and at most two actions.
@@ -148,6 +173,7 @@ Each component gets a gallery section with every state: default, hover, focus-vi
 ## Accessibility Rules
 - Keep every text and background token pair at WCAG 2.2 AA contrast in both themes (`TEC-15`).
 - Keep the signal color at 3:1 against its ground when it marks a non-text state.
+- Keep icon colors at 3:1 on every ground a control shows, including hover and pressed grounds.
 - Keep touch targets at least `--target-min` in both dimensions.
 - Use real `<button>`, `<a href>`, `<label>`, `<input>`, and `<dialog>` elements; never clickable `<div>` elements.
 - Follow `prefers-color-scheme` by default, and allow `data-theme="light"` or `data-theme="dark"` on `<html>`.

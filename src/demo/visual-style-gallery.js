@@ -1,5 +1,5 @@
 /**
- * Gallery behavior: the theme switch, live token values, and the motion demo.
+ * Gallery behavior: the theme switch, live token values, the motion demo, and dialog specimens.
  *
  * The theme switch sets `data-theme` on <html>, or removes it to follow the system theme.
  */
@@ -65,6 +65,11 @@ play.addEventListener('click', () => {
   play.setAttribute('aria-pressed', String(playing));
   motion.dataset.state = playing ? 'end' : 'start';
 });
+
+// Dialog specimens: open a native modal dialog; its form closes it without script.
+for (const button of document.querySelectorAll('[data-open-dialog]')) {
+  button.addEventListener('click', () => document.getElementById(button.dataset.openDialog).showModal());
+}
 
 // Browsers may restore a checked radio on reload, so start from the checked one.
 applyTheme(document.querySelector('.theme-switch input:checked')?.value ?? 'system');

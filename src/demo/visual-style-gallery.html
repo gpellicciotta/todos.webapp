@@ -14,7 +14,7 @@
       <div class="gallery-header__inner">
         <h1>ToDo's visual style gallery</h1>
         <p class="gallery-lead">
-          Every design token of <a href="../css/style.css">style.css</a>, rendered from the real stylesheet.
+          Every design token and control of <a href="../css/style.css">style.css</a>, rendered from the real stylesheet.
           Usage rules live in the visual style guide.
         </p>
         <fieldset class="theme-switch">
@@ -24,7 +24,8 @@
           <label><input type="radio" name="theme" value="dark"> Dark</label>
         </fieldset>
         <nav class="gallery-nav" aria-label="Gallery sections">
-          <ul>
+          <p class="gallery-nav__label" id="nav-tokens">Tokens</p>
+          <ul aria-labelledby="nav-tokens">
             <li><a href="#color">Color</a></li>
             <li><a href="#typography">Typography</a></li>
             <li><a href="#spacing">Spacing</a></li>
@@ -33,6 +34,21 @@
             <li><a href="#elevation">Elevation</a></li>
             <li><a href="#layers">Layers</a></li>
             <li><a href="#motion">Motion</a></li>
+          </ul>
+          <p class="gallery-nav__label" id="nav-controls">Controls</p>
+          <ul aria-labelledby="nav-controls">
+            <li><a href="#button">Button</a></li>
+            <li><a href="#icon-button">Icon button</a></li>
+            <li><a href="#field">Field</a></li>
+            <li><a href="#checkbox-radio">Checkbox and radio</a></li>
+            <li><a href="#chip">Chip</a></li>
+            <li><a href="#filter-chip">Filter chip</a></li>
+            <li><a href="#segmented-control">Segmented control</a></li>
+            <li><a href="#menu">Menu</a></li>
+            <li><a href="#popover">Popover</a></li>
+            <li><a href="#dialog">Dialog</a></li>
+            <li><a href="#banner">Banner</a></li>
+            <li><a href="#toast">Toast</a></li>
           </ul>
         </nav>
       </div>
@@ -49,6 +65,7 @@
           <li class="swatch"><span class="swatch__chip swatch--color-surface"></span><code>--color-surface</code><span class="swatch__value"></span><span class="swatch__role">Panels and dialogs</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-surface-sunken"></span><code>--color-surface-sunken</code><span class="swatch__value"></span><span class="swatch__role">Wells and chips</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-hover-bg"></span><code>--color-hover-bg</code><span class="swatch__value"></span><span class="swatch__role">Hovered rows and buttons</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-active-bg"></span><code>--color-active-bg</code><span class="swatch__value"></span><span class="swatch__role">Pressed gray controls</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-selected-bg"></span><code>--color-selected-bg</code><span class="swatch__value"></span><span class="swatch__role">Current row and route</span></li>
         </ul>
 
@@ -65,10 +82,12 @@
         <ul class="swatches">
           <li class="swatch"><span class="swatch__chip swatch--color-signal"></span><code>--color-signal</code><span class="swatch__value"></span><span class="swatch__role">Main action, overdue</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-signal-hover"></span><code>--color-signal-hover</code><span class="swatch__value"></span><span class="swatch__role">Main action on hover</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-signal-active"></span><code>--color-signal-active</code><span class="swatch__value"></span><span class="swatch__role">Main action while pressed</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-on-signal"></span><code>--color-on-signal</code><span class="swatch__value"></span><span class="swatch__role">Text on signal</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-link"></span><code>--color-link</code><span class="swatch__value"></span><span class="swatch__role">Links</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-focus"></span><code>--color-focus</code><span class="swatch__value"></span><span class="swatch__role">Focus ring</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-shadow"></span><code>--color-shadow</code><span class="swatch__value"></span><span class="swatch__role">Elevation shadows</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-backdrop"></span><code>--color-backdrop</code><span class="swatch__value"></span><span class="swatch__role">Scrim behind modal dialogs</span></li>
         </ul>
 
         <h3>Text on every ground</h3>
@@ -116,6 +135,15 @@
           <li class="pair swatch--color-signal-hover">
             <code class="pair__name pair__on-signal">--color-signal-hover</code>
             <span class="pair__on-signal">Add task</span>
+          </li>
+          <li class="pair swatch--color-signal-active">
+            <code class="pair__name pair__on-signal">--color-signal-active</code>
+            <span class="pair__on-signal">Add task</span>
+          </li>
+          <li class="pair swatch--color-active-bg">
+            <code class="pair__name">--color-active-bg</code>
+            <span class="pair__text">Export backup</span>
+            <a href="#color">Clear all</a>
           </li>
         </ul>
 
@@ -213,14 +241,20 @@
 
       <section class="gallery-section" id="sizes" aria-labelledby="sizes-title">
         <h2 id="sizes-title">Sizes</h2>
-        <p>Touch targets, rows, layout widths, and line widths.</p>
+        <p>Touch targets, icons, rows, layout widths, and line widths.</p>
         <dl class="specimens">
           <div class="specimen"><dt><code>--target-min</code> <span data-token="--target-min"></span></dt><dd><span class="size-box size--target"></span></dd></div>
+          <div class="specimen"><dt><code>--icon-size</code> <span data-token="--icon-size"></span>, stroke <span data-token="--icon-stroke"></span></dt><dd><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></dd></div>
           <div class="specimen"><dt><code>--row-height</code> <span data-token="--row-height"></span></dt><dd><span class="size-row">Water the plants</span></dd></div>
           <div class="specimen"><dt><code>--width-sidebar</code> <span data-token="--width-sidebar"></span></dt><dd><span class="width-bar width--sidebar"></span></dd></div>
           <div class="specimen"><dt><code>--width-editor</code> <span data-token="--width-editor"></span></dt><dd><span class="width-bar width--editor"></span></dd></div>
           <div class="specimen"><dt><code>--width-main</code> <span data-token="--width-main"></span></dt><dd><span class="width-bar width--main"></span></dd></div>
+          <div class="specimen"><dt><code>--width-menu</code> <span data-token="--width-menu"></span>, the narrowest menu or popover</dt><dd><span class="width-bar width--menu"></span></dd></div>
+          <div class="specimen"><dt><code>--width-text-min</code> <span data-token="--width-text-min"></span>, the narrowest banner text before its action wraps</dt><dd><span class="width-bar width--text-min"></span></dd></div>
+          <div class="specimen"><dt><code>--width-segment-min</code> <span data-token="--width-segment-min"></span>, the narrowest segmented option</dt><dd><span class="width-bar width--segment-min"></span></dd></div>
+          <div class="specimen"><dt><code>--height-textarea-min</code> <span data-token="--height-textarea-min"></span>, the lowest textarea</dt><dd><span class="size-box size--textarea"></span></dd></div>
           <div class="specimen"><dt><code>--border-width</code> <span data-token="--border-width"></span></dt><dd><span class="size-box size--border"></span></dd></div>
+          <div class="specimen"><dt><code>--border-width-strong</code> <span data-token="--border-width-strong"></span>, the leading edge of error banners</dt><dd><span class="size-box size--border-strong"></span></dd></div>
           <div class="specimen"><dt><code>--focus-ring</code> <span data-token="--focus-ring-width"></span> wide, <span data-token="--focus-ring-offset"></span> gap</dt><dd><span class="size-box size--focus"></span></dd></div>
         </dl>
       </section>
@@ -256,6 +290,328 @@
             <div class="specimen"><dt><code>--duration-base</code> <span data-token="--duration-base"></span></dt><dd class="motion__track"><span class="motion__dot motion--base"></span></dd></div>
             <div class="specimen"><dt><code>--ease-standard</code></dt><dd><span data-token="--ease-standard"></span></dd></div>
           </dl>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="button" aria-labelledby="button-title" data-gallery-group="controls">
+        <h2 id="button-title">Button</h2>
+        <p>The signal button marks the one main action of a view; secondary and quiet buttons carry the others.</p>
+
+        <h3>Signal</h3>
+        <ul class="states">
+          <li class="state"><button class="button" type="button">Add task</button><span class="state__label">Default</span></li>
+          <li class="state"><button class="button is-hover" type="button">Add task</button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="button is-focus" type="button">Add task</button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="button is-active" type="button">Add task</button><span class="state__label">Active</span></li>
+          <li class="state"><button class="button" type="button" disabled>Add task</button><span class="state__label">Disabled</span></li>
+          <li class="state">
+            <button class="button" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Add task</button>
+            <span class="state__label">With icon</span>
+          </li>
+        </ul>
+
+        <h3>Secondary</h3>
+        <ul class="states">
+          <li class="state"><button class="button button--secondary" type="button">Export backup</button><span class="state__label">Default</span></li>
+          <li class="state"><button class="button button--secondary is-hover" type="button">Export backup</button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="button button--secondary is-focus" type="button">Export backup</button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="button button--secondary is-active" type="button">Export backup</button><span class="state__label">Active</span></li>
+          <li class="state"><button class="button button--secondary" type="button" disabled>Export backup</button><span class="state__label">Disabled</span></li>
+          <li class="state">
+            <button class="button button--secondary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Delete task</button>
+            <span class="state__label">With icon</span>
+          </li>
+        </ul>
+
+        <h3>Quiet</h3>
+        <ul class="states">
+          <li class="state"><button class="button button--quiet" type="button">Clear all</button><span class="state__label">Default</span></li>
+          <li class="state"><button class="button button--quiet is-hover" type="button">Clear all</button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="button button--quiet is-focus" type="button">Clear all</button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="button button--quiet is-active" type="button">Clear all</button><span class="state__label">Active</span></li>
+          <li class="state"><button class="button button--quiet" type="button" disabled>Clear all</button><span class="state__label">Disabled</span></li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="icon-button" aria-labelledby="icon-button-title" data-gallery-group="controls">
+        <h2 id="icon-button-title">Icon button</h2>
+        <p>A square button with one icon; its <code>aria-label</code> names the action and its object.</p>
+        <ul class="states">
+          <li class="state"><button class="icon-button" type="button" aria-label="More actions for Water the plants"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button><span class="state__label">Default</span></li>
+          <li class="state"><button class="icon-button is-hover" type="button" aria-label="More actions for Buy oat milk"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="icon-button is-focus" type="button" aria-label="More actions for Call the plumber"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="icon-button is-active" type="button" aria-label="More actions for Book a table"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button><span class="state__label">Active</span></li>
+          <li class="state"><button class="icon-button" type="button" aria-label="Sort descending" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg></button><span class="state__label">Pressed</span></li>
+          <li class="state"><button class="icon-button is-hover" type="button" aria-label="Sort tasks descending" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg></button><span class="state__label">Pressed, hover</span></li>
+          <li class="state"><button class="icon-button is-active" type="button" aria-label="Sort lists descending" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg></button><span class="state__label">Pressed, active</span></li>
+          <li class="state"><button class="icon-button" type="button" aria-label="Close the task editor" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button><span class="state__label">Disabled</span></li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="field" aria-labelledby="field-title" data-gallery-group="controls">
+        <h2 id="field-title">Field</h2>
+        <p>A label, one control, and optional hint, counter, and error lines; the error never relies on color alone.</p>
+
+        <h3>Text input states</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label class="field__label" for="field-default">Description</label>
+            <input class="field__control" id="field-default" type="text" placeholder="Add a task" aria-describedby="field-default-hint">
+            <p class="field__hint" id="field-default-hint">Default, with a placeholder and a hint.</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-hover">Description</label>
+            <input class="field__control is-hover" id="field-hover" type="text" value="Water the plants">
+            <p class="field__hint">Hover.</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-focus">Description</label>
+            <input class="field__control is-focus" id="field-focus" type="text" value="Water the plants">
+            <p class="field__hint">Focus-visible.</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-disabled">Description</label>
+            <input class="field__control" id="field-disabled" type="text" value="Water the plants" disabled>
+            <p class="field__hint">Disabled.</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-readonly">Description</label>
+            <input class="field__control" id="field-readonly" type="text" value="Water the plants" readonly>
+            <p class="field__hint">Read-only, for viewers of a shared list.</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-error">Description</label>
+            <input class="field__control" id="field-error" type="text" value="" aria-invalid="true" aria-describedby="field-error-message">
+            <p class="field__error" id="field-error-message"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Enter a description.</p>
+          </div>
+        </div>
+
+        <h3>Control types</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label class="field__label" for="field-textarea">Note</label>
+            <textarea class="field__control" id="field-textarea" aria-describedby="field-textarea-counter">Ask the neighbors to water the plants while we are away.</textarea>
+            <div class="field__meta">
+              <p class="field__hint">Notes keep their line breaks.</p>
+              <p class="field__counter" id="field-textarea-counter">56 / 500</p>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-search">Search</label>
+            <input class="field__control" id="field-search" type="search" placeholder="Search tasks and notes">
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-select">Sort by</label>
+            <select class="field__control" id="field-select">
+              <option>Manual order</option>
+              <option>Due date</option>
+              <option>Last activity</option>
+              <option>Description</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-date">Due date</label>
+            <input class="field__control" id="field-date" type="date" value="2026-11-05">
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-time">Due time</label>
+            <input class="field__control" id="field-time" type="time" value="18:00">
+          </div>
+          <div class="field">
+            <label class="field__label" for="field-date-error">Due date</label>
+            <input class="field__control" id="field-date-error" type="date" aria-invalid="true" aria-describedby="field-date-error-message">
+            <p class="field__error" id="field-date-error-message"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Enter a date to set a time.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="checkbox-radio" aria-labelledby="checkbox-radio-title" data-gallery-group="controls">
+        <h2 id="checkbox-radio-title">Checkbox and radio</h2>
+        <p>Native inputs in the signal accent color; the whole label row is the touch target.</p>
+        <div class="field-grid">
+          <fieldset class="choice-group">
+            <legend>Status filter</legend>
+            <label class="choice"><input type="checkbox" checked> To do</label>
+            <label class="choice is-hover"><input type="checkbox" checked> In progress (hover)</label>
+            <label class="choice"><input class="is-focus" type="checkbox"> Completed (focus-visible)</label>
+            <label class="choice"><input type="checkbox" disabled> Cancelled (disabled)</label>
+            <label class="choice"><input type="checkbox" checked disabled> Shared lists only (checked, disabled)</label>
+          </fieldset>
+          <fieldset class="choice-group">
+            <legend>Overdue behavior</legend>
+            <label class="choice"><input type="radio" name="overdue" value="keep" checked> Keep open</label>
+            <label class="choice is-hover"><input type="radio" name="overdue" value="cancel"> Cancel automatically (hover)</label>
+            <label class="choice"><input class="is-focus" type="radio" name="overdue-focus" value="cancel"> Cancel automatically (focus-visible)</label>
+            <label class="choice"><input type="radio" name="overdue-disabled" value="none" disabled> Ask each time (disabled)</label>
+          </fieldset>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="chip" aria-labelledby="chip-title" data-gallery-group="controls">
+        <h2 id="chip-title">Chip</h2>
+        <p>Small sunken labels for due times, lists, and note counts; overdue chips add the signal color and an icon.</p>
+        <ul class="states">
+          <li class="state"><span class="chip"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Tomorrow 18:00</span><span class="state__label">Due</span></li>
+          <li class="state"><span class="chip chip--overdue"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Overdue</span><span class="state__label">Overdue</span></li>
+          <li class="state"><span class="chip">Groceries</span><span class="state__label">List</span></li>
+          <li class="state"><span class="chip">+1</span><span class="state__label">More lists</span></li>
+          <li class="state"><span class="chip"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h14v11l-5 5H5z"/></svg>3 notes</span><span class="state__label">Notes</span></li>
+          <li class="state">
+            <span class="chip chip--removable">Groceries<button class="icon-button" type="button" aria-label="Remove from Groceries"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+            <span class="state__label">Removable</span>
+          </li>
+          <li class="state">
+            <span class="chip chip--removable">Errands<button class="icon-button is-focus" type="button" aria-label="Remove from Errands"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+            <span class="state__label">Removable, focus-visible</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="filter-chip" aria-labelledby="filter-chip-title" data-gallery-group="controls">
+        <h2 id="filter-chip-title">Filter chip</h2>
+        <p>A toggle chip with <code>aria-pressed</code> that opens a filter popover and shows its active value.</p>
+        <ul class="states">
+          <li class="state"><button class="filter-chip" type="button" aria-pressed="false">Status<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Default</span></li>
+          <li class="state"><button class="filter-chip is-hover" type="button" aria-pressed="false">Lists<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="filter-chip is-focus" type="button" aria-pressed="false">Due<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="filter-chip is-active" type="button" aria-pressed="false">Due<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Active</span></li>
+          <li class="state"><button class="filter-chip" type="button" aria-pressed="true">Status: <span class="filter-chip__value">open</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, with a value</span></li>
+          <li class="state"><button class="filter-chip is-hover" type="button" aria-pressed="true">Lists: <span class="filter-chip__value">Groceries</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, hover</span></li>
+          <li class="state"><button class="filter-chip is-active" type="button" aria-pressed="true">Due: <span class="filter-chip__value">this week</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, active</span></li>
+          <li class="state"><button class="filter-chip" type="button" aria-pressed="false" disabled>Lists<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Disabled</span></li>
+          <li class="state"><button class="button button--quiet" type="button">Clear all</button><span class="state__label">Clear all</span></li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="segmented-control" aria-labelledby="segmented-control-title" data-gallery-group="controls">
+        <h2 id="segmented-control-title">Segmented control</h2>
+        <p>Radio buttons in one row; the checked option adds a signal outline and semibold text.</p>
+        <p>In the first group, In progress shows hover and Cancelled shows focus-visible.</p>
+        <div class="field-grid field-grid--wide">
+          <fieldset class="segmented">
+            <legend>Status</legend>
+            <div class="segmented__options">
+              <label class="segmented__option"><input type="radio" name="status" value="todo"> To do</label>
+              <label class="segmented__option is-hover"><input type="radio" name="status" value="in-progress"> In progress</label>
+              <label class="segmented__option"><input type="radio" name="status" value="completed" checked> Completed</label>
+              <label class="segmented__option is-focus"><input type="radio" name="status" value="cancelled"> Cancelled</label>
+            </div>
+          </fieldset>
+          <fieldset class="segmented">
+            <legend>Status, read-only</legend>
+            <div class="segmented__options">
+              <label class="segmented__option"><input type="radio" name="status-disabled" value="todo" disabled> To do</label>
+              <label class="segmented__option"><input type="radio" name="status-disabled" value="in-progress" checked disabled> In progress</label>
+              <label class="segmented__option"><input type="radio" name="status-disabled" value="completed" disabled> Completed</label>
+              <label class="segmented__option"><input type="radio" name="status-disabled" value="cancelled" disabled> Cancelled</label>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="menu" aria-labelledby="menu-title" data-gallery-group="controls">
+        <h2 id="menu-title">Menu</h2>
+        <p>Anchored lists of actions at level 1 elevation; keyboard behavior arrives with the menu module.</p>
+        <div class="stage">
+          <div class="menu" role="menu" aria-label="Status of Water the plants">
+            <button class="menu__item" type="button" role="menuitemradio" aria-checked="true"><svg class="icon menu__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5 9-10"/></svg>To do</button>
+            <button class="menu__item is-hover" type="button" role="menuitemradio" aria-checked="false"><svg class="icon menu__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5 9-10"/></svg>In progress (hover)</button>
+            <button class="menu__item is-focus" type="button" role="menuitemradio" aria-checked="false"><svg class="icon menu__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5 9-10"/></svg>Completed (focus-visible)</button>
+            <button class="menu__item" type="button" role="menuitemradio" aria-checked="false"><svg class="icon menu__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5 9-10"/></svg>Cancelled</button>
+          </div>
+          <div class="menu" role="menu" aria-label="Actions for Buy oat milk">
+            <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Add to list</button>
+            <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg>Remove from this list</button>
+            <div class="menu__separator" role="separator"></div>
+            <button class="menu__item is-active" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 15 6-6 6 6"/></svg>Move up (active)</button>
+            <button class="menu__item" type="button" role="menuitem" aria-disabled="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>Move down (disabled)</button>
+            <div class="menu__separator" role="separator"></div>
+            <button class="menu__item" type="button" role="menuitem"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Delete</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="popover" aria-labelledby="popover-title" data-gallery-group="controls">
+        <h2 id="popover-title">Popover</h2>
+        <p>An anchored panel with a title, content such as filter choices, and actions at the end.</p>
+        <p>The Clear button shows the focus-visible state.</p>
+        <div class="stage">
+          <div class="popover" role="group" aria-labelledby="popover-status-title">
+            <h3 class="popover__title" id="popover-status-title">Status</h3>
+            <div class="choice-group">
+              <label class="choice"><input type="checkbox" checked> To do</label>
+              <label class="choice"><input type="checkbox" checked> In progress</label>
+              <label class="choice"><input type="checkbox"> Completed</label>
+              <label class="choice"><input type="checkbox"> Cancelled</label>
+            </div>
+            <div class="popover__actions">
+              <button class="button button--quiet is-focus" type="button">Clear</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="dialog" aria-labelledby="dialog-title" data-gallery-group="controls">
+        <h2 id="dialog-title">Dialog</h2>
+        <p>A native <code>&lt;dialog&gt;</code> at level 2 elevation; below 64rem it becomes a full-width sheet.</p>
+        <p>The Delete list button shows the focus-visible state.</p>
+        <div class="stage stage--dialog">
+          <dialog class="dialog" open aria-labelledby="dialog-static-title">
+            <div class="dialog__header"><h3 class="dialog__title" id="dialog-static-title">Delete the list Groceries?</h3></div>
+            <div class="dialog__body"><p>The list moves to the recycle bin. Its tasks stay in your other lists.</p></div>
+            <div class="dialog__actions">
+              <button class="button button--secondary" type="button">Keep</button>
+              <button class="button is-focus" type="button">Delete list</button>
+            </div>
+          </dialog>
+        </div>
+        <p><button class="button button--secondary" type="button" data-open-dialog="dialog-modal">Open as a modal</button></p>
+        <dialog class="dialog" id="dialog-modal" aria-labelledby="dialog-modal-title">
+          <form method="dialog">
+            <div class="dialog__header"><h3 class="dialog__title" id="dialog-modal-title">Import a backup?</h3></div>
+            <div class="dialog__body"><p>Importing adds the lists and tasks of the file. Nothing is removed.</p></div>
+            <div class="dialog__actions">
+              <button class="button button--secondary" type="submit" value="cancel">Cancel</button>
+              <button class="button" type="submit" value="import">Import</button>
+            </div>
+          </form>
+        </dialog>
+      </section>
+
+      <section class="gallery-section" id="banner" aria-labelledby="banner-title" data-gallery-group="controls">
+        <h2 id="banner-title">Banner</h2>
+        <p>A full-width notice for lasting states; errors use the signal outline and an alert icon, never a second hue.</p>
+        <p>The Restore button shows the focus-visible state.</p>
+        <div class="stack">
+          <div class="banner" role="status">
+            <svg class="icon banner__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+            <p class="banner__text">You can view this list only. Its owner, Alex Example, can give you edit access.</p>
+          </div>
+          <div class="banner" role="status">
+            <svg class="icon banner__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+            <p class="banner__text">This task is in the recycle bin.</p>
+            <button class="button button--secondary is-focus" type="button">Restore</button>
+          </div>
+          <div class="banner banner--error" role="alert">
+            <svg class="icon banner__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+            <p class="banner__text">Your session expired. Sign in again to keep syncing.</p>
+            <button class="button" type="button">Sign in</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="toast" aria-labelledby="toast-title" data-gallery-group="controls">
+        <h2 id="toast-title">Toast</h2>
+        <p>A short message with an optional Undo; it never holds the only copy of an error.</p>
+        <p>The Undo button shows the focus-visible state.</p>
+        <div class="stack">
+          <div class="toast" role="status">
+            <p class="toast__text">Task moved to the recycle bin.</p>
+            <button class="button button--quiet is-focus" type="button">Undo</button>
+          </div>
+          <div class="toast" role="status">
+            <p class="toast__text">List created.</p>
+          </div>
         </div>
       </section>
     </main>

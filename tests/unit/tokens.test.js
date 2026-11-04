@@ -23,10 +23,17 @@ const TEXT_ON_GROUNDS = ['--color-text', '--color-text-muted', '--color-signal',
 // Non-text tokens that must reach 3:1 on every ground.
 const NON_TEXT_ON_GROUNDS = ['--color-border-strong', '--color-focus'];
 
-// Text on filled signal controls, in their default and hover states.
-const ON_SIGNAL_PAIRS = [
+// Icon colors that must reach 3:1 on every ground a control can show, including pressed grounds.
+const ICONS = ['--color-signal', '--color-text', '--color-text-muted'];
+const ICON_GROUNDS = [...GROUNDS, '--color-active-bg'];
+
+// Text on filled signal controls and on pressed secondary controls, in every state.
+const TEXT_PAIRS = [
   ['--color-on-signal', '--color-signal'],
   ['--color-on-signal', '--color-signal-hover'],
+  ['--color-on-signal', '--color-signal-active'],
+  ['--color-text', '--color-active-bg'],
+  ['--color-link', '--color-active-bg'],
 ];
 
 const COLOR_LITERAL = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/i;
@@ -238,12 +245,22 @@ describe('tokens.css', () => {
         }
       }
 
-      for (const [text, ground] of ON_SIGNAL_PAIRS) {
+      for (const [text, ground] of TEXT_PAIRS) {
         it(`${text} on ${ground} reaches 4.5:1`, () => {
           const { tokens } = loadTokens();
           const ratio = contrast(resolve(tokens, text, theme), resolve(tokens, ground, theme));
           expect(ratio).toBeGreaterThanOrEqual(4.5);
         });
+      }
+
+      for (const icon of ICONS) {
+        for (const ground of ICON_GROUNDS) {
+          it(`icon ${icon} on ${ground} reaches 3:1`, () => {
+            const { tokens } = loadTokens();
+            const ratio = contrast(resolve(tokens, icon, theme), resolve(tokens, ground, theme));
+            expect(ratio).toBeGreaterThanOrEqual(3);
+          });
+        }
       }
 
       for (const mark of NON_TEXT_ON_GROUNDS) {
@@ -279,9 +296,17 @@ describe('stylesheets outside tokens.css', () => {
       .map((name) => join(DEMO_DIR, name)),
   ];
 
-  it('include style.css, fonts.css, and the gallery stylesheet', () => {
+  it('include style.css, fonts.css, controls.css, and the gallery stylesheet', () => {
     const names = sheets().map((path) => basename(path));
-    expect(names).toEqual(expect.arrayContaining(['style.css', 'fonts.css', 'visual-style-gallery.css']));
+    expect(names).toEqual(
+      expect.arrayContaining(['style.css', 'fonts.css', 'controls.css', 'visual-style-gallery.css']),
+    );
+  });
+
+  it('are imported by style.css in order: fonts, tokens, then controls', () => {
+    const style = stripComments(readFileSync(join(CSS_DIR, 'style.css'), 'utf8'));
+    const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
+    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css']);
   });
 
   it('contain no raw color literals', () => {

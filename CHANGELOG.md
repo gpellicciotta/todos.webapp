@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Added the basic control components with every state and their visual style gallery sections.
 - Feature: Added per-list manual ordering with fractional-index positions compatible with the service.
 - Feature: Added overdue handling and the recycle bin with restore, permanent delete, and the 30-day purge.
 - Feature: Added the design tokens, the self-hosted Inter font, and the visual style gallery's token sections.

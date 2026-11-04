@@ -82,7 +82,14 @@
   accent-color: var(--color-signal);
 }
 
-/* Section navigation: wrapping links. */
+/* Section navigation: wrapping links in a token group and a control group. */
+.gallery-nav__label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
 .gallery-nav ul {
   display: flex;
   flex-wrap: wrap;
@@ -112,7 +119,7 @@
   color: var(--color-text-muted);
 }
 
-.gallery-section h3 {
+.gallery-section h3:not([class]) {
   margin-block: var(--space-6) var(--space-3);
 }
 
@@ -133,7 +140,7 @@
 }
 
 .swatches--ramp {
-  grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-8) * 2), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--space-8) * 2)), 1fr));
   gap: var(--space-3);
 }
 
@@ -169,6 +176,7 @@
 .swatch--color-surface { background-color: var(--color-surface); }
 .swatch--color-surface-sunken { background-color: var(--color-surface-sunken); }
 .swatch--color-hover-bg { background-color: var(--color-hover-bg); }
+.swatch--color-active-bg { background-color: var(--color-active-bg); }
 .swatch--color-selected-bg { background-color: var(--color-selected-bg); }
 .swatch--color-text { background-color: var(--color-text); }
 .swatch--color-text-muted { background-color: var(--color-text-muted); }
@@ -177,10 +185,12 @@
 .swatch--color-border-strong { background-color: var(--color-border-strong); }
 .swatch--color-signal { background-color: var(--color-signal); }
 .swatch--color-signal-hover { background-color: var(--color-signal-hover); }
+.swatch--color-signal-active { background-color: var(--color-signal-active); }
 .swatch--color-on-signal { background-color: var(--color-on-signal); }
 .swatch--color-link { background-color: var(--color-link); }
 .swatch--color-focus { background-color: var(--color-focus); }
 .swatch--color-shadow { background-color: var(--color-shadow); }
+.swatch--color-backdrop { background-color: var(--color-backdrop); }
 .swatch--gray-0 { background-color: var(--gray-0); }
 .swatch--gray-50 { background-color: var(--gray-50); }
 .swatch--gray-100 { background-color: var(--gray-100); }
@@ -360,6 +370,15 @@
   border: var(--border-width) solid var(--color-text);
 }
 
+.size--border-strong {
+  border: var(--border-width-strong) solid var(--color-text);
+}
+
+.size--textarea {
+  block-size: var(--height-textarea-min);
+  border: var(--border-width) solid var(--color-border-strong);
+}
+
 .size--focus {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
@@ -388,6 +407,9 @@
 .width--sidebar { inline-size: var(--width-sidebar); }
 .width--editor { inline-size: var(--width-editor); }
 .width--main { inline-size: var(--width-main); }
+.width--menu { inline-size: var(--width-menu); }
+.width--text-min { inline-size: var(--width-text-min); }
+.width--segment-min { inline-size: var(--width-segment-min); }
 
 /* Layers: a cascade of overlapping tiles; the list is its own stacking context. */
 .layers {
@@ -472,4 +494,72 @@
 
 .motion[data-state='end'] .motion__dot {
   translate: calc(100cqi - var(--space-5)) 0;
+}
+
+/* Control specimens: a row of states, each captioned below its specimen. */
+.states,
+.stack {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.states {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4) var(--space-5);
+}
+
+.state {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+}
+
+.state__label {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--width-sidebar)), 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.field-grid--wide {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--width-editor)), 1fr));
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: stretch;
+}
+
+.stack .toast {
+  justify-self: start;
+}
+
+/* Stage: a framed ground that holds panels which float in the app, such as menus and dialogs. */
+.stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border: var(--border-width) dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+}
+
+.stage .dialog {
+  position: static;
+  margin: 0 auto;
+}
+
+.stage--dialog {
+  display: block;
 }
