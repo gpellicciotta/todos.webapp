@@ -125,7 +125,6 @@ Gallery specimens force hover, active, and focus with `.is-hover`, `.is-active`,
 
 ### Controls
 Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/js/ui](../../src/js/ui/) add keyboard and focus handling.
-Keyboard behavior for dialogs and toasts comes later.
 
 - [Button](../../src/demo/visual-style-gallery.html#button): `.button` in the signal color for the one main action of a view.
   Use `--secondary` in gray for other actions and `--quiet` for low-emphasis ones, such as Clear all and Undo.
@@ -150,10 +149,16 @@ Keyboard behavior for dialogs and toasts comes later.
   Both return a controller with `open`, `close`, and `destroy`, and return focus to the trigger on close.
 - [Dialog](../../src/demo/visual-style-gallery.html#dialog): a native `<dialog>` with a title, a body, and actions at the end.
   Below 64rem it is a full-width sheet, and full height when opened as a modal.
+  `openDialog(dialog, { onClose })` in [dialog.js](../../src/js/ui/dialog.js) opens it as a modal.
+  Tab stays inside, Escape closes with `cancel`, and focus returns to the opener.
+  `[data-dialog-close]` buttons close it with their value; `confirmDialog` resolves to a boolean.
 - [Banner](../../src/demo/visual-style-gallery.html#banner): a full-width notice above the content with an icon, one or two sentences, and an optional action.
   Errors use `--error`, `role="alert"`, the signal outline, and an alert icon, never a second hue.
 - [Toast](../../src/demo/visual-style-gallery.html#toast): a short message at the bottom with an optional Undo, announced through a live region.
   Never use a toast as the only place an error appears.
+  `createToaster().show(message, { onAction })` in [toast.js](../../src/js/ui/toast.js) adds an Undo button.
+  Toasts expire after 8 seconds, pause while hovered or focused, and stack at most three.
+  [live-region.js](../../src/js/ui/live-region.js) announces them; `announce(message, { politeness: 'assertive' })` suits blocking errors.
 
 ### App Components
 Defined in [app-components.css](../../src/css/app-components.css) and [app-chrome.css](../../src/css/app-chrome.css), on top of the controls.
