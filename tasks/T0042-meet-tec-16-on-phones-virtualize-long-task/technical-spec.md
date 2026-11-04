@@ -15,3 +15,7 @@ Size estimate: 5 files, 500 lines
 - Integration: with 5000 tasks and 4x CPU throttling through CDP, All tasks paints its first rows within 200 ms.
 
 Completion check: `npm test && npm run lint && npm run test:e2e && npm run test:perf && npm run check:sw`
+
+### Follow-Ups From Earlier Reviews
+- From T0038: a render that changes more than 60 row keys drops later rows for a moment; keep old rows until replaced.
+- From T0038: run `npm run test:perf` in the Pages workflow so a TEC-16 regression fails CI.
