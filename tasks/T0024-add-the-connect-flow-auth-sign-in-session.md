@@ -4,12 +4,16 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T20:50:57Z"
-ended_at: —
+ended_at: "2026-11-04T21:26:26Z"
 review: agent
 preview: none
 protocol: standard
+review_status: approved
+review_round: 1
+reviewed_by: "@claude-review-agent"
+completion-commit: 47fe3788adb1ec1c2c3362e6337716e84a3d1db5
 ---
 # T0024: Add the connect flow: Auth sign-in, session token handling, server URL setting, and disconnect
 
@@ -28,7 +32,7 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [x] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.
 - [x] **[Doc]**       Update ui-design.md where the build differs and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -76,4 +80,24 @@ See technical-spec.md for decisions, files, size, and tests.
   - Files touched: 13.
   - Lines touched: 1072.
   - Reopenings: 0.
+
+- [2026-11-04] **[Implement]**
+  Fixed round 1 findings: e2e network guard with proof test, http only for this machine, persisted expired-token removal, and a failed pending count toast.
+  - Size: 1196 counted lines in 18 files, under the 1200 cap.
+  - New files: network-guard.spec.js, settings.test.js; changed playwright.config.js, preferences.js.
+
+- [2026-11-04] **[Review]**
+  Round 1 approved with a high and a medium finding fixed before merge; round 2 approved the network guard and URL checks.
+
+- [2026-11-04] **[Doc]**
+  Process note: an early test version sent two GETs with fake values to the production service; all mocks are now same-origin and a guard blocks real hosts.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 1 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 

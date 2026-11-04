@@ -167,3 +167,113 @@ PROBLEMS:
 - Before: [settings-390-light-before.png](screenshots/settings-390-light-before.png), [connect-1440-dark-before.png](screenshots/connect-1440-dark-before.png).
 - After: [connect-signed-in-390-light-after.png](screenshots/connect-signed-in-390-light-after.png), [settings-connected-390-light-after.png](screenshots/settings-connected-390-light-after.png).
 - After: [disconnect-dialog-390-dark-after.png](screenshots/disconnect-dialog-390-dark-after.png), [connect-uninvited-390-light-after.png](screenshots/connect-uninvited-390-light-after.png).
+
+### Review Rework
+Round 1 approved with one high, one medium, and two low findings; the rework ran in t24b, rebased onto `main` with T0019.
+- High: `playwright.config.js` adds a network guard to every browser launch.
+  `--host-resolver-rules` maps every host name but `127.0.0.1` and `localhost` to "not found".
+  A proxy on the closed port `127.0.0.1:9` catches IP addresses; `page.route` mocks still answer first.
+  `network-guard.spec.js` proves it with probes that are never real hosts: `guard.localhost` and `192.0.2.1` (TEST-NET-1).
+- Medium: `parseServerUrl` allows `http:` only for `localhost`, `127.0.0.1`, and `[::1]`, and keeps only origin and path.
+  The Settings error now reads "Enter an https address, or http on this computer".
+- Low: `session.js` writes the record back without the token once it reads an expired one, matching its comment.
+- Low: Settings catches a rejected `pendingCount()`, logs it, shows a toast, and stays connected without a dialog.
+- Size: 1196 counted lines against `main`, under the 1200 cap; the auth.js header now points to devops.md.
+- After the red run, the new expired-token test merged into the existing expiry test, to stay under the cap.
+
+Red phase, before the fixes. Command: `npx vitest run tests/unit/preferences.test.js tests/unit/session.test.js tests/unit/settings.test.js` (exit code 1)
+
+```text
+[... 5 lines omitted ...]
+     × allows http only for this machine, since a token must not cross the network in clear text 9ms
+     × keeps only the origin and the path, dropping the query and the fragment 4ms
+[... 2 lines omitted ...]
+     × removes an expired token from the storage once it reads it 11ms
+[... 2 lines omitted ...]
+     × says so when the pending changes cannot be counted, and stays connected 44ms
+[... 3 lines omitted ...]
+ FAIL  tests/unit/preferences.test.js > server URL preference > allows http only for this machine, since a token must not cross the network in clear text
+AssertionError: expected 'http://todos.example.com' to be null
+[... 17 lines omitted ...]
+ FAIL  tests/unit/preferences.test.js > server URL preference > keeps only the origin and the path, dropping the query and the fragment
+AssertionError: expected 'https://todos.example.com/base/?token…' to be 'https://todos.example.com/base' // Object.is equality
+[... 14 lines omitted ...]
+ FAIL  tests/unit/session.test.js > the session > removes an expired token from the storage once it reads it
+AssertionError: expected '{"token":"session-1","expiry":"2026-1…' not to contain 'session-1'
+[... 14 lines omitted ...]
+ FAIL  tests/unit/settings.test.js > Disconnect in Settings > says so when the pending changes cannot be counted, and stays connected
+AssertionError: expected "vi.fn()" to be called with arguments: [ Array(1) ]
+[... 44 lines omitted ...]
+ Test Files  3 failed (3)
+      Tests  4 failed | 21 passed (25)
+[... 3 lines omitted ...]
+```
+
+Command: `E2E_PORT=8869 npx playwright test tests/e2e/network-guard.spec.js` (exit code 1)
+
+```text
+[... 3 lines omitted ...]
+  x  1 [chromium] › tests\e2e\network-guard.spec.js:25:1 › requests to any host but the local server fail at once (486ms)
+[... 6 lines omitted ...]
+    Expected: "blocked"
+    Received: "reached"
+[... 3 lines omitted ...]
+    > 28 |   expect(await probe(page, baseURL.replace('127.0.0.1', 'guard.localhost'))).toBe('blocked');
+[... 16 lines omitted ...]
+  1 failed
+[... 1 lines omitted ...]
+```
+
+Green phase. Command: `npm test` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre test
+> vitest run
+
+
+ RUN  v5.1.0 C:/Users/giova/AppData/Local/Temp/claude/c--Dev-Projects-todos-webapp/2ef3bbc3-e820-4103-9d60-421b54f7c558/scratchpad/t24b
+
+
+ Test Files  31 passed (31)
+      Tests  585 passed (585)
+   Start at  22:21:55
+   Duration  6.40s (environment 68%, tests 19%, import 9%, transform 2%, worker 1%)
+
+    Isolate  31 workers spawned · ~975ms startup each (spawn + environment, per file)
+             at least ~3.34s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+Command: `npx eslint .` (exit code 0, no output)
+
+Command: `npm run check:sw` (exit code 0), after resetting the hashes to `main` and `node scripts/check-sw-version.mjs --update`
+
+```text
+
+> todos-webapp@0.1.0-pre check:sw
+> node scripts/check-sw-version.mjs
+
+OK: 54 precached files match VERSION 2026-11-04.17.
+```
+
+Command: `E2E_PORT=8869 npx playwright test` (exit code 0)
+
+```text
+
+Running 113 tests using 4 workers
+
+[... 28 lines omitted ...]
+  ok  30 [chromium] › tests\e2e\connect.spec.js:64:1 › local mode makes no network request outside the app origin (843ms)
+[... 1 lines omitted ...]
+  ok  33 [chromium] › tests\e2e\connect.spec.js:108:1 › a code that no sign-in on this device started is ignored (759ms)
+  ok  31 [chromium] › tests\e2e\connect.spec.js:81:1 › a mocked Auth redirect returns to #/connect signed in (1.4s)
+  ok  32 [chromium] › tests\e2e\connect.spec.js:97:1 › an uninvited user sees that access is by invitation only, and stays local (1.4s)
+  ok  34 [chromium] › tests\e2e\connect.spec.js:116:1 › disconnecting deletes the token and shows Local only (1.4s)
+  ok  35 [chromium] › tests\e2e\connect.spec.js:140:1 › an expired session asks to sign in again and keeps local work going (931ms)
+[... 54 lines omitted ...]
+  ok  92 [chromium] › tests\e2e\network-guard.spec.js:25:1 › requests to any host but the local server fail at once (856ms)
+[... 22 lines omitted ...]
+  ok 112 [chromium] › tests\e2e\task-editor.spec.js:173:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5) (2.4s)
+
+  113 passed (1.0m)
+```
