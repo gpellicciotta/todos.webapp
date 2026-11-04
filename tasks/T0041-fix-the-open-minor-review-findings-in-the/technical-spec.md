@@ -16,6 +16,10 @@
 - From T0019: editors' destroy() must flush a fixed field that still carries aria-invalid (Firefox fires no change on removal).
 - From T0019: link the list editor's character counter with aria-describedby.
 
+- From T0024: the connect card's aria-live plus inner role=alert double-announces; move focus to Done or Sign in on phase changes.
+- From T0024: settings.js should navigate with the `navigate` option instead of setting `location.hash`.
+- From T0024: devops.md should list `/sign-in` among the routes that need CORS headers.
+
 ### Declared Files
 The findings span about ten view, editor, and test files; the task log lists the exact files touched.
 
