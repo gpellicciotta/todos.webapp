@@ -2,11 +2,16 @@
 
 ### Declared Files
 - src/js/views/all-tasks.js
-- src/js/views/task-list.js
-- src/js/views/view-controls.js
-- src/js/views/add-bar.js
-- tests/unit/view-controls.test.js
+- src/css/views.css
+- src/css/style.css
+- src/js/app.js
+- src/service-worker.js
 - tests/e2e/all-tasks.spec.js
+- tests/e2e/shell.spec.js
+- tests/unit/tokens.test.js
+- docs/specs/ui-design.md
+
+Mechanical command: `node scripts/check-sw-version.mjs --update` (regenerates scripts/sw-precache-hashes.json)
 
 Size estimate: 6 files, 550 lines
 Size note: split on 2026-11-04 after reaching about 2580 lines; about 710 lines stay here.

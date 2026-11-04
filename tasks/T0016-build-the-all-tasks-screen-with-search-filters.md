@@ -58,3 +58,9 @@ See technical-spec.md for decisions, files, size, and tests.
 - [2026-11-04] **[Verify]**
   Size note: the diff reached about 2580 counted lines in 26 files, above the large line and three times the estimate; a human sign-off or a split is needed.
 
+- [2026-11-04] **[Verify]**
+  After the split, stage 4 keeps the screen, views.css, and its tests; red against stage 3 and green at stage 4 are recorded.
+  - Files touched: 9.
+  - Lines touched: 722, under three times the 550 estimate.
+  - Reopenings: 0.
+
