@@ -486,16 +486,16 @@
 
       <section class="gallery-section" id="filter-chip" aria-labelledby="filter-chip-title" data-gallery-group="controls">
         <h2 id="filter-chip-title">Filter chip</h2>
-        <p>A toggle chip with <code>aria-pressed</code> that opens a filter popover and shows its active value.</p>
+        <p>A chip that opens a filter popover; <code>data-active</code> marks a set filter, whose value it shows.</p>
         <ul class="states">
-          <li class="state"><button class="filter-chip" type="button" aria-pressed="false">Status<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Default</span></li>
-          <li class="state"><button class="filter-chip is-hover" type="button" aria-pressed="false">Lists<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Hover</span></li>
-          <li class="state"><button class="filter-chip is-focus" type="button" aria-pressed="false">Due<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Focus-visible</span></li>
-          <li class="state"><button class="filter-chip is-active" type="button" aria-pressed="false">Due<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Active</span></li>
-          <li class="state"><button class="filter-chip" type="button" aria-pressed="true">Status: <span class="filter-chip__value">open</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, with a value</span></li>
-          <li class="state"><button class="filter-chip is-hover" type="button" aria-pressed="true">Lists: <span class="filter-chip__value">Groceries</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, hover</span></li>
-          <li class="state"><button class="filter-chip is-active" type="button" aria-pressed="true">Due: <span class="filter-chip__value">this week</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, active</span></li>
-          <li class="state"><button class="filter-chip" type="button" aria-pressed="false" disabled>Lists<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Disabled</span></li>
+          <li class="state"><button class="filter-chip" type="button" data-active="false">Status<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Default</span></li>
+          <li class="state"><button class="filter-chip is-hover" type="button" data-active="false">Lists<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="filter-chip is-focus" type="button" data-active="false">Due<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="filter-chip is-active" type="button" data-active="false">Due<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Active</span></li>
+          <li class="state"><button class="filter-chip" type="button" data-active="true">Status: <span class="filter-chip__value">open</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, with a value</span></li>
+          <li class="state"><button class="filter-chip is-hover" type="button" data-active="true">Lists: <span class="filter-chip__value">Groceries</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, hover</span></li>
+          <li class="state"><button class="filter-chip is-active" type="button" data-active="true">Due: <span class="filter-chip__value">this week</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Pressed, active</span></li>
+          <li class="state"><button class="filter-chip" type="button" data-active="false" disabled>Lists<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button><span class="state__label">Disabled</span></li>
           <li class="state"><button class="button button--quiet" type="button">Clear all</button><span class="state__label">Clear all</span></li>
         </ul>
       </section>
@@ -584,7 +584,7 @@
         <h3 id="popover-demo-title">Working popover</h3>
         <p>The Status filter chip opens the panel; Escape, a click outside, or tabbing away closes it.</p>
         <div class="stage">
-          <button class="filter-chip" type="button" id="popover-demo-trigger" aria-pressed="false">Status<span class="filter-chip__value"></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
+          <button class="filter-chip" type="button" id="popover-demo-trigger" data-active="false">Status<span class="filter-chip__value"></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="popover" id="popover-demo" role="group" aria-labelledby="popover-demo-panel-title" hidden>
             <h4 class="popover__title" id="popover-demo-panel-title">Status</h4>
             <div class="choice-group">
@@ -1160,10 +1160,10 @@
                 <label class="field__label visually-hidden" for="pattern-search">Search tasks and notes</label>
                 <input class="field__control" id="pattern-search" type="search" placeholder="Search">
               </div>
-              <button class="filter-chip view-controls__filters" type="button" aria-pressed="true">Filters <span class="filter-chip__value">1</span><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
-              <button class="filter-chip view-controls__chip" type="button" aria-pressed="false">Lists<svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
-              <button class="filter-chip view-controls__chip" type="button" aria-pressed="true">Status: <span class="filter-chip__value">open</span><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
-              <button class="filter-chip view-controls__chip" type="button" aria-pressed="false">Due<svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
+              <button class="filter-chip view-controls__filters" type="button" data-active="true">Filters <span class="filter-chip__value">1</span><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
+              <button class="filter-chip view-controls__chip" type="button" data-active="false">Lists<svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
+              <button class="filter-chip view-controls__chip" type="button" data-active="true">Status: <span class="filter-chip__value">open</span><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
+              <button class="filter-chip view-controls__chip" type="button" data-active="false">Due<svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
               <button class="button button--quiet view-controls__chip" type="button">Clear all</button>
             </div>
             <div class="add-bar">

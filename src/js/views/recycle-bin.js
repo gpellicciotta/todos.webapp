@@ -47,13 +47,14 @@ function calendarDays(from, to) {
 
 /**
  * Describe when a bin entry was deleted and how long it stays, such as "Deleted 5 days ago · 25 days left".
- * @param {{'deletion-time': string}} entry the bin entry
+ * @param {{'deletion-time': string, 'purge-time': string}} entry the bin entry
  * @param {Date} now the current time
  * @returns {string} the description
  */
 export function describeDeletion(entry, now) {
   const ago = Math.max(0, calendarDays(new Date(entry['deletion-time']), now));
-  const left = RETENTION_DAYS - ago;
+  // Days left count to the exact purge time, which a daylight saving change can move to another local date.
+  const left = calendarDays(now, new Date(entry['purge-time']));
   const remaining = left <= 0 ? STRINGS.lastDay : `${left} ${left === 1 ? 'day' : 'days'} left`;
   return `Deleted ${relative.format(-ago, 'day')} · ${remaining}`;
 }
@@ -185,12 +186,12 @@ export function mountRecycleBin(view, {
   }
 
   /**
-   * Delete an entry for good, after the row's question.
+   * Delete an entry for good, after the row's question; the question stays open when it fails.
+   * The render after a delete drops the question with its row.
    * @param {object} entry the bin entry
    * @returns {Promise<void>}
    */
   async function purge(entry) {
-    asking = null;
     await attempt(entry, () => store.purgeForever(entry.type, entry.id), STRINGS.purgeFailed);
   }
 

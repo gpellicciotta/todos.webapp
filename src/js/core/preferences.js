@@ -47,12 +47,19 @@ export const DEFAULT_SERVER_URL = 'https://todos.pellicciotta.com';
 const THEMES = ['system', 'light', 'dark'];
 
 /**
- * Read the theme preference of this device.
+ * Read the theme preference of this device; a plain `light` or `dark`, stored without JSON quotes, counts too.
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
  * @returns {'system'|'light'|'dark'} the stored theme, or `system`
  */
-export function readTheme(getStorage) {
-  const theme = readPreference('theme', 'system', getStorage);
+export function readTheme(getStorage = () => globalThis.localStorage) {
+  let plain;
+  try {
+    plain = getStorage()?.getItem(`${PREFIX}theme`);
+  }
+  catch {
+    plain = null;
+  }
+  const theme = THEMES.includes(plain) ? plain : readPreference('theme', 'system', getStorage);
   return THEMES.includes(theme) ? theme : 'system';
 }
 

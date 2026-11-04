@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Fix: Fixed minor focus, ARIA, dialog, save, and drag findings from earlier reviews, and sped up a slow e2e test.
 - Feature: Made the task screens faster with keyed row reuse, progressive rendering, debounced search, and due chip updates.
 - Feature: Added the connect flow with Auth sign-in, session token handling, the server URL setting, and disconnect.
 - Feature: Added the Lists overview and the list editor panel with name, description, details, and delete.

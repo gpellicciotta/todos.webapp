@@ -70,6 +70,7 @@ Sources, read in the sibling repositories:
 Before connecting works in production, the services need these changes:
 - Auth must accept `{{app}}/#/connect` as the `app-redirect-url` of the `todos` application.
 - ToDo's sends CORS headers only in test mode; the app's origin needs them on the routes above.
+  They include `/sign-in`, where the callback redirects, since the app's fetch follows that redirect.
 - The callback should answer `403` for an account without an access grant; it answers `401` today.
 
 The end-to-end tests mock Auth and ToDo's with Playwright routes on the app's own origin.

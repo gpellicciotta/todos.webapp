@@ -4,8 +4,13 @@
  * Every move turns into one before or after neighbor for the store's `moveInList`.
  * Neighbors come from the shown rows, so a move skips the tasks the status filter hides.
  * A drag marks the dragged row with `data-dragging` and the drop spot with `data-drop`, as app-components.css draws.
- * Escape, or a render that replaces the dragged row, cancels a drag.
+ * A pointer within 48 px of the scroller's top or bottom edge scrolls it each frame; row midpoints count from the
+ * list's top, so the drop spot follows the scrolled rows.
+ * Escape, a lost pointer capture, or a render that replaces the dragged row cancels a drag.
  */
+
+const EDGE_PX = 48;
+const SCROLL_PX = 12;
 
 /**
  * Compute the placement of a task dropped at a slot of the shown order.
@@ -60,9 +65,10 @@ export function slotAt(midpoints, y) {
  * @param {object} options reorder options
  * @param {() => boolean} options.enabled tells whether moves are on, in manual order only
  * @param {(taskId: string, move: {placement: object, index: number}) => void} options.onMove stores a move
+ * @param {() => HTMLElement|null} [options.scroller] the element a drag scrolls, the main column by default
  * @returns {{step: (taskId: string, step: -1|1) => void, destroy: () => void}} the controller
  */
-export function attachReorder(list, { enabled, onMove }) {
+export function attachReorder(list, { enabled, onMove, scroller = () => list.closest('.app__main') }) {
   let drag = null;
 
   /**
@@ -114,6 +120,9 @@ export function attachReorder(list, { enabled, onMove }) {
     const current = drag;
     const move = current.row.isConnected ? mark() : null;
     drag = null;
+    if (current.frame !== null) {
+      cancelAnimationFrame(current.frame);
+    }
     current.rows.forEach((row) => row.removeAttribute('data-drop'));
     current.row.removeAttribute('data-dragging');
     current.row.style.removeProperty('translate');
@@ -134,19 +143,46 @@ export function attachReorder(list, { enabled, onMove }) {
     event.preventDefault();
     const rows = rowsOf();
     const row = handle.closest('.task-row');
+    const top = list.getBoundingClientRect().top;
     drag = {
-      row, rows, ids: rows.map((candidate) => candidate.dataset.taskId), startY: event.clientY, slot: rows.indexOf(row),
+      row, rows, ids: rows.map((candidate) => candidate.dataset.taskId), slot: rows.indexOf(row),
+      startY: event.clientY - top, y: event.clientY, frame: null,
       midpoints: rows.map((candidate) => {
         const box = candidate.getBoundingClientRect();
-        return box.top + box.height / 2;
+        return box.top - top + box.height / 2;
       }),
     };
     handle.setPointerCapture?.(event.pointerId);
     row.dataset.dragging = 'true';
   }
 
+  /** Move the dragged row to the pointer and mark the drop spot, in positions from the list's top. */
+  function follow() {
+    const y = drag.y - list.getBoundingClientRect().top;
+    drag.row.style.translate = `0 ${y - drag.startY}px`;
+    drag.slot = slotAt(drag.midpoints, y);
+    mark();
+  }
+
+  /** Scroll by one step while the pointer is near an edge of the scroller, then again on the next frame. */
+  function autoscroll() {
+    drag.frame = null;
+    if (!drag.row.isConnected) {
+      finish(false);
+      return;
+    }
+    const view = scroller();
+    const box = view?.getBoundingClientRect();
+    const speed = !box ? 0 : drag.y < box.top + EDGE_PX ? -SCROLL_PX : drag.y > box.bottom - EDGE_PX ? SCROLL_PX : 0;
+    if (speed !== 0) {
+      view.scrollTop += speed;
+      follow();
+      drag.frame = requestAnimationFrame(autoscroll);
+    }
+  }
+
   /**
-   * Follow the pointer with the dragged row and mark the drop spot.
+   * Follow the pointer with the dragged row, mark the drop spot, and scroll near an edge.
    * @param {PointerEvent} event the pointer move event
    */
   function onPointerMove(event) {
@@ -157,9 +193,9 @@ export function attachReorder(list, { enabled, onMove }) {
       finish(false);
       return;
     }
-    drag.row.style.translate = `0 ${event.clientY - drag.startY}px`;
-    drag.slot = slotAt(drag.midpoints, event.clientY);
-    mark();
+    drag.y = event.clientY;
+    follow();
+    drag.frame ??= requestAnimationFrame(autoscroll);
   }
 
   /**
@@ -195,6 +231,8 @@ export function attachReorder(list, { enabled, onMove }) {
   list.addEventListener('pointercancel', onPointerCancel);
   list.addEventListener('keydown', onKeydown);
   doc.addEventListener('keydown', onEscape);
+  // A render that drops the handle drops its pointer capture too, so the pointer up may never reach the list.
+  doc.addEventListener('lostpointercapture', onPointerCancel);
 
   return {
     step,
@@ -208,6 +246,7 @@ export function attachReorder(list, { enabled, onMove }) {
       list.removeEventListener('pointercancel', onPointerCancel);
       list.removeEventListener('keydown', onKeydown);
       doc.removeEventListener('keydown', onEscape);
+      doc.removeEventListener('lostpointercapture', onPointerCancel);
     },
   };
 }

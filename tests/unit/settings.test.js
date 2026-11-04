@@ -40,3 +40,16 @@ describe('Disconnect in Settings', () => {
     error.mockRestore();
   });
 });
+
+describe('Connect in Settings', () => {
+  it('opens the connect flow through the navigate option, not by setting the location hash', () => {
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const navigate = vi.fn();
+    const before = location.hash;
+    mountSettings(view, { session, navigate, toaster: { show: vi.fn() }, getStorage: () => null });
+    [...view.querySelectorAll('button')].find((button) => button.textContent === 'Connect').click();
+    expect(navigate).toHaveBeenCalledWith('#/connect');
+    expect(location.hash).toBe(before);
+  });
+});

@@ -123,6 +123,16 @@ describe('createTaskList', () => {
     expect(store.addToList).toHaveBeenCalledWith('t2', 'l3');
   });
 
+  it('closes a reopened Add to list menu that has no list left, and focuses the More button', () => {
+    const more = document.querySelectorAll('.task-row__more')[1];
+    more.click();
+    const menu = document.getElementById(more.getAttribute('aria-controls'));
+    menu.querySelector('[data-action="add-to-list"]').click();
+    list.render(tasks, { ...ctx, listsByTask: new Map([...ctx.listsByTask, ['t2', ['l1', 'l2', 'l3']]]) });
+    expect(menu.hidden).toBe(true);
+    expect(document.activeElement).toBe(document.querySelectorAll('.task-row__more')[1]);
+  });
+
   it('moves a task to the recycle bin with an Undo toast (TSK-11)', async () => {
     const more = document.querySelectorAll('.task-row__more')[0];
     more.click();

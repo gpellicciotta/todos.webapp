@@ -3,6 +3,7 @@
  *
  * Sign in sends the browser to Auth, which returns to `#/connect`; the shell captures the code before routing.
  * Phases: intro, working, signed in, not invited, error, and expired (`CON-13`).
+ * The card's polite live region announces each phase once; after Signing in, focus moves to the phase's action.
  * Uploading and downloading data come with the sync tasks; until then signing in ends at Done.
  */
 
@@ -103,7 +104,6 @@ export function mountConnect(view, { session, navigate, assign }) {
     }
     else if (phase === 'not-invited') {
       const status = make(doc, 'p', 'settings__text', STRINGS.notInvited);
-      status.setAttribute('role', 'alert');
       const back = make(doc, 'a', 'button button--secondary', STRINGS.back);
       back.href = '#/settings';
       parts.push(status, make(doc, 'p', 'settings__hint', STRINGS.notInvitedHint));
@@ -115,7 +115,6 @@ export function mountConnect(view, { session, navigate, assign }) {
     else {
       if (phase === 'error') {
         const status = make(doc, 'p', 'settings__text', STRINGS.failed);
-        status.setAttribute('role', 'alert');
         parts.push(status, make(doc, 'p', 'settings__hint', STRINGS.reasons[reason] ?? STRINGS.reasons.rejected));
       }
       else if (phase === 'expired') {
@@ -127,7 +126,12 @@ export function mountConnect(view, { session, navigate, assign }) {
       parts.push(make(doc, 'p', 'settings__hint', STRINGS.server(session.account()?.server ?? session.serverUrl())));
       actions.append(button(STRINGS.signIn, 'button', signIn));
     }
+    const working = card.dataset.phase === 'working';
+    card.dataset.phase = phase;
     card.replaceChildren(...parts, ...(phase === 'working' ? [] : [actions]));
+    if (working) {
+      actions.firstElementChild?.focus();
+    }
   }
 
   /** Show the phase that matches the session state. */

@@ -39,7 +39,8 @@ function errorOf(control) {
   if (control.getAttribute('aria-invalid') !== 'true') {
     return null;
   }
-  return document.getElementById(control.getAttribute('aria-describedby'))?.textContent ?? null;
+  return control.getAttribute('aria-describedby').split(' ').map((id) => document.getElementById(id))
+    .find((element) => element?.matches('.field__error'))?.textContent ?? null;
 }
 
 describe('mountListEditor', () => {
@@ -154,6 +155,30 @@ describe('mountListEditor', () => {
     await vi.waitFor(async () => expect((await store.listLists()).map((list) => list.name)).toEqual(['Garden']));
   });
 
+  it('saves a name fixed after an error when the editor closes without a change event', async () => {
+    const home = await store.createList({ name: 'Home' });
+    const { name } = await mount({ name: 'list-edit', params: { listId: home.id } });
+    change(name, '');
+    await editor.idle();
+    expect(errorOf(name)).toBe('A list needs a name.');
+    name.value = 'Garden';
+    const closing = editor;
+    editor = null;
+    closing.destroy();
+    await vi.waitFor(async () => expect((await store.getList(home.id)).name).toBe('Garden'));
+  });
+
+  it('links the description to its character counter, also while it shows an error', async () => {
+    const home = await store.createList({ name: 'Home' });
+    const { description } = await mount({ name: 'list-edit', params: { listId: home.id } });
+    const counter = panel.body.querySelector('.field__counter');
+    expect(description.getAttribute('aria-describedby').split(' ')).toContain(counter.id);
+    change(description, 'x'.repeat(1001));
+    await editor.idle();
+    expect(errorOf(description)).toMatch(/1000/);
+    expect(description.getAttribute('aria-describedby').split(' ')).toContain(counter.id);
+  });
+
   it('shows the creation time and, in local mode, only a link to connect in the Sharing section', async () => {
     const home = await store.createList({ name: 'Home' });
     await mount({ name: 'list-edit', params: { listId: home.id } });
@@ -181,6 +206,19 @@ describe('mountListEditor', () => {
     expect((await store.getTask(task.id))['deletion-time']).toBeNull();
     expect(toaster.show).toHaveBeenCalledWith('List moved to the recycle bin.', expect.objectContaining({ undo: true }));
     expect(document.querySelector('dialog')).toBeNull();
+  });
+
+  it('closes an open Delete list dialog as Keep when the editor closes', async () => {
+    const home = await store.createList({ name: 'Home' });
+    await mount({ name: 'list-edit', params: { listId: home.id } });
+    [...panel.body.querySelectorAll('button')].find((button) => button.textContent === 'Delete list').click();
+    const dialog = document.querySelector('dialog');
+    expect(dialog.open).toBe(true);
+    editor.destroy();
+    editor = null;
+    expect(dialog.open).toBe(false);
+    await vi.waitFor(() => expect(dialog.isConnected).toBe(false));
+    expect((await store.getList(home.id))['deletion-time']).toBeNull();
   });
 
   it('keeps the list when the confirmation is answered with Keep', async () => {

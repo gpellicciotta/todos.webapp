@@ -8,6 +8,7 @@
  */
 
 import { readTheme } from '../core/preferences.js';
+import { createLiveRegion } from './live-region.js';
 import { attachMenu } from './menu.js';
 
 const ICONS = 'img/icons.svg';
@@ -178,6 +179,7 @@ export function renderShell(root, { navigate }) {
   let viewKey = null;
   let route = null;
   let view = null;
+  let announcer = null;
 
   /** Mark the links of the current route with `aria-current="page"`. */
   function markCurrent() {
@@ -272,13 +274,13 @@ export function renderShell(root, { navigate }) {
 
     /**
      * Show a lasting banner above every view, such as a newer version in another tab.
+     * The polite live region announces it, since a status role added with its text is often not read.
      * @param {string} message the message
      * @param {{actionLabel: string, onAction: () => void}} [action] a button in the banner
      */
     showNotice(message, action) {
       const banner = doc.createElement('div');
       banner.className = 'banner';
-      banner.setAttribute('role', 'status');
       banner.innerHTML = `${icon('alert').replace('class="icon"', 'class="icon banner__icon"')}<p class="banner__text"></p>`;
       banner.querySelector('p').textContent = message;
       if (action) {
@@ -290,6 +292,8 @@ export function renderShell(root, { navigate }) {
         banner.append(button);
       }
       banners.replaceChildren(banner);
+      announcer ??= createLiveRegion({ document: doc, parent: root });
+      announcer.announce(message);
     },
   };
 }

@@ -249,7 +249,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
     description.hidden = !data.list.description;
     const value = describeFilters({ statuses: state.statuses }, [])[0]?.split(': ')[1] ?? STRINGS.all;
     chip.replaceChildren(`${STRINGS.status}: `, make(doc, 'span', 'filter-chip__value', value), spriteIcon(doc, 'chevron-down'));
-    chip.setAttribute('aria-pressed', String(state.statuses.length > 0));
+    chip.dataset.active = String(state.statuses.length > 0);
     for (const input of choices.querySelectorAll('input')) {
       input.checked = state.statuses.includes(input.value);
     }
@@ -322,7 +322,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
      */
     idle: () => first,
 
-    /** Stop following the store and the clock. */
+    /** Stop following the store and the clock, and close an open dialog as Keep. */
     destroy() {
       unsubscribe();
       clearInterval(timer);
@@ -330,6 +330,8 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
       taskList.destroy();
       behaviors.forEach((behavior) => behavior.destroy());
       announcer.destroy();
+      // An open Delete list dialog would stay in the top layer, unanswered, after Back leaves the view.
+      root.querySelector('dialog[open]')?.close('cancel');
     },
   };
 }

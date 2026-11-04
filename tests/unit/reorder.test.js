@@ -85,4 +85,64 @@ describe('attachReorder', () => {
     expect(onMove).toHaveBeenCalledTimes(1);
     reorder.destroy();
   });
+
+  /**
+   * Fire a pointer event at an element.
+   * @param {Element} target the element
+   * @param {string} type the event type
+   * @param {number} clientY the pointer position
+   */
+  function pointer(target, type, clientY) {
+    target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, clientY }));
+  }
+
+  it('ends a drag cleanly when a render drops the handle, and with it the pointer capture', () => {
+    const list = rows();
+    const onMove = vi.fn();
+    const reorder = attachReorder(list, { enabled: () => true, onMove });
+    const row = list.querySelector('[data-task-id="b"]');
+    pointer(row.querySelector('.task-row__handle'), 'pointerdown', 10);
+    expect(row.dataset.dragging).toBe('true');
+    document.dispatchEvent(new PointerEvent('lostpointercapture', { bubbles: true, pointerId: 1 }));
+    expect(row.hasAttribute('data-dragging')).toBe(false);
+    pointer(list, 'pointerup', 200);
+    expect(onMove).not.toHaveBeenCalled();
+    reorder.destroy();
+  });
+
+  it('scrolls while the pointer rests near an edge, and places the row by the scrolled positions', () => {
+    const list = rows();
+    const scroller = document.createElement('div');
+    scroller.className = 'app__main';
+    list.replaceWith(scroller);
+    scroller.append(list);
+    let scrolled = 0;
+    Object.defineProperty(scroller, 'scrollTop', { get: () => scrolled, set: (value) => {
+      scrolled = value;
+    } });
+    scroller.getBoundingClientRect = () => ({ top: 0, bottom: 200, height: 200 });
+    list.getBoundingClientRect = () => ({ top: -scrolled, bottom: 200 - scrolled, height: 200 });
+    [...list.children].forEach((row, index) => {
+      row.getBoundingClientRect = () => ({ top: index * 50 - scrolled, bottom: index * 50 + 50 - scrolled, height: 50 });
+    });
+    const frames = [];
+    const frame = vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((callback) => frames.push(callback));
+    try {
+      const onMove = vi.fn();
+      const reorder = attachReorder(list, { enabled: () => true, onMove });
+      pointer(list.querySelector('.task-row__handle'), 'pointerdown', 25);
+      pointer(list, 'pointermove', 160);
+      expect(frames).toHaveLength(1);
+      frames.shift()();
+      frames.shift()();
+      expect(scrolled).toBeGreaterThanOrEqual(24);
+      pointer(list, 'pointerup', 160);
+      expect(onMove).toHaveBeenCalledWith('a', { placement: { after: 'd' }, index: 3 });
+      expect(frames.length).toBeLessThanOrEqual(1);
+      reorder.destroy();
+    }
+    finally {
+      frame.mockRestore();
+    }
+  });
 });

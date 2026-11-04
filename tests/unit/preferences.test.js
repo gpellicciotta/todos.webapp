@@ -59,6 +59,16 @@ describe('theme preference', () => {
     expect(readTheme(() => storage)).toBe('system');
   });
 
+  it('accepts a plain light or dark value stored without JSON quotes', () => {
+    const storage = memoryStorage();
+    for (const theme of ['light', 'dark']) {
+      storage.setItem('todos.theme', theme);
+      expect(readTheme(() => storage)).toBe(theme);
+    }
+    storage.setItem('todos.theme', 'purple');
+    expect(readTheme(() => storage)).toBe('system');
+  });
+
   it('stores light, dark, and system under todos.theme', () => {
     const storage = memoryStorage();
     for (const theme of ['dark', 'light', 'system']) {

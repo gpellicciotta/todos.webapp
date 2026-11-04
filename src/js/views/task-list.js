@@ -493,13 +493,20 @@ export function createTaskList({
   }
 
   /**
-   * Open the Add to list choices of a task in the More menu.
+   * Open the Add to list choices of a task in the More menu; with no list left, such as after a render, focus More.
    * @param {HTMLElement} trigger the More button
    * @param {object} task the task
    */
   function openAddToList(trigger, task) {
+    const free = freeLists(task);
+    if (free.length === 0) {
+      detach();
+      moreMenu.replaceChildren();
+      trigger.focus();
+      return;
+    }
     moreMenu.setAttribute('aria-label', `${STRINGS.addTo}${task.description}`);
-    moreMenu.replaceChildren(...freeLists(task).map((candidate) => menuItem(doc, 'menuitem', candidate.name, { listId: candidate.id })));
+    moreMenu.replaceChildren(...free.map((candidate) => menuItem(doc, 'menuitem', candidate.name, { listId: candidate.id })));
     openMenu(trigger, moreMenu, (choice) => store.addToList(task.id, choice.dataset.listId).catch(fail), 'first', 'add-to-list');
   }
 

@@ -271,6 +271,24 @@ describe('mountTaskEditor', () => {
     expect(store.updateTask).toHaveBeenCalledTimes(2);
   });
 
+  it('saves an edited description once when Escape closes the editor after its change saved it', async () => {
+    const description = document.querySelector('textarea[name="description"]');
+    // Escape blurs the field first, whose change event saves it, then the panel closes.
+    change(description, 'Buy blue paint');
+    panel.update({ name: 'tasks', view: 'tasks', editor: null, params: {} });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(store.updateTask).toHaveBeenCalledTimes(1);
+  });
+
+  it('saves a field fixed after an error when the editor closes without a change event', async () => {
+    const description = document.querySelector('textarea[name="description"]');
+    change(description, '');
+    expect(errorOf(description)).toBe('Enter a description.');
+    description.value = 'Buy blue paint';
+    panel.update({ name: 'tasks', view: 'tasks', editor: null, params: {} });
+    await vi.waitFor(() => expect(store.updateTask).toHaveBeenCalledWith('t1', { description: 'Buy blue paint' }));
+  });
+
   it('shows a field error for an empty note and adds nothing (NOT-1)', () => {
     const note = document.querySelector('textarea[name="new-note"]');
     note.value = '  ';

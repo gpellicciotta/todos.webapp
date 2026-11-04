@@ -29,12 +29,12 @@ function wirePopover() {
   const boxes = [...panel.querySelectorAll('input[type="checkbox"]')];
 
   /**
-   * Show the checked statuses on the chip and press it while any is checked.
+   * Show the checked statuses on the chip and mark it active while any is checked.
    */
   function update() {
     const checked = boxes.filter((box) => box.checked).map((box) => box.value);
     value.textContent = checked.length > 0 ? `: ${checked.join(', ')}` : '';
-    chip.setAttribute('aria-pressed', String(checked.length > 0));
+    chip.dataset.active = String(checked.length > 0);
   }
 
   attachPopover(chip, panel);

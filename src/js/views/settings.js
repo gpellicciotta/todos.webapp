@@ -280,10 +280,10 @@ async function askDisconnect(doc, parent, opener, pending) {
 /**
  * Fill the Connection section for the session state, and refill it when the state changes.
  * @param {Document} doc the document
- * @param {object} options the session, the sync hook, the preference storage, and the toaster
+ * @param {object} options the session, the sync hook, the preference storage, the toaster, and `navigate`
  * @returns {{element: HTMLElement, destroy: () => void}} the section
  */
-function connectionSection(doc, { getStorage, session, sync, toaster }) {
+function connectionSection(doc, { getStorage, session, sync, toaster, navigate }) {
   const element = section(doc, 'connection', STRINGS.connection);
   const heading = element.firstChild;
 
@@ -324,9 +324,7 @@ function connectionSection(doc, { getStorage, session, sync, toaster }) {
     const account = session.account();
     const actions = make(doc, 'div', 'settings__actions');
     if (state === 'local') {
-      actions.append(button(doc, 'button', STRINGS.connect, () => {
-        doc.defaultView.location.hash = '#/connect';
-      }));
+      actions.append(button(doc, 'button', STRINGS.connect, () => navigate('#/connect')));
       element.replaceChildren(heading, make(doc, 'p', 'settings__text', STRINGS.localState),
         make(doc, 'p', 'settings__hint', STRINGS.localHint), actions, serverField(doc, getStorage));
       return;
@@ -371,12 +369,17 @@ function aboutSection(doc) {
  * @param {{show: (message: string) => void}} [options.toaster] shows confirmations and problems
  * @param {object} [options.session] the session, for the Connection section
  * @param {{pendingCount: () => Promise<number>, syncNow: () => Promise<void>}} [options.sync] the change queue, once sync exists
+ * @param {(hash: string) => void} [options.navigate] opens a route, setting the location hash by default
  * @returns {{update: () => void, destroy: () => void}} the screen
  */
-export function mountSettings(view, { getStorage, store, toaster, session = createSession({ getStorage }), sync } = {}) {
+export function mountSettings(view, {
+  getStorage, store, toaster, session = createSession({ getStorage }), sync, navigate = (hash) => {
+    view.ownerDocument.defaultView.location.hash = hash;
+  },
+} = {}) {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
-  const connection = connectionSection(doc, { getStorage, session, sync, toaster });
+  const connection = connectionSection(doc, { getStorage, session, sync, toaster, navigate });
   root.append(appearanceSection(doc, getStorage, toaster), dataSection(doc, store, toaster), connection.element, aboutSection(doc));
   view.replaceChildren(root);
   return {

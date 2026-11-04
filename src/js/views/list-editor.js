@@ -128,6 +128,8 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   const name = createField(doc, { label: STRINGS.name, name: 'name' });
   const description = createField(doc, { label: STRINGS.description, name: 'description', tag: 'textarea' });
   const counter = el(doc, 'p', 'field__counter');
+  counter.id = `${description.control.id}-counter`;
+  description.control.setAttribute('aria-describedby', counter.id);
   description.element.append(counter);
   section('fields').append(name.element, description.element);
   const details = el(doc, 'p', 'editor-panel__details');
@@ -254,14 +256,15 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
     idle: () => first.then(() => chain),
     returnFocus: () => (route.params.listId ? doc.querySelector('.list-view__more') : null),
     destroy() {
-      // Closing, such as with Back, fires no change event, so typed values save here.
+      // Closing, such as with Back, fires no change event, so typed values save here, also a fixed invalid one.
       for (const [field, key] of [[name, 'name'], [description, 'description']]) {
-        if (field.control.value !== shown.get(field.control) && field.control.getAttribute('aria-invalid') !== 'true') {
+        if (field.control.value !== shown.get(field.control)) {
           save({ [key]: field.control.value });
         }
       }
       destroyed = true;
       unsubscribe();
+      root.querySelector('dialog[open]')?.close('cancel');
     },
   };
 }

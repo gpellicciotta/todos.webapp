@@ -143,7 +143,8 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Group them in a `fieldset` with a `legend`.
 - [Chip](../../src/demo/visual-style-gallery.html#chip): a small sunken label for due times, lists, and note counts; the overdue chip uses the signal color and an icon.
   Chips are not buttons; a removable chip holds a separate remove icon button.
-- [Filter chip](../../src/demo/visual-style-gallery.html#filter-chip): a toggle chip with `aria-pressed` that opens a popover and shows its active value.
+- [Filter chip](../../src/demo/visual-style-gallery.html#filter-chip): a chip that opens a popover and shows its active value.
+  It carries `aria-expanded`, never `aria-pressed`; `data-active="true"` adds the signal outline of a set filter.
 - [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row, for status in the editor and order buttons in the list view.
   The checked option adds a signal outline and semibold text, so it never relies on color alone.
 - [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored panels at `--elevation-1` that close on Escape and outside clicks.

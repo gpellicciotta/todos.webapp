@@ -92,7 +92,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - On start the app opens the store, purges expired bin entries, then starts the overdue timer.
   The timer's first run cancels overdue `cancel` tasks.
 - A start-up failure replaces the view with an error banner asking for a reload.
-- The theme follows the system unless `localStorage` holds `todos.theme` as JSON `"light"` or `"dark"`.
+- The theme follows the system unless `localStorage` holds `todos.theme` as `light` or `dark`, plain or as JSON.
   A stored theme also sets every `theme-color` meta, so the browser bar matches it.
 
 ### Routes
@@ -137,6 +137,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - The More button opens the row menu; it has no status entry, since the status button sets it:
   - Add to list and Remove from this list (`TSK-8`).
     Add to list swaps the menu for the lists that do not hold the task yet, and appears only while one is left.
+    If a render leaves no such list, the menu closes and focus returns to the More button.
   - Move up and Move down, in a list view with manual order only (`LV-3`).
   - Delete, which moves the task to the recycle bin and shows an Undo toast (`TSK-11`).
 - Menu entries the user's role does not allow are left out (`SHR-4`).
@@ -157,6 +158,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - **[Decided]** Search filters once typing pauses for 150 ms or on Enter, so a word runs one query (`TEC-16`).
 - Filter chips open popovers with checkboxes or date ranges; compact layouts group them behind one Filters button.
 - An active filter chip shows its value, such as "Status: open"; Clear all removes every filter.
+- Chips carry `aria-expanded` for their popover and mark a set filter with `data-active`, not `aria-pressed`.
+- A stored Lists filter whose lists were all deleted filters nothing, so its chip shows no value.
 - The Sort button opens a menu of order fields with an ascending or descending toggle.
 - **[Decided]** Wide layouts put search and Sort on the first row, and the filter chips with Clear all below.
   One row cannot hold the search field, four chips, Clear all, and the Sort label in the 45rem column.
@@ -179,7 +182,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 
 ### Toasts and Banners
 - Toasts confirm actions, offer Undo for 8 seconds, and never hold the only copy of an error.
-- A newer app version in another tab shows a lasting banner with Reload, not a toast.
+- A newer app version in another tab shows a lasting banner with Reload, not a toast; the live region reads it.
 - Banners sit above the content for lasting states, such as view-only lists or an expired session.
 - Toasts and banners announce through a polite live region; blocking errors use an alert role.
 
@@ -227,6 +230,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - **[Decided]** Due, Status, and A–Z sort ascending; Created and Activity show the newest first.
 - **[Decided]** The order and the status filter persist per device, shared by every list view (`TV-12`).
 - Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
+- A drag near the main column's top or bottom edge scrolls it; Escape or a lost pointer capture cancels the drag.
 - Keyboard users move a focused row with Alt+Up and Alt+Down, and focus stays on the moved row.
   This works from any control of the row; on the status and More buttons it never opens a menu.
 - A polite live region announces each move, such as "Buy paint moved to position 2 of 5."
@@ -236,6 +240,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - While sorted, drag handles and move entries are hidden; Manual restores the stored order (`LV-8`).
 - A status filter chip defaults to "open" (`LV-10`).
 - A deleted or unknown list redirects to All tasks with a toast.
+- Leaving the screen, such as with Back, closes an open Delete list dialog as Keep.
 - [list.js](../../src/js/views/list.js) builds the screen; [reorder.js](../../src/js/views/reorder.js) turns moves into neighbors.
 
 ### Lists Overview
@@ -269,7 +274,7 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
 - A deleted task opens read-only with a Restore button (`BIN-6`).
   It hides Clear, Add to list, the chip remove buttons, the add note field, and Delete task.
 - [task-editor.js](../../src/js/views/task-editor.js) and [notes.js](../../src/js/views/notes.js) build it.
-- Escape closes the editor, also from a text field, whose change saves first.
+- Escape closes the editor, also from a text field, whose change saves first; the value saves once.
 - A due time without a date shows "Enter a date to set a time." on the date field.
 - The due date and time save once focus leaves both, not per digit; a year below 1000 is an error.
   A due time of exactly 23:59 shows as date-only (`TSK-6`); field errors also go to a polite live region.
@@ -292,10 +297,11 @@ Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
 - Delete list sits at the bottom, after a divider, like Delete task.
 - Deleting a list asks for confirmation and states that its tasks stay (`LST-6`, `LST-7`).
   A line under Delete list reads "Deleting a list never deletes its tasks."
-- The description shows a counter, such as "36 / 1000" (`LST-2`).
+- The description shows a counter, such as "36 / 1000" (`LST-2`); `aria-describedby` links it to the field.
 - **[Decided]** A created new list keeps the editor on `#/lists/new`, so typing goes on without a reload of the panel.
 - Details, Sharing, and Delete list appear once the new list exists.
 - Closing the editor, also with Back, saves a typed valid name or description first, like the task editor.
+  A field fixed after an error saves too, and closing also closes an open Delete list dialog as Keep.
 - [list-editor.js](../../src/js/views/list-editor.js) builds it; the List screen's Delete list uses its dialog.
 
 ### Sharing Section
@@ -314,6 +320,8 @@ Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
 - Rows show a type icon, the name or description, and "Deleted 5 days ago · 25 days left" (`BIN-1`).
 - Each row has Restore and Delete permanently (`BIN-2`, `BIN-4`).
 - Delete permanently asks in the row first, with Delete and Keep buttons.
+  If the delete fails, a toast says so and the question stays open with focus in it.
+- Days left count to the exact purge time, 30 times 24 hours after the deletion.
 - Restoring shows a toast linking to the restored item (`BIN-3`).
 - An empty bin says that deleted items stay here for 30 days; otherwise that note sits above the rows.
 - Compact rows show only the days left and an icon-only Delete permanently; the question takes its own line.
@@ -376,6 +384,7 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
    The screen names the server; a code from a sign-in this device did not start shows "Sign-in did not finish."
 4. A user without an invitation sees a page saying access is by invitation only, and stays local (`CON-3`).
    **[Decided]** Until sync lands, the screen ends at "Signed in as {{name}} ({{email}})" with Done.
+   The card's polite live region reads each result once; focus then moves to Done, Sign in, or Back to Settings.
 5. On success, the screen shows upload progress: "Uploading 5 lists and 34 tasks" (`CON-4`).
 6. It names merged lists, such as "Your list Home merged with your account's Home" (`CON-5`).
 7. It downloads the account's data, then shows Done and returns to All tasks (`CON-6`).

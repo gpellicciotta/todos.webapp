@@ -354,8 +354,8 @@ textarea.field__control {
 }
 
 /*
- * Filter chip: a toggle button with aria-pressed that opens a filter popover.
- * Active chips set aria-pressed="true" and show their value, such as "Status: open".
+ * Filter chip: a button that opens a filter popover, so it carries aria-expanded and never aria-pressed.
+ * Active chips set data-active="true" and show their value, such as "Status: open".
  */
 .filter-chip {
   display: inline-flex;
@@ -385,19 +385,19 @@ textarea.field__control {
   background-color: var(--color-active-bg);
 }
 
-.filter-chip[aria-pressed='true'] {
+.filter-chip[data-active='true'] {
   border-color: var(--color-signal);
   box-shadow: inset 0 0 0 var(--border-width) var(--color-signal);
   background-color: var(--color-selected-bg);
 }
 
-.filter-chip[aria-pressed='true']:hover,
-.filter-chip[aria-pressed='true'].is-hover {
+.filter-chip[data-active='true']:hover,
+.filter-chip[data-active='true'].is-hover {
   background-color: var(--color-hover-bg);
 }
 
-.filter-chip[aria-pressed='true']:active,
-.filter-chip[aria-pressed='true'].is-active {
+.filter-chip[data-active='true']:active,
+.filter-chip[data-active='true'].is-active {
   background-color: var(--color-active-bg);
 }
 

@@ -49,6 +49,13 @@ describe('describeDeletion', () => {
     expect(describeDeletion(entry(new Date(2026, 9, 6, 12, 0)), now)).toBe('Deleted 29 days ago · 1 day left');
     expect(describeDeletion(entry(new Date(2026, 9, 5, 23, 0)), now)).toBe('Deleted 30 days ago · last day');
   });
+
+  it('counts the days left to the exact purge time, which a daylight saving change moves to another date', () => {
+    // 30 times 24 hours after 00:30 summer time is 23:30 winter time on the day before.
+    const deleted = new Date(2026, 9, 6, 0, 30);
+    const purged = new Date(2026, 10, 4, 23, 30).toISOString();
+    expect(describeDeletion(entry(deleted, { 'purge-time': purged }), now)).toBe('Deleted 29 days ago · last day');
+  });
 });
 
 describe('mountRecycleBin', () => {
@@ -112,6 +119,21 @@ describe('mountRecycleBin', () => {
     row().querySelector('.inline-confirm').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(row().querySelector('.inline-confirm')).toBeNull();
     expect(store.purgeForever).not.toHaveBeenCalled();
+  });
+
+  it('keeps the in-row question and focus when deleting for good fails', async () => {
+    const { store, toaster } = await mount([entry(new Date())]);
+    store.purgeForever.mockRejectedValueOnce(new Error('disk full'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    document.querySelector('[data-role="purge"]').click();
+    document.querySelector('[data-role="confirm"]').focus();
+    document.querySelector('[data-role="confirm"]').click();
+    await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledWith('"Buy new curtains" could not be deleted.'));
+    error.mockRestore();
+    expect(document.activeElement).toBe(document.querySelector('[data-role="confirm"]'));
+    document.querySelector('[data-role="keep"]').click();
+    expect(document.querySelector('.inline-confirm')).toBeNull();
+    expect(document.activeElement).toBe(document.querySelector('[data-role="purge"]'));
   });
 
   it('deletes for good after Delete, and shows the empty bin text', async () => {

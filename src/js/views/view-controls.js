@@ -37,7 +37,6 @@ const STRINGS = Object.freeze({
   noList: 'In no list',
   from: 'From',
   to: 'To',
-  range: 'Due between',
   lists: (count) => `${count} lists`,
   statuses: (count) => `${count} statuses`,
   options: (count) => `${count} options`,
@@ -172,6 +171,10 @@ function filterValue(key, filter, lists) {
   if (key === 'lists') {
     const names = values.map((id) => (id === NO_LIST ? STRINGS.noList.toLowerCase() : lists.find((list) => list.id === id)?.name))
       .filter(Boolean);
+    // A stored filter of deleted lists filters nothing, so its chip shows no value.
+    if (names.length === 0) {
+      return null;
+    }
     return names.length === 1 ? names[0] : STRINGS.lists(names.length);
   }
   if (key === 'statuses') {
@@ -425,6 +428,7 @@ export function createViewControls({ document: doc = globalThis.document, state:
 
   /**
    * Fill a filter chip or the Filters button: a name, an optional value, and the chevron.
+   * The chip opens a popover, so `data-active` marks a set filter instead of `aria-pressed`, beside `aria-expanded`.
    * @param {HTMLElement} target the button
    * @param {string} name the name
    * @param {string|null} value the value text
@@ -436,7 +440,7 @@ export function createViewControls({ document: doc = globalThis.document, state:
       target.append(make('span', 'filter-chip__value', value));
     }
     target.append(spriteIcon(doc, 'chevron-down'));
-    target.setAttribute('aria-pressed', String(Boolean(value)));
+    target.dataset.active = String(Boolean(value));
   }
 
   /** Show the state in every control. */

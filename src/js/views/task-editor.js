@@ -92,6 +92,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   let pending = null;
   let destroyed = false;
   const shown = new Map();
+  // The values each save helper last handled, so closing never saves them again, such as after Escape.
+  const saved = new Map();
 
   /**
    * Put a stored value into a control, remembering it, so leaving the control unchanged can show a newer one.
@@ -101,6 +103,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   const put = (control, value) => {
     control.value = value;
     shown.set(control, value);
+    saved.delete(control);
   };
 
   /**
@@ -156,6 +159,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   section('description').append(description.element);
   /** Save the description; an empty or too long one is a field error. */
   function saveDescription() {
+    saved.set(description.control, description.control.value);
     const value = description.control.value.trim();
     const error = !value ? STRINGS.required : value.length > DESCRIPTION_MAX ? STRINGS.tooLong : null;
     description.setError(error);
@@ -186,6 +190,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   /** Save the due date and time; a time without a date or a year below 1000 is a field error. */
   function saveDue() {
     const [day, clock] = [date.control.value, time.control.value];
+    saved.set(date.control, day);
+    saved.set(time.control, clock);
     const error = !day && clock ? STRINGS.dateFirst : day && Number(day.split('-')[0]) < 1000 ? STRINGS.fullYear : null;
     date.setError(error);
     if (error) {
@@ -432,9 +438,9 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     returnFocus: () => [...doc.querySelectorAll('.task-row')].find((row) => row.dataset.taskId === taskId)
       ?.querySelector('[data-role="open"]') ?? null,
     destroy() {
-      // Closing, such as with Back, fires no change or focusout, so typed values save here.
+      // Closing, such as with Back, fires no change or focusout, so typed values save here, also a fixed invalid one.
       const typed = (control) => task && !fields.disabled && control.value !== shown.get(control)
-        && control.getAttribute('aria-invalid') !== 'true';
+        && control.value !== saved.get(control);
       if (typed(description.control)) {
         saveDescription();
       }

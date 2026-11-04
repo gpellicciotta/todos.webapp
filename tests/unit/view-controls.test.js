@@ -95,9 +95,20 @@ describe('createViewControls', () => {
   it('shows a chip per filter, with the active value, and a Filters button with the count', () => {
     const chips = [...document.querySelectorAll('.view-controls__chip.filter-chip')];
     expect(chips.map((chip) => chip.textContent.trim())).toEqual(['Lists', 'Status: open', 'Due', 'Created']);
-    expect(chips.map((chip) => chip.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false', 'false']);
+    expect(chips.map((chip) => chip.dataset.active)).toEqual(['false', 'true', 'false', 'false']);
+    // A chip opens a popover, so it carries aria-expanded and not the aria-pressed of a toggle.
+    expect(chips.every((chip) => !chip.hasAttribute('aria-pressed') && chip.hasAttribute('aria-expanded'))).toBe(true);
     expect(document.querySelector('.view-controls__filters').textContent.trim()).toBe('Filters 1');
     expect(document.querySelector('[data-shortcut="search"]').type).toBe('search');
+  });
+
+  it('shows no active Lists chip for a stored filter whose lists were all deleted', () => {
+    controls.setState({ filter: { statuses: [], lists: ['l-gone'] }, order: defaultViewState().order });
+    const lists = document.querySelector('.view-controls__chip[data-filter="lists"]');
+    expect(lists.textContent.trim()).toBe('Lists');
+    expect(lists.dataset.active).toBe('false');
+    expect(document.querySelector('.view-controls__filters').textContent.trim()).toBe('Filters');
+    expect(document.querySelector('.view-controls__clear').hidden).toBe(true);
   });
 
   it('changes the filter when a checkbox changes, in the chip popover and the Filters panel alike', () => {
@@ -180,7 +191,7 @@ describe('createViewControls', () => {
     clear.click();
     expect(onChange.mock.lastCall[0].filter).toEqual({ statuses: [] });
     expect(clear.hidden).toBe(true);
-    expect(document.querySelector('.view-controls__chip[data-filter="statuses"]').getAttribute('aria-pressed')).toBe('false');
+    expect(document.querySelector('.view-controls__chip[data-filter="statuses"]').dataset.active).toBe('false');
   });
 
   it('changes the order from the Sort menu, fields and direction apart', () => {

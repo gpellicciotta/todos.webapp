@@ -32,7 +32,7 @@ function announce(doc, message) {
 
 /**
  * Create a field: a label, one control, and an error line that `setError` fills.
- * An error marks the control with `aria-invalid` and points `aria-describedby` at the error line.
+ * An error marks the control with `aria-invalid` and adds the error line to `aria-describedby`, keeping other ids.
  * @param {Document} doc the document
  * @param {object} options field options
  * @param {string} options.label the label text
@@ -72,13 +72,19 @@ export function createField(doc, { label, name, tag = 'input', type = 'text', hi
     setError(message) {
       error.hidden = !message;
       error.replaceChildren(...(message ? [spriteIcon(doc, 'alert'), message] : []));
+      const others = (control.getAttribute('aria-describedby') ?? '').split(' ').filter((token) => token && token !== error.id);
+      const ids = message ? [...others, error.id] : others;
       if (message) {
         announce(doc, message);
         control.setAttribute('aria-invalid', 'true');
-        control.setAttribute('aria-describedby', error.id);
       }
       else {
         control.removeAttribute('aria-invalid');
+      }
+      if (ids.length > 0) {
+        control.setAttribute('aria-describedby', ids.join(' '));
+      }
+      else {
         control.removeAttribute('aria-describedby');
       }
     },

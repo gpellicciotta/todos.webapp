@@ -122,17 +122,17 @@ for (const viewport of VIEWPORTS) {
     await openGallery(page, viewport, THEMES[0]);
     await page.locator('.gallery-nav a').last().focus();
 
-    const stops = [];
-    for (let presses = 0; presses < 400; presses++) {
-      await page.keyboard.press('Tab');
-      const stop = await page.evaluate((selector) => {
-        const element = document.activeElement;
-        if (!element || element === document.body) {
-          return { done: true };
-        }
+    // The page records each stop as focus lands, so a Tab press costs one round trip instead of two (under 30 s).
+    await page.evaluate((selector) => {
+      window.focusStops = { stops: [], done: false };
+      document.addEventListener('focusout', (event) => {
+        window.focusStops.done ||= event.relatedTarget === null;
+      });
+      document.addEventListener('focusin', (event) => {
+        const element = event.target;
         const section = element.closest(selector);
-        if (!section) {
-          return { outside: true };
+        if (window.focusStops.done || !section) {
+          return;
         }
         const hosts = [element, element.closest('label')].filter(Boolean);
         const ringed = hosts.some((host) => {
@@ -141,15 +141,17 @@ for (const viewport of VIEWPORTS) {
         });
         const name = element.getAttribute('aria-label') ?? (element.closest('label') ?? element).textContent.trim();
         const tag = `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}`;
-        return { id: `${section.id}: ${tag} "${name}"`, ringed };
-      }, SECTIONS);
-      if (stop.done) {
+        window.focusStops.stops.push({ id: `${section.id}: ${tag} "${name}"`, ringed });
+      });
+    }, SECTIONS);
+    for (let presses = 0; presses < 400; presses++) {
+      await page.keyboard.press('Tab');
+      if (presses % 20 === 19 && await page.evaluate(() => window.focusStops.done)) {
         break;
       }
-      if (!stop.outside) {
-        stops.push(stop);
-      }
     }
+    const { stops, done } = await page.evaluate(() => window.focusStops);
+    expect(done, 'Tab reached the end of the page').toBe(true);
 
     expect(stops.length).toBeGreaterThanOrEqual(30);
     expect(stops.filter((stop) => !stop.ringed).map((stop) => stop.id)).toEqual([]);
@@ -186,10 +188,11 @@ test('checkbox, radio, segmented, and menu specimens include a focus-visible sta
 
 test('pressed toggles keep distinct hover and active feedback', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
-  for (const control of ['icon-button', 'filter-chip']) {
+  // A filter chip opens a popover, so data-active marks it instead of aria-pressed.
+  for (const [control, pressed] of [['icon-button', '[aria-pressed="true"]'], ['filter-chip', '[data-active="true"]']]) {
     const backgrounds = [];
     for (const state of [':not(.is-hover, .is-active)', '.is-hover', '.is-active']) {
-      const specimen = page.locator(`#${control} .${control}[aria-pressed="true"]${state}`);
+      const specimen = page.locator(`#${control} .${control}${pressed}${state}`);
       await expect(specimen, `${control} pressed ${state}`).toHaveCount(1);
       backgrounds.push(await specimen.evaluate((element) => getComputedStyle(element).backgroundColor));
     }

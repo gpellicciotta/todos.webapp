@@ -122,7 +122,7 @@ test.describe('popover behavior', () => {
     await page.keyboard.press('Space');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Space');
-    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+    await expect(chip).toHaveAttribute('data-active', 'true');
     await expect(chip).toHaveText('Status: To do, In progress');
 
     await page.keyboard.press('Escape');
@@ -142,7 +142,7 @@ test.describe('popover behavior', () => {
     }
     await expect(popover.getByRole('button', { name: 'Clear' })).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(chip).toHaveAttribute('aria-pressed', 'false');
+    await expect(chip).toHaveAttribute('data-active', 'false');
     await expect(chip).toHaveText('Status');
     await page.keyboard.press('Tab');
     await expect(popover, 'Tab out of the panel closes it').toBeHidden();
