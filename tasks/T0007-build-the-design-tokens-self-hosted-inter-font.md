@@ -1,13 +1,13 @@
 ---
 id: T0007
 owner: ~
-needs: [T0006]
+needs: []
 branch: —
 worktree: —
 status: ready
 started_at: —
 ended_at: —
-review: human
+review: agent
 preview: none
 protocol: standard
 ---
@@ -36,4 +36,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Review]**
   Review raised from agent to human.
+
+- [2026-11-04] **[Review]**
+  Review lowered from human to agent by @gpellicciotta: The user authorized agent review for all v0.1.0 tasks on 2026-11-04, to work without waiting for each review..
 
