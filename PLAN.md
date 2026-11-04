@@ -28,7 +28,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0020 Build the Recycle bin and Settings screens with theme selection and the local connection card.
 - [x] T0021 Define the JSON backup file format and implement export, and import in merge and overwrite modes.
 - [ ] T0022 [needs: T0020] Add the Export backup button and the Import backup dialog with mode choice, counts, and confirmation.
-- [~] T0023 [owner: @claude-code] Add a GitHub Pages workflow that tests and publishes the src folder under the app's custom domain.
+- [x] T0023 Add a GitHub Pages workflow that tests and publishes the src folder under the app's custom domain.
 - [ ] T0024 [needs: T0020] Add the connect flow: Auth sign-in, session token handling, server URL setting, and disconnect.
 - [ ] T0025 [needs: T0024] Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes.
 - [ ] T0026 [needs: T0025] Build sync download: the change feed client, per-field merge, lost access handling, and the sync log store.
