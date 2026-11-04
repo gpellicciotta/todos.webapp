@@ -25,8 +25,8 @@ for (const viewport of VIEWPORTS) {
     const response = await page.goto('/');
 
     expect(response.status()).toBe(200);
-    await expect(page).toHaveTitle("ToDo's");
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText("ToDo's");
+    await expect(page).toHaveTitle("All tasks · ToDo's");
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('All tasks');
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(scrollWidth).toBeLessThanOrEqual(viewport.width);
     expect(problems).toEqual([]);

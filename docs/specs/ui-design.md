@@ -66,6 +66,24 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Back and forward buttons move between routes; opening the task editor adds a route.
 - Each route restores its scroll position, filters, and sort (`TV-12`).
 
+### App Shell
+[app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
+[app-shell.css](../../src/css/app-shell.css) places its parts; one DOM holds both layouts.
+- The compact top bar holds the route title, the sync indicator, and a More menu with New list.
+- The wide layout shows the title above the main column, and the sync indicator at the sidebar bottom.
+- In local mode the sync indicator reads Local only and links to `#/connect`.
+- The main column scrolls; the bars and the sidebar stay in place.
+- Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
+  List views also carry `data-list-id`; the screen tasks fill these views.
+- Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
+- The `[data-editor-slot]` element names the open editor in `data-editor`: `task`, `list`, or empty.
+  It stays hidden until the editor tasks fill it; it covers the main column in compact layouts.
+- Editor routes keep their view, so opening an editor keeps the view's scroll and state.
+- Scroll positions and a memory object for filters and sort are kept per view, for the session.
+- The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
+- On start the app opens the store, cancels overdue `cancel` tasks, purges expired bin entries, then starts the overdue timer.
+- The theme follows the system unless `localStorage` holds `todos.theme` as `light` or `dark`.
+
 ### Routes
 - `#/tasks`: all tasks.
 - `#/tasks/{{task-id}}`: all tasks with the task editor open.
@@ -80,6 +98,9 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - `#/connect`: connect flow.
 
 An unknown route or identifier opens All tasks with a toast naming the missing item.
+- An unknown route toast reads "Nothing found at #/{{route}}. Showing All tasks."
+- A missing or deleted list reads "That list was not found. Showing All tasks."
+- The shell checks list identifiers; the editor tasks check task identifiers.
 
 ---
 
@@ -335,6 +356,8 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` focuses the add bar, `/` focuses search, and Escape closes the editor or a dialog.
+- `n` and `/` focus the view's `[data-shortcut="add"]` and `[data-shortcut="search"]` elements, and do nothing without them.
+- Ctrl+Z or Cmd+Z, outside text fields, runs the Undo of the newest toast.
 - Shortcuts never fire while a text field has focus, and the About section lists them.
 - Drag and drop always has the Move up and Move down alternative (`LV-3`).
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.

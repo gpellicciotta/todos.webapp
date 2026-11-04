@@ -310,10 +310,10 @@ describe('stylesheets outside tokens.css', () => {
     );
   });
 
-  it('are imported by style.css in order: fonts, tokens, controls, app components, then app chrome', () => {
+  it('are imported by style.css in order: fonts, tokens, controls, app components, app chrome, then app shell', () => {
     const style = stripComments(readFileSync(join(CSS_DIR, 'style.css'), 'utf8'));
     const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css']);
+    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'app-shell.css']);
   });
 
   it('scale no token by a bare number in app-chrome.css, using size tokens instead', () => {
