@@ -4,12 +4,16 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T14:45:54Z"
-ended_at: —
+ended_at: "2026-11-04T15:33:52Z"
 review: agent
 preview: none
 protocol: standard
+review_status: approved
+review_round: 1
+reviewed_by: "@claude-review-agent"
+completion-commit: 3cc2fe4645e54286065560da65223c233258356c
 ---
 # T0010: Build accessible menu and popover behavior modules with keyboard and focus handling
 
@@ -22,12 +26,12 @@ See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
 - [x] **[Read]**      Read ui-design.md's Toasts, Dialogs, and Accessibility sections.
-- [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
-- [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Write the menu and popover modules, and wire the gallery specimens.
-- [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Doc]**       Document the modules' usage in visual-style-guide.md and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
+- [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
+- [x] **[Implement]** Write the menu and popover modules, and wire the gallery specimens.
+- [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
+- [x] **[Doc]**       Document the modules' usage in visual-style-guide.md and update CHANGELOG.md.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -48,3 +52,42 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Decide]**
   Split for size on 2026-11-04: dialog, toast, and live region modules and tests moved to T0030.
+
+- [2026-11-04] **[Implement]**
+  Wrote behaviors.spec.js for the gallery's working menu and popover; all five tests failed before the wiring existed.
+
+- [2026-11-04] **[Implement]**
+  Added working menu and popover specimens, wired by visual-style-gallery-behaviors.js; controls.css now hides closed menus and popovers.
+  - Undeclared files: src/css/controls.css, docs/specs/visual-style-guide.md.
+
+- [2026-11-04] **[Verify]**
+  Completion check passed: 434 unit tests, ESLint, and 50 end-to-end tests with E2E_PORT=8795.
+
+- [2026-11-04] **[Doc]**
+  Documented attachMenu and attachPopover usage in visual-style-guide.md; CHANGELOG.md is left to the orchestrator.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 9.
+  - Lines touched: 928.
+  - Reopenings: 0.
+  - Size note: above the typical line, within the 820-line estimate's bounds.
+
+- [2026-11-04] **[Review]**
+  Agent review approved with minor notes on destroy() attributes, disabled item focus, and outside-click focus return.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 9.
+  - Lines touched: 928.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 1 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
+
