@@ -32,3 +32,5 @@ Completion check: `npm test && npm run lint && npm run test:e2e && npm run check
 - From T0018 reviews: the gallery-controls focus-ring e2e test nears its 30 s timeout under parallel load; make it faster or raise its timeout.
 - From T0017: autoscroll during a drag and recompute row midpoints; end the drag cleanly when a re-render drops pointer capture.
 - From T0017: close the Delete list dialog when the list view unmounts.
+- From T0019: editors' destroy() must flush a fixed field that still carries aria-invalid (Firefox fires no change on removal).
+- From T0019: link the list editor's character counter with aria-describedby.
