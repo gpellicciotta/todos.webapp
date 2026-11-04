@@ -136,3 +136,84 @@ It recorded no console errors, page errors, or HTTP errors in either run.
 - After: [import-overwrite-390-dark-after.png](screenshots/import-overwrite-390-dark-after.png), [import-invalid-390-light-after.png](screenshots/import-invalid-390-light-after.png).
 - Fixed after the first capture: mode hints sat a row away from their labels, and the native file button clashed in dark.
 - Differs from import.svg: a Backup file field leads the dialog, and Cancel precedes Import, as in the dialog component.
+
+### Review Rework
+The review found four problems in `import-dialog.js`, all fixed:
+- While importing, the file field, both radios, Close, Cancel, and Import are disabled, and their handlers check an `importing` flag.
+- While importing, a listener added before openDialog's own listeners swallows Escape and the native `cancel` request.
+- A failed `file.text()` reports its error only if no newer pick replaced it.
+- After a failed import every control unlocks again, and focus returns to Import.
+`tests/unit/import-dialog.test.js` uses happy-dom, a stand-in store, and held `applyChanges` promises.
+
+The red run used the dialog with the four fixes reversed by script; the fixed file was then restored.
+
+Command: `npx vitest run tests/unit/import-dialog.test.js` (exit code 1)
+
+```text
+
+ RUN  v5.1.0 C:/Users/giova/AppData/Local/Temp/claude/c--Dev-Projects-todos-webapp/2ef3bbc3-e820-4103-9d60-421b54f7c558/scratchpad/t22work
+
+ ❯ tests/unit/import-dialog.test.js (3 tests | 3 failed) 82ms
+   ❯ openImportDialog (3)
+     × locks every control while importing, so neither a second import nor a cancel can happen 58ms
+     × unlocks the controls after a failed import and puts focus on Import 10ms
+     × ignores a late read failure of an earlier file once a newer file is shown 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/import-dialog.test.js > openImportDialog > locks every control while importing, so neither a second import nor a cancel can happen
+[... 67 lines omitted ...]
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  21:44:44
+   Duration  1.03s (environment 77%, tests 10%, transform 8%, import 4%, worker 1%)
+```
+
+Command: `npm test` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre test
+> vitest run
+
+
+ RUN  v5.1.0 C:/Users/giova/AppData/Local/Temp/claude/c--Dev-Projects-todos-webapp/2ef3bbc3-e820-4103-9d60-421b54f7c558/scratchpad/t22work
+
+
+ Test Files  27 passed (27)
+      Tests  553 passed (553)
+   Start at  21:45:11
+   Duration  4.70s (environment 66%, tests 21%, import 10%, transform 2%, worker 1%)
+
+    Isolate  27 workers spawned · ~789ms startup each (spawn + environment, per file)
+             at least ~2.26s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+Command: `npx eslint .` (exit code 0)
+
+```text
+(no output)
+```
+
+Command: `npm run check:sw` (exit code 0, hashes regenerated from `main`'s file with `--update`)
+
+```text
+
+> todos-webapp@0.1.0-pre check:sw
+> node scripts/check-sw-version.mjs
+
+OK: 47 precached files match VERSION 2026-11-04.15.
+```
+
+Command: `E2E_PORT=8853 npx playwright test` (exit code 0)
+
+```text
+
+Running 99 tests using 4 workers
+
+[... 99 lines omitted ...]
+
+  99 passed (49.3s)
+```

@@ -25,7 +25,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0016 Build the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.
 - [x] T0017 Build the List screen with manual ordering, order buttons, drag and keyboard moves, and the status filter.
 - [x] T0018 Build the task editor panel with description, status, due time, overdue behavior, lists, notes, and delete.
-- [ ] T0019 Build the Lists overview and the list editor panel with name, description, details, and delete.
+- [~] T0019 [owner: @claude-code] Build the Lists overview and the list editor panel with name, description, details, and delete.
 - [x] T0020 Build the Recycle bin and Settings screens with theme selection and the local connection card.
 - [x] T0021 Define the JSON backup file format and implement export, and import in merge and overwrite modes.
 - [~] T0022 [owner: @claude-code] Add the Export backup button and the Import backup dialog with mode choice, counts, and confirmation.

@@ -1,11 +1,11 @@
 ---
 id: T0019
-owner: ~
-needs: [T0018]
+owner: "@claude-code"
+needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
+status: active
+started_at: "2026-11-04T20:44:38Z"
 ended_at: —
 review: agent
 preview: none
@@ -21,7 +21,7 @@ Show the Sharing section's local-mode text: Connect to share this list.
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read ui-design.md's Lists Overview and List Editor sections and their wireframes.
+- [x] **[Read]**      Read ui-design.md's Lists Overview and List Editor sections and their wireframes.
 - [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
 - [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
 - [ ] **[Implement]** Write the Lists overview and the list editor in the editor panel.
