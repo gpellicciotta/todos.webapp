@@ -1,0 +1,257 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { StoreError } from '../../src/js/store/db.js';
+import { freshStore } from './store-helpers.js';
+
+const DAY = 86_400_000;
+const MISSING = '0192f1a2-0000-7000-8000-00000000ffff';
+
+let store;
+let clock;
+let factory;
+let home;
+let work;
+let task;
+
+/**
+ * Read every record of one object store through a second connection, bypassing the facade.
+ * @param {string} name the object store name
+ * @returns {Promise<object[]>} the records
+ */
+function rawAll(name) {
+  return new Promise((resolve, reject) => {
+    const open = factory.open('test');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const req = db.transaction([name], 'readonly').objectStore(name).getAll();
+      req.onsuccess = () => {
+        db.close();
+        resolve(req.result);
+      };
+      req.onerror = () => reject(req.error);
+    };
+  });
+}
+
+/**
+ * Expect a promise to reject with a StoreError of the given code.
+ * @param {Promise<any>} promise the operation
+ * @param {string} code the expected error code
+ */
+async function expectCode(promise, code) {
+  const error = await promise.catch((e) => e);
+  expect(error).toBeInstanceOf(StoreError);
+  expect(error.code).toBe(code);
+}
+
+beforeEach(async () => {
+  ({ store, clock, factory } = await freshStore());
+  home = await store.createList({ name: 'Home' });
+  work = await store.createList({ name: 'Work' });
+  task = await store.createTask({ description: 'Fix door' }, { lists: [home.id, work.id] });
+  clock.tick();
+});
+
+afterEach(() => {
+  store.close();
+});
+
+describe('deleteList', () => {
+  it('moves the list to the bin and hides it from listLists', async () => {
+    const deleted = await store.deleteList(home.id);
+    expect(deleted).toMatchObject({ 'deletion-time': '2026-11-04T09:00:01.000Z', 'last-update-time': '2026-11-04T09:00:01.000Z' });
+    expect((await store.listLists()).map((list) => list.id)).toEqual([work.id]);
+    expect(await store.getList(home.id)).toEqual(deleted);
+  });
+
+  it('keeps its tasks in their other lists, without changing their activity', async () => {
+    await store.deleteList(home.id);
+    expect(await store.listsOfTask(task.id)).toEqual([work.id]);
+    expect((await store.tasksOfList(work.id)).map((t) => t.id)).toEqual([task.id]);
+    expect(await store.getTask(task.id)).toEqual(task);
+  });
+
+  it('leaves a task of only that list in no list', async () => {
+    const solo = await store.createTask({ description: 'Solo' }, { lists: [home.id] });
+    await store.deleteList(home.id);
+    expect(await store.listsOfTask(solo.id)).toEqual([]);
+    expect((await store.listTasks()).map((t) => t.id)).toContain(solo.id);
+  });
+
+  it('keeps the memberships stored but shows no tasks for the deleted list', async () => {
+    await store.deleteList(home.id);
+    expect(await rawAll('memberships')).toHaveLength(2);
+    expect(await store.tasksOfList(home.id)).toEqual([]);
+  });
+
+  it('rejects changes to the deleted list', async () => {
+    const other = await store.createTask({ description: 'Other' });
+    await store.deleteList(home.id);
+    await expectCode(store.updateList(home.id, { name: 'House' }), 'deleted');
+    await expectCode(store.addToList(other.id, home.id), 'deleted');
+    await expectCode(store.removeFromList(task.id, home.id), 'deleted');
+    await expectCode(store.createTask({ description: 'New' }, { lists: [home.id] }), 'deleted');
+    await expectCode(store.deleteList(home.id), 'deleted');
+  });
+
+  it('fails with not-found for an unknown list', async () => {
+    await expectCode(store.deleteList(MISSING), 'not-found');
+  });
+});
+
+describe('deleteTask', () => {
+  it('moves the task to the bin and hides it from every list and view', async () => {
+    const deleted = await store.deleteTask(task.id);
+    expect(deleted).toMatchObject({
+      'deletion-time': '2026-11-04T09:00:01.000Z',
+      'last-update-time': '2026-11-04T09:00:01.000Z',
+      'last-activity-time': '2026-11-04T09:00:01.000Z',
+    });
+    expect(await store.listTasks()).toEqual([]);
+    expect(await store.tasksOfList(home.id)).toEqual([]);
+    expect(await store.tasksOfList(work.id)).toEqual([]);
+    expect(await store.getTask(task.id)).toEqual(deleted);
+  });
+
+  it('rejects edits, membership changes, and note changes until restored', async () => {
+    const note = await store.addNote(task.id, { text: 'Keep me' });
+    const garden = await store.createList({ name: 'Garden' });
+    await store.deleteTask(task.id);
+    await expectCode(store.updateTask(task.id, { description: 'Changed' }), 'deleted');
+    await expectCode(store.addToList(task.id, garden.id), 'deleted');
+    await expectCode(store.removeFromList(task.id, home.id), 'deleted');
+    await expectCode(store.addNote(task.id, { text: 'New' }), 'deleted');
+    await expectCode(store.editNote(note.id, 'Changed'), 'deleted');
+    await expectCode(store.deleteNote(note.id), 'deleted');
+    await expectCode(store.deleteTask(task.id), 'deleted');
+    expect(await store.notesOfTask(task.id)).toEqual([note]);
+  });
+
+  it('fails with not-found for an unknown task', async () => {
+    await expectCode(store.deleteTask(MISSING), 'not-found');
+  });
+});
+
+describe('restore', () => {
+  it('brings back a task with all its memberships', async () => {
+    await store.deleteTask(task.id);
+    clock.tick();
+    const restored = await store.restoreTask(task.id);
+    expect(restored).toMatchObject({
+      'deletion-time': null,
+      'last-update-time': '2026-11-04T09:00:02.000Z',
+      'last-activity-time': '2026-11-04T09:00:02.000Z',
+    });
+    expect((await store.listsOfTask(task.id)).sort()).toEqual([home.id, work.id].sort());
+    expect((await store.tasksOfList(home.id)).map((t) => t.id)).toEqual([task.id]);
+    await expect(store.updateTask(task.id, { status: 'completed' })).resolves.toMatchObject({ status: 'completed' });
+  });
+
+  it('brings back a list with all its memberships', async () => {
+    await store.deleteList(home.id);
+    clock.tick();
+    const restored = await store.restoreList(home.id);
+    expect(restored).toMatchObject({ 'deletion-time': null, 'last-update-time': '2026-11-04T09:00:02.000Z' });
+    expect((await store.listLists()).map((list) => list.id).sort()).toEqual([home.id, work.id].sort());
+    expect((await store.tasksOfList(home.id)).map((t) => t.id)).toEqual([task.id]);
+    expect((await store.listsOfTask(task.id)).sort()).toEqual([home.id, work.id].sort());
+  });
+
+  it('restores within 30 days and rejects later restores as expired', async () => {
+    await store.deleteTask(task.id);
+    await store.deleteList(home.id);
+    clock.tick(30 * DAY);
+    await expect(store.restoreTask(task.id)).resolves.toBeTruthy();
+    await store.deleteTask(task.id);
+    clock.tick(30 * DAY + 1);
+    await expectCode(store.restoreTask(task.id), 'expired');
+    await expectCode(store.restoreList(home.id), 'expired');
+  });
+
+  it('rejects restoring an entry outside the bin, or an unknown one', async () => {
+    await expectCode(store.restoreTask(task.id), 'not-deleted');
+    await expectCode(store.restoreList(home.id), 'not-deleted');
+    await expectCode(store.restoreTask(MISSING), 'not-found');
+    await expectCode(store.restoreList(MISSING), 'not-found');
+  });
+});
+
+describe('listBin', () => {
+  it('lists deleted lists and tasks, newest deletion first, with their purge time', async () => {
+    await store.deleteList(home.id);
+    clock.tick();
+    await store.deleteTask(task.id);
+    expect(await store.listBin()).toEqual([
+      {
+        type: 'task', id: task.id, description: 'Fix door',
+        'deletion-time': '2026-11-04T09:00:02.000Z', 'purge-time': '2026-12-04T09:00:02.000Z',
+      },
+      {
+        type: 'list', id: home.id, name: 'Home',
+        'deletion-time': '2026-11-04T09:00:01.000Z', 'purge-time': '2026-12-04T09:00:01.000Z',
+      },
+    ]);
+  });
+
+  it('is empty when nothing is deleted', async () => {
+    expect(await store.listBin()).toEqual([]);
+  });
+});
+
+describe('purgeForever', () => {
+  it('deletes a list and its memberships, never its tasks', async () => {
+    await store.deleteList(home.id);
+    await store.purgeForever('list', home.id);
+    expect(await store.getList(home.id)).toBeUndefined();
+    expect((await rawAll('memberships')).map((m) => m['list-id'])).toEqual([work.id]);
+    expect(await store.getTask(task.id)).toEqual(task);
+    expect(await store.listBin()).toEqual([]);
+    await expect(store.createList({ name: 'Home' })).resolves.toBeTruthy();
+  });
+
+  it('deletes a task, its memberships, and its notes', async () => {
+    const other = await store.createTask({ description: 'Other' }, { lists: [home.id] });
+    await store.addNote(other.id, { text: 'Stays' });
+    await store.addNote(task.id, { text: 'Goes' });
+    await store.deleteTask(task.id);
+    await store.purgeForever('task', task.id);
+    expect(await store.getTask(task.id)).toBeUndefined();
+    expect((await rawAll('memberships')).map((m) => m['task-id'])).toEqual([other.id]);
+    expect((await rawAll('notes')).map((n) => n.text)).toEqual(['Stays']);
+  });
+
+  it('rejects entries outside the bin, unknown entries, and unknown types', async () => {
+    await expectCode(store.purgeForever('task', task.id), 'not-deleted');
+    await expectCode(store.purgeForever('list', home.id), 'not-deleted');
+    await expectCode(store.purgeForever('task', MISSING), 'not-found');
+    await expectCode(store.purgeForever('note', task.id), 'invalid');
+  });
+});
+
+describe('purgeExpired', () => {
+  it('removes entries deleted more than 30 days ago and keeps younger ones', async () => {
+    const young = await store.createTask({ description: 'Young' }, { lists: [work.id] });
+    await store.deleteList(home.id);
+    await store.deleteTask(task.id);
+    clock.tick(DAY);
+    await store.deleteTask(young.id);
+    clock.tick(29 * DAY);
+
+    expect(await store.purgeExpired(new Date(clock.now))).toEqual([]);
+
+    clock.tick(1);
+    const purged = await store.purgeExpired(new Date(clock.now));
+    expect(purged).toEqual(expect.arrayContaining([{ type: 'list', id: home.id }, { type: 'task', id: task.id }]));
+    expect(purged).toHaveLength(2);
+    expect(await store.getList(home.id)).toBeUndefined();
+    expect(await store.getTask(task.id)).toBeUndefined();
+    expect(await rawAll('memberships')).toEqual([expect.objectContaining({ 'list-id': work.id, 'task-id': young.id })]);
+    expect((await store.listBin()).map((entry) => entry.id)).toEqual([young.id]);
+  });
+
+  it('uses the store clock by default', async () => {
+    await store.deleteTask(task.id);
+    clock.tick(30 * DAY + 1);
+    expect(await store.purgeExpired()).toEqual([{ type: 'task', id: task.id }]);
+  });
+});

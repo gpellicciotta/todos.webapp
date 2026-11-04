@@ -3,6 +3,7 @@
  *
  * List names are unique per owner, compared case-insensitively (`LST-3`).
  * Like the service, the check also covers lists in the recycle bin.
+ * A list in the recycle bin rejects changes until restored.
  */
 
 import { uuid7 } from '../lib/uuid7.js';
@@ -107,6 +108,9 @@ export function updateList(ctx, id, changes = {}) {
     const list = await request(store.get(id));
     if (!list) {
       throw new StoreError('not-found', `No list ${id}.`);
+    }
+    if (list['deletion-time']) {
+      throw new StoreError('deleted', `List ${id} is in the recycle bin.`);
     }
     const updated = { ...list };
     if ('name' in changes) {

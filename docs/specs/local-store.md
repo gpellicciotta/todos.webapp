@@ -54,3 +54,30 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 - An unknown task or note throws a `StoreError` with code `not-found`.
 - Invalid input throws a `ValidationError` naming the field and the rule, and stores nothing.
 - Every write runs in one transaction, so a failure leaves no partial change.
+
+---
+
+## Recycle Bin
+[bin.js](../../src/js/store/bin.js) uses the existing `deletion-time` fields, so the schema stays at version 2.
+- Deleting a list or task sets its `deletion-time` and `last-update-time`; a task also sets `last-activity-time`.
+- Memberships stay stored, so restoring a list or task brings them all back (`BIN-3`).
+- A deleted list is hidden from `listLists` and `listsOfTask`, and `tasksOfList` returns no tasks for it.
+- A deleted list's tasks stay in their other lists, or in no list, and keep their activity time (`LST-6`, `LST-7`).
+- A deleted task is hidden from `listTasks` and `tasksOfList`; `getTask` and `notesOfTask` still read it (`TSK-11`).
+- Changes to a deleted list or task throw a `StoreError` with code `deleted` (`BIN-6`).
+  - Lists: `updateList`, `addToList`, `removeFromList`, and `createTask` into that list.
+  - Tasks: `updateTask`, `addToList`, `removeFromList`, and every note change.
+- `listBin` returns entries with `type`, `id`, `name` or `description`, `deletion-time`, and `purge-time`, newest first.
+- `purge-time` is 30 days after `deletion-time`; restoring later throws code `expired` (`BIN-2`).
+- `purgeForever(type, id)` removes a bin entry and its memberships, and a task's notes (`BIN-4`).
+- `purgeExpired(now)` removes every entry deleted more than 30 days ago in one transaction (`BIN-5`).
+- Restoring or purging an entry outside the bin throws code `not-deleted`.
+
+---
+
+## Overdue Handling
+[overdue.js](../../src/js/core/overdue.js) computes the flag and cancels overdue tasks through the store facade.
+- `isOverdue(task, now)` is true when `due-time` is before `now` and the status is `todo` or `in-progress` (`OVD-1`).
+- `applyOverdueHandling(store, now)` sets overdue `cancel` tasks to `cancelled` via `updateTask` (`OVD-4`).
+- It never changes deleted, `completed`, or `cancelled` tasks (`OVD-6`).
+- `startOverdueTimer` runs it once on start, then every minute; the returned function stops it (`OVD-5`).

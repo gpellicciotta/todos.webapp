@@ -5,6 +5,7 @@
  * See docs/specs/local-store.md for the stores and their records.
  */
 
+import * as bin from './bin.js';
 import { request, STORES } from './idb.js';
 import * as lists from './lists.js';
 import * as notes from './notes.js';
@@ -52,7 +53,7 @@ export function openDatabase(factory, name) {
  * @param {string} [options.name] the database name
  * @param {typeof IDBKeyRange} [options.keyRange] the IDBKeyRange class of the same IndexedDB implementation
  * @param {() => Date} [options.now] the clock
- * @returns {Promise<object>} the store facade with list, task, membership, and note operations
+ * @returns {Promise<object>} the store facade with list, task, membership, note, and recycle bin operations
  */
 export async function openStore({
   indexedDB = globalThis.indexedDB,
@@ -69,7 +70,7 @@ export async function openStore({
     getList: (id) => lists.getList(ctx, id),
     listLists: () => lists.listLists(ctx),
     createTask: (input, options) => tasks.createTask(ctx, input, options),
-    updateTask: (id, changes) => tasks.updateTask(ctx, id, changes),
+    updateTask: (id, changes, options) => tasks.updateTask(ctx, id, changes, options),
     getTask: (id) => tasks.getTask(ctx, id),
     listTasks: () => tasks.listTasks(ctx),
     addToList: (taskId, listId) => tasks.addToList(ctx, taskId, listId),
@@ -80,5 +81,12 @@ export async function openStore({
     editNote: (id, text) => notes.editNote(ctx, id, text),
     deleteNote: (id) => notes.deleteNote(ctx, id),
     notesOfTask: (taskId) => notes.notesOfTask(ctx, taskId),
+    deleteList: (id) => bin.deleteList(ctx, id),
+    deleteTask: (id) => bin.deleteTask(ctx, id),
+    restoreList: (id) => bin.restoreList(ctx, id),
+    restoreTask: (id) => bin.restoreTask(ctx, id),
+    purgeForever: (type, id) => bin.purgeForever(ctx, type, id),
+    listBin: () => bin.listBin(ctx),
+    purgeExpired: (now) => bin.purgeExpired(ctx, now),
   };
 }

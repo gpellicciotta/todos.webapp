@@ -3,6 +3,7 @@
  *
  * A task belongs to zero, one, or many lists. Memberships live in their own store,
  * keyed by `[list-id, task-id]`, so each list can keep its own order.
+ * Deleted tasks and lists keep their memberships, but are hidden and reject changes (`BIN-6`).
  */
 
 import { uuid7 } from '../lib/uuid7.js';
@@ -91,14 +92,29 @@ export async function mustGetTask(tx, id) {
 }
 
 /**
+ * Read a task outside the recycle bin inside a transaction, failing when it is missing or deleted.
+ * @param {IDBTransaction} tx the transaction
+ * @param {string} id the task identifier
+ * @returns {Promise<object>} the task
+ */
+export async function mustGetLiveTask(tx, id) {
+  const task = await mustGetTask(tx, id);
+  if (task['deletion-time']) {
+    throw new StoreError('deleted', `Task ${id} is in the recycle bin.`);
+  }
+  return task;
+}
+
+/**
  * Set a task's last activity time inside a transaction, leaving its last update time unchanged.
+ * Fails when the task is missing or deleted, so deleted tasks accept no note or membership changes.
  * @param {IDBTransaction} tx a read-write transaction covering the tasks store
  * @param {string} id the task identifier
  * @param {string} time the ISO time of the activity
  * @returns {Promise<object>} the updated task
  */
 export async function markActivity(tx, id, time) {
-  const task = await mustGetTask(tx, id);
+  const task = await mustGetLiveTask(tx, id);
   const updated = { ...task, 'last-activity-time': time };
   await request(tx.objectStore(STORES.tasks).put(updated));
   return updated;
@@ -114,6 +130,20 @@ async function mustGetList(tx, id) {
   const list = await request(tx.objectStore(STORES.lists).get(id));
   if (!list) {
     throw new StoreError('not-found', `No list ${id}.`);
+  }
+  return list;
+}
+
+/**
+ * Read a list outside the recycle bin inside a transaction, failing when it is missing or deleted.
+ * @param {IDBTransaction} tx the transaction
+ * @param {string} id the list identifier
+ * @returns {Promise<object>} the list
+ */
+async function mustGetLiveList(tx, id) {
+  const list = await mustGetList(tx, id);
+  if (list['deletion-time']) {
+    throw new StoreError('deleted', `List ${id} is in the recycle bin.`);
   }
   return list;
 }
@@ -160,7 +190,7 @@ export async function createTask(ctx, input, { lists = [] } = {}) {
   return transact(ctx.db, [STORES.lists, STORES.tasks, STORES.memberships], 'readwrite', async (tx) => {
     await request(tx.objectStore(STORES.tasks).add(task));
     for (const listId of lists) {
-      await mustGetList(tx, listId);
+      await mustGetLiveList(tx, listId);
       await putMembership(tx, task.id, listId, time);
     }
     return task;
@@ -172,11 +202,16 @@ export async function createTask(ctx, input, { lists = [] } = {}) {
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {string} id the task identifier
  * @param {object} changes new values for `description`, `status`, `due-time`, or `overdue-handling`
- * @returns {Promise<object>} the updated task
+ * @param {{when?: (task: object) => boolean}} [options] `when` checks the stored task inside the transaction;
+ *   when it returns false, nothing changes and the result is null
+ * @returns {Promise<object|null>} the updated task, or null when `when` declined
  */
-export function updateTask(ctx, id, changes = {}) {
+export function updateTask(ctx, id, changes = {}, { when } = {}) {
   return transact(ctx.db, [STORES.tasks], 'readwrite', async (tx) => {
-    const task = await mustGetTask(tx, id);
+    const task = await mustGetLiveTask(tx, id);
+    if (when && !when(task)) {
+      return null;
+    }
     const updated = { ...task };
     for (const field of EDITABLE) {
       if (field in changes) {
@@ -220,8 +255,8 @@ export async function listTasks(ctx) {
  */
 export function addToList(ctx, taskId, listId) {
   return transact(ctx.db, [STORES.lists, STORES.tasks, STORES.memberships], 'readwrite', async (tx) => {
-    const task = await mustGetTask(tx, taskId);
-    await mustGetList(tx, listId);
+    const task = await mustGetLiveTask(tx, taskId);
+    await mustGetLiveList(tx, listId);
     const time = ctx.now().toISOString();
     if (await putMembership(tx, taskId, listId, time)) {
       await request(tx.objectStore(STORES.tasks).put({ ...task, 'last-activity-time': time }));
@@ -237,8 +272,12 @@ export function addToList(ctx, taskId, listId) {
  * @returns {Promise<void>}
  */
 export function removeFromList(ctx, taskId, listId) {
-  return transact(ctx.db, [STORES.tasks, STORES.memberships], 'readwrite', async (tx) => {
-    const task = await mustGetTask(tx, taskId);
+  return transact(ctx.db, [STORES.lists, STORES.tasks, STORES.memberships], 'readwrite', async (tx) => {
+    const task = await mustGetLiveTask(tx, taskId);
+    const list = await request(tx.objectStore(STORES.lists).get(listId));
+    if (list?.['deletion-time']) {
+      throw new StoreError('deleted', `List ${listId} is in the recycle bin.`);
+    }
     const store = tx.objectStore(STORES.memberships);
     const key = [listId, taskId];
     if (await request(store.get(key))) {
@@ -249,25 +288,38 @@ export function removeFromList(ctx, taskId, listId) {
 }
 
 /**
- * Return the identifiers of the lists a task belongs to.
+ * Return the identifiers of the lists a task belongs to, leaving out lists in the recycle bin.
  * @param {{db: IDBDatabase}} ctx store context
  * @param {string} taskId the task identifier
  * @returns {Promise<string[]>} the list identifiers
  */
-export async function listsOfTask(ctx, taskId) {
-  const all = await transact(ctx.db, [STORES.memberships], 'readonly',
-    (tx) => request(tx.objectStore(STORES.memberships).getAll()));
-  return all.filter((m) => m['task-id'] === taskId).map((m) => m['list-id']);
+export function listsOfTask(ctx, taskId) {
+  return transact(ctx.db, [STORES.lists, STORES.memberships], 'readonly', async (tx) => {
+    const all = await request(tx.objectStore(STORES.memberships).getAll());
+    const result = [];
+    for (const member of all.filter((m) => m['task-id'] === taskId)) {
+      const list = await request(tx.objectStore(STORES.lists).get(member['list-id']));
+      if (list && !list['deletion-time']) {
+        result.push(member['list-id']);
+      }
+    }
+    return result;
+  });
 }
 
 /**
  * Return the tasks of a list outside the recycle bin, in the order they joined it.
+ * A list in the recycle bin shows no tasks.
  * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context
  * @param {string} listId the list identifier
  * @returns {Promise<object[]>} the tasks
  */
 export function tasksOfList(ctx, listId) {
-  return transact(ctx.db, [STORES.tasks, STORES.memberships], 'readonly', async (tx) => {
+  return transact(ctx.db, [STORES.lists, STORES.tasks, STORES.memberships], 'readonly', async (tx) => {
+    const list = await request(tx.objectStore(STORES.lists).get(listId));
+    if (list?.['deletion-time']) {
+      return [];
+    }
     const range = ctx.keyRange.bound([listId], [listId, []]);
     const members = await request(tx.objectStore(STORES.memberships).getAll(range));
     members.sort((a, b) => a['added-time'].localeCompare(b['added-time']));
