@@ -10,6 +10,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 ## Backlog
 - [ ] T0004 Show service broadcasts and the notification inbox while connected.
 - [ ] T0003 Support several accounts or servers on one device, each with its own data set and sync state.
+- [ ] T0043 Speed up the cold launch toward TEC-16, smooth throttled scrolling, and support rows taller than 48 px in long lists.
 
 ## v0.1.0
 - [x] T0006 Set up the web app project: src web root, npm tooling, ESLint, Vitest, Playwright, and a local static server.
