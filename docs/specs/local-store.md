@@ -105,3 +105,30 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
   - It runs before a new key would exceed 128 characters, the service limit.
   - It also runs when the neighbors share a position, such as after a merge.
 - `listMemberships()` returns all memberships by list, in position order.
+
+---
+
+## Queries
+[query.js](../../src/js/core/query.js) filters and sorts task arrays in memory (`TEC-16`).
+- `filterTasks(tasks, filter, ctx)` keeps the input order; filters combine with AND (`TV-8`).
+  - `lists`: list ids, or `NO_LIST` for tasks in no list (`TV-2`).
+  - `statuses`: statuses (`TV-3`).
+  - `due`: `overdue`, `today`, `this-week`, `none`, or `{from, to}` ranges (`TV-4`).
+  - `created`: one `{from, to}` range (`TV-5`).
+  - `text`: text in the description or any note, ignoring case and surrounding spaces (`TV-6`).
+  - `shared`: true for tasks in a shared list, false for the others (`TV-7`).
+- A filter with several values matches any of them; an empty or missing value applies no filter.
+- `overdue` uses `isOverdue` from overdue.js, so the filter and the flag agree (`OVD-1`).
+- Today and this week use local midnights; weeks start on Monday unless `ctx.weekStart` says otherwise.
+- Ranges are inclusive; a date-only bound covers that whole local day.
+- `ctx` supplies `now`, `listsByTask`, `notesByTask`, `sharedListIds`, and optionally `weekStart`.
+- Callers pass tasks from `listTasks()`, which already leaves out the recycle bin.
+- `indexMemberships(listMemberships(), liveListIds)` builds `listsByTask` without lists in the recycle bin.
+  - `liveListIds` come from `listLists()`; a task only in deleted lists then counts as in no list.
+- `sortTasks(tasks, order)` sorts by `due-time`, `creation-time`, `last-activity-time`, `status`, or `description`.
+  - Directions are `asc` and `desc`; ties break on the task id in the same direction.
+  - Tasks without a due time sort last in both directions (`TV-10`).
+  - Statuses sort in lifecycle order; descriptions ignore case.
+- `DEFAULT_FILTER` keeps open tasks; `DEFAULT_ORDER` is due time ascending.
+- `sortByPosition(tasks, positionsOfList(memberships, listId))` restores the manual order (`LV-8`).
+- Filtering and sorting 5000 tasks takes under 50 ms in Node, per the unit test.
