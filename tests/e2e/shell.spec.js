@@ -119,9 +119,12 @@ test('every route renders its title and its view, and the sidebar follows the li
       location.hash = target;
     }, hash);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
-    // All tasks fills its view; the other screens' tasks fill theirs later.
+    // All tasks, the Recycle bin, and Settings fill their views; the other screens' tasks fill theirs later.
     if (view === 'tasks') {
       await expect(page.locator('main [data-view="tasks"] .task-row')).toHaveCount(1);
+    }
+    else if (view === 'bin' || view === 'settings') {
+      await expect(page.locator(`main [data-view="${view}"] > .${view === 'bin' ? 'bin' : 'settings'}`)).toHaveCount(1);
     }
     else {
       await expect(page.locator(`main [data-view="${view}"]`)).toBeEmpty();
@@ -184,7 +187,7 @@ test('the theme follows the system by default and a stored preference pins it', 
   const colors = page.locator('meta[name="theme-color"]');
   await expect(colors.nth(0)).toHaveAttribute('content', '#ffffff');
   await expect(colors.nth(1)).toHaveAttribute('content', '#1a1a1f');
-  await page.evaluate(() => localStorage.setItem('todos.theme', 'dark'));
+  await page.evaluate(() => localStorage.setItem('todos.theme', JSON.stringify('dark')));
   await page.reload();
   await ready(page);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

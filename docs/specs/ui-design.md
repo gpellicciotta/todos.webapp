@@ -75,7 +75,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - The main column scrolls; the bars and the sidebar stay in place.
 - Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
   List views also carry `data-list-id`; the screen tasks fill these views.
-  [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`; the others stay empty until their tasks land.
+  [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`,
+  and [settings.js](../../src/js/views/settings.js) `settings`; the others stay empty until their tasks land.
 - A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
 - Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
@@ -90,7 +91,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - On start the app opens the store, purges expired bin entries, then starts the overdue timer.
   The timer's first run cancels overdue `cancel` tasks.
 - A start-up failure replaces the view with an error banner asking for a reload.
-- The theme follows the system unless `localStorage` holds `todos.theme` as `light` or `dark`.
+- The theme follows the system unless `localStorage` holds `todos.theme` as JSON `"light"` or `"dark"`.
   A stored theme also sets every `theme-color` meta, so the browser bar matches it.
 
 ### Routes
@@ -284,7 +285,8 @@ Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
 - Each row has Restore and Delete permanently (`BIN-2`, `BIN-4`).
 - Delete permanently asks in the row first, with Delete and Keep buttons.
 - Restoring shows a toast linking to the restored item (`BIN-3`).
-- An empty bin says that deleted items stay here for 30 days.
+- An empty bin says that deleted items stay here for 30 days; otherwise that note sits above the rows.
+- Compact rows show only the days left and an icon-only Delete permanently; the question takes its own line.
 
 ### Settings
 Wireframe: [settings.svg](../img/ui/settings.svg).
@@ -296,6 +298,9 @@ Settings is one page with these sections:
 - Connection, when connected: account name and email, server, sync state, Sync log, and Disconnect.
 - Connection also holds the server URL, changeable only while disconnected (`CON-12`).
 - About: app version, build date, and a link to the requirements and source.
+  [version.js](../../src/js/version.js) holds both; a unit test matches the version to package.json.
+- Export backup, Import backup, and Connect show disabled until their tasks land.
+- The server URL defaults to `https://todos.pellicciotta.com`; an invalid address shows an error, and empty restores it.
 
 ### Sync Log
 Wireframe: [sync-log.svg](../img/ui/sync-log.svg).

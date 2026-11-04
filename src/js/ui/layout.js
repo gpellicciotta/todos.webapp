@@ -7,9 +7,9 @@
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
+import { readTheme } from '../core/preferences.js';
 import { attachMenu } from './menu.js';
 
-export const THEME_KEY = 'todos.theme';
 const ICONS = 'img/icons.svg';
 const OPEN = ['todo', 'in-progress'];
 
@@ -45,14 +45,8 @@ const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin',
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
  * @returns {'light'|'dark'|'system'} the preference
  */
-export function readThemePreference(getStorage = () => globalThis.localStorage) {
-  try {
-    const value = getStorage()?.getItem(THEME_KEY);
-    return value === 'light' || value === 'dark' ? value : 'system';
-  }
-  catch {
-    return 'system';
-  }
+export function readThemePreference(getStorage) {
+  return readTheme(getStorage);
 }
 
 /**

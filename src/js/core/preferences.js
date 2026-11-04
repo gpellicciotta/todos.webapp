@@ -3,7 +3,7 @@
  *
  * Values are stored as JSON. Storage that is missing, blocked, or full never throws:
  * reads return the fallback and writes report failure, so the app works in private windows.
- * The views store their filters and sort here (`TV-12`); the Settings screen adds its own keys.
+ * The views store their filters and sort here (`TV-12`); Settings stores `theme` and `server-url`.
  */
 
 export const PREFIX = 'todos.';
@@ -40,4 +40,66 @@ export function writePreference(key, value, getStorage = () => globalThis.localS
   catch {
     return false;
   }
+}
+
+/** The server a new device connects to (`CON-12`). */
+export const DEFAULT_SERVER_URL = 'https://todos.pellicciotta.com';
+const THEMES = ['system', 'light', 'dark'];
+
+/**
+ * Read the theme preference of this device.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {'system'|'light'|'dark'} the stored theme, or `system`
+ */
+export function readTheme(getStorage) {
+  const theme = readPreference('theme', 'system', getStorage);
+  return THEMES.includes(theme) ? theme : 'system';
+}
+
+/**
+ * Store the theme preference of this device.
+ * @param {'system'|'light'|'dark'} theme the theme
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when stored
+ */
+export function writeTheme(theme, getStorage) {
+  return THEMES.includes(theme) && writePreference('theme', theme, getStorage);
+}
+
+/**
+ * Parse a server URL: an http or https address without credentials, without a trailing slash.
+ * @param {string} text the typed address
+ * @returns {string|null} the normalized URL, or null when it is not one
+ */
+export function parseServerUrl(text) {
+  try {
+    const url = new URL(String(text).trim());
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+      return null;
+    }
+    return url.href.replace(/\/$/, '');
+  }
+  catch {
+    return null;
+  }
+}
+
+/**
+ * Read the server URL of this device.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {string} the stored URL, or the production service
+ */
+export function readServerUrl(getStorage) {
+  return parseServerUrl(readPreference('server-url', '', getStorage)) ?? DEFAULT_SERVER_URL;
+}
+
+/**
+ * Store the server URL of this device, once it parses.
+ * @param {string} text the typed address
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when stored
+ */
+export function writeServerUrl(text, getStorage) {
+  const url = parseServerUrl(text);
+  return url !== null && writePreference('server-url', url, getStorage);
 }

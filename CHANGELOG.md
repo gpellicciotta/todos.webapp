@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Added the Recycle bin and Settings screens with theme selection and the local connection card.
 - Feature: Added the notes thread to the task editor, with the add field on top and notes newest first.
 - Feature: Added the task editor panel with description, status, due time, overdue behavior, lists, and delete.
 - Feature: Added the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.

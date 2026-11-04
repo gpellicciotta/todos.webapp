@@ -8,7 +8,7 @@
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-04.12';
+const VERSION = '2026-11-04.13';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 
@@ -54,9 +54,12 @@ const PRECACHE = [
   'js/views/all-tasks.js',
   'js/views/editor-panel.js',
   'js/views/notes.js',
+  'js/views/recycle-bin.js',
+  'js/views/settings.js',
   'js/views/task-editor.js',
   'js/views/task-list.js',
   'js/views/view-controls.js',
+  'js/version.js',
 ];
 
 self.addEventListener('install', (event) => {
