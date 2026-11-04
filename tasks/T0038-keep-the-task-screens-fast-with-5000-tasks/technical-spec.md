@@ -23,3 +23,4 @@ Size estimate: 6 files, 400 lines
 - From T0016: compact layouts need a way to delete a task before the editor lands, or the editor must provide it.
 
 Completion check: `npm test && npm run lint && npm run test:e2e && npm run check:sw`
+- From T0036: when a reopened Add to list menu has no items, close it and focus the More button.
