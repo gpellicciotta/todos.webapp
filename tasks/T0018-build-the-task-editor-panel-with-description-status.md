@@ -21,6 +21,7 @@ Build the task editor per docs/specs/ui-design.md and its wireframe task-editor.
 Open it as the right panel in wide layouts and as a full screen in compact layouts.
 Save every field on change, with field errors for invalid values (`TSK-1` to `TSK-12`).
 Add the notes thread with the add note field on top, newest first (`NOT-1` to `NOT-5`).
+Split on 2026-11-04 for size: the notes thread moved to T0039.
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
@@ -62,4 +63,9 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Review]**
   Round 1 rejected by @claude-review-agent: Partial dates save on each keystroke in the due date and time fields, which can trigger overdue cancellation; minor notes on refresh after destroy and Escape in notes.
+
+- [2026-11-04] **[Implement]**
+  Review rework: the due fields save on leaving them, short years are errors, stale reads stop, and notes keep drafts.
+  - Field errors announce; Escape in a note edit cancels only that edit.
+  - Lines touched: 1495 in 10 files, under three times 500.
 

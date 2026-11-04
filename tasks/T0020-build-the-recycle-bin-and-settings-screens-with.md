@@ -1,7 +1,7 @@
 ---
 id: T0020
 owner: "@claude-code"
-needs: []
+needs: ['T0039']
 branch: —
 worktree: —
 status: active

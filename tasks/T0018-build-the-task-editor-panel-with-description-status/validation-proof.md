@@ -143,3 +143,111 @@ The seed holds three lists, three tasks, and one task with two lists, a due time
 - The first deleted view dimmed every value to the disabled color and kept unusable controls.
   Values now use the muted text color; Clear, Add to list, and chip remove buttons hide.
 - Clear wraps below the date and time fields in the 25rem panel; ui-design.md records it.
+
+### Review Rework
+Round 1 found that Chromium's date field fires `change` per digit, saving years such as 0202 while typing.
+- The due date and time now save once focus leaves both fields; a year below 1000 is a field error.
+- A read that ends after `destroy()` neither fills the panel nor closes it.
+- A focused field left unchanged shows the newest stored value; field errors go to a polite live region.
+- Escape in a note's edit field cancels that edit only; a typed new note stays as a draft for the session.
+- The Undo e2e test merged into the Delete task test; the unit tests now leave the due fields to save.
+
+The new tests ran before the fix:
+
+Command: `npx vitest run tests/unit/task-editor.test.js` (exit code 1)
+
+```text
+[... 5 lines omitted ...]
+     × saves the due date and time only when the field is left, not on each change while typing 18ms
+     × shows a field error for a year with fewer than four digits and saves nothing 11ms
+     × announces a field error through a live region 1017ms
+     × fills a focused field that was left unchanged with the newest stored value 77ms
+     × cancels only the note edit on Escape in its field 75ms
+     × keeps a typed note draft when the editor closes, and shows it again on reopening 10ms
+     × neither fills nor closes the panel when a read finishes after the editor was destroyed 95ms
+[... 1 lines omitted ...]
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+[... 1 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > saves the due date and time only when the field is left, not on each change while typing
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 3 times
+[... 43 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > shows a field error for a year with fewer than four digits and saves nothing
+AssertionError: expected null to be 'Enter a four-digit year.' // Object.is equality
+[... 17 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > announces a field error through a live region
+AssertionError: expected undefined to be 'Enter a description.' // Object.is equality
+[... 17 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > fills a focused field that was left unchanged with the newest stored value
+AssertionError: expected 'Buy paint' to be 'Buy paint, changed in another tab' // Object.is equality
+[... 14 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > cancels only the note edit on Escape in its field
+AssertionError: expected <textarea …(4)></textarea> to be null
+[... 22 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > keeps a typed note draft when the editor closes, and shows it again on reopening
+AssertionError: expected '' to be 'Ask about the primer' // Object.is equality
+[... 16 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > neither fills nor closes the panel when a read finishes after the editor was destroyed
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+[... 22 lines omitted ...]
+      Tests  7 failed | 8 passed (15)
+[... 2 lines omitted ...]
+```
+
+Command: `E2E_PORT=8813 npx playwright test tests/e2e/task-editor.spec.js -g "typing a due date" --timeout 15000` (exit code 1)
+
+```text
+[... 1 lines omitted ...]
+Running 1 test using 1 worker
+[... 1 lines omitted ...]
+  x  1 [chromium] › tests\e2e\task-editor.spec.js:122:1 › typing a due date by keyboard saves nothing until focus leaves the due fields (1.3s)
+[... 4 lines omitted ...]
+    Error: expect(received).toBeNull()
+[... 1 lines omitted ...]
+    Received: "2026-05-11T07:30:00.000Z"
+[... 3 lines omitted ...]
+    > 140 |   expect(await stored()).toBeNull();
+[... 16 lines omitted ...]
+  1 failed
+[... 1 lines omitted ...]
+```
+
+After the fix, in the working tree with T0020's in-progress files:
+
+Command: `npm test` (exit code 0)
+
+```text
+[... 1 lines omitted ...]
+> todos-webapp@0.1.0-pre test
+> vitest run
+[... 5 lines omitted ...]
+ Test Files  26 passed (26)
+      Tests  549 passed (549)
+[... 5 lines omitted ...]
+```
+
+Command: `npm run lint` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre lint
+> eslint .
+```
+
+Command: `E2E_PORT=8813 npm run test:e2e` (exit code 0)
+
+```text
+[... 5 lines omitted ...]
+Running 94 tests using 4 workers
+[... 87 lines omitted ...]
+  ok 89 [chromium] › tests\e2e\task-editor.spec.js:64:3 › the editor opens from a row with focus on the description, and Escape returns to the row at 1440 px (847ms)
+  ok 88 [chromium] › tests\e2e\task-editor.spec.js:64:3 › the editor opens from a row with focus on the description, and Escape returns to the row at 390 px (1.3s)
+  ok 90 [chromium] › tests\e2e\task-editor.spec.js:87:1 › every field saves on change without a Save button, and the changes survive a reload (TSK-1 to TSK-7) (2.4s)
+  ok 91 [chromium] › tests\e2e\task-editor.spec.js:122:1 › typing a due date by keyboard saves nothing until focus leaves the due fields (1.7s)
+  ok 92 [chromium] › tests\e2e\task-editor.spec.js:149:1 › the Add to list box adds the task to an existing list or a new one, and chips remove it (TSK-8) (2.5s)
+  ok 94 [chromium] › tests\e2e\task-editor.spec.js:205:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6) (1.9s)
+  ok 93 [chromium] › tests\e2e\task-editor.spec.js:173:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5) (2.3s)
+[... 2 lines omitted ...]
+  94 passed (54.3s)
+```
+
+`npm run check:sw` still fails as expected until VERSION is bumped at commit time.
