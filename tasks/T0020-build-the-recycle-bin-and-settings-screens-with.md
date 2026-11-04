@@ -1,15 +1,19 @@
 ---
 id: T0020
 owner: "@claude-code"
-needs: ['T0040']
+needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T19:05:23Z"
-ended_at: —
+ended_at: "2026-11-04T20:23:42Z"
 review: agent
 preview: none
 protocol: standard
+review_status: approved
+review_round: 1
+reviewed_by: "@claude-review-agent"
+completion-commit: f7e83ffdcbd779ec0b86347f48d3e3603ef5490f
 ---
 # T0020: Build the Recycle bin and Settings screens with theme selection and the local connection card
 
@@ -27,8 +31,8 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Implement]** Write the recycle bin and settings views and the preferences module.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [x] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.
-- [ ] **[Doc]**       Update ui-design.md where the build differs and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Doc]**       Update ui-design.md where the build differs and update CHANGELOG.md.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -54,4 +58,22 @@ See technical-spec.md for decisions, files, size, and tests.
   Compared the bin and settings screens at 390 and 1440 px in both themes; fixed compact wrapping.
   - Before: [bin-1440-light-before.png](T0020-build-the-recycle-bin-and-settings-screens-with/screenshots/bin-1440-light-before.png).
   - After: [bin-1440-light-after.png](T0020-build-the-recycle-bin-and-settings-screens-with/screenshots/bin-1440-light-after.png).
+
+- [2026-11-04] **[Review]**
+  Agent review approved; the commit was rebuilt on T0018 and T0040 with an identical diff apart from the service worker version.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 15.
+  - Lines touched: 1180.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 1 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 
