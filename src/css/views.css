@@ -312,6 +312,13 @@
   gap: var(--space-2);
 }
 
+/* The connect screen's signed-in line: the check icon beside the account. */
+.connect__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .settings__link {
   justify-self: start;
   color: var(--color-link);

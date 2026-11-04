@@ -76,8 +76,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
   List views also carry `data-list-id`; the screen tasks fill these views.
   [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [lists.js](../../src/js/views/lists.js) `lists`,
-  [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`, and [settings.js](../../src/js/views/settings.js) `settings`.
-  The others stay empty until their tasks land.
+  [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`, [settings.js](../../src/js/views/settings.js) `settings`,
+  and [connect.js](../../src/js/views/connect.js) `connect`; the others stay empty until their tasks land.
 - A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
 - Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
@@ -320,8 +320,12 @@ Settings is one page with these sections:
 - About: app version, build date, and a link to the requirements and source.
   [version.js](../../src/js/version.js) holds both; a unit test matches the version to package.json.
 - The theme applies at once; a theme the browser cannot store shows a toast saying it lasts until reload.
-- Connect shows disabled until its task lands; a hint, its accessible description, says connecting comes later.
+- Connect opens the connect screen; connected, the section shows "Signed in as {{name}} ({{email}})" and the server.
+- Sync state and the Sync log link join the connected section with the sync indicator task.
+- An expired session adds "Your session expired." with Sign in again, which opens the connect screen.
+- Disconnect opens a dialog; without pending changes it offers Cancel and Disconnect, and a toast confirms.
 - The server URL defaults to `https://todos.pellicciotta.com`; an invalid address shows an error, and empty restores it.
+- It takes https, or http on `localhost`, `127.0.0.1`, or `[::1]`; the query and fragment are dropped.
 
 ### Sync Log
 Wireframe: [sync-log.svg](../img/ui/sync-log.svg).
@@ -359,7 +363,9 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 1. The user opens Settings and selects Connect, or the Local only indicator.
 2. The connect screen explains the gains, the loss of anonymity, and the invitation-only access (`CON-2`).
 3. Sign in sends the browser to the Auth service; it returns to `#/connect` with a session.
+   The screen names the server; a code from a sign-in this device did not start shows "Sign-in did not finish."
 4. A user without an invitation sees a page saying access is by invitation only, and stays local (`CON-3`).
+   **[Decided]** Until sync lands, the screen ends at "Signed in as {{name}} ({{email}})" with Done.
 5. On success, the screen shows upload progress: "Uploading 5 lists and 34 tasks" (`CON-4`).
 6. It names merged lists, such as "Your list Home merged with your account's Home" (`CON-5`).
 7. It downloads the account's data, then shows Done and returns to All tasks (`CON-6`).
@@ -387,6 +393,7 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 
 ### Session Expiry
 1. An expired session turns the indicator to Sign in needed and shows a banner (`CON-13`).
+   Until the sync indicator task, only Settings and the connect screen show the expired session.
 2. The app keeps working and queues changes.
 3. Sign in on the banner restores the session and syncs the queue.
 

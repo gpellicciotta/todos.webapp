@@ -66,18 +66,23 @@ export function writeTheme(theme, getStorage) {
   return THEMES.includes(theme) && writePreference('theme', theme, getStorage);
 }
 
+/** Hosts that may use plain `http:`, since their traffic never leaves this machine. */
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+
 /**
- * Parse a server URL: an http or https address without credentials, without a trailing slash.
+ * Parse a server URL: an https address, or http on this machine, without credentials.
+ * Only the origin and the path stay, without a trailing slash.
  * @param {string} text the typed address
  * @returns {string|null} the normalized URL, or null when it is not one
  */
 export function parseServerUrl(text) {
   try {
     const url = new URL(String(text).trim());
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+    const secure = url.protocol === 'https:' || (url.protocol === 'http:' && LOCAL_HOSTS.includes(url.hostname));
+    if (!secure || url.username || url.password) {
       return null;
     }
-    return url.href.replace(/\/$/, '');
+    return `${url.origin}${url.pathname}`.replace(/\/$/, '');
   }
   catch {
     return null;

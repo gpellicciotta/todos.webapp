@@ -89,9 +89,24 @@ describe('server URL preference', () => {
 
   it('parses only http and https URLs without credentials', () => {
     expect(parseServerUrl('http://localhost:8080/api/')).toBe('http://localhost:8080/api');
+    expect(parseServerUrl('http://127.0.0.1:8863')).toBe('http://127.0.0.1:8863');
     expect(parseServerUrl('')).toBeNull();
     expect(parseServerUrl('javascript:alert(1)')).toBeNull();
     expect(parseServerUrl('https://user:pw@example.com')).toBeNull();
+  });
+
+  it('allows http only for this machine, since a token must not cross the network in clear text', () => {
+    expect(parseServerUrl('http://todos.example.com')).toBeNull();
+    expect(parseServerUrl('http://192.168.1.20:8080')).toBeNull();
+    expect(parseServerUrl('http://[::1]:8080/')).toBe('http://[::1]:8080');
+    const storage = memoryStorage();
+    storage.setItem('todos.server-url', JSON.stringify('http://todos.example.com'));
+    expect(readServerUrl(() => storage)).toBe(DEFAULT_SERVER_URL);
+  });
+
+  it('keeps only the origin and the path, dropping the query and the fragment', () => {
+    expect(parseServerUrl('https://todos.example.com/base/?token=1#/x')).toBe('https://todos.example.com/base');
+    expect(parseServerUrl('http://localhost:8080/?a=b')).toBe('http://localhost:8080');
   });
 });
 

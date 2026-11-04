@@ -3,13 +3,16 @@
  *
  * The theme choice applies at once and persists on this device (`todos.theme`).
  * Export backup saves the backup file at once and names it in a toast (`BAK-1`, `BAK-4`); Import backup opens its dialog.
- * In local mode the Connection section explains connected mode; Connect stays disabled until the connect flow lands,
- * and a hint it references says so.
+ * In local mode the Connection section explains connected mode, and Connect opens the connect screen.
  * The server URL is kept per device and checked on change (`CON-12`); an empty field restores the default.
+ * Connected, the section names the account and its server, and the URL cannot change (`CON-11`).
+ * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
  */
 
 import { backupFileName, exportBackup } from '../core/backup.js';
 import { DEFAULT_SERVER_URL, parseServerUrl, readServerUrl, readTheme, writeServerUrl, writeTheme } from '../core/preferences.js';
+import { createSession } from '../sync/session.js';
+import { confirmDialog } from '../ui/dialog.js';
 import { applyTheme } from '../ui/layout.js';
 import { BUILD_DATE, VERSION } from '../version.js';
 import { openImportDialog, plural } from './import-dialog.js';
@@ -32,9 +35,22 @@ const STRINGS = Object.freeze({
   localState: 'Not connected. Your data stays on this device.',
   localHint: 'Connect to sync devices and share lists.',
   connect: 'Connect',
-  connectLater: 'Connecting to a server arrives in a later version.',
+  signedIn: (account) => (account.name ? `Signed in as ${account.name} (${account.email})` : `Signed in as ${account.email}`),
+  server: (url) => `Server: ${url}`,
+  expired: 'Your session expired. Your changes stay on this device until you sign in again.',
+  signInAgain: 'Sign in again',
+  disconnect: 'Disconnect',
+  disconnectTitle: 'Disconnect from your account?',
+  disconnectText: 'Your own lists and tasks stay on this device. Lists that others shared with you leave it.',
+  pending: (count) => `${plural(count, 'change')} did not sync yet.`,
+  syncAndDisconnect: 'Sync and disconnect',
+  disconnectAnyway: 'Disconnect anyway',
+  cancel: 'Cancel',
+  disconnected: 'Disconnected. Your data stays on this device.',
+  syncFailed: 'The changes could not sync, so you are still connected. Try again.',
+  countFailed: 'The pending changes could not be counted, so you are still connected. Try again.',
   serverUrl: 'Server URL',
-  serverUrlError: `Enter an http or https address, such as ${DEFAULT_SERVER_URL}.`,
+  serverUrlError: `Enter an https address, or http on this computer, such as ${DEFAULT_SERVER_URL}.`,
   about: 'About',
   version: (version, built) => `Version ${version} · Built ${built}`,
   source: 'Requirements and source code',
@@ -74,17 +90,20 @@ function section(doc, key, title) {
 }
 
 /**
- * Create a button that stays disabled until its task lands.
+ * Create a button.
  * @param {Document} doc the document
  * @param {string} className the class
  * @param {string} text the label
+ * @param {() => void} [onClick] the action
  * @returns {HTMLButtonElement} the button
  */
-function disabledButton(doc, className, text) {
-  const button = make(doc, 'button', className, text);
-  button.type = 'button';
-  button.disabled = true;
-  return button;
+function button(doc, className, text, onClick) {
+  const element = make(doc, 'button', className, text);
+  element.type = 'button';
+  if (onClick) {
+    element.addEventListener('click', onClick);
+  }
+  return element;
 }
 
 /**
@@ -186,19 +205,12 @@ function dataSection(doc, store, toaster) {
 }
 
 /**
- * Create the Connection section of local mode, with the server URL field.
+ * Create the server URL field of local mode.
  * @param {Document} doc the document
  * @param {() => Storage} [getStorage] returns the storage of the preference
- * @returns {HTMLElement} the section
+ * @returns {HTMLElement} the field
  */
-function connectionSection(doc, getStorage) {
-  const element = section(doc, 'connection', STRINGS.connection);
-  const actions = make(doc, 'div', 'settings__actions');
-  const connect = disabledButton(doc, 'button', STRINGS.connect);
-  const later = make(doc, 'p', 'settings__hint', STRINGS.connectLater);
-  later.id = 'settings-connect-hint';
-  connect.setAttribute('aria-describedby', later.id);
-  actions.append(connect);
+function serverField(doc, getStorage) {
   const field = make(doc, 'div', 'field');
   const label = make(doc, 'label', 'field__label', STRINGS.serverUrl);
   label.htmlFor = 'settings-server-url';
@@ -223,9 +235,116 @@ function connectionSection(doc, getStorage) {
     writeServerUrl(url, getStorage);
   });
   field.append(label, input, error);
-  element.append(make(doc, 'p', 'settings__text', STRINGS.localState), make(doc, 'p', 'settings__hint', STRINGS.localHint),
-    actions, later, field);
-  return element;
+  return field;
+}
+
+/**
+ * Ask before disconnecting; with pending changes, offer to sync first.
+ * @param {Document} doc the document
+ * @param {HTMLElement} parent the element that holds the dialog while open
+ * @param {HTMLElement} opener the Disconnect button
+ * @param {number} pending the count of changes not synced yet
+ * @returns {Promise<'sync'|'disconnect'|null>} the choice, or null for Cancel
+ */
+async function askDisconnect(doc, parent, opener, pending) {
+  const dialog = make(doc, 'dialog', 'dialog');
+  dialog.setAttribute('aria-labelledby', 'settings-disconnect-title');
+  const header = make(doc, 'div', 'dialog__header');
+  const title = make(doc, 'h2', 'dialog__title', STRINGS.disconnectTitle);
+  title.id = 'settings-disconnect-title';
+  header.append(title);
+  const body = make(doc, 'div', 'dialog__body');
+  body.append(make(doc, 'p', '', STRINGS.disconnectText));
+  const actions = make(doc, 'div', 'dialog__actions');
+  const choices = [['button--secondary', STRINGS.cancel, 'cancel']];
+  if (pending > 0) {
+    body.append(make(doc, 'p', '', STRINGS.pending(pending)));
+    choices.push(['button--secondary', STRINGS.disconnectAnyway, 'disconnect'], ['', STRINGS.syncAndDisconnect, 'sync']);
+  }
+  else {
+    choices.push(['', STRINGS.disconnect, 'disconnect']);
+  }
+  for (const [variant, text, value] of choices) {
+    const choice = button(doc, `button ${variant}`.trim(), text);
+    choice.dataset.dialogClose = value;
+    actions.append(choice);
+  }
+  dialog.append(header, body, actions);
+  parent.append(dialog);
+  await confirmDialog(dialog, { opener });
+  const answer = dialog.returnValue;
+  dialog.remove();
+  return answer === 'sync' || answer === 'disconnect' ? answer : null;
+}
+
+/**
+ * Fill the Connection section for the session state, and refill it when the state changes.
+ * @param {Document} doc the document
+ * @param {object} options the session, the sync hook, the preference storage, and the toaster
+ * @returns {{element: HTMLElement, destroy: () => void}} the section
+ */
+function connectionSection(doc, { getStorage, session, sync, toaster }) {
+  const element = section(doc, 'connection', STRINGS.connection);
+  const heading = element.firstChild;
+
+  /**
+   * Ask, optionally sync, then disconnect.
+   * @param {HTMLElement} opener the Disconnect button
+   * @returns {Promise<void>}
+   */
+  async function disconnect(opener) {
+    let pending;
+    try {
+      pending = (await sync?.pendingCount()) ?? 0;
+    }
+    catch (error) {
+      console.error('Counting pending changes failed:', error);
+      toaster?.show(STRINGS.countFailed);
+      return;
+    }
+    const choice = await askDisconnect(doc, element, opener, pending);
+    try {
+      if (choice === 'sync') {
+        await sync.syncNow();
+      }
+      if (choice) {
+        await session.disconnect();
+        toaster?.show(STRINGS.disconnected);
+      }
+    }
+    catch (error) {
+      console.error('Sync before disconnect failed:', error);
+      toaster?.show(STRINGS.syncFailed);
+    }
+  }
+
+  /** Show the controls of the current state. */
+  function render() {
+    const state = session.state();
+    const account = session.account();
+    const actions = make(doc, 'div', 'settings__actions');
+    if (state === 'local') {
+      actions.append(button(doc, 'button', STRINGS.connect, () => {
+        doc.defaultView.location.hash = '#/connect';
+      }));
+      element.replaceChildren(heading, make(doc, 'p', 'settings__text', STRINGS.localState),
+        make(doc, 'p', 'settings__hint', STRINGS.localHint), actions, serverField(doc, getStorage));
+      return;
+    }
+    const parts = [make(doc, 'p', 'settings__text', STRINGS.signedIn(account)), make(doc, 'p', 'settings__hint', STRINGS.server(account.server))];
+    if (state === 'sign-in-needed') {
+      parts.push(make(doc, 'p', 'settings__text', STRINGS.expired));
+      const again = make(doc, 'a', 'button', STRINGS.signInAgain);
+      again.href = '#/connect';
+      actions.append(again);
+    }
+    const leave = button(doc, 'button button--secondary', STRINGS.disconnect, () => disconnect(leave));
+    actions.append(leave);
+    element.replaceChildren(heading, ...parts, actions);
+  }
+
+  render();
+  return { element, destroy: session.subscribe(render) };
 }
 
 /**
@@ -250,18 +369,23 @@ function aboutSection(doc) {
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device preferences
  * @param {object} [options.store] the store facade, for the backups
  * @param {{show: (message: string) => void}} [options.toaster] shows confirmations and problems
+ * @param {object} [options.session] the session, for the Connection section
+ * @param {{pendingCount: () => Promise<number>, syncNow: () => Promise<void>}} [options.sync] the change queue, once sync exists
  * @returns {{update: () => void, destroy: () => void}} the screen
  */
-export function mountSettings(view, { getStorage, store, toaster } = {}) {
+export function mountSettings(view, { getStorage, store, toaster, session = createSession({ getStorage }), sync } = {}) {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
-  root.append(appearanceSection(doc, getStorage, toaster), dataSection(doc, store, toaster), connectionSection(doc, getStorage), aboutSection(doc));
+  const connection = connectionSection(doc, { getStorage, session, sync, toaster });
+  root.append(appearanceSection(doc, getStorage, toaster), dataSection(doc, store, toaster), connection.element, aboutSection(doc));
   view.replaceChildren(root);
   return {
     /** Follow a route of this view; Settings has no sub-routes of its own. */
     update() {},
 
-    /** Nothing to stop: the controls go with the view. */
-    destroy() {},
+    /** Stop following the session; the controls go with the view. */
+    destroy() {
+      connection.destroy();
+    },
   };
 }

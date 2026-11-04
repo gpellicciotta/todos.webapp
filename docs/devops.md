@@ -50,6 +50,28 @@ Test offline use by hand:
 [pwa.spec.js](../tests/e2e/pwa.spec.js) runs the same check with `context.setOffline(true)`.
 It also checks the manifest type and fields, and Chromium's installability errors.
 
+### Auth Integration
+[auth.js](../src/js/sync/auth.js) holds the sign-in contract; [session.js](../src/js/sync/session.js) stores the session.
+1. Sign in opens `https://auth.pellicciotta.com/sign-in?app-name=todos&app-redirect-url={{app}}/#/connect`.
+2. Auth returns to `{{app}}/#/connect?authorization-code={{code}}`; the shell strips the code before routing.
+3. `GET {{server}}/api/auth-token/callback?authorization-code={{code}}` redirects to `/sign-in?opc=…&email=…`.
+4. `POST {{server}}/api/auth-token` with `Basic {{email}}:{{opc}}` returns `bearer-token` and `expiration-time`.
+5. `GET {{server}}/api/users/me` names the account; `DELETE {{server}}/api/auth-token` signs out.
+
+Sources, read in the sibling repositories:
+- Auth: `docs/web-api.md`, Authentication and Authorization, and `webapp/js/view/sign-in-view.mjs`.
+- ToDo's: `TodosRestController.authCallback` and the `/api/auth-token` routes, and `clients/js/src/client.mjs`.
+- support.js: `redirectToAuth` in `src/net.mjs`, which the legacy web app uses.
+
+Before connecting works in production, the services need these changes:
+- Auth must accept `{{app}}/#/connect` as the `app-redirect-url` of the `todos` application.
+- ToDo's sends CORS headers only in test mode; the app's origin needs them on the routes above.
+- The callback should answer `403` for an account without an access grant; it answers `401` today.
+
+The end-to-end tests mock Auth and ToDo's with Playwright routes on the app's own origin.
+Playwright skips the request a mocked redirect leads to, so a cross-origin mock would reach a live host.
+[playwright.config.js](../playwright.config.js) blocks every host but the local server; network-guard.spec.js proves it.
+
 ### Service Worker Version Check
 [sw-precache-hashes.json](../scripts/sw-precache-hashes.json) records `VERSION` and a SHA-256 hash per precached file.
 `npm run check:sw` fails when a precached file changed but `VERSION` did not.

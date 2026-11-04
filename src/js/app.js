@@ -12,10 +12,12 @@
 
 import { startOverdueTimer } from './core/overdue.js';
 import { openStore } from './store/db.js';
+import { createSession } from './sync/session.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { createToaster } from './ui/toast.js';
 import { mountAllTasks } from './views/all-tasks.js';
+import { mountConnect } from './views/connect.js';
 import { createEditorPanel } from './views/editor-panel.js';
 import { mountList } from './views/list.js';
 import { mountListEditor } from './views/list-editor.js';
@@ -33,7 +35,7 @@ const MESSAGES = Object.freeze({
 });
 
 /** Screens that fill a view, by view name; the other views stay empty until their tasks land. */
-const SCREENS = { tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings };
+const SCREENS = { tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, connect: mountConnect };
 
 /** Editors of the editor panel, by the editor name of their routes. */
 const EDITORS = { task: mountTaskEditor, list: mountListEditor };
@@ -64,6 +66,9 @@ function inTextField(event) {
  */
 async function start() {
   let router;
+  // An Auth return carries its code in the hash; take it out before the router reads the route.
+  const session = createSession();
+  session.capture(window);
   shell = renderShell(document.getElementById('app'), { navigate: (hash) => router.navigate(hash) });
   const toaster = createToaster({ region: shell.toastRegion, undoShortcut: true });
   let store;
@@ -123,7 +128,7 @@ async function start() {
     if (screen?.element !== element) {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
-      const options = { store, toaster, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
+      const options = { store, toaster, session, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
       screen = { element, controller: mount ? mount(element, options) : null };
     }
     screen.controller?.update(route);

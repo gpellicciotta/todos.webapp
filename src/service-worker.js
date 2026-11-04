@@ -3,12 +3,12 @@
  *
  * Install caches every file of PRECACHE in a cache named after VERSION; activate deletes older caches.
  * Same-origin GET requests are served cache first; page navigations fall back to the cached start page.
- * Other origins are never fetched or cached here (`LOC-3`).
+ * Other origins and `/api/` requests are never fetched or cached here (`LOC-3`).
  * Bump VERSION with every change to a precached file, and keep PRECACHE complete:
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-04.16';
+const VERSION = '2026-11-04.17';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 
@@ -43,6 +43,8 @@ const PRECACHE = [
   'js/store/lists.js',
   'js/store/notes.js',
   'js/store/tasks.js',
+  'js/sync/auth.js',
+  'js/sync/session.js',
   'js/ui/dialog.js',
   'js/ui/layout.js',
   'js/ui/live-region.js',
@@ -52,6 +54,7 @@ const PRECACHE = [
   'js/ui/toast.js',
   'js/views/add-bar.js',
   'js/views/all-tasks.js',
+  'js/views/connect.js',
   'js/views/editor-panel.js',
   'js/views/import-dialog.js',
   'js/views/list-editor.js',
@@ -82,7 +85,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  if (request.method !== 'GET' || url.origin !== self.location.origin) {
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.includes('/api/')) {
     return;
   }
   event.respondWith(caches.open(CACHE).then(async (cache) => {

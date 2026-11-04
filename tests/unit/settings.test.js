@@ -1,0 +1,42 @@
+// @vitest-environment happy-dom
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mountSettings } from '../../src/js/views/settings.js';
+
+/** @returns {Promise<void>} resolves once pending promises and queued tasks have run */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/**
+ * Mount Settings with a connected session stand-in and a sync hook.
+ * @param {{pendingCount: Function, syncNow?: Function}} sync the sync hook
+ * @returns {{view: HTMLElement, session: object, toaster: {show: Function}}} the parts
+ */
+function mountConnected(sync) {
+  const view = document.body.appendChild(document.createElement('div'));
+  const session = {
+    state: () => 'connected',
+    account: () => ({ name: 'Jane Doe', email: 'jane@example.com', server: 'https://todos.example.com' }),
+    subscribe: () => () => {},
+    disconnect: vi.fn(async () => {}),
+  };
+  const toaster = { show: vi.fn() };
+  mountSettings(view, { session, sync, toaster, getStorage: () => null });
+  return { view, session, toaster };
+}
+
+afterEach(() => {
+  document.body.replaceChildren();
+});
+
+describe('Disconnect in Settings', () => {
+  it('says so when the pending changes cannot be counted, and stays connected', async () => {
+    const { view, session, toaster } = mountConnected({ pendingCount: () => Promise.reject(new Error('queue closed')) });
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    [...view.querySelectorAll('button')].find((button) => button.textContent === 'Disconnect').click();
+    await settle();
+    expect(toaster.show).toHaveBeenCalledWith('The pending changes could not be counted, so you are still connected. Try again.');
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(session.disconnect).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+});

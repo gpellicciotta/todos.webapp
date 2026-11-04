@@ -137,15 +137,14 @@ test('Settings shows the local connection card, the server URL, the enabled back
     await expect(page.getByRole('button', { name, exact: true })).toBeEnabled();
   }
   const connect = page.getByRole('button', { name: 'Connect', exact: true });
-  await expect(connect).toBeDisabled();
-  await expect(connect).toHaveAccessibleDescription('Connecting to a server arrives in a later version.');
+  await expect(connect).toBeEnabled();
   await expect(page.locator('.settings')).toContainText('Not connected. Your data stays on this device.');
   const url = page.getByRole('textbox', { name: 'Server URL' });
   await expect(url).toHaveValue('https://todos.pellicciotta.com');
-  await url.fill('not a url');
+  await url.fill('http://todos.example.com');
   await url.blur();
   await expect(url).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.locator('.field__error')).toContainText('Enter an http or https address');
+  await expect(page.locator('.field__error')).toContainText('Enter an https address, or http on this computer');
   await url.fill('https://todos.example.com/');
   await url.blur();
   await expect(url).not.toHaveAttribute('aria-invalid', 'true');
