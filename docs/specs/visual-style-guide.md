@@ -5,15 +5,15 @@ The [ui-design.md](ui-design.md) spec defines screens and behavior; this guide d
 ---
 
 ## Status of the System
-The tokens, the font, the controls, the task row components, and their gallery sections exist.
+The tokens, the font, the controls, the app components, and their gallery sections exist.
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
 - [tokens.css](../../src/css/tokens.css): primitive and semantic tokens and both themes.
 - [fonts.css](../../src/css/fonts.css): the self-hosted Inter font face.
 - [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
 - [app-components.css](../../src/css/app-components.css): the task list, task row, status button, and status menu.
+- [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, editor panel, note thread, and empty state.
 - [icons.svg](../../src/img/icons.svg): the icon sprite, one `<symbol>` per icon on a 24 px grid.
 - [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token, control, app component, and pattern.
-- `src/css/app-chrome.css`: navigation, the sync indicator, and the editor panel, added in a later task.
 
 Serve the gallery with `npm run serve`, then open `/demo/visual-style-gallery.html`.
 Change the stylesheets first, then the gallery and this guide in the same commit.
@@ -53,6 +53,8 @@ Change the stylesheets first, then the gallery and this guide in the same commit
   Chromium resolves external `<use>` references over HTTP, so the gallery and its tests use the sprite.
 - **[Decided]** Task rows respond to the width of their list, through a size container query.
   Rejected: a viewport media query, which cannot see a narrow main column beside the editor panel.
+- **[Decided]** The app shell positions the sidebar, the bottom bar, and the editor panel.
+  The component styles hold no fixed or sticky positions, so the gallery shows them in place.
 
 ---
 
@@ -98,6 +100,7 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 ### Space, Shape, and Size
 - `--space-1` to `--space-8`: a 4 px based scale; rows use `--space-2` inside and no gap between.
 - `--radius-sm` for chips, `--radius-md` for controls and rows, `--radius-lg` for dialogs and panels.
+- `--radius-round`: circles, such as the unseen entries dot of the sync indicator.
 - `--border-width` for every border; `--focus-ring-width` and `--focus-ring-offset` size the focus ring.
 - `--border-width-strong`: the leading edge of error banners.
 - `--target-min`: 44 px, the minimum size of every control.
@@ -112,6 +115,7 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - `--elevation-1` for popovers and menus, `--elevation-2` for dialogs and the wide editor panel.
 - `--layer-*` for stacking: sticky bars, popovers, dialogs, and toasts; never raw `z-index` values.
 - `--duration-fast` and `--duration-base` with `--ease-standard`; durations drop to zero under reduced motion.
+- `--duration-spin`: one turn of the syncing icon; reduced motion stops the spin entirely.
 
 ---
 
@@ -147,7 +151,7 @@ Defined in [controls.css](../../src/css/controls.css); keyboard behavior for men
   Never use a toast as the only place an error appears.
 
 ### App Components
-Defined in [app-components.css](../../src/css/app-components.css), on top of the controls.
+Defined in [app-components.css](../../src/css/app-components.css) and [app-chrome.css](../../src/css/app-chrome.css), on top of the controls.
 App states use attributes the app sets, such as `data-status` and `aria-current`, never gallery classes.
 
 - [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` opening the status menu.
@@ -173,9 +177,22 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - Focus: the row draws the ring for its open link, inside its own edge.
 
   Show the drag handle only in manual order; devices without hover hide it anyway.
-- Sync indicator: an icon and label per sync state, plus a dot for unseen sync log entries.
-- Navigation: the compact bottom bar and the wide sidebar, both marking the current route with `aria-current`.
-- Empty state: a short sentence, an optional icon, and at most two actions.
+- [Navigation](../../src/demo/visual-style-gallery.html#navigation): the wide `.sidebar` and the compact `.bottom-nav`.
+  Both mark the current route with `aria-current="page"`: a signal edge, a signal icon, and semibold text.
+  The sidebar holds All tasks, Lists, each list with its open count, New list, Recycle bin, and Settings.
+  Its sync indicator sits at the bottom, left-aligned with the item icons.
+  The bottom bar holds Tasks, Lists, Bin, and Settings, each an icon above a label.
+- [Sync indicator](../../src/demo/visual-style-gallery.html#sync-indicator): a `.sync-indicator` button with one icon and label per `data-state`.
+  States: `local`, `synced`, `syncing`, `offline` with its pending count, `sign-in`, and `error`.
+  Sign-in and error use the signal color; the syncing icon spins, except under reduced motion.
+  The `.sync-indicator__dot` marks unseen sync log entries, with visually hidden text naming it.
+- [Editor panel](../../src/demo/visual-style-gallery.html#editor-panel): an `<aside class="editor-panel">` with a title and a close button.
+  From 64rem it is a bordered right panel at `--elevation-2`; below, it fills the screen.
+  Its body scrolls; sections stack with dividers, and the danger zone sits apart at the end.
+- [Note thread](../../src/demo/visual-style-gallery.html#note-thread): the add note field above an `<ol>` of notes, newest first.
+  Each `.note` shows its author, its time, an "edited" mark, its text, and a More button for own notes.
+- [Empty state](../../src/demo/visual-style-gallery.html#empty-state): a short sentence, an optional icon, and at most two actions.
+  Use it for a first launch, a filter without results, and an empty recycle bin.
 
 ---
 
@@ -185,10 +202,10 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
 - View controls: search, filter chips, and the sort menu in one bar above the task list.
   Compact layouts group the filter chips behind one Filters button.
-- Editor panel: the task or list editor; a right panel in wide layouts, a full screen in compact ones.
-- Note thread: an add note field above an `<ol>` of notes, newest first.
-  Each note shows its author, its time, an "edited" mark, and a More menu.
-- In-place confirmation: a destructive row action swaps its buttons for a question with Delete and Keep.
+- [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
+  Compact layouts show the panel alone, as a full screen.
+- [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.
+  A destructive row action swaps its buttons for it, as the last note of the note thread shows.
 
 ---
 

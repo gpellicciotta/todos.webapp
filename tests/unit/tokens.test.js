@@ -296,17 +296,24 @@ describe('stylesheets outside tokens.css', () => {
       .map((name) => join(DEMO_DIR, name)),
   ];
 
-  it('include style.css, fonts.css, controls.css, app-components.css, and the gallery stylesheet', () => {
+  it('include style.css, fonts.css, controls.css, the app stylesheets, and the gallery stylesheet', () => {
     const names = sheets().map((path) => basename(path));
     expect(names).toEqual(
-      expect.arrayContaining(['style.css', 'fonts.css', 'controls.css', 'app-components.css', 'visual-style-gallery.css']),
+      expect.arrayContaining([
+        'style.css',
+        'fonts.css',
+        'controls.css',
+        'app-components.css',
+        'app-chrome.css',
+        'visual-style-gallery.css',
+      ]),
     );
   });
 
-  it('are imported by style.css in order: fonts, tokens, controls, then app components', () => {
+  it('are imported by style.css in order: fonts, tokens, controls, app components, then app chrome', () => {
     const style = stripComments(readFileSync(join(CSS_DIR, 'style.css'), 'utf8'));
     const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css']);
+    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css']);
   });
 
   it('contain no raw color literals', () => {

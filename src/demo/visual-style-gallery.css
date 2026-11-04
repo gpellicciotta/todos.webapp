@@ -598,3 +598,48 @@
     padding: var(--space-2);
   }
 }
+
+/* Chrome specimens: the bottom bar at phone width, editor panels side by side, and empty states. */
+.stage--compact .bottom-nav {
+  inline-size: 100%;
+  max-inline-size: calc(var(--width-sidebar) * 1.5);
+}
+
+.stage--panels .editor-panel {
+  flex: 1 1 var(--width-sidebar);
+}
+
+.stage__column {
+  inline-size: 100%;
+  max-inline-size: var(--width-editor);
+}
+
+.empty-states {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--width-sidebar)), 1fr));
+  gap: var(--space-4);
+}
+
+.empty-states > .empty-state {
+  border: var(--border-width) dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+/* Split pattern frame: the editor panel beside the rows; compact layouts show the panel alone. */
+.pattern-split {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (width >= 64rem) {
+  .pattern-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--width-editor));
+  }
+}
+
+@media (width < 64rem) {
+  .pattern-split__main {
+    display: none;
+  }
+}

@@ -106,6 +106,7 @@
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
+  --radius-round: 50%;
   --border-width: 1px;
   --border-width-strong: 3px;
   --focus-ring-width: 2px;
@@ -140,6 +141,7 @@
   /* Motion: durations and easing; durations drop to zero under reduced motion. */
   --duration-fast: 120ms;
   --duration-base: 200ms;
+  --duration-spin: 1200ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -157,6 +159,7 @@
   :root {
     --duration-fast: 0ms;
     --duration-base: 0ms;
+    --duration-spin: 0ms;
   }
 }
 

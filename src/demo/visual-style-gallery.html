@@ -54,10 +54,16 @@
           <ul aria-labelledby="nav-app">
             <li><a href="#status-button">Status button</a></li>
             <li><a href="#task-row">Task row</a></li>
+            <li><a href="#navigation">Navigation</a></li>
+            <li><a href="#sync-indicator">Sync indicator</a></li>
+            <li><a href="#editor-panel">Editor panel</a></li>
+            <li><a href="#note-thread">Note thread</a></li>
+            <li><a href="#empty-state">Empty state</a></li>
           </ul>
           <p class="gallery-nav__label" id="nav-patterns">Patterns</p>
           <ul aria-labelledby="nav-patterns">
             <li><a href="#task-list">Task list</a></li>
+            <li><a href="#task-editor">Task editor</a></li>
           </ul>
         </nav>
       </div>
@@ -893,6 +899,190 @@
         </div>
       </section>
 
+      <section class="gallery-section" id="navigation" aria-labelledby="navigation-title" data-gallery-group="app">
+        <h2 id="navigation-title">Navigation</h2>
+        <p>The wide sidebar and the compact bottom bar; both mark the current route with <code>aria-current</code>.</p>
+
+        <h3>Sidebar</h3>
+        <p>All tasks is current; Work shows hover, Travel shows focus-visible, and Settings shows active.</p>
+        <div class="stage">
+          <nav class="sidebar" aria-label="Main, wide layout">
+            <p class="sidebar__brand">ToDo's</p>
+            <ul class="nav-list">
+              <li><a class="nav-item" href="#navigation" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#tasks"/></svg><span class="nav-item__label">All tasks</span><span class="nav-item__count">24<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#lists"/></svg><span class="nav-item__label">Lists</span></a></li>
+            </ul>
+            <ul class="nav-list" aria-label="Lists">
+              <li><a class="nav-item nav-item--list" href="#navigation"><span class="nav-item__label">Home</span><span class="nav-item__count">8<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item nav-item--list is-hover" href="#navigation"><span class="nav-item__label">Work</span><span class="nav-item__count">12<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item nav-item--list is-focus" href="#navigation"><span class="nav-item__label">Travel</span><span class="nav-item__count">3<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item nav-item--list" href="#navigation"><span class="nav-item__label">Errands</span><span class="nav-item__count">5<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item nav-item--list" href="#navigation"><span class="nav-item__label">Reading and other long list names</span><span class="nav-item__count">2<span class="visually-hidden"> open tasks</span></span></a></li>
+            </ul>
+            <button class="button button--quiet sidebar__new-list" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg>New list</button>
+            <ul class="nav-list sidebar__end">
+              <li><a class="nav-item" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg><span class="nav-item__label">Recycle bin</span></a></li>
+              <li><a class="nav-item is-active" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#settings"/></svg><span class="nav-item__label">Settings</span></a></li>
+            </ul>
+            <div class="sidebar__footer">
+              <button class="sync-indicator" type="button" data-state="local" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-local"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Local only</span></button>
+            </div>
+          </nav>
+        </div>
+
+        <h3>Bottom bar</h3>
+        <p>Tasks is current; Bin shows hover, and Settings shows focus-visible.</p>
+        <div class="stage stage--compact">
+          <nav class="bottom-nav" aria-label="Main, compact layout">
+            <ul class="bottom-nav__list">
+              <li><a class="bottom-nav__item" href="#navigation" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#tasks"/></svg>Tasks</a></li>
+              <li><a class="bottom-nav__item" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#lists"/></svg>Lists</a></li>
+              <li><a class="bottom-nav__item is-hover" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Bin</a></li>
+              <li><a class="bottom-nav__item is-focus" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#settings"/></svg>Settings</a></li>
+            </ul>
+          </nav>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="sync-indicator" aria-labelledby="sync-indicator-title" data-gallery-group="app">
+        <h2 id="sync-indicator-title">Sync indicator</h2>
+        <p>One icon and label per sync state; it opens the sync popover. Syncing spins only without reduced motion.</p>
+
+        <h3>States</h3>
+        <ul class="states">
+          <li class="state"><button class="sync-indicator" type="button" data-state="local" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-local"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Local only</span></button><span class="state__label"><code>local</code></span></li>
+          <li class="state"><button class="sync-indicator" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label"><code>synced</code></span></li>
+          <li class="state"><button class="sync-indicator" type="button" data-state="syncing" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-syncing"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Syncing</span></button><span class="state__label"><code>syncing</code></span></li>
+          <li class="state"><button class="sync-indicator" type="button" data-state="offline" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-offline"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Offline · <span class="sync-indicator__count">3</span> pending</span></button><span class="state__label"><code>offline</code></span></li>
+          <li class="state"><button class="sync-indicator" type="button" data-state="sign-in" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-sign-in"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Sign in needed</span></button><span class="state__label"><code>sign-in</code></span></li>
+          <li class="state"><button class="sync-indicator" type="button" data-state="error" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-error"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Sync error</span></button><span class="state__label"><code>error</code></span></li>
+        </ul>
+
+        <h3>Interaction and the unseen entries dot</h3>
+        <ul class="states">
+          <li class="state"><button class="sync-indicator" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span><span class="sync-indicator__dot"></span><span class="visually-hidden">, new sync log entries</span></button><span class="state__label">Unseen sync log entries</span></li>
+          <li class="state"><button class="sync-indicator is-hover" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="sync-indicator is-focus" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="sync-indicator is-active" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label">Active</span></li>
+          <li class="state"><button class="sync-indicator" type="button" data-state="error" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-error"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Sync error</span><span class="sync-indicator__dot"></span><span class="visually-hidden">, new sync log entries</span></button><span class="state__label">Error, with unseen entries</span></li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="editor-panel" aria-labelledby="editor-panel-title" data-gallery-group="app">
+        <h2 id="editor-panel-title">Editor panel</h2>
+        <p>The task or list editor: a right panel in wide layouts, a full screen in compact ones.</p>
+        <p>The second close button shows the focus-visible state.</p>
+        <div class="stage stage--panels">
+          <aside class="editor-panel" aria-labelledby="panel-task-title">
+            <div class="editor-panel__header">
+              <h3 class="editor-panel__title" id="panel-task-title">Task</h3>
+              <button class="icon-button" type="button" aria-label="Close the task editor"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button>
+            </div>
+            <div class="editor-panel__body">
+              <div class="editor-panel__section">
+                <h4 class="editor-panel__section-title">Section</h4>
+                <p class="editor-panel__details">Sections stack with dividers; the body scrolls under the header.</p>
+              </div>
+              <div class="editor-panel__section">
+                <h4 class="editor-panel__section-title">Details</h4>
+                <p class="editor-panel__details">Created 1 Nov · Last activity 3 Nov 09:12</p>
+              </div>
+            </div>
+          </aside>
+          <aside class="editor-panel" aria-labelledby="panel-list-title">
+            <div class="editor-panel__header">
+              <h3 class="editor-panel__title" id="panel-list-title">List: Groceries for the weekend and the long names that truncate</h3>
+              <button class="icon-button is-focus" type="button" aria-label="Close the list editor"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button>
+            </div>
+            <div class="editor-panel__body">
+              <div class="editor-panel__section">
+                <h4 class="editor-panel__section-title">Details</h4>
+                <p class="editor-panel__details">Created 28 Oct</p>
+              </div>
+              <div class="editor-panel__danger">
+                <button class="button button--secondary" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete list</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="note-thread" aria-labelledby="note-thread-title" data-gallery-group="app">
+        <h2 id="note-thread-title">Note thread</h2>
+        <p>The add note field above the notes, newest first; own notes have a More menu, and deleting asks in place.</p>
+        <p>The first More button shows the focus-visible state.</p>
+        <div class="stage">
+          <div class="stage__column">
+            <div class="note-thread">
+              <div class="note-thread__add">
+                <div class="field">
+                  <label class="field__label" for="gallery-note-new">Add note</label>
+                  <textarea class="field__control" id="gallery-note-new" placeholder="Add a note"></textarea>
+                </div>
+                <div class="note-thread__actions"><button class="button button--secondary" type="button">Add note</button></div>
+              </div>
+              <ol class="note-thread__list" aria-label="Notes, newest first">
+                <li class="note">
+                  <div class="note__header">
+                    <p class="note__meta"><span class="note__author">You</span> · <time datetime="2026-11-03T09:12">3 Nov 09:12</time> · edited</p>
+                    <button class="icon-button is-focus" type="button" aria-haspopup="menu" aria-label="More actions for your note of 3 Nov 09:12"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
+                  </div>
+                  <p class="note__text">Hardware store closes at 18:00.
+            Take the old can to match the color.</p>
+                </li>
+                <li class="note">
+                  <div class="note__header">
+                    <p class="note__meta"><span class="note__author">Ann Example</span> · <time datetime="2026-11-02T14:05">2 Nov 14:05</time></p>
+                  </div>
+                  <p class="note__text">Get the matte white, not the gloss.</p>
+                </li>
+                <li class="note">
+                  <div class="note__header">
+                    <p class="note__meta"><span class="note__author">You</span> · <time datetime="2026-11-01T18:30">1 Nov 18:30</time></p>
+                  </div>
+                  <p class="note__text">Two coats should be enough.</p>
+                  <div class="inline-confirm" role="group" aria-label="Delete your note of 1 Nov 18:30">
+                    <p class="inline-confirm__text">Delete this note?</p>
+                    <div class="inline-confirm__actions">
+                      <button class="button button--secondary" type="button">Keep</button>
+                      <button class="button" type="button">Delete</button>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="empty-state" aria-labelledby="empty-state-title" data-gallery-group="app">
+        <h2 id="empty-state-title">Empty state</h2>
+        <p>A short sentence, an optional icon, and at most two actions.</p>
+        <p>The Connect link shows the focus-visible state.</p>
+        <div class="empty-states">
+          <div class="empty-state">
+            <svg class="icon empty-state__icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#tasks"/></svg>
+            <p class="empty-state__title">No tasks yet.</p>
+            <p class="empty-state__text">Your tasks stay on this device.</p>
+            <div class="empty-state__actions">
+              <a class="button button--quiet" href="#empty-state">Import a backup</a>
+              <a class="button button--quiet is-focus" href="#empty-state">Connect to sync across devices</a>
+            </div>
+          </div>
+          <div class="empty-state">
+            <svg class="icon empty-state__icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#search"/></svg>
+            <p class="empty-state__text">No tasks match Status: open and Lists: Home.</p>
+            <div class="empty-state__actions">
+              <button class="button button--quiet" type="button">Clear all</button>
+            </div>
+          </div>
+          <div class="empty-state">
+            <svg class="icon empty-state__icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>
+            <p class="empty-state__text">The recycle bin is empty. Deleted items stay here for 30 days.</p>
+          </div>
+        </div>
+      </section>
+
       <section class="gallery-section" id="task-list" aria-labelledby="task-list-title" data-gallery-group="patterns">
         <h2 id="task-list-title">Task list</h2>
         <p>The view header, view controls, add bar, and task rows of All tasks.</p>
@@ -1025,6 +1215,157 @@
               </li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section class="gallery-section" id="task-editor" aria-labelledby="task-editor-title" data-gallery-group="patterns">
+        <h2 id="task-editor-title">Task editor</h2>
+        <p>The editor panel next to the rows in wide layouts; compact layouts show the panel alone, as a full screen.</p>
+        <div class="pattern-frame pattern-split">
+          <div class="pattern-split__main">
+            <ul class="task-list" aria-label="All tasks, with the editor open">
+              <li class="task-row" data-status="in-progress">
+                <button class="icon-button status-button" type="button" aria-haspopup="menu" aria-label="Status of Call the plumber about the leak: In progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button>
+                <a class="task-row__open" href="#task-editor">
+                  <span class="task-row__description">Call the plumber about the leak</span>
+                  <span class="task-row__meta">
+                    <span class="chip chip--overdue"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#alert"/></svg>Overdue</span>
+                    <span class="chip task-row__list"><span class="task-row__chip-text">Home</span></span>
+                    <span class="chip task-row__notes"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#note"/></svg>2<span class="visually-hidden"> notes</span></span>
+                  </span>
+                </a>
+                <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Call the plumber about the leak"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
+              </li>
+              <li class="task-row" data-status="todo">
+                <button class="icon-button status-button" type="button" aria-haspopup="menu" aria-label="Status of Buy paint for the hallway: To do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+                <a class="task-row__open" href="#task-editor" aria-current="page">
+                  <span class="task-row__description">Buy paint for the hallway</span>
+                  <span class="task-row__meta">
+                    <span class="chip"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#clock"/></svg>Today 18:00</span>
+                    <span class="chip task-row__list"><span class="task-row__chip-text">Errands</span></span>
+                    <span class="chip task-row__list"><span class="task-row__chip-text">Home</span></span>
+                    <span class="chip task-row__notes"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#note"/></svg>2<span class="visually-hidden"> notes</span></span>
+                    <span class="task-row__shared"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#people"/></svg><span class="visually-hidden">Shared</span></span>
+                  </span>
+                </a>
+                <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Buy paint for the hallway"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
+              </li>
+              <li class="task-row" data-status="todo">
+                <button class="icon-button status-button" type="button" aria-haspopup="menu" aria-label="Status of Book flights for the spring trip: To do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+                <a class="task-row__open" href="#task-editor">
+                  <span class="task-row__description">Book flights for the spring trip</span>
+                  <span class="task-row__meta">
+                    <span class="chip"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#clock"/></svg>Fri 10:00</span>
+                    <span class="chip task-row__list"><span class="task-row__chip-text">Travel</span></span>
+                    <span class="task-row__shared"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#people"/></svg><span class="visually-hidden">Shared</span></span>
+                  </span>
+                </a>
+                <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Book flights for the spring trip"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
+              </li>
+              <li class="task-row" data-status="todo">
+                <button class="icon-button status-button" type="button" aria-haspopup="menu" aria-label="Status of Renew passport: To do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+                <a class="task-row__open" href="#task-editor">
+                  <span class="task-row__description">Renew passport</span>
+                  <span class="task-row__meta">
+                    <span class="chip"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#clock"/></svg>12 Nov</span>
+                    <span class="chip task-row__list"><span class="task-row__chip-text">Errands</span></span>
+                    <span class="chip task-row__list"><span class="task-row__chip-text">Travel</span></span>
+                    <span class="chip task-row__more-lists">+1<span class="visually-hidden"> more lists</span></span>
+                    <span class="chip task-row__notes"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#note"/></svg>3<span class="visually-hidden"> notes</span></span>
+                    <span class="task-row__shared"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#people"/></svg><span class="visually-hidden">Shared</span></span>
+                  </span>
+                </a>
+                <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Renew passport"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
+              </li>
+            </ul>
+          </div>
+          <aside class="editor-panel" aria-labelledby="pattern-editor-title">
+            <div class="editor-panel__header">
+              <h3 class="editor-panel__title" id="pattern-editor-title">Task</h3>
+              <button class="icon-button" type="button" aria-label="Close the task editor"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button>
+            </div>
+            <div class="editor-panel__body">
+              <div class="editor-panel__section">
+                <div class="field">
+                  <label class="field__label" for="pattern-description">Description</label>
+                  <textarea class="field__control" id="pattern-description" maxlength="500">Buy paint for the hallway</textarea>
+                </div>
+              </div>
+              <div class="editor-panel__section">
+                <fieldset class="segmented">
+                  <legend>Status</legend>
+                  <div class="segmented__options">
+                    <label class="segmented__option"><input type="radio" name="pattern-status" value="todo" checked><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg>To do</label>
+                    <label class="segmented__option"><input type="radio" name="pattern-status" value="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>In progress</label>
+                    <label class="segmented__option"><input type="radio" name="pattern-status" value="completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg>Completed</label>
+                    <label class="segmented__option"><input type="radio" name="pattern-status" value="cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg>Cancelled</label>
+                  </div>
+                </fieldset>
+              </div>
+              <div class="editor-panel__section">
+                <h4 class="editor-panel__section-title">Due</h4>
+                <div class="editor-panel__row">
+                  <div class="field">
+                    <label class="field__label" for="pattern-due-date">Date</label>
+                    <input class="field__control" id="pattern-due-date" type="date" value="2026-11-06">
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="pattern-due-time">Time</label>
+                    <input class="field__control" id="pattern-due-time" type="time" value="18:00">
+                  </div>
+                  <button class="button button--quiet" type="button">Clear</button>
+                </div>
+                <fieldset class="choice-group">
+                  <legend>When overdue</legend>
+                  <label class="choice"><input type="radio" name="pattern-overdue" value="keep" checked> Keep open</label>
+                  <label class="choice"><input type="radio" name="pattern-overdue" value="cancel"> Cancel automatically</label>
+                </fieldset>
+              </div>
+              <div class="editor-panel__section">
+                <h4 class="editor-panel__section-title">Lists</h4>
+                <ul class="chip-list">
+                  <li><span class="chip chip--removable">Home<button class="icon-button" type="button" aria-label="Remove from Home"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button></span></li>
+                  <li><span class="chip chip--removable">Errands<button class="icon-button" type="button" aria-label="Remove from Errands"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button></span></li>
+                  <li><button class="button button--quiet" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg>Add to list</button></li>
+                </ul>
+              </div>
+              <div class="editor-panel__section">
+                <h4 class="editor-panel__section-title">Notes</h4>
+                <div class="note-thread">
+                  <div class="note-thread__add">
+                    <div class="field">
+                      <label class="field__label" for="pattern-note-new">Add note</label>
+                      <textarea class="field__control" id="pattern-note-new" placeholder="Add a note"></textarea>
+                    </div>
+                    <div class="note-thread__actions"><button class="button button--secondary" type="button">Add note</button></div>
+                  </div>
+                  <ol class="note-thread__list" aria-label="Notes, newest first">
+                    <li class="note">
+                      <div class="note__header">
+                        <p class="note__meta"><span class="note__author">You</span> · <time datetime="2026-11-03T09:12">3 Nov 09:12</time> · edited</p>
+                        <button class="icon-button" type="button" aria-haspopup="menu" aria-label="More actions for your note of 3 Nov 09:12"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
+                      </div>
+                      <p class="note__text">Hardware store closes at 18:00.
+                Take the old can to match the color.</p>
+                    </li>
+                    <li class="note">
+                      <div class="note__header">
+                        <p class="note__meta"><span class="note__author">Ann Example</span> · <time datetime="2026-11-02T14:05">2 Nov 14:05</time></p>
+                      </div>
+                      <p class="note__text">Get the matte white, not the gloss.</p>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+              <div class="editor-panel__section">
+                <h4 class="editor-panel__section-title">Details</h4>
+                <p class="editor-panel__details">Created 1 Nov · Last updated 3 Nov 09:12 · Last activity 3 Nov 09:12</p>
+              </div>
+              <div class="editor-panel__danger">
+                <button class="button button--secondary" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button>
+              </div>
+            </div>
+          </aside>
         </div>
       </section>
     </main>
