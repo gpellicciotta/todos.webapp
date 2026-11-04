@@ -8,7 +8,7 @@
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-04.7';
+const VERSION = '2026-11-04.8';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 
@@ -31,6 +31,7 @@ const PRECACHE = [
   'js/app.js',
   'js/core/backup.js',
   'js/core/overdue.js',
+  'js/core/preferences.js',
   'js/core/query.js',
   'js/lib/fractional-index.js',
   'js/lib/uuid7.js',
@@ -50,6 +51,7 @@ const PRECACHE = [
   'js/ui/toast.js',
   'js/views/add-bar.js',
   'js/views/task-list.js',
+  'js/views/view-controls.js',
 ];
 
 self.addEventListener('install', (event) => {

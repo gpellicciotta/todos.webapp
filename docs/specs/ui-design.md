@@ -82,6 +82,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
   It stays hidden until the editor tasks fill it; it covers the main column in compact layouts.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
 - Scroll positions and a memory object for filters and sort are kept per view, for the session.
+- Filters and sort persist per device in `localStorage`, such as `todos.view.tasks` (`TV-12`).
+  [preferences.js](../../src/js/core/preferences.js) reads and writes these keys; blocked storage falls back to defaults.
 - The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
 - On start the app opens the store, purges expired bin entries, then starts the overdue timer.
   The timer's first run cancels overdue `cancel` tasks.
@@ -149,6 +151,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - Filter chips open popovers with checkboxes or date ranges; compact layouts group them behind one Filters button.
 - An active filter chip shows its value, such as "Status: open"; Clear all removes every filter.
 - The Sort button opens a menu of order fields with an ascending or descending toggle.
+- The Due filter's range and the Created filter use From and To date fields.
+- **[Decided]** The search text lasts for the session only, so a reload never hides tasks behind a forgotten search.
 
 ### Sync Indicator
 - Shows one of these states, each with its own icon and label (`SYN-4`):
