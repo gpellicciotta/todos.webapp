@@ -2,14 +2,17 @@
  * Settings screen: Appearance, Data, Connection, and About sections on one page.
  *
  * The theme choice applies at once and persists on this device (`todos.theme`).
- * Export backup and Import backup stay disabled until the backup screens land (`BAK-1`, `BAK-5`).
- * In local mode the Connection section explains connected mode; Connect stays disabled until the connect flow lands.
+ * Export backup saves the backup file at once and names it in a toast (`BAK-1`, `BAK-4`); Import backup opens its dialog.
+ * In local mode the Connection section explains connected mode; Connect stays disabled until the connect flow lands,
+ * and a hint it references says so.
  * The server URL is kept per device and checked on change (`CON-12`); an empty field restores the default.
  */
 
+import { backupFileName, exportBackup } from '../core/backup.js';
 import { DEFAULT_SERVER_URL, parseServerUrl, readServerUrl, readTheme, writeServerUrl, writeTheme } from '../core/preferences.js';
 import { applyTheme } from '../ui/layout.js';
 import { BUILD_DATE, VERSION } from '../version.js';
+import { openImportDialog, plural } from './import-dialog.js';
 import { spriteIcon } from './task-list.js';
 
 const SOURCE_URL = 'https://github.com/gpellicciotta/todos.webapp';
@@ -19,13 +22,17 @@ const STRINGS = Object.freeze({
   appearance: 'Appearance',
   theme: 'Theme',
   themes: Object.freeze({ system: 'System', light: 'Light', dark: 'Dark' }),
+  themeNotSaved: 'The theme could not be saved on this device. It applies until you reload.',
   data: 'Data',
   exportBackup: 'Export backup',
   importBackup: 'Import backup',
+  exported: (name, lists, tasks) => `Saved ${name} with ${plural(lists, 'list')} and ${plural(tasks, 'task')}.`,
+  exportFailed: 'The backup could not be saved. Try again.',
   connection: 'Connection',
   localState: 'Not connected. Your data stays on this device.',
   localHint: 'Connect to sync devices and share lists.',
   connect: 'Connect',
+  connectLater: 'Connecting to a server arrives in a later version.',
   serverUrl: 'Server URL',
   serverUrlError: `Enter an http or https address, such as ${DEFAULT_SERVER_URL}.`,
   about: 'About',
@@ -94,9 +101,10 @@ function formatBuildDate(isoDate) {
  * Create the Appearance section: the theme as a segmented control that applies at once.
  * @param {Document} doc the document
  * @param {() => Storage} [getStorage] returns the storage of the preference
+ * @param {{show: (message: string) => void}} [toaster] reports a theme that could not be saved
  * @returns {HTMLElement} the section
  */
-function appearanceSection(doc, getStorage) {
+function appearanceSection(doc, getStorage, toaster) {
   const element = section(doc, 'appearance', STRINGS.appearance);
   const fieldset = make(doc, 'fieldset', 'segmented');
   const options = make(doc, 'div', 'segmented__options');
@@ -110,8 +118,10 @@ function appearanceSection(doc, getStorage) {
     input.value = value;
     input.checked = value === current;
     input.addEventListener('change', () => {
-      writeTheme(value, getStorage);
       applyTheme(doc, value);
+      if (!writeTheme(value, getStorage)) {
+        toaster?.show(STRINGS.themeNotSaved);
+      }
     });
     option.append(input, doc.createTextNode(label));
     options.append(option);
@@ -121,15 +131,56 @@ function appearanceSection(doc, getStorage) {
 }
 
 /**
- * Create the Data section, whose backup buttons stay disabled until the backup screens land.
+ * Save the backup of every stored record as `todos-backup-{{yyyy-mm-dd}}.json`, then name it in a toast.
  * @param {Document} doc the document
+ * @param {object} store the store facade
+ * @param {{show: (message: string) => void}} [toaster] shows the confirmation
+ * @returns {Promise<void>}
+ */
+async function saveBackup(doc, store, toaster) {
+  const now = new Date();
+  const backup = await exportBackup(store, { now, appVersion: VERSION });
+  const name = backupFileName(now);
+  const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+  const link = make(doc, 'a', 'visually-hidden');
+  link.href = url;
+  link.download = name;
+  doc.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toaster?.show(STRINGS.exported(name, backup.lists.length, backup.tasks.length));
+}
+
+/**
+ * Create the Data section: Export backup and Import backup.
+ * @param {Document} doc the document
+ * @param {object} store the store facade
+ * @param {{show: (message: string) => void}} [toaster] shows the confirmations
  * @returns {HTMLElement} the section
  */
-function dataSection(doc) {
+function dataSection(doc, store, toaster) {
   const element = section(doc, 'data', STRINGS.data);
   const actions = make(doc, 'div', 'settings__actions');
-  actions.append(disabledButton(doc, 'button button--secondary', STRINGS.exportBackup),
-    disabledButton(doc, 'button button--secondary', STRINGS.importBackup));
+  const exportButton = make(doc, 'button', 'button button--secondary', STRINGS.exportBackup);
+  exportButton.type = 'button';
+  exportButton.addEventListener('click', async () => {
+    exportButton.disabled = true;
+    try {
+      await saveBackup(doc, store, toaster);
+    }
+    catch (error) {
+      console.error('Export failed:', error);
+      toaster?.show(STRINGS.exportFailed);
+    }
+    finally {
+      exportButton.disabled = false;
+    }
+  });
+  const importButton = make(doc, 'button', 'button button--secondary', STRINGS.importBackup);
+  importButton.type = 'button';
+  importButton.addEventListener('click', () => openImportDialog(doc, { store, toaster, opener: importButton }));
+  actions.append(exportButton, importButton);
   element.append(actions);
   return element;
 }
@@ -143,7 +194,11 @@ function dataSection(doc) {
 function connectionSection(doc, getStorage) {
   const element = section(doc, 'connection', STRINGS.connection);
   const actions = make(doc, 'div', 'settings__actions');
-  actions.append(disabledButton(doc, 'button', STRINGS.connect));
+  const connect = disabledButton(doc, 'button', STRINGS.connect);
+  const later = make(doc, 'p', 'settings__hint', STRINGS.connectLater);
+  later.id = 'settings-connect-hint';
+  connect.setAttribute('aria-describedby', later.id);
+  actions.append(connect);
   const field = make(doc, 'div', 'field');
   const label = make(doc, 'label', 'field__label', STRINGS.serverUrl);
   label.htmlFor = 'settings-server-url';
@@ -169,7 +224,7 @@ function connectionSection(doc, getStorage) {
   });
   field.append(label, input, error);
   element.append(make(doc, 'p', 'settings__text', STRINGS.localState), make(doc, 'p', 'settings__hint', STRINGS.localHint),
-    actions, field);
+    actions, later, field);
   return element;
 }
 
@@ -193,12 +248,14 @@ function aboutSection(doc) {
  * @param {HTMLElement} view the `[data-view="settings"]` element
  * @param {object} [options] screen options
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device preferences
+ * @param {object} [options.store] the store facade, for the backups
+ * @param {{show: (message: string) => void}} [options.toaster] shows confirmations and problems
  * @returns {{update: () => void, destroy: () => void}} the screen
  */
-export function mountSettings(view, { getStorage } = {}) {
+export function mountSettings(view, { getStorage, store, toaster } = {}) {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
-  root.append(appearanceSection(doc, getStorage), dataSection(doc), connectionSection(doc, getStorage), aboutSection(doc));
+  root.append(appearanceSection(doc, getStorage, toaster), dataSection(doc, store, toaster), connectionSection(doc, getStorage), aboutSection(doc));
   view.replaceChildren(root);
   return {
     /** Follow a route of this view; Settings has no sub-routes of its own. */

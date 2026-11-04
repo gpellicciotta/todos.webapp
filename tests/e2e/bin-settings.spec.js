@@ -116,12 +116,29 @@ test('choosing Dark sets data-theme at once and keeps it after a reload', async 
   expect(problems).toEqual([]);
 });
 
-test('Settings shows the local connection card, the server URL, the disabled actions, and the version', async ({ page }) => {
+test('a theme that cannot be saved still applies, and a toast says so', async ({ page }) => {
   const problems = watch(page);
   await open(page, '#/settings');
-  for (const name of ['Export backup', 'Import backup', 'Connect']) {
-    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
+  await page.evaluate(() => {
+    Storage.prototype.setItem = () => {
+      throw new DOMException('Full', 'QuotaExceededError');
+    };
+  });
+  await page.getByRole('group', { name: 'Theme' }).getByText('Dark').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('.toast')).toContainText('The theme could not be saved on this device.');
+  expect(problems).toEqual([]);
+});
+
+test('Settings shows the local connection card, the server URL, the enabled backup actions, and the version', async ({ page }) => {
+  const problems = watch(page);
+  await open(page, '#/settings');
+  for (const name of ['Export backup', 'Import backup']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeEnabled();
   }
+  const connect = page.getByRole('button', { name: 'Connect', exact: true });
+  await expect(connect).toBeDisabled();
+  await expect(connect).toHaveAccessibleDescription('Connecting to a server arrives in a later version.');
   await expect(page.locator('.settings')).toContainText('Not connected. Your data stays on this device.');
   const url = page.getByRole('textbox', { name: 'Server URL' });
   await expect(url).toHaveValue('https://todos.pellicciotta.com');

@@ -1,0 +1,295 @@
+/**
+ * Import backup dialog: pick a file, see its export date and counts, choose Merge or Overwrite, then confirm.
+ *
+ * An invalid file shows its reason and keeps Import disabled (`BAK-13`).
+ * The counts of added, updated, and binned items follow the chosen mode (`BAK-11`).
+ * Import applies the backup in one transaction; Cancel, Escape, and Close change nothing (`BAK-12`).
+ * While the import runs, every control is locked and the dialog cannot be cancelled.
+ */
+
+import { importBackup, parseBackup, previewImport } from '../core/backup.js';
+import { openDialog } from '../ui/dialog.js';
+import { make, spriteIcon } from './task-list.js';
+
+/** Dialog strings, for the strings module of TEC-13 to absorb. */
+const STRINGS = Object.freeze({
+  title: 'Import backup',
+  close: 'Close',
+  file: 'Backup file',
+  fileHint: 'Choose a todos-backup file exported from ToDo\'s.',
+  mode: 'Import mode',
+  modes: Object.freeze({
+    merge: Object.freeze({ label: 'Merge', hint: 'Add and update items; keep the rest.' }),
+    overwrite: Object.freeze({ label: 'Overwrite', hint: 'Replace your data; missing items go to the recycle bin.' }),
+  }),
+  summary: (date, lists, tasks) => `Exported ${date} · ${plural(lists, 'list')} · ${plural(tasks, 'task')}`,
+  counts: ({ added, updated, binned, removed }) => [`${added} added`, `${updated} updated`, `${binned} to recycle bin`,
+    ...(removed > 0 ? [`${removed} removed`] : [])].join(' · '),
+  unreadable: 'The file could not be read. Choose it again.',
+  failed: 'The import failed, and nothing changed. Try again.',
+  imported: (name, counts) => `Imported ${name}: ${STRINGS.counts(counts)}.`,
+  importAction: 'Import',
+  cancel: 'Cancel',
+});
+
+let dialogs = 0;
+
+/**
+ * Return a count with its noun, as in "1 list" or "8 lists".
+ * @param {number} count the count
+ * @param {string} noun the singular noun
+ * @returns {string} the phrase
+ */
+export function plural(count, noun) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+/**
+ * Format an ISO time as a local date, as in "30 Oct 2026".
+ * @param {string} iso the time
+ * @returns {string} the date
+ */
+function formatDate(iso) {
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
+}
+
+/**
+ * Create a mode option: a radio in its label, with a hint that describes it.
+ * @param {Document} doc the document
+ * @param {string} id the identifier prefix
+ * @param {string} mode `merge` or `overwrite`
+ * @returns {{element: HTMLElement, input: HTMLInputElement}} the option and its radio
+ */
+function modeOption(doc, id, mode) {
+  const element = make(doc, 'div', 'import-dialog__mode');
+  const label = make(doc, 'label', 'choice');
+  const input = doc.createElement('input');
+  Object.assign(input, { type: 'radio', name: `${id}-mode`, value: mode, checked: mode === 'merge' });
+  const hint = make(doc, 'p', 'field__hint import-dialog__mode-hint', STRINGS.modes[mode].hint);
+  hint.id = `${id}-${mode}-hint`;
+  input.setAttribute('aria-describedby', hint.id);
+  label.append(input, doc.createTextNode(STRINGS.modes[mode].label));
+  element.append(label, hint);
+  return { element, input };
+}
+
+/**
+ * Open the Import backup dialog; it removes itself once closed.
+ * @param {Document} doc the document
+ * @param {object} context the dialog context
+ * @param {object} context.store the store facade
+ * @param {{show: (message: string) => void}} [context.toaster] shows the confirmation toast
+ * @param {HTMLElement} [context.opener] the control that gets focus back, the focused one by default
+ * @returns {Promise<object|null>} the import counts, or null when the dialog closed without importing
+ */
+export function openImportDialog(doc, { store, toaster, opener }) {
+  dialogs += 1;
+  const id = `import-dialog-${dialogs}`;
+  const dialog = make(doc, 'dialog', 'dialog import-dialog');
+  dialog.setAttribute('aria-labelledby', `${id}-title`);
+
+  const header = make(doc, 'div', 'dialog__header import-dialog__header');
+  const title = make(doc, 'h2', 'dialog__title', STRINGS.title);
+  title.id = `${id}-title`;
+  const closeButton = make(doc, 'button', 'icon-button');
+  closeButton.type = 'button';
+  closeButton.dataset.dialogClose = 'cancel';
+  closeButton.setAttribute('aria-label', STRINGS.close);
+  closeButton.append(spriteIcon(doc, 'close'));
+  header.append(title, closeButton);
+
+  const field = make(doc, 'div', 'field');
+  const label = make(doc, 'label', 'field__label', STRINGS.file);
+  label.htmlFor = `${id}-file`;
+  const input = make(doc, 'input', 'field__control import-dialog__file');
+  Object.assign(input, { id: label.htmlFor, type: 'file', accept: '.json,application/json' });
+  const hint = make(doc, 'p', 'field__hint', STRINGS.fileHint);
+  hint.id = `${id}-file-hint`;
+  const error = make(doc, 'p', 'field__error');
+  error.id = `${id}-file-error`;
+  error.setAttribute('role', 'alert');
+  error.hidden = true;
+  const errorText = make(doc, 'span', 'import-dialog__error-text');
+  error.append(spriteIcon(doc, 'alert'), errorText);
+  input.setAttribute('aria-describedby', hint.id);
+  field.append(label, input, hint, error);
+
+  const summary = make(doc, 'div', 'import-dialog__summary');
+  const fileName = make(doc, 'p', 'import-dialog__file-name');
+  const fileMeta = make(doc, 'p', 'import-dialog__file-meta');
+  summary.append(fileName, fileMeta);
+  const modes = make(doc, 'fieldset', 'choice-group import-dialog__modes');
+  modes.append(make(doc, 'legend', 'visually-hidden', STRINGS.mode));
+  const options = ['merge', 'overwrite'].map((mode) => modeOption(doc, id, mode));
+  modes.append(...options.map((option) => option.element));
+  const counts = make(doc, 'p', 'import-dialog__counts');
+  counts.setAttribute('role', 'status');
+  const preview = make(doc, 'div', 'import-dialog__preview');
+  preview.hidden = true;
+  preview.append(summary, modes, counts);
+
+  const body = make(doc, 'div', 'dialog__body import-dialog__body');
+  body.append(field, preview);
+  const actions = make(doc, 'div', 'dialog__actions');
+  const cancelButton = make(doc, 'button', 'button button--secondary', STRINGS.cancel);
+  cancelButton.type = 'button';
+  cancelButton.dataset.dialogClose = 'cancel';
+  const importButton = make(doc, 'button', 'button', STRINGS.importAction);
+  importButton.type = 'button';
+  importButton.disabled = true;
+  actions.append(cancelButton, importButton);
+  dialog.append(header, body, actions);
+  doc.body.append(dialog);
+
+  let backup = null;
+  let name = '';
+  let request = 0;
+  let result = null;
+  let close = () => {};
+  let importing = false;
+
+  /** @returns {string} the chosen mode */
+  const mode = () => options.find((option) => option.input.checked).input.value;
+
+  /**
+   * Show a problem with the file or the import, or clear it.
+   * @param {string|null} message the reason, or null to clear it
+   */
+  function showError(message) {
+    error.hidden = message === null;
+    errorText.textContent = message ?? '';
+    if (message === null) {
+      input.removeAttribute('aria-invalid');
+      input.setAttribute('aria-describedby', hint.id);
+    }
+    else {
+      input.setAttribute('aria-invalid', 'true');
+      input.setAttribute('aria-describedby', `${hint.id} ${error.id}`);
+    }
+  }
+
+  /**
+   * Count what the chosen mode would change, ignoring answers that a newer choice made stale.
+   * @returns {Promise<void>}
+   */
+  async function refreshCounts() {
+    const current = ++request;
+    importButton.disabled = true;
+    try {
+      const planned = await previewImport(store, backup, mode());
+      if (current === request) {
+        counts.textContent = STRINGS.counts(planned);
+        importButton.disabled = false;
+      }
+    }
+    catch (problem) {
+      if (current === request) {
+        showError(problem.message);
+      }
+    }
+  }
+
+  /**
+   * Read and check the picked file, then show its summary and counts, or its reason for failing.
+   * @returns {Promise<void>}
+   */
+  async function onFile() {
+    const current = ++request;
+    backup = null;
+    preview.hidden = true;
+    importButton.disabled = true;
+    showError(null);
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    let text;
+    try {
+      text = await file.text();
+    }
+    catch {
+      text = null;
+    }
+    if (current !== request) {
+      return;
+    }
+    if (text === null) {
+      showError(STRINGS.unreadable);
+      return;
+    }
+    try {
+      backup = parseBackup(text);
+    }
+    catch (problem) {
+      showError(problem.message);
+      return;
+    }
+    name = file.name;
+    fileName.textContent = name;
+    fileMeta.textContent = STRINGS.summary(formatDate(backup['export-time']), backup.lists.length, backup.tasks.length);
+    counts.textContent = '';
+    preview.hidden = false;
+    await refreshCounts();
+  }
+
+  /**
+   * Apply the import in the chosen mode, then close with a toast; a failure keeps the dialog open.
+   * @returns {Promise<void>}
+   */
+  async function onImport() {
+    const locked = [input, ...options.map((option) => option.input), closeButton, cancelButton, importButton];
+    importing = true;
+    locked.forEach((control) => {
+      control.disabled = true;
+    });
+    try {
+      result = await importBackup(store, backup, mode());
+    }
+    catch (problem) {
+      console.error('Import failed:', problem);
+      showError(STRINGS.failed);
+      return;
+    }
+    finally {
+      importing = false;
+      locked.forEach((control) => {
+        control.disabled = false;
+      });
+      if (result === null) {
+        importButton.focus();
+      }
+    }
+    close('import');
+    toaster?.show(STRINGS.imported(name, result));
+  }
+
+  input.addEventListener('change', () => importing || onFile());
+  for (const option of options) {
+    option.input.addEventListener('change', () => importing || refreshCounts());
+  }
+  importButton.addEventListener('click', () => importing || onImport());
+  /**
+   * Keep the dialog open while importing; registered before openDialog's listeners, it runs first.
+   * @param {Event} event an Escape keydown or a cancel request
+   */
+  const hold = (event) => {
+    if (importing && (event.type === 'cancel' || event.key === 'Escape')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  };
+  dialog.addEventListener('keydown', hold);
+  dialog.addEventListener('cancel', hold);
+
+  return new Promise((resolve) => {
+    close = openDialog(dialog, {
+      opener,
+      initialFocus: input,
+      onClose() {
+        request += 1;
+        dialog.remove();
+        resolve(result);
+      },
+    });
+  });
+}

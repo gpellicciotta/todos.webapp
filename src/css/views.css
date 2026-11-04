@@ -301,7 +301,8 @@
   font-size: var(--text-sm);
 }
 
-.settings__text + .settings__hint {
+.settings__text + .settings__hint,
+.settings__actions + .settings__hint {
   margin-block-start: calc(var(--space-2) - var(--space-3));
 }
 
@@ -369,4 +370,68 @@
   .list-view .task-row > .task-row__more {
     display: inline-grid;
   }
+}
+
+/*
+ * Import backup dialog: the file field, then the file summary, the mode choice, and the counts.
+ */
+.import-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  padding-inline-end: var(--space-3);
+}
+
+.import-dialog__body,
+.import-dialog__preview {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+
+.import-dialog__summary {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-sunken);
+}
+
+.import-dialog__file-name,
+.import-dialog__file-meta,
+.import-dialog__counts {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.import-dialog__file-name,
+.import-dialog__counts {
+  font-weight: var(--weight-semibold);
+}
+
+.import-dialog__file-meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.import-dialog__file::file-selector-button {
+  margin-inline-end: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The hint sits under its option's label text, close to the label row. */
+.import-dialog__mode-hint {
+  margin-block-start: calc(0px - var(--space-2));
+  padding-inline-start: calc(var(--space-1) + var(--icon-size) + var(--space-3));
+}
+
+.import-dialog [hidden] {
+  display: none;
 }

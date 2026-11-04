@@ -309,7 +309,8 @@ Settings is one page with these sections:
 - Connection also holds the server URL, changeable only while disconnected (`CON-12`).
 - About: app version, build date, and a link to the requirements and source.
   [version.js](../../src/js/version.js) holds both; a unit test matches the version to package.json.
-- Export backup, Import backup, and Connect show disabled until their tasks land.
+- The theme applies at once; a theme the browser cannot store shows a toast saying it lasts until reload.
+- Connect shows disabled until its task lands; a hint, its accessible description, says connecting comes later.
 - The server URL defaults to `https://todos.pellicciotta.com`; an invalid address shows an error, and empty restores it.
 
 ### Sync Log
@@ -388,17 +389,19 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 ### Exporting a Backup
 1. The user selects Export backup in Settings.
 2. The browser saves `todos-backup-{{yyyy-mm-dd}}.json` at once (`BAK-1`, `BAK-4`).
-3. A toast names the file and its counts of lists and tasks.
+3. A toast names the file and its counts of lists and tasks: "Saved todos-backup-2026-11-04.json with 1 list and 2 tasks."
 
 ### Importing a Backup
 Wireframe: [import.svg](../img/ui/import.svg).
 
-1. The user selects Import backup and picks a file.
-2. An invalid file shows the reason and changes nothing (`BAK-13`).
-3. A valid file shows its export date and counts, and the mode choice: Merge or Overwrite (`BAK-5`).
+1. The user selects Import backup and picks a file in the dialog's Backup file field, which has focus.
+2. An invalid file shows the reason under the field, keeps Import disabled, and changes nothing (`BAK-13`).
+3. A valid file shows its name, export date, and counts, and the mode choice: Merge or Overwrite (`BAK-5`).
 4. Merge is the default; Overwrite explains that missing own items move to the recycle bin (`BAK-9`).
 5. The dialog shows the counts of added, updated, and binned items for the chosen mode (`BAK-11`).
-6. Import applies the change; Cancel changes nothing (`BAK-12`).
+   They update when the mode changes; overwrite adds "N removed" when it deletes memberships or notes.
+6. Import applies the change and a toast repeats the counts; Cancel, Close, and Escape change nothing (`BAK-12`).
+   The actions follow the dialog component: Cancel, then Import at the end.
 7. When connected, the dialog notes that lists of other owners stay unchanged (`BAK-10`).
 
 ---

@@ -8,7 +8,7 @@
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-04.14';
+const VERSION = '2026-11-04.15';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 
@@ -53,6 +53,7 @@ const PRECACHE = [
   'js/views/add-bar.js',
   'js/views/all-tasks.js',
   'js/views/editor-panel.js',
+  'js/views/import-dialog.js',
   'js/views/list.js',
   'js/views/notes.js',
   'js/views/recycle-bin.js',
