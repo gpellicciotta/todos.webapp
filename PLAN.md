@@ -47,4 +47,4 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0038 Keep the task screens fast with 5000 tasks: keyed row reuse, debounced search, and due chip updates.
 - [x] T0040 Add the notes thread to the task editor: add field on top, newest first, edit and delete own notes.
 - [x] T0041 Fix the open minor review findings in the screens and editors: focus, ARIA, dialogs, saves, drag, and test timing.
-- [ ] T0042 Meet TEC-16 on phones: virtualize long task lists and verify 200 ms first paint under 4x CPU throttling.
+- [x] T0042 Meet TEC-16 on phones: virtualize long task lists and verify 200 ms first paint under 4x CPU throttling.
