@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Handled IndexedDB version changes and blocked upgrades, and added change subscriptions to the store.
 - Feature: Added accessible dialog, toast, and live region behavior modules with focus handling.
 - Feature: Added accessible menu and popover behavior modules with keyboard and focus handling.
 - Feature: Added the app chrome components: navigation, sync indicator, editor panel, note thread, and empty state.

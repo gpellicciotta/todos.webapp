@@ -144,3 +144,21 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
   - `changes.put` holds records to store per store name; `changes.delete` holds `memberships` and `notes` keys.
   - Reading, planning, and writing share one transaction, so nothing changes in between and a failure stores nothing.
   - The writes skip the store's validation; the backup module validates every record first.
+
+---
+
+## Connections
+- `openStore({onVersionChange})` keeps one connection open for the page.
+- A newer version opened in another tab closes this connection, then calls `onVersionChange`.
+- The app answers with a Reload toast, since the closed connection serves no more operations.
+- An older connection that stays open blocks an upgrade; the open then fails with a `blocked` StoreError.
+- The upgrade finishes once that connection closes; the late connection is closed at once.
+
+---
+
+## Change Notifications
+- `subscribe(listener)` calls `listener({operation, remote})` after each committed write, and returns an unsubscribe function.
+- `operation` names the facade method, such as `createList`; reads never notify.
+- `openStore({broadcast: true})` also posts each write on the `{{name}}-changes` BroadcastChannel.
+- Stores of other tabs on that channel then notify their subscribers with `remote: true`.
+- Broadcasting is opt-in, so unit tests and scripts open no channel.

@@ -7,7 +7,7 @@
 
 import * as bin from './bin.js';
 import * as bulk from './bulk.js';
-import { request, STORES } from './idb.js';
+import { StoreError, STORES } from './idb.js';
 import * as lists from './lists.js';
 import * as notes from './notes.js';
 import * as tasks from './tasks.js';
@@ -40,16 +40,45 @@ function upgrade(db, oldVersion, tx) {
   }
 }
 
+/** Facade operations that change data; subscribers hear of each one once it commits. */
+const WRITES = [
+  'createList', 'updateList', 'createTask', 'updateTask', 'addToList', 'removeFromList', 'moveInList',
+  'addNote', 'editNote', 'deleteNote', 'deleteList', 'deleteTask', 'restoreList', 'restoreTask',
+  'purgeForever', 'purgeExpired', 'applyChanges',
+];
+
 /**
  * Open the database, creating or upgrading it as needed.
+ * A newer version opened elsewhere closes this connection and calls `onVersionChange`.
+ * An older connection that stays open fails the open with a `blocked` StoreError.
  * @param {IDBFactory} factory the IndexedDB factory
  * @param {string} name the database name
+ * @param {() => void} [onVersionChange] called after a newer version closed this connection
  * @returns {Promise<IDBDatabase>} the open database
  */
-export function openDatabase(factory, name) {
-  const req = factory.open(name, DB_VERSION);
-  req.onupgradeneeded = (event) => upgrade(req.result, event.oldVersion, req.transaction);
-  return request(req);
+export function openDatabase(factory, name, onVersionChange = () => {}) {
+  return new Promise((resolve, reject) => {
+    const req = factory.open(name, DB_VERSION);
+    let blocked = false;
+    req.onupgradeneeded = (event) => upgrade(req.result, event.oldVersion, req.transaction);
+    req.onblocked = () => {
+      blocked = true;
+      reject(new StoreError('blocked', 'Another tab still uses an older version of the app. Close it and reload.'));
+    };
+    req.onsuccess = () => {
+      const db = req.result;
+      if (blocked) {
+        db.close();
+        return;
+      }
+      db.onversionchange = () => {
+        db.close();
+        onVersionChange();
+      };
+      resolve(db);
+    };
+    req.onerror = () => reject(req.error);
+  });
 }
 
 /**
@@ -59,18 +88,40 @@ export function openDatabase(factory, name) {
  * @param {string} [options.name] the database name
  * @param {typeof IDBKeyRange} [options.keyRange] the IDBKeyRange class of the same IndexedDB implementation
  * @param {() => Date} [options.now] the clock
- * @returns {Promise<object>} the store facade with list, task, membership, note, recycle bin, and bulk operations
+ * @param {() => void} [options.onVersionChange] called after a newer app version closed the connection
+ * @param {boolean} [options.broadcast] tell stores in other tabs of each write, through a BroadcastChannel
+ * @returns {Promise<object>} the store facade with list, task, membership, note, recycle bin, and bulk operations;
+ *   `subscribe(listener)` hears of every write, as `{operation, remote}`, and returns an unsubscribe function
  */
 export async function openStore({
   indexedDB = globalThis.indexedDB,
   keyRange = globalThis.IDBKeyRange,
   name = DB_NAME,
   now = () => new Date(),
+  onVersionChange,
+  broadcast = false,
 } = {}) {
-  const db = await openDatabase(indexedDB, name);
+  const db = await openDatabase(indexedDB, name, onVersionChange);
   const ctx = { db, keyRange, now };
-  return {
-    close: () => db.close(),
+  const listeners = new Set();
+  const channel = broadcast && typeof BroadcastChannel === 'function' ? new BroadcastChannel(`${name}-changes`) : null;
+  /**
+   * Tell every subscriber of a write.
+   * @param {{operation: string, remote: boolean}} change the write
+   */
+  const emit = (change) => listeners.forEach((listener) => listener(change));
+  if (channel) {
+    channel.onmessage = (event) => emit({ operation: String(event.data?.operation), remote: true });
+  }
+  const facade = {
+    close: () => {
+      channel?.close();
+      db.close();
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
     createList: (input) => lists.createList(ctx, input),
     updateList: (id, changes) => lists.updateList(ctx, id, changes),
     getList: (id) => lists.getList(ctx, id),
@@ -99,4 +150,14 @@ export async function openStore({
     snapshot: () => bulk.snapshot(ctx),
     applyChanges: (planner) => bulk.applyChanges(ctx, planner),
   };
+  for (const operation of WRITES) {
+    const write = facade[operation];
+    facade[operation] = async (...args) => {
+      const result = await write(...args);
+      emit({ operation, remote: false });
+      channel?.postMessage({ operation });
+      return result;
+    };
+  }
+  return facade;
 }
