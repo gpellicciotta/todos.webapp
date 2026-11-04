@@ -4,12 +4,16 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T01:35:11Z"
-ended_at: —
+ended_at: "2026-11-04T14:45:42Z"
 review: agent
 preview: none
 protocol: standard
+review_status: approved
+review_round: 2
+reviewed_by: "@claude-review-agent"
+completion-commit: c442fe3c45ca4e1b5a6a262c0d4f8384c7ca0a98
 ---
 # T0008: Build the basic control components with every state, and their gallery sections
 
@@ -27,8 +31,8 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Implement]** Write controls.css with every state, import it from style.css, and add the gallery sections.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [x] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.
-- [ ] **[Doc]**       Link each component's gallery section from visual-style-guide.md and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Doc]**       Link each component's gallery section from visual-style-guide.md and update CHANGELOG.md.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -62,4 +66,33 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-04] **[Doc]**
   Linked each control's gallery section from visual-style-guide.md and documented the new tokens and the quiet button variant.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 1 rejected by @claude-review-agent: Gallery lacks focus-visible specimens for checkbox and radio, segmented control, and menu items; minor: pressed hover order, check icon contrast in dark, physical left offset.
+
+- [2026-11-04] **[Implement]**
+  Review rework: added focus specimens to every control section, pressed hover and active states, logical banner edges, and named size tokens.
+  - Icon contrast tests pass; reported check icon ratios did not reproduce.
+  - Size: 9 counted files, 1543 lines, under three times the estimate.
+
+- [2026-11-04] **[Review]**
+  Round 1 rejected for missing focus specimens; round 2 approved after the rework, with one cosmetic chip ring note.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 10.
+  - Lines touched: 1544.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 2 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 2 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 
