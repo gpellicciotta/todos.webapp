@@ -3,9 +3,11 @@
  *
  * A task belongs to zero, one, or many lists. Memberships live in their own store,
  * keyed by `[list-id, task-id]`, so each list can keep its own order.
+ * Each membership has a fractional-index `position`; a list shows its tasks in ascending position order (`LV-2` to `LV-5`).
  * Deleted tasks and lists keep their memberships, but are hidden and reject changes (`BIN-6`).
  */
 
+import { keyBetween, keysBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
 import { uuid7 } from '../lib/uuid7.js';
 import { request, StoreError, STORES, transact, ValidationError } from './idb.js';
 
@@ -149,28 +151,126 @@ async function mustGetLiveList(tx, id) {
 }
 
 /**
- * Store a membership unless it exists; return whether it was added.
+ * Return the key of a membership record.
+ * @param {object} membership the membership
+ * @returns {[string, string]} the key `[list-id, task-id]`
+ */
+function membershipKey(membership) {
+  return [membership['list-id'], membership['task-id']];
+}
+
+/**
+ * Compare memberships by position in code unit order, which equals byte order for keys, then by task identifier.
+ * @param {object} a a membership
+ * @param {object} b another membership
+ * @returns {number} negative, zero, or positive
+ */
+function byPosition(a, b) {
+  const x = a.position ?? '';
+  const y = b.position ?? '';
+  if (x !== y) {
+    return x < y ? -1 : 1;
+  }
+  if (a['task-id'] === b['task-id']) {
+    return 0;
+  }
+  return a['task-id'] < b['task-id'] ? -1 : 1;
+}
+
+/**
+ * Read the memberships of a list inside a transaction, in ascending position order.
  * @param {IDBTransaction} tx the transaction
+ * @param {typeof IDBKeyRange} keyRange the IDBKeyRange class
+ * @param {string} listId the list identifier
+ * @returns {Promise<object[]>} the memberships
+ */
+async function membersOfList(tx, keyRange, listId) {
+  const range = keyRange.bound([listId], [listId, []]);
+  const members = await request(tx.objectStore(STORES.memberships).getAll(range));
+  return members.sort(byPosition);
+}
+
+/**
+ * Store a membership at an index among the other memberships of its list.
+ * The new position goes between the neighbors, so no other membership changes.
+ * When that position would exceed 128 characters, or the neighbors share a position,
+ * the whole list gets short, evenly spread positions in the same order instead.
+ * @param {IDBTransaction} tx a read-write transaction covering the memberships store
+ * @param {object[]} others the other memberships of the list, in position order
+ * @param {object} membership the membership to place
+ * @param {number} index the index among `others` before which it goes
+ * @returns {Promise<void>}
+ */
+async function placeMembership(tx, others, membership, index) {
+  const store = tx.objectStore(STORES.memberships);
+  const lower = index > 0 ? others[index - 1].position : null;
+  const upper = index < others.length ? others[index].position : null;
+  let position = null;
+  try {
+    position = keyBetween(lower ?? null, upper ?? null);
+  }
+  catch {
+    // Equal, missing, or malformed neighbor positions: only a rebalance can place the membership.
+  }
+  if (position !== null && position.length <= MAX_KEY_LENGTH) {
+    await request(store.put({ ...membership, position }, membershipKey(membership)));
+    return;
+  }
+  const ordered = [...others.slice(0, index), membership, ...others.slice(index)];
+  const positions = keysBetween(null, null, ordered.length);
+  for (let i = 0; i < ordered.length; i++) {
+    await request(store.put({ ...ordered[i], position: positions[i] }, membershipKey(ordered[i])));
+  }
+}
+
+/**
+ * Store a membership after the last task of its list unless it exists; return whether it was added (`LV-5`).
+ * @param {IDBTransaction} tx the transaction
+ * @param {typeof IDBKeyRange} keyRange the IDBKeyRange class
  * @param {string} taskId the task identifier
  * @param {string} listId the list identifier
  * @param {string} time the ISO time of the change
  * @returns {Promise<boolean>} true when the membership is new
  */
-async function putMembership(tx, taskId, listId, time) {
+async function putMembership(tx, keyRange, taskId, listId, time) {
   const store = tx.objectStore(STORES.memberships);
-  const key = [listId, taskId];
-  if (await request(store.get(key))) {
+  if (await request(store.get([listId, taskId]))) {
     return false;
   }
-  await request(store.put({ 'list-id': listId, 'task-id': taskId, 'added-time': time }, key));
+  const others = await membersOfList(tx, keyRange, listId);
+  await placeMembership(tx, others, { 'list-id': listId, 'task-id': taskId, 'added-time': time }, others.length);
   return true;
 }
 
 /**
+ * Give every membership of an upgraded database a position, per list in added-time order.
+ * Runs inside the version-change transaction, so it issues requests without awaiting them.
+ * @param {IDBObjectStore} store the memberships store
+ */
+export function backfillPositions(store) {
+  const all = store.getAll();
+  all.onsuccess = () => {
+    const byList = new Map();
+    for (const membership of all.result) {
+      const members = byList.get(membership['list-id']) ?? [];
+      members.push(membership);
+      byList.set(membership['list-id'], members);
+    }
+    for (const members of byList.values()) {
+      members.sort((a, b) => a['added-time'].localeCompare(b['added-time']) || (a['task-id'] < b['task-id'] ? -1 : 1));
+      const positions = keysBetween(null, null, members.length);
+      members.forEach((membership, i) => {
+        store.put({ ...membership, position: positions[i] }, membershipKey(membership));
+      });
+    }
+  };
+}
+
+/**
  * Create a task, optionally inside lists.
- * @param {{db: IDBDatabase, now: () => Date}} ctx store context
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date}} ctx store context
  * @param {object} input the new task: `description` is required, other editable fields are optional
- * @param {{lists?: string[]}} [options] identifiers of the lists the task joins
+ * @param {{lists?: string[]}} [options] identifiers of the lists the task joins, each after its last task
  * @returns {Promise<object>} the stored task
  */
 export async function createTask(ctx, input, { lists = [] } = {}) {
@@ -191,7 +291,7 @@ export async function createTask(ctx, input, { lists = [] } = {}) {
     await request(tx.objectStore(STORES.tasks).add(task));
     for (const listId of lists) {
       await mustGetLiveList(tx, listId);
-      await putMembership(tx, task.id, listId, time);
+      await putMembership(tx, ctx.keyRange, task.id, listId, time);
     }
     return task;
   });
@@ -247,8 +347,8 @@ export async function listTasks(ctx) {
 }
 
 /**
- * Add a task to a list; adding an existing member changes nothing.
- * @param {{db: IDBDatabase, now: () => Date}} ctx store context
+ * Add a task to a list, after its last task; adding an existing member changes nothing.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date}} ctx store context
  * @param {string} taskId the task identifier
  * @param {string} listId the list identifier
  * @returns {Promise<void>}
@@ -258,7 +358,7 @@ export function addToList(ctx, taskId, listId) {
     const task = await mustGetLiveTask(tx, taskId);
     await mustGetLiveList(tx, listId);
     const time = ctx.now().toISOString();
-    if (await putMembership(tx, taskId, listId, time)) {
+    if (await putMembership(tx, ctx.keyRange, taskId, listId, time)) {
       await request(tx.objectStore(STORES.tasks).put({ ...task, 'last-activity-time': time }));
     }
   });
@@ -308,7 +408,23 @@ export function listsOfTask(ctx, taskId) {
 }
 
 /**
- * Return the tasks of a list outside the recycle bin, in the order they joined it.
+ * Return all memberships, each with its position, by list and then in position order.
+ * @param {{db: IDBDatabase}} ctx store context
+ * @returns {Promise<object[]>} the membership records
+ */
+export async function listMemberships(ctx) {
+  const all = await transact(ctx.db, [STORES.memberships], 'readonly',
+    (tx) => request(tx.objectStore(STORES.memberships).getAll()));
+  return all.sort((a, b) => {
+    if (a['list-id'] !== b['list-id']) {
+      return a['list-id'] < b['list-id'] ? -1 : 1;
+    }
+    return byPosition(a, b);
+  });
+}
+
+/**
+ * Return the tasks of a list outside the recycle bin, in its manual order (`LV-2`).
  * A list in the recycle bin shows no tasks.
  * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context
  * @param {string} listId the list identifier
@@ -320,9 +436,7 @@ export function tasksOfList(ctx, listId) {
     if (list?.['deletion-time']) {
       return [];
     }
-    const range = ctx.keyRange.bound([listId], [listId, []]);
-    const members = await request(tx.objectStore(STORES.memberships).getAll(range));
-    members.sort((a, b) => a['added-time'].localeCompare(b['added-time']));
+    const members = await membersOfList(tx, ctx.keyRange, listId);
     const result = [];
     for (const member of members) {
       const task = await request(tx.objectStore(STORES.tasks).get(member['task-id']));
@@ -331,5 +445,44 @@ export function tasksOfList(ctx, listId) {
       }
     }
     return result;
+  });
+}
+
+/**
+ * Move a task directly before or after another task of the same list (`LV-3`, `LV-4`).
+ * Only this membership changes, unless the list needs a rebalance; the other lists of the task keep their order.
+ * Sets the last activity time of the task, not its last update time; a deleted task or list fails with `deleted`.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date}} ctx store context
+ * @param {string} taskId the task identifier
+ * @param {string} listId the list identifier
+ * @param {{before?: string, after?: string}} placement exactly one neighbor task identifier
+ * @returns {Promise<void>}
+ */
+export async function moveInList(ctx, taskId, listId, placement = {}) {
+  const hasBefore = placement.before !== undefined && placement.before !== null;
+  const hasAfter = placement.after !== undefined && placement.after !== null;
+  if (hasBefore === hasAfter) {
+    throw new ValidationError('placement', 'invalid', 'A move needs exactly one of before or after.');
+  }
+  const field = hasBefore ? 'before' : 'after';
+  const neighborId = placement[field];
+  if (neighborId === taskId) {
+    throw new ValidationError(field, 'invalid', 'A task cannot be its own neighbor.');
+  }
+  return transact(ctx.db, [STORES.lists, STORES.tasks, STORES.memberships], 'readwrite', async (tx) => {
+    await mustGetLiveTask(tx, taskId);
+    await mustGetLiveList(tx, listId);
+    const members = await membersOfList(tx, ctx.keyRange, listId);
+    const own = members.find((m) => m['task-id'] === taskId);
+    if (!own) {
+      throw new StoreError('not-found', `Task ${taskId} is not in list ${listId}.`);
+    }
+    const others = members.filter((m) => m !== own);
+    const neighbor = others.findIndex((m) => m['task-id'] === neighborId);
+    if (neighbor < 0) {
+      throw new ValidationError(field, 'invalid', `Task ${neighborId} is not in list ${listId}.`);
+    }
+    await placeMembership(tx, others, own, field === 'before' ? neighbor : neighbor + 1);
+    await markActivity(tx, taskId, ctx.now().toISOString());
   });
 }

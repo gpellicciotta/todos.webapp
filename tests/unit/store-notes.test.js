@@ -200,17 +200,18 @@ describe('schema upgrade', () => {
     });
   }
 
-  it('adds the notes store at version 2 without losing lists, tasks, or memberships', async () => {
+  it('upgrades version 1 with the notes store and positions, without losing lists, tasks, or memberships', async () => {
     const factory = new IDBFactory();
     await createVersion1(factory);
     const upgraded = await openStore({
       indexedDB: factory, keyRange: IDBKeyRange, name: 'legacy', now: () => new Date(Date.UTC(2026, 10, 4, 9, 0, 0)),
     });
     try {
-      expect(DB_VERSION).toBe(2);
+      expect(DB_VERSION).toBe(3);
       expect(await upgraded.listLists()).toMatchObject([{ id: 'list-1', name: 'Home' }]);
       expect(await upgraded.listTasks()).toMatchObject([{ id: 'task-1', description: 'Fix door' }]);
       expect((await upgraded.tasksOfList('list-1')).map((t) => t.id)).toEqual(['task-1']);
+      expect(await upgraded.listMemberships()).toMatchObject([{ 'list-id': 'list-1', 'task-id': 'task-1', position: 'a0' }]);
       expect(await upgraded.notesOfTask('task-1')).toEqual([]);
       const note = await upgraded.addNote('task-1', { text: 'After the upgrade' });
       expect(await upgraded.notesOfTask('task-1')).toEqual([note]);

@@ -14,14 +14,15 @@ import * as tasks from './tasks.js';
 export { StoreError, ValidationError } from './idb.js';
 
 export const DB_NAME = 'todos';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 /**
  * Create or upgrade the schema.
  * @param {IDBDatabase} db the database being upgraded
  * @param {number} oldVersion the version before the upgrade, 0 for a new database
+ * @param {IDBTransaction} tx the version-change transaction
  */
-function upgrade(db, oldVersion) {
+function upgrade(db, oldVersion, tx) {
   if (oldVersion < 1) {
     db.createObjectStore(STORES.lists, { keyPath: 'id' });
     db.createObjectStore(STORES.tasks, { keyPath: 'id' });
@@ -31,6 +32,10 @@ function upgrade(db, oldVersion) {
   if (oldVersion < 2) {
     // Out-of-line keys [task-id, id], for the same reason; one key range reads the notes of a task.
     db.createObjectStore(STORES.notes);
+  }
+  if (oldVersion >= 1 && oldVersion < 3) {
+    // Memberships gain positions for the manual order, assigned per list in added-time order.
+    tasks.backfillPositions(tx.objectStore(STORES.memberships));
   }
 }
 
@@ -42,7 +47,7 @@ function upgrade(db, oldVersion) {
  */
 export function openDatabase(factory, name) {
   const req = factory.open(name, DB_VERSION);
-  req.onupgradeneeded = (event) => upgrade(req.result, event.oldVersion);
+  req.onupgradeneeded = (event) => upgrade(req.result, event.oldVersion, req.transaction);
   return request(req);
 }
 
@@ -77,6 +82,8 @@ export async function openStore({
     removeFromList: (taskId, listId) => tasks.removeFromList(ctx, taskId, listId),
     listsOfTask: (taskId) => tasks.listsOfTask(ctx, taskId),
     tasksOfList: (listId) => tasks.tasksOfList(ctx, listId),
+    moveInList: (taskId, listId, placement) => tasks.moveInList(ctx, taskId, listId, placement),
+    listMemberships: () => tasks.listMemberships(ctx),
     addNote: (taskId, input) => notes.addNote(ctx, taskId, input),
     editNote: (id, text) => notes.editNote(ctx, id, text),
     deleteNote: (id) => notes.deleteNote(ctx, id),
