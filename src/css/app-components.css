@@ -1,0 +1,288 @@
+/*
+ * App components of the ToDo's design system: the task list, task row, status button, and status menu.
+ *
+ * Every block uses semantic tokens from tokens.css only, on top of the controls in controls.css.
+ * Icons come from the sprite in src/img/icons.svg, drawn with the `.icon` class from controls.css.
+ * Gallery-only state classes force a state on a static specimen:
+ * `.is-hover`, `.is-active`, and `.is-focus`. App markup never uses them.
+ * App states use attributes the app sets: `data-status`, `data-dragging`, `data-drop`,
+ * `data-readonly`, and `aria-current`.
+ */
+
+/*
+ * Task list: a <ul> of task rows, and the size container the rows respond to.
+ * Below 36rem of list width, rows show only the status, the description, and the due chip.
+ */
+.task-list {
+  container: task-list / inline-size;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Task row: drag handle, status button, description with chips, and a More button, on one 48 px line.
+ * States: default, hover, focus-visible (on the row), active, selected (aria-current on the open link),
+ * dragging (data-dragging="true"), drop target (data-drop="before" or "after"),
+ * done (data-status="completed" or "cancelled"), and read-only (data-readonly="true").
+ */
+.task-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  block-size: var(--row-height);
+  padding-inline: var(--space-1);
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+  transition-property: background-color, box-shadow;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.task-row:hover,
+.task-row.is-hover {
+  background-color: var(--color-hover-bg);
+}
+
+.task-row:has(.task-row__open:active),
+.task-row.is-active {
+  background-color: var(--color-active-bg);
+}
+
+/* The open link fills the row, so the row draws its focus ring, inside its own edge. */
+.task-row:has(.task-row__open:focus-visible),
+.task-row.is-focus {
+  outline: var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
+.task-row:has(.task-row__open[aria-current='page']) {
+  background-color: var(--color-selected-bg);
+  box-shadow: inset var(--border-width-strong) 0 0 var(--color-signal);
+}
+
+/* Icon buttons on a hovered or selected row step up one ground, so their own hover stays visible. */
+.task-row:is(:hover, .is-hover) .icon-button:is(:hover, .is-hover),
+.task-row:has(.task-row__open[aria-current='page']) .icon-button:is(:hover, .is-hover) {
+  background-color: var(--color-active-bg);
+}
+
+.task-row[data-dragging='true'] {
+  z-index: var(--layer-sticky);
+  border-block-end-color: transparent;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--elevation-2);
+  cursor: grabbing;
+}
+
+/* Drop target: a signal line on the row edge where the dragged row will land. */
+.task-row[data-drop]::before {
+  position: absolute;
+  inset-inline: 0;
+  z-index: var(--layer-sticky);
+  block-size: var(--border-width-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-signal);
+  content: '';
+  pointer-events: none;
+}
+
+.task-row[data-drop='before']::before {
+  inset-block-start: calc(var(--border-width-strong) / -2);
+}
+
+.task-row[data-drop='after']::before {
+  inset-block-end: calc(var(--border-width-strong) / -2 - var(--border-width));
+}
+
+/* Icon buttons beside the shrinking description keep their full target size. */
+.task-row > .icon-button {
+  flex: none;
+}
+
+.task-row__handle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  align-self: stretch;
+  inline-size: var(--space-5);
+  color: var(--color-text-muted);
+  cursor: grab;
+}
+
+.task-row__open {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  align-self: stretch;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding-inline: var(--space-1) var(--space-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The row draws the ring for its open link, so the link draws none of its own. */
+.task-row__open:focus-visible {
+  outline: none;
+}
+
+.task-row__description {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-row[data-status='completed'] .task-row__description,
+.task-row[data-status='cancelled'] .task-row__description {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.task-row[data-status='cancelled'] .task-row__description {
+  text-decoration-line: line-through;
+}
+
+.task-row__meta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Chips on a hovered row move to the surface ground, so they stay distinct from the row. */
+.task-row:is(:hover, .is-hover) .chip {
+  background-color: var(--color-surface);
+}
+
+/* List chips cap their width and truncate long list names. */
+.task-row__list {
+  max-inline-size: var(--width-chip-max);
+}
+
+.task-row__chip-text {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-row__shared {
+  display: inline-grid;
+  place-items: center;
+  color: var(--color-text-muted);
+}
+
+.task-row__shared .icon {
+  inline-size: var(--text-base);
+  block-size: var(--text-base);
+}
+
+.task-row[data-readonly='true'] .status-button {
+  cursor: default;
+}
+
+@media (hover: none) {
+  .task-row__handle {
+    display: none;
+  }
+}
+
+@container task-list (width < 36rem) {
+  .task-row__handle,
+  .task-row__list,
+  .task-row__more-lists,
+  .task-row__notes,
+  .task-row__shared,
+  .task-row__more {
+    display: none;
+  }
+}
+
+/*
+ * Status button: an icon button showing the status icon, opening the status menu.
+ * Icons: status-todo (empty circle), status-in-progress (half-filled circle),
+ * status-completed (filled circle with a check), status-cancelled (circle with a dash).
+ * Read-only rows disable it but keep the icon at full icon contrast.
+ */
+.status-button:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+/* Status menu: the menu from controls.css, with each status icon between the check and the label. */
+.status-menu .menu__item > .icon:not(.menu__check) {
+  color: var(--color-text-muted);
+}
+
+/*
+ * Task view: the view header, view controls, the add bar, and the task list of one screen.
+ * Compact layouts move the add bar below the rows, above the bottom navigation.
+ */
+.task-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.view-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.view-header__title {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.view-controls__search {
+  flex: 1 1 var(--width-menu);
+}
+
+/* Compact layouts show one Filters button in place of the filter chips. */
+.view-controls__filters {
+  display: none;
+}
+
+@media (width < 64rem) {
+  .view-controls__filters {
+    display: inline-flex;
+  }
+
+  .view-controls__chip {
+    display: none;
+  }
+}
+
+.add-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.add-bar__field {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+@media (width < 64rem) {
+  .task-view > .add-bar {
+    order: 1;
+  }
+}

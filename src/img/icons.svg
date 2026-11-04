@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Icon sprite of the ToDo's design system: one 24 px grid, stroked outlines, round caps and joins.
+    Pages draw an icon with <svg class="icon" aria-hidden="true" focusable="false"><use href="{{path}}/img/icons.svg#{{id}}"/></svg>.
+    The `.icon` class sets the size, the stroke width, and `stroke: currentColor`, so icons follow the text color.
+    Filled shapes set fill="currentColor" and stroke="none"; no symbol holds a color of its own.
+  -->
+
+  <!-- Task status: the shapes differ, so status never relies on color. -->
+  <symbol id="status-todo" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+  </symbol>
+  <symbol id="status-in-progress" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 6a6 6 0 0 1 0 12Z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="status-completed" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M8.2 11.8 10.5 14.1 15.8 8.8 17.2 10.2 10.5 16.9 6.8 13.2Z"/>
+  </symbol>
+  <symbol id="status-cancelled" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M8 12h8"/>
+  </symbol>
+
+  <!-- Task row: due time, alert, notes, shared, more actions, and the drag handle. -->
+  <symbol id="clock" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 7v5l3 2"/>
+  </symbol>
+  <symbol id="alert" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 8v5M12 16h.01"/>
+  </symbol>
+  <symbol id="note" viewBox="0 0 24 24">
+    <path d="M5 4h14v11l-5 5H5Z"/>
+    <path d="M14 20v-5h5"/>
+  </symbol>
+  <symbol id="people" viewBox="0 0 24 24">
+    <circle cx="9" cy="8" r="3"/>
+    <path d="M3 20a6 6 0 0 1 12 0"/>
+    <path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.2a6 6 0 0 1 3 5.8"/>
+  </symbol>
+  <symbol id="more" viewBox="0 0 24 24">
+    <circle cx="5" cy="12" r="1"/>
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="19" cy="12" r="1"/>
+  </symbol>
+  <symbol id="grip" viewBox="0 0 24 24">
+    <circle cx="9" cy="6" r="1"/>
+    <circle cx="15" cy="6" r="1"/>
+    <circle cx="9" cy="12" r="1"/>
+    <circle cx="15" cy="12" r="1"/>
+    <circle cx="9" cy="18" r="1"/>
+    <circle cx="15" cy="18" r="1"/>
+  </symbol>
+
+  <!-- Actions: check, close, back, add, search, and sort. -->
+  <symbol id="check" viewBox="0 0 24 24">
+    <path d="m5 12 5 5 9-10"/>
+  </symbol>
+  <symbol id="close" viewBox="0 0 24 24">
+    <path d="M18 6 6 18M6 6l12 12"/>
+  </symbol>
+  <symbol id="back" viewBox="0 0 24 24">
+    <path d="m15 18-6-6 6-6"/>
+  </symbol>
+  <symbol id="plus" viewBox="0 0 24 24">
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+  <symbol id="search" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="7"/>
+    <path d="m20 20-4-4"/>
+  </symbol>
+  <symbol id="sort" viewBox="0 0 24 24">
+    <path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/>
+  </symbol>
+  <symbol id="chevron-down" viewBox="0 0 24 24">
+    <path d="m6 9 6 6 6-6"/>
+  </symbol>
+
+  <!-- Navigation: tasks, lists, recycle bin, and settings. -->
+  <symbol id="tasks" viewBox="0 0 24 24">
+    <path d="M11 6h9M11 12h9M11 18h9"/>
+    <path d="m4 6 1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17"/>
+  </symbol>
+  <symbol id="lists" viewBox="0 0 24 24">
+    <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>
+  </symbol>
+  <symbol id="bin" viewBox="0 0 24 24">
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>
+  </symbol>
+  <symbol id="settings" viewBox="0 0 24 24">
+    <path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/>
+    <circle cx="15" cy="6" r="2"/>
+    <circle cx="9" cy="12" r="2"/>
+    <circle cx="17" cy="18" r="2"/>
+  </symbol>
+
+  <!-- Sync states: one shape per state, so the state never relies on color. -->
+  <symbol id="sync-local" viewBox="0 0 24 24">
+    <rect x="3" y="4" width="18" height="12" rx="2"/>
+    <path d="M8 20h8M12 16v4"/>
+  </symbol>
+  <symbol id="sync-synced" viewBox="0 0 24 24">
+    <path d="M7 19h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10.06 4.5 4.5 0 0 0 7 19Z"/>
+    <path d="m9.5 14.5 2 2 3.5-4"/>
+  </symbol>
+  <symbol id="sync-syncing" viewBox="0 0 24 24">
+    <path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/>
+    <path d="M18 3v3.7h-3.7M6 21v-3.7h3.7"/>
+  </symbol>
+  <symbol id="sync-offline" viewBox="0 0 24 24">
+    <path d="M7 19h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10.06 4.5 4.5 0 0 0 7 19Z"/>
+    <path d="m3 3 18 18"/>
+  </symbol>
+  <symbol id="sync-sign-in" viewBox="0 0 24 24">
+    <circle cx="8" cy="15" r="4"/>
+    <path d="m11 12 9-9M17 6l3 3M14 9l2 2"/>
+  </symbol>
+  <symbol id="sync-error" viewBox="0 0 24 24">
+    <path d="M12 4 2.5 20h19Z"/>
+    <path d="M12 10v4M12 17h.01"/>
+  </symbol>
+</svg>

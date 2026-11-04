@@ -563,3 +563,38 @@
 .stage--dialog {
   display: block;
 }
+
+/* App specimens: captioned one-row task lists, at most as wide as the main column. */
+.row-states {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: var(--width-main);
+}
+
+.row-state {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.row-state .task-list {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/* Pattern frames: a framed page ground that holds a composed screen part. */
+.pattern-frame {
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+}
+
+.pattern-frame > .task-view {
+  max-inline-size: var(--width-main);
+}
+
+@media (width < 64rem) {
+  .pattern-frame {
+    padding: var(--space-2);
+  }
+}

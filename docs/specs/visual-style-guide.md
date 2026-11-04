@@ -5,13 +5,15 @@ The [ui-design.md](ui-design.md) spec defines screens and behavior; this guide d
 ---
 
 ## Status of the System
-The tokens, the font, the basic controls, and their gallery sections exist; app components follow later.
+The tokens, the font, the controls, the task row components, and their gallery sections exist.
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
 - [tokens.css](../../src/css/tokens.css): primitive and semantic tokens and both themes.
 - [fonts.css](../../src/css/fonts.css): the self-hosted Inter font face.
 - [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
-- [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token group and control, with a theme switch.
-- `src/css/app-components.css`: the task row, navigation, and other app components, added in a later task.
+- [app-components.css](../../src/css/app-components.css): the task list, task row, status button, and status menu.
+- [icons.svg](../../src/img/icons.svg): the icon sprite, one `<symbol>` per icon on a 24 px grid.
+- [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token, control, app component, and pattern.
+- `src/css/app-chrome.css`: navigation, the sync indicator, and the editor panel, added in a later task.
 
 Serve the gallery with `npm run serve`, then open `/demo/visual-style-gallery.html`.
 Change the stylesheets first, then the gallery and this guide in the same commit.
@@ -46,6 +48,11 @@ Change the stylesheets first, then the gallery and this guide in the same commit
   Rejected: violet 500 (`#8b5cf6`) in dark, as white text on it reaches only 4.23:1.
 - **[Decided]** Inter 4.1 ships as one `InterVariable.woff2` file, without the italic file.
   The app sets no italic text, and the italic file would add 388 KB.
+- **[Decided]** Reusable icons live in one sprite file, drawn with `<use href="…/img/icons.svg#id">`.
+  Rejected: inline paths in every page, which repeat each icon and drift apart.
+  Chromium resolves external `<use>` references over HTTP, so the gallery and its tests use the sprite.
+- **[Decided]** Task rows respond to the width of their list, through a size container query.
+  Rejected: a viewport media query, which cannot see a narrow main column beside the editor panel.
 
 ---
 
@@ -98,6 +105,7 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - `--row-height`: 48 px, the task row height.
 - Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-editor` size the side panels.
 - Control minimums: `--width-menu` for menus and popovers, `--width-segment-min` for segmented options.
+- `--width-chip-max`: the widest list chip in a task row; longer list names truncate.
 - Text minimums: `--width-text-min` before a banner's action wraps, `--height-textarea-min` for textareas.
 
 ### Elevation, Layers, and Motion
@@ -139,13 +147,32 @@ Defined in [controls.css](../../src/css/controls.css); keyboard behavior for men
   Never use a toast as the only place an error appears.
 
 ### App Components
-- Status button: the status icon of the task row, opening a status menu; the icon shapes are:
+Defined in [app-components.css](../../src/css/app-components.css), on top of the controls.
+App states use attributes the app sets, such as `data-status` and `aria-current`, never gallery classes.
+
+- [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` opening the status menu.
+  The icon shapes differ, so status never relies on color:
   - `todo`: an empty circle.
   - `in-progress`: a half-filled circle.
   - `completed`: a filled circle with a check, with muted text.
   - `cancelled`: a circle with a dash, with struck-through muted text.
-- Task row: status button, description, chips, and a More button at `--row-height`.
-  States: default, hover, focus-visible, selected, dragging, drop target, done, and read-only.
+
+  The status menu is a `.menu.status-menu` of `menuitemradio` items, each with its status icon.
+  Read-only rows disable the button but keep its icon at full icon contrast.
+- [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, one line at `--row-height`.
+  It holds the drag handle, the status button, the open link, and the More button.
+  The open link holds the description, due chip, two list chips, a "+n" chip, notes, and the shared marker.
+  The description truncates with an ellipsis; list chips truncate at `--width-chip-max`.
+  Below 36rem of list width, rows show only the status, the description, and the due chip.
+  States use attributes the app sets:
+  - Status: `data-status` mutes completed and cancelled text; only cancelled text is struck through.
+  - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge.
+  - Dragging: `data-dragging="true"` lifts the row to `--elevation-2`.
+  - Drop target: `data-drop="before"` or `"after"` draws a signal line on that row edge.
+  - Read-only: `data-readonly="true"`, a disabled status button, and no handle or More button.
+  - Focus: the row draws the ring for its open link, inside its own edge.
+
+  Show the drag handle only in manual order; devices without hover hide it anyway.
 - Sync indicator: an icon and label per sync state, plus a dot for unseen sync log entries.
 - Navigation: the compact bottom bar and the wide sidebar, both marking the current route with `aria-current`.
 - Empty state: a short sentence, an optional icon, and at most two actions.
@@ -153,9 +180,11 @@ Defined in [controls.css](../../src/css/controls.css); keyboard behavior for men
 ---
 
 ## Patterns
-- Task list: task rows in a `<ul>`; the add bar sits above them in wide layouts and pinned below in compact ones.
+- [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header, view controls, add bar, and rows.
+  The add bar sits above the rows in wide layouts and below them in compact ones.
 - Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
 - View controls: search, filter chips, and the sort menu in one bar above the task list.
+  Compact layouts group the filter chips behind one Filters button.
 - Editor panel: the task or list editor; a right panel in wide layouts, a full screen in compact ones.
 - Note thread: an add note field above an `<ol>` of notes, newest first.
   Each note shows its author, its time, an "edited" mark, and a More menu.
@@ -164,9 +193,15 @@ Defined in [controls.css](../../src/css/controls.css); keyboard behavior for men
 ---
 
 ## Icons
-- Use inline stroke SVG icons with an `icon` class, so icons follow the text color.
+- Use stroke SVG icons with an `icon` class, so icons follow the text color.
+- Draw sprite icons with `<svg class="icon" aria-hidden="true"><use href="…/img/icons.svg#id"/></svg>`.
+- Pages at the web root use `img/icons.svg`; the gallery uses `../img/icons.svg`.
+- Add a reusable icon to [icons.svg](../../src/img/icons.svg) as a `<symbol>` with a `0 0 24 24` view box.
+- Symbols hold no colors: filled parts set `fill="currentColor"` and `stroke="none"`.
 - Mark decorative icons with `aria-hidden="true"`; buttons carry the accessible name, not the icon.
 - Keep one stroke width and one 24 px grid across the set.
+- Status icons: `status-todo`, `status-in-progress`, `status-completed`, and `status-cancelled`.
+- Sync icons: `sync-local`, `sync-synced`, `sync-syncing`, `sync-offline`, `sync-sign-in`, and `sync-error`.
 
 ---
 
