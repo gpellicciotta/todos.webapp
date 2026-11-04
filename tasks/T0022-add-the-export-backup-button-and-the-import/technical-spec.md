@@ -14,3 +14,6 @@ Size estimate: 3 files, 250 lines
 - Integration: an invalid file shows its reason and leaves the data unchanged.
 
 Completion check: `npm test && npm run lint && npm run test:e2e`
+
+### Follow-Ups From Earlier Reviews
+- From T0020: report a failed theme write, and explain why still-disabled Settings buttons are disabled.

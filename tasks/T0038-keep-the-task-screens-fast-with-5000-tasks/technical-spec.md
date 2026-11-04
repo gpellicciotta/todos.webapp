@@ -24,3 +24,7 @@ Size estimate: 6 files, 400 lines
 
 Completion check: `npm test && npm run lint && npm run test:e2e && npm run check:sw`
 - From T0036: when a reopened Add to list menu has no items, close it and focus the More button.
+- From T0020: the bin's 60 s redraw rebuilds rows; redraw only when the local date changes.
+- From T0020: a failed permanent delete leaves the in-row question without state; restore it and keep focus.
+- From T0020: align the bin's days-left label with the exact 30-day purge time.
+- From T0020: accept a plain `light` or `dark` stored theme before the JSON fallback.
