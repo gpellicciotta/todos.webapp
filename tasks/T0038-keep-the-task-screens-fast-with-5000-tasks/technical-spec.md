@@ -28,3 +28,5 @@ Completion check: `npm test && npm run lint && npm run test:e2e && npm run check
 - From T0020: a failed permanent delete leaves the in-row question without state; restore it and keep focus.
 - From T0020: align the bin's days-left label with the exact 30-day purge time.
 - From T0020: accept a plain `light` or `dark` stored theme before the JSON fallback.
+- From T0018: Escape after an edit saves the value twice; record saved values in `shown` inside the save helpers.
+- From T0018 reviews: the gallery-controls focus-ring e2e test nears its 30 s timeout under parallel load; make it faster or raise its timeout.
