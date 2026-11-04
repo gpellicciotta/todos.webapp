@@ -159,6 +159,7 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 ## Change Notifications
 - `subscribe(listener)` calls `listener({operation, remote})` after each committed write, and returns an unsubscribe function.
 - `operation` names the facade method, such as `createList`; reads never notify.
+- A subscriber that throws is logged; the write stays committed and the other subscribers still hear of it.
 - `openStore({broadcast: true})` also posts each write on the `{{name}}-changes` BroadcastChannel.
 - Stores of other tabs on that channel then notify their subscribers with `remote: true`.
 - Broadcasting is opt-in, so unit tests and scripts open no channel.

@@ -56,16 +56,26 @@ export function readThemePreference(getStorage = () => globalThis.localStorage) 
 }
 
 /**
- * Apply a theme preference to the page through `data-theme` on `<html>`.
+ * Apply a theme preference to the page through `data-theme` on `<html>`, and to the browser bar color.
+ * A stored theme gives every `theme-color` meta that theme's color, whatever the system scheme.
  * @param {Document} doc the document
  * @param {'light'|'dark'|'system'} preference the preference; `system` removes the attribute
  */
 export function applyTheme(doc, preference) {
-  if (preference === 'light' || preference === 'dark') {
+  const pinned = preference === 'light' || preference === 'dark';
+  if (pinned) {
     doc.documentElement.dataset.theme = preference;
   }
   else {
     delete doc.documentElement.dataset.theme;
+  }
+  const metas = [...doc.querySelectorAll('meta[name="theme-color"]')];
+  for (const meta of metas) {
+    meta.dataset.color ??= meta.content;
+  }
+  const color = pinned ? metas.find((meta) => meta.media.includes(preference))?.dataset.color : null;
+  for (const meta of metas) {
+    meta.content = color ?? meta.dataset.color;
   }
 }
 
@@ -134,7 +144,7 @@ export function openCounts(tasks, memberships) {
  * @param {object} options shell options
  * @param {(hash: string) => void} options.navigate opens a route, for the More menu
  * @returns {{main: HTMLElement, editor: HTMLElement, toastRegion: HTMLElement, update: Function,
- *   setLists: Function, showBanner: Function}} the shell controller
+ *   setLists: Function, showBanner: Function, showNotice: Function}} the shell controller
  */
 export function renderShell(root, { navigate }) {
   const doc = root.ownerDocument;
@@ -156,7 +166,7 @@ export function renderShell(root, { navigate }) {
       <ul class="nav-list sidebar__end">${DESTINATIONS.slice(2).map(sidebarItem).join('')}</ul>
       <div class="sidebar__footer">${syncIndicator()}</div>
     </nav>
-    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"></main>
+    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"></div></main>
     <div class="app__editor" data-editor-slot hidden></div>
     <nav class="bottom-nav app__bottom-nav" aria-label="${STRINGS.main}">
       <ul class="bottom-nav__list">${DESTINATIONS.map((destination) => `<li><a class="bottom-nav__item" href="${destination.hash}" `
@@ -166,12 +176,14 @@ export function renderShell(root, { navigate }) {
 
   const title = root.querySelector('#app-title');
   const main = root.querySelector('.app__main');
+  const banners = root.querySelector('.app__banners');
   const editor = root.querySelector('[data-editor-slot]');
   const listNav = root.querySelector('[data-nav-lists]');
   const more = root.querySelector('.app__more');
   attachMenu(more, more.nextElementSibling, { onSelect: (item) => navigate(item.dataset.hash) });
   let viewKey = null;
   let route = null;
+  let view = null;
 
   /** Mark the links of the current route with `aria-current="page"`. */
   function markCurrent() {
@@ -207,18 +219,18 @@ export function renderShell(root, { navigate }) {
       doc.title = `${text} · ${STRINGS.app}`;
       if (viewKey !== next.viewKey) {
         viewKey = next.viewKey;
-        const view = doc.createElement('div');
+        view = doc.createElement('div');
         view.className = 'app__view';
         view.dataset.view = next.view;
         if (next.params.listId) {
           view.dataset.listId = next.params.listId;
         }
-        main.replaceChildren(view);
+        main.replaceChildren(banners, view);
       }
       editor.dataset.editor = next.editor ?? '';
       editor.dataset.taskId = next.params.taskId ?? '';
       markCurrent();
-      return main.firstElementChild;
+      return view;
     },
 
     /**
@@ -257,11 +269,33 @@ export function renderShell(root, { navigate }) {
       banner.setAttribute('role', 'alert');
       banner.innerHTML = `${icon('alert').replace('class="icon"', 'class="icon banner__icon"')}<p class="banner__text"></p>`;
       banner.querySelector('p').textContent = message;
-      const view = doc.createElement('div');
+      view = doc.createElement('div');
       view.className = 'app__view';
       view.append(banner);
       viewKey = null;
-      main.replaceChildren(view);
+      main.replaceChildren(banners, view);
+    },
+
+    /**
+     * Show a lasting banner above every view, such as a newer version in another tab.
+     * @param {string} message the message
+     * @param {{actionLabel: string, onAction: () => void}} [action] a button in the banner
+     */
+    showNotice(message, action) {
+      const banner = doc.createElement('div');
+      banner.className = 'banner';
+      banner.setAttribute('role', 'status');
+      banner.innerHTML = `${icon('alert').replace('class="icon"', 'class="icon banner__icon"')}<p class="banner__text"></p>`;
+      banner.querySelector('p').textContent = message;
+      if (action) {
+        const button = doc.createElement('button');
+        button.className = 'button button--secondary';
+        button.type = 'button';
+        button.textContent = action.actionLabel;
+        button.addEventListener('click', action.onAction);
+        banner.append(button);
+      }
+      banners.replaceChildren(banner);
     },
   };
 }

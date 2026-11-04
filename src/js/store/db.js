@@ -106,10 +106,17 @@ export async function openStore({
   const listeners = new Set();
   const channel = broadcast && typeof BroadcastChannel === 'function' ? new BroadcastChannel(`${name}-changes`) : null;
   /**
-   * Tell every subscriber of a write.
+   * Tell every subscriber of a write; a failing subscriber never fails the committed write or the others.
    * @param {{operation: string, remote: boolean}} change the write
    */
-  const emit = (change) => listeners.forEach((listener) => listener(change));
+  const emit = (change) => listeners.forEach((listener) => {
+    try {
+      listener(change);
+    }
+    catch (error) {
+      console.error('Store subscriber failed:', error);
+    }
+  });
   if (channel) {
     channel.onmessage = (event) => emit({ operation: String(event.data?.operation), remote: true });
   }

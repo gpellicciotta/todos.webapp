@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Applied review follow-ups to the store, toasts, shell, and task row styles.
 - Build: Added a GitHub Pages workflow that tests and publishes src, and a service worker version check.
 - Feature: Made the app an installable offline PWA with a manifest, app icons, and a versioned service worker precache.
 - Feature: Added the app shell with the hash router, compact and wide layouts, navigation, and app start-up.

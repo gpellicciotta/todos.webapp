@@ -88,3 +88,52 @@ describe('store change notifications', () => {
     second.close();
   });
 });
+
+describe('store change notification coverage', () => {
+  it('notifies once for every write operation of the facade', async () => {
+    const store = await open(new IDBFactory());
+    const heard = [];
+    store.subscribe(({ operation }) => heard.push(operation));
+    const list = await store.createList({ name: 'Home' });
+    await store.updateList(list.id, { name: 'House' });
+    const first = await store.createTask({ description: 'Buy paint' });
+    const second = await store.createTask({ description: 'Call the plumber' }, { lists: [list.id] });
+    await store.updateTask(first.id, { status: 'in-progress' });
+    await store.addToList(first.id, list.id);
+    await store.moveInList(first.id, list.id, { before: second.id });
+    await store.removeFromList(first.id, list.id);
+    const note = await store.addNote(first.id, { text: 'Blue' });
+    await store.editNote(note.id, 'Green');
+    await store.deleteNote(note.id);
+    await store.deleteTask(first.id);
+    await store.restoreTask(first.id);
+    await store.deleteList(list.id);
+    await store.restoreList(list.id);
+    await store.deleteTask(second.id);
+    await store.purgeForever('task', second.id);
+    await store.purgeExpired();
+    await store.applyChanges(() => ({ changes: {}, result: null }));
+    expect(heard).toEqual([
+      'createList', 'updateList', 'createTask', 'createTask', 'updateTask', 'addToList', 'moveInList', 'removeFromList',
+      'addNote', 'editNote', 'deleteNote', 'deleteTask', 'restoreTask', 'deleteList', 'restoreList', 'deleteTask',
+      'purgeForever', 'purgeExpired', 'applyChanges',
+    ]);
+    store.close();
+  });
+
+  it('keeps a committed write and the other subscribers when one subscriber throws', async () => {
+    const store = await open(new IDBFactory());
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const after = vi.fn();
+    store.subscribe(() => {
+      throw new Error('subscriber failed');
+    });
+    store.subscribe(after);
+    const list = await store.createList({ name: 'Home' });
+    expect(list.name).toBe('Home');
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith('Store subscriber failed:', expect.any(Error));
+    error.mockRestore();
+    store.close();
+  });
+});

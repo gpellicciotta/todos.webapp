@@ -23,6 +23,7 @@
 /*
  * Task row: drag handle, status button, description with chips, and a More button, on one 48 px line.
  * States: default, hover, focus-visible (on the row), active, selected (aria-current on the open link),
+ * which adds a signal edge on the inline start and keeps hover and press feedback,
  * dragging (data-dragging="true"), drop target (data-drop="before" or "after"),
  * done (data-status="completed" or "cancelled"), and read-only (data-readonly="true").
  */
@@ -54,17 +55,37 @@
 .task-row:has(.task-row__open:focus-visible),
 .task-row.is-focus {
   outline: var(--focus-ring);
-  outline-offset: calc(var(--focus-ring-width) * -1);
+  outline-offset: var(--focus-ring-offset-inset);
 }
 
 .task-row:has(.task-row__open[aria-current='page']) {
   background-color: var(--color-selected-bg);
-  box-shadow: inset var(--border-width-strong) 0 0 var(--color-signal);
 }
 
-/* Icon buttons on a hovered or selected row step up one ground, so their own hover stays visible. */
-.task-row:is(:hover, .is-hover) .icon-button:is(:hover, .is-hover),
-.task-row:has(.task-row__open[aria-current='page']) .icon-button:is(:hover, .is-hover) {
+.task-row:has(.task-row__open[aria-current='page'])::after {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--border-width-strong);
+  background-color: var(--color-signal);
+  content: '';
+  pointer-events: none;
+}
+
+.task-row:has(.task-row__open[aria-current='page']):hover {
+  background-color: var(--color-hover-bg);
+}
+
+.task-row:has(.task-row__open[aria-current='page']):has(.task-row__open:active) {
+  background-color: var(--color-active-bg);
+}
+
+/*
+ * Icon buttons on a hovered or selected row step up one ground, so their own hover stays visible.
+ * A disabled button, such as the status button of a read-only row, stays flat.
+ */
+.task-row:is(:hover, .is-hover) .icon-button:not(:disabled):is(:hover, .is-hover),
+.task-row:has(.task-row__open[aria-current='page']) .icon-button:not(:disabled):is(:hover, .is-hover) {
   background-color: var(--color-active-bg);
 }
 
@@ -90,11 +111,14 @@
 }
 
 .task-row[data-drop='before']::before {
-  inset-block-start: calc(var(--border-width-strong) / -2);
+  inset-block-start: 0;
+  translate: 0 -50%;
 }
 
+/* The line centers on the divider below the row, so it moves past the row's own border too. */
 .task-row[data-drop='after']::before {
-  inset-block-end: calc(var(--border-width-strong) / -2 - var(--border-width));
+  inset-block-end: 0;
+  translate: 0 calc(50% + var(--border-width));
 }
 
 /* Icon buttons beside the shrinking description keep their full target size. */

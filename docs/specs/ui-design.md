@@ -75,14 +75,19 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - The main column scrolls; the bars and the sidebar stay in place.
 - Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
   List views also carry `data-list-id`; the screen tasks fill these views.
+- A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
+- Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
 - The `[data-editor-slot]` element names the open editor in `data-editor`: `task`, `list`, or empty.
   It stays hidden until the editor tasks fill it; it covers the main column in compact layouts.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
 - Scroll positions and a memory object for filters and sort are kept per view, for the session.
 - The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
-- On start the app opens the store, cancels overdue `cancel` tasks, purges expired bin entries, then starts the overdue timer.
+- On start the app opens the store, purges expired bin entries, then starts the overdue timer.
+  The timer's first run cancels overdue `cancel` tasks.
+- A start-up failure replaces the view with an error banner asking for a reload.
 - The theme follows the system unless `localStorage` holds `todos.theme` as `light` or `dark`.
+  A stored theme also sets every `theme-color` meta, so the browser bar matches it.
 
 ### Routes
 - `#/tasks`: all tasks.
@@ -155,6 +160,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 
 ### Toasts and Banners
 - Toasts confirm actions, offer Undo for 8 seconds, and never hold the only copy of an error.
+- A newer app version in another tab shows a lasting banner with Reload, not a toast.
 - Banners sit above the content for lasting states, such as view-only lists or an expired session.
 - Toasts and banners announce through a polite live region; blocking errors use an alert role.
 
@@ -357,7 +363,8 @@ Wireframe: [import.svg](../img/ui/import.svg).
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` focuses the add bar, `/` focuses search, and Escape closes the editor or a dialog.
 - `n` and `/` focus the view's `[data-shortcut="add"]` and `[data-shortcut="search"]` elements, and do nothing without them.
-- Ctrl+Z or Cmd+Z, outside text fields, runs the Undo of the newest toast.
+- Ctrl+Z or Cmd+Z, outside text fields and modal dialogs, runs the Undo of the newest toast.
+  It never runs another toast action, such as Reload.
 - Shortcuts never fire while a text field has focus, and the About section lists them.
 - Drag and drop always has the Move up and Move down alternative (`LV-3`).
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.

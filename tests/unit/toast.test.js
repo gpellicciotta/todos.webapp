@@ -176,6 +176,38 @@ describe('createToaster', () => {
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 
+  it('runs only Undo actions on Ctrl+Z, never another action such as Reload', () => {
+    toaster.destroy();
+    toaster = createToaster({ region, liveRegion, undoShortcut: true });
+    const undo = vi.fn();
+    const reload = vi.fn();
+    toaster.show('Task moved to the recycle bin.', { onAction: undo });
+    toaster.show('ToDo\'s was updated.', { actionLabel: 'Reload', onAction: reload });
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
+    expect(reload).not.toHaveBeenCalled();
+    expect(undo).toHaveBeenCalledTimes(1);
+    expect(toaster.undoLatest()).toBe(false);
+    toaster.show('Archived.', { actionLabel: 'Restore', undo: true, onAction: undo });
+    expect(toaster.undoLatest()).toBe(true);
+    expect(undo).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores Ctrl+Z while a modal dialog is open', () => {
+    toaster.destroy();
+    toaster = createToaster({ region, liveRegion, undoShortcut: true });
+    const onAction = vi.fn();
+    toaster.show('Task moved to the recycle bin.', { onAction });
+    document.body.insertAdjacentHTML('beforeend', '<dialog id="modal"><button type="button">Keep</button></dialog>');
+    const modal = document.getElementById('modal');
+    modal.matches = (selector) => (selector === ':modal' ? modal.open : Element.prototype.matches.call(modal, selector));
+    modal.showModal();
+    const event = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true });
+    document.body.dispatchEvent(event);
+    expect(onAction).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+    modal.close();
+  });
+
   it('ignores Ctrl+Z without the shortcut option', () => {
     const onAction = vi.fn();
     toaster.show('Task moved to the recycle bin.', { onAction });

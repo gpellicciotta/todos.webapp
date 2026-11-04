@@ -1,8 +1,10 @@
 /**
  * App entry point: theme, service worker, local store, start-up maintenance, shell, routes, and shortcuts.
  *
- * On start the app cancels overdue `cancel` tasks, then purges expired recycle bin entries,
- * and then keeps the overdue timer running (`OVD-4`, `OVD-5`, `BIN-5`).
+ * On start the app purges expired recycle bin entries, then starts the overdue timer,
+ * whose first run cancels overdue `cancel` tasks (`OVD-4`, `OVD-5`, `BIN-5`).
+ * A newer version in another tab shows a lasting banner with Reload; a start-up failure shows an error banner.
+ * Moving to another view moves focus to the main column, which the route title labels.
  * Shortcuts, outside text fields: `n` focuses the view's `[data-shortcut="add"]` element and `/` its
  * `[data-shortcut="search"]` element, each a no-op while the view has none; Escape closes an open editor.
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
@@ -13,6 +15,16 @@ import { openStore } from './store/db.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { createToaster } from './ui/toast.js';
+
+/** Start-up strings, for the strings module of TEC-13 to absorb. */
+const MESSAGES = Object.freeze({
+  updated: 'ToDo\'s was updated in another tab. Reload to continue.',
+  reload: 'Reload',
+  storeFailed: 'The local data could not be opened. Reload to try again.',
+  startFailed: 'ToDo\'s could not start. Reload to try again.',
+});
+
+let shell = null;
 
 /**
  * Register the service worker that precaches the app shell, so the app starts offline (`TEC-1`).
@@ -38,26 +50,24 @@ function inTextField(event) {
  */
 async function start() {
   let router;
-  const shell = renderShell(document.getElementById('app'), { navigate: (hash) => router.navigate(hash) });
+  shell = renderShell(document.getElementById('app'), { navigate: (hash) => router.navigate(hash) });
   const toaster = createToaster({ region: shell.toastRegion, undoShortcut: true });
   let store;
   try {
     store = await openStore({
       broadcast: true,
-      onVersionChange: () => toaster.show('ToDo\'s was updated in another tab. Reload to continue.', {
-        actionLabel: 'Reload',
-        onAction: () => location.reload(),
-      }),
+      onVersionChange: () => shell.showNotice(MESSAGES.updated, { actionLabel: MESSAGES.reload, onAction: () => location.reload() }),
     });
+    await store.purgeExpired();
     const stopOverdue = startOverdueTimer({ store });
     await stopOverdue.idle();
-    await store.purgeExpired();
   }
   catch (error) {
     console.error('Store failed:', error);
-    shell.showBanner(error?.code === 'blocked' ? error.message : 'The local data could not be opened. Reload to try again.');
+    shell.showBanner(error?.code === 'blocked' ? error.message : MESSAGES.storeFailed);
     return;
   }
+  let shownViewKey = null;
 
   /**
    * Show the lists and open counts in the sidebar, and keep the title of a renamed list current.
@@ -90,6 +100,10 @@ async function start() {
       title = list.name;
     }
     shell.update(route, title);
+    if (shownViewKey !== null && shownViewKey !== route.viewKey) {
+      shell.main.focus({ preventScroll: true });
+    }
+    shownViewKey = route.viewKey;
   }
 
   router = createRouter({
@@ -132,4 +146,12 @@ async function start() {
 
 applyTheme(document, readThemePreference());
 registerServiceWorker();
-start();
+start().catch((error) => {
+  console.error('Start-up failed:', error);
+  if (shell) {
+    shell.showBanner(MESSAGES.startFailed);
+  }
+  else {
+    document.getElementById('app').textContent = MESSAGES.startFailed;
+  }
+});

@@ -77,6 +77,7 @@ test('navigation marks the current route, and back and forward move between rout
   await expect(bottom.getByRole('link', { name: 'Tasks' })).toHaveAttribute('aria-current', 'page');
   await bottom.getByRole('link', { name: 'Bin' }).click();
   await expect(page).toHaveURL(/#\/bin$/);
+  await expect(page.locator('#main')).toBeFocused();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recycle bin');
   await expect(bottom.getByRole('link', { name: 'Bin' })).toHaveAttribute('aria-current', 'page');
   await expect(bottom.locator('[aria-current]')).toHaveCount(1);
@@ -174,8 +175,54 @@ test('the theme follows the system by default and a stored preference pins it', 
   await page.goto('/');
   await ready(page);
   expect(await page.evaluate(() => document.documentElement.dataset.theme ?? null)).toBeNull();
+  const colors = page.locator('meta[name="theme-color"]');
+  await expect(colors.nth(0)).toHaveAttribute('content', '#ffffff');
+  await expect(colors.nth(1)).toHaveAttribute('content', '#1a1a1f');
   await page.evaluate(() => localStorage.setItem('todos.theme', 'dark'));
   await page.reload();
   await ready(page);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // The browser bar color follows the stored theme too, under either system scheme.
+  await expect(colors.nth(0)).toHaveAttribute('content', '#1a1a1f');
+  await expect(colors.nth(1)).toHaveAttribute('content', '#1a1a1f');
+});
+
+test('a newer app version in another tab shows a lasting banner with Reload', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/');
+  await ready(page);
+  await page.evaluate(() => new Promise((resolve, reject) => {
+    const request = indexedDB.open('todos', 99);
+    request.onsuccess = () => {
+      request.result.close();
+      resolve();
+    };
+    request.onerror = () => reject(request.error);
+  }));
+  const banner = page.locator('.app__banners .banner');
+  await expect(banner).toContainText('updated in another tab');
+  await expect(banner.getByRole('button', { name: 'Reload' })).toBeVisible();
+  await expect(page.locator('.toast')).toHaveCount(0);
+  await page.evaluate(() => {
+    location.hash = '#/bin';
+  });
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recycle bin');
+  await expect(banner).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test('a start-up failure shows an error banner instead of a broken page', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(History.prototype, 'scrollRestoration', {
+      get: () => 'auto',
+      set: () => {
+        throw new Error('Start-up test failure');
+      },
+    });
+  });
+  await page.goto('/');
+  await expect(page.getByRole('alert')).toContainText("ToDo's could not start. Reload to try again.");
+  expect(errors).toEqual([]);
 });

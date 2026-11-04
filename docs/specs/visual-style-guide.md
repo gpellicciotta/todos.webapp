@@ -188,10 +188,11 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Below 36rem of list width, rows show only the status, the description, and the due chip.
   States use attributes the app sets:
   - Status: `data-status` mutes completed and cancelled text; only cancelled text is struck through.
-  - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge.
+  - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.
+    A selected row keeps hover and press feedback.
   - Dragging: `data-dragging="true"` lifts the row to `--elevation-2`.
   - Drop target: `data-drop="before"` or `"after"` draws a signal line on that row edge.
-  - Read-only: `data-readonly="true"`, a disabled status button, and no handle or More button.
+  - Read-only: `data-readonly="true"`, a disabled status button that stays flat on hover, and no handle or More button.
   - Focus: the row draws the ring for its open link, inside its own edge.
 
   Show the drag handle only in manual order; devices without hover hide it anyway.

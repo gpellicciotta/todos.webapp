@@ -5,7 +5,8 @@
  * Expiry pauses while the pointer is over the toast or focus is inside it.
  * Escape inside a toast dismisses it; at most three toasts stack, and the oldest goes first.
  * While a modal dialog is open the rest of the page is inert, so toasts wait until it closes.
- * With `undoShortcut`, Ctrl+Z or Cmd+Z outside text fields runs the newest toast's Undo.
+ * With `undoShortcut`, Ctrl+Z or Cmd+Z outside text fields and modal dialogs runs the newest toast's Undo.
+ * Only Undo actions answer it: a toast with another action label, such as Reload, needs `undo: true`.
  */
 
 import { createLiveRegion } from './live-region.js';
@@ -189,12 +190,14 @@ export function createToaster(options = {}) {
    * @param {object} [settings] toast settings
    * @param {() => void} [settings.onAction] adds an action button that calls this and dismisses the toast
    * @param {string} [settings.actionLabel] action button text, `Undo` by default
+   * @param {boolean} [settings.undo] whether the action is an Undo for Ctrl+Z; true without an `actionLabel`
    * @param {(reason: string) => void} [settings.onDismiss] called once when the toast goes, with its reason
    * @returns {() => void} a function that dismisses the toast
    */
   function show(message, settings = {}) {
     const toast = {
       onAction: settings.onAction,
+      undo: Boolean(settings.onAction) && (settings.undo ?? settings.actionLabel === undefined),
       onDismiss: settings.onDismiss,
       remaining: duration,
       startedAt: 0,
@@ -236,7 +239,7 @@ export function createToaster(options = {}) {
   function onShortcut(event) {
     const field = event.target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
     if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey || event.key.toLowerCase() !== 'z'
-      || event.defaultPrevented || field) {
+      || event.defaultPrevented || field || modalOpen()) {
       return;
     }
     if (undoLatest()) {
@@ -245,11 +248,11 @@ export function createToaster(options = {}) {
   }
 
   /**
-   * Run the action of the newest toast that has one, such as Undo, for a keyboard shortcut.
-   * @returns {boolean} true when a toast had an action to run
+   * Run the Undo of the newest toast that has one, for a keyboard shortcut; other actions never run.
+   * @returns {boolean} true when a toast had an Undo to run
    */
   function undoLatest() {
-    const toast = toasts.findLast((candidate) => candidate.onAction);
+    const toast = toasts.findLast((candidate) => candidate.undo);
     if (!toast) {
       return false;
     }

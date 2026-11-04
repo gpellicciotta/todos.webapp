@@ -316,11 +316,14 @@ describe('stylesheets outside tokens.css', () => {
     expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'app-shell.css']);
   });
 
-  it('scale no token by a bare number in app-chrome.css, using size tokens instead', () => {
-    const lines = stripComments(readFileSync(join(CSS_DIR, 'app-chrome.css'), 'utf8')).split('\n');
-    const offenders = lines.filter((line) => /var\(--[\w-]+\)\s*[*/]\s*-?\d|\d\s*\*\s*var\(/.test(line));
-    expect(offenders.map((line) => line.trim())).toEqual([]);
-  });
+  for (const name of ['app-components.css', 'app-chrome.css']) {
+    it(`scale no token by a bare number in ${name}, using size tokens instead`, () => {
+      const path = join(CSS_DIR, name);
+      const lines = existsSync(path) ? stripComments(readFileSync(path, 'utf8')).split('\n') : ['missing'];
+      const offenders = lines.filter((line) => line === 'missing' || /var\(--[\w-]+\)\s*[*/]\s*-?\d|\d\s*\*\s*var\(/.test(line));
+      expect(offenders.map((line) => line.trim())).toEqual([]);
+    });
+  }
 
   it('contain no raw color literals', () => {
     const offenders = [];

@@ -282,3 +282,33 @@ test('task row specimens cover every documented state', async ({ page }) => {
     await expect(page.locator(`#task-row ${selector}`).first(), selector).toBeVisible();
   }
 });
+
+test('a read-only row keeps its disabled status button flat on hover, and a selected row shows press feedback', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const readonly = page.locator('#task-row .task-row[data-readonly="true"]');
+  await readonly.locator('.status-button').hover();
+  expect(await readonly.locator('.status-button').evaluate((button) => getComputedStyle(button).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+
+  const selected = page.locator('#task-row .task-row:has(.task-row__open[aria-current="page"])').first();
+  const edge = await selected.evaluate((row) => {
+    const after = getComputedStyle(row, '::after');
+    return { shadow: getComputedStyle(row).boxShadow, content: after.content, start: after.insetInlineStart };
+  });
+  expect(edge).toEqual({ shadow: 'none', content: '""', start: '0px' });
+  const ground = () => selected.evaluate((row) => getComputedStyle(row).backgroundColor);
+  const resting = await ground();
+  await selected.locator('.task-row__open').hover();
+  const hovered = await ground();
+  await page.mouse.down();
+  const pressed = await ground();
+  await page.mouse.up();
+  expect(hovered).not.toBe(resting);
+  expect(pressed).not.toBe(hovered);
+});
+
+test('the task list pattern shows only open rows under its Status: open filter', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  await expect(page.locator('#task-list .filter-chip', { hasText: 'Status: open' })).toHaveCount(1);
+  const statuses = await page.locator('#task-list .task-row').evaluateAll((rows) => rows.map((row) => row.dataset.status));
+  expect(statuses.filter((status) => !['todo', 'in-progress'].includes(status))).toEqual([]);
+});
