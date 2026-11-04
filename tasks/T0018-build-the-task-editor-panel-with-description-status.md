@@ -4,15 +4,16 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T19:05:22Z"
-ended_at: —
+ended_at: "2026-11-04T20:23:33Z"
 review: agent
 preview: none
 protocol: standard
-review_status: rejected
-review_round: 1
+review_status: approved
+review_round: 2
 reviewed_by: "@claude-review-agent"
+completion-commit: f7e83ffdcbd779ec0b86347f48d3e3603ef5490f
 ---
 # T0018: Build the task editor panel with description, status, due time, overdue behavior, lists, notes, and delete
 
@@ -31,8 +32,8 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Implement]** Write the editor panel, the task editor, and the notes thread.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [x] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.
-- [ ] **[Doc]**       Update ui-design.md where the build differs and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Doc]**       Update ui-design.md where the build differs and update CHANGELOG.md.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -68,4 +69,31 @@ See technical-spec.md for decisions, files, size, and tests.
   Review rework: the due fields save on leaving them, short years are errors, stale reads stop, and notes keep drafts.
   - Field errors announce; Escape in a note edit cancels only that edit.
   - Lines touched: 1495 in 10 files, under three times 500.
+
+- [2026-11-04] **[Implement]**
+  Round 2 rework: closing the editor, such as with Back, now saves a typed description or due date first.
+  - The regression test failed before the fix.
+
+- [2026-11-04] **[Verify]**
+  Split the notes thread into T0040; stage 1 keeps the editor without notes at VERSION 2026-11-04.10.
+  - Lines touched: 1153 in 9 files, under three times 500.
+  - Stage 1: 535 unit and 89 e2e tests pass in a fresh tree.
+
+- [2026-11-04] **[Review]**
+  Rounds 1 and 2 rejected for partial date saves and Back losing a typed date; round 3 approved after the notes split.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 10.
+  - Lines touched: 1153.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 2 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 2 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 

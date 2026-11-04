@@ -251,3 +251,73 @@ Running 94 tests using 4 workers
 ```
 
 `npm run check:sw` still fails as expected until VERSION is bumped at commit time.
+
+### Split and Back Fix
+Round 2 found that Back while typing a due date lost it: the editor closed before the focusout timer saved.
+`destroy()` now saves a typed, valid description or due date and time before it stops.
+The notes thread moved to T0040 for size; stage 1 here is main plus the editor without notes.
+- The unit test that waited on `notesOfTask` now waits on `listsOfTask`, which both stages call.
+
+The new test ran in the working tree before the fix:
+
+Command: `npx vitest run tests/unit/task-editor.test.js` (exit code 1)
+
+```text
+[... 5 lines omitted ...]
+     × saves a typed due date and description when the editor closes before focus leaves them 1012ms
+[... 1 lines omitted ...]
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+[... 1 lines omitted ...]
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > saves a typed due date and description when the editor closes before focus leaves them
+AssertionError: expected "vi.fn()" to be called with arguments: [ 't1', { 'due-time': '2026-11-08' } ]
+[... 15 lines omitted ...]
+      Tests  1 failed | 15 passed (16)
+[... 2 lines omitted ...]
+```
+
+The stage 1 checks ran in a fresh tree: `git archive main` extracted, the stage 1 snapshot copied over,
+a `node_modules` junction, and the precache hashes regenerated for VERSION 2026-11-04.10.
+
+Command: `npm test` (exit code 0)
+
+```text
+[... 1 lines omitted ...]
+> todos-webapp@0.1.0-pre test
+> vitest run
+[... 5 lines omitted ...]
+ Test Files  24 passed (24)
+      Tests  535 passed (535)
+[... 5 lines omitted ...]
+```
+
+Command: `npx eslint .` (exit code 0)
+
+```text
+
+```
+
+Command: `npm run check:sw` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre check:sw
+> node scripts/check-sw-version.mjs
+
+OK: 42 precached files match VERSION 2026-11-04.10.
+```
+
+Command: `E2E_PORT=8831 npx playwright test` (exit code 0)
+
+```text
+[... 1 lines omitted ...]
+Running 89 tests using 4 workers
+[... 83 lines omitted ...]
+  ok 84 [chromium] › tests\e2e\task-editor.spec.js:64:3 › the editor opens from a row with focus on the description, and Escape returns to the row at 1440 px (1.0s)
+  ok 85 [chromium] › tests\e2e\task-editor.spec.js:64:3 › the editor opens from a row with focus on the description, and Escape returns to the row at 390 px (1.2s)
+  ok 86 [chromium] › tests\e2e\task-editor.spec.js:87:1 › every field saves on change without a Save button, and the changes survive a reload (TSK-1 to TSK-7) (2.4s)
+  ok 87 [chromium] › tests\e2e\task-editor.spec.js:122:1 › typing a due date by keyboard saves nothing until focus leaves the due fields (1.4s)
+  ok 88 [chromium] › tests\e2e\task-editor.spec.js:149:1 › the Add to list box adds the task to an existing list or a new one, and chips remove it (TSK-8) (1.8s)
+  ok 89 [chromium] › tests\e2e\task-editor.spec.js:173:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6) (1.3s)
+[... 2 lines omitted ...]
+  89 passed (44.1s)
+```
