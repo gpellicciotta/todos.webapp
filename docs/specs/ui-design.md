@@ -75,13 +75,14 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - The main column scrolls; the bars and the sidebar stay in place.
 - Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
   List views also carry `data-list-id`; the screen tasks fill these views.
+  [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`; the others stay empty until their tasks land.
 - A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
 - Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
 - The `[data-editor-slot]` element names the open editor in `data-editor`: `task`, `list`, or empty.
   It stays hidden until the editor tasks fill it; it covers the main column in compact layouts.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
-- Scroll positions and a memory object for filters and sort are kept per view, for the session.
+- Scroll positions and a memory object are kept per view, for the session; it keeps the search text.
 - Filters and sort persist per device in `localStorage`, such as `todos.view.tasks` (`TV-12`).
   [preferences.js](../../src/js/core/preferences.js) reads and writes these keys; blocked storage falls back to defaults.
 - The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
@@ -144,13 +145,18 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
 - In All tasks, the new task joins the lists of the active list filter, or no list.
 - Compact layouts pin the add bar above the bottom navigation; wide layouts place it above the rows.
-- A counter appears from 450 characters; the field stops at 500.
+- A counter appears from 450 characters, inside the field's end; the field stops at 500.
+- A failed add keeps the text and shows a toast.
 
 ### View Controls
 - A search field filters by text in descriptions and notes (`TV-6`).
 - Filter chips open popovers with checkboxes or date ranges; compact layouts group them behind one Filters button.
 - An active filter chip shows its value, such as "Status: open"; Clear all removes every filter.
 - The Sort button opens a menu of order fields with an ascending or descending toggle.
+- **[Decided]** Wide layouts put search and Sort on the first row, and the filter chips with Clear all below.
+  One row cannot hold the search field, four chips, Clear all, and the Sort label in the 45rem column.
+- Compact layouts show search, Filters with the active filter count, and Sort without its field name.
+  The Filters panel stacks every filter, scrolls when taller than the screen, and ends with Clear all.
 - The Due filter's range and the Created filter use From and To date fields.
 - **[Decided]** The search text lasts for the session only, so a reload never hides tasks behind a forgotten search.
 
@@ -190,6 +196,9 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Sort fields: Due time, Created, Last activity, Status, and Description (`TV-9`).
 - The default sort is Due time ascending, with tasks without a due time last (`TV-10`).
 - An empty result names the active filters and offers Clear all.
+- Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
+- A new task joins the lists of the active Lists filter, leaving out "In no list".
+- Overdue chips refresh every minute, also for tasks that keep their status.
 
 ### List
 Wireframe: [list.svg](../img/ui/list.svg).
@@ -295,7 +304,7 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 
 1. The app opens All tasks in local mode, with no sign-in prompt (`LOC-1`).
 2. The empty state reads "No tasks yet. Your tasks stay on this device."
-3. It offers the add bar, an Import a backup link, and a Connect to sync across devices link.
+3. It offers the add bar, an Import a backup link to Settings, and a Connect to sync across devices link.
 4. The first added task replaces the empty state; no setup step appears (`LOC-2`).
 5. The app asks for persistent storage after the first task is added, not on load (`TEC-5`).
 

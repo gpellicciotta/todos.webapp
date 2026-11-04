@@ -310,13 +310,13 @@ describe('stylesheets outside tokens.css', () => {
     );
   });
 
-  it('are imported by style.css in order: fonts, tokens, controls, app components, app chrome, then app shell', () => {
+  it('are imported by style.css in order: fonts, tokens, controls, app components, app chrome, app shell, then views', () => {
     const style = stripComments(readFileSync(join(CSS_DIR, 'style.css'), 'utf8'));
     const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'app-shell.css']);
+    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'app-shell.css', 'views.css']);
   });
 
-  for (const name of ['app-components.css', 'app-chrome.css']) {
+  for (const name of ['app-components.css', 'app-chrome.css', 'views.css']) {
     it(`scale no token by a bare number in ${name}, using size tokens instead`, () => {
       const path = join(CSS_DIR, name);
       const lines = existsSync(path) ? stripComments(readFileSync(path, 'utf8')).split('\n') : ['missing'];

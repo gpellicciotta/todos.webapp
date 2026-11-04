@@ -91,7 +91,7 @@ test('navigation marks the current route, and back and forward move between rout
   expect(problems).toEqual([]);
 });
 
-test('every route renders its title and an empty view, and the sidebar follows the lists', async ({ page }) => {
+test('every route renders its title and its view, and the sidebar follows the lists', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
   await page.goto('/');
@@ -119,7 +119,13 @@ test('every route renders its title and an empty view, and the sidebar follows t
       location.hash = target;
     }, hash);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
-    await expect(page.locator(`main [data-view="${view}"]`)).toBeEmpty();
+    // All tasks fills its view; the other screens' tasks fill theirs later.
+    if (view === 'tasks') {
+      await expect(page.locator('main [data-view="tasks"] .task-row')).toHaveCount(1);
+    }
+    else {
+      await expect(page.locator(`main [data-view="${view}"]`)).toBeEmpty();
+    }
     await expect(page).toHaveTitle(`${title} · ToDo's`);
     if (view === 'list') {
       await expect(sidebar.getByRole('link', { name: /^Home/ })).toHaveAttribute('aria-current', 'page');
@@ -145,12 +151,12 @@ test('an unknown route or list opens All tasks with a toast naming it', async ({
 
 test('the n and / shortcuts focus the add bar and search once a view has them', async ({ page }) => {
   const problems = watch(page);
-  await page.goto('/');
+  await page.goto('/#/bin');
   await ready(page);
   await page.keyboard.press('n');
   expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await page.evaluate(() => {
-    const view = document.querySelector('[data-view="tasks"]');
+    const view = document.querySelector('[data-view="bin"]');
     view.insertAdjacentHTML('beforeend', '<input data-shortcut="add" aria-label="Add a task"><input data-shortcut="search" aria-label="Search">');
   });
   await page.keyboard.press('n');

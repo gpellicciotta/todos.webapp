@@ -2,7 +2,7 @@
  * The stylesheet entry point: the only stylesheet a page links.
  *
  * It imports the font faces, the design tokens, the controls, the app components, the app chrome,
- * and the app shell,
+ * the app shell, and the screen layouts,
  * then sets page-wide base styles.
  * Rules here use semantic tokens only; raw values belong in tokens.css.
  */
@@ -13,6 +13,7 @@
 @import url('app-components.css');
 @import url('app-chrome.css');
 @import url('app-shell.css');
+@import url('views.css');
 
 /* Base: box model, page ground, and body text. */
 *,

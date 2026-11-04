@@ -15,6 +15,7 @@ import { openStore } from './store/db.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { createToaster } from './ui/toast.js';
+import { mountAllTasks } from './views/all-tasks.js';
 
 /** Start-up strings, for the strings module of TEC-13 to absorb. */
 const MESSAGES = Object.freeze({
@@ -23,6 +24,9 @@ const MESSAGES = Object.freeze({
   storeFailed: 'The local data could not be opened. Reload to try again.',
   startFailed: 'ToDo\'s could not start. Reload to try again.',
 });
+
+/** Screens that fill a view, by view name; the other views stay empty until their tasks land. */
+const SCREENS = { tasks: mountAllTasks };
 
 let shell = null;
 
@@ -67,6 +71,7 @@ async function start() {
     shell.showBanner(error?.code === 'blocked' ? error.message : MESSAGES.storeFailed);
     return;
   }
+  let screen = null;
   let shownViewKey = null;
 
   /**
@@ -99,7 +104,13 @@ async function start() {
       }
       title = list.name;
     }
-    shell.update(route, title);
+    const element = shell.update(route, title);
+    if (screen?.element !== element) {
+      screen?.controller?.destroy();
+      const mount = SCREENS[route.view];
+      screen = { element, controller: mount ? mount(element, { store, toaster, memory: router.memory() }) : null };
+    }
+    screen.controller?.update(route);
     if (shownViewKey !== null && shownViewKey !== route.viewKey) {
       shell.main.focus({ preventScroll: true });
     }

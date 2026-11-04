@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Added the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.
 - Feature: Added the task view controls with search, filter chips, sort, and per-device preferences.
 - Feature: Added the shared task list rows and the add bar for the task screens.
 - Feature: Applied review follow-ups to the store, toasts, shell, and task row styles.

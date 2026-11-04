@@ -1,0 +1,114 @@
+/*
+ * Screen layouts of ToDo's: how the task views fill the shell's main column.
+ *
+ * The task view pattern and its parts live in app-components.css; these rules place them in the app.
+ * Compact layouts pin the add bar above the bottom navigation; wide layouts keep it above the rows.
+ * Rules here use semantic tokens only.
+ */
+
+/* Task views fill the main column, so the compact add bar can sit at its end. */
+.app__view:has(> .task-view) {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100%;
+}
+
+.task-view {
+  flex: 1 0 auto;
+}
+
+/* Closed parts of a view set `hidden`, which their display rules would otherwise override. */
+.task-view [hidden] {
+  display: none;
+}
+
+.task-list-frame {
+  min-inline-size: 0;
+}
+
+/* The Sort button ends the controls row. */
+.view-controls__sort {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+/* Wide layouts put search and Sort on the first row, and the filter chips with Clear all below. */
+@media (width >= 64rem) {
+  .view-controls::after {
+    flex-basis: 100%;
+    order: 1;
+    content: '';
+  }
+
+  .view-controls > .view-controls__chip {
+    order: 2;
+  }
+}
+
+.view-controls__group {
+  min-inline-size: 0;
+}
+
+.view-controls__range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+/* The Filters panel holds every filter, so it scrolls inside the viewport when it is taller. */
+.view-controls__panel {
+  gap: var(--space-4);
+  max-block-size: calc(100dvh - var(--space-8) - var(--space-8) - var(--space-8));
+  overflow-y: auto;
+}
+
+.add-bar__field {
+  position: relative;
+}
+
+/* The counter sits inside the field's end, so the bar keeps one line. */
+.add-bar__counter {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--space-3);
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+.add-bar__field:has(.add-bar__counter:not([hidden])) .field__control {
+  padding-inline-end: calc(var(--space-8) + var(--space-8));
+}
+
+/* A first launch centers its empty state in the view. */
+.task-view[data-state='first-launch'] > .empty-state {
+  flex: 1 0 auto;
+  align-content: center;
+}
+
+@media (width < 64rem) {
+  .view-controls__search {
+    flex: 1 1 0;
+    min-inline-size: 0;
+  }
+
+  .view-controls__sort-value {
+    display: none;
+  }
+
+  /* The add bar sticks to the bottom of the main column, above the bottom navigation. */
+  .task-view > .add-bar {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: var(--layer-sticky);
+    margin-block-start: auto;
+    padding-block: var(--space-2);
+    background-color: var(--color-bg);
+  }
+
+  /* Toasts rise above the pinned add bar. */
+  .app:has(.task-view > .add-bar) .toast-region {
+    inset-block-end: calc(var(--target-min) + var(--space-3) + var(--space-4) + var(--target-min) + var(--space-4)
+      + env(safe-area-inset-bottom));
+  }
+}
