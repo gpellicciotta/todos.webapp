@@ -126,6 +126,63 @@ describe('createToaster', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
+  it('holds toasts while a modal dialog is open and shows them once it closes', () => {
+    document.body.insertAdjacentHTML('beforeend', '<dialog id="modal"><button type="button">Keep</button></dialog>');
+    const modal = document.getElementById('modal');
+    // happy-dom never matches :modal, so the stub answers as browsers do for a dialog opened with showModal().
+    modal.matches = (selector) => (selector === ':modal' ? modal.open : Element.prototype.matches.call(modal, selector));
+    modal.showModal();
+    toaster.show('Task moved to the recycle bin.', { onAction: vi.fn() });
+    vi.advanceTimersByTime(10_000);
+    expect(texts(region)).toEqual([]);
+    expect(liveRegion.announce).not.toHaveBeenCalled();
+    modal.close();
+    modal.dispatchEvent(new Event('close'));
+    expect(texts(region)).toEqual(['Task moved to the recycle bin.']);
+    expect(liveRegion.announce).toHaveBeenCalledWith('Task moved to the recycle bin.');
+    vi.advanceTimersByTime(7_999);
+    expect(texts(region)).toHaveLength(1);
+  });
+
+  it('runs the newest Undo on undoLatest and reports whether one was there', () => {
+    const older = vi.fn();
+    const newer = vi.fn();
+    expect(toaster.undoLatest()).toBe(false);
+    toaster.show('Task moved to the recycle bin.', { onAction: older });
+    toaster.show('List created.');
+    toaster.show('Note deleted.', { onAction: newer });
+    expect(toaster.undoLatest()).toBe(true);
+    expect(newer).toHaveBeenCalledTimes(1);
+    expect(older).not.toHaveBeenCalled();
+    expect(texts(region)).toEqual(['Task moved to the recycle bin.', 'List created.']);
+  });
+
+  it('runs the newest Undo on Ctrl+Z or Cmd+Z outside text fields with the shortcut on', () => {
+    toaster.destroy();
+    document.body.insertAdjacentHTML('beforeend', '<input id="field" aria-label="Add a task">');
+    toaster = createToaster({ region, liveRegion, undoShortcut: true });
+    const onAction = vi.fn();
+    toaster.show('Task moved to the recycle bin.', { onAction });
+    const field = document.getElementById('field');
+    const inField = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true });
+    field.dispatchEvent(inField);
+    expect(onAction).not.toHaveBeenCalled();
+    expect(inField.defaultPrevented).toBe(false);
+    const outside = new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true, cancelable: true });
+    document.body.dispatchEvent(outside);
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(outside.defaultPrevented).toBe(true);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
+    expect(onAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores Ctrl+Z without the shortcut option', () => {
+    const onAction = vi.fn();
+    toaster.show('Task moved to the recycle bin.', { onAction });
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
   it('removes every toast and stops its timers on destroy', () => {
     const onDismiss = vi.fn();
     toaster.show('List created.', { onDismiss });

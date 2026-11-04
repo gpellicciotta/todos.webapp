@@ -111,12 +111,15 @@
   --border-width-strong: 3px;
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+  --focus-ring-offset-inset: -2px;
   --focus-ring: var(--focus-ring-width) solid var(--color-focus);
 
   /* Size: touch targets, rows, icons, and layout widths. */
   --target-min: 2.75rem;
   --icon-size: 1.25rem;
   --icon-stroke: 2;
+  --icon-size-lg: 2.5rem;
+  --icon-stroke-thin: 1;
   --row-height: 3rem;
   --width-main: 45rem;
   --width-sidebar: 16rem;

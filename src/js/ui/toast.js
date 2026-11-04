@@ -4,6 +4,8 @@
  * Each toast announces its message through the polite live region and expires after 8 seconds.
  * Expiry pauses while the pointer is over the toast or focus is inside it.
  * Escape inside a toast dismisses it; at most three toasts stack, and the oldest goes first.
+ * While a modal dialog is open the rest of the page is inert, so toasts wait until it closes.
+ * With `undoShortcut`, Ctrl+Z or Cmd+Z outside text fields runs the newest toast's Undo.
  */
 
 import { createLiveRegion } from './live-region.js';
@@ -20,7 +22,9 @@ import { createLiveRegion } from './live-region.js';
  * @param {typeof setTimeout} [options.setTimeout] timer function, for tests
  * @param {typeof clearTimeout} [options.clearTimeout] timer cancel function, for tests
  * @param {() => number} [options.now] clock in milliseconds, for tests
- * @returns {{show: (message: string, options?: object) => () => void, destroy: () => void}} the toaster
+ * @param {boolean} [options.undoShortcut] let Ctrl+Z or Cmd+Z outside text fields run the newest Undo
+ * @returns {{show: (message: string, options?: object) => () => void, undoLatest: () => boolean, destroy: () => void}}
+ *   the toaster
  */
 export function createToaster(options = {}) {
   const doc = options.document ?? globalThis.document;
@@ -34,6 +38,7 @@ export function createToaster(options = {}) {
   const region = options.region ?? doc.createElement('div');
   const liveRegion = options.liveRegion ?? createLiveRegion({ document: doc, setTimeout: set, clearTimeout: clear });
   const toasts = [];
+  const held = [];
   let lastFocus = null;
 
   if (ownRegion) {
@@ -50,6 +55,23 @@ export function createToaster(options = {}) {
   function onDocumentFocusin(event) {
     if (!region.contains(event.target)) {
       lastFocus = event.target;
+    }
+  }
+
+  /**
+   * Tell whether a modal dialog is open, making the rest of the page inert.
+   * @returns {boolean} true while a modal dialog is open
+   */
+  function modalOpen() {
+    return [...doc.querySelectorAll('dialog[open]')].some((dialog) => dialog.matches(':modal'));
+  }
+
+  /**
+   * Show the toasts held back while a modal dialog was open, once none is open.
+   */
+  function onDialogClose() {
+    while (held.length > 0 && !modalOpen()) {
+      place(held.shift());
     }
   }
 
@@ -91,6 +113,11 @@ export function createToaster(options = {}) {
     }
     toast.done = true;
     pause(toast);
+    if (held.includes(toast)) {
+      held.splice(held.indexOf(toast), 1);
+      toast.onDismiss?.(reason);
+      return;
+    }
     const hadFocus = toast.element.contains(doc.activeElement);
     toast.element.remove();
     toasts.splice(toasts.indexOf(toast), 1);
@@ -177,25 +204,70 @@ export function createToaster(options = {}) {
       done: false,
       returnFocus: null,
     };
+    toast.message = message;
     toast.element = render(toast, message, settings.actionLabel ?? 'Undo');
+    if (modalOpen()) {
+      held.push(toast);
+    }
+    else {
+      place(toast);
+    }
+    return () => dismiss(toast, 'dismiss');
+  }
+
+  /**
+   * Add a toast to the region, announce it, and start its expiry.
+   * @param {object} toast toast record
+   */
+  function place(toast) {
     region.append(toast.element);
     toasts.push(toast);
     while (toasts.length > max) {
       dismiss(toasts[0], 'overflow');
     }
-    liveRegion.announce(message);
+    liveRegion.announce(toast.message);
     resume(toast);
-    return () => dismiss(toast, 'dismiss');
+  }
+
+  /**
+   * Run the newest Undo on Ctrl+Z or Cmd+Z, unless a text field has focus.
+   * @param {KeyboardEvent} event keydown event
+   */
+  function onShortcut(event) {
+    const field = event.target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
+    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey || event.key.toLowerCase() !== 'z'
+      || event.defaultPrevented || field) {
+      return;
+    }
+    if (undoLatest()) {
+      event.preventDefault();
+    }
+  }
+
+  /**
+   * Run the action of the newest toast that has one, such as Undo, for a keyboard shortcut.
+   * @returns {boolean} true when a toast had an action to run
+   */
+  function undoLatest() {
+    const toast = toasts.findLast((candidate) => candidate.onAction);
+    if (!toast) {
+      return false;
+    }
+    dismiss(toast, 'action');
+    toast.onAction();
+    return true;
   }
 
   /**
    * Dismiss every toast and remove the listeners and elements this toaster added.
    */
   function destroy() {
-    for (const toast of [...toasts]) {
+    for (const toast of [...held, ...toasts]) {
       dismiss(toast, 'destroy');
     }
     doc.removeEventListener('focusin', onDocumentFocusin);
+    doc.removeEventListener('close', onDialogClose, true);
+    doc.removeEventListener('keydown', onShortcut);
     if (ownRegion) {
       region.remove();
     }
@@ -205,5 +277,9 @@ export function createToaster(options = {}) {
   }
 
   doc.addEventListener('focusin', onDocumentFocusin);
-  return { show, destroy };
+  doc.addEventListener('close', onDialogClose, true);
+  if (options.undoShortcut) {
+    doc.addEventListener('keydown', onShortcut);
+  }
+  return { show, undoLatest, destroy };
 }

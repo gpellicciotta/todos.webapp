@@ -107,7 +107,8 @@ test('the syncing icon spins only without reduced motion', async ({ page }) => {
 
 test('navigation marks the current route with aria-current in the sidebar and the bottom bar', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
-  for (const nav of ['.sidebar', '.bottom-nav']) {
+  const bottom = '.bottom-nav[aria-label="Main, compact layout"]';
+  for (const nav of ['nav.sidebar', bottom]) {
     const current = page.locator(`#navigation ${nav} [aria-current="page"]`);
     await expect(current, nav).toHaveCount(1);
     const [currentGround, otherGround] = await Promise.all([
@@ -118,7 +119,45 @@ test('navigation marks the current route with aria-current in the sidebar and th
     expect(currentGround, nav).not.toBe(otherGround);
   }
   for (const destination of ['Tasks', 'Lists', 'Bin', 'Settings']) {
-    await expect(page.locator('#navigation .bottom-nav').getByRole('link', { name: destination, exact: true })).toHaveCount(1);
+    await expect(page.locator(`#navigation ${bottom}`).getByRole('link', { name: destination, exact: true })).toHaveCount(1);
+  }
+});
+
+test('the current nav item keeps hover and active feedback and its edge on the inline start', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const ground = (locator) => locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+  const current = page.locator('#navigation nav.sidebar .nav-item[aria-current="page"]');
+  const hovered = page.locator('#navigation .nav-item.is-hover[aria-current="page"]');
+  const pressed = page.locator('#navigation .nav-item.is-active[aria-current="page"]');
+  const grounds = new Set([await ground(current), await ground(hovered), await ground(pressed)]);
+  expect(grounds.size).toBe(3);
+
+  const edgeSide = () => current.evaluate((element) => {
+    const edge = element.getBoundingClientRect();
+    const mark = getComputedStyle(element, '::before');
+    return { left: mark.left, right: mark.right, width: mark.width, box: Math.round(edge.width) };
+  });
+  expect(await edgeSide()).toMatchObject({ left: '0px', width: '3px' });
+  await current.evaluate((element) => element.setAttribute('dir', 'rtl'));
+  expect(await edgeSide()).toMatchObject({ right: '0px', width: '3px' });
+
+  const pressedBar = page.locator('#navigation .bottom-nav .bottom-nav__item.is-active');
+  await expect(pressedBar.first()).toBeVisible();
+});
+
+test('the sync dot ring matches the ground under the indicator', async ({ page }) => {
+  // Reduced motion stops the theme switch from catching grounds mid-transition.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openGallery(page, VIEWPORTS[1], THEMES[1]);
+  const rings = await page.locator('#sync-indicator .sync-indicator:has(.sync-indicator__dot)').evaluateAll((buttons) => buttons.map((button) => {
+    const own = getComputedStyle(button).backgroundColor;
+    const under = own === 'rgba(0, 0, 0, 0)' ? getComputedStyle(document.body).backgroundColor : own;
+    const ring = getComputedStyle(button.querySelector('.sync-indicator__dot')).boxShadow;
+    return { ring: ring.slice(0, ring.indexOf(')') + 1), under };
+  }));
+  expect(rings.length).toBeGreaterThanOrEqual(3);
+  for (const { ring, under } of rings) {
+    expect(ring).toBe(under);
   }
 });
 

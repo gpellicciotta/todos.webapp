@@ -3,19 +3,8 @@
  *
  * Toasts, sync state changes, and moved rows announce through the polite region.
  * Blocking errors use the assertive one.
+ * The regions use the `.visually-hidden` class of style.css.
  */
-
-const HIDDEN_STYLE = [
-  'position: absolute',
-  'width: 1px',
-  'height: 1px',
-  'margin: -1px',
-  'padding: 0',
-  'border: 0',
-  'overflow: hidden',
-  'clip-path: inset(50%)',
-  'white-space: nowrap',
-].join('; ');
 
 /**
  * Create a visually hidden live region element.
@@ -28,7 +17,7 @@ function createRegion(doc, politeness) {
   region.setAttribute('aria-live', politeness);
   region.setAttribute('aria-atomic', 'true');
   region.dataset.liveRegion = politeness;
-  region.style.cssText = HIDDEN_STYLE;
+  region.className = 'visually-hidden';
   return region;
 }
 

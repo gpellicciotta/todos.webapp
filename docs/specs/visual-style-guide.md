@@ -55,6 +55,9 @@ Change the stylesheets first, then the gallery and this guide in the same commit
   Rejected: a viewport media query, which cannot see a narrow main column beside the editor panel.
 - **[Decided]** The app shell positions the sidebar, the bottom bar, and the editor panel.
   The component styles hold no fixed or sticky positions, so the gallery shows them in place.
+- **[Decided]** Component styles never scale a token by a bare number, such as `* 2` or `/ 2`.
+  They use a named token, or add tokens together; [tokens.test.js](../../tests/unit/tokens.test.js) checks app-chrome.css.
+- **[Decided]** Marks on an inline edge use logical properties, so they follow right-to-left text.
 
 ---
 
@@ -102,9 +105,11 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - `--radius-sm` for chips, `--radius-md` for controls and rows, `--radius-lg` for dialogs and panels.
 - `--radius-round`: circles, such as the unseen entries dot of the sync indicator.
 - `--border-width` for every border; `--focus-ring-width` and `--focus-ring-offset` size the focus ring.
+- `--focus-ring-offset-inset`: draws the ring inside items that fill a bar, such as bottom bar items.
 - `--border-width-strong`: the leading edge of error banners.
 - `--target-min`: 44 px, the minimum size of every control.
 - `--icon-size` and `--icon-stroke`: every icon is 20 px with one stroke width.
+- `--icon-size-lg` and `--icon-stroke-thin`: the larger, thinner icon of empty states.
 - `--row-height`: 48 px, the task row height.
 - Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-editor` size the side panels.
 - Control minimums: `--width-menu` for menus and popovers, `--width-segment-min` for segmented options.
@@ -158,7 +163,10 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Never use a toast as the only place an error appears.
   `createToaster().show(message, { onAction })` in [toast.js](../../src/js/ui/toast.js) adds an Undo button.
   Toasts expire after 8 seconds, pause while hovered or focused, and stack at most three.
+  While a modal dialog is open the page is inert, so toasts wait until it closes.
+  With `undoShortcut: true`, Ctrl+Z or Cmd+Z outside text fields runs the newest Undo; `undoLatest()` does the same.
   [live-region.js](../../src/js/ui/live-region.js) announces them; `announce(message, { politeness: 'assertive' })` suits blocking errors.
+  Its regions use the `.visually-hidden` class of style.css.
 
 ### App Components
 Defined in [app-components.css](../../src/css/app-components.css) and [app-chrome.css](../../src/css/app-chrome.css), on top of the controls.
@@ -189,6 +197,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Show the drag handle only in manual order; devices without hover hide it anyway.
 - [Navigation](../../src/demo/visual-style-gallery.html#navigation): the wide `.sidebar` and the compact `.bottom-nav`.
   Both mark the current route with `aria-current="page"`: a signal edge, a signal icon, and semibold text.
+  The sidebar edge sits on the inline start; the current item keeps hover and active grounds.
   The sidebar holds All tasks, Lists, each list with its open count, New list, Recycle bin, and Settings.
   Its sync indicator sits at the bottom, left-aligned with the item icons.
   The bottom bar holds Tasks, Lists, Bin, and Settings, each an icon above a label.
@@ -196,6 +205,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   States: `local`, `synced`, `syncing`, `offline` with its pending count, `sign-in`, and `error`.
   Sign-in and error use the signal color; the syncing icon spins, except under reduced motion.
   The `.sync-indicator__dot` marks unseen sync log entries, with visually hidden text naming it.
+  Its ring takes the ground under it: `--sync-indicator-ground`, the page ground by default.
+  The sidebar and the top bar set it to the surface; hover and active use the indicator's own ground.
 - [Editor panel](../../src/demo/visual-style-gallery.html#editor-panel): an `<aside class="editor-panel">` with a title and a close button.
   From 64rem it is a bordered right panel at `--elevation-2`; below, it fills the screen.
   Its body scrolls; sections stack with dividers, and the danger zone sits apart at the end.

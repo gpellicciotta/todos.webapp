@@ -21,7 +21,9 @@ describe('createLiveRegion', () => {
     const assertive = document.querySelector('[aria-live="assertive"]');
     expect(polite.getAttribute('aria-atomic')).toBe('true');
     expect(assertive.getAttribute('aria-atomic')).toBe('true');
-    expect(polite.style.position).toBe('absolute');
+    expect(polite.classList.contains('visually-hidden')).toBe(true);
+    expect(assertive.classList.contains('visually-hidden')).toBe(true);
+    expect(polite.getAttribute('style')).toBeNull();
     expect(polite.textContent).toBe('');
   });
 

@@ -316,6 +316,12 @@ describe('stylesheets outside tokens.css', () => {
     expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css']);
   });
 
+  it('scale no token by a bare number in app-chrome.css, using size tokens instead', () => {
+    const lines = stripComments(readFileSync(join(CSS_DIR, 'app-chrome.css'), 'utf8')).split('\n');
+    const offenders = lines.filter((line) => /var\(--[\w-]+\)\s*[*/]\s*-?\d|\d\s*\*\s*var\(/.test(line));
+    expect(offenders.map((line) => line.trim())).toEqual([]);
+  });
+
   it('contain no raw color literals', () => {
     const offenders = [];
     for (const path of sheets()) {

@@ -261,6 +261,7 @@
         <dl class="specimens">
           <div class="specimen"><dt><code>--target-min</code> <span data-token="--target-min"></span></dt><dd><span class="size-box size--target"></span></dd></div>
           <div class="specimen"><dt><code>--icon-size</code> <span data-token="--icon-size"></span>, stroke <span data-token="--icon-stroke"></span></dt><dd><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></dd></div>
+          <div class="specimen"><dt><code>--icon-size-lg</code> <span data-token="--icon-size-lg"></span>, stroke <span data-token="--icon-stroke-thin"></span>, for empty states</dt><dd><svg class="icon empty-state__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></dd></div>
           <div class="specimen"><dt><code>--row-height</code> <span data-token="--row-height"></span></dt><dd><span class="size-row">Water the plants</span></dd></div>
           <div class="specimen"><dt><code>--width-sidebar</code> <span data-token="--width-sidebar"></span></dt><dd><span class="width-bar width--sidebar"></span></dd></div>
           <div class="specimen"><dt><code>--width-editor</code> <span data-token="--width-editor"></span></dt><dd><span class="width-bar width--editor"></span></dd></div>
@@ -271,7 +272,7 @@
           <div class="specimen"><dt><code>--height-textarea-min</code> <span data-token="--height-textarea-min"></span>, the lowest textarea</dt><dd><span class="size-box size--textarea"></span></dd></div>
           <div class="specimen"><dt><code>--border-width</code> <span data-token="--border-width"></span></dt><dd><span class="size-box size--border"></span></dd></div>
           <div class="specimen"><dt><code>--border-width-strong</code> <span data-token="--border-width-strong"></span>, the leading edge of error banners</dt><dd><span class="size-box size--border-strong"></span></dd></div>
-          <div class="specimen"><dt><code>--focus-ring</code> <span data-token="--focus-ring-width"></span> wide, <span data-token="--focus-ring-offset"></span> gap</dt><dd><span class="size-box size--focus"></span></dd></div>
+          <div class="specimen"><dt><code>--focus-ring</code> <span data-token="--focus-ring-width"></span> wide, <span data-token="--focus-ring-offset"></span> gap, <span data-token="--focus-ring-offset-inset"></span> inside bars</dt><dd><span class="size-box size--focus"></span></dd></div>
         </dl>
       </section>
 
@@ -970,6 +971,26 @@
           </nav>
         </div>
 
+        <h3>Pressed and current item feedback</h3>
+        <p>Current sidebar items keep hover and active feedback, with the signal edge on the inline start.</p>
+        <p>In the bottom bar, Tasks is current and pressed, and Lists shows active.</p>
+        <div class="stage stage--compact">
+          <div class="sidebar">
+            <ul class="nav-list" aria-label="Current item states">
+              <li><a class="nav-item is-hover" href="#navigation" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#tasks"/></svg><span class="nav-item__label">All tasks, hover</span></a></li>
+              <li><a class="nav-item is-active" href="#navigation" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#tasks"/></svg><span class="nav-item__label">All tasks, active</span></a></li>
+            </ul>
+          </div>
+          <nav class="bottom-nav" aria-label="Pressed states, compact layout">
+            <ul class="bottom-nav__list">
+              <li><a class="bottom-nav__item is-active" href="#navigation" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#tasks"/></svg>Tasks, active</a></li>
+              <li><a class="bottom-nav__item is-active" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#lists"/></svg>Lists, active</a></li>
+              <li><a class="bottom-nav__item" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Bin</a></li>
+              <li><a class="bottom-nav__item" href="#navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#settings"/></svg>Settings</a></li>
+            </ul>
+          </nav>
+        </div>
+
         <h3>Bottom bar</h3>
         <p>Tasks is current; Bin shows hover, and Settings shows focus-visible.</p>
         <div class="stage stage--compact">
@@ -1002,6 +1023,7 @@
         <ul class="states">
           <li class="state"><button class="sync-indicator" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span><span class="sync-indicator__dot"></span><span class="visually-hidden">, new sync log entries</span></button><span class="state__label">Unseen sync log entries</span></li>
           <li class="state"><button class="sync-indicator is-hover" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="sync-indicator is-hover" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span><span class="sync-indicator__dot"></span><span class="visually-hidden">, new sync log entries</span></button><span class="state__label">Hover, with unseen entries</span></li>
           <li class="state"><button class="sync-indicator is-focus" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label">Focus-visible</span></li>
           <li class="state"><button class="sync-indicator is-active" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label">Active</span></li>
           <li class="state"><button class="sync-indicator" type="button" data-state="error" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-error"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Sync error</span><span class="sync-indicator__dot"></span><span class="visually-hidden">, new sync log entries</span></button><span class="state__label">Error, with unseen entries</span></li>
