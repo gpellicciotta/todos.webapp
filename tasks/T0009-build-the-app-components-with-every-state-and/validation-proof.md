@@ -1,8 +1,11 @@
 ## Walkthrough & Validation
+T0009 was split on 2026-11-04; the app chrome and its tests moved to T0031.
+Green runs use a T0009-only tree: `git archive HEAD` plus only the T0009 files.
+Output blocks drop ANSI codes and trailing spaces only.
 
 ### Red Phase
 The tests ran before app-components.css, the icon sprite, and the app gallery sections existed.
-Output blocks drop ANSI codes and trailing spaces only.
+The end-to-end run predates the split, so it also lists the chrome tests now owned by T0031.
 
 Command: `npx vitest run tests/unit/tokens.test.js` (exit code 1)
 
@@ -35,8 +38,6 @@ AssertionError: expected [ 'controls.css', 'fonts.css', …(2) ] to deeply equal
    Start at  15:50:34
    Duration  337ms (tests 53%, transform 24%, import 18%, worker 5%)
 ```
-
-All 17 new end-to-end tests failed, each on its missing sections or specimens.
 
 Command: `E2E_PORT=8791 npx playwright test tests/e2e/gallery-app.spec.js` (exit code 1)
 
@@ -81,7 +82,7 @@ Running 17 tests using 4 workers
 ```
 
 ### Green Phase
-The completion check passed; `E2E_PORT` only moves the test server off the shared default port.
+All runs below use the T0009-only tree; `E2E_PORT` only moves the test server off the shared port.
 
 Command: `npm test` (exit code 0)
 
@@ -91,16 +92,13 @@ Command: `npm test` (exit code 0)
 > vitest run
 
 
- RUN  v5.1.0 C:/Dev-Projects/todos.webapp
+ RUN  v5.1.0 C:/Users/giova/AppData/Local/Temp/claude/c--Dev-Projects-todos-webapp/2ef3bbc3-e820-4103-9d60-421b54f7c558/scratchpad/t0009-tree
 
 
- Test Files  15 passed (15)
-      Tests  434 passed (434)
-   Start at  16:04:53
-   Duration  2.37s (environment 54%, tests 24%, import 18%, transform 3%, worker 2%)
-
-    Isolate  15 workers spawned · ~582ms startup each (spawn + environment, per file)
-             at least ~666ms faster with isolate: false — reuses workers across files instead of one per file
+ Test Files  11 passed (11)
+      Tests  384 passed (384)
+   Start at  16:12:14
+   Duration  1.19s (tests 39%, import 31%, transform 26%, worker 3%)
 ```
 
 Command: `npm run lint` (exit code 0)
@@ -111,51 +109,50 @@ Command: `npm run lint` (exit code 0)
 > eslint .
 ```
 
-Command: `E2E_PORT=8791 npm run test:e2e` (exit code 0)
+Command: `E2E_PORT=8792 npx playwright test tests/e2e/gallery-app.spec.js` (exit code 0)
+
+```text
+
+Running 15 tests using 4 workers
+
+  ok  2 [chromium] › tests\e2e\gallery-app.spec.js:79:5 › task row, status, and task list sections render at 1440 px in the light theme (1.2s)
+  ok  3 [chromium] › tests\e2e\gallery-app.spec.js:102:3 › task rows keep one line at 48 px and truncate long text at 390 px (1.1s)
+  ok  1 [chromium] › tests\e2e\gallery-app.spec.js:79:5 › task row, status, and task list sections render at 390 px in the dark theme (1.2s)
+  ok  4 [chromium] › tests\e2e\gallery-app.spec.js:79:5 › task row, status, and task list sections render at 390 px in the light theme (1.3s)
+  ok  6 [chromium] › tests\e2e\gallery-app.spec.js:102:3 › task rows keep one line at 48 px and truncate long text at 1440 px (777ms)
+  ok  5 [chromium] › tests\e2e\gallery-app.spec.js:79:5 › task row, status, and task list sections render at 1440 px in the dark theme (910ms)
+  ok  7 [chromium] › tests\e2e\gallery-app.spec.js:136:3 › completed rows are muted, and cancelled rows are muted and struck through, in the light theme (916ms)
+  ok  8 [chromium] › tests\e2e\gallery-app.spec.js:136:3 › completed rows are muted, and cancelled rows are muted and struck through, in the dark theme (922ms)
+  ok 10 [chromium] › tests\e2e\gallery-app.spec.js:185:3 › interactive task row, status, and task list specimens are at least 44 by 44 px at 390 px (695ms)
+  ok 12 [chromium] › tests\e2e\gallery-app.spec.js:185:3 › interactive task row, status, and task list specimens are at least 44 by 44 px at 1440 px (718ms)
+  ok  9 [chromium] › tests\e2e\gallery-app.spec.js:163:1 › every status has its own icon from the sprite (974ms)
+  ok 14 [chromium] › tests\e2e\gallery-app.spec.js:249:1 › the status button and task row sections show forced focus-visible specimens with a focus ring (714ms)
+  ok 15 [chromium] › tests\e2e\gallery-app.spec.js:266:1 › task row specimens cover every documented state (933ms)
+  ok 11 [chromium] › tests\e2e\gallery-app.spec.js:212:3 › every keyboard stop in the task row, status, and task list sections shows a focus ring at 390 px (2.9s)
+  ok 13 [chromium] › tests\e2e\gallery-app.spec.js:212:3 › every keyboard stop in the task row, status, and task list sections shows a focus ring at 1440 px (3.3s)
+
+  15 passed (7.7s)
+```
+
+Command: `E2E_PORT=8792 npm run test:e2e` (exit code 0)
 
 ```text
 
 > todos-webapp@0.1.0-pre test:e2e
 > playwright test
 
+[... 32 lines omitted ...]
+  ok 32 [chromium] › tests\e2e\index.spec.js:9:3 › index page loads cleanly at 390 px (250ms)
+  ok 33 [chromium] › tests\e2e\index.spec.js:9:3 › index page loads cleanly at 1440 px (206ms)
+  ok 20 [chromium] › tests\e2e\gallery-controls.spec.js:121:3 › every keyboard stop in the control sections shows a focus ring at 390 px (6.7s)
+  ok 23 [chromium] › tests\e2e\gallery-controls.spec.js:121:3 › every keyboard stop in the control sections shows a focus ring at 1440 px (6.7s)
 
-Running 35 tests using 4 workers
-[... 8 lines omitted ...]
-  ok  8 [chromium] › tests\e2e\gallery-app.spec.js:146:3 › completed rows are muted, and cancelled rows are muted and struck through, in the dark theme (1.4s)
-  ok 10 [chromium] › tests\e2e\gallery-app.spec.js:202:1 › the syncing icon spins only without reduced motion (997ms)
-  ok 12 [chromium] › tests\e2e\gallery-app.spec.js:229:3 › interactive app specimens are at least 44 by 44 px at 390 px (773ms)
-  ok 11 [chromium] › tests\e2e\gallery-app.spec.js:211:1 › navigation marks the current route with aria-current in the sidebar and the bottom bar (1.1s)
-  ok  9 [chromium] › tests\e2e\gallery-app.spec.js:173:1 › every status and sync state has its own icon from the sprite (1.5s)
-  ok 14 [chromium] › tests\e2e\gallery-app.spec.js:229:3 › interactive app specimens are at least 44 by 44 px at 1440 px (781ms)
-  ok 16 [chromium] › tests\e2e\gallery-app.spec.js:293:1 › every app component section shows a forced focus-visible specimen with a focus ring (804ms)
-  ok 17 [chromium] › tests\e2e\gallery-app.spec.js:310:1 › task row specimens cover every documented state (1.3s)
-  ok 18 [chromium] › tests\e2e\gallery-controls.spec.js:70:5 › control sections render at 390 px in the light theme (1.8s)
-  ok 20 [chromium] › tests\e2e\gallery-controls.spec.js:93:3 › interactive control specimens are at least 44 by 44 px at 390 px (947ms)
-  ok 19 [chromium] › tests\e2e\gallery-controls.spec.js:70:5 › control sections render at 390 px in the dark theme (2.1s)
-  ok 22 [chromium] › tests\e2e\gallery-controls.spec.js:70:5 › control sections render at 1440 px in the light theme (2.1s)
-  ok 13 [chromium] › tests\e2e\gallery-app.spec.js:256:3 › every keyboard stop in the app sections shows a focus ring at 390 px (7.5s)
-  ok 24 [chromium] › tests\e2e\gallery-controls.spec.js:93:3 › interactive control specimens are at least 44 by 44 px at 1440 px (1.1s)
-  ok 23 [chromium] › tests\e2e\gallery-controls.spec.js:70:5 › control sections render at 1440 px in the dark theme (2.6s)
-  ok 26 [chromium] › tests\e2e\gallery-controls.spec.js:159:1 › every control section shows a forced focus-visible specimen with a focus ring (1.1s)
-  ok 27 [chromium] › tests\e2e\gallery-controls.spec.js:175:1 › checkbox, radio, segmented, and menu specimens include a focus-visible state (1.5s)
-  ok 15 [chromium] › tests\e2e\gallery-app.spec.js:256:3 › every keyboard stop in the app sections shows a focus ring at 1440 px (11.6s)
-  ok 29 [chromium] › tests\e2e\gallery.spec.js:62:5 › gallery renders cleanly at 390 px in the light theme (2.0s)
-  ok 28 [chromium] › tests\e2e\gallery-controls.spec.js:187:1 › pressed toggles keep distinct hover and active feedback (2.3s)
-  ok 30 [chromium] › tests\e2e\gallery.spec.js:62:5 › gallery renders cleanly at 390 px in the dark theme (2.1s)
-  ok 31 [chromium] › tests\e2e\gallery.spec.js:62:5 › gallery renders cleanly at 1440 px in the light theme (2.0s)
-  ok 32 [chromium] › tests\e2e\gallery.spec.js:62:5 › gallery renders cleanly at 1440 px in the dark theme (1.9s)
-  ok 33 [chromium] › tests\e2e\gallery.spec.js:106:1 › gallery follows the system theme when System is selected (1.7s)
-  ok 21 [chromium] › tests\e2e\gallery-controls.spec.js:121:3 › every keyboard stop in the control sections shows a focus ring at 390 px (14.2s)
-  ok 34 [chromium] › tests\e2e\index.spec.js:9:3 › index page loads cleanly at 390 px (455ms)
-  ok 35 [chromium] › tests\e2e\index.spec.js:9:3 › index page loads cleanly at 1440 px (445ms)
-  ok 25 [chromium] › tests\e2e\gallery-controls.spec.js:121:3 › every keyboard stop in the control sections shows a focus ring at 1440 px (15.1s)
-
-  35 passed (30.2s)
+  33 passed (15.8s)
 ```
 
 ### Visual Check
-Full-page gallery captures, with motion enabled; section crops were also inspected at both widths and themes.
-Fixes made after inspection: shrinking row buttons, hidden chips on hovered rows, and an overflowing due row.
+Full-page gallery captures with motion enabled; the after shots show the T0009-only gallery.
+Fixes made after inspection: shrinking row buttons and hidden chips on hovered rows.
 
 | Width   | Theme | Before                                                                     | After                                                                    |
 | :------ | :---- | :------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
