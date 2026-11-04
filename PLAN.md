@@ -11,12 +11,12 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0003 Support several accounts or servers on one device, each with its own data set and sync state.
 
 ## v0.1.0
-- [!] T0006 [reason: awaiting human review] [owner: @claude-code] Set up the web app project: src web root, npm tooling, ESLint, Vitest, Playwright, and a local static server.
-- [ ] T0007 [needs: T0006] Build the design tokens, self-hosted Inter font faces, the style.css entry point, and the gallery token sections.
+- [x] T0006 Set up the web app project: src web root, npm tooling, ESLint, Vitest, Playwright, and a local static server.
+- [ ] T0007 Build the design tokens, self-hosted Inter font faces, the style.css entry point, and the gallery token sections.
 - [ ] T0008 [needs: T0007] Build the basic control components with every state, and their gallery sections.
 - [ ] T0009 [needs: T0008] Build the app components with every state, and their gallery sections: task row, status button, navigation, and more.
 - [ ] T0010 [needs: T0008] Build accessible menu, popover, dialog, and toast behavior modules with keyboard and focus handling.
-- [ ] T0011 [needs: T0006] Build the IndexedDB data store for lists, tasks, and memberships, with UUIDv7 identifiers and validation.
+- [ ] T0011 Build the IndexedDB data store for lists, tasks, and memberships, with UUIDv7 identifiers and validation.
 - [ ] T0012 [needs: T0011] Add timestamped task notes to the data store, updating each task's last activity time.
 - [ ] T0013 [needs: T0011] Add fractional-index manual ordering per list, and the task query functions for filters and sorting.
 - [ ] T0014 [needs: T0011] Add overdue handling and the recycle bin with restore, permanent delete, and the 30-day purge.
