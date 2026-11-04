@@ -1,0 +1,74 @@
+/*
+ * The stylesheet entry point: the only stylesheet a page links.
+ *
+ * It imports the font faces and the design tokens, then sets page-wide base styles.
+ * Component styles join it as partials in later tasks.
+ * Rules here use semantic tokens only; raw values belong in tokens.css.
+ */
+
+@import url('fonts.css');
+@import url('tokens.css');
+
+/* Base: box model, page ground, and body text. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-optical-sizing: auto;
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+}
+
+/* Base: headings, set in semibold with tight leading. */
+h1,
+h2,
+h3 {
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+h1 {
+  font-size: var(--text-xl);
+}
+
+h2 {
+  font-size: var(--text-lg);
+}
+
+h3 {
+  font-size: var(--text-base);
+}
+
+/* Base: underlined links in the link color, with a thicker underline on hover. */
+a {
+  color: var(--color-link);
+}
+
+a:hover {
+  text-decoration-thickness: var(--focus-ring-width);
+}
+
+/* Base: code in the monospace family. */
+code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Base: the focus ring on every interactive element, with a gap to the element. */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

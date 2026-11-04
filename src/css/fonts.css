@@ -1,0 +1,15 @@
+/*
+ * Self-hosted font faces.
+ *
+ * Inter 4.1, one variable file for every weight, from the official rsms/inter release.
+ * The SIL Open Font License sits beside the font in fonts/OFL.txt.
+ * `swap` shows fallback text at once and swaps in Inter when it arrives.
+ */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../fonts/InterVariable.woff2') format('woff2');
+}

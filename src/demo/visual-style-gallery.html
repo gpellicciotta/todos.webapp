@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visual Style Gallery · ToDo's</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="visual-style-gallery.css">
+    <script type="module" src="visual-style-gallery.js"></script>
+  </head>
+  <body>
+    <header class="gallery-header">
+      <div class="gallery-header__inner">
+        <h1>ToDo's visual style gallery</h1>
+        <p class="gallery-lead">
+          Every design token of <a href="../css/style.css">style.css</a>, rendered from the real stylesheet.
+          Usage rules live in the visual style guide.
+        </p>
+        <fieldset class="theme-switch">
+          <legend>Theme</legend>
+          <label><input type="radio" name="theme" value="system" checked> System</label>
+          <label><input type="radio" name="theme" value="light"> Light</label>
+          <label><input type="radio" name="theme" value="dark"> Dark</label>
+        </fieldset>
+        <nav class="gallery-nav" aria-label="Gallery sections">
+          <ul>
+            <li><a href="#color">Color</a></li>
+            <li><a href="#typography">Typography</a></li>
+            <li><a href="#spacing">Spacing</a></li>
+            <li><a href="#radii">Radii</a></li>
+            <li><a href="#sizes">Sizes</a></li>
+            <li><a href="#elevation">Elevation</a></li>
+            <li><a href="#layers">Layers</a></li>
+            <li><a href="#motion">Motion</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="gallery">
+      <section class="gallery-section" id="color" aria-labelledby="color-title">
+        <h2 id="color-title">Color</h2>
+        <p>Semantic tokens name roles and switch with the theme; primitives hold the raw ramps.</p>
+
+        <h3>Grounds</h3>
+        <ul class="swatches">
+          <li class="swatch"><span class="swatch__chip swatch--color-bg"></span><code>--color-bg</code><span class="swatch__value"></span><span class="swatch__role">Page ground</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-surface"></span><code>--color-surface</code><span class="swatch__value"></span><span class="swatch__role">Panels and dialogs</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-surface-sunken"></span><code>--color-surface-sunken</code><span class="swatch__value"></span><span class="swatch__role">Wells and chips</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-hover-bg"></span><code>--color-hover-bg</code><span class="swatch__value"></span><span class="swatch__role">Hovered rows and buttons</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-selected-bg"></span><code>--color-selected-bg</code><span class="swatch__value"></span><span class="swatch__role">Current row and route</span></li>
+        </ul>
+
+        <h3>Text and borders</h3>
+        <ul class="swatches">
+          <li class="swatch"><span class="swatch__chip swatch--color-text"></span><code>--color-text</code><span class="swatch__value"></span><span class="swatch__role">Body text</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-text-muted"></span><code>--color-text-muted</code><span class="swatch__value"></span><span class="swatch__role">Secondary lines, done tasks</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-text-disabled"></span><code>--color-text-disabled</code><span class="swatch__value"></span><span class="swatch__role">Disabled controls only</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-border"></span><code>--color-border</code><span class="swatch__value"></span><span class="swatch__role">Dividers</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-border-strong"></span><code>--color-border-strong</code><span class="swatch__value"></span><span class="swatch__role">Control outlines, 3:1</span></li>
+        </ul>
+
+        <h3>Signal</h3>
+        <ul class="swatches">
+          <li class="swatch"><span class="swatch__chip swatch--color-signal"></span><code>--color-signal</code><span class="swatch__value"></span><span class="swatch__role">Main action, overdue</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-signal-hover"></span><code>--color-signal-hover</code><span class="swatch__value"></span><span class="swatch__role">Main action on hover</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-on-signal"></span><code>--color-on-signal</code><span class="swatch__value"></span><span class="swatch__role">Text on signal</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-link"></span><code>--color-link</code><span class="swatch__value"></span><span class="swatch__role">Links</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-focus"></span><code>--color-focus</code><span class="swatch__value"></span><span class="swatch__role">Focus ring</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-shadow"></span><code>--color-shadow</code><span class="swatch__value"></span><span class="swatch__role">Elevation shadows</span></li>
+        </ul>
+
+        <h3>Text on every ground</h3>
+        <p>Each pair reaches 4.5:1 in both themes; tests/unit/tokens.test.js checks them.</p>
+        <ul class="pairs">
+          <li class="pair swatch--color-bg">
+            <code class="pair__name">--color-bg</code>
+            <span class="pair__text">Water the plants</span>
+            <span class="pair__muted">Done yesterday</span>
+            <span class="pair__signal">Overdue</span>
+            <a href="#color">Open list</a>
+          </li>
+          <li class="pair swatch--color-surface">
+            <code class="pair__name">--color-surface</code>
+            <span class="pair__text">Water the plants</span>
+            <span class="pair__muted">Done yesterday</span>
+            <span class="pair__signal">Overdue</span>
+            <a href="#color">Open list</a>
+          </li>
+          <li class="pair swatch--color-surface-sunken">
+            <code class="pair__name">--color-surface-sunken</code>
+            <span class="pair__text">Water the plants</span>
+            <span class="pair__muted">Done yesterday</span>
+            <span class="pair__signal">Overdue</span>
+            <a href="#color">Open list</a>
+          </li>
+          <li class="pair swatch--color-hover-bg">
+            <code class="pair__name">--color-hover-bg</code>
+            <span class="pair__text">Water the plants</span>
+            <span class="pair__muted">Done yesterday</span>
+            <span class="pair__signal">Overdue</span>
+            <a href="#color">Open list</a>
+          </li>
+          <li class="pair swatch--color-selected-bg">
+            <code class="pair__name">--color-selected-bg</code>
+            <span class="pair__text">Water the plants</span>
+            <span class="pair__muted">Done yesterday</span>
+            <span class="pair__signal">Overdue</span>
+            <a href="#color">Open list</a>
+          </li>
+          <li class="pair swatch--color-signal">
+            <code class="pair__name pair__on-signal">--color-signal</code>
+            <span class="pair__on-signal">Add task</span>
+          </li>
+          <li class="pair swatch--color-signal-hover">
+            <code class="pair__name pair__on-signal">--color-signal-hover</code>
+            <span class="pair__on-signal">Add task</span>
+          </li>
+        </ul>
+
+        <h3>Gray ramp</h3>
+        <ul class="swatches swatches--ramp">
+          <li class="swatch"><span class="swatch__chip swatch--gray-0"></span><code>--gray-0</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-50"></span><code>--gray-50</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-100"></span><code>--gray-100</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-200"></span><code>--gray-200</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-300"></span><code>--gray-300</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-400"></span><code>--gray-400</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-500"></span><code>--gray-500</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-600"></span><code>--gray-600</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-700"></span><code>--gray-700</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-800"></span><code>--gray-800</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-850"></span><code>--gray-850</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-900"></span><code>--gray-900</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--gray-950"></span><code>--gray-950</code><span class="swatch__value"></span></li>
+        </ul>
+
+        <h3>Violet ramp</h3>
+        <ul class="swatches swatches--ramp">
+          <li class="swatch"><span class="swatch__chip swatch--violet-50"></span><code>--violet-50</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-100"></span><code>--violet-100</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-200"></span><code>--violet-200</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-300"></span><code>--violet-300</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-400"></span><code>--violet-400</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-500"></span><code>--violet-500</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-600"></span><code>--violet-600</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-700"></span><code>--violet-700</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-800"></span><code>--violet-800</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-900"></span><code>--violet-900</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--violet-950"></span><code>--violet-950</code><span class="swatch__value"></span></li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="typography" aria-labelledby="typography-title">
+        <h2 id="typography-title">Typography</h2>
+        <p>Inter sets all text; task rows use <code>--text-base</code> and chips <code>--text-sm</code>.</p>
+
+        <h3>Text scale</h3>
+        <dl class="specimens">
+          <div class="specimen"><dt><code>--text-xs</code> <span data-token="--text-xs"></span></dt><dd class="type--xs">Buy oat milk and bread</dd></div>
+          <div class="specimen"><dt><code>--text-sm</code> <span data-token="--text-sm"></span></dt><dd class="type--sm">Buy oat milk and bread</dd></div>
+          <div class="specimen"><dt><code>--text-base</code> <span data-token="--text-base"></span></dt><dd class="type--base">Buy oat milk and bread</dd></div>
+          <div class="specimen"><dt><code>--text-lg</code> <span data-token="--text-lg"></span></dt><dd class="type--lg">Buy oat milk and bread</dd></div>
+          <div class="specimen"><dt><code>--text-xl</code> <span data-token="--text-xl"></span></dt><dd class="type--xl">Buy oat milk and bread</dd></div>
+        </dl>
+
+        <h3>Weights</h3>
+        <dl class="specimens">
+          <div class="specimen"><dt><code>--weight-regular</code> <span data-token="--weight-regular"></span></dt><dd class="type--regular">Body text and done tasks</dd></div>
+          <div class="specimen"><dt><code>--weight-medium</code> <span data-token="--weight-medium"></span></dt><dd class="type--medium">Open tasks and labels</dd></div>
+          <div class="specimen"><dt><code>--weight-semibold</code> <span data-token="--weight-semibold"></span></dt><dd class="type--semibold">Headings</dd></div>
+        </dl>
+
+        <h3>Line heights</h3>
+        <dl class="specimens">
+          <div class="specimen"><dt><code>--leading-tight</code> <span data-token="--leading-tight"></span></dt><dd class="type--tight">Headings and single lines, such as a long task description that wraps onto a second line.</dd></div>
+          <div class="specimen"><dt><code>--leading-normal</code> <span data-token="--leading-normal"></span></dt><dd class="type--normal">Body text and notes, such as a long task note that wraps onto a second line.</dd></div>
+        </dl>
+
+        <h3>Families and figures</h3>
+        <dl class="specimens">
+          <div class="specimen"><dt><code>--font-body</code></dt><dd class="type--body">Inter: Aa Bb Cc 0123456789</dd></div>
+          <div class="specimen"><dt><code>--font-body</code>, tabular figures</dt><dd class="type--body type--tabular">Due 09:41 · 11:11 · 3 notes · 18 tasks</dd></div>
+          <div class="specimen"><dt><code>--font-mono</code></dt><dd class="type--mono">Code and identifiers: 0123456789</dd></div>
+        </dl>
+      </section>
+
+      <section class="gallery-section" id="spacing" aria-labelledby="spacing-title">
+        <h2 id="spacing-title">Spacing</h2>
+        <p>A 4 px based scale for padding, gaps, and margins.</p>
+        <dl class="specimens">
+          <div class="specimen specimen--row"><dt><code>--space-1</code> <span data-token="--space-1"></span></dt><dd><span class="space-bar space--1"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-2</code> <span data-token="--space-2"></span></dt><dd><span class="space-bar space--2"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-3</code> <span data-token="--space-3"></span></dt><dd><span class="space-bar space--3"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-4</code> <span data-token="--space-4"></span></dt><dd><span class="space-bar space--4"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-5</code> <span data-token="--space-5"></span></dt><dd><span class="space-bar space--5"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-6</code> <span data-token="--space-6"></span></dt><dd><span class="space-bar space--6"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-7</code> <span data-token="--space-7"></span></dt><dd><span class="space-bar space--7"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-8</code> <span data-token="--space-8"></span></dt><dd><span class="space-bar space--8"></span></dd></div>
+        </dl>
+      </section>
+
+      <section class="gallery-section" id="radii" aria-labelledby="radii-title">
+        <h2 id="radii-title">Radii</h2>
+        <p>Small for chips, medium for controls and rows, large for dialogs and panels.</p>
+        <ul class="tiles">
+          <li class="tile radius--sm"><code>--radius-sm</code> <span data-token="--radius-sm"></span></li>
+          <li class="tile radius--md"><code>--radius-md</code> <span data-token="--radius-md"></span></li>
+          <li class="tile radius--lg"><code>--radius-lg</code> <span data-token="--radius-lg"></span></li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="sizes" aria-labelledby="sizes-title">
+        <h2 id="sizes-title">Sizes</h2>
+        <p>Touch targets, rows, layout widths, and line widths.</p>
+        <dl class="specimens">
+          <div class="specimen"><dt><code>--target-min</code> <span data-token="--target-min"></span></dt><dd><span class="size-box size--target"></span></dd></div>
+          <div class="specimen"><dt><code>--row-height</code> <span data-token="--row-height"></span></dt><dd><span class="size-row">Water the plants</span></dd></div>
+          <div class="specimen"><dt><code>--width-sidebar</code> <span data-token="--width-sidebar"></span></dt><dd><span class="width-bar width--sidebar"></span></dd></div>
+          <div class="specimen"><dt><code>--width-editor</code> <span data-token="--width-editor"></span></dt><dd><span class="width-bar width--editor"></span></dd></div>
+          <div class="specimen"><dt><code>--width-main</code> <span data-token="--width-main"></span></dt><dd><span class="width-bar width--main"></span></dd></div>
+          <div class="specimen"><dt><code>--border-width</code> <span data-token="--border-width"></span></dt><dd><span class="size-box size--border"></span></dd></div>
+          <div class="specimen"><dt><code>--focus-ring</code> <span data-token="--focus-ring-width"></span> wide, <span data-token="--focus-ring-offset"></span> gap</dt><dd><span class="size-box size--focus"></span></dd></div>
+        </dl>
+      </section>
+
+      <section class="gallery-section" id="elevation" aria-labelledby="elevation-title">
+        <h2 id="elevation-title">Elevation</h2>
+        <p>Level 1 for popovers and menus, level 2 for dialogs and the wide editor panel.</p>
+        <ul class="tiles">
+          <li class="tile elevation--1"><code>--elevation-1</code> Popover</li>
+          <li class="tile elevation--2"><code>--elevation-2</code> Dialog</li>
+        </ul>
+      </section>
+
+      <section class="gallery-section" id="layers" aria-labelledby="layers-title">
+        <h2 id="layers-title">Layers</h2>
+        <p>Stacking order from the page up to toasts; higher layers cover lower ones.</p>
+        <ol class="layers">
+          <li class="layer layer--base"><code>--layer-base</code> <span data-token="--layer-base"></span></li>
+          <li class="layer layer--sticky"><code>--layer-sticky</code> <span data-token="--layer-sticky"></span></li>
+          <li class="layer layer--popover"><code>--layer-popover</code> <span data-token="--layer-popover"></span></li>
+          <li class="layer layer--dialog"><code>--layer-dialog</code> <span data-token="--layer-dialog"></span></li>
+          <li class="layer layer--toast"><code>--layer-toast</code> <span data-token="--layer-toast"></span></li>
+        </ol>
+      </section>
+
+      <section class="gallery-section" id="motion" aria-labelledby="motion-title">
+        <h2 id="motion-title">Motion</h2>
+        <p>Short transitions with one easing curve; durations drop to zero under reduced motion.</p>
+        <div class="motion" data-state="start">
+          <button class="gallery-button" type="button" aria-pressed="false">Play transitions</button>
+          <dl class="specimens">
+            <div class="specimen"><dt><code>--duration-fast</code> <span data-token="--duration-fast"></span></dt><dd class="motion__track"><span class="motion__dot motion--fast"></span></dd></div>
+            <div class="specimen"><dt><code>--duration-base</code> <span data-token="--duration-base"></span></dt><dd class="motion__track"><span class="motion__dot motion--base"></span></dd></div>
+            <div class="specimen"><dt><code>--ease-standard</code></dt><dd><span data-token="--ease-standard"></span></dd></div>
+          </dl>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

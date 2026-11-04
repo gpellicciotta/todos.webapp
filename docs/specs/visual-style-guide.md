@@ -5,14 +5,14 @@ The [ui-design.md](ui-design.md) spec defines screens and behavior; this guide d
 ---
 
 ## Status of the System
-This guide comes first; the stylesheets and the gallery follow with the first code task.
-That task adds these files, once the web root is chosen:
-- `{{web-root}}/css/style.css`: the only stylesheet a page links.
-- `{{web-root}}/css/tokens.css`: primitive and semantic tokens and both themes.
-- `{{web-root}}/css/components.css`: base styles, components, and patterns.
-- `{{web-root}}/css/fonts.css`: the self-hosted Inter font faces.
-- `{{web-root}}/demo/visual-style-gallery.html`: every token, component, state, and pattern in both themes.
+The tokens, the font, and the gallery's token sections exist; components follow in later tasks.
+- [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
+- [tokens.css](../../src/css/tokens.css): primitive and semantic tokens and both themes.
+- [fonts.css](../../src/css/fonts.css): the self-hosted Inter font face.
+- [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token group, with a theme switch.
+- `src/css/components.css`: base components and patterns, added with the first component task.
 
+Serve the gallery with `npm run serve`, then open `/demo/visual-style-gallery.html`.
 Change the stylesheets first, then the gallery and this guide in the same commit.
 
 ---
@@ -40,6 +40,11 @@ Change the stylesheets first, then the gallery and this guide in the same commit
 - **[Decided]** Task rows are compact: one 48 px line per task, with details in the task editor.
   Rejected: comfortable cards, and a user density setting that would double the states to test.
 - **[Decided]** Themes use `light-dark()` on semantic tokens, so each color is defined once for both themes.
+  Browsers without `light-dark()` get the light theme from an `@supports` fallback block.
+- **[Decided]** The signal is violet 600 (`#7c3aed`) on light grounds and violet 400 (`#a78bfa`) on dark ones.
+  Rejected: violet 500 (`#8b5cf6`) in dark, as white text on it reaches only 4.23:1.
+- **[Decided]** Inter 4.1 ships as one `InterVariable.woff2` file, without the italic file.
+  The app sets no italic text, and the italic file would add 388 KB.
 
 ---
 
@@ -47,25 +52,42 @@ Change the stylesheets first, then the gallery and this guide in the same commit
 Token names follow the two-tier rule: primitives hold raw values, and components use semantic tokens only.
 
 ### Color
-- Gray ramp: about twelve steps from near-white to near-black, slightly cool.
-- Signal ramp: violet steps for light and dark themes, each pair checked for AA contrast.
+Definitions live in [tokens.css](../../src/css/tokens.css); the gallery's Color section shows them live.
+- Gray ramp: `--gray-0` to `--gray-950`, thirteen slightly cool steps from white to near-black.
+- Violet ramp: `--violet-50` to `--violet-950`, the one signal hue.
 - Grounds: `--color-bg` for the page, `--color-surface` for panels and dialogs, `--color-surface-sunken` for wells and chips.
+- Hover and selection: `--color-hover-bg` for hovered rows, `--color-selected-bg` for the current row, route, and pressed toggles.
 - Text: `--color-text`, `--color-text-muted` for secondary lines and done tasks, `--color-text-disabled` for disabled controls only.
 - Borders: `--color-border` for dividers, `--color-border-strong` for controls that need 3:1 contrast.
 - Signal: `--color-signal` for the main action and overdue chips, `--color-on-signal` for text on it.
-- Selection: `--color-selected-bg` for the current row, the active route, and pressed toggles.
-- Focus: `--focus-ring` on every interactive element, in the signal color with a gap to the element.
+- Signal states: `--color-signal-hover` for the hovered main action, `--color-link` for links.
+- Focus: `--focus-ring` on every interactive element, drawn in `--color-focus` with a gap to the element.
+- Shadow: `--color-shadow` tints both elevation levels.
+
+Signal values and their lowest contrast ratios, checked by [tokens.test.js](../../tests/unit/tokens.test.js):
+
+| Token                  | Light               | Dark                | Lowest ratio, light / dark |
+| :--------------------- | :------------------ | :------------------ | :------------------------- |
+| `--color-signal`       | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds     |
+| `--color-signal-hover` | violet 700, #6d28d9 | violet 300, #c0a9fa | 7.10 / 9.18 with on-signal |
+| `--color-on-signal`    | gray 0, #ffffff     | gray 950, #111216   | 5.70 / 6.88 on signal      |
+| `--color-link`         | violet 700, #6d28d9 | violet 300, #c0a9fa | 6.14 / 6.60 on grounds     |
+| `--color-focus`        | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds     |
 
 ### Typography
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
 - Text scale: `--text-xs` to `--text-xl`; task rows use `--text-base`, chips use `--text-sm`.
 - Weights: regular for body, medium for task descriptions and labels, semibold for headings.
+- Weight tokens: `--weight-regular`, `--weight-medium`, and `--weight-semibold`.
+- Line heights: `--leading-tight` for headings and single lines, `--leading-normal` for body text.
+- `--font-mono`: the system monospace stack, for code and identifiers in the gallery.
 - Open tasks use medium weight; done tasks use regular weight and the muted color.
 - Cancelled tasks also get a strike-through, so they differ from completed ones beyond the icon.
 
 ### Space, Shape, and Size
 - `--space-1` to `--space-8`: a 4 px based scale; rows use `--space-2` inside and no gap between.
 - `--radius-sm` for chips, `--radius-md` for controls and rows, `--radius-lg` for dialogs and panels.
+- `--border-width` for every border; `--focus-ring-width` and `--focus-ring-offset` size the focus ring.
 - `--target-min`: 44 px, the minimum size of every control.
 - `--row-height`: 48 px, the task row height.
 - Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-editor` size the side panels.
