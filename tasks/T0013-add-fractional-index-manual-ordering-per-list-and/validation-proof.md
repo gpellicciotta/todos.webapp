@@ -45,66 +45,74 @@ Error: Cannot find module '../../src/js/lib/fractional-index.js' imported from C
    Duration  845ms (import 34%, transform 30%, tests 27%, worker 9%)
 ```
 
-### Green Phase
+The red phase above predates the split; its `query.test.js` suite moved to T0029.
 
-Command: `npx vitest run tests/unit/fractional-index.test.js tests/unit/query.test.js tests/unit/store-tasks.test.js tests/unit/store-lists.test.js tests/unit/store-notes.test.js tests/unit/uuid7.test.js` (exit code 0)
+### Split and Rebase
+
+The task was split for size on 2026-11-04; `query.js` and `query.test.js` moved to T0029.
+The ordering changes were then merged by hand onto T0014, the recycle bin.
+`moveInList` now rejects deleted tasks and lists with code `deleted`.
+A new test proves this; it failed with the old lookups in `moveInList`:
+
+Command: `npx vitest run tests/unit/store-tasks.test.js -t "deleted task or within a deleted list"` (exit code 1)
 
 ```text
 
  RUN  v5.1.0 C:/Dev-Projects/todos.webapp
 
+ ❯ tests/unit/store-tasks.test.js (41 tests | 1 failed | 40 skipped) 38ms
+   ❯ manual order (16)
+     × rejects moves of a deleted task or within a deleted list 34ms
 
- Test Files  6 passed (6)
-      Tests  149 passed (149)
-   Start at  02:35:00
-   Duration  1.04s (tests 43%, import 41%, transform 11%, worker 5%)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/store-tasks.test.js > manual order > rejects moves of a deleted task or within a deleted list
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ tests/unit/store-tasks.test.js:331:68
+    329|     await expect(store.moveInList(c.id, home.id, { before: a.id })).re…
+    330|     await store.deleteList(work.id);
+    331|     await expect(store.moveInList(b.id, work.id, { before: a.id })).re…
+       |                                                                    ^
+    332|   });
+    333|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 40 skipped (41)
+   Start at  15:40:22
+   Duration  508ms (import 45%, transform 38%, tests 14%, worker 3%)
 ```
 
-Command: `npx vitest run tests/unit/query.test.js -t performance --silent=false` (exit code 0)
+### Green Phase
+
+Command: `npx vitest run tests/unit/fractional-index.test.js tests/unit/store-*.test.js tests/unit/bin.test.js tests/unit/overdue.test.js tests/unit/uuid7.test.js` (exit code 0)
 
 ```text
 
  RUN  v5.1.0 C:/Dev-Projects/todos.webapp
 
-stdout | tests/unit/query.test.js > performance > filters and sorts 5000 tasks in under 50 ms
-filter+sort of 5000 tasks: 8.1 ms, 1542 results
 
-
- Test Files  1 passed (1)
-      Tests  1 passed | 25 skipped (26)
-   Start at  02:35:03
-   Duration  307ms (import 38%, tests 37%, transform 19%, worker 6%)
+ Test Files  7 passed (7)
+      Tests  157 passed (157)
+   Start at  15:40:30
+   Duration  894ms (import 43%, tests 38%, transform 15%, worker 4%)
 ```
 
 Command: `npx eslint src/js tests/unit` (exit code 0)
 
 ```text
 (no output)
-```
-
-Command: `npm test` (exit code 0)
-
-```text
-
-> todos-webapp@0.1.0-pre test
-> vitest run
-
-
- RUN  v5.1.0 C:/Dev-Projects/todos.webapp
-
-
- Test Files  8 passed (8)
-      Tests  242 passed (242)
-   Start at  02:35:08
-   Duration  1.08s (tests 52%, import 37%, transform 7%, worker 4%)
-```
-
-Command: `npm run lint` (exit code 0)
-
-```text
-
-> todos-webapp@0.1.0-pre lint
-> eslint .
 ```
 
 ### Service Key Compatibility

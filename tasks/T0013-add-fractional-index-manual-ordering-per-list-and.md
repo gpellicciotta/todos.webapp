@@ -4,12 +4,16 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: suspended
-started_at: "2026-11-04T01:23:51Z"
-ended_at: —
+status: completed
+started_at: "2026-11-04T14:38:11Z"
+ended_at: "2026-11-04T14:42:59Z"
 review: agent
 preview: none
 protocol: standard
+review_status: approved
+review_round: 1
+reviewed_by: "@claude-review-agent"
+completion-commit: e68d3b2b028b8e1204b3ebbd8c81a12ce3602cf6
 ---
 # T0013: Add fractional-index manual ordering per list
 
@@ -25,8 +29,8 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
 - [x] **[Implement]** Write fractional-index.js, the move operation, and list positions in the store.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Doc]**       Update CHANGELOG.md.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -59,4 +63,27 @@ See technical-spec.md for decisions, files, size, and tests.
 - [2026-11-04] **[Doc]**
   Parked the finished work on branch wip/T0013-ordering and suspended the task for a human size sign-off.
   - Diff: 9 files, 1469 lines; estimate 450 lines.
+
+- [2026-11-04] **[Implement]**
+  Merged the ordering changes by hand onto T0014; moveInList rejects deleted tasks and lists; added recycle bin position tests.
+  - Size after split: 7 files, 875 lines.
+  - Query module and tests left out for T0029.
+
+- [2026-11-04] **[Review]**
+  Agent review approved; minor notes on a silent rebalance after a malformed key, and moves next to hidden members.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 8.
+  - Lines touched: 876.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 1 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 
