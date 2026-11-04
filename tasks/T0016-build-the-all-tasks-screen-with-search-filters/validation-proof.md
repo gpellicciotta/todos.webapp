@@ -128,3 +128,107 @@ After screenshots seed seven tasks across all statuses, three lists, notes, and 
   The wide layout now puts search and Sort first, then the chips; ui-design.md records it.
 - The first pass showed "Sort : Due time" with a gap before the colon; the label is now one text run.
 - The compact Filters panel ran past the screen bottom; it now caps its height and scrolls.
+
+### Review Rework
+Round 1 found two focus losses: Clear all in an empty result hid itself, and a store change closed an open row menu.
+Clear all now moves focus to search; the list passes focus to the add bar once its last row leaves.
+The open-menu fix lives in T0036's `task-list.js`; the end-to-end check below covers both on the screen.
+Stage 4 now carries VERSION 2026-11-04.9.
+
+The new tests ran in the working tree before the fix: the menu e2e test, the Clear all unit and e2e tests.
+
+Command: `npx vitest run tests/unit/task-list.test.js tests/unit/all-tasks.test.js` (exit code 1)
+
+```text
+[... 5 lines omitted ...]
+     × moves focus to search when Clear all in an empty result hides itself 54ms
+[... 2 lines omitted ...]
+     × keeps an open status menu open, on the same item, when rows render again 16ms
+     × keeps an open More menu open when rows render again 7ms
+     × closes the menu and passes focus on when its row leaves 6ms
+     × moves focus to the fallback control when the last row leaves 10ms
+[... 3 lines omitted ...]
+ FAIL  tests/unit/all-tasks.test.js > mountAllTasks > moves focus to search when Clear all in an empty result hides itself
+AssertionError: expected <button …(2)></button> to be <input …(5)></input> // Object.is equality
+[... 28 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > keeps an open status menu open, on the same item, when rows render again
+AssertionError: expected true to be false // Object.is equality
+[... 17 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > keeps an open More menu open when rows render again
+AssertionError: expected true to be false // Object.is equality
+[... 17 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > closes the menu and passes focus on when its row leaves
+[... 11 lines omitted ...]
+ FAIL  tests/unit/task-list.test.js > createTaskList > moves focus to the fallback control when the last row leaves
+AssertionError: expected <body><div …(1)>…(3)</div>
+[... 288 lines omitted ...]
+ Test Files  2 failed (2)
+      Tests  5 failed | 8 passed (13)
+[... 2 lines omitted ...]
+```
+
+Command: `E2E_PORT=8807 npx playwright test tests/e2e/all-tasks.spec.js -g "store change while|Clear all in an empty"` (exit code 1)
+
+```text
+[... 3 lines omitted ...]
+  x  1 [chromium] › tests\e2e\all-tasks.spec.js:280:1 › a store change while the status menu is open keeps the menu open and focused (7.0s)
+  x  2 [chromium] › tests\e2e\all-tasks.spec.js:304:1 › Clear all in an empty result focuses search, and deleting the last shown row focuses the add bar (7.0s)
+[... 18 lines omitted ...]
+    > 296 |   await expect(menu).toBeVisible();
+[... 34 lines omitted ...]
+    > 311 |   await expect(search).toBeFocused();
+[... 16 lines omitted ...]
+  2 failed
+[... 2 lines omitted ...]
+```
+
+The fixed stage 4, the working tree, in a fresh tree with regenerated hashes:
+
+Command: `npm test` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre test
+> vitest run
+
+
+[... 1 lines omitted ...]
+
+
+ Test Files  23 passed (23)
+      Tests  522 passed (522)
+   Start at  19:03:16
+   Duration  4.22s (environment 61%, tests 19%, import 12%, transform 7%, worker 1%)
+
+    Isolate  23 workers spawned · ~777ms startup each (spawn + environment, per file)
+             at least ~1.78s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+Command: `npm run lint` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre lint
+> eslint .
+```
+
+Command: `npm run check:sw` (exit code 0)
+
+```text
+
+> todos-webapp@0.1.0-pre check:sw
+> node scripts/check-sw-version.mjs
+
+OK: 40 precached files match VERSION 2026-11-04.9.
+```
+
+Command: `E2E_PORT=8824 npm run test:e2e` (exit code 0)
+
+```text
+[... 13 lines omitted ...]
+  ok  9 [chromium] › tests\e2e\all-tasks.spec.js:280:1 › a store change while the status menu is open keeps the menu open and focused (1.1s)
+[... 2 lines omitted ...]
+  ok 10 [chromium] › tests\e2e\all-tasks.spec.js:304:1 › Clear all in an empty result focuses search, and deleting the last shown row focuses the add bar (2.2s)
+[... 74 lines omitted ...]
+  83 passed (1.0m)
+```

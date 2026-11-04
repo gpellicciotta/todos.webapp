@@ -1,15 +1,19 @@
 ---
 id: T0016
 owner: "@claude-code"
-needs: ['T0037']
+needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-04T16:27:05Z"
-ended_at: —
+ended_at: "2026-11-04T19:04:58Z"
 review: agent
 preview: none
 protocol: standard
+review_status: approved
+review_round: 2
+reviewed_by: "@claude-review-agent"
+completion-commit: 7b1f3803182e8acb63030f9fd9293385e001a845
 ---
 # T0016: Build the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state
 
@@ -28,8 +32,8 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Implement]** Write the All tasks view, the shared task list and controls, and the add bar.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [x] **[Visual]**    Capture before and after screenshots at 390 and 1440 px in light and dark themes.
-- [ ] **[Doc]**       Update ui-design.md where the build differs and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Doc]**       Update ui-design.md where the build differs and update CHANGELOG.md.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -63,4 +67,33 @@ See technical-spec.md for decisions, files, size, and tests.
   - Files touched: 9.
   - Lines touched: 722, under three times the 550 estimate.
   - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 1 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 1 rejected by @claude-review-agent: Clear all in the no-results state hides its own button and leaves focus on body.
+
+- [2026-11-04] **[Implement]**
+  Review rework: Clear all in an empty result focuses search, and the add bar takes focus when the last row leaves.
+  - Stage 4 VERSION is now 2026-11-04.9.
+  - Lines touched: 807 in 10 files, under three times 550.
+
+- [2026-11-04] **[Review]**
+  Round 1 rejected for Clear all focus loss; round 2 approved after the fix.
+
+- [2026-11-04] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 12.
+  - Lines touched: 816.
+  - Reopenings: 0.
+
+- [2026-11-04] **[Review]**
+  Round 2 requested (mode: agent).
+
+- [2026-11-04] **[Review]**
+  Round 2 approved by @claude-review-agent.
+
+- [2026-11-04] **[Complete]**
+  Task completed successfully.
 

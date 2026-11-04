@@ -7,6 +7,7 @@
 - src/js/app.js
 - src/service-worker.js
 - tests/e2e/all-tasks.spec.js
+- tests/unit/all-tasks.test.js
 - tests/e2e/shell.spec.js
 - tests/unit/tokens.test.js
 - docs/specs/ui-design.md
