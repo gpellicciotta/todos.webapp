@@ -16,7 +16,8 @@
     "serve": "node scripts/serve.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check:sw": "node scripts/check-sw-version.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

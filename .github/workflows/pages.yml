@@ -1,0 +1,84 @@
+# Tests the app, then publishes src/ to GitHub Pages (TEC-11).
+# The app has no build step, so the deployed artifact is the src/ folder as committed.
+# See docs/devops.md for the one-time Pages setup and the release procedure.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The default token reads the repository only; the deploy job widens it for Pages.
+permissions:
+  contents: read
+
+# One deployment at a time; a newer run waits instead of cancelling a deployment in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Node.js 22 is the oldest line that package.json engines (>=22.13) accepts.
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install the Playwright Chromium build
+        run: npx playwright install --with-deps chromium
+
+      - name: Check the service worker VERSION bump
+        run: npm run check:sw
+
+      - name: Run the unit tests
+        run: npm test
+
+      - name: Run the linter
+        run: npm run lint
+
+      - name: Run the end-to-end tests
+        run: npm run test:e2e
+
+  deploy:
+    name: Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload src/ as the Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: src
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
