@@ -9,7 +9,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0047 Create a new list only when the Create button is clicked, not when the dialog is closed.
 - [ ] T0048 [needs: T0054] Let the All tasks dashboard group tasks by List, Due Date, or Status.
 - [ ] T0049 Replace the + New List button with a subtle (+) button next to the Lists header.
-- [~] T0050 [owner: @claude-code] Style all Delete buttons with the danger color.
+- [x] T0050 Style all Delete buttons with the danger color.
 - [x] T0052 Use blue, green, and gray for the In progress, Completed, and Cancelled status icons.
 - [ ] T0057 [protocol: adhoc] Add devops.py script just like in other projects
 
