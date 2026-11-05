@@ -12,5 +12,5 @@ See also:
 - [Documentation Index](docs/index.md)
 
 ## Status
-Requirements and UI design are done; the v0.1.0 build has started with the project tooling.
+Version 0.1.0 works fully offline; connected sync and sharing wait for the service's sync protocol.
 Work is tracked in [PLAN.md](PLAN.md); see [devops.md](docs/devops.md) to attach the plan store.

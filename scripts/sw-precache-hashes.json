@@ -1,21 +1,21 @@
 {
-  "version": "2026-11-04.20",
+  "version": "2026-11-05.1",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
     "css/style.css": "0c9d1fbaf37d4e27d7f664f0802608f1a179eb2277669949c16e0c803cb5f1cb",
     "css/fonts.css": "e6e9055d913fdd6c1a851008e5de007708e67469f34ea565eaa464ba3f398b6e",
-    "css/tokens.css": "35a0234c783f294e80929df9f97c31393a0fff7bfbc93269a5b0ece5090c2b50",
-    "css/controls.css": "d9fa819abeaea231dcf2b3d47bd28a31d7b4358dd10e9c03b110883ea7f4b6e0",
-    "css/app-components.css": "0ed814f119d45b32488de964f5afd84aca30b7ed2113aa8c870f7e649f42866c",
-    "css/app-chrome.css": "0d85b6f1f40d0be8b46cf74aac4219426f3eab63f72ed0fc8e01eb863d248784",
+    "css/tokens.css": "a1d89d775bf883d0c501958fbe0f65a5db5feaeef2d07f87956679313e40cfc1",
+    "css/controls.css": "4fce23950a593cf3c30e9b56714b7db16f4ae5b92f1217167fb2c1d47dccfc93",
+    "css/app-components.css": "f03e17241d581017993a22adb90ac39eadf580f44c91f161334859e61322868d",
+    "css/app-chrome.css": "b47f21931e5befb506d8d911467629bab6b5e03459fce7771d16f158f9cd5edd",
     "css/app-shell.css": "274c9db7962b55c8f7ca57e77e0718e377a50cd8210b351e198944a9448e23ed",
     "css/views.css": "52a28be713d118fcf2098a471572ab76a4ebd5a7c32ee85c1285ac903c217f3c",
     "fonts/InterVariable.woff2": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
-    "img/icons.svg": "803361e4f0f575ccbaa647002ced2b4271bf05847481208b8d2cb6c6d55c6a1e",
-    "img/app-icon.svg": "3259815b5d76003f67015bf0f6bbfebc2516912cda5d4544d4f759ed3e1c0398",
-    "img/app-icon-192.png": "91a278a7d848683f2157db808d90e814e4d99a753114f3c8396a3b70791d05dd",
-    "img/app-icon-512.png": "368525b00ed73ff4e0b3067d9c422097cc0db9f8cdc97ec9edc1e922e1b79845",
+    "img/icons.svg": "50b9b9fddc1fc450b1eb8faf71a82ca9f7fa4eeb07586121765ef68a3f4aff35",
+    "img/app-icon.svg": "896a0408734b94fbaba79d534b51a984f943c7128ab8e1f9c90e09f8396eab12",
+    "img/app-icon-192.png": "75debeac40dbbb2b83ebd50000bb6b0386b1a3c1c35d2c623674942f6257d688",
+    "img/app-icon-512.png": "ad2c9f2e2f6553c33afcc6f6c1f3229929980558a1446dc4b15d8354ae75c1f2",
     "js/app.js": "bfd24c315081ab6258fbf10d01c6b03a723393293b7bc8189502e70abdc6d45d",
     "js/core/backup.js": "570e01f616f150b8657628bbe85c56979ae0a7d3396a3a30b2e39ae49baa7a75",
     "js/core/overdue.js": "16a1330fad43034dfab93b14df05571ca04f4718d68c3cc0c909ea376a5761f3",
@@ -54,6 +54,6 @@
     "js/views/task-editor.js": "9f9c15bf101dfdbb48bae62c33a6bbac3b9cb2eb7658d1e8606ab285d5b55e01",
     "js/views/task-list.js": "e761445610157a6d33c74afc084db33c7f4d97d8e0b84fe1ac9314772d93a7a7",
     "js/views/view-controls.js": "f7269f19592ec1985838e602beedc78314b1d5dad4c8be802972d28ce35fa334",
-    "js/version.js": "85cb21e7ee735eb85d37a439facaf834ac4eec10c17f84b8a890d5cc39af5c09"
+    "js/version.js": "3797bc22ace862e0a8ef063713c3f31da6c982c7e2b1a90f55f435c62dda310f"
   }
 }

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { VERSION } from '../../src/js/version.js';
 
 // The Recycle bin and Settings screens: restore, in-row permanent delete, the theme, and the local connection card.
 
@@ -150,6 +151,7 @@ test('Settings shows the local connection card, the server URL, the enabled back
   await expect(url).not.toHaveAttribute('aria-invalid', 'true');
   await page.reload();
   await expect(page.getByRole('textbox', { name: 'Server URL' })).toHaveValue('https://todos.example.com');
-  await expect(page.locator('.settings')).toContainText(/Version 0\.1\.0-pre · Built \d{1,2} \w{3} \d{4}/);
+  await expect(page.locator('.settings')).toContainText(`Version ${VERSION} · Built `);
+  await expect(page.locator('.settings')).toContainText(/Built \d{1,2} \w{3} \d{4}/);
   expect(problems).toEqual([]);
 });

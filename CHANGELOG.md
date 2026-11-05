@@ -4,42 +4,17 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.1.0-pre
-- Feature: Changed the signal color to navy, added a deep orange danger color with matching focus rings, and redrew the in-progress and cancelled icons.
-- Feature: Virtualized long task lists so views open within 200 ms with 5000 tasks under 4x CPU throttling.
-- Fix: Fixed minor focus, ARIA, dialog, save, and drag findings from earlier reviews, and sped up a slow e2e test.
-- Feature: Made the task screens faster with keyed row reuse, progressive rendering, debounced search, and due chip updates.
-- Feature: Added the connect flow with Auth sign-in, session token handling, the server URL setting, and disconnect.
-- Feature: Added the Lists overview and the list editor panel with name, description, details, and delete.
-- Feature: Added the Export backup button and the Import backup dialog with mode choice, counts, and confirmation.
-- Feature: Added the List screen with manual ordering, order buttons, drag and keyboard moves, and the status filter.
-- Feature: Added the Recycle bin and Settings screens with theme selection and the local connection card.
-- Feature: Added the notes thread to the task editor, with the add field on top and notes newest first.
-- Feature: Added the task editor panel with description, status, due time, overdue behavior, lists, and delete.
-- Feature: Added the All tasks screen with search, filters, sort, the add bar, the status menu, and the empty state.
-- Feature: Added the task view controls with search, filter chips, sort, and per-device preferences.
-- Feature: Added the shared task list rows and the add bar for the task screens.
-- Feature: Applied review follow-ups to the store, toasts, shell, and task row styles.
-- Build: Added a GitHub Pages workflow that tests and publishes src, and a service worker version check.
-- Feature: Made the app an installable offline PWA with a manifest, app icons, and a versioned service worker precache.
-- Feature: Added the app shell with the hash router, compact and wide layouts, navigation, and app start-up.
-- Feature: Applied design system review follow-ups: nav item edge, token math, sync dot ring, live region class, and toast Undo.
-- Feature: Handled IndexedDB version changes and blocked upgrades, and added change subscriptions to the store.
-- Feature: Added accessible dialog, toast, and live region behavior modules with focus handling.
-- Feature: Added accessible menu and popover behavior modules with keyboard and focus handling.
-- Feature: Added the app chrome components: navigation, sync indicator, editor panel, note thread, and empty state.
-- Feature: Added the task row, status button, and status menu components and the icon sprite to the design system.
-- Feature: Defined the JSON backup format and added export, and import in merge and overwrite modes with a preview.
-- Feature: Added the task query functions for the filters, search, and sorting of All tasks and the list view.
-- Feature: Added the basic control components with every state and their visual style gallery sections.
-- Feature: Added per-list manual ordering with fractional-index positions compatible with the service.
-- Feature: Added overdue handling and the recycle bin with restore, permanent delete, and the 30-day purge.
-- Feature: Added the design tokens, the self-hosted Inter font, and the visual style gallery's token sections.
-- Feature: Added timestamped task notes to the local store, newest first, updating each task's last activity time.
-- Feature: Added the IndexedDB store for lists, tasks, and memberships, with UUIDv7 identifiers and validation.
-- Build: Added the npm project with ESLint, Vitest, Playwright, and a dependency-free static server for src.
-- Docs: Moved the list editor and sharing into the editor panel, added a status menu, and ordered notes newest first.
-- Docs: Added low-fidelity wireframes for every screen, drawn by a tested script at phone and desktop widths.
-- Docs: Designed the UI screens, navigation, and key flows, and a new monochrome design system.
-- Docs: Wrote the functional and technical requirements for local and connected modes.
-- Build: Created the repository with standard project files and a plan branch store.
+## v0.1.1-pre
+
+## v0.1.0 [released: 2026-11-05]
+- FrontEnd: Added an offline-first, installable web app that keeps lists, tasks, and notes in the browser.
+- FrontEnd: Added All tasks with search, filters, sorting, and an add bar, plus the first-launch empty state.
+- FrontEnd: Added the List screen with manual ordering by drag or keyboard and view-only sort orders.
+- FrontEnd: Added task and list editors that save on change, with timestamped notes and a 30-day recycle bin.
+- FrontEnd: Added overdue handling that cancels overdue tasks set to cancel automatically, also after the app was closed.
+- FrontEnd: Added JSON backup export, and import in merge or overwrite mode with a preview of the changes.
+- FrontEnd: Added Settings with theme selection, and a connect flow with sign-in and disconnect through the Auth service.
+- FrontEnd: Added a monochrome design system with a navy signal color, a danger color, and a visual style gallery.
+- FrontEnd: Made long lists fast by rendering only visible rows, so views open within 200 ms throttled.
+- Build: Added the npm tooling, a static dev server, and a GitHub Pages workflow with a precache version check.
+- Docs: Wrote the requirements, the UI design with wireframes, the visual style guide, and the store and backup specs.

@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
+import { VERSION } from '../../src/js/version.js';
 
 // Export backup and the Import backup dialog in Settings (BAK-1, BAK-4, BAK-5, BAK-9, BAK-11 to BAK-13).
 
@@ -116,7 +117,7 @@ test('Export backup downloads todos-backup-{{date}}.json holding the stored data
   const file = await exportFile(page);
   expect(file.name).toBe(`todos-backup-${today}.json`);
   const backup = JSON.parse(file.text);
-  expect(backup).toMatchObject({ format: 'todos-backup', 'format-version': 1, 'app-version': '0.1.0-pre' });
+  expect(backup).toMatchObject({ format: 'todos-backup', 'format-version': 1, 'app-version': VERSION });
   expect(backup.lists.map((list) => [list.id, list.name])).toEqual([[ids.listId, 'Home']]);
   expect(backup.tasks.map((task) => task.id).sort()).toEqual([ids.waterId, ids.billId].sort());
   expect(backup.memberships.map((m) => m['task-id'])).toEqual([ids.waterId, ids.billId]);

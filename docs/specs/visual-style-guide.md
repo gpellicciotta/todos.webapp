@@ -85,15 +85,15 @@ Definitions live in [tokens.css](../../src/css/tokens.css); the gallery's Color 
 
 Signal values and their lowest contrast ratios, checked by [tokens.test.js](../../tests/unit/tokens.test.js):
 
-| Token                   | Light              | Dark               | Lowest ratio, light / dark  |
-| :---------------------- | :----------------- | :----------------- | :-------------------------- |
-| `--color-signal`        | navy 600, #1e40af  | navy 400, #8fa8f0  | 7.54 / 5.79 on grounds      |
-| `--color-signal-hover`  | navy 700, #1e3a8a  | navy 300, #b3c4f6  | 10.36 / 10.82 with on-signal |
-| `--color-signal-active` | navy 800, #172e6e  | navy 200, #c7d4f0  | 12.71 / 13.33 with on-signal |
-| `--color-on-signal`     | gray 0, #ffffff    | gray 950, #111216  | 8.72 / 8.05 on signal       |
-| `--color-link`          | navy 700, #1e3a8a  | navy 300, #b3c4f6  | 8.95 / 7.78 on grounds      |
-| `--color-focus`         | navy 600, #1e40af  | navy 400, #8fa8f0  | 7.54 / 5.79 on grounds      |
-| `--color-danger`        | orange 700, #b23b0b | orange 400, #fb923c | 5.15 / 5.95 on grounds     |
+| Token                   | Light               | Dark                | Lowest ratio, light / dark   |
+| :---------------------- | :------------------ | :------------------ | :--------------------------- |
+| `--color-signal`        | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds       |
+| `--color-signal-hover`  | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 10.36 / 10.82 with on-signal |
+| `--color-signal-active` | navy 800, #172e6e   | navy 200, #c7d4f0   | 12.71 / 13.33 with on-signal |
+| `--color-on-signal`     | gray 0, #ffffff     | gray 950, #111216   | 8.72 / 8.05 on signal        |
+| `--color-link`          | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 8.95 / 7.78 on grounds       |
+| `--color-focus`         | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds       |
+| `--color-danger`        | orange 700, #b23b0b | orange 400, #fb923c | 5.15 / 5.95 on grounds       |
 
 ### Typography
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
