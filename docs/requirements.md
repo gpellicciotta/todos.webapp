@@ -83,11 +83,12 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LV-3: Users reorder tasks by dragging, and by keyboard move-up and move-down actions.
 - LV-4: Each list keeps its own manual order; reordering one list leaves other lists unchanged.
 - LV-5: A task added to a list goes after its last task.
-- LV-6: Order buttons sort the view by due time, creation time, last activity time, status, or description.
-- LV-7: An order button sorts the current view only and never changes the stored manual order.
-- LV-8: Clearing the sort restores the manual order; manual reordering is unavailable while a sort is active.
+- LV-6: Users sort the view by manual order, due time, creation time, last activity time, status, or description.
+- LV-7: A sort other than manual order affects the current view only and never changes the stored manual order.
+- LV-8: Choosing manual order restores it; manual reordering is unavailable while another sort or a grouping is active.
 - LV-9: Users create, edit, change status of, and delete tasks directly in the list view.
 - LV-10: The list view filters by status, hiding `completed` and `cancelled` tasks by default.
+- LV-11: The list view uses the view controls and offers every filter except list, and grouping by due date or status.
 
 ### Task View
 - TV-1: The task view shows all non-deleted tasks across all lists, including tasks in no list.
@@ -101,7 +102,23 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-9: Users order by due time, creation time, last activity time, status, or description, ascending or descending.
 - TV-10: Tasks without a due time sort last in both directions when ordering by due time.
 - TV-11: Users create, edit, change status of, and delete tasks directly in the task view.
-- TV-12: The app remembers the last used filters and order per device.
+- TV-12: The app remembers the last used filters, grouping, and order per device.
+
+### View Options
+- VO-1: The task view and the list view share one set of options for search, filter, group, and sort.
+- VO-2: At rest the view shows only the search and add field and a subtle line of active filters and task count.
+- VO-3: Typing in the field filters the view to matching tasks; only the Add button creates a task from the text.
+- VO-4: The More menu of the task view and of each list view offers "Edit view options".
+- VO-5: View options open in the side panel on wide layouts and as a full screen on compact layouts.
+- VO-6: View options hold every filter, the grouping choice, the sort choice, and a Reset button.
+- VO-7: The subtle line names the task count, each active filter, any grouping, and any sort other than the default.
+- VO-8: Reset, in the panel or on the subtle line, restores every option to its default.
+- VO-9: Users group the view by list, due date, or status, or not at all; the task view offers all three.
+- VO-10: A group shows its name and its task count; search, filters, and sort apply inside each group.
+- VO-11: A task in several lists appears in each of its list groups; tasks in no list form the last group.
+- VO-12: Groups appear in a fixed order: lists as arranged, due dates from overdue to none, statuses as listed.
+- VO-13: Every control works by keyboard, and a polite announcement states the task count after each change.
+- VO-14: A user who cannot add tasks to the view sees the field as search only, without an Add button.
 
 ### Recycle Bin
 - BIN-1: The recycle bin lists deleted lists and tasks with their deletion time and days left.

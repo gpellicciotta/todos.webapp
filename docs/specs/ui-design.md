@@ -20,7 +20,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Breakpoints
 - Compact layout below 64rem (1024 px): one column, a top bar, and a bottom navigation bar.
 - Wide layout from 64rem: a left sidebar, the main column, and an optional editor panel on the right.
-- The editor panel holds the task editor or the list editor, never both at once.
+- The editor panel holds the task editor, the list editor, or the view options, never two at once.
 - The main column caps its width, so task rows stay readable on 1440 px screens.
 
 ### Compact Layout
@@ -28,14 +28,13 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 +--------------------------------------+
 | Title                  [sync] [more] |  top bar
 +--------------------------------------+
-| [search........] [Filters 2] [Sort]  |  view controls
-+--------------------------------------+
 | ( ) Buy paint            Tomorrow    |
 | (/) Call plumber         Overdue  !  |  task rows
 | ( ) Book flights                     |
 |                                      |
 +--------------------------------------+
-| [Add a task...................] [+]  |  add bar
+| [Search or add a task..........] [+] |  add bar
+| 24 tasks · Status: open              |  info line
 +--------------------------------------+
 | Tasks    Lists    Bin    Settings    |  bottom navigation
 +--------------------------------------+
@@ -44,10 +43,10 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Wide Layout
 ```text
 +--------------+-------------------------------+---------------------+
-| ToDo's       | All tasks              [Sort] | Task or list editor |
-|              | [search] [Lists] [Status] ... | Description         |
-| All tasks 24 +-------------------------------+ Status              |
-| Lists        | [Add a task.............] [+] | Due time            |
+| ToDo's       | All tasks                [...]| Task, list, or view |
+|              |                               | Description         |
+| All tasks 24 | [Search or add a task...] [+] | Status              |
+| Lists        | 24 tasks · Status: open       | Due time            |
 |  Home     8  | ( ) Buy paint      Tomorrow   | Lists               |
 |  Work    12  | (/) Call plumber   Overdue !  | Notes               |
 |  + New list  | ( ) Book flights              |                     |
@@ -86,7 +85,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
   It covers the main column in compact layouts; an editor not built yet leaves the slot hidden.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
 - Scroll positions and a memory object are kept per view, for the session; it keeps the search text.
-- Filters and sort persist per device in `localStorage`, such as `todos.view.tasks` (`TV-12`).
+- Filters, grouping, and sort persist per device in `localStorage`, such as `todos.view.tasks` (`TV-12`).
   [preferences.js](../../src/js/core/preferences.js) reads and writes these keys; blocked storage falls back to defaults.
 - The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
 - On start the app opens the store, purges expired bin entries, then starts the overdue timer.
@@ -98,10 +97,12 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Routes
 - `#/tasks`: all tasks.
 - `#/tasks/{{task-id}}`: all tasks with the task editor open.
+- `#/tasks/view-options`: all tasks with the view options open.
 - `#/lists`: lists overview.
 - `#/lists/{{list-id}}`: one list.
 - `#/lists/{{list-id}}/tasks/{{task-id}}`: one list with the task editor open.
 - `#/lists/{{list-id}}/edit`: one list with the list editor open.
+- `#/lists/{{list-id}}/view-options`: one list with the view options open.
 - `#/lists/new`: the list editor for a new list.
 - `#/bin`: recycle bin.
 - `#/settings`: settings.
@@ -146,27 +147,110 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   A row that leaves the view after a change passes focus to the row now at its place.
 
 ### Add Bar
-- One text field and an Add button; Enter adds the task and keeps the field focused (`TSK-1`).
+- One text field and an Add button; only the Add button creates the task (`TSK-1`, `VO-3`).
+  Enter applies the typed search at once but never adds; after an add, focus returns to the field.
+- The field also searches the view; [Search and Add](#search-and-add) describes this.
 - In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
 - In All tasks, the new task joins the lists of the active list filter, or no list.
 - Compact layouts pin the add bar above the bottom navigation; wide layouts place it above the rows.
 - A counter appears from 450 characters, inside the field's end; the field stops at 500.
 - A failed add keeps the text and shows a toast.
 
-### View Controls
-- A search field filters by text in descriptions and notes (`TV-6`).
-- **[Decided]** Search filters once typing pauses for 150 ms or on Enter, so a word runs one query (`TEC-16`).
-- Filter chips open popovers with checkboxes or date ranges; compact layouts group them behind one Filters button.
-- An active filter chip shows its value, such as "Status: open"; Clear all removes every filter.
-- Chips carry `aria-expanded` for their popover and mark a set filter with `data-active`, not `aria-pressed`.
-- A stored Lists filter whose lists were all deleted filters nothing, so its chip shows no value.
-- The Sort button opens a menu of order fields with an ascending or descending toggle.
-- **[Decided]** Wide layouts put search and Sort on the first row, and the filter chips with Clear all below.
-  One row cannot hold the search field, four chips, Clear all, and the Sort label in the 45rem column.
-- Compact layouts show search, Filters with the active filter count, and Sort without its field name.
-  The Filters panel stacks every filter, scrolls when taller than the screen, and ends with Clear all.
-- The Due filter's range and the Created filter use From and To date fields.
-- **[Decided]** The search text lasts for the session only, so a reload never hides tasks behind a forgotten search.
+### Search and Add
+Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
+
+```text
+[ paint.................................................. ] [Add]
+12 of 24 tasks · Status: open · Grouped by List                Reset
+                                                       (32 px or more)
+Home                                                              3
+( ) Buy paint for the hallway   ...
+```
+
+- **[Decided]** The add field doubles as search (`VO-3`): its placeholder reads "Search or add a task".
+  Typing filters the rows to tasks whose description or notes match, on top of the view options (`TV-6`, `TV-8`).
+  A duplicate is hard to miss, since an existing task appears while the user types.
+- **[Decided]** Only the Add button adds.
+  Enter never adds, so a user who only searches cannot create a task by accident.
+  Keyboard users Tab to Add and press Enter or Space.
+- **[Decided]** The info line sits right under the field (`VO-7`):
+  - It starts with the count, such as "24 tasks", or "12 of 24 tasks" while filters or text narrow the view.
+  - It names each active filter, including the default "Status: open", so hidden tasks never surprise.
+  - It adds "Grouped by ..." and "Sorted by ..." only when they differ from the defaults.
+  - It is 12 px muted text on one line; it wraps to two lines, then truncates, and the view options show the rest.
+  - **[Decided]** A quiet Reset link ends the line while any option differs from its default (`VO-8`).
+- **[Decided]** The field and its info line form one block, set apart from the rows by at least 32 px of whitespace.
+  On compact layouts the block is the pinned bar above the bottom navigation, so the rows scroll above it.
+- When a matching task has exactly the typed text, the Add button reads "Add anyway".
+  The check ignores case and surrounding spaces, and covers every non-deleted task the view options show.
+- With no match, the rows give way to the line "No task matches. Add creates it."
+  With a match, a muted line under the rows says what Add creates.
+- A task added while the view options hide it, such as a new task under "Status: done", shows a toast.
+  The toast names the hidden state and offers Show, which resets the options that hide the task.
+- Add clears the field, which removes the filter.
+- The `/` shortcut and `n` both focus the field; Escape in a non-empty field clears it.
+- The rows filter once typing pauses for 150 ms, so a word runs one query (`TEC-16`).
+- **[Decided]** The typed text lasts for the session only, so a reload never hides tasks behind forgotten text.
+  A field with text is visible, so the filter is never hidden.
+- A viewer of a shared list sees "Search tasks" and no Add button (`VO-14`).
+
+### View Options
+Wireframe: [view-options.svg](../img/ui/view-options.svg).
+
+- **[Decided]** The More menu opens the view options (`VO-4`).
+  A list view's menu holds Edit list, Edit view options, Share list, and Delete list.
+  The All tasks menu holds Edit view options only, since All tasks acts as a special list without list actions.
+- **[Decided]** The options open where the editors open (`VO-5`):
+  a right panel on wide layouts, and a full screen with a back button on compact layouts.
+  Escape or the close button closes the panel; the route keeps the view, as for the editors.
+- Changes apply at once, with no Apply button; the rows behind the panel update as the user chooses.
+  The compact screen ends with a primary button, "Show 12 tasks", which goes back.
+- Sections, in order (`VO-6`):
+  - Filter: an accordion of Lists, Status, Due, and Created, plus Shared when connected (`TV-2` to `TV-5`, `TV-7`).
+    Each row shows its value at the right; opening one row closes the other.
+    Due keeps its quick options and a From and To range; Created has From and To.
+  - Group by: a segmented control with None, List, Due date, and Status (`VO-9`).
+  - Sort by: a field menu and an Ascending or Descending toggle (`TV-9`).
+  - Reset at the top: restores every option to its default (`VO-8`).
+- Defaults: open statuses, due time ascending (manual order in a list view), no grouping, no other filter.
+- A stored Lists filter whose lists were all deleted filters nothing, so the info line leaves it out.
+- The panel uses native inputs: checkboxes, radios, a select, and date fields.
+- A polite live region announces the count after each change, such as "12 tasks" (`VO-13`).
+- **[Decided]** For now the options persist per device: one entry for All tasks, and one shared by every list view.
+  Remembering them per list is a later task.
+
+#### Differences between the views
+| Option      | All tasks                    | List view                                      |
+| :---------- | :--------------------------- | :--------------------------------------------- |
+| More menu   | Edit view options            | Edit list, Edit view options, Share list, Delete list |
+| Lists       | filter row                   | not offered                                    |
+| Group by    | None, List, Due date, Status | None, Due date, Status (`LV-11`)               |
+| Sort by     | five fields                  | adds Manual order, the default (`LV-6`)        |
+| Defaults    | open, due time ascending     | open, manual order                             |
+| Persistence | one entry for All tasks      | one entry shared by every list view (`TV-12`)  |
+
+#### Grouping
+- A group header is a 32 px row: the name at the left, the count at the right (`VO-10`).
+- **[Decided]** A task in several lists shows under each list group, so group counts can exceed the task count (`VO-11`).
+  The count on the info line counts each task once.
+- Group order (`VO-12`):
+  - List: as arranged in the sidebar, then No list.
+  - Due date: Overdue, Today, This week, Later, No due time.
+  - Status: To do, In progress, Completed, Cancelled.
+- Search, filters, and sort apply inside each group; empty groups are left out.
+- While a list view is grouped, drag handles and move entries are hidden, as for any sort (`LV-8`).
+- Collapsing groups is out of scope for now.
+
+#### Design alternatives
+- **A. Search and add in one field, view options in the side panel (chosen).**
+  Nothing but the field and a quiet line shows at rest; options sit behind the More menu, where list actions already live.
+  Costs two taps to change a filter, which suits settings changed rarely.
+- B. A quiet bar with Search and View buttons, with the panel as a popover or sheet.
+  Keeps filters one tap away, but adds permanent controls and a second text field.
+- C. Separate Filter, Group, and Sort buttons.
+  Each opens a small panel, like the old chips, but three buttons stay on screen.
+- D. A query field with typed tokens, such as `status:open due:today`.
+  Quickest for experts, but hard to discover and to use on touch screens; it needs a parser.
 
 ### Sync Indicator
 - Shows one of these states, each with its own icon and label (`SYN-4`):
@@ -198,12 +282,14 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 
 - Shows every non-deleted task, in any list or none (`TV-1`).
-- Filters: Lists, Status, Due, Created, and Shared when connected (`TV-2` to `TV-7`).
+- Filters sit in the view options: Lists, Status, Due, Created, and Shared when connected (`TV-2` to `TV-7`).
 - The Lists filter offers every list plus "In no list"; the Due filter offers Overdue, Today, This week, a range, and No due time.
 - **[Decided]** The default status filter is "open", `todo` and `in-progress`, matching the list view (`LV-10`).
 - Sort fields: Due time, Created, Last activity, Status, and Description (`TV-9`).
 - The default sort is Due time ascending, with tasks without a due time last (`TV-10`).
-- An empty result names the active filters and offers Clear all.
+- Grouping by List, Due date, or Status is available here first (`VO-9`); see [View Options](#view-options).
+- A More menu with Edit view options sits in the page header, and in the compact top bar above New list.
+- An empty result names the active filters and offers Reset.
 - Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
 - A new task joins the lists of the active Lists filter, leaving out "In no list".
 - Overdue chips refresh every minute, also for tasks that keep their status.
@@ -234,13 +320,13 @@ Wireframe: [list.svg](../img/ui/list.svg).
 
 - The header shows the list name, its description, the owner and role when shared, and the actions.
   The top bar holds the name; the owner and role arrive with sharing (`SHR-3`).
-- Actions: Edit list, Share, and Delete list in a More menu.
-- Edit list and Share open the list editor route; Share scrolls to its Sharing section.
+- Actions: Edit list, Edit view options, Share list, and Delete list in a More menu; no other action buttons show.
+- Edit list and Share list open the list editor route; Share list scrolls to its Sharing section.
+- Edit view options opens the view options route (`VO-4`).
 - Delete list asks for confirmation, then opens All tasks with an Undo toast (`LST-6`).
-- Order buttons form one segmented control: Manual, Due, Created, Activity, Status, and A–Z (`LV-6`).
-  Below 36rem of width they wrap into two rows of three.
+- The view options replace the order buttons and the status chip (`VO-1`); Manual order is the first sort choice (`LV-6`).
 - **[Decided]** Due, Status, and A–Z sort ascending; Created and Activity show the newest first.
-- **[Decided]** The order and the status filter persist per device, shared by every list view (`TV-12`).
+- **[Decided]** The order, the grouping, and the filters persist per device, shared by every list view (`TV-12`).
 - Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
 - A drag near the main column's top or bottom edge scrolls it; Escape or a lost pointer capture cancels the drag.
 - Keyboard users move a focused row with Alt+Up and Alt+Down, and focus stays on the moved row.
@@ -248,9 +334,9 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - A polite live region announces each move, such as "Buy paint moved to position 2 of 5."
 - Moves place a task next to its shown neighbor, so tasks the status filter hides keep their places.
 - **[Decided]** Compact rows keep the More button in the list view, since touch screens show no drag handle.
-- Another order button sorts the view only and shows a note: "Sorted by due time. Manual order is kept." (`LV-7`).
-- While sorted, drag handles and move entries are hidden; Manual restores the stored order (`LV-8`).
-- A status filter chip defaults to "open" (`LV-10`).
+- Another sort affects the view only; the info line reads "Sorted by Due time" and the manual order is kept (`LV-7`).
+- While sorted or grouped, drag handles and move entries are hidden; Manual order restores the stored order (`LV-8`).
+- The status filter defaults to "open" (`LV-10`); the info line then reads "Status: all".
 - A deleted or unknown list redirects to All tasks with a toast.
 - Leaving the screen, such as with Back, closes an open Delete list dialog as Keep.
 - [list.js](../../src/js/views/list.js) builds the screen; [reorder.js](../../src/js/views/reorder.js) turns moves into neighbors.
@@ -456,8 +542,8 @@ Wireframe: [import.svg](../img/ui/import.svg).
 
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
-- Shortcuts: `n` focuses the add bar, `/` focuses search, and Escape closes the editor or a dialog.
-- `n` and `/` focus the view's `[data-shortcut="add"]` and `[data-shortcut="search"]` elements, and do nothing without them.
+- Shortcuts: `n` and `/` focus the add and search field, and Escape closes the editor or a dialog.
+- `n` and `/` both focus the view's `[data-shortcut="add"]` element, the add and search field, and do nothing without it.
 - Ctrl+Z or Cmd+Z, outside text fields and modal dialogs, runs the Undo of the newest toast.
   It never runs another toast action, such as Reload.
 - Shortcuts never fire while a text field has focus, and the About section lists them.

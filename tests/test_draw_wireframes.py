@@ -16,6 +16,7 @@ SCREENS = {
     "first-launch.svg",
     "all-tasks.svg",
     "list.svg",
+    "view-options.svg",
     "lists.svg",
     "task-editor.svg",
     "list-editor.svg",

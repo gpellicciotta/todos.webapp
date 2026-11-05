@@ -151,7 +151,7 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Chips are not buttons; a removable chip holds a separate remove icon button.
 - [Filter chip](../../src/demo/visual-style-gallery.html#filter-chip): a chip that opens a popover and shows its active value.
   It carries `aria-expanded`, never `aria-pressed`; `data-active="true"` adds the signal outline of a set filter.
-- [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row, for status in the editor and order buttons in the list view.
+- [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row, for status in the editor and the grouping choice in the view options.
   The checked option adds a signal outline and semibold text, so it never relies on color alone.
 - [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored panels at `--elevation-1` that close on Escape and outside clicks.
   Choice menus use `menuitemradio` items with a check icon on the current one.
@@ -229,8 +229,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header, view controls, add bar, and rows.
   The add bar sits above the rows in wide layouts and below them in compact ones.
 - Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
-- View controls: search, filter chips, and the sort menu in one bar above the task list.
-  Compact layouts group the filter chips behind one Filters button.
+- Search and add: one field with an Add button, and under it a 12 px muted info line of the task count and active options.
+  Leave at least 32 px between this block and the rows; the options themselves live in the view options panel.
 - [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
   Compact layouts show the panel alone, as a full screen.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.

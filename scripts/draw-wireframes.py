@@ -22,6 +22,7 @@ MAIN_LEFT = SIDEBAR_WIDTH + 40
 MAIN_RIGHT = 1104
 EDITOR_LEFT = 1020
 ROW_HEIGHT = 48
+VIEW_PANEL_HEIGHT = 536
 
 STYLE = """
 text { font-family: sans-serif; fill: #222222; }
@@ -97,6 +98,7 @@ HOME_TASKS = [
     {"text": "Buy a new lawn mower", "status": "cancelled"},
 ]
 
+LIST_MENU = ["Edit list", "Edit view options", "Share list", "Delete list"]
 STATUSES = [("todo", "To do"), ("in-progress", "In progress"), ("completed", "Completed"), ("cancelled", "Cancelled")]
 
 
@@ -339,26 +341,92 @@ def page_header(f, x, y, right, title, subtitle=None, actions=()):
 # ------------------------------------------------------------------------------------------------
 
 
-def view_controls_compact(f, y, filters="Filters 1"):
-    """Draw the compact search field with the Filters and Sort buttons."""
-    f.rect(0, y, f.width, 60, "box", radius=0)
-    sort_left = button_right(f, f.width - 16, y + 8, "Sort")
-    filter_left = button_right(f, sort_left - 8, y + 8, filters)
-    field(f, 16, y + 8, filter_left - 24, "Search", muted=True)
+def info_line(f, x, baseline, right, text, reset=False):
+    """Draw the subtle line of the active filters and the task count, with Reset when settings differ."""
+    if reset:
+        f.text(right, baseline, "Reset", 12, "bold", "end")
+        f.line(right - text_width("Reset", 12) + 6, baseline + 3, right, baseline + 3, "icon-line")
+        right -= text_width("Reset", 12) + 16
+    f.text(x, baseline, fit(text, right - x, 12), 12, "muted")
 
 
-def view_controls_wide(f, x, y, right, chips, sort="Sort: Due time"):
-    """Draw the wide search field, filter chips, and Sort button in one row."""
-    sort_left = button_right(f, right, y, sort)
-    field(f, x, y, 220, "Search", muted=True)
-    left = x + 232
-    for label, active in chips:
-        width = text_width(label, 13) + 28
-        if left + width > sort_left - 8:
+def more_menu(f, x, y, items):
+    """Draw an open More menu; the last item is set apart by a rule, as a destructive action."""
+    f.rect(x, y, 200, len(items) * 40 + 16, "frame", radius=8)
+    for index, label in enumerate(items):
+        top = y + 8 + index * 40
+        if index == len(items) - 1 and len(items) > 1:
+            f.line(x + 8, top, x + 192, top)
+        f.text(x + 16, top + 25, label, 14)
+
+
+def group_header(f, x, y, width, name, count):
+    """Draw one group header with the group name and its task count; return the y below it."""
+    f.rect(x, y, width, 32, "box", radius=0)
+    f.text(x + 12, y + 21, name, 13, "bold")
+    f.text(x + width - 12, y + 21, str(count), 13, "muted", "end")
+    return y + 32
+
+
+def grouped_rows(f, x, y, width, wide, bottom):
+    """Draw All tasks grouped by list; a task in several lists appears under each of them."""
+    by_name = {
+        "Home": [TASKS[0], TASKS[1], TASKS[3]],
+        "Work": [TASKS[4], TASKS[5]],
+        "Travel": [TASKS[2], TASKS[3]],
+        "No list": [TASKS[6]],
+    }
+    for name, tasks in by_name.items():
+        if y + 32 + ROW_HEIGHT > bottom:
             break
-        f.rect(left, y + 2, width, 40, "selected" if active else "control", radius=20)
-        f.text(left + width / 2, y + 27, label, 13, "bold" if active else "", "middle")
-        left += width + 8
+        y = group_header(f, x, y, width, name, len(tasks))
+        y = task_rows(f, x, y, width, tasks, wide, bottom)
+    return y
+
+
+def check_row(f, x, y, label, checked):
+    """Draw one checkbox row of 32 px and return the y below it."""
+    f.rect(x, y + 8, 16, 16, "control", radius=3)
+    if checked:
+        f.text(x + 8, y + 21, "✓", 13, "bold", "middle")
+    f.text(x + 28, y + 21, label, 14)
+    return y + 32
+
+
+def view_options_fields(f, x, y, width, compact=False):
+    """Draw the View options: filters as an accordion, Group by, and Sort by; return the bottom edge.
+
+    The content of the right panel on wide layouts and of the full screen on compact layouts.
+    """
+    f.text(x, y + 22, "Filter", 12, "muted")
+    button_right(f, x + width, y, "Reset", "control", 13, 32)
+    y += 36
+    for label, value in [("Lists", "All lists"), ("Status", "Open"), ("Due", "Any"), ("Created", "Any")]:
+        expanded = label == "Status"
+        f.text(x, y + 26, label, 14, "bold" if expanded else "")
+        f.text(x + width - 24, y + 26, value, 13, "muted", "end")
+        f.text(x + width - 6, y + 26, "⌄" if expanded else "›", 14, "", "middle")
+        y += 40
+        if expanded:
+            for status, name in STATUSES:
+                y = check_row(f, x + 12, y, name, status in ("todo", "in-progress"))
+            y += 4
+        f.line(x, y, x + width, y)
+    y += 12
+    f.text(x, y + 14, "Group by", 12, "muted")
+    segmented(f, x, y + 22, width, ["None", "List", "Due date", "Status"], 1, 12, 36)
+    y += 74
+    f.text(x, y + 14, "Sort by", 12, "muted")
+    f.rect(x, y + 22, width - 158, 36, "control")
+    f.text(x + 12, y + 45, "Created", 14)
+    f.text(x + width - 158 - 16, y + 45, "⌄", 14, "", "middle")
+    segmented(f, x + width - 150, y + 22, 150, ["Ascending", "Descending"], 1, 11, 36)
+    y += 74
+    if compact:
+        label = "Show 12 tasks"
+        pad = (width - text_width(label, 14)) / 2
+        button(f, x, f.height - 76, label, "primary", 14, 44, pad)
+    return y
 
 
 def task_row(f, x, y, width, task, wide, handle=False, selected=False):
@@ -418,20 +486,37 @@ def task_rows(f, x, y, width, tasks, wide, bottom, handle=False, selected=None):
     return y
 
 
-def add_bar(f, x, y, width, placeholder="Add a task"):
-    """Draw the add bar: a text field and an Add button."""
-    f.rect(x, y, width, 60, "bar", radius=0 if width == f.width else 8)
+def add_bar(f, x, y, width, placeholder="Search or add a task", typed=False, info=None, reset=False):
+    """Draw the add bar and return its bottom edge.
+
+    A text field that also searches, and an Add button. The subtle info line sits under the field: inside the
+    pinned bar on compact layouts, below the box on wide layouts.
+    """
+    pinned = width == f.width
+    height = 60 + (28 if info and pinned else 0)
+    f.rect(x, y, width, height, "bar", radius=0 if pinned else 8)
     add_left = button_right(f, x + width - 8, y + 8, "Add", "primary")
-    field(f, x + 8, y + 8, add_left - x - 16, placeholder, muted=True)
+    field(f, x + 8, y + 8, add_left - x - 16, placeholder, muted=not typed)
+    if info:
+        if pinned:
+            info_line(f, x + 16, y + 74, x + width - 16, info, reset)
+        else:
+            info_line(f, x + 8, y + 82, x + width - 8, info, reset)
+            height += 30
+    return y + height
 
 
-def compact_task_screen(f, title, tasks, sync="Local only", back=False, nav="Tasks"):
-    """Draw a compact task list screen with controls, rows, add bar, and bottom navigation."""
+def compact_task_screen(
+    f, title, tasks, sync="Local only", back=False, nav="Tasks", grouped=False, info="24 tasks · Status: open", reset=False
+):
+    """Draw a compact task list screen with rows, the pinned add bar and info line, and bottom navigation."""
     top_bar(f, title, sync, back)
-    view_controls_compact(f, 60)
-    bottom = f.height - 64 - 60
-    task_rows(f, 0, 120, f.width, tasks, False, bottom)
-    add_bar(f, 0, bottom, f.width)
+    top = f.height - 64 - 88
+    if grouped:
+        grouped_rows(f, 0, 68, f.width, False, top)
+    else:
+        task_rows(f, 0, 68, f.width, tasks, False, top)
+    add_bar(f, 0, top, f.width, info=info, reset=reset)
     bottom_nav(f, nav)
 
 
@@ -460,22 +545,29 @@ def wide_dialog(f, title, width, height):
     return left + 28, top + 76, left + width - 28
 
 
-def wide_all_tasks(f, sync="Local only", selected=None, right=MAIN_RIGHT):
+def wide_all_tasks(
+    f, sync="Local only", selected=None, right=MAIN_RIGHT, grouped=False, typed=None,
+    info="24 tasks · Status: open", reset=False,
+):
     """Draw the wide All tasks screen as a background or main view."""
     sidebar(f, "All tasks", sync=sync)
-    page_header(f, MAIN_LEFT, 28, right, "All tasks")
-    chips = [("Lists", False), ("Status: open", True), ("Due", False), ("Created", False)]
-    if sync != "Local only":
-        chips.append(("Shared", False))
-    view_controls_wide(f, MAIN_LEFT, 92, right, chips)
-    add_bar(f, MAIN_LEFT, 152, right - MAIN_LEFT)
-    task_rows(f, MAIN_LEFT, 228, right - MAIN_LEFT, TASKS, True, f.height - 24, selected=selected)
+    page_header(f, MAIN_LEFT, 28, right, "All tasks", None, [("⋯", "control")])
+    add_bar(f, MAIN_LEFT, 92, right - MAIN_LEFT, typed or "Search or add a task", typed is not None, info, reset)
+    top = 92 + 60 + 30 + 40
+    if grouped:
+        grouped_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, True, f.height - 24)
+    elif typed:
+        matches = [task for task in TASKS if typed in task["text"].lower()]
+        end = task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, matches, True, f.height - 24)
+        f.text(MAIN_LEFT, end + 32, f"Add creates \u201c{typed}\u201d as a new task; matching tasks stay listed above.", 13, "muted")
+    else:
+        task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, TASKS, True, f.height - 24, selected=selected)
 
 
 def wide_list(f, sync="Synced", right=MAIN_RIGHT):
     """Draw the wide Home list screen as a background or main view."""
     sidebar(f, "Home", sync=sync)
-    actions = [("Edit list", "control"), ("Share", "control"), ("⋯", "control")]
+    actions = [("⋯", "control")]
     page_header(
         f,
         MAIN_LEFT,
@@ -485,12 +577,9 @@ def wide_list(f, sync="Synced", right=MAIN_RIGHT):
         "Chores and repairs around the house · Shared with 2 people · You own this list",
         actions,
     )
-    segmented(f, MAIN_LEFT, 112, 520, ["Manual", "Due", "Created", "Activity", "Status", "A–Z"], 0, 13, 40)
-    f.rect(MAIN_LEFT + 536, 114, 136, 36, "selected", radius=18)
-    f.text(MAIN_LEFT + 604, 137, "Status: all", 13, "bold", "middle")
     width = right - MAIN_LEFT
-    add_bar(f, MAIN_LEFT, 168, width)
-    y = 244
+    add_bar(f, MAIN_LEFT, 112, width, info="8 tasks · Status: all", reset=True)
+    y = 112 + 60 + 30 + 40
     for index, task in enumerate(HOME_TASKS):
         if index == 3:
             f.line(MAIN_LEFT, y, right, y, "drop")
@@ -524,12 +613,12 @@ def first_launch():
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     top_bar(compact, "All tasks")
     empty_state(compact, compact.width / 2, 220, 340)
-    add_bar(compact, 0, compact.height - 124, compact.width)
+    add_bar(compact, 0, compact.height - 124, compact.width, "Add a task")
     bottom_nav(compact, "Tasks")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "All tasks", lists=[])
     page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "All tasks")
-    add_bar(wide, MAIN_LEFT, 100, MAIN_RIGHT - MAIN_LEFT)
+    add_bar(wide, MAIN_LEFT, 100, MAIN_RIGHT - MAIN_LEFT, "Add a task")
     empty_state(wide, (MAIN_LEFT + MAIN_RIGHT) / 2, 240, 380)
     return "First launch", "Local mode with no data: no sign-in, straight to a usable empty state.", compact, wide
 
@@ -538,34 +627,54 @@ def all_tasks():
     """All tasks with the default open filter."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     compact_task_screen(compact, "All tasks", TASKS)
-    status_menu(compact, 12, 216, "todo")
+    status_menu(compact, 12, 190, "todo")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    wide_all_tasks(wide)
-    status_menu(wide, MAIN_LEFT + 8, 324, "todo")
+    wide_all_tasks(wide, typed="paint", info="1 of 24 tasks · Status: open")
     return (
         "All tasks",
-        "Every open task, filtered and sorted; the status button opens a menu with the four statuses.",
+        "Quiet by default (compact, with a status menu); typing in the add bar filters the rows (wide).",
+        compact,
+        wide,
+    )
+
+
+def view_options():
+    """The View options as a full screen and as a right panel, over All tasks grouped by list."""
+    compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
+    top_bar(compact, "View options", "Local only", back=True)
+    view_options_fields(compact, 16, 76, compact.width - 32, compact=True)
+    wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
+    wide_all_tasks(
+        wide, right=EDITOR_LEFT - 20, grouped=True, reset=True,
+        info="24 tasks · Status: open · Grouped by List · Sorted by Created, newest",
+    )
+    left, width = editor_panel(wide, "View options")
+    view_options_fields(wide, left, 76, width)
+    return (
+        "View options",
+        "Opens from the More menu where the editors open; changes apply at once, and the info line reports them.",
         compact,
         wide,
     )
 
 
 def list_view():
-    """One list in manual order with the order buttons."""
+    """One list in manual order, with the More menu open."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     top_bar(compact, "Home", "Synced", back=True)
     compact.text(16, 88, fit("Chores and repairs around the house", 300, 14), 14, "muted")
     compact.text(16, 110, "Shared with 2 people · You own this list", 13, "muted")
-    segmented(compact, 16, 124, compact.width - 32, ["Manual", "Due", "Created", "Activity", "Status", "A–Z"], 0, 12)
-    bottom = compact.height - 124
-    task_rows(compact, 0, 172, compact.width, HOME_TASKS, False, bottom)
-    add_bar(compact, 0, bottom, compact.width)
+    top = compact.height - 64 - 88
+    task_rows(compact, 0, 124, compact.width, HOME_TASKS, False, top)
+    add_bar(compact, 0, top, compact.width, info="8 tasks · Status: all", reset=True)
     bottom_nav(compact, "Lists")
+    more_menu(compact, compact.width - 208, 56, LIST_MENU)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_list(wide)
+    more_menu(wide, MAIN_RIGHT - 200, 76, LIST_MENU)
     return (
         "List",
-        "Manual order, shown with all statuses; other order buttons sort the view without changing that order.",
+        "Manual order with all statuses shown; the More menu holds the list and view actions.",
         compact,
         wide,
     )
@@ -965,6 +1074,7 @@ SCREENS = {
     "first-launch.svg": first_launch,
     "all-tasks.svg": all_tasks,
     "list.svg": list_view,
+    "view-options.svg": view_options,
     "lists.svg": lists,
     "task-editor.svg": task_editor,
     "list-editor.svg": list_editor,
