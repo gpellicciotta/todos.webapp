@@ -124,6 +124,25 @@ describe('createTaskList', () => {
     expect(store.addToList).toHaveBeenCalledWith('t2', 'l3');
   });
 
+  it('styles the Delete menu item as danger and no other item', () => {
+    const more = document.querySelectorAll('.task-row__more')[1];
+    more.click();
+    const menu = document.getElementById(more.getAttribute('aria-controls'));
+    const danger = [...menu.querySelectorAll('.menu__item--danger')].map((item) => item.dataset.action);
+    expect(danger).toEqual(['delete']);
+  });
+
+  it('marks each status button and status menu item with its status', () => {
+    const buttons = [...document.querySelectorAll('.status-button')];
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(button.dataset.status).toBe(button.closest('.task-row').dataset.status);
+    }
+    buttons[0].click();
+    const menu = document.getElementById(buttons[0].getAttribute('aria-controls'));
+    expect([...menu.querySelectorAll('[role="menuitemradio"]')].map((item) => item.dataset.status)).toEqual(['todo', 'in-progress', 'completed', 'cancelled']);
+  });
+
   it('closes a reopened Add to list menu that has no list left, and focuses the More button', () => {
     const more = document.querySelectorAll('.task-row__more')[1];
     more.click();

@@ -198,6 +198,9 @@ describe('mountListEditor', () => {
     remove.click();
     const dialog = document.querySelector('dialog');
     expect(dialog.open).toBe(true);
+    expect(remove.classList.contains('button--danger')).toBe(true);
+    expect(dialog.querySelector('[data-dialog-close="delete"]').className).toBe('button button--danger');
+    expect(dialog.querySelector('[data-dialog-close="cancel"]').classList.contains('button--danger')).toBe(false);
     expect(dialog.querySelector('h2').textContent).toBe('Delete the list Home?');
     expect(dialog.querySelector('p').textContent).toBe('The list moves to the recycle bin. Its tasks stay in your other lists.');
     dialog.querySelector('[data-dialog-close="delete"]').click();

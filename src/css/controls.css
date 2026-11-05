@@ -29,7 +29,8 @@
 
 /*
  * Button: one action, with a text label and an optional leading icon.
- * Variants: default (signal, the one main action of a view), `--secondary` (gray), `--secondary.button--danger` (danger outline), `--quiet` (text only).
+ * Variants: default (signal, the one main action of a view), `--secondary` (gray), `--danger` (filled danger, confirms a delete),
+ * `--secondary.button--danger` (danger outline, starts a delete), `--quiet` (text only).
  */
 .button {
   display: inline-flex;
@@ -79,7 +80,22 @@
   background-color: var(--color-active-bg);
 }
 
-/* Danger: add to a secondary button that deletes; the outline takes the danger color. */
+/* Danger: a filled button confirms a delete; add it to a secondary button for the danger outline that starts one. */
+.button--danger:not(.button--secondary) {
+  background-color: var(--color-danger);
+  color: var(--color-on-danger);
+}
+
+.button--danger:not(.button--secondary, :disabled):hover,
+.button--danger:not(.button--secondary).is-hover {
+  background-color: var(--color-danger-hover);
+}
+
+.button--danger:not(.button--secondary, :disabled):active,
+.button--danger:not(.button--secondary).is-active {
+  background-color: var(--color-danger-active);
+}
+
 .button--secondary.button--danger {
   border-color: var(--color-danger);
 }
@@ -87,6 +103,8 @@
 /* Danger focus: elements marked as danger draw the focus ring in the danger color too. */
 .button--danger:focus-visible,
 .button--danger.is-focus,
+.menu__item--danger:focus-visible,
+.menu__item--danger.is-focus,
 .field__control[aria-invalid='true']:focus-within {
   outline-color: var(--color-danger);
 }
@@ -561,6 +579,16 @@ textarea.field__control {
 .menu__item:focus-visible,
 .menu__item.is-focus {
   outline-offset: 0;
+}
+
+/* Danger item: a delete action takes the danger color on text and icon; pressed uses the hover ground to keep 4.5:1. */
+.menu__item--danger {
+  color: var(--color-danger);
+}
+
+.menu__item--danger:active,
+.menu__item--danger.is-active {
+  background-color: var(--color-hover-bg);
 }
 
 .menu__check {

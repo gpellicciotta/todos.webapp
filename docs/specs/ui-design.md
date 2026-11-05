@@ -127,10 +127,10 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - The status button opens a status menu listing the four statuses; picking one sets it (`TSK-4`).
 - The menu marks the current status and opens on Enter or Space, with arrow keys to choose.
 - The status icons differ in shape, not only in color:
-  - `todo`: an empty circle.
-  - `in-progress`: a circle with a filled bottom half.
-  - `completed`: a filled circle with a check, and muted text.
-  - `cancelled`: a filled circle with a dash, like completed, and struck-through muted text.
+  - `todo`: an empty circle, in the muted text color.
+  - `in-progress`: a circle with a filled bottom half, in blue.
+  - `completed`: a filled circle with a check, in green, and struck-through muted text.
+  - `cancelled`: a filled circle with a dash, in the danger color, and struck-through muted text.
 - The due chip shows a relative time, such as "Tomorrow 18:00"; overdue tasks show "Overdue" in the signal color (`OVD-2`).
 - List chips show at most two list names and a "+n" count; the list view leaves out its own list.
 - A note icon with a count appears when the task has notes; a people icon marks tasks in shared lists.

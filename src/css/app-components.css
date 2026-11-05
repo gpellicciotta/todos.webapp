@@ -167,9 +167,6 @@
 .task-row[data-status='cancelled'] .task-row__description {
   color: var(--color-text-muted);
   font-weight: var(--weight-regular);
-}
-
-.task-row[data-status='cancelled'] .task-row__description {
   text-decoration-line: line-through;
 }
 
@@ -242,6 +239,25 @@
 /* Status menu: the menu from controls.css, with each status icon between the check and the label. */
 .status-menu .menu__item > .icon:not(.menu__check) {
   color: var(--color-text-muted);
+}
+
+/*
+ * Status colors: In progress is blue, Completed green, and Cancelled gray; To do keeps the muted text color.
+ * The rules sit after the hover and disabled rules so that the color stays in every state.
+ */
+.status-button[data-status='in-progress'],
+.status-menu .menu__item[data-status='in-progress'] > .icon:not(.menu__check) {
+  color: var(--color-status-in-progress);
+}
+
+.status-button[data-status='completed'],
+.status-menu .menu__item[data-status='completed'] > .icon:not(.menu__check) {
+  color: var(--color-status-completed);
+}
+
+.status-button[data-status='cancelled'],
+.status-menu .menu__item[data-status='cancelled'] > .icon:not(.menu__check) {
+  color: var(--color-status-cancelled);
 }
 
 /*

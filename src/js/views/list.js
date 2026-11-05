@@ -132,7 +132,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
   menu.setAttribute('aria-label', STRINGS.actions);
   menu.hidden = true;
   for (const [action, text] of [['edit', STRINGS.edit], ['share', STRINGS.share], ['delete', STRINGS.delete]]) {
-    const item = make(doc, 'button', 'menu__item', text);
+    const item = make(doc, 'button', action === 'delete' ? 'menu__item menu__item--danger' : 'menu__item', text);
     item.type = 'button';
     item.setAttribute('role', 'menuitem');
     item.dataset.action = action;

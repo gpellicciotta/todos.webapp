@@ -33,3 +33,56 @@ for (const theme of ['light', 'dark']) {
     expect(colors.plain).not.toBe(colors.danger);
   });
 }
+
+for (const theme of ['light', 'dark']) {
+  test(`Delete controls use the danger color, and other controls do not, in the ${theme} theme`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(GALLERY);
+    await page.getByRole('radio', { name: theme === 'light' ? 'Light' : 'Dark' }).check();
+
+    await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; }' });
+    const result = await page.evaluate(() => {
+      const probe = (token) => {
+        const span = document.createElement('span');
+        span.style.color = `var(${token})`;
+        document.body.append(span);
+        const color = getComputedStyle(span).color;
+        span.remove();
+        return color;
+      };
+      const deletes = [...document.querySelectorAll('.button, .menu__item')]
+        .filter((element) => /^Delete\b/.test(element.textContent.trim()) && element.checkVisibility() && !element.disabled && !element.matches('.is-hover, .is-active'));
+      return {
+        danger: probe('--color-danger'),
+        onDanger: probe('--color-on-danger'),
+        controls: deletes.map((element) => {
+          const style = getComputedStyle(element);
+          return {
+            label: element.textContent.trim(),
+            menu: element.classList.contains('menu__item'),
+            secondary: element.classList.contains('button--secondary'),
+            color: style.color,
+            background: style.backgroundColor,
+            border: style.borderTopColor,
+          };
+        }),
+        plain: getComputedStyle(document.querySelector('#button .button:not(.button--danger):not(.button--secondary):not(:disabled)')).backgroundColor,
+      };
+    });
+
+    expect(result.controls.length).toBeGreaterThanOrEqual(6);
+    for (const control of result.controls) {
+      if (control.menu) {
+        expect(control.color, control.label).toBe(result.danger);
+      }
+      else if (control.secondary) {
+        expect(control.border, control.label).toBe(result.danger);
+      }
+      else {
+        expect(control.background, control.label).toBe(result.danger);
+        expect(control.color, control.label).toBe(result.onDanger);
+      }
+    }
+    expect(result.plain).not.toBe(result.danger);
+  });
+}

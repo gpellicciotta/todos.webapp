@@ -25,7 +25,18 @@ const NON_TEXT_ON_GROUNDS = ['--color-border-strong', '--color-focus'];
 
 
 // Icon colors that must reach 3:1 on every ground a control can show, including pressed grounds.
-const ICONS = ['--color-signal', '--color-danger', '--color-text', '--color-text-muted'];
+const ICONS = [
+  '--color-signal',
+  '--color-danger',
+  '--color-text',
+  '--color-text-muted',
+  '--color-status-in-progress',
+  '--color-status-completed',
+  '--color-status-cancelled',
+];
+const STATUS_ICONS = ['--color-status-in-progress', '--color-status-completed', '--color-status-cancelled'];
+// Smallest RGB distance between the in-progress blue and the navy signal color.
+const MIN_BLUE_DISTANCE = 60;
 const ICON_GROUNDS = [...GROUNDS, '--color-active-bg'];
 
 // Text on filled signal controls and on pressed secondary controls, in every state.
@@ -35,6 +46,9 @@ const TEXT_PAIRS = [
   ['--color-on-signal', '--color-signal-active'],
   ['--color-text', '--color-active-bg'],
   ['--color-link', '--color-active-bg'],
+  ['--color-on-danger', '--color-danger'],
+  ['--color-on-danger', '--color-danger-hover'],
+  ['--color-on-danger', '--color-danger-active'],
 ];
 
 const COLOR_LITERAL = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/i;
@@ -213,6 +227,18 @@ function contrast(a, b) {
   return (high + 0.05) / (low + 0.05);
 }
 
+/**
+ * Compute the Euclidean distance of two hex colors in RGB space.
+ * @param {string} a first color
+ * @param {string} b second color
+ * @returns {number} distance from 0 to about 441
+ */
+function distance(a, b) {
+  const channels = (hex) => [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
+  const [x, y] = [channels(a), channels(b)];
+  return Math.hypot(...x.map((value, index) => value - y[index]));
+}
+
 describe('contrast helpers', () => {
   it('computes the known black on white ratio', () => {
     expect(contrast('#000000', '#ffffff')).toBeCloseTo(21, 5);
@@ -263,6 +289,18 @@ describe('tokens.css', () => {
           });
         }
       }
+
+      it('keeps the in-progress blue clearly apart from the signal navy', () => {
+        const { tokens } = loadTokens();
+        const blue = resolve(tokens, '--color-status-in-progress', theme);
+        expect(distance(blue, resolve(tokens, '--color-signal', theme))).toBeGreaterThanOrEqual(MIN_BLUE_DISTANCE);
+      });
+
+      it('gives the three status colors three different colors', () => {
+        const { tokens } = loadTokens();
+        const colors = STATUS_ICONS.map((name) => resolve(tokens, name, theme));
+        expect(new Set(colors).size).toBe(STATUS_ICONS.length);
+      });
 
       for (const mark of NON_TEXT_ON_GROUNDS) {
         for (const ground of GROUNDS) {

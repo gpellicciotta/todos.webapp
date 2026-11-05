@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.1-pre
+- FrontEnd: Gave the In progress, Completed, and Cancelled status icons blue, green, and red colors, and struck through completed tasks.
+- FrontEnd: Styled every Delete button and menu item with the danger color, filled for the editor and confirm buttons.
 - DevEx: Made the due date end-to-end test independent of the browser locale, so it passes on Linux CI.
 - Docs: Amended TEC-11 so the Cloud Run server hosts the app at the todos site root and Pages stays a bring-your-own-server copy.
 - FrontEnd: Made the service worker leave /admin and /api alone, so /admin never falls back to the app shell.

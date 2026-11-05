@@ -133,7 +133,7 @@ for (const viewport of VIEWPORTS) {
 }
 
 for (const theme of THEMES) {
-  test(`completed rows are muted, and cancelled rows are muted and struck through, in the ${theme.name} theme`, async ({ page }) => {
+  test(`completed and cancelled rows are muted and struck through, in the ${theme.name} theme`, async ({ page }) => {
     await openGallery(page, VIEWPORTS[0], theme);
     const text = await tokenColor(page, '--color-text');
     const muted = await tokenColor(page, '--color-text-muted');
@@ -149,7 +149,7 @@ for (const theme of THEMES) {
       for (const style of styles) {
         const done = status === 'completed' || status === 'cancelled';
         expect(style.color, status).toBe(done ? muted : text);
-        if (status === 'cancelled') {
+        if (done) {
           expect(style.decoration, status).toContain('line-through');
         }
         else {
@@ -312,3 +312,42 @@ test('the task list pattern shows only open rows under its Status: open filter',
   const statuses = await page.locator('#task-list .task-row').evaluateAll((rows) => rows.map((row) => row.dataset.status));
   expect(statuses.filter((status) => !['todo', 'in-progress'].includes(status))).toEqual([]);
 });
+
+for (const theme of THEMES) {
+  test(`status icons take the status colors, and To do keeps the muted text color, in the ${theme.name} theme`, async ({ page }) => {
+    await openGallery(page, VIEWPORTS[1], theme);
+    await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; }' });
+    const expected = {
+      todo: await tokenColor(page, '--color-text-muted'),
+      'in-progress': await tokenColor(page, '--color-status-in-progress'),
+      completed: await tokenColor(page, '--color-status-completed'),
+      cancelled: await tokenColor(page, '--color-status-cancelled'),
+    };
+    expect(new Set(Object.values(expected)).size).toBe(4);
+
+    const colors = await page.evaluate(() => {
+      const read = (selector) => [...document.querySelectorAll(selector)].map((element) => ({
+        status: element.dataset.status,
+        color: getComputedStyle(element.querySelector('.icon:not(.menu__check)')).color,
+      }));
+      return {
+        buttons: read('#status-button .status-button[data-status]:not(:disabled):not(.is-hover):not(.is-active):not(.is-focus)'),
+        menu: read('#status-button .status-menu .menu__item[data-status]'),
+        rows: read('#task-list .status-button[data-status]'),
+      };
+    });
+    for (const group of Object.values(colors)) {
+      expect(group.length).toBeGreaterThanOrEqual(4);
+      for (const { status, color } of group) {
+        expect(color, status).toBe(expected[status]);
+      }
+    }
+  });
+
+  test(`status icon colors survive hover in the ${theme.name} theme`, async ({ page }) => {
+    await openGallery(page, VIEWPORTS[1], theme);
+    const color = await tokenColor(page, '--color-status-in-progress');
+    const hovered = await page.locator('#status-button .status-button.is-hover').evaluate((element) => getComputedStyle(element).color);
+    expect(hovered).toBe(color);
+  });
+}

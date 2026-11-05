@@ -37,8 +37,18 @@
   --navy-950: #14213f;
 
   /* Primitive: deep orange, the danger hue for errors and destructive actions. */
+  --orange-900: #6e2406;
+  --orange-800: #8f2f08;
   --orange-700: #b23b0b;
   --orange-400: #fb923c;
+  --orange-300: #fdba74;
+  --orange-200: #fed7aa;
+
+  /* Primitive: sky blue, green, and gray status hues; the sky blue stays apart from the navy signal hue. */
+  --sky-600: #0284c7;
+  --sky-400: #38bdf8;
+  --green-700: #15803d;
+  --green-400: #4ade80;
 
   /* Primitive: shadow tints, the only colors with alpha. */
   --shadow-tint-light: rgb(17 18 22 / 14%);
@@ -75,8 +85,16 @@
   --color-link: light-dark(var(--navy-700), var(--navy-300));
   --color-focus: light-dark(var(--navy-600), var(--navy-400));
 
-  /* Semantic: danger for error borders, error text, alert icons, and delete button outlines. */
+  /* Semantic: danger for error borders, error text, alert icons, delete outlines, and filled delete buttons. */
   --color-danger: light-dark(var(--orange-700), var(--orange-400));
+  --color-danger-hover: light-dark(var(--orange-800), var(--orange-300));
+  --color-danger-active: light-dark(var(--orange-900), var(--orange-200));
+  --color-on-danger: light-dark(var(--gray-0), var(--gray-950));
+
+  /* Semantic: status icon colors; Cancelled shares the danger color; shapes still carry the status, and To do keeps the muted text color. */
+  --color-status-in-progress: light-dark(var(--sky-600), var(--sky-400));
+  --color-status-completed: light-dark(var(--green-700), var(--green-400));
+  --color-status-cancelled: var(--color-danger);
 
   /* Semantic: shadow color for elevation, and the scrim behind modal dialogs. */
   --color-shadow: light-dark(var(--shadow-tint-light), var(--shadow-tint-dark));
@@ -192,6 +210,11 @@
     --color-link: var(--navy-700);
     --color-focus: var(--navy-600);
     --color-danger: var(--orange-700);
+    --color-danger-hover: var(--orange-800);
+    --color-danger-active: var(--orange-900);
+    --color-on-danger: var(--gray-0);
+    --color-status-in-progress: var(--sky-600);
+    --color-status-completed: var(--green-700);
     --color-shadow: var(--shadow-tint-light);
     --color-backdrop: var(--scrim-light);
   }

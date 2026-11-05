@@ -58,7 +58,7 @@ export async function confirmListDelete({ parent, opener, list, store, toaster, 
   const body = el(doc, 'div', 'dialog__body');
   body.append(el(doc, 'p', '', STRINGS.deleteText));
   const actions = el(doc, 'div', 'dialog__actions');
-  for (const [value, text, className] of [['cancel', STRINGS.keep, 'button button--secondary'], ['delete', STRINGS.delete, 'button']]) {
+  for (const [value, text, className] of [['cancel', STRINGS.keep, 'button button--secondary'], ['delete', STRINGS.delete, 'button button--danger']]) {
     const button = el(doc, 'button', className, text);
     button.type = 'button';
     button.dataset.dialogClose = value;
@@ -141,7 +141,7 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   sharing.append(connect);
   section('sharing', STRINGS.sharing).append(sharing);
   const danger = el(doc, 'div', 'editor-panel__danger');
-  const remove = el(doc, 'button', 'button button--secondary');
+  const remove = el(doc, 'button', 'button button--danger');
   remove.type = 'button';
   remove.append(spriteIcon(doc, 'bin'), STRINGS.delete);
   danger.append(remove, el(doc, 'p', 'editor-panel__details', STRINGS.deleteHint));

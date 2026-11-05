@@ -35,10 +35,12 @@ Change the stylesheets first, then the gallery and this guide in the same commit
 - **[Decided]** The palette is monochrome with one signal color: navy.
   Rejected: cool neutrals with a bright blue, and warm paper with ink.
   Rejected signal colors after a gallery comparison: violet, bright blue, deep yellow, and red.
-- **[Decided]** Errors and dangers use deep orange on borders, error text, alert icons, and delete button outlines.
+- **[Decided]** Errors and dangers use deep orange on borders, error text, alert icons, and Delete controls.
   Replaces the earlier decision that errors use the signal color. Every error still keeps its alert icon and text.
   Rejected: red, which could not pair with a red signal and reads as harsher in a calm tool.
-- **[Decided]** Status uses icon shapes and text weight, not colors: see the status icon rules below.
+- **[Decided]** Status icons add color to their shapes: blue for In progress, green for Completed, the danger color for Cancelled.
+  To do keeps the muted text color. Shapes and text still carry the status, so color never does alone.
+  The in-progress sky blue stays clearly apart from the navy signal color; a unit test checks the distance.
 - **[Decided]** Inter, self-hosted as one variable font, sets all text.
   Rejected: the system font stack, which renders differently on every platform.
 - **[Decided]** The service worker caches the font, so offline pages look the same as online ones.
@@ -77,7 +79,9 @@ Definitions live in [tokens.css](../../src/css/tokens.css); the gallery's Color 
 - Text: `--color-text`, `--color-text-muted` for secondary lines and done tasks, `--color-text-disabled` for disabled controls only.
 - Borders: `--color-border` for dividers, `--color-border-strong` for controls that need 3:1 contrast.
 - Signal: `--color-signal` for the main action and overdue chips, `--color-on-signal` for text on it.
-- Danger: `--color-danger` for error borders, error text, alert icons, the delete button outline, and the focus ring of those controls.
+- Danger: `--color-danger` for error borders, error text, alert icons, Delete outlines and menu items, filled Delete buttons, and the focus ring of those controls.
+- Danger states: `--color-danger-hover` and `--color-danger-active` for the filled Delete button, `--color-on-danger` for its text.
+- Status: `--color-status-in-progress` (sky blue), `--color-status-completed` (green), and `--color-status-cancelled` (the danger color) for status icons; each reaches 3:1 on every ground.
 - Signal states: `--color-signal-hover` and `--color-signal-active` for the hovered and pressed main action.
 - Links: `--color-link` for links and quiet buttons.
 - Focus: `--focus-ring` on every interactive element, drawn in `--color-focus` with a gap to the element.
@@ -137,7 +141,9 @@ Gallery specimens force hover, active, and focus with `.is-hover`, `.is-active`,
 Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/js/ui](../../src/js/ui/) add keyboard and focus handling.
 
 - [Button](../../src/demo/visual-style-gallery.html#button): `.button` in the signal color for the one main action of a view.
-  Deleting buttons use `.button--secondary.button--danger`, a danger outline with neutral text.
+  Delete buttons that confirm or start a delete, such as Delete task and Delete list in the editors and the buttons in dialogs and in-place questions, use `.button--danger`, filled with `--color-on-danger` text.
+  Delete buttons beside other actions in a row, such as the recycle bin's Delete permanently, use `.button--secondary.button--danger`, a danger outline with neutral text.
+  Delete menu items use `.menu__item--danger`, with danger text and icon; its pressed ground is the hover ground to keep 4.5:1.
   Use `--secondary` in gray for other actions and `--quiet` for low-emphasis ones, such as Clear all and Undo.
   Never place two signal buttons side by side.
 - [Icon button](../../src/demo/visual-style-gallery.html#icon-button): a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
@@ -180,13 +186,13 @@ Defined in [app-components.css](../../src/css/app-components.css) and [app-chrom
 App states use attributes the app sets, such as `data-status` and `aria-current`, never gallery classes.
 
 - [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` opening the status menu.
-  The icon shapes differ, so status never relies on color:
-  - `todo`: an empty circle.
-  - `in-progress`: a circle with a filled bottom half.
-  - `completed`: a filled circle with a check, with muted text.
-  - `cancelled`: a filled circle with a dash, like completed, with struck-through muted text.
+  The icon shapes differ, so status never relies on color. The app sets `data-status` on the button, which colors the icon:
+  - `todo`: an empty circle, in the muted text color.
+  - `in-progress`: a circle with a filled bottom half, in blue.
+  - `completed`: a filled circle with a check, in green, with struck-through muted text.
+  - `cancelled`: a filled circle with a dash, in the danger color, with struck-through muted text.
 
-  The status menu is a `.menu.status-menu` of `menuitemradio` items, each with its status icon.
+  The status menu is a `.menu.status-menu` of `menuitemradio` items, each with its status icon in the same color (`data-status` on the item).
   Read-only rows disable the button but keep its icon at full icon contrast.
 - [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, one line at `--row-height`.
   It holds the drag handle, the status button, the open link, and the More button.
@@ -194,7 +200,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The description truncates with an ellipsis; list chips truncate at `--width-chip-max`.
   Below 36rem of list width, rows show only the status, the description, and the due chip.
   States use attributes the app sets:
-  - Status: `data-status` mutes completed and cancelled text; only cancelled text is struck through.
+  - Status: `data-status` mutes and strikes through completed and cancelled text.
   - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.
     A selected row keeps hover and press feedback.
   - Dragging: `data-dragging="true"` lifts the row to `--elevation-2`.

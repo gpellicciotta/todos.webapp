@@ -35,6 +35,12 @@ describe('mountList', () => {
     expect(chip.dataset.active).toBe('true');
   });
 
+  it('styles only the Delete item of the list menu as danger', async () => {
+    const view = await mount();
+    const danger = [...view.querySelectorAll('.menu__item--danger')];
+    expect(danger.map((item) => item.dataset.action)).toEqual(['delete']);
+  });
+
   it('closes an open Delete list dialog as Keep when the view unmounts', async () => {
     const view = await mount();
     view.querySelector('.list-view__more').click();

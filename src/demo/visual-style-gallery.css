@@ -188,6 +188,12 @@
 .swatch--color-signal-active { background-color: var(--color-signal-active); }
 .swatch--color-on-signal { background-color: var(--color-on-signal); }
 .swatch--color-danger { background-color: var(--color-danger); }
+.swatch--color-danger-hover { background-color: var(--color-danger-hover); }
+.swatch--color-danger-active { background-color: var(--color-danger-active); }
+.swatch--color-on-danger { background-color: var(--color-on-danger); }
+.swatch--color-status-in-progress { background-color: var(--color-status-in-progress); }
+.swatch--color-status-completed { background-color: var(--color-status-completed); }
+.swatch--color-status-cancelled { background-color: var(--color-status-cancelled); }
 .swatch--color-link { background-color: var(--color-link); }
 .swatch--color-focus { background-color: var(--color-focus); }
 .swatch--color-shadow { background-color: var(--color-shadow); }

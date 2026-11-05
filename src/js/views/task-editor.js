@@ -338,7 +338,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   const details = el(doc, 'p', 'editor-panel__details');
   section('details', STRINGS.details).append(details);
   const danger = el(doc, 'div', 'editor-panel__danger');
-  const remove = el(doc, 'button', 'button button--secondary');
+  const remove = el(doc, 'button', 'button button--danger');
   remove.type = 'button';
   remove.append(spriteIcon(doc, 'bin'), STRINGS.delete);
   remove.addEventListener('click', () => store.deleteTask(taskId).then(() => {

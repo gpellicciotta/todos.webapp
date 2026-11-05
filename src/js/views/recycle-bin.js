@@ -208,7 +208,7 @@ export function mountRecycleBin(view, {
       group.setAttribute('aria-label', `Delete ${name} permanently`);
       const actions = make(doc, 'div', 'inline-confirm__actions');
       const keep = button(doc, 'button button--secondary', STRINGS.keep, 'keep');
-      const confirm = button(doc, 'button', STRINGS.confirm, 'confirm');
+      const confirm = button(doc, 'button button--danger', STRINGS.confirm, 'confirm');
       keep.addEventListener('click', () => ask(null, 'purge'));
       confirm.addEventListener('click', () => purge(entry));
       group.addEventListener('keydown', (event) => {
@@ -226,7 +226,7 @@ export function mountRecycleBin(view, {
     const restoreButton = button(doc, 'button button--secondary', STRINGS.restore, 'restore');
     restoreButton.setAttribute('aria-label', `${STRINGS.restore} ${name}`);
     restoreButton.addEventListener('click', () => restore(entry));
-    const purgeButton = button(doc, 'button button--secondary bin-row__purge', '', 'purge');
+    const purgeButton = button(doc, 'button button--secondary button--danger bin-row__purge', '', 'purge');
     purgeButton.setAttribute('aria-label', `Delete ${name} permanently`);
     purgeButton.append(spriteIcon(doc, 'close'), make(doc, 'span', 'bin-row__purge-label', STRINGS.purge));
     purgeButton.addEventListener('click', () => ask(keyOf(entry), 'keep'));

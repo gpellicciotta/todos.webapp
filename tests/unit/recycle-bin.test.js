@@ -107,10 +107,14 @@ describe('mountRecycleBin', () => {
     const { store } = await mount([entry(new Date())]);
     // Rows render again on every change, so each step looks the row up again.
     const row = () => document.querySelector('.bin-row');
+    expect(row().querySelector('[data-role="purge"]').classList.contains('button--danger')).toBe(true);
+    expect(row().querySelector('[data-role="restore"]').classList.contains('button--danger')).toBe(false);
     row().querySelector('[data-role="purge"]').click();
     const group = row().querySelector('.inline-confirm');
     expect(group.getAttribute('role')).toBe('group');
     expect(group.textContent).toContain('Delete forever?');
+    expect(group.querySelector('[data-role="confirm"]').classList.contains('button--danger')).toBe(true);
+    expect(group.querySelector('[data-role="keep"]').classList.contains('button--danger')).toBe(false);
     expect(document.activeElement.textContent).toBe('Keep');
     document.activeElement.click();
     expect(row().querySelector('.inline-confirm')).toBeNull();

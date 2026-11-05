@@ -190,7 +190,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
     row.className = 'inline-confirm__actions';
     const keep = button(doc, 'button button--secondary', STRINGS.keep, 'keep');
     keep.addEventListener('click', () => leave(note));
-    const remove = button(doc, 'button', STRINGS.delete, 'delete');
+    const remove = button(doc, 'button button--danger', STRINGS.delete, 'delete');
     remove.addEventListener('click', () => save(() => store.deleteNote(note.id), () => {
       confirming = null;
     }));
@@ -230,7 +230,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
       menu.setAttribute('aria-label', `${STRINGS.more}${when}`);
       menu.hidden = true;
       for (const [action, label, icon] of [['edit', STRINGS.edit, 'note'], ['delete', STRINGS.delete, 'bin']]) {
-        const entry = button(doc, 'menu__item', label, `menu-${action}`);
+        const entry = button(doc, action === 'delete' ? 'menu__item menu__item--danger' : 'menu__item', label, `menu-${action}`);
         entry.setAttribute('role', 'menuitem');
         entry.prepend(spriteIcon(doc, icon));
         menu.append(entry);

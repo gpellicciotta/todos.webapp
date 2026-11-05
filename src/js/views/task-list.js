@@ -270,6 +270,7 @@ function renderRow(doc, task, view, template, selected) {
   const open = more.previousElementSibling;
   const status = open.previousElementSibling;
   status.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}: ${STATUS_LABELS[task.status]}`);
+  status.dataset.status = task.status;
   status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${task.status}`);
   open.href = view.href;
   if (task.id === selected) {
@@ -369,8 +370,8 @@ function placeRows(list, rows) {
  * @param {{icon?: string, checked?: boolean}} [extra] a leading icon and the radio state
  * @returns {HTMLButtonElement} the item
  */
-function menuItem(doc, role, text, data, { icon, checked } = {}) {
-  const item = make(doc, 'button', 'menu__item');
+function menuItem(doc, role, text, data, { icon, checked, danger } = {}) {
+  const item = make(doc, 'button', danger ? 'menu__item menu__item--danger' : 'menu__item');
   item.type = 'button';
   item.setAttribute('role', role);
   Object.assign(item.dataset, data);
@@ -541,7 +542,7 @@ export function createTaskList({
     ];
     moreMenu.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
     moreMenu.replaceChildren(...entries.filter(([shown]) => shown)
-      .map(([, text, action, icon]) => menuItem(doc, 'menuitem', text, { action }, { icon })));
+      .map(([, text, action, icon]) => menuItem(doc, 'menuitem', text, { action }, { icon, danger: action === 'delete' })));
     openMenu(trigger, moreMenu, (item) => {
       if (item.dataset.action === 'add-to-list') {
         openAddToList(trigger, task);

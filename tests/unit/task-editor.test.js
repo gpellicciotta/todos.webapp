@@ -233,6 +233,23 @@ describe('mountTaskEditor', () => {
     expect(document.activeElement).toBe(document.querySelector('.note [data-role="more"]'));
   });
 
+  it('styles Delete task and the note Delete controls as danger', async () => {
+    const remove = [...document.querySelectorAll('.editor-panel__danger button')].find((button) => button.textContent === 'Delete task');
+    expect(remove.classList.contains('button--danger')).toBe(true);
+    expect(remove.classList.contains('button--secondary')).toBe(false);
+    store.notesOfTask.mockImplementation(async () => [{
+      id: 'n1', 'task-id': 't1', text: 'Two coats', author: null, 'creation-time': TASK['creation-time'], 'edit-time': null,
+    }]);
+    store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
+    await vi.waitFor(() => expect(document.querySelector('.note')).not.toBeNull());
+    document.querySelector('.note [data-role="more"]').click();
+    expect(document.querySelector('.note [data-role="menu-delete"]').classList.contains('menu__item--danger')).toBe(true);
+    expect(document.querySelector('.note [data-role="menu-edit"]').classList.contains('menu__item--danger')).toBe(false);
+    document.querySelector('.note [data-role="menu-delete"]').click();
+    expect(document.querySelector('.inline-confirm [data-role="delete"]').classList.contains('button--danger')).toBe(true);
+    expect(document.querySelector('.inline-confirm [data-role="keep"]').classList.contains('button--danger')).toBe(false);
+  });
+
   it('keeps a typed note draft when the editor closes, and shows it again on reopening', async () => {
     const note = document.querySelector('textarea[name="new-note"]');
     note.value = 'Ask about the primer';
