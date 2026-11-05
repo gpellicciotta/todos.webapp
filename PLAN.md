@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [ ] T0039 Add switchable accent candidates and a red danger color for errors to the design tokens and gallery.
+- [-] T0039 [reason: The accent and danger colors have been chosen already] Add switchable accent candidates and a red danger color for errors to the design tokens and gallery.
 - [x] T0005 Draw a low-fidelity SVG wireframe per screen of docs/specs/ui-design.md, showing 390 px and 1440 px side by side.
 - [x] T0001 Write the functional and technical requirements for the offline-first web app in docs/requirements.md.
 - [x] T0002 Design the UI: screens, navigation, key flows, wireframes, and the visual style guide.
