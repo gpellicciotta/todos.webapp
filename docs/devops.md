@@ -143,19 +143,16 @@ Keep it limited to `main`.
 
 Run the workflow by hand to redeploy without a new commit.
 
-### Custom Domain Later
-`TEC-11` gets its own domain later; the default address serves until then.
-1. Verify the domain under the GitHub account settings first; this prevents domain takeovers.
-2. In Settings, then Pages, enter the domain under Custom domain, then save.
-3. At the DNS provider, add a `CNAME` record for a subdomain, pointing to `gpellicciotta.github.io`.
-   For an apex domain, add the `A` and `AAAA` records that GitHub lists instead.
-4. Once the certificate is ready, select Enforce HTTPS; this can take up to 24 hours.
+### Hosting Origins
+`TEC-11` splits hosting across two origins:
+- The Cloud Run server hosts the app at `https://todos.pellicciotta.com/`; the app and its API share that origin.
+- GitHub Pages at `https://gpellicciotta.github.io/todos.webapp/` stays a bring-your-own-server copy.
+  Its users set the server URL themselves.
 
-A workflow deployment needs no `CNAME` file, and GitHub ignores one if present.
-Moving to a new domain gives the app a new origin, so its local data does not follow.
-Export a backup at the old address and import it at the new one.
+Each origin has its own local data, so a copy at one address does not see the data of the other.
+Export a backup at one address and import it at the other to move data.
 
-See [Managing a custom domain](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
+The Pages workflow needs no custom domain, `CNAME` file, or DNS record.
 
 ---
 

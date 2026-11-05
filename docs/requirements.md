@@ -183,7 +183,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TEC-10: The REST API is the only contract between the app and the service.
 
 ### Hosting and Language
-- TEC-11: GitHub Pages hosts the app under a custom domain.
+- TEC-11: The Cloud Run server hosts the app at `https://todos.pellicciotta.com/`, so the app and its API share one origin.
+  GitHub Pages at `https://gpellicciotta.github.io/todos.webapp/` stays a bring-your-own-server copy with a configurable server URL.
 - TEC-12: The UI is in US English.
 - TEC-13: All UI strings live in one module, so translations can follow.
 - TEC-14: The app shows times in the device timezone.

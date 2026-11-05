@@ -6,6 +6,8 @@ All notable changes to this project are documented here.
 
 ## v0.1.1-pre
 - DevEx: Made the due date end-to-end test independent of the browser locale, so it passes on Linux CI.
+- Docs: Amended TEC-11 so the Cloud Run server hosts the app at the todos site root and Pages stays a bring-your-own-server copy.
+- FrontEnd: Made the service worker leave /admin and /api alone, so /admin never falls back to the app shell.
 
 ## v0.1.0 [released: 2026-11-05]
 - FrontEnd: Added an offline-first, installable web app that keeps lists, tasks, and notes in the browser.
