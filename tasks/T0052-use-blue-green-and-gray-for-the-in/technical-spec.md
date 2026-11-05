@@ -1,6 +1,7 @@
 ### Decisions
 - **[Decided]** New tokens: `--color-status-in-progress`, `--color-status-completed`, `--color-status-cancelled`.
-- **[Decided]** Cancelled uses a gray at least 3:1 on surface, so it stays distinct from muted row text.
+- **[Decided]** Cancelled icon uses the danger color; its row text stays muted gray.
+- **[Decided]** Completed rows strike through their text, like cancelled rows.
 - Blue must stay clearly different from the navy signal color; verify side by side in the gallery.
 - Done rows keep muted description text; only the icon takes the status color.
 - Applies to the status button and the status menu.
