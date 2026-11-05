@@ -3,7 +3,8 @@
  *
  * Install caches every file of PRECACHE in a cache named after VERSION; activate deletes older caches.
  * Same-origin GET requests are served cache first; page navigations fall back to the cached start page.
- * Other origins and `/api/` requests are never fetched or cached here (`LOC-3`).
+ * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
+ * a navigation to `/admin` reaches the server and never falls back to the app shell.
  * Bump VERSION with every change to a precached file, and keep PRECACHE complete:
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
@@ -70,6 +71,20 @@ const PRECACHE = [
   'js/version.js',
 ];
 
+/**
+ * Tell whether a URL belongs to the server, not the app: `/admin` and `/api`, at the site root or under the worker's base path.
+ * @param {URL} url the request URL
+ * @returns {boolean} true when the worker must leave the request alone
+ */
+function isServerPath(url) {
+  const base = new URL('./', self.location.href).pathname;
+  if (!url.pathname.startsWith(base)) {
+    return false;
+  }
+  const [first] = url.pathname.slice(base.length).split('/');
+  return first === 'admin' || first === 'api';
+}
+
 self.addEventListener('install', (event) => {
   // `cache: 'reload'` skips the HTTP cache, so a new VERSION never stores files cached before the deploy.
   const requests = PRECACHE.map((url) => new Request(new URL(url, self.location.href), { cache: 'reload' }));
@@ -85,7 +100,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.includes('/api/')) {
+  if (request.method !== 'GET' || url.origin !== self.location.origin || isServerPath(url)) {
     return;
   }
   event.respondWith(caches.open(CACHE).then(async (cache) => {
