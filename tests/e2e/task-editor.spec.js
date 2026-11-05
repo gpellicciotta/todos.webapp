@@ -134,8 +134,8 @@ test('typing a due date by keyboard saves nothing until focus leaves the due fie
   const date = panel.getByLabel('Due date', { exact: true });
   await date.focus();
   await page.keyboard.type('11052026');
-  await panel.getByLabel('Due time', { exact: true }).focus();
-  await page.keyboard.type('0930');
+  // The time field's segments depend on the browser locale (an AM/PM segment in en-US), so fill it directly.
+  await panel.getByLabel('Due time', { exact: true }).fill('09:30');
   await page.waitForTimeout(300);
   expect(await stored()).toBeNull();
   const [year, month, day] = (await date.inputValue()).split('-').map(Number);

@@ -8,7 +8,7 @@
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-05.1';
+const VERSION = '2026-11-05.2';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 

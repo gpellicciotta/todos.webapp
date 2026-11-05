@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.1-pre
+- DevEx: Made the due date end-to-end test independent of the browser locale, so it passes on Linux CI.
 
 ## v0.1.0 [released: 2026-11-05]
 - FrontEnd: Added an offline-first, installable web app that keeps lists, tasks, and notes in the browser.
