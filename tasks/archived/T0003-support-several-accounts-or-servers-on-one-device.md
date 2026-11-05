@@ -4,9 +4,9 @@ owner: ~
 needs: []
 branch: —
 worktree: —
-status: ready
+status: cancelled
 started_at: —
-ended_at: —
+ended_at: "2026-11-05T10:03:26Z"
 review: agent
 preview: none
 protocol: standard
@@ -25,3 +25,7 @@ Support several accounts or servers on one device, each with its own data set an
 ## Execution Log
 - [2026-11-03] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-05] **[Cancelled]**
+  The use case is not clear.
+
