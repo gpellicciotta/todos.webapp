@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## v0.2.0 Milestone
-- [~] T0045 [owner: @gemini] Exclude /admin and /api from service worker navigation fallback and caching.
+- [x] T0045 Exclude /admin and /api from service worker navigation fallback and caching.
 - [x] T0044 Amend TEC-11: the Cloud Run server hosts the app at the todos site root, Pages stays a bring-your-own-server copy.
 - [ ] T0046 Make lists re-orderable in the front-end only, without back-end storage.
 - [ ] T0047 Create a new list only when the Create button is clicked, not when the dialog is closed.
