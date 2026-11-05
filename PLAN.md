@@ -10,4 +10,3 @@ An overview of all tasks and their planning, possibly split by milestone.
 
 ## Backlog
 - [ ] T0004 Show service broadcasts and the notification inbox while connected.
-- [-] T0003 [reason: The use case is not clear] Support several accounts or servers on one device, each with its own data set and sync state.
