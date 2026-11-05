@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.0-pre
+- Feature: Changed the signal color to navy, added a deep orange danger color with matching focus rings, and redrew the in-progress and cancelled icons.
 - Feature: Virtualized long task lists so views open within 200 ms with 5000 tasks under 4x CPU throttling.
 - Fix: Fixed minor focus, ARIA, dialog, save, and drag findings from earlier reviews, and sped up a slow e2e test.
 - Feature: Made the task screens faster with keyed row reuse, progressive rendering, debounced search, and due chip updates.

@@ -26,18 +26,19 @@
   --gray-900: #1a1a1f;
   --gray-950: #111216;
 
-  /* Primitive: violet ramp, the one signal hue. */
-  --violet-50: #f4f0fe;
-  --violet-100: #ebe4fd;
-  --violet-200: #d9cbfc;
-  --violet-300: #c0a9fa;
-  --violet-400: #a78bfa;
-  --violet-500: #8b5cf6;
-  --violet-600: #7c3aed;
-  --violet-700: #6d28d9;
-  --violet-800: #5b21b6;
-  --violet-900: #3b1d75;
-  --violet-950: #2a1a4f;
+  /* Primitive: navy ramp, the one signal hue. */
+  --navy-50: #eef2fb;
+  --navy-200: #c7d4f0;
+  --navy-300: #b3c4f6;
+  --navy-400: #8fa8f0;
+  --navy-600: #1e40af;
+  --navy-700: #1e3a8a;
+  --navy-800: #172e6e;
+  --navy-950: #14213f;
+
+  /* Primitive: deep orange, the danger hue for errors and destructive actions. */
+  --orange-700: #b23b0b;
+  --orange-400: #fb923c;
 
   /* Primitive: shadow tints, the only colors with alpha. */
   --shadow-tint-light: rgb(17 18 22 / 14%);
@@ -54,7 +55,7 @@
   --color-surface: light-dark(var(--gray-0), var(--gray-900));
   --color-surface-sunken: light-dark(var(--gray-100), var(--gray-850));
   --color-hover-bg: light-dark(var(--gray-100), var(--gray-800));
-  --color-selected-bg: light-dark(var(--violet-50), var(--violet-950));
+  --color-selected-bg: light-dark(var(--navy-50), var(--navy-950));
   --color-active-bg: light-dark(var(--gray-200), var(--gray-700));
 
   /* Semantic: text; disabled text is exempt from contrast rules and marks disabled controls only. */
@@ -67,12 +68,15 @@
   --color-border-strong: var(--gray-500);
 
   /* Semantic: signal for the main action, overdue chips, links, and focus. */
-  --color-signal: light-dark(var(--violet-600), var(--violet-400));
-  --color-signal-hover: light-dark(var(--violet-700), var(--violet-300));
-  --color-signal-active: light-dark(var(--violet-800), var(--violet-200));
+  --color-signal: light-dark(var(--navy-600), var(--navy-400));
+  --color-signal-hover: light-dark(var(--navy-700), var(--navy-300));
+  --color-signal-active: light-dark(var(--navy-800), var(--navy-200));
   --color-on-signal: light-dark(var(--gray-0), var(--gray-950));
-  --color-link: light-dark(var(--violet-700), var(--violet-300));
-  --color-focus: light-dark(var(--violet-600), var(--violet-400));
+  --color-link: light-dark(var(--navy-700), var(--navy-300));
+  --color-focus: light-dark(var(--navy-600), var(--navy-400));
+
+  /* Semantic: danger for error borders, error text, alert icons, and delete button outlines. */
+  --color-danger: light-dark(var(--orange-700), var(--orange-400));
 
   /* Semantic: shadow color for elevation, and the scrim behind modal dialogs. */
   --color-shadow: light-dark(var(--shadow-tint-light), var(--shadow-tint-dark));
@@ -175,18 +179,19 @@
     --color-surface: var(--gray-0);
     --color-surface-sunken: var(--gray-100);
     --color-hover-bg: var(--gray-100);
-    --color-selected-bg: var(--violet-50);
+    --color-selected-bg: var(--navy-50);
     --color-active-bg: var(--gray-200);
     --color-text: var(--gray-950);
     --color-text-muted: var(--gray-600);
     --color-text-disabled: var(--gray-400);
     --color-border: var(--gray-200);
-    --color-signal: var(--violet-600);
-    --color-signal-hover: var(--violet-700);
-    --color-signal-active: var(--violet-800);
+    --color-signal: var(--navy-600);
+    --color-signal-hover: var(--navy-700);
+    --color-signal-active: var(--navy-800);
     --color-on-signal: var(--gray-0);
-    --color-link: var(--violet-700);
-    --color-focus: var(--violet-600);
+    --color-link: var(--navy-700);
+    --color-focus: var(--navy-600);
+    --color-danger: var(--orange-700);
     --color-shadow: var(--shadow-tint-light);
     --color-backdrop: var(--scrim-light);
   }

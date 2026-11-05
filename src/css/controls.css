@@ -29,7 +29,7 @@
 
 /*
  * Button: one action, with a text label and an optional leading icon.
- * Variants: default (signal, the one main action of a view), `--secondary` (gray), `--quiet` (text only).
+ * Variants: default (signal, the one main action of a view), `--secondary` (gray), `--secondary.button--danger` (danger outline), `--quiet` (text only).
  */
 .button {
   display: inline-flex;
@@ -77,6 +77,18 @@
 .button--secondary:active,
 .button--secondary.is-active {
   background-color: var(--color-active-bg);
+}
+
+/* Danger: add to a secondary button that deletes; the outline takes the danger color. */
+.button--secondary.button--danger {
+  border-color: var(--color-danger);
+}
+
+/* Danger focus: elements marked as danger draw the focus ring in the danger color too. */
+.button--danger:focus-visible,
+.button--danger.is-focus,
+.field__control[aria-invalid='true']:focus-within {
+  outline-color: var(--color-danger);
 }
 
 .button--quiet {
@@ -227,8 +239,8 @@ textarea.field__control {
 }
 
 .field__control[aria-invalid='true'] {
-  border-color: var(--color-signal);
-  box-shadow: inset 0 0 0 var(--border-width) var(--color-signal);
+  border-color: var(--color-danger);
+  box-shadow: inset 0 0 0 var(--border-width) var(--color-danger);
 }
 
 .field__meta {
@@ -259,7 +271,7 @@ textarea.field__control {
   display: flex;
   align-items: flex-start;
   gap: var(--space-1);
-  color: var(--color-signal);
+  color: var(--color-danger);
   font-weight: var(--weight-medium);
 }
 
@@ -676,7 +688,7 @@ textarea.field__control {
 
 /*
  * Banner: a full-width notice above the content with an icon, one or two sentences, and an optional action.
- * Variants: default (information, role="status") and `--error` (signal outline and alert icon, role="alert").
+ * Variants: default (information, role="status") and `--error` (danger outline and alert icon, role="alert").
  */
 .banner {
   display: flex;
@@ -701,12 +713,12 @@ textarea.field__control {
 }
 
 .banner--error {
-  border-color: var(--color-signal);
+  border-color: var(--color-danger);
   border-inline-start-width: var(--border-width-strong);
 }
 
 .banner--error .banner__icon {
-  color: var(--color-signal);
+  color: var(--color-danger);
 }
 
 /*

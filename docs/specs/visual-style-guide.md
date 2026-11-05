@@ -32,10 +32,12 @@ Change the stylesheets first, then the gallery and this guide in the same commit
 ## Decisions
 - **[Decided]** The app gets its own design system instead of reusing the family-portal one.
   Rejected: the family-portal system, whose warm, personal look suits a family space more than a dense task tool.
-- **[Decided]** The palette is monochrome with one signal color: electric violet.
-  Rejected: cool neutrals with blue, and warm paper with ink.
-- **[Decided]** Danger and errors use no second hue: they use the signal color with an alert icon and text.
-  Deletions are recoverable through the recycle bin, so destructive actions need no red warning color.
+- **[Decided]** The palette is monochrome with one signal color: navy.
+  Rejected: cool neutrals with a bright blue, and warm paper with ink.
+  Rejected signal colors after a gallery comparison: violet, bright blue, deep yellow, and red.
+- **[Decided]** Errors and dangers use deep orange on borders, error text, alert icons, and delete button outlines.
+  Replaces the earlier decision that errors use the signal color. Every error still keeps its alert icon and text.
+  Rejected: red, which could not pair with a red signal and reads as harsher in a calm tool.
 - **[Decided]** Status uses icon shapes and text weight, not colors: see the status icon rules below.
 - **[Decided]** Inter, self-hosted as one variable font, sets all text.
   Rejected: the system font stack, which renders differently on every platform.
@@ -44,8 +46,8 @@ Change the stylesheets first, then the gallery and this guide in the same commit
   Rejected: comfortable cards, and a user density setting that would double the states to test.
 - **[Decided]** Themes use `light-dark()` on semantic tokens, so each color is defined once for both themes.
   Browsers without `light-dark()` get the light theme from an `@supports` fallback block.
-- **[Decided]** The signal is violet 600 (`#7c3aed`) on light grounds and violet 400 (`#a78bfa`) on dark ones.
-  Rejected: violet 500 (`#8b5cf6`) in dark, as white text on it reaches only 4.23:1.
+- **[Decided]** The signal is navy 600 (`#1e40af`) on light grounds and navy 400 (`#8fa8f0`) on dark ones.
+  Navy reaches at least 4.5:1 on every ground in both themes; the danger orange does too.
 - **[Decided]** Inter 4.1 ships as one `InterVariable.woff2` file, without the italic file.
   The app sets no italic text, and the italic file would add 388 KB.
 - **[Decided]** Reusable icons live in one sprite file, drawn with `<use href="…/img/icons.svg#id">`.
@@ -67,13 +69,15 @@ Token names follow the two-tier rule: primitives hold raw values, and components
 ### Color
 Definitions live in [tokens.css](../../src/css/tokens.css); the gallery's Color section shows them live.
 - Gray ramp: `--gray-0` to `--gray-950`, thirteen slightly cool steps from white to near-black.
-- Violet ramp: `--violet-50` to `--violet-950`, the one signal hue.
+- Navy ramp: `--navy-50` to `--navy-950`, eight steps, the one signal hue.
+- Deep orange: `--orange-700` and `--orange-400`, the danger hue for light and dark grounds.
 - Grounds: `--color-bg` for the page, `--color-surface` for panels and dialogs, `--color-surface-sunken` for wells and chips.
 - Hover and selection: `--color-hover-bg` for hovered rows, `--color-selected-bg` for the current row, route, and pressed toggles.
 - Pressed: `--color-active-bg` for gray controls while pressed; only text and link colors sit on it.
 - Text: `--color-text`, `--color-text-muted` for secondary lines and done tasks, `--color-text-disabled` for disabled controls only.
 - Borders: `--color-border` for dividers, `--color-border-strong` for controls that need 3:1 contrast.
 - Signal: `--color-signal` for the main action and overdue chips, `--color-on-signal` for text on it.
+- Danger: `--color-danger` for error borders, error text, alert icons, the delete button outline, and the focus ring of those controls.
 - Signal states: `--color-signal-hover` and `--color-signal-active` for the hovered and pressed main action.
 - Links: `--color-link` for links and quiet buttons.
 - Focus: `--focus-ring` on every interactive element, drawn in `--color-focus` with a gap to the element.
@@ -81,14 +85,15 @@ Definitions live in [tokens.css](../../src/css/tokens.css); the gallery's Color 
 
 Signal values and their lowest contrast ratios, checked by [tokens.test.js](../../tests/unit/tokens.test.js):
 
-| Token                   | Light               | Dark                | Lowest ratio, light / dark  |
-| :---------------------- | :------------------ | :------------------ | :-------------------------- |
-| `--color-signal`        | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds      |
-| `--color-signal-hover`  | violet 700, #6d28d9 | violet 300, #c0a9fa | 7.10 / 9.18 with on-signal  |
-| `--color-signal-active` | violet 800, #5b21b6 | violet 200, #d9cbfc | 8.98 / 12.39 with on-signal |
-| `--color-on-signal`     | gray 0, #ffffff     | gray 950, #111216   | 5.70 / 6.88 on signal       |
-| `--color-link`          | violet 700, #6d28d9 | violet 300, #c0a9fa | 6.14 / 6.60 on grounds      |
-| `--color-focus`         | violet 600, #7c3aed | violet 400, #a78bfa | 4.92 / 4.95 on grounds      |
+| Token                   | Light              | Dark               | Lowest ratio, light / dark  |
+| :---------------------- | :----------------- | :----------------- | :-------------------------- |
+| `--color-signal`        | navy 600, #1e40af  | navy 400, #8fa8f0  | 7.54 / 5.79 on grounds      |
+| `--color-signal-hover`  | navy 700, #1e3a8a  | navy 300, #b3c4f6  | 10.36 / 10.82 with on-signal |
+| `--color-signal-active` | navy 800, #172e6e  | navy 200, #c7d4f0  | 12.71 / 13.33 with on-signal |
+| `--color-on-signal`     | gray 0, #ffffff    | gray 950, #111216  | 8.72 / 8.05 on signal       |
+| `--color-link`          | navy 700, #1e3a8a  | navy 300, #b3c4f6  | 8.95 / 7.78 on grounds      |
+| `--color-focus`         | navy 600, #1e40af  | navy 400, #8fa8f0  | 7.54 / 5.79 on grounds      |
+| `--color-danger`        | orange 700, #b23b0b | orange 400, #fb923c | 5.15 / 5.95 on grounds     |
 
 ### Typography
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
@@ -132,6 +137,7 @@ Gallery specimens force hover, active, and focus with `.is-hover`, `.is-active`,
 Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/js/ui](../../src/js/ui/) add keyboard and focus handling.
 
 - [Button](../../src/demo/visual-style-gallery.html#button): `.button` in the signal color for the one main action of a view.
+  Deleting buttons use `.button--secondary.button--danger`, a danger outline with neutral text.
   Use `--secondary` in gray for other actions and `--quiet` for low-emphasis ones, such as Clear all and Undo.
   Never place two signal buttons side by side.
 - [Icon button](../../src/demo/visual-style-gallery.html#icon-button): a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
@@ -159,7 +165,7 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Tab stays inside, Escape closes with `cancel`, and focus returns to the opener.
   `[data-dialog-close]` buttons close it with their value; `confirmDialog` resolves to a boolean.
 - [Banner](../../src/demo/visual-style-gallery.html#banner): a full-width notice above the content with an icon, one or two sentences, and an optional action.
-  Errors use `--error`, `role="alert"`, the signal outline, and an alert icon, never a second hue.
+  Errors use `--error`, `role="alert"`, the danger outline, and an alert icon.
 - [Toast](../../src/demo/visual-style-gallery.html#toast): a short message at the bottom with an optional Undo, announced through a live region.
   Never use a toast as the only place an error appears.
   `createToaster().show(message, { onAction })` in [toast.js](../../src/js/ui/toast.js) adds an Undo button.
@@ -176,9 +182,9 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` opening the status menu.
   The icon shapes differ, so status never relies on color:
   - `todo`: an empty circle.
-  - `in-progress`: a half-filled circle.
+  - `in-progress`: a circle with a filled bottom half.
   - `completed`: a filled circle with a check, with muted text.
-  - `cancelled`: a circle with a dash, with struck-through muted text.
+  - `cancelled`: a filled circle with a dash, like completed, with struck-through muted text.
 
   The status menu is a `.menu.status-menu` of `menuitemradio` items, each with its status icon.
   Read-only rows disable the button but keep its icon at full icon contrast.
@@ -205,7 +211,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The bottom bar holds Tasks, Lists, Bin, and Settings, each an icon above a label.
 - [Sync indicator](../../src/demo/visual-style-gallery.html#sync-indicator): a `.sync-indicator` button with one icon and label per `data-state`.
   States: `local`, `synced`, `syncing`, `offline` with its pending count, `sign-in`, and `error`.
-  Sign-in and error use the signal color; the syncing icon spins, except under reduced motion.
+  Sign-in uses the signal color and error uses the danger color; the syncing icon spins, except under reduced motion.
   The `.sync-indicator__dot` marks unseen sync log entries, with visually hidden text naming it.
   Its ring takes the ground under it: `--sync-indicator-ground`, the page ground by default.
   The sidebar and the top bar set it to the surface; hover and active use the indicator's own ground.

@@ -230,8 +230,8 @@
 
 /*
  * Status button: an icon button showing the status icon, opening the status menu.
- * Icons: status-todo (empty circle), status-in-progress (half-filled circle),
- * status-completed (filled circle with a check), status-cancelled (circle with a dash).
+ * Icons: status-todo (empty circle), status-in-progress (circle with a filled bottom half),
+ * status-completed (filled circle with a check), status-cancelled (filled circle with a dash).
  * Read-only rows disable it but keep the icon at full icon contrast.
  */
 .status-button:disabled {

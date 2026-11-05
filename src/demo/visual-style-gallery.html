@@ -101,6 +101,7 @@
           <li class="swatch"><span class="swatch__chip swatch--color-signal-active"></span><code>--color-signal-active</code><span class="swatch__value"></span><span class="swatch__role">Main action while pressed</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-on-signal"></span><code>--color-on-signal</code><span class="swatch__value"></span><span class="swatch__role">Text on signal</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-link"></span><code>--color-link</code><span class="swatch__value"></span><span class="swatch__role">Links</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-danger"></span><code>--color-danger</code><span class="swatch__value"></span><span class="swatch__role">Error borders, text, and alert icons</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-focus"></span><code>--color-focus</code><span class="swatch__value"></span><span class="swatch__role">Focus ring</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-shadow"></span><code>--color-shadow</code><span class="swatch__value"></span><span class="swatch__role">Elevation shadows</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-backdrop"></span><code>--color-backdrop</code><span class="swatch__value"></span><span class="swatch__role">Scrim behind modal dialogs</span></li>
@@ -180,19 +181,22 @@
           <li class="swatch"><span class="swatch__chip swatch--gray-950"></span><code>--gray-950</code><span class="swatch__value"></span></li>
         </ul>
 
-        <h3>Violet ramp</h3>
+        <h3>Navy ramp</h3>
         <ul class="swatches swatches--ramp">
-          <li class="swatch"><span class="swatch__chip swatch--violet-50"></span><code>--violet-50</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-100"></span><code>--violet-100</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-200"></span><code>--violet-200</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-300"></span><code>--violet-300</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-400"></span><code>--violet-400</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-500"></span><code>--violet-500</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-600"></span><code>--violet-600</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-700"></span><code>--violet-700</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-800"></span><code>--violet-800</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-900"></span><code>--violet-900</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--violet-950"></span><code>--violet-950</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-50"></span><code>--navy-50</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-200"></span><code>--navy-200</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-300"></span><code>--navy-300</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-400"></span><code>--navy-400</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-600"></span><code>--navy-600</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-700"></span><code>--navy-700</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-800"></span><code>--navy-800</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--navy-950"></span><code>--navy-950</code><span class="swatch__value"></span></li>
+        </ul>
+
+        <h3>Deep orange</h3>
+        <ul class="swatches swatches--ramp">
+          <li class="swatch"><span class="swatch__chip swatch--orange-700"></span><code>--orange-700</code><span class="swatch__value"></span></li>
+          <li class="swatch"><span class="swatch__chip swatch--orange-400"></span><code>--orange-400</code><span class="swatch__value"></span></li>
         </ul>
       </section>
 
@@ -338,6 +342,16 @@
             <button class="button button--secondary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Delete task</button>
             <span class="state__label">With icon</span>
           </li>
+        </ul>
+
+        <h3>Danger</h3>
+        <p>A secondary button with a danger outline for deleting; the label and icon keep the neutral text color.</p>
+        <ul class="states">
+          <li class="state"><button class="button button--secondary button--danger" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button><span class="state__label">Default</span></li>
+          <li class="state"><button class="button button--secondary button--danger is-hover" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="button button--secondary button--danger is-focus" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="button button--secondary button--danger is-active" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button><span class="state__label">Active</span></li>
+          <li class="state"><button class="button button--secondary button--danger" type="button" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button><span class="state__label">Disabled</span></li>
         </ul>
 
         <h3>Quiet</h3>
@@ -631,7 +645,7 @@
 
       <section class="gallery-section" id="banner" aria-labelledby="banner-title" data-gallery-group="controls">
         <h2 id="banner-title">Banner</h2>
-        <p>A full-width notice for lasting states; errors use the signal outline and an alert icon, never a second hue.</p>
+        <p>A full-width notice for lasting states; errors use the danger outline and an alert icon.</p>
         <p>The Restore button shows the focus-visible state.</p>
         <div class="stack">
           <div class="banner" role="status">
@@ -1062,7 +1076,7 @@
                 <p class="editor-panel__details">Created 28 Oct</p>
               </div>
               <div class="editor-panel__danger">
-                <button class="button button--secondary" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete list</button>
+                <button class="button button--secondary button--danger" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete list</button>
               </div>
             </div>
           </aside>
@@ -1424,7 +1438,7 @@
                 <p class="editor-panel__details">Created 1 Nov · Last updated 3 Nov 09:12 · Last activity 3 Nov 09:12</p>
               </div>
               <div class="editor-panel__danger">
-                <button class="button button--secondary" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button>
+                <button class="button button--secondary button--danger" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button>
               </div>
             </div>
           </aside>

@@ -18,13 +18,14 @@ const GROUNDS = [
 ];
 
 // Text tokens that must reach 4.5:1 on every ground.
-const TEXT_ON_GROUNDS = ['--color-text', '--color-text-muted', '--color-signal', '--color-link'];
+const TEXT_ON_GROUNDS = ['--color-text', '--color-text-muted', '--color-signal', '--color-link', '--color-danger'];
 
 // Non-text tokens that must reach 3:1 on every ground.
 const NON_TEXT_ON_GROUNDS = ['--color-border-strong', '--color-focus'];
 
+
 // Icon colors that must reach 3:1 on every ground a control can show, including pressed grounds.
-const ICONS = ['--color-signal', '--color-text', '--color-text-muted'];
+const ICONS = ['--color-signal', '--color-danger', '--color-text', '--color-text-muted'];
 const ICON_GROUNDS = [...GROUNDS, '--color-active-bg'];
 
 // Text on filled signal controls and on pressed secondary controls, in every state.
