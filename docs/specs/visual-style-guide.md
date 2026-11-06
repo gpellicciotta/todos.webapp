@@ -173,6 +173,8 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
 - [Dialog](../../src/demo/visual-style-gallery.html#dialog): a native `<dialog>` with a title, a body, and actions at the end.
   Below 64rem it is a full-width sheet, and full height when opened as a modal.
   `openDialog(dialog, { onClose })` in [dialog.js](../../src/js/ui/dialog.js) opens it as a modal.
+  `.dialog--in-view` makes it fill its container, for the compact import: no scrim, radius, or shadow, and a ruled header.
+  The shell places it in the main column; `openDialog(dialog, { modal: false })` opens it in place, without the Tab trap.
   Tab stays inside, Escape closes with `cancel`, and focus returns to the opener.
   `[data-dialog-close]` buttons close it with their value; `confirmDialog` resolves to a boolean.
 - [Banner](../../src/demo/visual-style-gallery.html#banner): a full-width notice above the content with an icon, one or two sentences, and an optional action.

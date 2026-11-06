@@ -564,13 +564,16 @@ def compact_task_screen(
 # ------------------------------------------------------------------------------------------------
 
 
-def compact_sheet(f, title, top=48):
-    """Draw a full-height compact sheet over a dimmed screen; return its content top."""
-    scrim(f)
-    f.rect(0, top, f.width, f.height - top, "frame", radius=16)
-    f.text(20, top + 40, title, 20, "bold")
-    icon_button(f, f.width - 56, top + 12, "×")
-    return top + 72
+def in_view_panel(f, title):
+    """Draw a compact panel that fills the main view between the top bar and the bottom bar; return its content top.
+
+    The bars stay visible and usable, as for the editors. The header holds the title and a close button.
+    """
+    f.rect(0, 60, f.width, f.height - 60 - 64, "frame", radius=0)
+    f.text(16, 60 + 36, title, 20, "bold")
+    icon_button(f, f.width - 52, 60 + 8, "×")
+    f.line(0, 60 + 60, f.width, 60 + 60)
+    return 60 + 60 + 16
 
 
 def wide_dialog(f, title, width, height):
@@ -1096,8 +1099,8 @@ def connect():
     return "Connect", "After sign-in, local data uploads into the account; same-named lists merge.", compact, wide
 
 
-def import_fields(f, x, y, width):
-    """Draw the import dialog content; return the bottom edge."""
+def import_fields(f, x, y, width, actions=True):
+    """Draw the import dialog content, with its buttons unless `actions` is off; return the bottom edge."""
     f.rect(x, y, width, 64, "box", radius=8)
     f.text(x + 16, y + 26, fit("todos-backup-2026-10-30.json", width - 32, 15), 15, "bold")
     f.text(x + 16, y + 48, "Exported 30 Oct 2026 · 8 lists · 120 tasks", 12, "muted")
@@ -1108,6 +1111,8 @@ def import_fields(f, x, y, width):
     y += 60
     f.text(x, y + 14, "12 added · 30 updated · 0 to recycle bin", 14, "bold")
     y += 40
+    if not actions:
+        return y
     left = button(f, x, y, "Import", "primary") + 8
     button(f, left, y, "Cancel")
     return y + 44
@@ -1119,8 +1124,13 @@ def import_dialog():
     top_bar(compact, "Settings")
     settings_sections(compact, 12, 72, compact.width - 24)
     bottom_nav(compact, "Settings")
-    top = compact_sheet(compact, "Import backup", 200)
-    import_fields(compact, 20, top, compact.width - 40)
+    top = in_view_panel(compact, "Import backup")
+    import_fields(compact, 16, top, compact.width - 32, actions=False)
+    bottom = compact.height - 64
+    compact.line(0, bottom - 68, compact.width, bottom - 68)
+    right = compact.width - 16
+    left = button_right(compact, right, bottom - 56, "Import", "primary")
+    button_right(compact, left - 8, bottom - 56, "Cancel")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "Settings")
     page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Settings")
@@ -1129,7 +1139,7 @@ def import_dialog():
     import_fields(wide, left, top, right - left)
     return (
         "Import backup",
-        "The file's counts, the mode choice, and what the import will change, before applying it.",
+        "The file's counts, the mode choice, and what the import will change; in the main view on phones, a dialog on wide screens.",
         compact,
         wide,
     )

@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.1-pre
+- FrontEnd: Opened Import backup in the main view between the bars on phones, like the task and list editors.
 - FrontEnd: Replaced the top-bar More button with a floating New list button at the bottom right of the Lists view.
 - FrontEnd: Moved the account, Recycle bin, and Settings behind a circular user button at the top right.
 - FrontEnd: Added a Sign in button for expired sessions, and removed the shell's sync indicator for now.

@@ -81,6 +81,13 @@
   padding-block-end: env(safe-area-inset-bottom);
 }
 
+.app > .dialog--in-view {
+  position: static;
+  grid-area: main;
+  z-index: var(--layer-sticky);
+  min-block-size: 0;
+}
+
 /* The floating button sits at the bottom end of the screen, above the bottom bar in the compact layout. */
 .app .fab {
   position: fixed;

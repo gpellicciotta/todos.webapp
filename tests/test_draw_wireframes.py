@@ -170,6 +170,19 @@ def test_lists_float_new_list_and_no_screen_keeps_a_more_button_in_the_top_bar(o
         assert "⋮" not in compact_labels, name
 
 
+def test_import_wireframe_fills_the_compact_main_view_between_the_bars(output):
+    _, groups = frames(output / "import.svg")
+    compact = groups[0]
+    rects = [
+        (float(r.get("x")), float(r.get("y")), float(r.get("width")), float(r.get("height")))
+        for r in compact.iter(f"{SVG}rect")
+    ]
+    assert (0.0, 60.0, 390.0, 720.0) in rects
+    assert not [r for r in compact.iter(f"{SVG}rect") if r.get("class") == "scrim"]
+    labels = [t.text for t in compact.iter(f"{SVG}text")]
+    assert "Import backup" in labels and "Tasks" in labels and "Lists" in labels
+
+
 def test_task_editor_wireframe_has_no_page_level_more_button(output):
     _, groups = frames(output / "task-editor.svg")
     wide = groups[1]

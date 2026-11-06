@@ -5,6 +5,9 @@
  * The counts of added, updated, and binned items follow the chosen mode (`BAK-11`).
  * Import applies the backup in one transaction; Cancel, Escape, and Close change nothing (`BAK-12`).
  * While the import runs, every control is locked and the dialog cannot be cancelled.
+ * Below 64rem it opens in the main view, between the bars, as the editors do: not modal, without a scrim,
+ * and a route change or growing to 64rem cancels it. The main column it covers is inert meanwhile.
+ * From 64rem it stays a modal dialog.
  */
 
 import { importBackup, parseBackup, previewImport } from '../core/backup.js';
@@ -31,6 +34,8 @@ const STRINGS = Object.freeze({
   importAction: 'Import',
   cancel: 'Cancel',
 });
+
+const COMPACT = '(width < 64rem)';
 
 let dialogs = 0;
 
@@ -139,7 +144,12 @@ export function openImportDialog(doc, { store, toaster, opener }) {
   importButton.disabled = true;
   actions.append(cancelButton, importButton);
   dialog.append(header, body, actions);
-  doc.body.append(dialog);
+  const media = doc.defaultView?.matchMedia?.(COMPACT);
+  const app = media?.matches ? doc.querySelector('.app') : null;
+  if (app) {
+    dialog.classList.add('dialog--in-view');
+  }
+  (app ?? doc.body).append(dialog);
 
   let backup = null;
   let name = '';
@@ -281,15 +291,45 @@ export function openImportDialog(doc, { store, toaster, opener }) {
   dialog.addEventListener('keydown', hold);
   dialog.addEventListener('cancel', hold);
 
+  /** Cancel when the route changes or the viewport grows to the wide layout, unless the import is running. */
+  const onRoute = () => {
+    if (!importing) {
+      close('cancel');
+    }
+  };
+  const onResize = (event) => {
+    if (!event.matches) {
+      onRoute();
+    }
+  };
+  // The covered main column stays out of reach of Tab and screen readers; it wakes before focus returns to the opener.
+  const main = app?.querySelector('.app__main');
+  const wake = () => {
+    if (main) {
+      main.inert = false;
+    }
+  };
+  dialog.addEventListener('close', wake);
+
   return new Promise((resolve) => {
     close = openDialog(dialog, {
       opener,
       initialFocus: input,
+      modal: !app,
       onClose() {
         request += 1;
+        doc.defaultView.removeEventListener('hashchange', onRoute);
+        media?.removeEventListener('change', onResize);
         dialog.remove();
         resolve(result);
       },
     });
+    if (app) {
+      doc.defaultView.addEventListener('hashchange', onRoute);
+      media.addEventListener('change', onResize);
+      if (main) {
+        main.inert = true;
+      }
+    }
   });
 }

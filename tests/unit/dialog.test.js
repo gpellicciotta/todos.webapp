@@ -55,6 +55,23 @@ describe('openDialog', () => {
     expect(document.activeElement).toBe(first);
   });
 
+  it('opens non-modally with modal false, without trapping Tab, and still closes on Escape', async () => {
+    const modal = vi.spyOn(dialog, 'showModal');
+    const plain = vi.spyOn(dialog, 'show');
+    const onClose = vi.fn();
+    openDialog(dialog, { modal: false, onClose });
+    expect(plain).toHaveBeenCalledTimes(1);
+    expect(modal).not.toHaveBeenCalled();
+    expect(dialog.open).toBe(true);
+    last.focus();
+    expect(press(last, 'Tab').defaultPrevented).toBe(false);
+    expect(press(first, 'Tab', { shiftKey: true }).defaultPrevented).toBe(false);
+    press(last, 'Escape');
+    await settle();
+    expect(dialog.open).toBe(false);
+    expect(onClose).toHaveBeenCalledWith('cancel');
+  });
+
   it('focuses a given initial control', () => {
     openDialog(dialog, { initialFocus: document.getElementById('keep') });
     expect(document.activeElement).toBe(document.getElementById('keep'));

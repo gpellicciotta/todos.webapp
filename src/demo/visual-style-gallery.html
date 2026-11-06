@@ -647,6 +647,21 @@
             </div>
           </dialog>
         </div>
+        <h3 id="dialog-in-view-heading">In-view dialog</h3>
+        <p>With <code>dialog--in-view</code> the dialog fills its container: no scrim, radius, or shadow, and a ruled header. The compact import uses it between the bars.</p>
+        <div class="stage stage--dialog">
+          <dialog class="dialog dialog--in-view" open aria-labelledby="dialog-in-view-title">
+            <div class="dialog__header">
+              <h3 class="dialog__title" id="dialog-in-view-title">Import backup</h3>
+              <button class="icon-button" type="button" aria-label="Close"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button>
+            </div>
+            <div class="dialog__body"><p>Choose a file exported from ToDo's, then pick Merge or Overwrite.</p></div>
+            <div class="dialog__actions">
+              <button class="button button--secondary" type="button">Cancel</button>
+              <button class="button" type="button">Import</button>
+            </div>
+          </dialog>
+        </div>
         <p><button class="button button--secondary" type="button" data-open-dialog="dialog-modal">Open as a modal</button></p>
         <p id="dialog-demo-result">Closed with: none</p>
         <dialog class="dialog" id="dialog-modal" aria-labelledby="dialog-modal-title">

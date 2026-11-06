@@ -288,6 +288,8 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 ### Dialogs
 - Dialogs use the native `<dialog>` element, trap focus, and close with Escape.
 - Compact layouts show dialogs as full-height sheets.
+- Import backup is the exception: below 64rem it opens in the main view, like the editors.
+  It sits between the top bar and the bottom bar, has no scrim, and is not modal; a route change cancels it.
 
 ---
 
@@ -546,7 +548,8 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 ### Importing a Backup
 Wireframe: [import.svg](../img/ui/import.svg).
 
-1. The user selects Import backup and picks a file in the dialog's Backup file field, which has focus.
+1. The user selects Import backup and picks a file in the Backup file field, which has focus.
+   On phones this is the main view with an Import backup header and close button; wide screens show a dialog.
 2. An invalid file shows the reason under the field, keeps Import disabled, and changes nothing (`BAK-13`).
 3. A valid file shows its name, export date, and counts, and the mode choice: Merge or Overwrite (`BAK-5`).
 4. Merge is the default; Overwrite explains that missing own items move to the recycle bin (`BAK-9`).

@@ -133,6 +133,28 @@ test('the floating button is a signal pill with a shadow and a target of at leas
   expect(new Set(grounds).size).toBeGreaterThanOrEqual(3);
 });
 
+test('the in-view dialog specimen fills its stage with no radius or shadow, under a ruled header', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const dialog = page.locator('#dialog .dialog--in-view');
+  await expect(dialog).toBeVisible();
+  const style = await dialog.evaluate((element) => {
+    const css = getComputedStyle(element);
+    const stage = element.parentElement.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+    const header = getComputedStyle(element.querySelector('.dialog__header'));
+    return {
+      radius: css.borderTopLeftRadius, shadow: css.boxShadow, width: box.width, stage: stage.width, rule: header.borderBottomWidth,
+      display: header.display, modal: element.matches(':modal'),
+    };
+  });
+  expect(style.radius).toBe('0px');
+  expect(style.shadow).toBe('none');
+  expect(style.width).toBeGreaterThan(style.stage - 60);
+  expect(style.rule).not.toBe('0px');
+  expect(style.display).toBe('flex');
+  expect(style.modal).toBe(false);
+});
+
 test('the syncing icon spins only without reduced motion', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
   const icon = page.locator('#sync-indicator .sync-indicator[data-state="syncing"] .icon').first();

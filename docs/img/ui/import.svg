@@ -25,7 +25,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">Import backup</text>
-  <text x="40" y="72" font-size="16" class="muted">The file's counts, the mode choice, and what the import will change, before applying it.</text>
+  <text x="40" y="72" font-size="16" class="muted">The file's counts, the mode choice, and what the import will change; in the main view on phones, a dialog on wide screens.</text>
   <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
   <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
   <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
@@ -65,26 +65,27 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="97.5" y="828" font-size="12" text-anchor="middle">Tasks</text>
     <rect x="283.5" y="794" width="18" height="18" rx="3" class="icon"/>
     <text x="292.5" y="828" font-size="12" text-anchor="middle">Lists</text>
-    <rect x="0" y="0" width="390" height="844" rx="0" class="scrim"/>
-    <rect x="0" y="200" width="390" height="644" rx="16" class="frame"/>
-    <text x="20" y="240" font-size="20" class="bold">Import backup</text>
-    <rect x="334" y="212" width="44" height="44" rx="6" class="control"/>
-    <text x="356" y="239" font-size="16" text-anchor="middle">×</text>
-    <rect x="20" y="272" width="350" height="64" rx="8" class="box"/>
-    <text x="36" y="298" font-size="15" class="bold">todos-backup-2026-10-30.json</text>
-    <text x="36" y="320" font-size="12" class="muted">Exported 30 Oct 2026 · 8 lists · 120 tasks</text>
-    <circle cx="30" cy="366" r="9" class="icon"/>
-    <circle cx="30" cy="366" r="4" class="icon-fill"/>
-    <text x="50" y="371" font-size="14" class="bold">Merge</text>
-    <text x="50" y="391" font-size="12" class="muted">Add and update items; keep the rest.</text>
-    <circle cx="30" cy="418" r="9" class="icon"/>
-    <text x="50" y="423" font-size="14" class="bold">Overwrite</text>
-    <text x="50" y="443" font-size="12" class="muted">Replace your data; missing items go to the bin.</text>
-    <text x="20" y="482" font-size="14" class="bold">12 added · 30 updated · 0 to recycle bin</text>
-    <rect x="20" y="508" width="79.04" height="44" rx="6" class="primary"/>
-    <text x="59.52" y="534.9" font-size="14" class="on-primary" text-anchor="middle">Import</text>
-    <rect x="107.04" y="508" width="79.04" height="44" rx="6" class="control"/>
-    <text x="146.56" y="534.9" font-size="14" text-anchor="middle">Cancel</text>
+    <rect x="0" y="60" width="390" height="720" rx="0" class="frame"/>
+    <text x="16" y="96" font-size="20" class="bold">Import backup</text>
+    <rect x="338" y="68" width="44" height="44" rx="6" class="control"/>
+    <text x="360" y="95" font-size="16" text-anchor="middle">×</text>
+    <line x1="0" y1="120" x2="390" y2="120" class="rule"/>
+    <rect x="16" y="136" width="358" height="64" rx="8" class="box"/>
+    <text x="32" y="162" font-size="15" class="bold">todos-backup-2026-10-30.json</text>
+    <text x="32" y="184" font-size="12" class="muted">Exported 30 Oct 2026 · 8 lists · 120 tasks</text>
+    <circle cx="26" cy="230" r="9" class="icon"/>
+    <circle cx="26" cy="230" r="4" class="icon-fill"/>
+    <text x="46" y="235" font-size="14" class="bold">Merge</text>
+    <text x="46" y="255" font-size="12" class="muted">Add and update items; keep the rest.</text>
+    <circle cx="26" cy="282" r="9" class="icon"/>
+    <text x="46" y="287" font-size="14" class="bold">Overwrite</text>
+    <text x="46" y="307" font-size="12" class="muted">Replace your data; missing items go to the bin.</text>
+    <text x="16" y="346" font-size="14" class="bold">12 added · 30 updated · 0 to recycle bin</text>
+    <line x1="0" y1="712" x2="390" y2="712" class="rule"/>
+    <rect x="294.96" y="724" width="79.04" height="44" rx="6" class="primary"/>
+    <text x="334.48" y="750.9" font-size="14" class="on-primary" text-anchor="middle">Import</text>
+    <rect x="207.92" y="724" width="79.04" height="44" rx="6" class="control"/>
+    <text x="247.44" y="750.9" font-size="14" text-anchor="middle">Cancel</text>
   </g>
   <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
     <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>

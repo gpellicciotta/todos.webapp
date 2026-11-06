@@ -715,6 +715,42 @@ textarea.field__control {
 }
 
 /*
+ * In-view dialog: a dialog that fills its container instead of floating over the page.
+ * The compact import uses it, so it sits between the bars like an editor: no scrim, radius, or shadow,
+ * and a header with a rule below, as the editor panel has. The app shell places it in the main column.
+ */
+.dialog--in-view {
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: auto;
+  max-block-size: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.dialog--in-view .dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-block-size: calc(var(--target-min) + var(--space-3));
+  padding-block: 0;
+  padding-inline: var(--space-4) var(--space-2);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.dialog--in-view .dialog__body {
+  padding: var(--space-4);
+}
+
+.dialog--in-view .dialog__actions {
+  padding: var(--space-3) var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/*
  * Banner: a full-width notice above the content with an icon, one or two sentences, and an optional action.
  * Variants: default (information, role="status") and `--error` (danger outline and alert icon, role="alert").
  */

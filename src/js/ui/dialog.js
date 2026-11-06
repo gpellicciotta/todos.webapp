@@ -1,5 +1,6 @@
 /**
  * Dialog behavior: native `<dialog>` modals with a focus trap, Escape to cancel, and focus return.
+ * With `modal: false` the dialog opens in place instead, without the trap, for a panel that fills the view.
  *
  * Buttons with `data-dialog-close="{{value}}"` close the dialog with that value.
  * A `<form method="dialog">` closes it natively with the submit button's value.
@@ -8,11 +9,12 @@
 import { tabbableIn } from './popover.js';
 
 /**
- * Open a `<dialog>` as a modal and manage its keyboard and focus behavior until it closes.
+ * Open a `<dialog>`, a modal by default, and manage its keyboard and focus behavior until it closes.
  * @param {HTMLDialogElement} dialog dialog to open
  * @param {object} [options] behavior options
  * @param {HTMLElement} [options.opener] element that gets focus back on close, the focused one by default
  * @param {HTMLElement} [options.initialFocus] control to focus on open, the first tabbable one by default
+ * @param {boolean} [options.modal] open as a modal with a Tab trap, true by default; false opens it in place
  * @param {(returnValue: string) => void} [options.onClose] called once after the dialog closes;
  *   Escape closes with `cancel`
  * @returns {(returnValue?: string) => void} a function that closes the dialog with a value
@@ -45,7 +47,7 @@ export function openDialog(dialog, options = {}) {
       close('cancel');
       return;
     }
-    if (event.key !== 'Tab') {
+    if (event.key !== 'Tab' || options.modal === false) {
       return;
     }
     const controls = tabbableIn(dialog);
@@ -109,7 +111,12 @@ export function openDialog(dialog, options = {}) {
   dialog.addEventListener('close', onCloseEvent);
   dialog.returnValue = '';
   if (!dialog.open) {
-    dialog.showModal();
+    if (options.modal === false) {
+      dialog.show();
+    }
+    else {
+      dialog.showModal();
+    }
   }
   const active = doc.activeElement;
   const target = options.initialFocus ?? (active !== dialog && dialog.contains(active) ? null : tabbableIn(dialog)[0]);
