@@ -28,7 +28,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Compact Layout
 ```text
 +--------------------------------------+
-| Title                  [more]  (o)   |  top bar
+| Title                          (o)   |  top bar
 +--------------------------------------+
 | ( ) Buy paint            Tomorrow    |
 | (/) Call plumber         Overdue  !  |  task rows
@@ -68,7 +68,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
 [app-shell.css](../../src/css/app-shell.css) places its parts; one DOM holds both layouts.
-- The compact top bar holds the route title, a More menu with New list, and the user button.
+- The top bar holds the route title and the user button; it has no More menu.
 - The wide layout shows the title above the main column, with the user button at its right end.
 - The shell holds no sync indicator for now; the sync indicator task decides where it goes.
 - The main column scrolls; the bars and the sidebar stay in place.
@@ -303,7 +303,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Sort fields: Due time, Created, Last activity, Status, and Description (`TV-9`).
 - The default sort is Due time ascending, with tasks without a due time last (`TV-10`).
 - Grouping by List, Due date, or Status is available here first (`VO-9`); see [View Options](#view-options).
-- A More menu with Edit view options sits in the page header, and in the compact top bar above New list.
+- A More menu with Edit view options sits in the page header; the shell's top bar has no More menu.
 - An empty result names the active filters and offers Reset.
 - Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
 - A new task joins the lists of the active Lists filter, leaving out "In no list".
@@ -361,7 +361,10 @@ Wireframe: [lists.svg](../img/ui/lists.svg).
 
 - Each list row shows its name, description start, "4 open · 10 total", and sharing state (`LST-5`).
 - Shared lists show the owner's name when owned by someone else.
-- A New list button opens the list editor for a new list.
+- A floating New list button opens the list editor for a new list.
+- It is fixed at the bottom right of the screen, above the bottom bar on compact layouts.
+- It floats over the rows, so the list ends with room to scroll clear of it.
+- It hides while an editor is open, so it never covers the editor panel.
 - Wide layouts keep this screen for managing lists, though the sidebar also lists them.
 - Each row links to its list; without lists, the screen says that a list groups tasks.
 - Sharing state and the owner's name arrive with sharing (`SHR-3`); local lists show neither.

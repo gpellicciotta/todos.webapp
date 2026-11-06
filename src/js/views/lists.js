@@ -2,7 +2,8 @@
  * Lists overview: every list with its name, description start, and "4 open · 10 total" (`LST-5`).
  *
  * It fills the shell's `[data-view="lists"]` element, and renders again after every store change.
- * Each row opens its list; New list opens the list editor on `#/lists/new`.
+ * Each row opens its list; the floating New list button opens the list editor on `#/lists/new`.
+ * The button hides while an editor is open, so it never covers the editor panel.
  * Sharing state and the owner of others' lists join the rows once sharing lands (`SHR-3`).
  */
 
@@ -72,15 +73,13 @@ export function mountLists(view, { store }) {
   let pending = null;
   let destroyed = false;
   const root = make(doc, 'div', 'lists-view');
-  const header = make(doc, 'div', 'view-header lists-view__header');
-  const add = make(doc, 'a', 'button lists-view__new');
+  const add = make(doc, 'a', 'fab');
   add.href = formatRoute('list-new');
   add.append(spriteIcon(doc, 'plus'), STRINGS.newList);
-  header.append(add);
   const rows = make(doc, 'ul', 'lists-view__rows');
   rows.setAttribute('aria-label', STRINGS.lists);
   const empty = make(doc, 'p', 'empty-state empty-state__text', STRINGS.empty);
-  root.append(header, rows, empty);
+  root.append(rows, empty, add);
   view.replaceChildren(root);
 
   /**
@@ -106,8 +105,13 @@ export function mountLists(view, { store }) {
   const first = refresh();
 
   return {
-    /** Follow a route of this view; the New list editor needs nothing here. */
-    update() {},
+    /**
+     * Follow a route of this view: the floating New list button hides while an editor is open.
+     * @param {{editor?: string|null}} [route] the route
+     */
+    update(route) {
+      add.hidden = Boolean(route?.editor);
+    },
 
     /**
      * Wait for the first render.

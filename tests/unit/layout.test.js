@@ -24,6 +24,13 @@ describe('renderShell navigation', () => {
     expect(root.querySelector('.sync-indicator')).toBeNull();
   });
 
+  it('has no More button or menu in the top bar, since New list lives in the Lists view', () => {
+    const { root } = render();
+    expect(root.querySelector('.app__more')).toBeNull();
+    expect(root.querySelector('.app__top-bar .menu')).toBeNull();
+    expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['H1', 'DIV']);
+  });
+
   it('keeps Recycle bin and Settings out of the sidebar and the bottom bar', () => {
     const { root } = render();
     const sidebar = [...root.querySelectorAll('.app__sidebar a')].map((link) => link.getAttribute('href'));

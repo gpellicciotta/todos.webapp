@@ -305,18 +305,23 @@ def user_panel(f, right, y, name, status):
         f.text(left + 52, top + 28, label, 14)
 
 
-def top_bar(f, title, account="local", back=False, action=None):
-    """Draw the compact top bar: an optional back button, the title, an action, More, and the user button."""
+def fab(f, right, bottom, label="New list"):
+    """Draw the floating action button, a pill with a plus and a label, with its bottom right corner at (right, bottom)."""
+    width = text_width(label, 14) + 56
+    left, top = right - width, bottom - 44
+    f.rect(left, top, width, 44, "primary", radius=22)
+    f.text(left + 18, top + 28, "+", 18, "on-primary bold")
+    f.text(left + 42, top + 28, label, 14, "on-primary")
+
+
+def top_bar(f, title, account="local", back=False):
+    """Draw the compact top bar: an optional back button, the title, and the user button."""
     f.rect(0, 0, f.width, 60, "bar", radius=0)
     x = 16
     if back:
         icon_button(f, 8, 8, "<")
         x = 60
     right = user_button(f, f.width - 8, 8, account) - 8
-    icon_button(f, right - 44, 8, "⋮")
-    right -= 52
-    if action:
-        right = button_right(f, right, 8, action, "primary") - 8
     f.text(x, 37, fit(title, right - x - 8, 20), 20, "bold")
 
 
@@ -581,11 +586,11 @@ def wide_dialog(f, title, width, height):
 
 def wide_all_tasks(
     f, account="local", selected=None, right=MAIN_RIGHT, grouped=False, typed=None,
-    info="24 tasks · Status: open", reset=False,
+    info="24 tasks · Status: open", reset=False, more=True,
 ):
-    """Draw the wide All tasks screen as a background or main view."""
+    """Draw the wide All tasks screen as a background or main view, with the view's More button unless `more` is off."""
     sidebar(f, "All tasks")
-    page_header(f, MAIN_LEFT, 28, right, "All tasks", None, [("⋯", "control")], account)
+    page_header(f, MAIN_LEFT, 28, right, "All tasks", None, [("⋯", "control")] if more else [], account)
     add_bar(f, MAIN_LEFT, 92, right - MAIN_LEFT, typed or "Search or add a task", typed is not None, info, reset)
     top = 92 + 60 + 30 + 40
     if grouped:
@@ -756,19 +761,26 @@ LIST_ROWS = [
 def lists():
     """The lists overview."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Lists", "connected", action="New list")
+    top_bar(compact, "Lists", "connected")
     y = 60
     for name, description, open_count, total, sharing in LIST_ROWS:
         y = list_row(compact, 0, y, compact.width, name, description, f"{open_count}/{total} open", sharing)
     bottom_nav(compact, "Lists")
+    fab(compact, compact.width - 16, compact.height - 64 - 16)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "Lists")
-    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Lists", actions=[("New list", "primary")], account="connected")
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Lists", account="connected")
     y = 100
     for name, description, open_count, total, sharing in LIST_ROWS:
         counts = f"{open_count} open · {total} total"
         y = list_row(wide, MAIN_LEFT, y, MAIN_RIGHT - MAIN_LEFT, name, description, counts, sharing)
-    return "Lists", "Every list with its open and total counts and its sharing state.", compact, wide
+    fab(wide, wide.width - 24, wide.height - 24)
+    return (
+        "Lists",
+        "Every list with its counts and sharing state; New list floats at the bottom right of the screen.",
+        compact,
+        wide,
+    )
 
 
 def editor_fields(f, x, y, width, compact):
@@ -835,7 +847,7 @@ def task_editor():
     top_bar(compact, "Task", "connected", back=True)
     editor_fields(compact, 16, 76, compact.width - 32, True)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    wide_all_tasks(wide, "connected", selected=1, right=EDITOR_LEFT - 20)
+    wide_all_tasks(wide, "connected", selected=1, right=EDITOR_LEFT - 20, more=False)
     left, width = editor_panel(wide, "Task")
     editor_fields(wide, left, 76, width, False)
     return (

@@ -141,6 +141,7 @@ def test_top_bar_ends_with_the_user_button():
         module.top_bar(frame, "All tasks", account)
         root = ET.fromstring(f'<svg xmlns="http://www.w3.org/2000/svg">{frame.svg(0, 0)}</svg>')
         assert (module.COMPACT_WIDTH - 30, 30, 22) in circles(root), account
+        assert "⋮" not in [t.text for t in root.iter(f"{SVG}text")]
         labels = [t.text for t in root.iter(f"{SVG}text")]
         assert ("Sign in" in labels) == (account == "expired")
         assert "Local only" not in labels
@@ -156,3 +157,23 @@ def test_navigation_holds_no_recycle_bin_or_settings_entry(output, name):
         labels = [t.text for t in group.iter(f"{SVG}text")]
         assert "Recycle bin" not in labels and "Bin" not in labels, name
         assert "Local only" not in labels and "Synced" not in labels, name
+
+
+def test_lists_float_new_list_and_no_screen_keeps_a_more_button_in_the_top_bar(output):
+    _, groups = frames(output / "lists.svg")
+    for group in groups:
+        labels = [t.text for t in group.iter(f"{SVG}text")]
+        assert labels.count("New list") == 1
+    for name in SCREENS:
+        _, groups = frames(output / name)
+        compact_labels = [t.text for t in groups[0].iter(f"{SVG}text")]
+        assert "⋮" not in compact_labels, name
+
+
+def test_task_editor_wireframe_has_no_page_level_more_button(output):
+    _, groups = frames(output / "task-editor.svg")
+    wide = groups[1]
+    header_dots = [
+        t for t in wide.iter(f"{SVG}text") if t.text == "⋯" and float(t.get("y")) < 80 and float(t.get("x")) > 900
+    ]
+    assert header_dots == []

@@ -59,7 +59,7 @@ for (const [viewport, compact] of [[COMPACT, true], [{ width: 1023, height: 800 
     await expect(page.locator('.app__bottom-nav')).toBeVisible({ visible: compact });
     await expect(page.locator('.sync-indicator')).toHaveCount(0);
     await expect(page.locator('.app__top-bar .user-button')).toBeVisible();
-    await expect(page.locator('.app__top-bar .app__more')).toBeVisible({ visible: compact });
+    await expect(page.locator('.app__more')).toHaveCount(0);
     await expect(page.locator('.app__sidebar')).toBeVisible({ visible: !compact });
     await expect(page.locator('.app__sidebar, .app__bottom-nav').getByRole('link', { name: /Recycle bin|Bin|Settings/ })).toHaveCount(0);
     // The user button ends the top bar, at the right edge of the main column.

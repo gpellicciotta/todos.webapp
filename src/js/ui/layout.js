@@ -12,7 +12,6 @@
 import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { createLiveRegion } from './live-region.js';
-import { attachMenu } from './menu.js';
 import { attachUserMenu } from './user-menu.js';
 
 const ICONS = 'img/icons.svg';
@@ -22,7 +21,6 @@ const OPEN = ['todo', 'in-progress'];
 export const STRINGS = Object.freeze({
   app: "ToDo's",
   main: 'Main',
-  more: 'More actions',
   newList: 'New list',
   openTasks: ' open tasks',
   lists: 'Lists',
@@ -128,21 +126,16 @@ export function openCounts(tasks, memberships) {
  * Render the app shell into a root element.
  * @param {HTMLElement} root the element that holds the shell
  * @param {object} options shell options
- * @param {(hash: string) => void} options.navigate opens a route, for the More menu
  * @param {object} [options.session] the session the user menu follows, a new one by default
  * @returns {{main: HTMLElement, editor: HTMLElement, toastRegion: HTMLElement, update: Function,
  *   setLists: Function, showBanner: Function, showNotice: Function}} the shell controller
  */
-export function renderShell(root, { navigate, session = createSession() }) {
+export function renderShell(root, { session = createSession() } = {}) {
   const doc = root.ownerDocument;
   root.classList.add('app');
   root.innerHTML = `
     <header class="app__top-bar">
       <h1 class="app__title" id="app-title"></h1>
-      <button class="icon-button app__more" type="button" aria-label="${STRINGS.more}">${icon('more')}</button>
-      <div class="menu" aria-label="${STRINGS.more}" hidden>
-        <button class="menu__item" type="button" role="menuitem" data-hash="#/lists/new">${icon('plus')}${STRINGS.newList}</button>
-      </div>
       <div data-user-menu></div>
     </header>
     <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
@@ -164,8 +157,6 @@ export function renderShell(root, { navigate, session = createSession() }) {
   const banners = root.querySelector('.app__banners');
   const editor = root.querySelector('[data-editor-slot]');
   const listNav = root.querySelector('[data-nav-lists]');
-  const more = root.querySelector('.app__more');
-  attachMenu(more, more.nextElementSibling, { onSelect: (item) => navigate(item.dataset.hash) });
   attachUserMenu(root.querySelector('[data-user-menu]'), { session });
   let viewKey = null;
   let route = null;

@@ -444,20 +444,18 @@
 }
 
 /*
- * Lists overview: New list, then one row per list with its name, description start, and task counts.
+ * Lists overview: one row per list with its name, description start, and task counts.
  * The counts end the first line; the description takes one line below the name.
+ * The floating New list button (`.fab`) floats over the screen, so the rows end with room to scroll clear of it.
  */
 .lists-view {
   display: grid;
   gap: var(--space-3);
+  padding-block-end: calc(var(--target-min) + var(--space-7));
 }
 
 .lists-view [hidden] {
   display: none;
-}
-
-.lists-view__new {
-  margin-inline-start: auto;
 }
 
 .lists-view__rows {

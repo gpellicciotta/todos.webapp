@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 
 const GALLERY = '/demo/visual-style-gallery.html';
 // Sections of the app chrome and the task editor pattern; the task row components have their own spec.
-const SECTIONS = '#navigation, #sync-indicator, #user-menu, #editor-panel, #note-thread, #empty-state, #task-editor';
-const COMPONENT_SECTIONS = '#navigation, #sync-indicator, #user-menu, #editor-panel, #note-thread, #empty-state';
+const SECTIONS = '#navigation, #sync-indicator, #user-menu, #floating-button, #editor-panel, #note-thread, #empty-state, #task-editor';
+const COMPONENT_SECTIONS = '#navigation, #sync-indicator, #user-menu, #floating-button, #editor-panel, #note-thread, #empty-state';
 const MIN_TARGET = 44;
 
 const VIEWPORTS = [
@@ -16,7 +16,7 @@ const THEMES = [
   { name: 'dark', label: 'Dark' },
 ];
 
-const CHROME_SECTIONS = ['Navigation', 'Sync indicator', 'User menu', 'Editor panel', 'Note thread', 'Empty state', 'Task editor'];
+const CHROME_SECTIONS = ['Navigation', 'Sync indicator', 'User menu', 'Floating button', 'Editor panel', 'Note thread', 'Empty state', 'Task editor'];
 
 const SYNC_STATES = ['local', 'synced', 'syncing', 'offline', 'sign-in', 'error'];
 
@@ -115,6 +115,22 @@ test('the user button is a circle in every state, and the connected one takes th
   expect(await ground('sign-in-needed')).toBe(await ground('local'));
   await expect(page.locator('#user-menu .user-panel')).toHaveCount(2);
   await expect(page.locator('#user-menu .user-panel [aria-current="page"]')).toHaveCount(1);
+});
+
+test('the floating button is a signal pill with a shadow and a target of at least 44 px', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const fab = page.locator('#floating-button .fab').first();
+  const style = await fab.evaluate((element) => {
+    const css = getComputedStyle(element);
+    const box = element.getBoundingClientRect();
+    return { position: css.position, shadow: css.boxShadow, height: box.height, radius: css.borderTopLeftRadius };
+  });
+  expect(style.position).toBe('static');
+  expect(style.shadow).not.toBe('none');
+  expect(style.height).toBeGreaterThanOrEqual(MIN_TARGET);
+  expect(parseFloat(style.radius)).toBeGreaterThanOrEqual(style.height / 2);
+  const grounds = await page.locator('#floating-button .fab').evaluateAll((items) => items.map((item) => getComputedStyle(item).backgroundColor));
+  expect(new Set(grounds).size).toBeGreaterThanOrEqual(3);
 });
 
 test('the syncing icon spins only without reduced motion', async ({ page }) => {
@@ -259,7 +275,7 @@ test('every chrome component section shows a forced focus-visible specimen with 
     return { id: section.id, count: specimens.length, unringed: unringed.length };
   }));
 
-  expect(sections.length).toBe(6);
+  expect(sections.length).toBe(7);
   expect(sections.filter((section) => section.count === 0).map((section) => section.id)).toEqual([]);
   expect(sections.filter((section) => section.unringed > 0).map((section) => section.id)).toEqual([]);
 });

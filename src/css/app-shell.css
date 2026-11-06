@@ -4,6 +4,7 @@
  *
  * Compact layout below 64rem: top bar, main column, and bottom bar in one column.
  * Wide layout from 64rem: sidebar, main column under its title, and the editor panel slot on the right.
+ * A floating button (`.fab`) is fixed at the bottom end of the screen in both layouts.
  * The main column is the scroll container, so the bars stay in place; the router restores its scroll.
  */
 
@@ -80,6 +81,14 @@
   padding-block-end: env(safe-area-inset-bottom);
 }
 
+/* The floating button sits at the bottom end of the screen, above the bottom bar in the compact layout. */
+.app .fab {
+  position: fixed;
+  z-index: var(--layer-float);
+  inset-block-end: calc(var(--target-min) + var(--space-3) + var(--space-4) + env(safe-area-inset-bottom));
+  inset-inline-end: var(--space-4);
+}
+
 /* Toasts sit above the bottom bar in the compact layout. */
 .app .toast-region {
   inset-block-end: calc(var(--target-min) + var(--space-3) + var(--space-4) + env(safe-area-inset-bottom));
@@ -103,7 +112,6 @@
     background-color: transparent;
   }
 
-  .app__top-bar > .app__more,
   .app__bottom-nav {
     display: none;
   }
@@ -124,6 +132,10 @@
   }
 
   .app .toast-region {
+    inset-block-end: var(--space-4);
+  }
+
+  .app .fab {
     inset-block-end: var(--space-4);
   }
 }

@@ -303,6 +303,48 @@
 }
 
 /*
+ * Floating action button: the one main action of a screen, floating over its content at --elevation-2.
+ * A pill with an icon and a label in the signal color; hover and pressed use the signal states.
+ * It holds no position: the app shell fixes it at the bottom end of the screen, so the gallery shows it in place.
+ */
+.fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-5);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-round);
+  background-color: var(--color-signal);
+  color: var(--color-on-signal);
+  box-shadow: var(--elevation-2);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  text-decoration: none;
+  cursor: pointer;
+  transition-property: background-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.fab[hidden] {
+  display: none;
+}
+
+.fab:hover,
+.fab.is-hover {
+  background-color: var(--color-signal-hover);
+}
+
+.fab:active,
+.fab.is-active {
+  background-color: var(--color-signal-active);
+}
+
+/*
  * User menu: the end of the top bar, with the circular user button and its popover panel.
  * The button shows a person icon in local mode and the account initials once connected (data-state="connected");
  * an expired session (data-state="sign-in-needed") keeps the quiet look. Its title and aria-label name the user.

@@ -35,8 +35,6 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="30" y="35" font-size="16" text-anchor="middle">&lt;</text>
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
-    <rect x="286" y="8" width="44" height="44" rx="6" class="control"/>
-    <text x="308" y="35" font-size="16" text-anchor="middle">⋮</text>
     <text x="60" y="37" font-size="20" class="bold">Home</text>
     <text x="16" y="88" font-size="14" class="muted">Chores and repairs around the house</text>
     <text x="16" y="110" font-size="13" class="muted">Shared with 2 people · You own this list</text>

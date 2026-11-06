@@ -82,6 +82,71 @@ test('the overview shows each list with its description and counts, which follow
   expect(problems).toEqual([]);
 });
 
+for (const [name, viewport, compact] of [['compact', { width: 390, height: 844 }, true], ['wide', WIDE, false]]) {
+  test(`New list floats at the bottom right of the screen on the ${name} layout`, async ({ page }) => {
+    const problems = watch(page);
+    await seed(page);
+    await page.setViewportSize(viewport);
+    await page.goto('/#/lists');
+    const button = page.locator('.lists-view .fab');
+    await expect(button).toBeVisible();
+    expect(await button.evaluate((element) => getComputedStyle(element).position)).toBe('fixed');
+    const box = await button.boundingBox();
+    expect(viewport.width - (box.x + box.width)).toBeLessThanOrEqual(32);
+    expect(viewport.width - (box.x + box.width)).toBeGreaterThanOrEqual(8);
+    if (compact) {
+      const nav = await page.locator('.app__bottom-nav').boundingBox();
+      expect(box.y + box.height).toBeLessThanOrEqual(nav.y);
+      expect(nav.y - (box.y + box.height)).toBeLessThanOrEqual(32);
+    }
+    else {
+      expect(viewport.height - (box.y + box.height)).toBeLessThanOrEqual(32);
+    }
+    expect(problems).toEqual([]);
+  });
+}
+
+test('the floating New list button stays over the rows, and the last row scrolls clear of it', async ({ page }) => {
+  const problems = watch(page);
+  await seed(page);
+  await page.setViewportSize({ width: 390, height: 600 });
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    for (let index = 0; index < 40; index += 1) {
+      await store.createList({ name: `Extra list ${index}` });
+    }
+    store.close();
+  });
+  await page.goto('/#/lists');
+  const button = page.locator('.lists-view .fab');
+  await expect(page.locator('.lists-view .list-row')).toHaveCount(42);
+  const before = await button.boundingBox();
+  await page.locator('#main').evaluate((main) => {
+    main.scrollTop = main.scrollHeight;
+  });
+  const after = await button.boundingBox();
+  expect(after.y).toBe(before.y);
+  const last = await page.locator('.lists-view .list-row').last().boundingBox();
+  expect(last.y + last.height).toBeLessThanOrEqual(after.y);
+  const topmost = await button.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+  });
+  expect(topmost).toBe(true);
+  expect(problems).toEqual([]);
+});
+
+test('the floating New list button hides while the New list editor is open', async ({ page }) => {
+  await seed(page);
+  await page.goto('/#/lists');
+  await page.locator('.lists-view .fab').click();
+  await expect(page).toHaveURL(/#\/lists\/new$/);
+  await expect(page.locator('.lists-view .fab')).toBeHidden();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.lists-view .fab')).toBeVisible();
+});
+
 test('New list creates the list once a valid name is typed, and closing early creates nothing (LST-1, LST-3)', async ({ page }) => {
   const problems = watch(page);
   await seed(page);

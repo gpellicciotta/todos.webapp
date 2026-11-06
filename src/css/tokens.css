@@ -156,9 +156,10 @@
   --elevation-1: 0 1px 2px var(--color-shadow), 0 4px 12px var(--color-shadow);
   --elevation-2: 0 2px 4px var(--color-shadow), 0 12px 32px var(--color-shadow);
 
-  /* Layers: stacking order; never use raw z-index values. */
+  /* Layers: stacking order, from bars and the editor slot to floating buttons, popovers, dialogs, and toasts; never use raw z-index values. */
   --layer-base: 0;
   --layer-sticky: 10;
+  --layer-float: 20;
   --layer-popover: 100;
   --layer-dialog: 200;
   --layer-toast: 300;

@@ -34,8 +34,6 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="360" cy="30" r="22" class="icon"/>
     <circle cx="360" cy="25" r="5" class="icon"/>
     <path d="M 351 42 Q 360 26 369 42" class="icon-line"/>
-    <rect x="286" y="8" width="44" height="44" rx="6" class="control"/>
-    <text x="308" y="35" font-size="16" text-anchor="middle">⋮</text>
     <text x="16" y="37" font-size="20" class="bold">Settings</text>
     <rect x="12" y="72" width="366" height="100" rx="8" class="box"/>
     <text x="28" y="102" font-size="16" class="bold">Appearance</text>
