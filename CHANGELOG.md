@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.1-pre
+- FrontEnd: Moved the account, Recycle bin, and Settings behind a circular user button at the top right.
+- FrontEnd: Added a Sign in button for expired sessions, and removed the shell's sync indicator for now.
 - FrontEnd: Gave the In progress, Completed, and Cancelled status icons blue, green, and red colors, and struck through completed tasks.
 - FrontEnd: Styled every Delete button and menu item with the danger color, filled for the editor and confirm buttons.
 - DevEx: Made the due date end-to-end test independent of the browser locale, so it passes on Linux CI.

@@ -27,7 +27,6 @@
   padding-inline: var(--space-4) var(--space-2);
   border-block-end: var(--border-width) solid var(--color-border);
   background-color: var(--color-surface);
-  --sync-indicator-ground: var(--color-surface);
 }
 
 .app__title {
@@ -104,7 +103,6 @@
     background-color: transparent;
   }
 
-  .app__top-bar > .sync-indicator,
   .app__top-bar > .app__more,
   .app__bottom-nav {
     display: none;

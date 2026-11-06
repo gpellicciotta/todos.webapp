@@ -1,5 +1,5 @@
 /*
- * App chrome of the ToDo's design system: navigation, sync indicator, editor panel,
+ * App chrome of the ToDo's design system: navigation, sync indicator, user menu, editor panel,
  * note thread, in-place confirmation, and empty state.
  *
  * Every block uses semantic tokens from tokens.css only, on top of controls.css and app-components.css.
@@ -111,8 +111,9 @@
 }
 
 /*
- * Sidebar: the wide navigation column with All tasks, Lists and each list, New list,
- * Recycle bin, Settings, and the sync indicator at its bottom, left-aligned with the items.
+ * Sidebar: the wide navigation column with All tasks, Lists and each list, and New list.
+ * The optional `.sidebar__end` group and `.sidebar__footer` stay for the gallery; the app leaves them out,
+ * since Recycle bin, Settings, and the account sit in the user menu.
  */
 .sidebar {
   display: flex;
@@ -150,7 +151,7 @@
 }
 
 /*
- * Bottom navigation: the compact bar with Tasks, Lists, Bin, and Settings, each an icon above a label.
+ * Bottom navigation: the compact bar with Tasks and Lists, each an icon above a label; the gallery shows more items.
  * The current destination (aria-current="page") gets a signal top edge, the signal icon, and semibold text.
  */
 .bottom-nav {
@@ -160,7 +161,8 @@
 
 .bottom-nav__list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -298,6 +300,117 @@
   .sync-indicator[data-state='syncing'] .icon {
     animation: none;
   }
+}
+
+/*
+ * User menu: the end of the top bar, with the circular user button and its popover panel.
+ * The button shows a person icon in local mode and the account initials once connected (data-state="connected");
+ * an expired session (data-state="sign-in-needed") keeps the quiet look. Its title and aria-label name the user.
+ * The panel is a `.popover` holding the user name, the connection state, and `.button--secondary` links with icons;
+ * the link of the current route (aria-current="page") takes the signal border and icon on the selected ground.
+ * A `.button` Sign in link appears beside the button while the session needs a new sign-in.
+ */
+.user-menu {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.user-button {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--target-min);
+  block-size: var(--target-min);
+  padding: 0;
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-round);
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  cursor: pointer;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.user-button:hover,
+.user-button.is-hover {
+  background-color: var(--color-hover-bg);
+  color: var(--color-text);
+}
+
+.user-button:active,
+.user-button.is-active,
+.user-button[aria-expanded='true'] {
+  background-color: var(--color-active-bg);
+  color: var(--color-text);
+}
+
+.user-button[data-state='connected'] {
+  border-color: var(--color-signal);
+  background-color: var(--color-signal);
+  color: var(--color-on-signal);
+}
+
+.user-button[data-state='connected']:hover,
+.user-button[data-state='connected'].is-hover {
+  border-color: var(--color-signal-hover);
+  background-color: var(--color-signal-hover);
+  color: var(--color-on-signal);
+}
+
+.user-panel {
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: min(calc(100% - var(--space-4)), var(--width-editor));
+  padding: var(--space-2);
+}
+
+.user-panel__name,
+.user-panel__status {
+  margin: 0;
+  padding-inline: var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.user-panel__name {
+  padding-block-start: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.user-panel__status {
+  padding-block-end: var(--space-2);
+  border-block-end: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.user-panel__link {
+  justify-content: flex-start;
+  gap: var(--space-3);
+}
+
+.user-panel__link[aria-current='page'] {
+  border-color: var(--color-signal);
+  background-color: var(--color-selected-bg);
+}
+
+.user-panel__link[aria-current='page']:hover,
+.user-panel__link[aria-current='page'].is-hover {
+  background-color: var(--color-hover-bg);
+}
+
+.user-panel__link[aria-current='page']:active,
+.user-panel__link[aria-current='page'].is-active {
+  background-color: var(--color-active-bg);
+}
+
+.user-panel__link[aria-current='page'] .icon {
+  color: var(--color-signal);
 }
 
 /*

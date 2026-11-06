@@ -69,12 +69,11 @@ test('local mode makes no network request outside the app origin', async ({ page
     }
   });
   await open(page, '#/tasks');
-  await page.getByRole('link', { name: /Local only/ }).first().click();
-  await expect(page).toHaveURL(/#\/connect$/);
-  await expect(page.locator('[data-view="connect"]')).toContainText('no longer anonymous');
-  await open(page, '#/settings');
+  await page.getByRole('button', { name: 'Local User' }).click();
+  await page.locator('.user-panel').getByRole('link', { name: 'Settings' }).click();
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   await expect(page).toHaveURL(/#\/connect$/);
+  await expect(page.locator('[data-view="connect"]')).toContainText('no longer anonymous');
   expect(foreign).toEqual([]);
 });
 
@@ -132,7 +131,7 @@ test('disconnecting deletes the token and shows Local only', async ({ page }) =>
   await dialog.getByRole('button', { name: 'Disconnect' }).click();
   await expect(card).toContainText('Not connected. Your data stays on this device.');
   await expect(card.getByRole('textbox', { name: 'Server URL' })).toBeVisible();
-  await expect(page.locator('.sync-indicator').first()).toContainText('Local only');
+  await expect(page.getByRole('button', { name: 'Local User' })).toHaveAttribute('title', 'Local User');
   expect(await storedSession(page)).toBeNull();
   expect(calls.at(-1)).toMatchObject({ method: 'DELETE', url: `${SERVER}/api/auth-token`, authorization: 'Bearer session-1' });
 });

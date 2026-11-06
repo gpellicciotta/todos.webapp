@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 
 const GALLERY = '/demo/visual-style-gallery.html';
 // Sections of the app chrome and the task editor pattern; the task row components have their own spec.
-const SECTIONS = '#navigation, #sync-indicator, #editor-panel, #note-thread, #empty-state, #task-editor';
-const COMPONENT_SECTIONS = '#navigation, #sync-indicator, #editor-panel, #note-thread, #empty-state';
+const SECTIONS = '#navigation, #sync-indicator, #user-menu, #editor-panel, #note-thread, #empty-state, #task-editor';
+const COMPONENT_SECTIONS = '#navigation, #sync-indicator, #user-menu, #editor-panel, #note-thread, #empty-state';
 const MIN_TARGET = 44;
 
 const VIEWPORTS = [
@@ -16,7 +16,7 @@ const THEMES = [
   { name: 'dark', label: 'Dark' },
 ];
 
-const CHROME_SECTIONS = ['Navigation', 'Sync indicator', 'Editor panel', 'Note thread', 'Empty state', 'Task editor'];
+const CHROME_SECTIONS = ['Navigation', 'Sync indicator', 'User menu', 'Editor panel', 'Note thread', 'Empty state', 'Task editor'];
 
 const SYNC_STATES = ['local', 'synced', 'syncing', 'offline', 'sign-in', 'error'];
 
@@ -94,6 +94,27 @@ test('every sync state has its own icon and label, plus the unseen entries dot',
   }
   expect(syncIcons.size).toBe(SYNC_STATES.length);
   await expect(page.locator('#sync-indicator .sync-indicator__dot').first()).toBeVisible();
+});
+
+test('the user button is a circle in every state, and the connected one takes the signal color', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const buttons = page.locator('#user-menu .user-button');
+  expect(await buttons.count()).toBeGreaterThanOrEqual(8);
+  const shapes = await buttons.evaluateAll((elements) => elements.map((element) => {
+    const box = element.getBoundingClientRect();
+    return { width: box.width, height: box.height, radius: getComputedStyle(element).borderTopLeftRadius };
+  }));
+  for (const shape of shapes) {
+    expect(shape.width).toBe(shape.height);
+    expect(shape.width).toBeGreaterThanOrEqual(MIN_TARGET);
+    expect(parseFloat(shape.radius)).toBeGreaterThanOrEqual(shape.width / 2);
+  }
+  const ground = (state) => page.locator(`#user-menu .state .user-button[data-state="${state}"]`).first()
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(await ground('connected')).not.toBe(await ground('local'));
+  expect(await ground('sign-in-needed')).toBe(await ground('local'));
+  await expect(page.locator('#user-menu .user-panel')).toHaveCount(2);
+  await expect(page.locator('#user-menu .user-panel [aria-current="page"]')).toHaveCount(1);
 });
 
 test('the syncing icon spins only without reduced motion', async ({ page }) => {
@@ -238,7 +259,7 @@ test('every chrome component section shows a forced focus-visible specimen with 
     return { id: section.id, count: specimens.length, unringed: unringed.length };
   }));
 
-  expect(sections.length).toBe(5);
+  expect(sections.length).toBe(6);
   expect(sections.filter((section) => section.count === 0).map((section) => section.id)).toEqual([]);
   expect(sections.filter((section) => section.unringed > 0).map((section) => section.id)).toEqual([]);
 });

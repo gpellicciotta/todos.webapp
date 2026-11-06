@@ -57,6 +57,7 @@
             <li><a href="#task-row">Task row</a></li>
             <li><a href="#navigation">Navigation</a></li>
             <li><a href="#sync-indicator">Sync indicator</a></li>
+            <li><a href="#user-menu">User menu</a></li>
             <li><a href="#editor-panel">Editor panel</a></li>
             <li><a href="#note-thread">Note thread</a></li>
             <li><a href="#empty-state">Empty state</a></li>
@@ -1058,6 +1059,50 @@
           <li class="state"><button class="sync-indicator is-active" type="button" data-state="synced" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-synced"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Synced</span></button><span class="state__label">Active</span></li>
           <li class="state"><button class="sync-indicator" type="button" data-state="error" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sync-error"/></svg><span class="visually-hidden">Sync state: </span><span class="sync-indicator__label">Sync error</span><span class="sync-indicator__dot"></span><span class="visually-hidden">, new sync log entries</span></button><span class="state__label">Error, with unseen entries</span></li>
         </ul>
+      </section>
+
+      <section class="gallery-section" id="user-menu" aria-labelledby="user-menu-title" data-gallery-group="app">
+        <h2 id="user-menu-title">User menu</h2>
+        <p>The circular user button ends the top bar. Its title and accessible name are the user name; its popover holds the account, Recycle bin, and Settings.</p>
+
+        <h3>States</h3>
+        <p>Local mode shows a person icon; a connected account shows its initials in the signal color. An expired session keeps the quiet look.</p>
+        <ul class="states">
+          <li class="state"><button class="user-button" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Local mode, <code>local</code></span></li>
+          <li class="state"><button class="user-button" type="button" data-state="connected" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button><span class="state__label">Connected, <code>connected</code></span></li>
+          <li class="state"><button class="user-button" type="button" data-state="sign-in-needed" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button><span class="state__label">Session expired, <code>sign-in-needed</code></span></li>
+          <li class="state"><button class="user-button is-hover" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Hover</span></li>
+          <li class="state"><button class="user-button is-hover" type="button" data-state="connected" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button><span class="state__label">Connected, hover</span></li>
+          <li class="state"><button class="user-button is-active" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Active</span></li>
+          <li class="state"><button class="user-button is-focus" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Focus-visible</span></li>
+          <li class="state"><button class="user-button" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Panel open</span></li>
+        </ul>
+
+        <h3>Sign in needed</h3>
+        <p>An expired session adds a Sign in button before the user button; it opens the connect screen.</p>
+        <div class="stage stage--compact">
+          <div class="user-menu">
+            <a class="button button--secondary user-menu__sign-in" href="#user-menu">Sign in</a>
+            <button class="user-button" type="button" data-state="sign-in-needed" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button>
+          </div>
+        </div>
+
+        <h3>Panel</h3>
+        <p>The name, the connection state, and the two destinations. The current destination takes <code>aria-current</code>; Settings shows hover.</p>
+        <div class="stage">
+          <div class="popover user-panel" role="group" aria-label="Account, local mode">
+            <p class="user-panel__name">Local User</p>
+            <p class="user-panel__status">Local only</p>
+            <a class="button button--secondary user-panel__link" href="#user-menu" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Recycle bin</a>
+            <a class="button button--secondary user-panel__link is-hover" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#settings"/></svg>Settings</a>
+          </div>
+          <div class="popover user-panel" role="group" aria-label="Account, connected">
+            <p class="user-panel__name">Jane Doe</p>
+            <p class="user-panel__status">Connected</p>
+            <a class="button button--secondary user-panel__link" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Recycle bin</a>
+            <a class="button button--secondary user-panel__link" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#settings"/></svg>Settings</a>
+          </div>
+        </div>
       </section>
 
       <section class="gallery-section" id="editor-panel" aria-labelledby="editor-panel-title" data-gallery-group="app">

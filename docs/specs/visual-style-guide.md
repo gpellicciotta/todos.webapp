@@ -11,7 +11,7 @@ The tokens, the font, the controls, the app components, and their gallery sectio
 - [fonts.css](../../src/css/fonts.css): the self-hosted Inter font face.
 - [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
 - [app-components.css](../../src/css/app-components.css): the task list, task row, status button, and status menu.
-- [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, editor panel, note thread, and empty state.
+- [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, editor panel, note thread, and empty state.
 - [icons.svg](../../src/img/icons.svg): the icon sprite, one `<symbol>` per icon on a 24 px grid.
 - [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token, control, app component, and pattern.
 
@@ -57,6 +57,9 @@ Change the stylesheets first, then the gallery and this guide in the same commit
   Chromium resolves external `<use>` references over HTTP, so the gallery and its tests use the sprite.
 - **[Decided]** Task rows respond to the width of their list, through a size container query.
   Rejected: a viewport media query, which cannot see a narrow main column beside the editor panel.
+- **[Decided]** The account, Recycle bin, and Settings sit behind a circular user button, not in the navigation bars.
+  Rejected: keeping them in the sidebar and bottom bar, where many lists push them out of sight.
+  Rejected: a text account label, which costs width on 390 px phones; the button shows a name through its title and the panel.
 - **[Decided]** The app shell positions the sidebar, the bottom bar, and the editor panel.
   The component styles hold no fixed or sticky positions, so the gallery shows them in place.
 - **[Decided]** Component styles never scale a token by a bare number, such as `* 2` or `/ 2`.
@@ -212,9 +215,18 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - [Navigation](../../src/demo/visual-style-gallery.html#navigation): the wide `.sidebar` and the compact `.bottom-nav`.
   Both mark the current route with `aria-current="page"`: a signal edge, a signal icon, and semibold text.
   The sidebar edge sits on the inline start; the current item keeps hover and active grounds.
-  The sidebar holds All tasks, Lists, each list with its open count, New list, Recycle bin, and Settings.
-  Its sync indicator sits at the bottom, left-aligned with the item icons.
-  The bottom bar holds Tasks, Lists, Bin, and Settings, each an icon above a label.
+  The app's sidebar holds All tasks, Lists, each list with its open count, and New list.
+  Recycle bin, Settings, and the account sit in the user menu, so the app leaves `.sidebar__end` and `.sidebar__footer` empty;
+  the gallery still shows both, as the optional end group and footer of the component.
+  The app's bottom bar holds Tasks and Lists, each an icon above a label; the gallery shows four items to cover the states.
+- [User menu](../../src/demo/visual-style-gallery.html#user-menu): the `.user-button` that ends the top bar, and its `.user-panel`.
+  The button is a 44 px circle: a person icon in local mode, the initials in the signal color once `data-state="connected"`,
+  and the quiet look again for `sign-in-needed`. Its title and aria-label name the user.
+  The panel is a `.popover` with the name, the state, and two `.button--secondary` links with icons.
+  The current route's link takes the signal border and icon on the selected ground.
+  A `.button.button--secondary.user-menu__sign-in` joins the button only while the session needs a new sign-in.
+  Use it for the account and the destinations needed now and then; keep daily destinations in the navigation bars.
+  The shell anchors the panel to the button, end edges aligned, so the component styles hold no fixed position.
 - [Sync indicator](../../src/demo/visual-style-gallery.html#sync-indicator): a `.sync-indicator` button with one icon and label per `data-state`.
   States: `local`, `synced`, `syncing`, `offline` with its pending count, `sign-in`, and `error`.
   Sign-in uses the signal color and error uses the danger color; the syncing icon spins, except under reduced motion.

@@ -45,6 +45,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
 .icon-fill { fill: #444444; stroke: #444444; stroke-width: 2; }
 .icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
 .icon-line { stroke: #444444; stroke-width: 2; }
+.icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 """
 
 LISTS = [("Home", 8), ("Work", 12), ("Travel", 3), ("Errands", 5), ("Reading", 2)]
@@ -255,29 +256,67 @@ def scrim(f):
 # ------------------------------------------------------------------------------------------------
 
 
-def sync_pill(f, right, y, label):
-    """Draw the sync indicator as an icon and label pill ending at `right`; return its left edge."""
-    width = text_width(label, 12) + 36
-    f.rect(right - width, y, width, 32, "control", radius=16)
-    f.circle(right - width + 14, y + 16, 5, "icon")
-    f.text(right - width + 26, y + 21, label, 12)
-    return right - width
+def user_button(f, right, y, account="local"):
+    """Draw the circular user button, 44 px, with its right edge at `right`; return its left edge.
+
+    A local user shows a person glyph, a connected one its initials, and an expired session adds a Sign in button.
+    """
+    cx, cy = right - 22, y + 22
+    if account == "local":
+        f.circle(cx, cy, 22, "icon")
+        f.circle(cx, cy - 5, 5, "icon")
+        f.path(f"M {cx - 9:g} {cy + 12:g} Q {cx:g} {cy - 4:g} {cx + 9:g} {cy + 12:g}", "icon-line")
+    else:
+        f.circle(cx, cy, 22, "icon-fill" if account == "connected" else "icon")
+        f.text(cx, cy + 5, "JD", 14, "on-primary bold" if account == "connected" else "bold", "middle")
+    left = right - 44
+    if account == "expired":
+        left = button_right(f, left - 8, y, "Sign in", "control")
+    return left
 
 
-def top_bar(f, title, sync="Local only", back=False, action=None):
-    """Draw the compact top bar with an optional back button, the sync pill, and a More button."""
+def bin_glyph(f, x, y):
+    """Draw the 18 px Recycle bin icon with its top left at (x, y)."""
+    f.path(f"M {x + 2:g} {y + 4:g} H {x + 16:g} M {x + 6:g} {y + 4:g} V {y + 1:g} H {x + 12:g} V {y + 4:g}", "icon-line-open")
+    f.path(f"M {x + 4:g} {y + 4:g} L {x + 5:g} {y + 17:g} H {x + 13:g} L {x + 14:g} {y + 4:g}", "icon-line-open")
+
+
+def settings_glyph(f, x, y):
+    """Draw the 18 px Settings icon, three sliders, with its top left at (x, y)."""
+    for row, knob in ((4, 11), (9, 5), (14, 12)):
+        f.path(f"M {x + 1:g} {y + row:g} H {x + 17:g}", "icon-line-open")
+        f.circle(x + knob, y + row, 2.5, "icon")
+
+
+def user_panel(f, right, y, name, status):
+    """Draw the open user panel with its right edge at `right` and its top at `y`; the button sits above it.
+
+    Recycle bin and Settings are buttons with icons, the first one marking the current route.
+    """
+    left = right - 200
+    f.rect(left, y, 200, 184, "frame", radius=8)
+    f.text(left + 16, y + 30, name, 14, "bold")
+    f.text(left + 16, y + 50, status, 12, "muted")
+    f.line(left + 12, y + 62, right - 12, y + 62)
+    for index, (label, glyph) in enumerate((("Recycle bin", bin_glyph), ("Settings", settings_glyph))):
+        top = y + 72 + index * 52
+        f.rect(left + 8, top, 184, 44, "signal" if index == 0 else "control")
+        glyph(f, left + 22, top + 13)
+        f.text(left + 52, top + 28, label, 14)
+
+
+def top_bar(f, title, account="local", back=False, action=None):
+    """Draw the compact top bar: an optional back button, the title, an action, More, and the user button."""
     f.rect(0, 0, f.width, 60, "bar", radius=0)
     x = 16
     if back:
         icon_button(f, 8, 8, "<")
         x = 60
-    right = f.width - 8
+    right = user_button(f, f.width - 8, 8, account) - 8
     icon_button(f, right - 44, 8, "⋮")
     right -= 52
     if action:
         right = button_right(f, right, 8, action, "primary") - 8
-    if sync:
-        right = sync_pill(f, right, 14, sync) - 8
     f.text(x, 37, fit(title, right - x - 8, 20), 20, "bold")
 
 
@@ -285,7 +324,7 @@ def bottom_nav(f, current):
     """Draw the compact bottom navigation bar, marking the current destination."""
     top = f.height - 64
     f.rect(0, top, f.width, 64, "bar", radius=0)
-    labels = ["Tasks", "Lists", "Bin", "Settings"]
+    labels = ["Tasks", "Lists"]
     slot = f.width / len(labels)
     for index, label in enumerate(labels):
         cx = slot * index + slot / 2
@@ -295,8 +334,8 @@ def bottom_nav(f, current):
         f.text(cx, top + 48, label, 12, "bold" if label == current else "", "middle")
 
 
-def sidebar(f, current, lists=LISTS, sync="Local only"):
-    """Draw the wide sidebar with destinations, the lists, and the sync indicator."""
+def sidebar(f, current, lists=LISTS):
+    """Draw the wide sidebar with the destinations and the lists; the user menu holds the rest."""
     f.rect(0, 0, SIDEBAR_WIDTH, f.height, "bar", radius=0)
     f.text(24, 46, "ToDo's", 22, "bold")
     y = 80
@@ -319,16 +358,11 @@ def sidebar(f, current, lists=LISTS, sync="Local only"):
         f.text(44, y + 22, "No lists yet", 13, "muted")
         y += 36
     item("+ New list", None, False, indent=16)
-    y = f.height - 168
-    f.line(16, y - 8, SIDEBAR_WIDTH - 16, y - 8)
-    item("Recycle bin", None, current == "Recycle bin")
-    item("Settings", None, current == "Settings")
-    sync_pill(f, 12 + text_width(sync, 12) + 36, f.height - 56, sync)
 
 
-def page_header(f, x, y, right, title, subtitle=None, actions=()):
-    """Draw a wide page title with an optional subtitle and right-aligned action buttons."""
-    edge = right
+def page_header(f, x, y, right, title, subtitle=None, actions=(), account="local"):
+    """Draw a wide page title with an optional subtitle, right-aligned action buttons, and the user button."""
+    edge = user_button(f, right, y - 6, account) - 8
     for label, css in reversed(actions):
         edge = button_right(f, edge, y, label, css) - 8
     f.text(x, y + 32, fit(title, edge - x - 16, 28), 28, "bold")
@@ -507,10 +541,10 @@ def add_bar(f, x, y, width, placeholder="Search or add a task", typed=False, inf
 
 
 def compact_task_screen(
-    f, title, tasks, sync="Local only", back=False, nav="Tasks", grouped=False, info="24 tasks · Status: open", reset=False
+    f, title, tasks, account="local", back=False, nav="Tasks", grouped=False, info="24 tasks · Status: open", reset=False
 ):
     """Draw a compact task list screen with rows, the pinned add bar and info line, and bottom navigation."""
-    top_bar(f, title, sync, back)
+    top_bar(f, title, account, back)
     top = f.height - 64 - 88
     if grouped:
         grouped_rows(f, 0, 68, f.width, False, top)
@@ -546,12 +580,12 @@ def wide_dialog(f, title, width, height):
 
 
 def wide_all_tasks(
-    f, sync="Local only", selected=None, right=MAIN_RIGHT, grouped=False, typed=None,
+    f, account="local", selected=None, right=MAIN_RIGHT, grouped=False, typed=None,
     info="24 tasks · Status: open", reset=False,
 ):
     """Draw the wide All tasks screen as a background or main view."""
-    sidebar(f, "All tasks", sync=sync)
-    page_header(f, MAIN_LEFT, 28, right, "All tasks", None, [("⋯", "control")])
+    sidebar(f, "All tasks")
+    page_header(f, MAIN_LEFT, 28, right, "All tasks", None, [("⋯", "control")], account)
     add_bar(f, MAIN_LEFT, 92, right - MAIN_LEFT, typed or "Search or add a task", typed is not None, info, reset)
     top = 92 + 60 + 30 + 40
     if grouped:
@@ -564,9 +598,9 @@ def wide_all_tasks(
         task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, TASKS, True, f.height - 24, selected=selected)
 
 
-def wide_list(f, sync="Synced", right=MAIN_RIGHT):
+def wide_list(f, account="connected", right=MAIN_RIGHT):
     """Draw the wide Home list screen as a background or main view."""
-    sidebar(f, "Home", sync=sync)
+    sidebar(f, "Home")
     actions = [("⋯", "control")]
     page_header(
         f,
@@ -576,6 +610,7 @@ def wide_list(f, sync="Synced", right=MAIN_RIGHT):
         "Home",
         "Chores and repairs around the house · Shared with 2 people · You own this list",
         actions,
+        account,
     )
     width = right - MAIN_LEFT
     add_bar(f, MAIN_LEFT, 112, width, info="8 tasks · Status: all", reset=True)
@@ -623,6 +658,22 @@ def first_launch():
     return "First launch", "Local mode with no data: no sign-in, straight to a usable empty state.", compact, wide
 
 
+def user_menu():
+    """The user button and its panel: Local User in the compact layout, a connected account in the wide one."""
+    compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
+    compact_task_screen(compact, "All tasks", TASKS)
+    user_panel(compact, compact.width - 8, 60, "Local User", "Local only")
+    wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
+    wide_all_tasks(wide, "connected")
+    user_panel(wide, MAIN_RIGHT, 28 - 6 + 44 + 4, "Jane Doe", "Connected")
+    return (
+        "User menu",
+        "The circular user button ends the top bar; its panel holds the name, the state, Recycle bin, and Settings.",
+        compact,
+        wide,
+    )
+
+
 def all_tasks():
     """All tasks with the default open filter."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
@@ -641,7 +692,7 @@ def all_tasks():
 def view_options():
     """The View options as a full screen and as a right panel, over All tasks grouped by list."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "View options", "Local only", back=True)
+    top_bar(compact, "View options", back=True)
     view_options_fields(compact, 16, 76, compact.width - 32, compact=True)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_all_tasks(
@@ -661,7 +712,7 @@ def view_options():
 def list_view():
     """One list in manual order, with the More menu open."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Home", "Synced", back=True)
+    top_bar(compact, "Home", "connected", back=True)
     compact.text(16, 88, fit("Chores and repairs around the house", 300, 14), 14, "muted")
     compact.text(16, 110, "Shared with 2 people · You own this list", 13, "muted")
     top = compact.height - 64 - 88
@@ -705,14 +756,14 @@ LIST_ROWS = [
 def lists():
     """The lists overview."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Lists", "Synced", action="New list")
+    top_bar(compact, "Lists", "connected", action="New list")
     y = 60
     for name, description, open_count, total, sharing in LIST_ROWS:
         y = list_row(compact, 0, y, compact.width, name, description, f"{open_count}/{total} open", sharing)
     bottom_nav(compact, "Lists")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    sidebar(wide, "Lists", sync="Synced")
-    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Lists", actions=[("New list", "primary")])
+    sidebar(wide, "Lists")
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Lists", actions=[("New list", "primary")], account="connected")
     y = 100
     for name, description, open_count, total, sharing in LIST_ROWS:
         counts = f"{open_count} open · {total} total"
@@ -781,10 +832,10 @@ def editor_panel(f, title):
 def task_editor():
     """The task editor as a full screen and as a right panel."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Task", "Synced", back=True)
+    top_bar(compact, "Task", "connected", back=True)
     editor_fields(compact, 16, 76, compact.width - 32, True)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    wide_all_tasks(wide, "Synced", selected=1, right=EDITOR_LEFT - 20)
+    wide_all_tasks(wide, "connected", selected=1, right=EDITOR_LEFT - 20)
     left, width = editor_panel(wide, "Task")
     editor_fields(wide, left, 76, width, False)
     return (
@@ -813,7 +864,7 @@ def list_editor_fields(f, x, y, width):
 def list_editor():
     """The list editor, opening where the task editor opens."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "List", "Synced", back=True)
+    top_bar(compact, "List", "connected", back=True)
     list_editor_fields(compact, 16, 76, compact.width - 32)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_list(wide, right=EDITOR_LEFT - 20)
@@ -969,15 +1020,17 @@ def log_entry(f, x, y, width, kind, time, item, detail):
 def sync_log():
     """The sync log while connected."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Sync log", "Synced", back=True)
+    top_bar(compact, "Sync log", "connected", back=True)
     y = 76
     for entry in LOG_ENTRIES:
         y = log_entry(compact, 12, y, compact.width - 24, *entry)
     compact.text(16, y + 20, "Entries stay for 30 days.", 13, "muted")
     bottom_nav(compact, "Settings")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    sidebar(wide, "Settings", sync="Synced")
-    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Sync log", "Values that sync overwrote or undid in the last 30 days.")
+    sidebar(wide, "Settings")
+    page_header(
+        wide, MAIN_LEFT, 28, MAIN_RIGHT, "Sync log", "Values that sync overwrote or undid in the last 30 days.", account="connected"
+    )
     y = 116
     for entry in LOG_ENTRIES:
         y = log_entry(wide, MAIN_LEFT, y, 720, *entry)
@@ -1021,12 +1074,12 @@ def connect_steps(f, x, y, width):
 def connect():
     """The connect screen while uploading local data."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Connect", "Syncing", back=True)
+    top_bar(compact, "Connect", "connected", back=True)
     connect_steps(compact, 16, 84, compact.width - 32)
     bottom_nav(compact, "Settings")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    sidebar(wide, "Settings", sync="Syncing")
-    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Connect")
+    sidebar(wide, "Settings")
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Connect", account="connected")
     connect_steps(wide, MAIN_LEFT, 100, 560)
     return "Connect", "After sign-in, local data uploads into the account; same-named lists merge.", compact, wide
 
@@ -1073,6 +1126,7 @@ def import_dialog():
 SCREENS = {
     "first-launch.svg": first_launch,
     "all-tasks.svg": all_tasks,
+    "user-menu.svg": user_menu,
     "list.svg": list_view,
     "view-options.svg": view_options,
     "lists.svg": lists,

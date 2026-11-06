@@ -11,6 +11,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Same app in both modes: connected mode adds controls but never moves or renames existing ones.
 - Forgiving: deletions go to the recycle bin, and a toast offers Undo.
 - Honest sync: the sync indicator always tells whether data is only local, pending, or synced.
+  Until it lands, the user menu says Local only, Connected, or Sign in needed.
+- Quiet chrome: the account, Recycle bin, and Settings sit behind the user button, since they are needed only now and then.
 - Keyboard and touch parity: every drag, hover, or shortcut has a visible button alternative.
 
 ---
@@ -26,7 +28,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Compact Layout
 ```text
 +--------------------------------------+
-| Title                  [sync] [more] |  top bar
+| Title                  [more]  (o)   |  top bar
 +--------------------------------------+
 | ( ) Buy paint            Tomorrow    |
 | (/) Call plumber         Overdue  !  |  task rows
@@ -36,14 +38,14 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 | [Search or add a task..........] [+] |  add bar
 | 24 tasks · Status: open              |  info line
 +--------------------------------------+
-| Tasks    Lists    Bin    Settings    |  bottom navigation
+| Tasks                    Lists       |  bottom navigation
 +--------------------------------------+
 ```
 
 ### Wide Layout
 ```text
 +--------------+-------------------------------+---------------------+
-| ToDo's       | All tasks                [...]| Task, list, or view |
+| ToDo's       | All tasks            [...] (o)| Task, list, or view |
 |              |                               | Description         |
 | All tasks 24 | [Search or add a task...] [+] | Status              |
 | Lists        | 24 tasks · Status: open       | Due time            |
@@ -51,16 +53,14 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 |  Work    12  | (/) Call plumber   Overdue !  | Notes               |
 |  + New list  | ( ) Book flights              |                     |
 |              |                               |                     |
-| Recycle bin  |                               |                     |
-| Settings     |                               |                     |
-| [sync state] |                               |                     |
 +--------------+-------------------------------+---------------------+
 ```
 
 ### Navigation Rules
 - Destinations: All tasks, Lists, each single list, Recycle bin, and Settings.
-- The compact bottom bar holds Tasks, Lists, Bin, and Settings; the wide sidebar holds the same plus every list.
+- The compact bottom bar holds Tasks and Lists; the wide sidebar holds the same plus every list.
 - The sidebar lists each list with its open task count, and ends with a New list button.
+- Recycle bin and Settings sit in the user menu, so many lists never push them out of sight.
 - **[Decided]** Routes use the URL hash, such as `#/lists/{{list-id}}`, since GitHub Pages has no route rewrites.
 - Back and forward buttons move between routes; opening the task editor adds a route.
 - Each route restores its scroll position, filters, and sort (`TV-12`).
@@ -68,10 +68,11 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
 [app-shell.css](../../src/css/app-shell.css) places its parts; one DOM holds both layouts.
-- The compact top bar holds the route title, the sync indicator, and a More menu with New list.
-- The wide layout shows the title above the main column, and the sync indicator at the sidebar bottom.
-- In local mode the sync indicator reads Local only and links to `#/connect`.
+- The compact top bar holds the route title, a More menu with New list, and the user button.
+- The wide layout shows the title above the main column, with the user button at its right end.
+- The shell holds no sync indicator for now; the sync indicator task decides where it goes.
 - The main column scrolls; the bars and the sidebar stay in place.
+- [user-menu.js](../../src/js/ui/user-menu.js) builds the user menu; see User Menu below.
 - Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
   List views also carry `data-list-id`; the screen tasks fill these views.
   [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [lists.js](../../src/js/views/lists.js) `lists`,
@@ -93,6 +94,20 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - A start-up failure replaces the view with an error banner asking for a reload.
 - The theme follows the system unless `localStorage` holds `todos.theme` as `light` or `dark`, plain or as JSON.
   A stored theme also sets every `theme-color` meta, so the browser bar matches it.
+
+### User Menu
+Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
+
+- A circular user button ends the top bar in both layouts; it is at least 44 px wide.
+- Local mode: the button shows a person icon, hovering shows "Local User", and so does its accessible name.
+- Connected: the button shows the account's initials, such as JD, and hovering shows the account name, or the email without one.
+- Click or Enter opens a panel under the button, its end edge lined up with the button's.
+- Escape, an outside click, or choosing a link closes the panel.
+- The panel shows the user name, the connection state, then Recycle bin and Settings as buttons with icons.
+- The state reads "Local only", "Connected", or "Sign in needed" (`CON-13`); the link of the current route is marked.
+- Expired session: a Sign in button appears before the user button and opens `#/connect`; the user button and panel stay.
+- Local mode has no Sign in text on the page (`LOC-1`); Connect stays reachable from Settings and the empty states.
+- The panel reads the session each time it opens and when the session changes.
 
 ### Routes
 - `#/tasks`: all tasks.
@@ -262,7 +277,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - Sync error: the popover names the error and offers Retry.
 - A dot marks unseen sync log entries, such as overwritten values or rejected changes.
 - Its popover shows the state, the last sync time, a Sync now button, and a Sync log link.
-- Compact layouts place it in the top bar; wide layouts at the sidebar bottom, left-aligned with its items.
+- The shell holds no sync indicator yet; its place is decided with the sync indicator task.
 
 ### Toasts and Banners
 - Toasts confirm actions, offer Undo for 8 seconds, and never hold the only copy of an error.
@@ -471,7 +486,7 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 2. New list in the sidebar, the Lists screen, or the editor's Add to list box creates a list.
 3. The editor's Lists section adds a task to several lists; the row menu adds one list at a time.
 4. In a list with manual order, the user drags rows or uses Move up and Move down.
-5. Every step works offline; the sync indicator stays at Local only.
+5. Every step works offline; the user menu stays at Local only.
 
 ### Connecting
 Wireframe: [connect.svg](../img/ui/connect.svg).
@@ -510,7 +525,7 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 
 ### Session Expiry
 1. An expired session turns the indicator to Sign in needed and shows a banner (`CON-13`).
-   Until the sync indicator task, only Settings and the connect screen show the expired session.
+   Until the sync indicator task, the Sign in button beside the user button, Settings, and the connect screen show it.
 2. The app keeps working and queues changes.
 3. Sign in on the banner restores the session and syncs the queue.
 

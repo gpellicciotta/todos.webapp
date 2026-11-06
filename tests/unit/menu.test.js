@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { attachMenu } from '../../src/js/ui/menu.js';
-import { attachPopover } from '../../src/js/ui/popover.js';
+import { anchorPanel, attachPopover } from '../../src/js/ui/popover.js';
 
 /**
  * Dispatch a keyboard event on an element.
@@ -250,5 +250,44 @@ describe('attachPopover', () => {
     expect(panel.hidden).toBe(true);
     expect(document.activeElement).toBe(trigger);
     expect(onClose).toHaveBeenCalledWith('outside');
+  });
+});
+
+describe('anchorPanel', () => {
+  /**
+   * Place a 192 px panel under a 44 px trigger at the given offset.
+   * @param {string} align the alignment option
+   * @param {string} direction the trigger's writing direction
+   * @returns {number} the panel's left position in pixels
+   */
+  function place(align, direction) {
+    document.body.innerHTML = '<button id="trigger" type="button">User</button><div id="panel"></div>';
+    const trigger = document.getElementById('trigger');
+    const panel = document.getElementById('panel');
+    trigger.style.direction = direction;
+    trigger.getBoundingClientRect = () => ({ left: 600, right: 644, top: 16, bottom: 60, width: 44, height: 44 });
+    panel.getBoundingClientRect = () => ({ width: 192, height: 100 });
+    anchorPanel(panel, trigger, 4, align);
+    return Number.parseFloat(panel.style.left);
+  }
+
+  it('lines up the start edges by default, and the end edges with align end', () => {
+    expect(place('start', 'ltr')).toBe(600);
+    expect(place('end', 'ltr')).toBe(644 - 192);
+  });
+
+  it('mirrors both alignments for a right-to-left trigger', () => {
+    expect(place('start', 'rtl')).toBe(644 - 192);
+    expect(place('end', 'rtl')).toBe(600);
+  });
+
+  it('keeps the panel inside the viewport', () => {
+    document.body.innerHTML = '<button id="trigger" type="button">User</button><div id="panel"></div>';
+    const trigger = document.getElementById('trigger');
+    const panel = document.getElementById('panel');
+    trigger.getBoundingClientRect = () => ({ left: window.innerWidth - 20, right: window.innerWidth + 24, top: 16, bottom: 60, width: 44, height: 44 });
+    panel.getBoundingClientRect = () => ({ width: 192, height: 100 });
+    anchorPanel(panel, trigger, 4, 'start');
+    expect(Number.parseFloat(panel.style.left)).toBe(window.innerWidth - 192 - 4);
   });
 });

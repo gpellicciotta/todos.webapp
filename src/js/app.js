@@ -69,7 +69,7 @@ async function start() {
   // An Auth return carries its code in the hash; take it out before the router reads the route.
   const session = createSession();
   session.capture(window);
-  shell = renderShell(document.getElementById('app'), { navigate: (hash) => router.navigate(hash) });
+  shell = renderShell(document.getElementById('app'), { navigate: (hash) => router.navigate(hash), session });
   const toaster = createToaster({ region: shell.toastRegion, undoShortcut: true });
   let store;
   try {

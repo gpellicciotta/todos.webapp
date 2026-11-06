@@ -21,6 +21,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
 .icon-fill { fill: #444444; stroke: #444444; stroke-width: 2; }
 .icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
 .icon-line { stroke: #444444; stroke-width: 2; }
+.icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">Task editor</text>
@@ -32,11 +33,10 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="0" y="0" width="390" height="60" rx="0" class="bar"/>
     <rect x="8" y="8" width="44" height="44" rx="6" class="control"/>
     <text x="30" y="35" font-size="16" text-anchor="middle">&lt;</text>
-    <rect x="338" y="8" width="44" height="44" rx="6" class="control"/>
-    <text x="360" y="35" font-size="16" text-anchor="middle">⋮</text>
-    <rect x="253.68" y="14" width="76.32" height="32" rx="16" class="control"/>
-    <circle cx="267.68" cy="30" r="5" class="icon"/>
-    <text x="279.68" y="35" font-size="12">Synced</text>
+    <circle cx="360" cy="30" r="22" class="icon-fill"/>
+    <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <rect x="286" y="8" width="44" height="44" rx="6" class="control"/>
+    <text x="308" y="35" font-size="16" text-anchor="middle">⋮</text>
     <text x="60" y="37" font-size="20" class="bold">Task</text>
     <text x="16" y="90" font-size="13" class="muted">Description</text>
     <rect x="16" y="98" width="358" height="64" rx="6" class="control"/>
@@ -102,14 +102,10 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="44" y="370" font-size="14">Reading</text>
     <text x="236" y="370" font-size="13" class="muted" text-anchor="end">2</text>
     <text x="44" y="414" font-size="14">+ New list</text>
-    <line x1="16" y1="724" x2="248" y2="724" class="rule"/>
-    <text x="28" y="758" font-size="14">Recycle bin</text>
-    <text x="28" y="802" font-size="14">Settings</text>
-    <rect x="12" y="844" width="76.32" height="32" rx="16" class="control"/>
-    <circle cx="26" cy="860" r="5" class="icon"/>
-    <text x="38" y="865" font-size="12">Synced</text>
-    <rect x="960.16" y="28" width="39.84" height="44" rx="6" class="control"/>
-    <text x="980.08" y="54.9" font-size="14" text-anchor="middle">⋯</text>
+    <circle cx="978" cy="44" r="22" class="icon-fill"/>
+    <text x="978" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <rect x="908.16" y="28" width="39.84" height="44" rx="6" class="control"/>
+    <text x="928.08" y="54.9" font-size="14" text-anchor="middle">⋯</text>
     <text x="304" y="60" font-size="28" class="bold">All tasks</text>
     <rect x="304" y="92" width="696" height="60" rx="8" class="bar"/>
     <rect x="936.48" y="100" width="55.52" height="44" rx="6" class="primary"/>

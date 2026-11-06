@@ -15,6 +15,7 @@ SVG = "{http://www.w3.org/2000/svg}"
 SCREENS = {
     "first-launch.svg",
     "all-tasks.svg",
+    "user-menu.svg",
     "list.svg",
     "view-options.svg",
     "lists.svg",
@@ -126,3 +127,32 @@ def test_output_is_reproducible(output, tmp_path):
     subprocess.run([sys.executable, str(SCRIPT), str(tmp_path)], check=True)
     for path in output.iterdir():
         assert (tmp_path / path.name).read_bytes() == path.read_bytes()
+
+
+def circles(frame):
+    """Return the (cx, cy, r) of every circle of a frame."""
+    return [(float(c.get("cx")), float(c.get("cy")), float(c.get("r"))) for c in frame.iter(f"{SVG}circle")]
+
+
+def test_top_bar_ends_with_the_user_button():
+    module = load_script()
+    for account in ("local", "connected", "expired"):
+        frame = module.Frame(module.COMPACT_WIDTH, module.COMPACT_HEIGHT)
+        module.top_bar(frame, "All tasks", account)
+        root = ET.fromstring(f'<svg xmlns="http://www.w3.org/2000/svg">{frame.svg(0, 0)}</svg>')
+        assert (module.COMPACT_WIDTH - 30, 30, 22) in circles(root), account
+        labels = [t.text for t in root.iter(f"{SVG}text")]
+        assert ("Sign in" in labels) == (account == "expired")
+        assert "Local only" not in labels
+
+
+@pytest.mark.parametrize("name", sorted(SCREENS))
+def test_navigation_holds_no_recycle_bin_or_settings_entry(output, name):
+    # The user menu holds those two; only their own screens and the user menu screen may name them.
+    if name in {"recycle-bin.svg", "settings.svg", "user-menu.svg", "import.svg", "sync-log.svg", "connect.svg"}:
+        return
+    _, groups = frames(output / name)
+    for group in groups:
+        labels = [t.text for t in group.iter(f"{SVG}text")]
+        assert "Recycle bin" not in labels and "Bin" not in labels, name
+        assert "Local only" not in labels and "Synced" not in labels, name

@@ -57,10 +57,16 @@ for (const [viewport, compact] of [[COMPACT, true], [{ width: 1023, height: 800 
     await page.goto('/');
     await ready(page);
     await expect(page.locator('.app__bottom-nav')).toBeVisible({ visible: compact });
-    await expect(page.locator('.app__top-bar .sync-indicator')).toBeVisible({ visible: compact });
+    await expect(page.locator('.sync-indicator')).toHaveCount(0);
+    await expect(page.locator('.app__top-bar .user-button')).toBeVisible();
     await expect(page.locator('.app__top-bar .app__more')).toBeVisible({ visible: compact });
     await expect(page.locator('.app__sidebar')).toBeVisible({ visible: !compact });
-    await expect(page.locator('.app__sidebar .sync-indicator')).toHaveText(/Local only/);
+    await expect(page.locator('.app__sidebar, .app__bottom-nav').getByRole('link', { name: /Recycle bin|Bin|Settings/ })).toHaveCount(0);
+    // The user button ends the top bar, at the right edge of the main column.
+    const bar = await page.locator('.app__top-bar').boundingBox();
+    const button = await page.locator('.app__top-bar .user-button').boundingBox();
+    expect(bar.x + bar.width - (button.x + button.width)).toBeLessThanOrEqual(16);
+    expect(button.y).toBeLessThan(bar.y + bar.height);
     await expect(page.locator('[data-editor-slot]')).toBeHidden();
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(scrollWidth).toBeLessThanOrEqual(viewport.width);
@@ -75,19 +81,127 @@ test('navigation marks the current route, and back and forward move between rout
   await ready(page);
   const bottom = page.locator('.app__bottom-nav');
   await expect(bottom.getByRole('link', { name: 'Tasks' })).toHaveAttribute('aria-current', 'page');
-  await bottom.getByRole('link', { name: 'Bin' }).click();
+  await expect(bottom.getByRole('link')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Local User' }).click();
+  const panel = page.locator('.user-panel');
+  await panel.getByRole('link', { name: 'Recycle bin' }).click();
   await expect(page).toHaveURL(/#\/bin$/);
+  await expect(panel).toBeHidden();
   await expect(page.locator('#main')).toBeFocused();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recycle bin');
-  await expect(bottom.getByRole('link', { name: 'Bin' })).toHaveAttribute('aria-current', 'page');
-  await expect(bottom.locator('[aria-current]')).toHaveCount(1);
+  await expect(bottom.locator('[aria-current]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Local User' }).click();
+  await expect(panel.getByRole('link', { name: 'Recycle bin' })).toHaveAttribute('aria-current', 'page');
+  await expect(panel.locator('[aria-current]')).toHaveCount(1);
+  await page.keyboard.press('Escape');
   await page.goBack();
   await expect(bottom.getByRole('link', { name: 'Tasks' })).toHaveAttribute('aria-current', 'page');
   await page.setViewportSize(WIDE);
   await page.goForward();
-  const sidebar = page.locator('.app__sidebar');
-  await expect(sidebar.getByRole('link', { name: 'Recycle bin' })).toHaveAttribute('aria-current', 'page');
-  await expect(sidebar.locator('[aria-current]')).toHaveCount(1);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recycle bin');
+  await expect(page.locator('.app__sidebar [aria-current]')).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
+for (const [name, viewport] of [['compact', COMPACT], ['wide', WIDE]]) {
+  test(`the ${name} user button names Local User and opens Recycle bin and Settings`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await ready(page);
+    const button = page.locator('.app__top-bar .user-button');
+    await expect(button).toHaveAttribute('title', 'Local User');
+    await expect(page.locator('.user-menu__sign-in')).toBeHidden();
+    const panel = page.locator('.user-panel');
+    await expect(panel).toBeHidden();
+    await button.click();
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText('Local User');
+    await expect(panel).toContainText('Local only');
+    // The panel hangs under the button, its end edge lined up with the button's.
+    const box = await panel.boundingBox();
+    const trigger = await button.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    expect(Math.abs(box.x + box.width - (trigger.x + trigger.width))).toBeLessThanOrEqual(1);
+    expect(Math.abs(box.y - (trigger.y + trigger.height))).toBeLessThanOrEqual(8);
+    await panel.getByRole('link', { name: 'Settings' }).click();
+    await expect(page).toHaveURL(/#\/settings$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Settings');
+    await expect(panel).toBeHidden();
+    await button.click();
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(button).toBeFocused();
+    expect(problems).toEqual([]);
+  });
+}
+
+test('the bottom bar spreads its two destinations over the full width', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto('/');
+  await ready(page);
+  const boxes = await page.locator('.app__bottom-nav .bottom-nav__item').evaluateAll((items) => items.map((item) => {
+    const box = item.getBoundingClientRect();
+    return { left: box.left, right: box.right };
+  }));
+  expect(boxes).toHaveLength(2);
+  expect(boxes[0].left).toBeLessThanOrEqual(1);
+  expect(boxes[1].right).toBeGreaterThanOrEqual(319);
+  expect(Math.abs((boxes[0].right - boxes[0].left) - (boxes[1].right - boxes[1].left))).toBeLessThanOrEqual(1);
+});
+
+for (const [name, viewport] of [['narrow', { width: 320, height: 700 }], ['desktop', { width: 1280, height: 800 }]]) {
+  test(`the ${name} panel stays aligned with the button for a long name`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => localStorage.setItem('todos.session', JSON.stringify({
+      token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Jane Doe Verylongnamehere Smithsonian-Montgomery',
+      email: 'jane.doe.with.a.very.long.address@example.com', server: 'http://127.0.0.1:1',
+    })));
+    await page.goto('/');
+    await ready(page);
+    const button = page.locator('.app__top-bar .user-button');
+    await button.click();
+    const box = await page.locator('.user-panel').boundingBox();
+    const trigger = await button.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 3);
+    expect(box.width).toBeLessThanOrEqual(400);
+    expect(Math.abs(box.x + box.width - (trigger.x + trigger.width))).toBeLessThanOrEqual(1);
+  });
+}
+
+test('a connected account shows its initials and name, and Connected in the panel', async ({ page }) => {
+  const problems = watch(page);
+  await page.addInitScript(() => localStorage.setItem('todos.session', JSON.stringify({
+    token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server: 'http://127.0.0.1:1',
+  })));
+  await page.goto('/');
+  await ready(page);
+  const button = page.getByRole('button', { name: 'Jane Doe' });
+  await expect(button).toHaveText('JD');
+  await expect(button).toHaveAttribute('title', 'Jane Doe');
+  await expect(page.locator('.user-menu__sign-in')).toBeHidden();
+  await button.click();
+  await expect(page.locator('.user-panel')).toContainText('Jane Doe');
+  await expect(page.locator('.user-panel')).toContainText('Connected');
+  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Recycle bin', 'Settings']);
+  expect(problems).toEqual([]);
+});
+
+test('an expired session shows a Sign in button that opens the connect screen', async ({ page }) => {
+  const problems = watch(page);
+  await page.addInitScript(() => localStorage.setItem('todos.session', JSON.stringify({
+    token: 'session-1', expiry: '2000-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server: 'http://127.0.0.1:1',
+  })));
+  await page.goto('/');
+  await ready(page);
+  await page.locator('.user-menu__sign-in').click();
+  await expect(page).toHaveURL(/#\/connect$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connect');
+  await page.getByRole('button', { name: 'Jane Doe' }).click();
+  await expect(page.locator('.user-panel')).toContainText('Sign in needed');
+  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Recycle bin', 'Settings']);
   expect(problems).toEqual([]);
 });
 

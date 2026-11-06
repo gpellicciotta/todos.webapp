@@ -3,13 +3,17 @@
  *
  * Both layouts live in one DOM; app-shell.css shows the compact one below 64rem and the wide one from 64rem.
  * Each route gets an empty `[data-view]` element in the main column for its screen to fill.
- * The current route is marked with `aria-current="page"` in the sidebar and the bottom bar.
+ * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
+ * the account, Recycle bin, and Settings (see user-menu.js).
+ * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
 import { readTheme } from '../core/preferences.js';
+import { createSession } from '../sync/session.js';
 import { createLiveRegion } from './live-region.js';
 import { attachMenu } from './menu.js';
+import { attachUserMenu } from './user-menu.js';
 
 const ICONS = 'img/icons.svg';
 const OPEN = ['todo', 'in-progress'];
@@ -22,8 +26,6 @@ export const STRINGS = Object.freeze({
   newList: 'New list',
   openTasks: ' open tasks',
   lists: 'Lists',
-  localOnly: 'Local only',
-  syncState: 'Sync state: ',
   titles: Object.freeze({
     tasks: 'All tasks', lists: 'Lists', list: 'List', bin: 'Recycle bin',
     settings: 'Settings', 'sync-log': 'Sync log', connect: 'Connect',
@@ -34,11 +36,9 @@ export const STRINGS = Object.freeze({
 const DESTINATIONS = [
   { key: 'tasks', hash: '#/tasks', icon: 'tasks', label: 'All tasks', short: 'Tasks', count: true },
   { key: 'lists', hash: '#/lists', icon: 'lists', label: 'Lists', short: 'Lists' },
-  { key: 'bin', hash: '#/bin', icon: 'bin', label: 'Recycle bin', short: 'Bin' },
-  { key: 'settings', hash: '#/settings', icon: 'settings', label: 'Settings', short: 'Settings' },
 ];
 
-/** Navigation destination of each view. */
+/** Navigation destination of each view; the Recycle bin and Settings destinations sit in the user menu. */
 const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin', settings: 'settings', 'sync-log': 'settings', connect: 'settings' };
 
 /**
@@ -81,15 +81,6 @@ export function applyTheme(doc, preference) {
  */
 function icon(id) {
   return `<svg class="icon" aria-hidden="true" focusable="false"><use href="${ICONS}#${id}"/></svg>`;
-}
-
-/**
- * Return the markup of the sync indicator in its local state, linking to the connect flow.
- * @returns {string} the markup
- */
-function syncIndicator() {
-  return `<a class="sync-indicator" href="#/connect" data-state="local">${icon('sync-local')}`
-    + `<span class="visually-hidden">${STRINGS.syncState}</span><span class="sync-indicator__label">${STRINGS.localOnly}</span></a>`;
 }
 
 /**
@@ -138,28 +129,27 @@ export function openCounts(tasks, memberships) {
  * @param {HTMLElement} root the element that holds the shell
  * @param {object} options shell options
  * @param {(hash: string) => void} options.navigate opens a route, for the More menu
+ * @param {object} [options.session] the session the user menu follows, a new one by default
  * @returns {{main: HTMLElement, editor: HTMLElement, toastRegion: HTMLElement, update: Function,
  *   setLists: Function, showBanner: Function, showNotice: Function}} the shell controller
  */
-export function renderShell(root, { navigate }) {
+export function renderShell(root, { navigate, session = createSession() }) {
   const doc = root.ownerDocument;
   root.classList.add('app');
   root.innerHTML = `
     <header class="app__top-bar">
       <h1 class="app__title" id="app-title"></h1>
-      ${syncIndicator()}
       <button class="icon-button app__more" type="button" aria-label="${STRINGS.more}">${icon('more')}</button>
       <div class="menu" aria-label="${STRINGS.more}" hidden>
         <button class="menu__item" type="button" role="menuitem" data-hash="#/lists/new">${icon('plus')}${STRINGS.newList}</button>
       </div>
+      <div data-user-menu></div>
     </header>
     <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
       <p class="sidebar__brand">${STRINGS.app}</p>
-      <ul class="nav-list">${DESTINATIONS.slice(0, 2).map(sidebarItem).join('')}</ul>
+      <ul class="nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <ul class="nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
       <a class="button button--quiet sidebar__new-list" href="#/lists/new">${icon('plus')}${STRINGS.newList}</a>
-      <ul class="nav-list sidebar__end">${DESTINATIONS.slice(2).map(sidebarItem).join('')}</ul>
-      <div class="sidebar__footer">${syncIndicator()}</div>
     </nav>
     <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"></div></main>
     <div class="app__editor" data-editor-slot hidden></div>
@@ -176,6 +166,7 @@ export function renderShell(root, { navigate }) {
   const listNav = root.querySelector('[data-nav-lists]');
   const more = root.querySelector('.app__more');
   attachMenu(more, more.nextElementSibling, { onSelect: (item) => navigate(item.dataset.hash) });
+  attachUserMenu(root.querySelector('[data-user-menu]'), { session });
   let viewKey = null;
   let route = null;
   let view = null;
