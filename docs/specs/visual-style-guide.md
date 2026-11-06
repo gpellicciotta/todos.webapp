@@ -60,7 +60,8 @@ Change the stylesheets first, then the gallery and this guide in the same commit
 - **[Decided]** The account, Recycle bin, and Settings sit behind a circular user button, not in the navigation bars.
   Rejected: keeping them in the sidebar and bottom bar, where many lists push them out of sight.
   Rejected: a text account label, which costs width on 390 px phones; the button shows a name through its title and the panel.
-- **[Decided]** New list is a floating button in the Lists view, not a top-bar menu entry.
+- **[Decided]** New list is a floating plus button in the Lists view, not a top-bar menu entry.
+  Rejected: a pill with a label, which read as an oval and was neither a normal button nor a circle.
   Rejected: a More menu in the top bar that held only New list, which hid the one action of the screen.
 - **[Decided]** The app shell positions the sidebar, the bottom bar, the floating button, and the editor panel.
   The component styles hold no fixed or sticky positions, so the gallery shows them in place.
@@ -231,7 +232,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   A `.button.button--secondary.user-menu__sign-in` joins the button only while the session needs a new sign-in.
   Use it for the account and the destinations needed now and then; keep daily destinations in the navigation bars.
   The shell anchors the panel to the button, end edges aligned, so the component styles hold no fixed position.
-- [Floating button](../../src/demo/visual-style-gallery.html#floating-button): a `.fab` pill with an icon and a label, at `--elevation-2`.
+- [Floating button](../../src/demo/visual-style-gallery.html#floating-button): a `.fab` signal circle with one icon and no label, at `--elevation-2`.
+  Its aria-label and title name the action, such as New list.
   Use it for the one main action of a screen that lists things, such as New list; never for secondary actions.
   It sits on the `--layer-float` layer, above rows and bars, below popovers, dialogs, and toasts.
   The component styles hold no position; the app shell fixes it at the bottom end of the screen, above the bottom bar when compact.

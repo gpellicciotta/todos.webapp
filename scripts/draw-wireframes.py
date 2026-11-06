@@ -305,13 +305,10 @@ def user_panel(f, right, y, name, status):
         f.text(left + 52, top + 28, label, 14)
 
 
-def fab(f, right, bottom, label="New list"):
-    """Draw the floating action button, a pill with a plus and a label, with its bottom right corner at (right, bottom)."""
-    width = text_width(label, 14) + 56
-    left, top = right - width, bottom - 44
-    f.rect(left, top, width, 44, "primary", radius=22)
-    f.text(left + 18, top + 28, "+", 18, "on-primary bold")
-    f.text(left + 42, top + 28, label, 14, "on-primary")
+def fab(f, right, bottom):
+    """Draw the floating action button, a 56 px circle with only a plus, with its bottom right corner at (right, bottom)."""
+    f.circle(right - 28, bottom - 28, 28, "icon-fill")
+    f.text(right - 28, bottom - 28 + 9, "+", 28, "on-primary bold", "middle")
 
 
 def top_bar(f, title, account="local", back=False):

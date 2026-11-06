@@ -304,25 +304,21 @@
 
 /*
  * Floating action button: the one main action of a screen, floating over its content at --elevation-2.
- * A pill with an icon and a label in the signal color; hover and pressed use the signal states.
- * It holds no position: the app shell fixes it at the bottom end of the screen, so the gallery shows it in place.
+ * A signal circle with one icon and no label; its aria-label and title name the action, such as New list.
+ * Hover and pressed use the signal states. It holds no position: the app shell fixes it at the bottom end
+ * of the screen, so the gallery shows it in place.
  */
 .fab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-inline-size: var(--target-min);
-  min-block-size: var(--target-min);
-  padding-inline: var(--space-5);
+  display: inline-grid;
+  place-items: center;
+  inline-size: calc(var(--target-min) + var(--space-3));
+  block-size: calc(var(--target-min) + var(--space-3));
+  padding: 0;
   border: var(--border-width) solid transparent;
   border-radius: var(--radius-round);
   background-color: var(--color-signal);
   color: var(--color-on-signal);
   box-shadow: var(--elevation-2);
-  font: inherit;
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-tight);
   text-decoration: none;
   cursor: pointer;
   transition-property: background-color;

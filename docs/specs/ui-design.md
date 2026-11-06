@@ -363,7 +363,8 @@ Wireframe: [lists.svg](../img/ui/lists.svg).
 
 - Each list row shows its name, description start, "4 open · 10 total", and sharing state (`LST-5`).
 - Shared lists show the owner's name when owned by someone else.
-- A floating New list button opens the list editor for a new list.
+- A floating plus button, a circle without a label, opens the list editor for a new list.
+- Its accessible name and hover text are New list.
 - It is fixed at the bottom right of the screen, above the bottom bar on compact layouts.
 - It floats over the rows, so the list ends with room to scroll clear of it.
 - It hides while an editor is open, so it never covers the editor panel.

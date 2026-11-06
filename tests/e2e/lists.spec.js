@@ -92,6 +92,14 @@ for (const [name, viewport, compact] of [['compact', { width: 390, height: 844 }
     await expect(button).toBeVisible();
     expect(await button.evaluate((element) => getComputedStyle(element).position)).toBe('fixed');
     const box = await button.boundingBox();
+    await expect(page.locator('.lists-view').getByRole('link', { name: 'New list' })).toHaveCount(1);
+    await expect(button).toHaveText('');
+    expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(0.5);
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(await button.evaluate((element) => {
+      const radius = getComputedStyle(element).borderTopLeftRadius;
+      return radius.endsWith('%') ? parseFloat(radius) >= 50 : parseFloat(radius) >= element.getBoundingClientRect().width / 2;
+    })).toBe(true);
     expect(viewport.width - (box.x + box.width)).toBeLessThanOrEqual(32);
     expect(viewport.width - (box.x + box.width)).toBeGreaterThanOrEqual(8);
     if (compact) {

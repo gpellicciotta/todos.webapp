@@ -451,7 +451,7 @@
 .lists-view {
   display: grid;
   gap: var(--space-3);
-  padding-block-end: calc(var(--target-min) + var(--space-7));
+  padding-block-end: calc(var(--target-min) + var(--space-3) + var(--space-7));
 }
 
 .lists-view [hidden] {

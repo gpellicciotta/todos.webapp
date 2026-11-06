@@ -26,12 +26,14 @@ describe('mountLists', () => {
     return view;
   }
 
-  it('offers New list as a floating button that links to the new list editor', async () => {
+  it('offers New list as a floating plus button that links to the new list editor', async () => {
     const view = await mount();
     const button = view.querySelector('.fab');
     expect(button.tagName).toBe('A');
     expect(button.getAttribute('href')).toBe('#/lists/new');
-    expect(button.textContent.trim()).toBe('New list');
+    expect(button.getAttribute('aria-label')).toBe('New list');
+    expect(button.title).toBe('New list');
+    expect(button.textContent.trim()).toBe('');
     expect(button.querySelector('svg.icon use').getAttribute('href')).toContain('#plus');
     expect(view.querySelectorAll('.fab')).toHaveLength(1);
   });

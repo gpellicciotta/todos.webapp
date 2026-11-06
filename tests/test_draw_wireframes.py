@@ -163,7 +163,10 @@ def test_lists_float_new_list_and_no_screen_keeps_a_more_button_in_the_top_bar(o
     _, groups = frames(output / "lists.svg")
     for group in groups:
         labels = [t.text for t in group.iter(f"{SVG}text")]
-        assert labels.count("New list") == 1
+        assert "+" in labels
+        assert "New list" not in labels
+        corner = (float(group.get("data-width")) - (16 if group.get("data-width") == "390" else 24) - 28)
+        assert any(abs(cx - corner) < 0.5 and r == 28 for cx, _, r in circles(group))
     for name in SCREENS:
         _, groups = frames(output / name)
         compact_labels = [t.text for t in groups[0].iter(f"{SVG}text")]

@@ -6,7 +6,7 @@ All notable changes to this project are documented here.
 
 ## v0.1.1-pre
 - FrontEnd: Opened Import backup in the main view between the bars on phones, like the task and list editors.
-- FrontEnd: Replaced the top-bar More button with a floating New list button at the bottom right of the Lists view.
+- FrontEnd: Replaced the top-bar More button with a floating circular plus button, named New list, at the bottom right of the Lists view.
 - FrontEnd: Moved the account, Recycle bin, and Settings behind a circular user button at the top right.
 - FrontEnd: Added a Sign in button for expired sessions, and removed the shell's sync indicator for now.
 - FrontEnd: Gave the In progress, Completed, and Cancelled status icons blue, green, and red colors, and struck through completed tasks.

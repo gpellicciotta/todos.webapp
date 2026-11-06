@@ -2,7 +2,7 @@
  * Lists overview: every list with its name, description start, and "4 open · 10 total" (`LST-5`).
  *
  * It fills the shell's `[data-view="lists"]` element, and renders again after every store change.
- * Each row opens its list; the floating New list button opens the list editor on `#/lists/new`.
+ * Each row opens its list; the floating plus button, named New list, opens the list editor on `#/lists/new`.
  * The button hides while an editor is open, so it never covers the editor panel.
  * Sharing state and the owner of others' lists join the rows once sharing lands (`SHR-3`).
  */
@@ -75,7 +75,9 @@ export function mountLists(view, { store }) {
   const root = make(doc, 'div', 'lists-view');
   const add = make(doc, 'a', 'fab');
   add.href = formatRoute('list-new');
-  add.append(spriteIcon(doc, 'plus'), STRINGS.newList);
+  add.setAttribute('aria-label', STRINGS.newList);
+  add.title = STRINGS.newList;
+  add.append(spriteIcon(doc, 'plus'));
   const rows = make(doc, 'ul', 'lists-view__rows');
   rows.setAttribute('aria-label', STRINGS.lists);
   const empty = make(doc, 'p', 'empty-state empty-state__text', STRINGS.empty);

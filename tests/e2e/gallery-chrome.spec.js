@@ -117,18 +117,24 @@ test('the user button is a circle in every state, and the connected one takes th
   await expect(page.locator('#user-menu .user-panel [aria-current="page"]')).toHaveCount(1);
 });
 
-test('the floating button is a signal pill with a shadow and a target of at least 44 px', async ({ page }) => {
+test('the floating button is a signal circle with a plus, a shadow, and a target of at least 44 px', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
   const fab = page.locator('#floating-button .fab').first();
   const style = await fab.evaluate((element) => {
     const css = getComputedStyle(element);
     const box = element.getBoundingClientRect();
-    return { position: css.position, shadow: css.boxShadow, height: box.height, radius: css.borderTopLeftRadius };
+    return {
+      position: css.position, shadow: css.boxShadow, height: box.height, width: box.width, radius: css.borderTopLeftRadius,
+      text: element.textContent.trim(), label: element.getAttribute('aria-label'),
+    };
   });
   expect(style.position).toBe('static');
   expect(style.shadow).not.toBe('none');
   expect(style.height).toBeGreaterThanOrEqual(MIN_TARGET);
-  expect(parseFloat(style.radius)).toBeGreaterThanOrEqual(style.height / 2);
+  expect(Math.abs(style.width - style.height)).toBeLessThanOrEqual(0.5);
+  expect(style.radius.endsWith('%') ? parseFloat(style.radius) : (parseFloat(style.radius) / style.height) * 100).toBeGreaterThanOrEqual(50);
+  expect(style.text).toBe('');
+  expect(style.label).toBe('New list');
   const grounds = await page.locator('#floating-button .fab').evaluateAll((items) => items.map((item) => getComputedStyle(item).backgroundColor));
   expect(new Set(grounds).size).toBeGreaterThanOrEqual(3);
 });
