@@ -220,7 +220,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - [Navigation](../../src/demo/visual-style-gallery.html#navigation): the wide `.sidebar` and the compact `.bottom-nav`.
   Both mark the current route with `aria-current="page"`: a signal edge, a signal icon, and semibold text.
   The sidebar edge sits on the inline start; the current item keeps hover and active grounds.
-  The app's sidebar holds All tasks, Lists, each list with its open count, and New list.
+  The app's sidebar holds All tasks, Lists, and each list with its open count.
+  Create lists through the floating plus in the Lists view; the sidebar has no creation action.
   Recycle bin, Settings, and the account sit in the user menu, so the app leaves `.sidebar__end` and `.sidebar__footer` empty;
   the gallery still shows both, as the optional end group and footer of the component.
   The app's bottom bar holds Tasks and Lists, each an icon above a label; the gallery shows four items to cover the states.

@@ -4,7 +4,8 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.1.1-pre
+## v0.1.2-pre
+- FrontEnd: Removed the sidebar New list action; list creation stays available through the Lists view floating plus.
 - FrontEnd: Opened Import backup in the main view between the bars on phones, like the task and list editors.
 - FrontEnd: Replaced the top-bar More button with a floating circular plus button, named New list, at the bottom right of the Lists view.
 - FrontEnd: Moved the account, Recycle bin, and Settings behind a circular user button at the top right.

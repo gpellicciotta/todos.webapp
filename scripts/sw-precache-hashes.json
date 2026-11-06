@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-06.12",
+  "version": "2026-11-06.13",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -8,7 +8,7 @@
     "css/tokens.css": "1ecebf01c8f74341a96eb2ab6f005f8fa7dbab08d5b07926f18ef0c2d75a24db",
     "css/controls.css": "23e003c393fdd05e895efc28519101eb8f1ec69057aeaa983b501685b9f37543",
     "css/app-components.css": "a97b0ec18cbd6ead11ba54e375b5a03553e9886a91534e337f3e0a6082cf6c54",
-    "css/app-chrome.css": "bd857aae9cb5f3750b14166800dcfe6cd70f6cf8c05cf3faab5724166d4fe918",
+    "css/app-chrome.css": "f68f96c3deba74fff2faee0f2218352bc46a4df11c7029a3f418b953f0be1b47",
     "css/app-shell.css": "8d92533cb53f785f0fd1e1811a899bcba3771f2df18c5a64e35d70687970a084",
     "css/views.css": "c64d8dc0e18d90bfeb735f3c9f21098a0c0cdb724b3010dfdf421632d1e11938",
     "fonts/InterVariable.woff2": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
@@ -33,7 +33,7 @@
     "js/sync/auth.js": "5fceafeaae42d967991e14fbe64a0f53b6226ef7b86ffbeb79a542a05b9c813a",
     "js/sync/session.js": "b44a1f114ee0936d6896116c4ae3fde73d91e8ed99fbea8f7bc1f0f9a3917494",
     "js/ui/dialog.js": "d79f49956ef5c50d7eb83132d0dcc0cb5231c3cba772d9da4ac90bdfe7e05059",
-    "js/ui/layout.js": "c2bd0c7cb60cdc633ccd20833933924202212307cfe44adaed0effb6700e7aee",
+    "js/ui/layout.js": "cdc69d694ce03639efd515880e94e6c6c331b07c0cb09aeb929be9d3ff96157f",
     "js/ui/live-region.js": "a573f970c05d7fa6be6b92be546afe83d94417657f7cc748ad5cbe1f0614ff2a",
     "js/ui/menu.js": "d3edd40e8d1e744f7c0ccdc00034ece466b03a61cda5d182927ee404cad1f38f",
     "js/ui/popover.js": "667df5719442770230d083270b14952d4c609e28681d1609c880b03ea8453ff0",

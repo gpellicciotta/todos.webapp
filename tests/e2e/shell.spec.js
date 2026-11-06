@@ -3,6 +3,22 @@ import { expect, test } from '@playwright/test';
 const COMPACT = { width: 390, height: 844 };
 const WIDE = { width: 1440, height: 900 };
 
+test('list creation stays in the main Lists view', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/lists');
+  await ready(page);
+  await expect(page.locator('.app__sidebar').getByRole('link', { name: 'New list' })).toHaveCount(0);
+  await expect(page.locator('.app__sidebar .nav-item__label')).toHaveText(['All tasks', 'Lists']);
+  const link = page.locator('.lists-view').getByRole('link', { name: 'New list', exact: true });
+  await expect(link).toBeVisible();
+  await link.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/#\/lists\/new$/);
+  await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toBeFocused();
+  expect(problems).toEqual([]);
+});
+
 /**
  * Collect console errors, page errors, failed requests, and HTTP errors of a page.
  * @param {import('@playwright/test').Page} page the page to watch

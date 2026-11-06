@@ -172,7 +172,7 @@ test('New list creates the list once a valid name is typed, and closing early cr
   await expect(page).toHaveURL(/#\/lists$/);
   await expect(rows).toHaveText(['Home', 'Work']);
 
-  await page.locator('.app__sidebar').getByRole('link', { name: 'New list' }).click();
+  await page.locator('.lists-view').getByRole('link', { name: 'New list' }).click();
   await expect(name).toBeFocused();
   await name.fill('home');
   await name.press('Tab');

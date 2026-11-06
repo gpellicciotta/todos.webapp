@@ -17,6 +17,13 @@ function render() {
 }
 
 describe('renderShell navigation', () => {
+  it('keeps list creation out of the sidebar', () => {
+    const { root } = render();
+    expect(root.querySelectorAll('.app__sidebar .nav-item__label')).toHaveLength(2);
+    expect(root.querySelector('.app__sidebar h2')).toBeNull();
+    expect(root.querySelector('.app__sidebar [href="#/lists/new"]')).toBeNull();
+    expect(root.querySelector('.app__sidebar .icon-button')).toBeNull();
+  });
   it('ends the top bar with the user button and shows no sync indicator', () => {
     const { root } = render();
     const bar = root.querySelector('.app__top-bar');
@@ -35,7 +42,7 @@ describe('renderShell navigation', () => {
     const { root } = render();
     const sidebar = [...root.querySelectorAll('.app__sidebar a')].map((link) => link.getAttribute('href'));
     const bottom = [...root.querySelectorAll('.app__bottom-nav a')].map((link) => link.getAttribute('href'));
-    expect(sidebar).toEqual(['#/tasks', '#/lists', '#/lists/new']);
+    expect(sidebar).toEqual(['#/tasks', '#/lists']);
     expect(bottom).toEqual(['#/tasks', '#/lists']);
     expect([...root.querySelectorAll('.user-panel a')].map((link) => link.getAttribute('href'))).toEqual(['#/bin', '#/settings']);
   });

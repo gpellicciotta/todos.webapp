@@ -105,13 +105,13 @@
   font-weight: var(--weight-regular);
 }
 
-/* List items and New list indent to the label column, under the Lists icon. */
+/* List items indent to the label column, under the Lists icon. */
 .nav-item--list {
   padding-inline-start: calc(var(--space-3) + var(--icon-size) + var(--space-3));
 }
 
 /*
- * Sidebar: the wide navigation column with All tasks, Lists and each list, and New list.
+ * Sidebar: the wide navigation column with All tasks, Lists, and each list.
  * The optional `.sidebar__end` group and `.sidebar__footer` stay for the gallery; the app leaves them out,
  * since Recycle bin, Settings, and the account sit in the user menu.
  */
@@ -133,12 +133,6 @@
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
-}
-
-.sidebar__new-list {
-  justify-content: flex-start;
-  gap: var(--space-3);
-  padding-inline: var(--space-3);
 }
 
 .sidebar__end {

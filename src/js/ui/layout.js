@@ -142,7 +142,6 @@ export function renderShell(root, { session = createSession() } = {}) {
       <p class="sidebar__brand">${STRINGS.app}</p>
       <ul class="nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <ul class="nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
-      <a class="button button--quiet sidebar__new-list" href="#/lists/new">${icon('plus')}${STRINGS.newList}</a>
     </nav>
     <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"></div></main>
     <div class="app__editor" data-editor-slot hidden></div>
