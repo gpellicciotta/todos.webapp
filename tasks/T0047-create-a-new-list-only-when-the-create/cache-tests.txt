@@ -1,0 +1,9 @@
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp
+
+
+ Test Files  2 passed (2)
+      Tests  30 passed (30)
+   Start at  20:38:23
+   Duration  592ms (tests 71%, import 17%, worker 6%, transform 5%)
+

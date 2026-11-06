@@ -1,0 +1,34 @@
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp
+
+ ❯ tests/unit/list-editor.test.js (14 tests | 1 failed | 13 skipped) 94ms
+   ❯ mountListEditor (14)
+     × locks draft fields during submission and unlocks them once created 92ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/list-editor.test.js > mountListEditor > locks draft fields during submission and unlocks them once created
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/unit/list-editor.test.js:192:27
+    190|     });
+    191|     panel.body.querySelector('button').click();
+    192|     expect(name.disabled).toBe(true);
+       |                           ^
+    193|     expect(description.disabled).toBe(true);
+    194|     release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 skipped (14)
+   Start at  20:37:07
+   Duration  1.68s (environment 79%, import 7%, transform 7%, tests 6%, worker 1%)
+
