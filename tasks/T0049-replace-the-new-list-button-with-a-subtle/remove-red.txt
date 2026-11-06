@@ -1,0 +1,72 @@
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp
+
+ ❯ tests/unit/layout.test.js (6 tests | 2 failed) 63ms
+   ❯ renderShell navigation (5)
+     × keeps list creation out of the sidebar 28ms
+     × keeps Recycle bin and Settings out of the sidebar and the bottom bar 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/layout.test.js > renderShell navigation > keeps list creation out of the sidebar
+AssertionError: expected <a class="icon-button" …(3)>…(1)</a> to be null
+
+- Expected:
+null
+
++ Received:
+<a
+  aria-label="New list"
+  class="icon-button"
+  href="#/lists/new"
+  title="New list"
+>
+  <svg
+    aria-hidden="true"
+    class="icon"
+    focusable="false"
+  >
+    <use
+      href="img/icons.svg#plus"
+    />
+  </svg>
+</a>
+
+ ❯ tests/unit/layout.test.js:24:70
+     22|     expect(root.querySelectorAll('.app__sidebar .nav-item__label')).to…
+     23|     expect(root.querySelector('.app__sidebar h2')).toBeNull();
+     24|     expect(root.querySelector('.app__sidebar [href="#/lists/new"]')).t…
+       |                                                                      ^
+     25|     expect(root.querySelector('.app__sidebar .icon-button')).toBeNull(…
+     26|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/unit/layout.test.js > renderShell navigation > keeps Recycle bin and Settings out of the sidebar and the bottom bar
+AssertionError: expected [ '#/tasks', '#/lists', '#/lists/new' ] to deeply equal [ '#/tasks', '#/lists' ]
+
+- Expected
++ Received
+
+  [
+    "#/tasks",
+    "#/lists",
++   "#/lists/new",
+  ]
+
+ ❯ tests/unit/layout.test.js:45:21
+     43|     const sidebar = [...root.querySelectorAll('.app__sidebar a')].map(…
+     44|     const bottom = [...root.querySelectorAll('.app__bottom-nav a')].ma…
+     45|     expect(sidebar).toEqual(['#/tasks', '#/lists']);
+       |                     ^
+     46|     expect(bottom).toEqual(['#/tasks', '#/lists']);
+     47|     expect([...root.querySelectorAll('.user-panel a')].map((link) => l…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  18:40:44
+   Duration  1.21s (environment 86%, tests 6%, transform 5%, import 3%, worker 1%)
+

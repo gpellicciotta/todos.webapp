@@ -1,0 +1,16 @@
+
+> todos-webapp@0.1.1-pre test
+> vitest run
+
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp
+
+
+ Test Files  37 passed (37)
+      Tests  748 passed (748)
+   Start at  15:16:03
+   Duration  8.96s (environment 68%, tests 20%, import 8%, transform 2%, worker 2%)
+
+    Isolate  37 workers spawned · ~1.17s startup each (spawn + environment, per file)
+             at least ~5.02s faster with isolate: false — reuses workers across files instead of one per file
+

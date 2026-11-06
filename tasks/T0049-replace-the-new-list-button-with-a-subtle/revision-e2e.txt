@@ -1,0 +1,50 @@
+[WebServer] (node:33688) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 27 tests using 4 workers
+
+(node:69340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:66072) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:68712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:60256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:66072) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:69340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:68712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:60256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  2 [chromium] › tests\e2e\lists.spec.js:86:3 › New list floats at the bottom right of the screen on the wide layout (1.8s)
+  ok  4 [chromium] › tests\e2e\lists.spec.js:67:1 › the overview shows each list with its description and counts, which follow task changes (LST-5) (2.2s)
+  ok  3 [chromium] › tests\e2e\lists.spec.js:86:3 › New list floats at the bottom right of the screen on the compact layout (2.7s)
+  ok  1 [chromium] › tests\e2e\lists.spec.js:117:1 › the floating New list button stays over the rows, and the last row scrolls clear of it (2.9s)
+  ok  5 [chromium] › tests\e2e\lists.spec.js:148:1 › the floating New list button hides while the New list editor is open (1.2s)
+  ok  6 [chromium] › tests\e2e\lists.spec.js:158:1 › New list creates the list once a valid name is typed, and closing early creates nothing (LST-1, LST-3) (1.9s)
+  ok  7 [chromium] › tests\e2e\lists.spec.js:194:1 › Edit list renames the list, and deleting it keeps its tasks visible in All tasks (LST-4, LST-6, LST-7) (1.9s)
+  ok  9 [chromium] › tests\e2e\shell.spec.js:80:3 › the compact layout shows at 390 px (1.8s)
+  ok  8 [chromium] › tests\e2e\shell.spec.js:6:1 › the sidebar Lists heading offers a keyboard-accessible plus link (2.5s)
+  ok 12 [chromium] › tests\e2e\shell.spec.js:80:3 › the wide layout shows at 1440 px (921ms)
+  ok 11 [chromium] › tests\e2e\shell.spec.js:80:3 › the wide layout shows at 1024 px (1.3s)
+  ok 10 [chromium] › tests\e2e\shell.spec.js:80:3 › the compact layout shows at 1023 px (1.5s)
+  ok 14 [chromium] › tests\e2e\shell.spec.js:133:3 › the compact user button names Local User and opens Recycle bin and Settings (1.2s)
+  ok 13 [chromium] › tests\e2e\shell.spec.js:103:1 › navigation marks the current route, and back and forward move between routes (1.5s)
+  ok 16 [chromium] › tests\e2e\shell.spec.js:166:1 › the bottom bar spreads its two destinations over the full width (1.0s)
+  ok 17 [chromium] › tests\e2e\shell.spec.js:181:3 › the narrow panel stays aligned with the button for a long name (821ms)
+  ok 18 [chromium] › tests\e2e\shell.spec.js:181:3 › the desktop panel stays aligned with the button for a long name (898ms)
+  ok 15 [chromium] › tests\e2e\shell.spec.js:133:3 › the wide user button names Local User and opens Recycle bin and Settings (2.0s)
+  ok 19 [chromium] › tests\e2e\shell.spec.js:200:1 › a connected account shows its initials and name, and Connected in the panel (1.2s)
+  ok 20 [chromium] › tests\e2e\shell.spec.js:218:1 › an expired session shows a Sign in button that opens the connect screen (1.4s)
+  ok 22 [chromium] › tests\e2e\shell.spec.js:283:1 › an unknown route or list opens All tasks with a toast naming it (1.3s)
+  ok 23 [chromium] › tests\e2e\shell.spec.js:298:1 › the n and / shortcuts focus the add bar and search once a view has them (1.3s)
+  ok 24 [chromium] › tests\e2e\shell.spec.js:319:1 › Escape closes an open editor route (1.3s)
+  ok 21 [chromium] › tests\e2e\shell.spec.js:234:1 › every route renders its title and its view, and the sidebar follows the lists (3.5s)
+  ok 27 [chromium] › tests\e2e\shell.spec.js:366:1 › a start-up failure shows an error banner instead of a broken page (1.0s)
+  ok 25 [chromium] › tests\e2e\shell.spec.js:326:1 › the theme follows the system by default and a stored preference pins it (2.2s)
+  ok 26 [chromium] › tests\e2e\shell.spec.js:342:1 › a newer app version in another tab shows a lasting banner with Reload (1.9s)
+
+  27 passed (14.3s)

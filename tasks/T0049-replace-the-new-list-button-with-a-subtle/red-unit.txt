@@ -1,0 +1,34 @@
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp
+
+ ❯ tests/unit/layout.test.js (6 tests | 1 failed) 54ms
+   ❯ renderShell navigation (5)
+     × places an icon-only New list link beside the Lists group heading 24ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/layout.test.js > renderShell navigation > places an icon-only New list link beside the Lists group heading
+AssertionError: expected undefined to be 'Lists' // Object.is equality
+
+- Expected:
+"Lists"
+
++ Received:
+undefined
+
+ ❯ tests/unit/layout.test.js:23:34
+     21|     const { root, shell } = render();
+     22|     const heading = root.querySelector('.sidebar__lists-header h2');
+     23|     expect(heading?.textContent).toBe('Lists');
+       |                                  ^
+     24|     const link = heading.parentElement.querySelector('a');
+     25|     expect(link.classList.contains('icon-button')).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  15:15:04
+   Duration  980ms (environment 84%, tests 7%, transform 6%, import 3%, worker 1%)
+
