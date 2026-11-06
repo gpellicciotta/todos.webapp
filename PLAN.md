@@ -2,10 +2,10 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## v0.2.0 Milestone
-- [ ] T0061 Show Import backup in the main view on compact layouts, like the task and list editors.
+- [x] T0061 Show Import backup in the main view on compact layouts, like the task and list editors.
 - [x] T0060 Replace the top-bar More button with a floating New list button in the Lists view.
 - [x] T0059 Hide the account, Recycle bin, and Settings behind a circular user button with a popover panel.
-- [ ] T0058 [protocol: adhoc] [needs: T0057, T0055, T0046, T0047, T0048, T0049, T0061] Release (and publish) all changes as v0.2.0, via the devops.py script
+- [ ] T0058 [protocol: adhoc] [needs: T0057, T0055, T0046, T0047, T0048, T0049] Release (and publish) all changes as v0.2.0, via the devops.py script
 - [ ] T0055 [needs: T0054] Make the add field also search, with Add anyway, a hidden-task toast, and Add-only creation.
 - [ ] T0054 Build the View options panel, the More menu entries, and the info line for All tasks and list views.
 - [ ] T0046 Make lists re-orderable in the front-end only, without back-end storage.
