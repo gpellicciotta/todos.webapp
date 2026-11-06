@@ -1,7 +1,7 @@
 ### Design
 - **[Decided]** The shell loses the top-bar More button and its menu; `attachMenu` stays for the view menus.
 - **[Decided]** New list stays in the sidebar on wide layouts, and in the editor's Add to list box.
-- **[Decided]** The `.fab` component holds the look: a pill button with icon and label, at `--elevation-2`.
+- **[Decided]** The `.fab` component holds the look: a signal circle with only a plus, named New list by aria-label and title, at `--elevation-2`.
 - **[Decided]** The shell positions it fixed at the bottom end of the screen (app-shell.css), above the bottom bar when compact.
 - **[Decided]** A new layer token sits between sticky bars and popovers, so the button covers rows but not popovers or dialogs.
 - **[Decided]** The Lists view hides the button while an editor route is open, so it never covers the editor panel.

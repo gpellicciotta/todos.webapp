@@ -94,3 +94,92 @@ OK: 55 precached files match VERSION 2026-11-06.8.
 - After: [compact](after-lists-compact.png), [wide](after-lists-wide.png), and [wide with the editor open](after-lists-wide-editor-open.png).
 - After, dark: [compact](after-dark-lists-compact.png) and [wide](after-dark-lists-wide.png).
 - Capture check: no console errors, page errors, or 404s in any capture session.
+
+## Rework 1: circular plus-only button
+User feedback: the pill read as an oval; make it a circle with only a plus sign. The button is now a 56 px signal circle, named New list through aria-label and title.
+
+### Red phase
+`npx vitest run tests/unit/lists.test.js`, exit code 1:
+
+```text
+[... 25 lines omitted ...]
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  14:42:07
+   Duration  1.09s (environment 77%, import 10%, transform 8%, tests 4%, worker 1%)
+```
+
+`python -m pytest tests/test_draw_wireframes.py -q`, exit code 1:
+
+```text
+[... 15 lines omitted ...]
+E             + 390)
+
+tests\test_draw_wireframes.py:167: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_draw_wireframes.py::test_lists_float_new_list_and_no_screen_keeps_a_more_button_in_the_top_bar
+1 failed, 57 passed in 0.51s
+```
+
+`npx playwright test tests/e2e/lists.spec.js tests/e2e/gallery-chrome.spec.js -g "floats|signal circle"`, exit code 1:
+
+```text
+[... 102 lines omitted ...]
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chromium] › tests\e2e\gallery-chrome.spec.js:120:1 › the floating button is a signal circle with a plus, a shadow, and a target of at least 44 px 
+    [chromium] › tests\e2e\lists.spec.js:86:3 › New list floats at the bottom right of the screen on the compact layout 
+    [chromium] › tests\e2e\lists.spec.js:86:3 › New list floats at the bottom right of the screen on the wide layout 
+```
+
+### Green phase
+Final run, after review round 2 tidy-ups: sharper radius assertions, a tighter wireframe test, and row padding tied to the 56 px button.
+
+`npx vitest run`, exit code 0:
+
+```text
+[... 3 lines omitted ...]
+
+ Test Files  37 passed (37)
+      Tests  747 passed (747)
+   Start at  14:47:11
+   Duration  8.18s (environment 69%, tests 20%, import 8%, transform 1%, worker 1%)
+
+    Isolate  37 workers spawned · ~1.06s startup each (spawn + environment, per file)
+             at least ~4.55s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+`python -m pytest -q`, exit code 0:
+
+```text
+..........................................................               [100%]
+58 passed in 0.50s
+```
+
+`npm run check:sw`, exit code 0:
+
+```text
+[... 2 lines omitted ...]
+> node scripts/check-sw-version.mjs
+
+OK: 55 precached files match VERSION 2026-11-06.12.
+```
+
+`npx playwright test`, exit code 0:
+
+```text
+[... 144 lines omitted ...]
+  ok 141 [chromium] › tests\e2e\task-editor.spec.js:173:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5) (3.1s)
+
+  142 passed (1.4m)
+```
+
+`npx eslint .`, exit code 0: no output.
+
+### Screenshots
+- [Compact](after-circle-lists-compact.png), [wide](after-circle-lists-wide.png), and [compact, dark](after-circle-dark-lists-compact.png).

@@ -5,15 +5,15 @@ needs: []
 branch: —
 worktree: —
 status: completed
-started_at: "2026-11-06T12:59:19Z"
-ended_at: "2026-11-06T13:11:30Z"
+started_at: "2026-11-06T13:41:51Z"
+ended_at: "2026-11-06T13:48:59Z"
 review: agent
 preview: none
 protocol: standard
 review_status: approved
-review_round: 1
+review_round: 2
 reviewed_by: "@claude-subagent"
-completion-commit: 87688fbcdb98acdc4d95a9e65a28b267f5fac1e2
+completion-commit: de0dbcd3baf32967658ed4709acb9d72c5fc8d7c
 ---
 # T0060: Replace the top-bar More button with a floating New list button in the Lists view
 
@@ -65,6 +65,31 @@ Completion check: `npm test`, `npm run lint`, `npx playwright test`, `python -m 
 
 - [2026-11-06] **[Review]**
   Round 1 approved by @claude-subagent.
+
+- [2026-11-06] **[Complete]**
+  Task completed successfully.
+
+- [2026-11-06] **[Review]**
+  Round 1 approval cleared by reopening; rework needs a new review round.
+
+- [2026-11-06] **[Implement]**
+  Reworked the floating button into a 56 px signal circle with only a plus, per user feedback.
+  - Name stays New list via aria-label and title.
+
+- [2026-11-06] **[Verify]**
+  Recorded task outcomes after rework.
+  - Files touched: 20.
+  - Lines touched: 420.
+  - Reopenings: 1.
+
+- [2026-11-06] **[Review]**
+  Round 2 requested (mode: agent).
+
+- [2026-11-06] **[Review]**
+  Rework review approved; fixed its vacuous radius assertions, wireframe test, row padding, and spec wording.
+
+- [2026-11-06] **[Review]**
+  Round 2 approved by @claude-subagent.
 
 - [2026-11-06] **[Complete]**
   Task completed successfully.
