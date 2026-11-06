@@ -106,6 +106,7 @@ Its `activate` handler then deletes the previous cache.
 - Revisit this when the app loads modules lazily or changes its stored data format.
 
 ### App Icons
+The app icon and the favicon are one file: the slightly rounded hexagon with a fat navy 600 border, a white inside, and a navy check.
 [app-icon.svg](../src/img/app-icon.svg) is the source; the PNG icons of the manifest are rendered from it.
 Render them again after changing the SVG:
 
