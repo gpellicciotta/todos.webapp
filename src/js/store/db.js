@@ -130,6 +130,7 @@ export async function openStore({
       return () => listeners.delete(listener);
     },
     createList: (input) => lists.createList(ctx, input),
+    validateList: (input) => lists.validateList(ctx, input),
     updateList: (id, changes) => lists.updateList(ctx, id, changes),
     getList: (id) => lists.getList(ctx, id),
     listLists: () => lists.listLists(ctx),

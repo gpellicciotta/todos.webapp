@@ -107,13 +107,16 @@ describe('mountListEditor', () => {
     expect((await store.getList(home.id)).name).toBe('Garden');
   });
 
-  it('creates a new list once its name is valid, with the description typed before (LST-1)', async () => {
+  it('creates a valid draft only through Create, including its description (LST-1)', async () => {
     await store.createList({ name: 'Work' });
     const { name, description } = await mount({ name: 'list-new', params: {} });
     expect(panel.title()).toBe('New list');
     expect(document.activeElement).toBe(name);
     expect(panel.body.querySelector('[data-section="details"]').hidden).toBe(true);
     expect(panel.body.querySelector('.editor-panel__danger').hidden).toBe(true);
+    const create = [...panel.body.querySelectorAll('button')].find((button) => button.textContent === 'Create');
+    expect(create).toBeDefined();
+    expect(create.disabled).toBe(true);
     change(description, 'Flowers and vegetables');
     change(name, '');
     await editor.idle();
@@ -121,9 +124,15 @@ describe('mountListEditor', () => {
     change(name, 'WORK');
     await editor.idle();
     expect(errorOf(name)).toBe('A list named "Work" already exists.');
+    expect(create.disabled).toBe(true);
     expect((await store.listLists()).map((list) => list.name)).toEqual(['Work']);
     change(name, 'Garden');
     change(description, 'Flowers, herbs, and vegetables');
+    await editor.idle();
+    expect(create.disabled).toBe(false);
+    expect((await store.listLists()).map((list) => list.name)).toEqual(['Work']);
+    create.click();
+    create.click();
     await editor.idle();
     const lists = await store.listLists();
     expect(lists.map((list) => [list.name, list.description])).toEqual([['Garden', 'Flowers, herbs, and vegetables'], ['Work', '']]);
@@ -146,13 +155,62 @@ describe('mountListEditor', () => {
     expect((await store.listLists()).map((list) => list.name)).toEqual(['Work']);
   });
 
-  it('saves a typed valid name when the editor closes before the field changes, like the task editor', async () => {
+  it('discards a typed valid name when the new editor closes', async () => {
     const { name } = await mount({ name: 'list-new', params: {} });
     name.value = 'Garden';
     const closing = editor;
     editor = null;
     closing.destroy();
-    await vi.waitFor(async () => expect((await store.listLists()).map((list) => list.name)).toEqual(['Garden']));
+    await closing.idle();
+    expect(await store.listLists()).toEqual([]);
+  });
+
+  it('creates on Enter in the name field, but not on ordinary draft changes', async () => {
+    const { name } = await mount({ name: 'list-new', params: {} });
+    change(name, 'Garden');
+    await editor.idle();
+    expect(await store.listLists()).toEqual([]);
+    name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await editor.idle();
+    expect((await store.listLists()).map((list) => list.name)).toEqual(['Garden']);
+  });
+
+  it('locks draft fields during submission and unlocks them once created', async () => {
+    const { name, description } = await mount({ name: 'list-new', params: {} });
+    change(name, 'Garden');
+    await editor.idle();
+    const write = store.createList.bind(store);
+    let release;
+    const gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    vi.spyOn(store, 'createList').mockImplementation(async (draft) => {
+      await gate;
+      return write(draft);
+    });
+    panel.body.querySelector('button').click();
+    expect(name.disabled).toBe(true);
+    expect(description.disabled).toBe(true);
+    release();
+    await editor.idle();
+    expect(name.disabled).toBe(false);
+    expect(description.disabled).toBe(false);
+    expect((await store.listLists()).map((list) => list.name)).toEqual(['Garden']);
+  });
+
+  it('rejects a recycled duplicate and an overlong description without creating a draft', async () => {
+    const home = await store.createList({ name: 'Home' });
+    await store.deleteList(home.id);
+    const { name, description } = await mount({ name: 'list-new', params: {} });
+    change(name, 'HOME');
+    await editor.idle();
+    expect(errorOf(name)).toBe('A list named "Home" already exists in the recycle bin.');
+    change(name, 'Garden');
+    change(description, 'x'.repeat(1001));
+    await editor.idle();
+    expect(errorOf(description)).toMatch(/1000/);
+    expect(panel.body.querySelector('button').disabled).toBe(true);
+    expect(await store.listLists()).toEqual([]);
   });
 
   it('saves a name fixed after an error when the editor closes without a change event', async () => {

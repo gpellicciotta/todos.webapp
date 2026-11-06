@@ -41,9 +41,11 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 
 ### Lists
 - LST-1: Users create a list with a name of 1 to 100 characters and an optional description.
+  Create or Enter in the name field saves the draft; closing with Escape or the close button discards it.
 - LST-2: A list description holds at most 1000 characters.
 - LST-3: List names are unique per owner, compared case-insensitively; a duplicate name is rejected with a message.
 - LST-4: Users rename a list and edit its description.
+  Changes to existing lists save automatically.
 - LST-5: Users see all lists with their task count, their open task count, and, when connected, their sharing state.
 - LST-6: Deleting a list moves it to the recycle bin and never deletes its tasks.
 - LST-7: A deleted list's tasks stay in their other lists, or end up in no list.

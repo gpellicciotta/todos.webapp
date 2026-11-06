@@ -155,7 +155,7 @@ test('the floating New list button hides while the New list editor is open', asy
   await expect(page.locator('.lists-view .fab')).toBeVisible();
 });
 
-test('New list creates the list once a valid name is typed, and closing early creates nothing (LST-1, LST-3)', async ({ page }) => {
+test('New list creates only through Create and discards drafts on close (LST-1, LST-3)', async ({ page }) => {
   const problems = watch(page);
   await seed(page);
   await page.goto('/#/lists');
@@ -167,9 +167,22 @@ test('New list creates the list once a valid name is typed, and closing early cr
   await expect(panel.locator('.editor-panel__title')).toHaveText('New list');
   const name = panel.getByRole('textbox', { name: 'Name' });
   await expect(name).toBeFocused();
+  const create = panel.getByRole('button', { name: 'Create', exact: true });
+  await expect(create).toBeDisabled();
+  await name.fill('Discarded with Escape');
+  await name.press('Tab');
+  await expect(create).toBeEnabled();
+  await expect(rows).toHaveText(['Home', 'Work']);
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
   await expect(page).toHaveURL(/#\/lists$/);
+  await expect(rows).toHaveText(['Home', 'Work']);
+
+  await page.locator('.lists-view').getByRole('link', { name: 'New list' }).click();
+  await name.fill('Discarded with close');
+  await panel.getByRole('textbox', { name: 'Description' }).fill('Never saved');
+  await panel.getByRole('button', { name: 'Close the list editor' }).click();
+  await expect(panel).toHaveCount(0);
   await expect(rows).toHaveText(['Home', 'Work']);
 
   await page.locator('.lists-view').getByRole('link', { name: 'New list' }).click();
@@ -178,16 +191,33 @@ test('New list creates the list once a valid name is typed, and closing early cr
   await name.press('Tab');
   const error = panel.locator('[data-section="fields"] .field__error').first();
   await expect(error).toHaveText('A list named "Home" already exists.');
+  await expect(create).toBeDisabled();
   await expect(rows).toHaveText(['Home', 'Work']);
   await name.fill('Garden');
   await name.press('Tab');
-  await expect(rows).toHaveText(['Garden', 'Home', 'Work']);
+  await expect(create).toBeEnabled();
+  await expect(rows).toHaveText(['Home', 'Work']);
   await expect(error).toBeHidden();
   await panel.getByRole('textbox', { name: 'Description' }).fill('Flowers and vegetables');
+  await create.click();
+  await expect(rows).toHaveText(['Garden', 'Home', 'Work']);
+  await expect(create).toBeHidden();
   await page.keyboard.press('Escape');
   await expect(page).toHaveURL(/#\/lists$/);
   await expect(page.locator('.list-row', { hasText: 'Garden' }).locator('.list-row__description')).toHaveText('Flowers and vegetables');
   await expect(page.locator('.app__sidebar .nav-item--list .nav-item__label')).toHaveText(['Garden', 'Home', 'Work']);
+  expect(problems).toEqual([]);
+});
+
+test('Enter in the new list name creates the draft', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/#/lists/new');
+  const name = page.getByRole('textbox', { name: 'Name', exact: true });
+  await name.fill('Created by Enter');
+  await name.press('Enter');
+  await expect(page.locator('.lists-view .list-row__name')).toHaveText(['Created by Enter']);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-editor-slot]')).toBeHidden();
   expect(problems).toEqual([]);
 });
 

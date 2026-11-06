@@ -4,7 +4,8 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.1.2-pre
+## v0.1.3-pre
+- FrontEnd: Required Create or Enter to save new lists; closing discards drafts while existing lists still save automatically.
 - FrontEnd: Removed the sidebar New list action; list creation stays available through the Lists view floating plus.
 - FrontEnd: Opened Import backup in the main view between the bars on phones, like the task and list editors.
 - FrontEnd: Replaced the top-bar More button with a floating circular plus button, named New list, at the bottom right of the Lists view.

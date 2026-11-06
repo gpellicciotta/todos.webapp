@@ -1,9 +1,9 @@
 /**
- * List editor: the name and description of one list, saved on change, with no Save button (`LST-1`, `LST-2`, `LST-4`).
+ * List editor: explicit creation for drafts, and save-on-change editing (`LST-1`, `LST-2`, `LST-4`).
  *
  * It opens in the editor panel, like the task editor. A duplicate or empty name shows a field error and saves
- * nothing (`LST-3`). On `#/lists/new` the list is created once its name is valid; closing before that creates
- * nothing. Details show the creation time; in local mode the Sharing section only links to the connect flow.
+ * nothing (`LST-3`). On `#/lists/new`, Create or Enter in the name field creates the list; closing discards
+ * the draft. Details show the creation time; in local mode the Sharing section only links to the connect flow.
  * Delete list asks first, stating that the tasks stay, then opens All tasks with Undo (`LST-6`, `LST-7`).
  */
 
@@ -16,6 +16,7 @@ import { make as el, spriteIcon } from './task-list.js';
 /** Editor strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   title: 'List', newTitle: 'New list', name: 'Name', description: 'Description',
+  create: 'Create',
   counter: (count) => `${count} / ${DESCRIPTION_MAX}`, details: 'Details', created: 'Created ',
   sharing: 'Sharing', connect: 'Connect to share this list', delete: 'Delete list',
   deleteHint: 'Deleting a list never deletes its tasks.', deleteTitle: (name) => `Delete the list ${name}?`,
@@ -102,6 +103,9 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   let chain = Promise.resolve();
   let pending = null;
   let destroyed = false;
+  let creating = false;
+  let latestDraft = null;
+  let draftTouched = false;
   const shown = new Map();
 
   /**
@@ -132,6 +136,11 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   description.control.setAttribute('aria-describedby', counter.id);
   description.element.append(counter);
   section('fields').append(name.element, description.element);
+  const create = el(doc, 'button', 'button', STRINGS.create);
+  create.type = 'button';
+  create.disabled = true;
+  create.hidden = Boolean(listId);
+  root.append(create);
   const details = el(doc, 'p', 'editor-panel__details');
   const detailsSection = section('details', STRINGS.details);
   detailsSection.append(details);
@@ -182,7 +191,7 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   }
 
   /**
-   * Store a change after the earlier ones: create a new list once a name is given, or update it.
+   * Store a change to an existing list after the earlier ones.
    * A validation failure shows on its field; other failures show in a toast.
    * @param {{name?: string, description?: string}} changes the changed fields
    */
@@ -191,11 +200,6 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
       try {
         if (listId) {
           list = await store.updateList(listId, changes);
-        }
-        else if ('name' in changes) {
-          list = await store.createList({ name: changes.name, description: description.control.value });
-          listId = list.id;
-          fill();
         }
         else {
           return;
@@ -214,10 +218,106 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
     });
   }
 
+  /** Validate the current draft without writing, ignoring results for values that have since changed. */
+  function validateDraft(force = false) {
+    const draft = { name: name.control.value, description: description.control.value };
+    if (!force && latestDraft?.name === draft.name && latestDraft?.description === draft.description) {
+      return;
+    }
+    latestDraft = draft;
+    create.disabled = true;
+    chain = chain.then(async () => {
+      if (destroyed || listId || creating) {
+        return;
+      }
+      let error = null;
+      try {
+        await store.validateList(draft);
+      }
+      catch (failure) {
+        error = failure;
+      }
+      if (destroyed || listId || creating || draft.name !== name.control.value || draft.description !== description.control.value) {
+        return;
+      }
+      name.setError(null);
+      description.setError(null);
+      if (error?.name === 'ValidationError' && draftTouched) {
+        (error.field === 'description' ? description : name).setError(error.message);
+      }
+      else if (error && error.name !== 'ValidationError') {
+        fail(toaster, error);
+      }
+      create.disabled = Boolean(error);
+    });
+  }
+
+  /** Persist one explicitly submitted draft; subsequent changes use the existing edit behavior. */
+  function submit() {
+    if (destroyed || listId || creating) {
+      return;
+    }
+    creating = true;
+    name.control.disabled = true;
+    description.control.disabled = true;
+    create.disabled = true;
+    const draft = { name: name.control.value, description: description.control.value };
+    chain = chain.then(async () => {
+      try {
+        if (destroyed) {
+          return;
+        }
+        list = await store.createList(draft);
+        listId = list.id;
+        create.hidden = true;
+        panel.setTitle(STRINGS.title);
+        name.setError(null);
+        description.setError(null);
+        fill();
+      }
+      catch (error) {
+        if (error?.name === 'ValidationError') {
+          (error.field === 'description' ? description : name).setError(error.message);
+        }
+        else {
+          fail(toaster, error);
+        }
+      }
+      finally {
+        creating = false;
+        name.control.disabled = false;
+        description.control.disabled = false;
+        if (!listId && !destroyed) {
+          validateDraft(true);
+        }
+      }
+    });
+  }
+
+  create.addEventListener('click', submit);
+  name.control.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.isComposing && !listId) {
+      event.preventDefault();
+      submit();
+    }
+  });
+
   for (const [field, key] of [[name, 'name'], [description, 'description']]) {
+    field.control.addEventListener('input', () => {
+      if (!listId) {
+        draftTouched = true;
+        validateDraft();
+      }
+    });
     field.control.addEventListener('change', () => {
       shown.set(field.control, field.control.value);
-      save({ [key]: field.control.value });
+      if (listId) {
+        save({ [key]: field.control.value });
+      }
+      else {
+        draftTouched = true;
+        validateDraft();
+      }
     });
   }
   description.control.addEventListener('input', count);
@@ -239,6 +339,9 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
       if (!destroyed && (!listId || (next && !next['deletion-time']))) {
         list = next;
         fill();
+        if (!listId && !creating) {
+          validateDraft(true);
+        }
       }
     }).catch((error) => console.error('List editor failed to render:', error));
     return pending;
@@ -258,7 +361,7 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
     destroy() {
       // Closing, such as with Back, fires no change event, so typed values save here, also a fixed invalid one.
       for (const [field, key] of [[name, 'name'], [description, 'description']]) {
-        if (field.control.value !== shown.get(field.control)) {
+        if (listId && field.control.value !== shown.get(field.control)) {
           save({ [key]: field.control.value });
         }
       }

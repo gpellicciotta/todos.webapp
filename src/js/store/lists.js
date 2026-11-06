@@ -96,6 +96,18 @@ export async function createList(ctx, input) {
 }
 
 /**
+ * Validate a new list without writing it; creation still checks uniqueness in its write transaction.
+ * @param {{db: IDBDatabase}} ctx store context
+ * @param {{name: string, description?: string}} input the draft
+ * @returns {Promise<void>} resolves when the draft is valid
+ */
+export async function validateList(ctx, input) {
+  const name = checkName(input.name);
+  checkDescription(input.description);
+  await transact(ctx.db, [STORES.lists], 'readonly', (tx) => checkUnique(tx.objectStore(STORES.lists), { name, owner: null }));
+}
+
+/**
  * Rename or describe a list; omitted fields stay unchanged.
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {string} id the list identifier
