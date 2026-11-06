@@ -90,7 +90,7 @@ OK: 55 precached files match VERSION 2026-11-06.8.
 ```
 
 ### Screenshots
-- Before: [compact](before-lists-compact.png) and [wide](before-lists-wide.png).
+- Before (the shell with the top-bar More button and the header New list button): [compact](before-lists-compact.png) and [wide](before-lists-wide.png).
 - After: [compact](after-lists-compact.png), [wide](after-lists-wide.png), and [wide with the editor open](after-lists-wide-editor-open.png).
 - After, dark: [compact](after-dark-lists-compact.png) and [wide](after-dark-lists-wide.png).
 - Capture check: no console errors, page errors, or 404s in any capture session.
@@ -182,4 +182,4 @@ OK: 55 precached files match VERSION 2026-11-06.12.
 `npx eslint .`, exit code 0: no output.
 
 ### Screenshots
-- [Compact](after-circle-lists-compact.png), [wide](after-circle-lists-wide.png), and [compact, dark](after-circle-dark-lists-compact.png).
+The After screenshots above were recaptured with the circular button, so they show the final state.
