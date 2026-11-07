@@ -52,6 +52,18 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LST-8: Users reorder lists by drag or keyboard, in the sidebar and the Lists screen; the order stays on the device.
   New lists append at the end; the store and the sync feed never hold the order.
 - LST-9: Each row of the Lists screen has a More button with the actions of the list view: edit, view options, share, and delete.
+- LST-10: From 12 lists, the sidebar and the Lists screen offer a find field that filters lists by typed text.
+  It ignores case and accents, matches names (the Lists screen also descriptions), and states how many lists match.
+- LST-11: A find with no match on the Lists screen offers to create a list with the typed name.
+- LST-12: Users sort the Lists screen by manual order, name, open task count, or last activity.
+  The device remembers the choice.
+  Sorting and finding never change the stored order, and reordering is available only in manual order without find text.
+- LST-13: Users move a list to the top or bottom, besides moving it by one place, by menu entry or keyboard.
+- LST-14: The wide sidebar keeps All tasks, Lists, and the find field in view, and scrolls only the lists.
+  It keeps the current list in view and never moves its scroll on a count change.
+- LST-15: The sidebar and the Lists screen are each one tab stop, with arrow, Home, End, and Page keys between lists.
+  A shortcut focuses the find field, and a polite announcement states the match count after each change.
+- LST-16: When connected, users show only shared lists on the Lists screen.
 
 ### Tasks
 - TSK-1: Users create a task with a description of 1 to 500 characters.
@@ -227,7 +239,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 
 ### Quality
 - TEC-15: The UI meets WCAG 2.2 level AA and is fully operable by keyboard.
-- TEC-16: Views open within 200 ms with 5000 tasks on a mid-range phone.
+- TEC-16: Views open within 200 ms with 150 lists and 5000 tasks on a mid-range phone.
 - TEC-17: The app sends no analytics or tracking data.
 - TEC-18: Signing out or disconnecting deletes the session token from the device.
 - TEC-19: A new app version installs only when the user chooses Update, so open tabs never mix old and new code.

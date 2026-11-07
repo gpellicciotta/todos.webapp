@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1970" height="1050" viewBox="0 0 1970 1050">
+  <title>Lists with many lists wireframe</title>
+  <style>
+text { font-family: sans-serif; fill: #222222; }
+.muted { fill: #666666; }
+.on-primary { fill: #ffffff; }
+.bold { font-weight: bold; }
+rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
+.bar { fill: #eeeeee; stroke: #bbbbbb; }
+.box { fill: #f5f5f5; stroke: #bbbbbb; }
+.control { fill: #ffffff; stroke: #888888; }
+.disabled { fill: #f5f5f5; stroke: #cccccc; }
+.primary { fill: #444444; stroke: #444444; }
+.selected { fill: #dddddd; stroke: #999999; }
+.chip { fill: #eeeeee; stroke: #cccccc; }
+.signal { fill: #ffffff; stroke: #222222; stroke-width: 2; }
+.scrim { fill: #888888; fill-opacity: 0.5; }
+.rule { stroke: #cccccc; }
+.drop { stroke: #222222; stroke-width: 3; }
+.icon { fill: #ffffff; stroke: #444444; stroke-width: 2; }
+.icon-fill { fill: #444444; stroke: #444444; stroke-width: 2; }
+.icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
+.icon-line { stroke: #444444; stroke-width: 2; }
+.icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
+  <text x="40" y="44" font-size="28" class="bold">Lists with many lists</text>
+  <text x="40" y="72" font-size="16" class="muted">The sidebar keeps its header fixed and scrolls only the lists; the Lists screen finds, sorts, and renders every list.</text>
+  <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
+  <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
+  <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
+    <rect x="0" y="0" width="390" height="844" rx="0" class="frame"/>
+    <rect x="0" y="0" width="390" height="60" rx="0" class="bar"/>
+    <circle cx="360" cy="30" r="22" class="icon-fill"/>
+    <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <text x="16" y="37" font-size="20" class="bold">Lists</text>
+    <line x1="0" y1="124" x2="390" y2="124" class="rule"/>
+    <text x="382" y="97" font-size="13" class="muted" text-anchor="end">7/15 open</text>
+    <text x="12" y="87" font-size="16" class="bold">Garden</text>
+    <text x="12" y="109" font-size="13" class="muted">Spring planting and the fence</text>
+    <line x1="0" y1="188" x2="390" y2="188" class="rule"/>
+    <rect x="325.68" y="144" width="56.32" height="24" rx="12" class="chip"/>
+    <text x="353.84" y="160" font-size="12" text-anchor="middle">Shared</text>
+    <text x="317.68" y="161" font-size="13" class="muted" text-anchor="end">8/14 open</text>
+    <text x="12" y="151" font-size="16" class="bold">Home</text>
+    <text x="12" y="173" font-size="13" class="muted">Chores and repairs around the…</text>
+    <line x1="0" y1="252" x2="390" y2="252" class="rule"/>
+    <rect x="325.68" y="208" width="56.32" height="24" rx="12" class="chip"/>
+    <text x="353.84" y="224" font-size="12" text-anchor="middle">Shared</text>
+    <text x="317.68" y="225" font-size="13" class="muted" text-anchor="end">9/40 open</text>
+    <text x="12" y="215" font-size="16" class="bold">Groceries</text>
+    <text x="12" y="237" font-size="13" class="muted">Weekly shopping</text>
+    <line x1="0" y1="316" x2="390" y2="316" class="rule"/>
+    <text x="382" y="289" font-size="13" class="muted" text-anchor="end">12/30 open</text>
+    <text x="12" y="279" font-size="16" class="bold">Work</text>
+    <text x="12" y="301" font-size="13" class="muted">Projects and follow-ups</text>
+    <line x1="0" y1="380" x2="390" y2="380" class="rule"/>
+    <text x="382" y="353" font-size="13" class="muted" text-anchor="end">3/12 open</text>
+    <text x="12" y="343" font-size="16" class="bold">Gym</text>
+    <text x="12" y="365" font-size="13" class="muted">Training plan and bookings</text>
+    <line x1="0" y1="444" x2="390" y2="444" class="rule"/>
+    <text x="382" y="417" font-size="13" class="muted" text-anchor="end">0/6 open</text>
+    <text x="12" y="407" font-size="16" class="bold">Taxes</text>
+    <text x="12" y="429" font-size="13" class="muted">Forms and receipts for this year</text>
+    <line x1="0" y1="508" x2="390" y2="508" class="rule"/>
+    <text x="382" y="481" font-size="13" class="muted" text-anchor="end">4/11 open</text>
+    <text x="12" y="471" font-size="16" class="bold">Garage</text>
+    <text x="12" y="493" font-size="13" class="muted">Tools, shelves, and the bike repair</text>
+    <line x1="0" y1="572" x2="390" y2="572" class="rule"/>
+    <text x="382" y="545" font-size="13" class="muted" text-anchor="end">0/6 open</text>
+    <text x="12" y="535" font-size="16" class="bold">Gifts</text>
+    <text x="12" y="557" font-size="13" class="muted">Ideas for birthdays and holidays</text>
+    <line x1="0" y1="636" x2="390" y2="636" class="rule"/>
+    <text x="382" y="609" font-size="13" class="muted" text-anchor="end">2/9 open</text>
+    <text x="12" y="599" font-size="16" class="bold">Health</text>
+    <text x="12" y="621" font-size="13" class="muted">Appointments and checkups</text>
+    <rect x="0" y="692" width="390" height="88" rx="0" class="bar"/>
+    <rect x="338" y="700" width="44" height="44" rx="6" class="control"/>
+    <text x="360" y="727" font-size="16" text-anchor="middle">↕</text>
+    <rect x="8" y="700" width="322" height="44" rx="6" class="control"/>
+    <text x="20" y="727" font-size="14" class="muted">Find a list</text>
+    <text x="16" y="766" font-size="12" class="muted">124 lists</text>
+    <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
+    <rect x="88.5" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="97.5" y="828" font-size="12" text-anchor="middle">Tasks</text>
+    <rect x="252.5" y="788" width="80" height="48" rx="24" class="selected"/>
+    <rect x="283.5" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="292.5" y="828" font-size="12" class="bold" text-anchor="middle">Lists</text>
+    <circle cx="346" cy="648" r="28" class="icon-fill"/>
+    <text x="346" y="657" font-size="28" class="on-primary bold" text-anchor="middle">+</text>
+  </g>
+  <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
+    <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
+    <rect x="0" y="0" width="264" height="900" rx="0" class="bar"/>
+    <text x="24" y="46" font-size="22" class="bold">ToDo's</text>
+    <text x="28" y="106" font-size="14">All tasks</text>
+    <text x="236" y="106" font-size="13" class="muted" text-anchor="end">24</text>
+    <text x="28" y="150" font-size="14">Lists</text>
+    <rect x="12" y="168" width="240" height="40" rx="6" class="control"/>
+    <text x="24" y="194" font-size="14" class="muted">Find a list</text>
+    <rect x="12" y="220" width="240" height="40" rx="6" class="selected"/>
+    <text x="44" y="246" font-size="14" class="bold">Garden</text>
+    <text x="236" y="246" font-size="13" class="muted" text-anchor="end">7</text>
+    <text x="44" y="290" font-size="14">Home</text>
+    <text x="236" y="290" font-size="13" class="muted" text-anchor="end">8</text>
+    <text x="44" y="334" font-size="14">Groceries</text>
+    <text x="236" y="334" font-size="13" class="muted" text-anchor="end">9</text>
+    <text x="44" y="378" font-size="14">Work</text>
+    <text x="236" y="378" font-size="13" class="muted" text-anchor="end">12</text>
+    <text x="44" y="422" font-size="14">Gym</text>
+    <text x="236" y="422" font-size="13" class="muted" text-anchor="end">3</text>
+    <text x="44" y="466" font-size="14">Taxes</text>
+    <text x="44" y="510" font-size="14">Garage</text>
+    <text x="236" y="510" font-size="13" class="muted" text-anchor="end">4</text>
+    <text x="44" y="554" font-size="14">Gifts</text>
+    <text x="44" y="598" font-size="14">Health</text>
+    <text x="236" y="598" font-size="13" class="muted" text-anchor="end">2</text>
+    <text x="44" y="642" font-size="14">Holidays</text>
+    <text x="236" y="642" font-size="13" class="muted" text-anchor="end">6</text>
+    <text x="44" y="686" font-size="14">Insurance</text>
+    <text x="236" y="686" font-size="13" class="muted" text-anchor="end">1</text>
+    <text x="44" y="730" font-size="14">Kids</text>
+    <text x="236" y="730" font-size="13" class="muted" text-anchor="end">5</text>
+    <text x="44" y="774" font-size="14">Legal</text>
+    <text x="236" y="774" font-size="13" class="muted" text-anchor="end">2</text>
+    <text x="44" y="818" font-size="14">Yoga</text>
+    <rect x="258" y="220" width="4" height="672" rx="2" class="box"/>
+    <rect x="258" y="314.08" width="4" height="75.871" rx="2" class="selected"/>
+    <circle cx="1082" cy="44" r="22" class="icon-fill"/>
+    <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <text x="304" y="60" font-size="28" class="bold">Lists</text>
+    <rect x="304" y="100" width="800" height="60" rx="8" class="bar"/>
+    <rect x="922.88" y="108" width="173.12" height="44" rx="6" class="control"/>
+    <text x="1009.44" y="134.9" font-size="14" text-anchor="middle">Sort: Manual order</text>
+    <rect x="312" y="108" width="602.88" height="44" rx="6" class="control"/>
+    <text x="324" y="135" font-size="14" class="muted">Find a list</text>
+    <text x="312" y="182" font-size="12" class="muted">124 lists</text>
+    <line x1="304" y1="286" x2="1104" y2="286" class="rule"/>
+    <text x="1096" y="259" font-size="13" class="muted" text-anchor="end">7 open · 15 total</text>
+    <text x="316" y="249" font-size="16" class="bold">Garden</text>
+    <text x="316" y="271" font-size="13" class="muted">Spring planting and the fence</text>
+    <line x1="304" y1="350" x2="1104" y2="350" class="rule"/>
+    <rect x="1039.68" y="306" width="56.32" height="24" rx="12" class="chip"/>
+    <text x="1067.84" y="322" font-size="12" text-anchor="middle">Shared</text>
+    <text x="1031.68" y="323" font-size="13" class="muted" text-anchor="end">8 open · 14 total</text>
+    <text x="316" y="313" font-size="16" class="bold">Home</text>
+    <text x="316" y="335" font-size="13" class="muted">Chores and repairs around the house</text>
+    <line x1="304" y1="414" x2="1104" y2="414" class="rule"/>
+    <rect x="1039.68" y="370" width="56.32" height="24" rx="12" class="chip"/>
+    <text x="1067.84" y="386" font-size="12" text-anchor="middle">Shared</text>
+    <text x="1031.68" y="387" font-size="13" class="muted" text-anchor="end">9 open · 40 total</text>
+    <text x="316" y="377" font-size="16" class="bold">Groceries</text>
+    <text x="316" y="399" font-size="13" class="muted">Weekly shopping</text>
+    <line x1="304" y1="478" x2="1104" y2="478" class="rule"/>
+    <text x="1096" y="451" font-size="13" class="muted" text-anchor="end">12 open · 30 total</text>
+    <text x="316" y="441" font-size="16" class="bold">Work</text>
+    <text x="316" y="463" font-size="13" class="muted">Projects and follow-ups</text>
+    <line x1="304" y1="542" x2="1104" y2="542" class="rule"/>
+    <text x="1096" y="515" font-size="13" class="muted" text-anchor="end">3 open · 12 total</text>
+    <text x="316" y="505" font-size="16" class="bold">Gym</text>
+    <text x="316" y="527" font-size="13" class="muted">Training plan and bookings</text>
+    <line x1="304" y1="606" x2="1104" y2="606" class="rule"/>
+    <text x="1096" y="579" font-size="13" class="muted" text-anchor="end">0 open · 6 total</text>
+    <text x="316" y="569" font-size="16" class="bold">Taxes</text>
+    <text x="316" y="591" font-size="13" class="muted">Forms and receipts for this year</text>
+    <line x1="304" y1="670" x2="1104" y2="670" class="rule"/>
+    <text x="1096" y="643" font-size="13" class="muted" text-anchor="end">4 open · 11 total</text>
+    <text x="316" y="633" font-size="16" class="bold">Garage</text>
+    <text x="316" y="655" font-size="13" class="muted">Tools, shelves, and the bike repair</text>
+    <line x1="304" y1="734" x2="1104" y2="734" class="rule"/>
+    <text x="1096" y="707" font-size="13" class="muted" text-anchor="end">0 open · 6 total</text>
+    <text x="316" y="697" font-size="16" class="bold">Gifts</text>
+    <text x="316" y="719" font-size="13" class="muted">Ideas for birthdays and holidays</text>
+    <line x1="304" y1="798" x2="1104" y2="798" class="rule"/>
+    <text x="1096" y="771" font-size="13" class="muted" text-anchor="end">2 open · 9 total</text>
+    <text x="316" y="761" font-size="16" class="bold">Health</text>
+    <text x="316" y="783" font-size="13" class="muted">Appointments and checkups</text>
+    <line x1="304" y1="862" x2="1104" y2="862" class="rule"/>
+    <rect x="1039.68" y="818" width="56.32" height="24" rx="12" class="chip"/>
+    <text x="1067.84" y="834" font-size="12" text-anchor="middle">By Ann</text>
+    <text x="1031.68" y="835" font-size="13" class="muted" text-anchor="end">6 open · 21 total</text>
+    <text x="316" y="825" font-size="16" class="bold">Holidays</text>
+    <text x="316" y="847" font-size="13" class="muted">Trips planned for next year</text>
+    <circle cx="1388" cy="848" r="28" class="icon-fill"/>
+    <text x="1388" y="857" font-size="28" class="on-primary bold" text-anchor="middle">+</text>
+  </g>
+</svg>

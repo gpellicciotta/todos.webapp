@@ -349,30 +349,56 @@ def bottom_nav(f, current):
         f.text(cx, top + 48, label, 12, "bold" if label == current else "", "middle")
 
 
+def nav_item(f, y, label, count, selected, indent=0):
+    """Draw one 40 px sidebar item at y and return the y of the next item."""
+    if selected:
+        f.rect(12, y, SIDEBAR_WIDTH - 24, 40, "selected")
+    f.text(28 + indent, y + 26, label, 14, "bold" if selected else "")
+    if count is not None:
+        f.text(SIDEBAR_WIDTH - 28, y + 26, str(count), 13, "muted", "end")
+    return y + 44
+
+
 def sidebar(f, current, lists=LISTS):
     """Draw the wide sidebar with the destinations and the lists; the user menu holds the rest."""
     f.rect(0, 0, SIDEBAR_WIDTH, f.height, "bar", radius=0)
     f.text(24, 46, "ToDo's", 22, "bold")
-    y = 80
-
-    def item(label, count, selected, indent=0):
-        nonlocal y
-        if selected:
-            f.rect(12, y, SIDEBAR_WIDTH - 24, 40, "selected")
-        f.text(28 + indent, y + 26, label, 14, "bold" if selected else "")
-        if count is not None:
-            f.text(SIDEBAR_WIDTH - 28, y + 26, str(count), 13, "muted", "end")
-        y += 44
-
-    item("All tasks", 24 if lists else 0, current == "All tasks")
-    item("Lists", None, current == "Lists")
+    y = nav_item(f, 80, "All tasks", 24 if lists else 0, current == "All tasks")
+    y = nav_item(f, y, "Lists", None, current == "Lists")
     if lists:
         for name, count in lists:
-            item(name, count, current == name, indent=16)
+            y = nav_item(f, y, name, count, current == name, indent=16)
     else:
         f.text(44, y + 22, "No lists yet", 13, "muted")
-        y += 36
-    item("+ New list", None, False, indent=16)
+
+
+def sidebar_many(f, current, rows, total, find=None, matches=None):
+    """Draw the wide sidebar for many lists.
+
+    The brand, All tasks, Lists, and the find field stay fixed; only the list rows below scroll, and a scrollbar
+    thumb shows the position. A zero open count is left out. `rows` are (name, open count) pairs, `total` is the
+    number of lists, and `matches` is the number of lists the find text leaves.
+    """
+    f.rect(0, 0, SIDEBAR_WIDTH, f.height, "bar", radius=0)
+    f.text(24, 46, "ToDo's", 22, "bold")
+    y = nav_item(f, 80, "All tasks", 24, current == "All tasks")
+    y = nav_item(f, y, "Lists", None, current == "Lists")
+    f.rect(12, y, SIDEBAR_WIDTH - 24, 40, "control")
+    f.text(24, y + 26, find or "Find a list", 14, "" if find else "muted")
+    if find:
+        f.text(SIDEBAR_WIDTH - 24, y + 26, f"{matches} of {total}", 12, "muted", "end")
+    top, bottom = y + 52, f.height - 8
+    y = top
+    shown = 0
+    for name, count in rows:
+        if y + 40 > bottom:
+            break
+        y = nav_item(f, y, name, count or None, name == current, indent=16)
+        shown += 1
+    if shown < total and not find:
+        track = bottom - top
+        f.rect(SIDEBAR_WIDTH - 6, top, 4, track, "box", radius=2)
+        f.rect(SIDEBAR_WIDTH - 6, top + track * 0.14, 4, track * shown / total, "selected", radius=2)
 
 
 def page_header(f, x, y, right, title, subtitle=None, actions=(), account="local"):
@@ -820,6 +846,112 @@ def lists():
     )
 
 
+# A window of a 124-list account in manual order: name, description, open count, total count, sharing state.
+MANY_ROWS = [
+    ("Garden", "Spring planting and the fence", 7, 15, None),
+    ("Home", "Chores and repairs around the house", 8, 14, "Shared"),
+    ("Groceries", "Weekly shopping", 9, 40, "Shared"),
+    ("Work", "Projects and follow-ups", 12, 30, None),
+    ("Gym", "Training plan and bookings", 3, 12, None),
+    ("Taxes", "Forms and receipts for this year", 0, 6, None),
+    ("Garage", "Tools, shelves, and the bike repair", 4, 11, None),
+    ("Gifts", "Ideas for birthdays and holidays", 0, 6, None),
+    ("Health", "Appointments and checkups", 2, 9, None),
+    ("Holidays", "Trips planned for next year", 6, 21, "By Ann"),
+    ("Insurance", "Policies and renewals", 1, 5, None),
+    ("Kids", "School, clubs, and play dates", 5, 18, None),
+    ("Legal", "Contracts and paperwork", 2, 4, None),
+    ("Yoga", "Classes and routines", 0, 3, None),
+]
+FIND_RESULTS = ["Garage", "Garden", "Legal", "Yoga"]
+MANY_TOTAL = 124
+
+
+def find_bar(f, x, y, width, value="", sort="Manual order", info=None, reset=False):
+    """Draw the find and sort bar of the Lists screen and return its bottom edge.
+
+    It follows the add bar: pinned above the bottom navigation when compact, above the rows when wide.
+    """
+    pinned = width == f.width
+    f.rect(x, y, width, 88 if pinned else 60, "bar", radius=0 if pinned else 8)
+    if pinned:
+        left = x + width - 52
+        icon_button(f, left, y + 8, "↕")
+    else:
+        left = button_right(f, x + width - 8, y + 8, f"Sort: {sort}")
+    field_width = left - x - 16
+    field(f, x + 8, y + 8, field_width, value or "Find a list", muted=not value)
+    if value:
+        f.text(x + 8 + field_width - 14, y + 36, "×", 18, "", "end")
+    if info:
+        if pinned:
+            info_line(f, x + 16, y + 74, x + width - 16, info, reset)
+        else:
+            info_line(f, x + 8, y + 82, x + width - 8, info, reset)
+    return y + (88 if pinned else 90)
+
+
+def list_rows_until(f, x, y, width, rows, wide, bottom):
+    """Draw list overview rows while a whole row fits above `bottom`; return the next y."""
+    for name, description, open_count, total, sharing in rows:
+        if y + 64 > bottom:
+            break
+        counts = f"{open_count} open · {total} total" if wide else f"{open_count}/{total} open"
+        y = list_row(f, x, y, width, name, description, counts, sharing)
+    return y
+
+
+def lists_many():
+    """The Lists screen and the sidebar with 124 lists."""
+    compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
+    top_bar(compact, "Lists", "connected")
+    bar_top = compact.height - 64 - 88
+    list_rows_until(compact, 0, 60, compact.width, MANY_ROWS, False, bar_top)
+    find_bar(compact, 0, bar_top, compact.width, info=f"{MANY_TOTAL} lists")
+    bottom_nav(compact, "Lists")
+    fab(compact, compact.width - 16, bar_top - 16)
+    wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
+    sidebar_many(wide, "Garden", [(name, open_count) for name, _, open_count, _, _ in MANY_ROWS], MANY_TOTAL)
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Lists", account="connected")
+    y = find_bar(wide, MAIN_LEFT, 100, MAIN_RIGHT - MAIN_LEFT, info=f"{MANY_TOTAL} lists") + 32
+    list_rows_until(wide, MAIN_LEFT, y, MAIN_RIGHT - MAIN_LEFT, MANY_ROWS, True, wide.height)
+    fab(wide, wide.width - 24, wide.height - 24)
+    return (
+        "Lists with many lists",
+        "The sidebar keeps its header fixed and scrolls only the lists; the Lists screen finds, sorts, and renders every list.",
+        compact,
+        wide,
+    )
+
+
+def lists_find():
+    """Finding a list: no match with the create offer when compact, matches in the sidebar and screen when wide."""
+    compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
+    top_bar(compact, "Lists", "connected")
+    bar_top = compact.height - 64 - 88
+    typed = "Garden shed"
+    compact.text(compact.width / 2, 200, f'No list matches "{typed}".', 16, "bold", "middle")
+    button(compact, (compact.width - (text_width(f'Create list "{typed}"', 14) + 32)) / 2, 224, f'Create list "{typed}"', "primary")
+    find_bar(compact, 0, bar_top, compact.width, value=typed, sort="Name", info=f"0 of {MANY_TOTAL} lists")
+    bottom_nav(compact, "Lists")
+    fab(compact, compact.width - 16, bar_top - 16)
+    in_manual_order = [row for row in MANY_ROWS if row[0] in FIND_RESULTS]
+    results = sorted(in_manual_order, key=lambda row: row[0])
+    wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
+    sidebar_many(wide, "Garden", [(name, open_count) for name, _, open_count, _, _ in in_manual_order], MANY_TOTAL, "ga", len(results))
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Lists", account="connected")
+    info = f"{len(results)} of {MANY_TOTAL} lists · Sorted by Name"
+    y = find_bar(wide, MAIN_LEFT, 100, MAIN_RIGHT - MAIN_LEFT, "ga", "Name", info, reset=True) + 32
+    list_rows_until(wide, MAIN_LEFT, y, MAIN_RIGHT - MAIN_LEFT, results, True, wide.height)
+    fab(wide, wide.width - 24, wide.height - 24)
+    return (
+        "Finding a list",
+        "Compact: no match offers Create list. Wide: the sidebar keeps manual order; the Lists screen sorts by name.",
+        compact,
+        wide,
+    )
+
+
 def editor_fields(f, x, y, width, compact):
     """Draw the task editor sections from Description to Delete; return the bottom edge."""
     f.text(x, y + 14, "Description", 13, "muted")
@@ -1192,6 +1324,8 @@ SCREENS = {
     "list.svg": list_view,
     "view-options.svg": view_options,
     "lists.svg": lists,
+    "lists-many.svg": lists_many,
+    "lists-find.svg": lists_find,
     "task-editor.svg": task_editor,
     "list-editor.svg": list_editor,
     "recycle-bin.svg": recycle_bin,

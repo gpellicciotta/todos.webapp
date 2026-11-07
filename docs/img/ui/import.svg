@@ -105,7 +105,6 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="236" y="326" font-size="13" class="muted" text-anchor="end">5</text>
     <text x="44" y="370" font-size="14">Reading</text>
     <text x="236" y="370" font-size="13" class="muted" text-anchor="end">2</text>
-    <text x="44" y="414" font-size="14">+ New list</text>
     <circle cx="1082" cy="44" r="22" class="icon"/>
     <circle cx="1082" cy="39" r="5" class="icon"/>
     <path d="M 1073 56 Q 1082 40 1091 56" class="icon-line"/>

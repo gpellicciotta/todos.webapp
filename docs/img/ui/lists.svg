@@ -86,7 +86,6 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="236" y="326" font-size="13" class="muted" text-anchor="end">5</text>
     <text x="44" y="370" font-size="14">Reading</text>
     <text x="236" y="370" font-size="13" class="muted" text-anchor="end">2</text>
-    <text x="44" y="414" font-size="14">+ New list</text>
     <circle cx="1082" cy="44" r="22" class="icon-fill"/>
     <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
     <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>

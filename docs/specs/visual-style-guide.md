@@ -222,7 +222,10 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - [Navigation](../../src/demo/visual-style-gallery.html#navigation): the wide `.sidebar` and the compact `.bottom-nav`.
   Both mark the current route with `aria-current="page"`: a signal edge, a signal icon, and semibold text.
   The sidebar edge sits on the inline start; the current item keeps hover and active grounds.
-  The app's sidebar holds All tasks, Lists, and each list with its open count.
+  The app's sidebar holds All tasks, Lists, and each list with its open count; a zero count shows nothing.
+  From 12 lists a find field sits under Lists, and only the list rows scroll, with a thin scrollbar.
+  The field is a native search input in the surface ground.
+  Its match count, such as "4 of 124", sits at its end in muted 12 px text.
   Create lists through the floating plus in the Lists view; the sidebar has no creation action.
   Recycle bin, Settings, and the account sit in the user menu, so the app leaves `.sidebar__end` and `.sidebar__footer` empty;
   the gallery still shows both, as the optional end group and footer of the component.
@@ -261,6 +264,9 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header and its More button, the search field, an `.add-block`, and rows.
   The add block holds the add bar and the info line; it sits above the rows in wide layouts and below them in compact ones.
 - Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
+- Find and sort: the Lists screen reuses this block with a find field and a Sort button.
+  Its info line counts lists, such as "4 of 124 lists".
+  Rows may use `content-visibility: auto` with `contain-intrinsic-size`, so long lists paint only the rows near the view.
 - Search and add: one field with an Add button, and under it a 12 px muted info line of the task count and active options.
   Leave at least 32 px between this block and the rows; the options themselves live in the view options panel.
   The `.info-line` wraps to two lines, then truncates; its quiet Reset button shows only while an option differs from its default.

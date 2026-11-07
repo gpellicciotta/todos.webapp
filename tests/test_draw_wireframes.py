@@ -19,6 +19,8 @@ SCREENS = {
     "list.svg",
     "view-options.svg",
     "lists.svg",
+    "lists-many.svg",
+    "lists-find.svg",
     "task-editor.svg",
     "list-editor.svg",
     "recycle-bin.svg",
@@ -194,3 +196,52 @@ def test_task_editor_wireframe_has_no_page_level_more_button(output):
         t for t in wide.iter(f"{SVG}text") if t.text == "⋯" and float(t.get("y")) < 80 and float(t.get("x")) > 900
     ]
     assert header_dots == []
+
+
+def labels_of(group):
+    """Return the texts of one frame, in drawing order."""
+    return [t.text for t in group.iter(f"{SVG}text")]
+
+
+@pytest.mark.parametrize("name", sorted(SCREENS))
+def test_sidebar_has_no_creation_action(output, name):
+    # List creation sits behind the floating plus of the Lists screen (commit 718553e), not in the sidebar.
+    _, groups = frames(output / name)
+    for group in groups:
+        assert "+ New list" not in labels_of(group), name
+
+
+def test_many_lists_sidebar_fixes_the_header_and_scrolls_only_the_lists(output):
+    module = load_script()
+    _, (compact, wide) = frames(output / "lists-many.svg")
+    labels = labels_of(wide)
+    assert labels.count("Find a list") == 2  # the sidebar jump field and the Lists screen field
+    assert labels.index("All tasks") < labels.index("Lists") < labels.index("Find a list")
+    texts = {t.text: float(t.get("y")) for t in wide.iter(f"{SVG}text") if float(t.get("x")) < module.SIDEBAR_WIDTH}
+    assert texts["All tasks"] < texts["Lists"] < texts["Find a list"] < texts["Garden"]
+    thumbs = [r for r in wide.iter(f"{SVG}rect") if r.get("class") == "selected" and r.get("width") == "4"]
+    assert len(thumbs) == 1, "the sidebar draws one scrollbar thumb"
+    assert float(thumbs[0].get("x")) == module.SIDEBAR_WIDTH - 6
+    assert "124 lists" in labels_of(compact) and "124 lists" in labels
+    assert "Sort: Manual order" in labels
+
+
+def test_many_lists_rows_end_above_the_pinned_find_bar(output):
+    module = load_script()
+    _, (compact, _) = frames(output / "lists-many.svg")
+    pinned_top = module.COMPACT_HEIGHT - 64 - 88
+    rules = [float(line.get("y1")) for line in compact.iter(f"{SVG}line")]
+    assert rules and max(rules) <= pinned_top
+    assert any(float(r.get("y")) == pinned_top and r.get("width") == "390" for r in compact.iter(f"{SVG}rect"))
+
+
+def test_find_wireframe_shows_results_and_the_create_offer(output):
+    _, (compact, wide) = frames(output / "lists-find.svg")
+    compact_labels, wide_labels = labels_of(compact), labels_of(wide)
+    assert 'No list matches "Garden shed".' in compact_labels
+    assert 'Create list "Garden shed"' in compact_labels
+    assert "0 of 124 lists" in compact_labels
+    assert "4 of 124 lists · Sorted by Name" in wide_labels
+    assert wide_labels.count("Reset") == 1
+    assert wide_labels.count("4 of 124") == 1  # the sidebar field counts its own matches
+    assert 'Create list "Garden shed"' not in wide_labels

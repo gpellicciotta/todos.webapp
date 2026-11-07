@@ -50,7 +50,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 | Lists        | 24 tasks · Status: open       | Due time            |
 |  Home     8  | ( ) Buy paint      Tomorrow   | Lists               |
 |  Work    12  | (/) Call plumber   Overdue !  | Notes               |
-|  + New list  | ( ) Book flights              |                     |
+|              | ( ) Book flights              |                     |
 |              |                               |                     |
 +--------------+-------------------------------+---------------------+
 ```
@@ -58,11 +58,44 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### Navigation Rules
 - Destinations: All tasks, Lists, each single list, Recycle bin, and Settings.
 - The compact bottom bar holds Tasks and Lists; the wide sidebar holds the same plus every list.
-- The sidebar lists each list with its open task count, and ends with a New list button.
+- The sidebar lists each list with its open task count.
+  It has no creation action; New list stays on the Lists screen.
+- From 12 lists the sidebar gains a find field and scrolls only its lists; see [Sidebar With Many Lists](#sidebar-with-many-lists).
 - Recycle bin and Settings sit in the user menu, so many lists never push them out of sight.
 - **[Decided]** Routes use the URL hash, such as `#/lists/{{list-id}}`, since GitHub Pages has no route rewrites.
 - Back and forward buttons move between routes; opening the task editor adds a route.
 - Each route restores its scroll position, filters, and sort (`TV-12`).
+
+### Sidebar With Many Lists
+Wireframes: [lists-many.svg](../img/ui/lists-many.svg) and [lists-find.svg](../img/ui/lists-find.svg).
+
+The wide sidebar must stay usable from 12 lists up to 500.
+The [Lists Overview](#lists-overview) section decides finding, ordering, and rendering for both surfaces.
+- **[Decided]** Only the lists scroll: the brand, All tasks, Lists, and the find field stay fixed above them.
+  The rows take the rest of the height with a thin scrollbar.
+  `overscroll-behavior: contain` keeps the page still at the ends.
+  Reason: All tasks, Lists, and Find stay in reach at any scroll depth.
+- **[Decided]** The current list stays in view.
+  A route to a list scrolls its row to the nearest edge, only when the row is out of view.
+  A count update never moves the scroll; the scroll position survives route changes, since one DOM holds the sidebar.
+- **[Decided]** The find field shows from 12 lists, or while it holds text; fewer lists need no extra chrome.
+  Reason: 12 rows of 40 px with 4 px gaps fill about half of a 900 px high sidebar.
+- **[Decided]** The sidebar field is a quick jump: it matches names only and keeps the manual order.
+  It counts matches at its end, such as "4 of 124".
+  Enter or a click on a result opens that list and clears the field; Escape clears it; Down moves into the first row.
+  The field is empty again on each start, like the add bar's search text.
+- **[Decided]** No match leaves the muted line "No list matches." and no creation action.
+  The Lists screen offers Create list.
+- **[Decided]** Rows stay 40 px with 4 px gaps, and the sidebar has no density option.
+  A long name ends in an ellipsis and the link's `title` holds the full name.
+- **[Decided]** The sidebar always follows the manual order (`LST-8`); the sort of the Lists screen never changes it.
+- **[Decided]** One flat list: no pinned, favorite, or collapsible groups.
+  Reason: manual order already pins, since Move to top puts a list first.
+  A group flag would be one more value that never syncs, as the order stays on the device.
+- A count of 0 shows nothing, and 1000 or more reads "999+".
+  The visually hidden text keeps the exact number.
+- The sidebar patches rows by list identifier instead of rebuilding them.
+  Focus, scroll, and the find text survive a count change.
 
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
@@ -363,6 +396,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Rows carry `aria-setsize` and `aria-posinset`, so screen readers count every task, rendered or not.
 - Move up, Move down, Alt+Up, Alt+Down, and drag targets cover the whole list; a moved row scrolls into view.
 - `TEC-16` is met for opening a view under 4x CPU throttling, the stand-in for a mid-range phone.
+  The 150 lists it now names are unmeasured until the Lists render check lands; see Many Lists.
   With 5000 tasks, All tasks paints its first rows about 175 ms after the route change, down from about 265 ms.
   Desktop Chromium without throttling takes about 55 ms.
   [performance.spec.js](../../tests/e2e/performance.spec.js) asserts 200 ms, and the Pages workflow runs it.
@@ -409,7 +443,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - [list.js](../../src/js/views/list.js) builds the screen; [reorder.js](../../src/js/views/reorder.js) turns moves into neighbors.
 
 ### Lists Overview
-Wireframe: [lists.svg](../img/ui/lists.svg).
+Wireframes: [lists.svg](../img/ui/lists.svg) with a few lists, [lists-many.svg](../img/ui/lists-many.svg) and [lists-find.svg](../img/ui/lists-find.svg) with 124.
 
 - Each list row shows its name, description start, "4 open · 10 total", and sharing state (`LST-5`).
 - Shared lists show the owner's name when owned by someone else.
@@ -433,6 +467,69 @@ Wireframe: [lists.svg](../img/ui/lists.svg).
   Unknown identifiers are dropped; lists missing from it, such as new lists, follow in name order.
   [list-order.js](../../src/js/core/list-order.js) holds the helpers; another tab's change arrives as a `storage` event.
 - [lists.js](../../src/js/views/lists.js) builds the screen; [reorder.js](../../src/js/views/reorder.js) drives the drag.
+
+#### Many Lists
+Design for 100 and more lists, up to 500 (`LST-10` to `LST-16`).
+The sidebar and this screen share the rules below.
+- **[Decided]** Find: from 12 lists, a find field sits above the rows, with the sort button and info line.
+  The block follows the add bar: pinned above the bottom navigation when compact, above the rows when wide.
+  Reason: a thumb reaches the bottom, and one pattern serves tasks and lists.
+- **[Decided]** Matching ignores case and accents and finds the text anywhere in the name.
+  This screen also searches descriptions.
+  Results keep the order of the screen, with no ranking, so the order stays predictable.
+  The field takes 100 characters, the length of a name.
+  The rows filter once typing pauses for 150 ms (`TEC-16`).
+- **[Decided]** The info line follows [Search and Add](#search-and-add): "124 lists", or "4 of 124 lists · Sorted by Name".
+  A quiet Reset link ends it while the sort or the text differs from the default, and clears both.
+- **[Decided]** Enter in the field opens the first match, like the sidebar field; Escape clears the text; Down moves into the rows.
+  The text lasts for the session, and a Back from a list restores it with the scroll position.
+- **[Decided]** No match shows "No list matches "{{text}}"." and a Create list "{{text}}" button.
+  The button creates the list and opens `#/lists/{{list-id}}/edit`, as Add opens the task editor (`TSK-13`).
+  It shows only for a valid new name; the floating plus keeps opening an empty editor.
+- **[Decided]** Sort: a "Sort: Manual order" button opens a menu with Manual order, Name (A to Z), Open tasks (most first),
+  and Last activity (newest first), where a list's last activity is the latest activity of its tasks.
+  The choice persists per device in `todos.view.lists` (`TV-12`) and never changes the stored order, as for tasks (`LV-7`).
+  Compact layouts show the button as an icon in the pinned bar.
+  Connected with a shared list, the menu ends with a Shared only checkbox that the info line names.
+  It arrives with `T0028`.
+- **[Decided]** Reordering needs Manual order and an empty field, as for tasks (`LV-8`).
+  Otherwise drag handles and move entries are hidden.
+  Alt+Up and Alt+Down then announce "Reordering needs Manual order and no search."
+- **[Decided]** Move to top and Move to bottom join the row menu while reordering is available.
+  Alt+Shift+Up and Alt+Shift+Down do the same on a focused row, also in the sidebar.
+  Each move announces "{{list}} moved to position 1 of 124."; focus stays on the row, which scrolls into view.
+  Reason: a drag across 100 rows is slow, and the two ends cover pinning and parking a list.
+  A drag keeps its edge auto-scroll, and a new list still appends at the end.
+- **[Decided]** Rows stay 64 px high, and there is no density option; find and sort carry the scale.
+- **[Decided]** Rendering: the sidebar renders every row, since 500 plain links are cheap.
+  This screen renders every row too, each with `content-visibility: auto` and `contain-intrinsic-size: auto 64px`.
+  Row menus build on first open, so 500 rows hold no 500 menus.
+  Reason: unlike windowing, this keeps find in page, the tab order, and the restored scroll position true.
+- **[Decided]** Budget: opening Lists takes at most 200 ms with 150 lists and 5000 tasks (`TEC-16`).
+  The check runs under 4x CPU throttling.
+  [performance.spec.js](../../tests/e2e/performance.spec.js) asserts it; with 500 lists the time is recorded, not asserted.
+  If the 500-list time passes twice the 150-list time, a new task adds windowing as for task rows.
+- **[Decided]** Counts: one shared pass builds the open and total count of every list from the tasks and memberships.
+  It marks open task identifiers once, then walks the memberships once.
+  The cost is tasks plus memberships, never lists times tasks.
+  A burst of store changes recounts once per animation frame, and both surfaces patch rows by list identifier.
+- **[Decided]** Keyboard: the sidebar rows are one tab stop; Up, Down, Home, End, PageUp, and PageDown move between them.
+  On this screen the rows are one tab stop too: Up and Down move between rows, Right moves to the row's More button, Left back.
+  Tab and Shift+Tab leave the list; no ARIA grid role is used.
+  `/` focuses this screen's field, and `l` focuses the sidebar's field, or opens this screen where there is none.
+- **[Decided]** Announcements: a polite live region reads "4 of 124 lists" or "No list matches" after the rows filter,
+  and "Sorted by Name" after a sort; the fields are `type="search"` and named "Find a list" (`TEC-15`).
+
+#### Design alternatives
+- **A. Find, sort, and manual order on a flat list (chosen).**
+  Adds one field and one button above 12 lists, and stores nothing new but the sort choice.
+- B. Pinned lists with collapsible groups, such as Pinned, Shared, and Others.
+  Familiar, but it needs a stored flag that must sync, and more chrome; revisit if manual order proves too weak.
+- C. Windowing the Lists screen like task rows.
+  A smaller DOM at 500 lists, but it breaks find in page, the tab order, and scroll restore.
+  It stays the fallback.
+- D. A command palette on Ctrl+K to jump to a list.
+  Quick for experts, but invisible on touch and a new component; the sidebar field with `l` is as fast.
 
 ### Task Editor
 Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
@@ -562,7 +659,7 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 
 ### Creating and Organizing Offline
 1. The user adds tasks with the add bar in All tasks or in a list.
-2. New list in the sidebar, the Lists screen, or the editor's Add to list box creates a list.
+2. New list on the Lists screen, its Create list offer, or the editor's Add to list box creates a list.
 3. The editor's Lists section adds a task to several lists; the row menu adds one list at a time.
 4. In a list with manual order, the user drags rows or uses Move up and Move down.
 5. Every step works offline; the user menu stays at Local only.
@@ -645,11 +742,13 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` and `/` focus the add and search field, and Escape closes the editor or a dialog.
+- On the Lists screen `/` focuses the find field; `l` focuses the sidebar's find field, or opens Lists where there is none.
+- Alt+Up, Alt+Down, Alt+Shift+Up, and Alt+Shift+Down move a focused list by one place or to an end.
 - `n` and `/` both focus the view's `[data-shortcut~="add"]` element, the add and search field, and do nothing without it.
 - Ctrl+Z or Cmd+Z, outside text fields and modal dialogs, runs the Undo of the newest toast.
   It never runs another toast action, such as Reload.
 - Shortcuts never fire while a text field has focus, and the About section lists them.
-- Drag and drop always has the Move up and Move down alternative (`LV-3`).
+- Drag and drop always has a keyboard alternative: Move up and Move down for tasks (`LV-3`), Alt+arrows and menu entries for lists.
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.
 - Focus moves to the editor's description when it opens, and back to the row when it closes.

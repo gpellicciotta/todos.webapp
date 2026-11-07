@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1970" height="1050" viewBox="0 0 1970 1050">
+  <title>Finding a list wireframe</title>
+  <style>
+text { font-family: sans-serif; fill: #222222; }
+.muted { fill: #666666; }
+.on-primary { fill: #ffffff; }
+.bold { font-weight: bold; }
+rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
+.bar { fill: #eeeeee; stroke: #bbbbbb; }
+.box { fill: #f5f5f5; stroke: #bbbbbb; }
+.control { fill: #ffffff; stroke: #888888; }
+.disabled { fill: #f5f5f5; stroke: #cccccc; }
+.primary { fill: #444444; stroke: #444444; }
+.selected { fill: #dddddd; stroke: #999999; }
+.chip { fill: #eeeeee; stroke: #cccccc; }
+.signal { fill: #ffffff; stroke: #222222; stroke-width: 2; }
+.scrim { fill: #888888; fill-opacity: 0.5; }
+.rule { stroke: #cccccc; }
+.drop { stroke: #222222; stroke-width: 3; }
+.icon { fill: #ffffff; stroke: #444444; stroke-width: 2; }
+.icon-fill { fill: #444444; stroke: #444444; stroke-width: 2; }
+.icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
+.icon-line { stroke: #444444; stroke-width: 2; }
+.icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
+  <text x="40" y="44" font-size="28" class="bold">Finding a list</text>
+  <text x="40" y="72" font-size="16" class="muted">Compact: no match offers Create list. Wide: the sidebar keeps manual order; the Lists screen sorts by name.</text>
+  <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
+  <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
+  <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
+    <rect x="0" y="0" width="390" height="844" rx="0" class="frame"/>
+    <rect x="0" y="0" width="390" height="60" rx="0" class="bar"/>
+    <circle cx="360" cy="30" r="22" class="icon-fill"/>
+    <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <text x="16" y="37" font-size="20" class="bold">Lists</text>
+    <text x="195" y="200" font-size="16" class="bold" text-anchor="middle">No list matches "Garden shed".</text>
+    <rect x="81" y="224" width="228" height="44" rx="6" class="primary"/>
+    <text x="195" y="250.9" font-size="14" class="on-primary" text-anchor="middle">Create list "Garden shed"</text>
+    <rect x="0" y="692" width="390" height="88" rx="0" class="bar"/>
+    <rect x="338" y="700" width="44" height="44" rx="6" class="control"/>
+    <text x="360" y="727" font-size="16" text-anchor="middle">↕</text>
+    <rect x="8" y="700" width="322" height="44" rx="6" class="control"/>
+    <text x="20" y="727" font-size="14">Garden shed</text>
+    <text x="316" y="728" font-size="18" text-anchor="end">×</text>
+    <text x="16" y="766" font-size="12" class="muted">0 of 124 lists</text>
+    <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
+    <rect x="88.5" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="97.5" y="828" font-size="12" text-anchor="middle">Tasks</text>
+    <rect x="252.5" y="788" width="80" height="48" rx="24" class="selected"/>
+    <rect x="283.5" y="794" width="18" height="18" rx="3" class="icon"/>
+    <text x="292.5" y="828" font-size="12" class="bold" text-anchor="middle">Lists</text>
+    <circle cx="346" cy="648" r="28" class="icon-fill"/>
+    <text x="346" y="657" font-size="28" class="on-primary bold" text-anchor="middle">+</text>
+  </g>
+  <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
+    <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
+    <rect x="0" y="0" width="264" height="900" rx="0" class="bar"/>
+    <text x="24" y="46" font-size="22" class="bold">ToDo's</text>
+    <text x="28" y="106" font-size="14">All tasks</text>
+    <text x="236" y="106" font-size="13" class="muted" text-anchor="end">24</text>
+    <text x="28" y="150" font-size="14">Lists</text>
+    <rect x="12" y="168" width="240" height="40" rx="6" class="control"/>
+    <text x="24" y="194" font-size="14">ga</text>
+    <text x="240" y="194" font-size="12" class="muted" text-anchor="end">4 of 124</text>
+    <rect x="12" y="220" width="240" height="40" rx="6" class="selected"/>
+    <text x="44" y="246" font-size="14" class="bold">Garden</text>
+    <text x="236" y="246" font-size="13" class="muted" text-anchor="end">7</text>
+    <text x="44" y="290" font-size="14">Garage</text>
+    <text x="236" y="290" font-size="13" class="muted" text-anchor="end">4</text>
+    <text x="44" y="334" font-size="14">Legal</text>
+    <text x="236" y="334" font-size="13" class="muted" text-anchor="end">2</text>
+    <text x="44" y="378" font-size="14">Yoga</text>
+    <circle cx="1082" cy="44" r="22" class="icon-fill"/>
+    <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <text x="304" y="60" font-size="28" class="bold">Lists</text>
+    <rect x="304" y="100" width="800" height="60" rx="8" class="bar"/>
+    <rect x="985.6" y="108" width="110.4" height="44" rx="6" class="control"/>
+    <text x="1040.8" y="134.9" font-size="14" text-anchor="middle">Sort: Name</text>
+    <rect x="312" y="108" width="665.6" height="44" rx="6" class="control"/>
+    <text x="324" y="135" font-size="14">ga</text>
+    <text x="963.6" y="136" font-size="18" text-anchor="end">×</text>
+    <text x="1096" y="182" font-size="12" class="bold" text-anchor="end">Reset</text>
+    <line x1="1068.4" y1="185" x2="1096" y2="185" class="icon-line"/>
+    <text x="312" y="182" font-size="12" class="muted">4 of 124 lists · Sorted by Name</text>
+    <line x1="304" y1="286" x2="1104" y2="286" class="rule"/>
+    <text x="1096" y="259" font-size="13" class="muted" text-anchor="end">4 open · 11 total</text>
+    <text x="316" y="249" font-size="16" class="bold">Garage</text>
+    <text x="316" y="271" font-size="13" class="muted">Tools, shelves, and the bike repair</text>
+    <line x1="304" y1="350" x2="1104" y2="350" class="rule"/>
+    <text x="1096" y="323" font-size="13" class="muted" text-anchor="end">7 open · 15 total</text>
+    <text x="316" y="313" font-size="16" class="bold">Garden</text>
+    <text x="316" y="335" font-size="13" class="muted">Spring planting and the fence</text>
+    <line x1="304" y1="414" x2="1104" y2="414" class="rule"/>
+    <text x="1096" y="387" font-size="13" class="muted" text-anchor="end">2 open · 4 total</text>
+    <text x="316" y="377" font-size="16" class="bold">Legal</text>
+    <text x="316" y="399" font-size="13" class="muted">Contracts and paperwork</text>
+    <line x1="304" y1="478" x2="1104" y2="478" class="rule"/>
+    <text x="1096" y="451" font-size="13" class="muted" text-anchor="end">0 open · 3 total</text>
+    <text x="316" y="441" font-size="16" class="bold">Yoga</text>
+    <text x="316" y="463" font-size="13" class="muted">Classes and routines</text>
+    <circle cx="1388" cy="848" r="28" class="icon-fill"/>
+    <text x="1388" y="857" font-size="28" class="on-primary bold" text-anchor="middle">+</text>
+  </g>
+</svg>
