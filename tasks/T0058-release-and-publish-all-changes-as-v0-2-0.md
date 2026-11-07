@@ -23,8 +23,7 @@ Completion check: the Pages run for the tag is green, and Settings, About shows 
 
 ## Task Execution Steps
 - [ ] **[Read]**      Read the Release Procedure in docs/devops.md and the top entries of CHANGELOG.md.
-- [ ] **[Verify]**    Run `python scripts/devops.py check` and report any failure instead of releasing.
-- [ ] **[Verify]**    Run the release with `--dry-run` and show its plan to the user.
+- [ ] **[Verify]**    Run the release with `--dry-run`, which runs the checks; report any failure and show the plan.
 - [ ] **[Decide]**    Obtain the user's confirmation to push `main`, `plan`, and the tag `v0.2.0`.
 - [ ] **[Implement]** Run the release with `--backend-dir ../todos` and the confirmation, then record its output.
 - [ ] **[Verify]**    Follow the Pages run, reload the site once, and check that the new worker is active.
