@@ -70,6 +70,10 @@ describe('view state per device (TV-12)', () => {
     expect(loadViewState('tasks', () => storage).group).toBe('none');
     storage.setItem('todos.view.list', JSON.stringify({ group: 'list' }));
     expect(loadViewState('list', () => storage).group).toBe('none');
+    for (const group of ['due', 'status']) {
+      storage.setItem('todos.view.list', JSON.stringify({ group }));
+      expect(loadViewState('list', () => storage).group).toBe(group);
+    }
   });
 
   it('accepts manual order in a list view only', () => {
@@ -317,10 +321,16 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(radios.find((radio) => radio.checked).value).toBe('none');
   });
 
-  it('offers no Group by in a list view until the list view groups', async () => {
+  it('offers Group by with None, Due date, and Status in a list view, but not List (LV-11)', async () => {
     await mount('list');
-    expect(panel.body.querySelectorAll('input[name$="group"]')).toHaveLength(0);
-    expect([...panel.body.querySelectorAll('.view-options__heading')].map((heading) => heading.textContent)).toEqual(['Filter', 'Sort by']);
+    const radios = [...panel.body.querySelectorAll('input[name$="group"]')];
+    expect(radios.map((radio) => radio.parentElement.textContent)).toEqual(['None', 'Due date', 'Status']);
+    expect([...panel.body.querySelectorAll('.view-options__heading')].map((heading) => heading.textContent)).toEqual(['Filter', 'Group by', 'Sort by']);
+    toggle(radios.find((radio) => radio.value === 'status'), true);
+    expect(models.list.get().group).toBe('status');
+    panel.body.querySelector('.view-options__reset').click();
+    expect(models.list.get().group).toBe('none');
+    expect(radios.find((radio) => radio.checked).value).toBe('none');
   });
 
   it('offers no Lists row in a list view, and Manual order as the first sort choice (LV-6)', async () => {

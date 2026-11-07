@@ -245,7 +245,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 | Lists       | filter row                   | not offered                                    |
 | Group by    | None, List, Due date, Status | None, Due date, Status (`LV-11`)               |
 | Sort by     | five fields                  | adds Manual order, the default (`LV-6`)        |
-| Defaults    | open, due time ascending     | open, manual order                             |
+| Defaults    | open, created newest first   | open, manual order                             |
 | Persistence | one entry for All tasks      | one entry shared by every list view (`TV-12`)  |
 
 #### Grouping
@@ -260,6 +260,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - Status: To do, In progress, Completed, Cancelled.
 - Search, filters, and sort apply inside each group; empty groups are left out.
 - While a list view is grouped, drag handles and move entries are hidden, as for any sort (`LV-8`).
+  Each group keeps the sort of the view, so the manual order still applies inside it.
 - Collapsing groups is out of scope for now.
 
 #### Design alternatives

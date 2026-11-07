@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-07.10",
+  "version": "2026-11-07.11",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -47,7 +47,7 @@
     "js/views/editor-panel.js": "42c39698e458b56ccad42496fb65b74bf3e1b85724375744bc9d94b3e85f5f9c",
     "js/views/import-dialog.js": "b698ccc7ac4615c4960b580461d257a97c49fe7ca29ef24b4bdfb9bd074db3a9",
     "js/views/list-editor.js": "c4c0030578de963537159d297d8a2647dfea8326a66fc2440a18142570dc60c7",
-    "js/views/list.js": "6ee8f5dd1f21ce472c3f070f967d6633f6a4320c2d4f3c5398b27998c03733bd",
+    "js/views/list.js": "641d09d410b3343742287d21a5efc211fb67bec3a215095652b49caaae664aaf",
     "js/views/lists.js": "1bc30c59637355dfa82ac6ddcac2b3e8cfb73c47cd437afaa562a8f79d6587ae",
     "js/views/notes.js": "4df19c195737f3c15fdfce9488070dfaf1d44a959dad8e3ec7be3a8f14ea8056",
     "js/views/recycle-bin.js": "b8f9d1200472d39a7389bb19c4a8b218763aaccc7f9f8c918096db2076f2ece8",
@@ -55,7 +55,7 @@
     "js/views/settings.js": "b0c2a418b56b250add0f6dd5c465bc3e823a5412fcd743d48ee26b0207721677",
     "js/views/task-editor.js": "f8704e976a1b57890b3127680f0582e1fc752a7cee31556956fd48205587318c",
     "js/views/task-list.js": "100b646ecbc0ed9704728d09b35720ce75428fca692cc870dc28132b3fb13747",
-    "js/views/view-controls.js": "5d13c84a11f6eef66778add674429d2e7d2cd7fff0dc6b8f2454364ced505468",
+    "js/views/view-controls.js": "30124437a346570e836be2532500e0c121a7bd74d80a135c628dcf1831ba8afb",
     "js/version.js": "6daff589b024dcbf6655b87a2da164b0b2b44fc0d7459132a883dad38434b7a2"
   }
 }

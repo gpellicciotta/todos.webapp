@@ -92,6 +92,29 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
+  test('Group by offers Due date and Status but not List, keeps the manual order inside groups, and hides the grips (LV-8, LV-11)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
+    const options = await openOptions(page);
+    await expect(options.getByRole('radio')).toHaveCount(5);
+    await expect(options.getByRole('radio', { name: 'List', exact: true })).toHaveCount(0);
+    await options.getByRole('radio', { name: 'Status', exact: true }).check();
+    await expect(page.locator(INFO)).toHaveText('3 of 4 tasks · Status: open · Grouped by Status');
+    expect(await page.locator('.list-view .task-list > li').evaluateAll((items) => items.map((item) => (item.classList.contains('group-header')
+      ? `# ${item.querySelector('.group-header__name').textContent} ${item.querySelector('.group-header__count').textContent}`
+      : item.querySelector('.task-row__description').textContent)))).toEqual([
+      '# To do 2', 'Clean the gutters', 'Buy paint', '# In progress 1', 'Fix the door',
+    ]);
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator('.list-view .group-header')).toHaveCount(2);
+    await page.locator('.list-view .info-line__reset').click();
+    await expect(page.locator('.list-view .group-header')).toHaveCount(0);
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
+    expect(problems).toEqual([]);
+  });
+
   test('shows the header, the open tasks in manual order, and the info line (LV-1, LV-2, LV-10, VO-2)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);

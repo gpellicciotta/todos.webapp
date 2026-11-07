@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.2.1-pre
+- FrontEnd: Added Group by Due date or Status to the view options of every list, hiding the drag handles while grouped.
 - FrontEnd: Made All tasks sort by creation time, newest first, by default, so a new task comes first.
 - FrontEnd: Opened the task editor on a new task after Add, in All tasks and in every list, with the focus in the editor.
 - DevEx: Made the Import backup focus end-to-end test wait for the main column to wake, so it passes on slow CI runners.

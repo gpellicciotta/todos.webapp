@@ -120,6 +120,25 @@ describe('mountList', () => {
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
   });
 
+  it('groups the rows by status, keeping the manual order inside each group, and hides the moves (LV-8, LV-11)', async () => {
+    const view = await mount();
+    const home = (await store.listLists())[0];
+    await store.createTask({ description: 'First open' }, { lists: [home.id] });
+    await store.createTask({ description: 'Doing it', status: 'in-progress' }, { lists: [home.id] });
+    await store.createTask({ description: 'Second open' }, { lists: [home.id] });
+    await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(3));
+    expect(view.querySelector('.group-header')).toBeNull();
+    expect(view.querySelector('.task-row__handle')).not.toBeNull();
+    models.list.set({ ...models.list.get(), group: 'status' });
+    const entries = [...view.querySelectorAll('.group-header, .task-row .task-row__description')].map((node) => node.textContent);
+    expect(entries).toEqual(['To do2', 'First open', 'Second open', 'In progress1', 'Doing it']);
+    expect(view.querySelector('.task-row__handle')).toBeNull();
+    expect(view.querySelector('.info-line__text').textContent).toBe('3 tasks · Status: open · Grouped by Status');
+    models.list.set({ ...models.list.get(), group: 'none' });
+    expect(view.querySelector('.group-header')).toBeNull();
+    expect(view.querySelector('.task-row__handle')).not.toBeNull();
+  });
+
   it('opens the task editor of a new task in this list and leaves focus to the editor', async () => {
     const view = await mount();
     const field = view.querySelector('[data-shortcut~="add"]');

@@ -5,13 +5,14 @@
  * info line, and the shared task list, and renders again after every store change.
  * The More menu holds Edit list, Edit view options, Share list, and Delete list (`VO-4`).
  * Manual order shows drag handles and Move up and Move down; another sort affects the view only (`LV-7`, `LV-8`).
+ * A grouping by due date or status splits the rows into groups, each in the chosen order, and hides the moves (`LV-8`, `LV-11`).
  * The options live in a view model that the View options panel shares; they persist per device,
  * for every list view together (`TV-12`).
  * A list that leaves the store, such as one deleted in another tab, opens All tasks with a toast.
  */
 
 import {
-  clearFilters, exactMatchIndex, filterTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks,
+  clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks,
 } from '../core/query.js';
 import { createLiveRegion } from '../ui/live-region.js';
 import { attachMenu } from '../ui/menu.js';
@@ -133,7 +134,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
   const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText });
   const addHint = createAddHint({ document: doc });
-  const moves = { enabled: () => model.get().order.field === 'manual', step: (taskId, step) => reorder.step(taskId, step) };
+  const moves = { enabled: () => model.get().order.field === 'manual' && (model.get().group ?? 'none') === 'none', step: (taskId, step) => reorder.step(taskId, step) };
   const taskList = createTaskList({
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
     hrefOf: (task) => formatRoute('list-task', { listId, taskId: task.id }),
@@ -233,7 +234,8 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     const byOptions = filterTasks(data.tasks, { ...state.filter, text: undefined }, ctx);
     const filtered = filterTasks(byOptions, state.filter, ctx);
     const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
-    taskList.render(shown, ctx);
+    const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx) : null;
+    taskList.render(shown, ctx, { groups });
     addBar.setKnown(exactMatchIndex(byOptions));
     addBar.setViewer(data.list.role === 'viewer');
     const nothingMatches = addHint.update({ text: state.filter.text ?? '', shown: shown.length, viewer: data.list.role === 'viewer' });

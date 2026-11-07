@@ -69,8 +69,8 @@ export const NATURAL_DIRECTION = Object.freeze({
   [MANUAL]: 'asc', 'due-time': 'asc', 'creation-time': 'desc', 'last-activity-time': 'desc', status: 'asc', description: 'asc',
 });
 
-/** The groupings with a control, by kind of view; the list view groups with a later task (`LV-11`). */
-const GROUPINGS_OF = Object.freeze({ tasks: GROUPINGS, list: Object.freeze([NONE]) });
+/** The groupings with a control, by kind of view; a list view cannot group by list (`LV-11`). */
+const GROUPINGS_OF = Object.freeze({ tasks: GROUPINGS, list: Object.freeze(GROUPINGS.filter((group) => group !== 'list')) });
 
 /** Grouping names, for the Group by control and the info line (`VO-9`, `VO-7`). */
 export const GROUP_LABELS = Object.freeze({ [NONE]: 'None', list: 'List', due: 'Due date', status: 'Status' });
@@ -450,7 +450,7 @@ export function createInfoLine({ document: doc = globalThis.document, onReset })
 /**
  * Mount the View options into the editor panel (`VO-5`, `VO-6`).
  * Changes apply at once. The panel holds Reset, the Filter rows with one open at a time, Group by, and Sort by;
- * the list view offers no Group by until it groups (`LV-11`). A polite live region announces the count after each change (`VO-13`).
+ * the list view groups by due date or status, not by list (`LV-11`). A polite live region announces the count after each change (`VO-13`).
  * @param {object} panel the editor panel
  * @param {HTMLElement} panel.element the panel element
  * @param {HTMLElement} panel.body the body to fill
