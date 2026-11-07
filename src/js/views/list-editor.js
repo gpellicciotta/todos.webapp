@@ -3,14 +3,17 @@
  *
  * It opens in the editor panel, like the task editor. A duplicate or empty name shows a field error and saves
  * nothing (`LST-3`). On `#/lists/new`, Create or Enter in the name field creates the list; closing discards
- * the draft. Details show the creation time; in local mode the Sharing section only links to the connect flow.
+ * the draft. Details show the creation time and, when connected, the owner. The Sharing section is in sharing.js.
+ * A role below editor sees the fields read-only under a banner naming the owner, and only the owner may delete (`SHR-4`).
  * Delete list asks first, stating that the tasks stay, then opens All tasks with Undo (`LST-6`, `LST-7`).
  */
 
+import { can, listRole } from '../core/permissions.js';
 import { DESCRIPTION_MAX } from '../store/lists.js';
 import { confirmDialog } from '../ui/dialog.js';
 import { DEFAULT_HASH } from '../ui/router.js';
 import { createField } from './editor-panel.js';
+import { mountSharing } from './sharing.js';
 import { make as el, spriteIcon } from './task-list.js';
 
 /** Editor strings, for the strings module of TEC-13 to absorb. */
@@ -18,13 +21,15 @@ const STRINGS = Object.freeze({
   title: 'List', newTitle: 'New list', name: 'Name', description: 'Description',
   create: 'Create',
   counter: (count) => `${count} / ${DESCRIPTION_MAX}`, details: 'Details', created: 'Created ',
-  sharing: 'Sharing', connect: 'Connect to share this list', delete: 'Delete list',
+  sharing: 'Sharing', owner: ' · Owner: ', readOnly: (owner) => `You cannot edit this list${owner ? `. Its owner is ${owner}` : ''}.`,
+  delete: 'Delete list',
   deleteHint: 'Deleting a list never deletes its tasks.', deleteTitle: (name) => `Delete the list ${name}?`,
   deleteText: 'The list moves to the recycle bin. Its tasks stay in your other lists.', keep: 'Keep',
   deleted: 'List moved to the recycle bin.', failed: 'That change could not be saved.',
 });
 
 let instances = 0;
+const LOCAL_SESSION = Object.freeze({ state: () => 'local' });
 
 /**
  * Report a change that could not be saved, in the console and in a toast.
@@ -93,9 +98,12 @@ export async function confirmListDelete({ parent, opener, list, store, toaster, 
  * @param {{show: Function}} context.toaster the toaster
  * @param {(hash: string) => void} context.navigate opens another route
  * @param {string} [context.locale] the locale of times, the user's by default
+ * @param {object} [context.session] the session, local when left out
+ * @param {{send: Function}} [context.api] the API client of the Sharing section
+ * @param {object} [context.sync] the sync engine, which tells when the connection is lost
  * @returns {{idle: () => Promise<void>, returnFocus: () => HTMLElement|null, destroy: () => void}} the editor
  */
-export function mountListEditor(panel, route, { store, toaster, navigate, locale }) {
+export function mountListEditor(panel, route, { store, toaster, navigate, locale, session = LOCAL_SESSION, api, sync }) {
   const doc = panel.document;
   const format = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   let listId = route.params.listId ?? null;
@@ -144,11 +152,14 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   const details = el(doc, 'p', 'editor-panel__details');
   const detailsSection = section('details', STRINGS.details);
   detailsSection.append(details);
-  const connect = el(doc, 'a', 'list-editor__connect', STRINGS.connect);
-  connect.href = '#/connect';
-  const sharing = el(doc, 'p', 'list-editor__sharing');
-  sharing.append(connect);
-  section('sharing', STRINGS.sharing).append(sharing);
+  const banner = el(doc, 'div', 'banner');
+  banner.setAttribute('role', 'status');
+  banner.hidden = true;
+  const bannerText = el(doc, 'p', 'banner__text');
+  banner.append(spriteIcon(doc, 'alert', 'icon banner__icon'), bannerText);
+  root.prepend(banner);
+  const sharingSection = section('sharing', STRINGS.sharing);
+  let sharing = null;
   const danger = el(doc, 'div', 'editor-panel__danger');
   const remove = el(doc, 'button', 'button button--danger');
   remove.type = 'button';
@@ -156,7 +167,7 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   danger.append(remove, el(doc, 'p', 'editor-panel__details', STRINGS.deleteHint));
   root.append(danger);
   // Details, Sharing, and Delete list appear once the list exists.
-  const later = [detailsSection, sharing.parentElement, danger];
+  const later = [detailsSection, sharingSection, danger];
   panel.body.append(root);
   put(name.control, '');
   put(description.control, '');
@@ -187,7 +198,20 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
       }
     }
     count();
-    details.textContent = `${STRINGS.created}${format.format(new Date(list['creation-time']))}`;
+    const editable = can(listRole(list), 'edit-list');
+    name.control.disabled = !editable;
+    description.control.disabled = !editable;
+    danger.hidden = !can(listRole(list), 'delete-list');
+    const owner = session.state() === 'local' ? '' : list.owner?.name || list.owner?.email || '';
+    banner.hidden = editable;
+    bannerText.textContent = STRINGS.readOnly(owner);
+    details.textContent = `${STRINGS.created}${format.format(new Date(list['creation-time']))}${owner ? `${STRINGS.owner}${owner}` : ''}`;
+    if (sharing) {
+      sharing.update(list);
+    }
+    else if (api || session.state() === 'local') {
+      sharing = mountSharing(sharingSection, { list, api, session, sync });
+    }
   }
 
   /**
@@ -350,7 +374,15 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
   const unsubscribe = store.subscribe(() => refresh());
   count();
   const first = refresh().then(() => {
-    if (!destroyed) {
+    if (destroyed) {
+      return;
+    }
+    // Share list opens the editor at its Sharing section, so the name field does not take the scroll back.
+    if (route.name === 'list-share' && list) {
+      sharingSection.scrollIntoView?.({ block: 'start' });
+      sharingSection.querySelector('input[name="email"], a')?.focus({ preventScroll: true });
+    }
+    else {
       name.control.focus();
     }
   });
@@ -367,6 +399,7 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
       }
       destroyed = true;
       unsubscribe();
+      sharing?.destroy();
       root.querySelector('dialog[open]')?.close('cancel');
     },
   };

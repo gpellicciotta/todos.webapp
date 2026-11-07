@@ -353,4 +353,65 @@ describe('mountAllTasks', () => {
       expect(document.querySelector('.group-header')).toBeNull();
     });
   });
+
+  describe('the Shared filter (TV-7)', () => {
+    const task = (id, description) => ({
+      id, description, status: 'todo', 'due-time': null, 'owner-id': 3,
+      'creation-time': '2026-11-04T09:00:00.000Z', 'last-activity-time': '2026-11-04T09:00:00.000Z',
+    });
+    const store = {
+      snapshot: async () => ({
+        lists: [
+          { id: 'l1', name: 'Family', role: 'owner', sharing: [{ id: 1 }] },
+          { id: 'l2', name: 'Solo', role: 'owner', sharing: [] },
+          { id: 'l3', name: 'Theirs', role: 'viewer', owner: { id: 9 }, sharing: [] },
+        ],
+        tasks: [task('t1', 'Plan trip'), task('t2', 'Buy paint'), task('t3', 'Loose task'), task('t4', 'Their task')],
+        memberships: [
+          { 'list-id': 'l1', 'task-id': 't1', position: 'a0' },
+          { 'list-id': 'l2', 'task-id': 't2', position: 'a0' },
+          { 'list-id': 'l3', 'task-id': 't4', position: 'a0' },
+        ],
+        notes: [],
+      }),
+      subscribe: () => () => {},
+    };
+
+    /**
+     * Mount All tasks with a Shared filter and a session.
+     * @param {boolean|undefined} shared the filter value
+     * @param {'local'|'connected'} state the connection state
+     * @returns {Promise<{rows: () => string[], info: () => string}>} what the screen shows
+     */
+    async function mount(shared, state) {
+      document.body.innerHTML = '<div data-view="tasks"></div>';
+      const storage = { getItem: () => null, setItem: vi.fn() };
+      const viewModels = { tasks: createViewModel('tasks', () => storage) };
+      viewModels.tasks.set({ filter: { statuses: ['todo'], ...(shared === undefined ? {} : { shared }) }, order: defaultViewState().order });
+      screen = mountAllTasks(document.querySelector('[data-view]'), {
+        store, toaster: { show: vi.fn() }, viewModels, getStorage: () => storage, session: { state: () => state },
+      });
+      await screen.idle();
+      return {
+        rows: () => [...document.querySelectorAll('.task-row__description')].map((row) => row.textContent).sort(),
+        info: () => document.querySelector('.info-line__text').textContent,
+      };
+    }
+
+    it('shows the tasks in a list the user shares or that is shared with them for Shared', async () => {
+      const view = await mount(true, 'connected');
+      expect(view.rows()).toEqual(['Plan trip', 'Their task']);
+      expect(view.info()).toContain('Shared: yes');
+    });
+
+    it('shows the others for Not shared', async () => {
+      expect((await mount(false, 'connected')).rows()).toEqual(['Buy paint', 'Loose task']);
+    });
+
+    it('ignores a stored Shared filter in local mode, also in the info line', async () => {
+      const view = await mount(true, 'local');
+      expect(view.rows()).toEqual(['Buy paint', 'Loose task', 'Plan trip', 'Their task']);
+      expect(view.info()).not.toContain('Shared');
+    });
+  });
 });

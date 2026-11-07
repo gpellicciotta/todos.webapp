@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountList } from '../../src/js/views/list.js';
 import { createViewModel, defaultViewState } from '../../src/js/views/view-controls.js';
-import { freshStore } from './store-helpers.js';
+import { freshStore, setListFields } from './store-helpers.js';
 
 describe('mountList', () => {
   let store;
@@ -39,6 +39,15 @@ describe('mountList', () => {
     const items = [...view.querySelectorAll('.menu__item')];
     expect(items.map((item) => item.textContent)).toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
     expect(items.map((item) => item.dataset.action)).toEqual(['edit', 'view-options', 'share', 'delete']);
+  });
+
+  it('names the owner and the own role of a shared list, and offers a viewer no list changes (SHR-3, SHR-4)', async () => {
+    const view = await mount();
+    const [home] = await store.listLists();
+    await setListFields(store, home.id, { role: 'viewer', owner: { id: 9, email: 'sam@example.com', name: 'Sam Roe' }, sharing: [] });
+    await vi.waitFor(() => expect(view.querySelector('.list-view__owner')?.textContent).toBe('Shared by Sam Roe · Viewer'));
+    expect([...view.querySelectorAll('.menu__item')].map((item) => item.textContent)).toEqual(['List details', 'Edit view options']);
+    expect(view.querySelector('.add-bar button[type="submit"], .add-bar__button')?.hidden ?? true).toBe(true);
   });
 
   it('opens the view options route from Edit view options, and the list editor from Edit list', async () => {

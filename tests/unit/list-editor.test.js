@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountListEditor } from '../../src/js/views/list-editor.js';
-import { freshStore } from './store-helpers.js';
+import { freshStore, setListFields } from './store-helpers.js';
 
 /**
  * Create a panel stand-in with a body, a title, and a close spy.
@@ -53,10 +53,11 @@ describe('mountListEditor', () => {
   /**
    * Mount the editor of a route and wait for its first fill.
    * @param {object} route the editor route
+   * @param {object} [extra] more editor context, such as a connected session
    * @returns {Promise<{name: HTMLInputElement, description: HTMLTextAreaElement}>} the fields
    */
-  async function mount(route) {
-    editor = mountListEditor(panel, route, { store, toaster, navigate });
+  async function mount(route, extra = {}) {
+    editor = mountListEditor(panel, route, { store, toaster, navigate, ...extra });
     await editor.idle();
     return { name: panel.body.querySelector('input[name="name"]'), description: panel.body.querySelector('textarea[name="description"]') };
   }
@@ -290,5 +291,87 @@ describe('mountListEditor', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(navigate).not.toHaveBeenCalled();
     expect((await store.getList(home.id))['deletion-time']).toBeNull();
+  });
+});
+
+describe('mountListEditor by role (SHR-3, SHR-4)', () => {
+  let store;
+  let panel;
+  let editor;
+  let api;
+  const connected = { state: () => 'connected', account: () => ({ name: 'Jane Doe', email: 'jane@example.com' }), subscribe: () => () => {} };
+  const sam = { id: 9, email: 'sam@example.com', name: 'Sam Roe' };
+
+  /**
+   * Store a shared list and open its editor with a connected session.
+   * @param {object} fields the sync fields of the list: `role`, `owner`, and `sharing`
+   * @param {string} [routeName] the editor route name
+   * @returns {Promise<object>} the list
+   */
+  async function open(fields, routeName = 'list-edit') {
+    const list = await store.createList({ name: 'Home', description: 'Chores' });
+    await setListFields(store, list.id, fields);
+    editor = mountListEditor(panel, { name: routeName, params: { listId: list.id } }, {
+      store, toaster: { show: vi.fn() }, navigate: vi.fn(), session: connected, api,
+    });
+    await editor.idle();
+    return list;
+  }
+
+  const buttons = () => [...panel.body.querySelectorAll('button')].filter((button) => !button.closest('[hidden]')).map((button) => button.textContent);
+
+  beforeEach(async () => {
+    document.body.innerHTML = '';
+    ({ store } = await freshStore());
+    panel = fakePanel();
+    api = { send: vi.fn(async () => ({ status: 200, ok: true, headers: { get: () => null }, body: [] })) };
+  });
+
+  afterEach(() => {
+    editor?.destroy();
+    editor = null;
+    store.close();
+  });
+
+  it('offers the owner the editable fields, the Sharing controls, and Delete list', async () => {
+    await open({ role: 'owner', owner: { id: 3, name: 'Jane Doe' }, sharing: [] });
+    expect(panel.body.querySelector('input[name="name"]').disabled).toBe(false);
+    expect(panel.body.querySelector('[data-section="sharing"] button[data-sharing="invite"]')).not.toBeNull();
+    expect(buttons()).toContain('Delete list');
+    expect(panel.body.querySelector('.editor-panel__details').textContent).toContain('Jane Doe');
+  });
+
+  it('lets an editor edit the list but not share or delete it', async () => {
+    await open({ role: 'editor', owner: sam, sharing: [] });
+    expect(panel.body.querySelector('input[name="name"]').disabled).toBe(false);
+    expect(panel.body.querySelector('textarea[name="description"]').disabled).toBe(false);
+    expect(panel.body.querySelector('[data-section="sharing"] button')).toBeNull();
+    expect(panel.body.querySelector('[data-sharing="own-role"]').textContent).toContain('Editor');
+    expect(buttons()).not.toContain('Delete list');
+  });
+
+  it.each(['task-editor', 'viewer'])('shows a %s the list read-only with a banner naming the owner', async (role) => {
+    await open({ role, owner: sam, sharing: [] });
+    expect(panel.body.querySelector('input[name="name"]').disabled).toBe(true);
+    expect(panel.body.querySelector('textarea[name="description"]').disabled).toBe(true);
+    expect(panel.body.querySelector('.banner').textContent).toContain('Sam Roe');
+    expect(panel.body.querySelector('[data-sharing="owner"]').textContent).toContain('Sam Roe');
+    expect(buttons()).toEqual([]);
+    expect(api.send).not.toHaveBeenCalled();
+  });
+
+  it('scrolls to the Sharing section when opened with Share list', async () => {
+    const scrolled = vi.fn();
+    const original = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = function scroll() {
+      scrolled(this.dataset.section);
+    };
+    try {
+      await open({ role: 'owner', owner: { id: 3, name: 'Jane Doe' }, sharing: [] }, 'list-share');
+      expect(scrolled).toHaveBeenCalledWith('sharing');
+    }
+    finally {
+      HTMLElement.prototype.scrollIntoView = original;
+    }
   });
 });

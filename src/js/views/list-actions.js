@@ -1,11 +1,13 @@
 /**
  * List actions: the More menu of a list, shared by the List screen header and the rows of the Lists screen.
  *
- * The menu holds Edit list, Edit view options, Share list, and Delete list (`VO-4`).
- * Edit list and Share list open the list editor route, Edit view options the view options route of the list,
- * and Delete list asks for confirmation first (`LST-6`).
+ * The menu holds Edit list, Edit view options, Share list, and Delete list (`VO-4`), left out where the user's role on
+ * the list does not allow them (`SHR-4`): List details replaces Edit list below the editor role, and only the owner
+ * shares or deletes. Edit list and List details open the list editor route, Share list the same editor scrolled to its
+ * Sharing section, Edit view options the view options route of the list, and Delete list asks for confirmation first (`LST-6`).
  */
 
+import { listActionsFor, listRole } from '../core/permissions.js';
 import { formatRoute } from '../ui/router.js';
 import { confirmListDelete } from './list-editor.js';
 import { make, spriteIcon } from './task-list.js';
@@ -14,6 +16,7 @@ import { make, spriteIcon } from './task-list.js';
 const STRINGS = Object.freeze({
   actions: 'List actions',
   edit: 'Edit list',
+  details: 'List details',
   editViewOptions: 'Edit view options',
   share: 'Share list',
   delete: 'Delete list',
@@ -22,10 +25,28 @@ const STRINGS = Object.freeze({
 /** The More menu entries and the routes that Edit list, Edit view options, and Share list open. */
 export const LIST_ACTIONS = Object.freeze([
   { action: 'edit', text: STRINGS.edit, route: 'list-edit' },
+  { action: 'details', text: STRINGS.details, route: 'list-edit' },
   { action: 'view-options', text: STRINGS.editViewOptions, route: 'list-view-options' },
-  { action: 'share', text: STRINGS.share, route: 'list-edit' },
+  { action: 'share', text: STRINGS.share, route: 'list-share' },
   { action: 'delete', text: STRINGS.delete },
 ]);
+
+/**
+ * Fill a list menu with the actions that a role is offered.
+ * @param {HTMLElement} menu the menu element
+ * @param {string|null} role the role of the user on the list; none offers every action of a local list
+ */
+export function fillListMenu(menu, role) {
+  const doc = menu.ownerDocument;
+  const allowed = new Set(listActionsFor(role ?? 'owner'));
+  menu.replaceChildren(...LIST_ACTIONS.filter(({ action }) => allowed.has(action)).map(({ action, text }) => {
+    const item = make(doc, 'button', action === 'delete' ? 'menu__item menu__item--danger' : 'menu__item', text);
+    item.type = 'button';
+    item.setAttribute('role', 'menuitem');
+    item.dataset.action = action;
+    return item;
+  }));
+}
 
 /**
  * Create the More button of a list and its hidden menu; the caller adds both to the page and attaches the menu.
@@ -34,9 +55,10 @@ export const LIST_ACTIONS = Object.freeze([
  * @param {string} options.id the identifier of the menu element
  * @param {string} [options.name] the list name, which tells the buttons of several lists apart
  * @param {string} [options.className] extra classes of the button
+ * @param {object|null} [options.list] the list, whose role decides the entries; a local list offers all
  * @returns {{more: HTMLButtonElement, menu: HTMLElement}} the button and the menu
  */
-export function createListMenu({ document: doc, id, name = '', className = '' }) {
+export function createListMenu({ document: doc, id, name = '', className = '', list = null }) {
   const label = name ? `${STRINGS.actions}: ${name}` : STRINGS.actions;
   const more = make(doc, 'button', `icon-button ${className}`.trim());
   more.type = 'button';
@@ -46,13 +68,7 @@ export function createListMenu({ document: doc, id, name = '', className = '' })
   menu.id = id;
   menu.setAttribute('aria-label', label);
   menu.hidden = true;
-  for (const { action, text } of LIST_ACTIONS) {
-    const item = make(doc, 'button', action === 'delete' ? 'menu__item menu__item--danger' : 'menu__item', text);
-    item.type = 'button';
-    item.setAttribute('role', 'menuitem');
-    item.dataset.action = action;
-    menu.append(item);
-  }
+  fillListMenu(menu, listRole(list));
   return { more, menu };
 }
 

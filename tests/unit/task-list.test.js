@@ -143,6 +143,64 @@ describe('createTaskList', () => {
     expect([...menu.querySelectorAll('[role="menuitemradio"]')].map((item) => item.dataset.status)).toEqual(['todo', 'in-progress', 'completed', 'cancelled']);
   });
 
+  describe('by role (SHR-4, SHR-5)', () => {
+    const sam = { id: 9 };
+    const mine = { id: 3 };
+    const shared = (role) => ({
+      now: NOW, userId: 3,
+      lists: new Map([['l1', { id: 'l1', name: 'Home', role, owner: sam }], ['l2', { id: 'l2', name: 'Mine', role: 'owner', owner: mine }]]),
+      listsByTask: new Map([['t1', ['l1']]]),
+    });
+    const foreign = [{ id: 't1', description: 'Call the plumber', status: 'todo', 'due-time': null, 'owner-id': 9 }];
+
+    /**
+     * Render the foreign task for a role and tell what its row and menu offer.
+     * @param {string} role the role on the list holding the task
+     * @param {string|null} [listId] the list a list view shows
+     * @returns {{status: HTMLButtonElement, more: HTMLButtonElement, items: () => string[]}} the row controls
+     */
+    function rowFor(role, listId = null) {
+      list.destroy();
+      list = createTaskList({ document, store, toaster, label: 'x', listId, hrefOf: (task) => `#/tasks/${task.id}` });
+      document.body.replaceChildren(list.element);
+      list.render(foreign, shared(role));
+      const row = document.querySelector('.task-row');
+      const more = row.querySelector('[data-role="more"]');
+      return {
+        status: row.querySelector('[data-role="status"]'),
+        more,
+        items: () => {
+          more.click();
+          return [...document.querySelectorAll('.menu:not([hidden]) .menu__item')].map((item) => item.textContent);
+        },
+      };
+    }
+
+    it('locks the status of a viewer and leaves them no row menu', () => {
+      const row = rowFor('viewer');
+      expect(row.status.disabled).toBe(true);
+      expect(row.more.hidden).toBe(true);
+    });
+
+    it('lets a task editor change the status and remove the task from the list, but not delete it', () => {
+      const row = rowFor('task-editor', 'l1');
+      expect(row.status.disabled).toBe(false);
+      expect(row.items()).toEqual(['Add to list', 'Remove from this list']);
+    });
+
+    it('offers a task editor Add to list only for the lists they may add to', () => {
+      const row = rowFor('task-editor');
+      expect(row.items()).toEqual(['Add to list']);
+      document.querySelector('.menu:not([hidden]) [data-action="add-to-list"]').click();
+      expect([...document.querySelectorAll('.menu:not([hidden]) .menu__item')].map((item) => item.textContent)).toEqual(['Mine']);
+    });
+
+    it('offers the owner of the list every action, including Delete', () => {
+      const row = rowFor('owner');
+      expect(row.items()).toEqual(['Add to list', 'Delete']);
+    });
+  });
+
   it('closes a reopened Add to list menu that has no list left, and focuses the More button', () => {
     const more = document.querySelectorAll('.task-row__more')[1];
     more.click();

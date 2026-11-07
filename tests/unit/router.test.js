@@ -12,6 +12,7 @@ const ROUTES = [
   [`#/lists/${LIST}`, 'list', { listId: LIST }, 'list', null],
   [`#/lists/${LIST}/tasks/${TASK}`, 'list-task', { listId: LIST, taskId: TASK }, 'list', 'task'],
   [`#/lists/${LIST}/edit`, 'list-edit', { listId: LIST }, 'list', 'list'],
+  [`#/lists/${LIST}/share`, 'list-share', { listId: LIST }, 'list', 'list'],
   [`#/lists/${LIST}/view-options`, 'list-view-options', { listId: LIST }, 'list', 'view-options'],
   ['#/lists/new', 'list-new', {}, 'lists', 'list'],
   ['#/bin', 'bin', {}, 'bin', null],

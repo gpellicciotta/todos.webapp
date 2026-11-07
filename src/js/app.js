@@ -15,6 +15,7 @@
 
 import { startOverdueTimer } from './core/overdue.js';
 import { openStore } from './store/db.js';
+import { createApi } from './sync/api.js';
 import { createEngine } from './sync/engine.js';
 import { createInbox } from './sync/inbox.js';
 import { createSession } from './sync/session.js';
@@ -130,7 +131,8 @@ async function start() {
   // The screens and the View options panel share these, so the rows, the info line, and the panel follow one state.
   const viewModels = { tasks: createViewModel('tasks'), list: createViewModel('list') };
   const editorPanel = createEditorPanel({
-    slot: shell.editor, editors: EDITORS, context: { store, toaster, viewModels, navigate: (hash) => router.navigate(hash) },
+    slot: shell.editor, editors: EDITORS,
+    context: { store, toaster, session, api: createApi({ session }), sync: engine, viewModels, navigate: (hash) => router.navigate(hash) },
     close: () => router.navigate(formatRoute(router.current().view, router.current().params)),
     fallbackFocus: () => shell.main.querySelector('[data-shortcut~="add"]') ?? shell.main,
   });

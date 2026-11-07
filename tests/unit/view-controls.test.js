@@ -176,6 +176,24 @@ describe('grouping in the info line (VO-7)', () => {
   });
 });
 
+describe('the Shared filter (TV-7)', () => {
+  it('names the filter, keeps it in the device storage, and counts it as a change from the defaults', () => {
+    expect(describeFilters({ shared: true }, LISTS)).toEqual(['Shared: yes']);
+    expect(describeFilters({ shared: false }, LISTS)).toEqual(['Shared: no']);
+    const storage = memoryStorage();
+    const state = { ...defaultViewState(), filter: { statuses: ['todo'], shared: false } };
+    saveViewState('tasks', state, () => storage);
+    expect(loadViewState('tasks', () => storage).filter.shared).toBe(false);
+    expect(isDefaultViewState({ ...defaultViewState(), filter: { ...defaultViewState().filter, shared: true } })).toBe(false);
+  });
+
+  it('drops a stored value that is not a boolean', () => {
+    const storage = memoryStorage();
+    storage.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: ['todo'], shared: 'yes' }, order: { field: 'creation-time', direction: 'desc' } }));
+    expect(loadViewState('tasks', () => storage).filter.shared).toBeUndefined();
+  });
+});
+
 describe('isDefaultViewState (VO-8)', () => {
   it('tells the defaults from any other option or search text', () => {
     expect(isDefaultViewState(defaultViewState())).toBe(true);
@@ -340,15 +358,17 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
    * Mount the view options of a view into a panel stand-in.
    * @param {'tasks'|'list'} view the view
    * @param {object[]} [lists] the lists the store holds
+   * @param {object} [session] the session, local when left out
    * @returns {Promise<void>} resolves once the lists loaded
    */
-  async function mount(view, lists = LISTS) {
+  async function mount(view, lists = LISTS, session = undefined) {
     const element = document.body.appendChild(document.createElement('aside'));
     const body = element.appendChild(document.createElement('div'));
     panel = { element, body, document, setTitle: vi.fn(), close: vi.fn() };
     context = {
       store: { listLists: async () => lists, subscribe: () => () => {} },
       viewModels: models,
+      session,
     };
     controller = mountViewOptions(panel, { view, params: {} }, context);
     if (view === 'tasks') {
@@ -382,7 +402,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect([...panel.body.querySelectorAll('.view-options__heading')].map((heading) => heading.textContent))
       .toEqual(['Filter', 'Group by', 'Sort by']);
     expect(panel.body.querySelector('.view-options__reset').textContent).toBe('Reset');
-    const rows = [...panel.body.querySelectorAll('.view-options__row')];
+    const rows = [...panel.body.querySelectorAll('.view-options__row')].filter((row) => !row.hidden);
     expect(rows.map((row) => row.dataset.row)).toEqual(['lists', 'statuses', 'due', 'created']);
     expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'open', 'Any', 'Any']);
   });
@@ -456,6 +476,47 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     toggle(region.querySelector('input[value="l-home"]'), false);
     toggle(region.querySelector('input[value="no-list"]'), false);
     expect(models.tasks.get().filter.lists).toBeUndefined();
+  });
+
+  it('offers the Shared filter in All tasks only while connected, as Any, Shared, and Not shared (TV-7)', async () => {
+    await mount('tasks');
+    expect(panel.body.querySelector('[data-row="shared"]').hidden).toBe(true);
+    controller.destroy();
+    await mount('tasks', LISTS, { state: () => 'connected', subscribe: () => () => {} });
+    const row = panel.body.querySelector('[data-row="shared"]');
+    expect(row.hidden).toBe(false);
+    expect(row.querySelector('.view-options__label').textContent).toBe('Shared');
+    expect(row.querySelector('.view-options__value').textContent).toBe('Any');
+    const region = panel.body.querySelector('[data-region="shared"]');
+    expect([...region.querySelectorAll('.choice')].map((choice) => choice.textContent.trim())).toEqual(['Any', 'Shared', 'Not shared']);
+    toggle(region.querySelector('input[value="true"]'), true);
+    expect(models.tasks.get().filter.shared).toBe(true);
+    expect(row.querySelector('.view-options__value').textContent).toBe('Shared');
+    toggle(region.querySelector('input[value="false"]'), true);
+    expect(models.tasks.get().filter.shared).toBe(false);
+    expect(row.querySelector('.view-options__value').textContent).toBe('Not shared');
+    toggle(region.querySelector('input[value="any"]'), true);
+    expect(models.tasks.get().filter.shared).toBeUndefined();
+  });
+
+  it('offers no Shared filter in a list view (TV-7)', async () => {
+    await mount('list', LISTS, { state: () => 'connected', subscribe: () => () => {} });
+    expect(panel.body.querySelector('[data-row="shared"]')).toBeNull();
+  });
+
+  it('shows the Shared row once the session connects', async () => {
+    let listener;
+    const session = {
+      state: () => 'local',
+      subscribe: (callback) => {
+        listener = callback;
+        return () => {};
+      },
+    };
+    await mount('tasks', LISTS, session);
+    session.state = () => 'connected';
+    listener('connected');
+    expect(panel.body.querySelector('[data-row="shared"]').hidden).toBe(false);
   });
 
   it('changes the status filter, and keeps an empty one as every status', async () => {

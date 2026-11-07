@@ -170,7 +170,9 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
     If a render leaves no such list, the menu closes and focus returns to the More button.
   - Move up and Move down, in a list view with manual order only (`LV-3`).
   - Delete, which moves the task to the recycle bin and shows an Undo toast (`TSK-11`).
-- Menu entries the user's role does not allow are left out (`SHR-4`).
+- Menu entries the user's role does not allow are left out (`SHR-4`):
+  a viewer has a disabled status button and no More button; a task editor has Add to list (only to lists they may add to)
+  and Remove from this list, and only the task owner or the owner of a list holding the task sees Delete.
 - [task-list.js](../../src/js/views/task-list.js) renders the rows and their menus for All tasks and the list view.
   The status menu opens with focus on the current status; after a change, focus stays on that row's button.
   A row that leaves the view after a change passes focus to the row now at its place.
@@ -240,6 +242,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   The compact screen ends with a primary button, "Show 12 tasks", which goes back.
 - Sections, in order (`VO-6`):
   - Filter: an accordion of Lists, Status, Due, and Created, plus Shared when connected (`TV-2` to `TV-5`, `TV-7`).
+    Shared is a row of All tasks only, with the radios Any, Shared, and Not shared; local mode ignores a stored value.
     Each row shows its value at the right; opening one row closes the other.
     Due keeps its quick options and a From and To range; Created has From and To.
   - Group by: a segmented control with None, List, Due date, and Status (`VO-9`).
@@ -381,9 +384,11 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 Wireframe: [list.svg](../img/ui/list.svg).
 
 - The header shows the list name, its description, the owner and role when shared, and the actions.
-  The top bar holds the name; the owner and role arrive with sharing (`SHR-3`).
+  A list shared with the user shows "Shared by {{owner}} · {{role}}" under the description (`SHR-3`).
 - Actions: Edit list, Edit view options, Share list, and Delete list in a More menu; no other action buttons show.
-- Edit list and Share list open the list editor route; Share list scrolls to its Sharing section.
+  The menu offers only what the role allows (`SHR-4`): an editor has no Share list or Delete list, and
+  task editors and viewers have List details instead of Edit list.
+- Edit list and List details open the list editor route; Share list opens `#/lists/{{list-id}}/share`, the same editor scrolled to its Sharing section.
 - Edit view options opens the view options route (`VO-4`).
 - Delete list asks for confirmation, then opens All tasks with an Undo toast (`LST-6`).
 - The view options replace the order buttons and the status chip (`VO-1`); Manual order is the first sort choice (`LV-6`).
@@ -415,7 +420,7 @@ Wireframe: [lists.svg](../img/ui/lists.svg).
 - It hides while an editor is open, so it never covers the editor panel.
 - Wide layouts keep this screen for managing lists, though the sidebar also lists them.
 - Each row links to its list; without lists, the screen says that a list groups tasks.
-- Sharing state and the owner's name arrive with sharing (`SHR-3`); local lists show neither.
+- A shared list shows "Shared by {{owner}}" under its name, or "Shared with 2 people" for the owner; local lists show neither (`SHR-3`).
 - Rows follow the order of this device (`LST-8`); the sidebar shows the same order.
   Drag a row by its handle, or press Alt+Up or Alt+Down on a row; the rows have no Move up or Move down buttons.
   **[Decided]** The handle also shows on touch screens, since it is the only way to reorder by pointer.
@@ -446,6 +451,7 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
 - Each note shows its author when connected, its time, and "edited" after a change.
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
 - A viewer sees all fields read-only and a banner naming the list owner (`SHR-4`).
+  Only the task owner or the owner of a list holding the task sees Delete task.
 - A deleted task opens read-only with a Restore button (`BIN-6`).
   It hides Clear, Add to list, the chip remove buttons, the add note field, and Delete task.
 - [task-editor.js](../../src/js/views/task-editor.js) and [notes.js](../../src/js/views/notes.js) build it.
@@ -468,6 +474,7 @@ Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
 - A duplicate or empty name shows a field error and is not saved (`LST-3`).
 - A new list is created once its name is valid; closing the editor before that creates nothing.
 - Details show the creation time and, when connected, the owner.
+- A role below editor sees the name and description read-only under a banner naming the owner (`SHR-4`).
 - A Sharing section follows the details; see below.
 - Delete list sits at the bottom, after a divider, like Delete task.
 - Deleting a list asks for confirmation and states that its tasks stay (`LST-6`, `LST-7`).
@@ -484,10 +491,17 @@ Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
 - It shows the owner and every person with access (`SHR-1`, `SHR-2`).
 - For the owner, each person has a role select and a Remove button, and an invite row follows.
 - The invite row has an email field, a role select defaulting to Task editor, and an Invite button.
-- Each role option has a one-line explanation, such as "Can add, edit, and reorder tasks".
-- Other users see the owner and their own role, read-only (`SHR-3`).
+- Each role option of the invite row has a one-line explanation, such as "Can add, edit, and reorder tasks".
+  The role selects of the people show the role name only, with the explanation as a tooltip, to fit narrow panels.
+- **[Decided]** Invite sends a sharing request (`POST /api/sharing-requests`), which also reaches an address without an account.
+  The person gets access once they accept, so the status line says "Invitation sent to {{email}}." and the people list does not change.
+  Pending invitations are not listed.
+- **[Decided]** The service has no call that changes a role, so a role change removes the rule and adds it back with the new role.
+  If the new role is refused, the old role is added back and the status line gives the reason.
+- Other users see the owner and their own role, read-only, with no controls (`SHR-3`).
 - Offline, every control is disabled and a banner says sharing needs a connection (`SHR-6`).
 - In local mode, the section only says "Connect to share this list" and links to the connect flow.
+- [sharing.js](../../src/js/views/sharing.js) builds the section; [permissions.js](../../src/js/core/permissions.js) holds the role rules (`SHR-5`).
 
 ### Recycle Bin
 Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).

@@ -37,6 +37,8 @@ const STRINGS = Object.freeze({
   open: 'open',
   all: 'All',
   any: 'Any',
+  shared: 'Shared',
+  notShared: 'Not shared',
   noList: 'In no list',
   from: 'From',
   to: 'To',
@@ -50,12 +52,13 @@ const STRINGS = Object.freeze({
   show: (counts) => (counts ? `Show ${counts.shown} ${counts.shown === 1 ? 'task' : 'tasks'}` : 'Show tasks'),
 });
 
-/** The filters with a row in the panel, in display order; the Lists filter is for All tasks only. */
+/** The filters with a row in the panel, in display order; the Lists and Shared filters are for All tasks only (`TV-7`). */
 const FILTERS = Object.freeze([
   { key: 'lists', label: 'Lists' },
   { key: 'statuses', label: 'Status' },
   { key: 'due', label: 'Due' },
   { key: 'created', label: 'Created' },
+  { key: 'shared', label: 'Shared' },
 ]);
 
 /** Sort field names, with Manual order for the list view (`LV-6`). */
@@ -146,6 +149,9 @@ export function sanitizeViewState(raw, kind = 'tasks') {
     if (created) {
       state.filter.created = created;
     }
+    if (typeof stored.shared === 'boolean') {
+      state.filter.shared = stored.shared;
+    }
   }
   const fields = kind === 'list' ? [MANUAL, ...SORT_FIELDS] : SORT_FIELDS;
   if (order && fields.includes(order.field) && ['asc', 'desc'].includes(order.direction)) {
@@ -202,7 +208,8 @@ export function isDefaultViewState(state, kind = 'tasks') {
   const statuses = filter.statuses ?? [];
   return !(typeof filter.text === 'string' && filter.text.trim())
     && statuses.length === OPEN.length && OPEN.every((status) => statuses.includes(status))
-    && !filter.lists?.length && !filter.due?.length && !filter.created && (state.group ?? NONE) === NONE
+    && !filter.lists?.length && !filter.due?.length && !filter.created && typeof filter.shared !== 'boolean'
+    && (state.group ?? NONE) === NONE
     && order.field === fallback.field && (order.field === MANUAL || order.direction === fallback.direction);
 }
 
@@ -227,6 +234,9 @@ function rangeText({ from, to }) {
  */
 function filterValue(key, filter, lists) {
   const values = filter[key];
+  if (key === 'shared') {
+    return typeof values === 'boolean' ? (values ? 'yes' : 'no') : null;
+  }
   if (key === 'created') {
     return values ? rangeText(values) : null;
   }
@@ -577,12 +587,22 @@ export function mountViewOptions(panel, route, context) {
     if (key === 'due') {
       return [...DUE_OPTIONS.map((option) => choice(key, option, DUE_LABELS[option])), rangeFields(key)];
     }
+    if (key === 'shared') {
+      return [['any', STRINGS.any], ['true', STRINGS.shared], ['false', STRINGS.notShared]].map(([value, text]) => {
+        const label = choice(key, value, text);
+        const input = label.firstElementChild;
+        input.type = 'radio';
+        input.name = `${id}-shared`;
+        return label;
+      });
+    }
     return key === 'created' ? [rangeFields(key)] : [];
   }
 
+  const connected = () => Boolean(context.session) && context.session.state() !== 'local';
   const rows = new Map();
   const accordion = make(doc, 'div', 'view-options__rows');
-  for (const { key, label } of FILTERS.filter(({ key: filterKey }) => filterKey !== 'lists' || kind === 'tasks')) {
+  for (const { key, label } of FILTERS.filter(({ key: filterKey }) => (filterKey !== 'lists' && filterKey !== 'shared') || kind === 'tasks')) {
     const row = button(doc, 'view-options__row');
     row.dataset.row = key;
     row.setAttribute('aria-expanded', 'false');
@@ -664,8 +684,13 @@ export function mountViewOptions(panel, route, context) {
   /** Show the state in every control. */
   function sync() {
     const state = model.get();
-    for (const [key, { row, label }] of rows) {
-      const value = filterValue(key, state.filter, lists) ?? (key === 'lists' || key === 'statuses' ? STRINGS.all : STRINGS.any);
+    for (const [key, { row, region, label }] of rows) {
+      if (key === 'shared') {
+        row.hidden = !connected();
+        region.hidden = region.hidden || !connected();
+      }
+      const shared = typeof state.filter.shared === 'boolean' ? (state.filter.shared ? STRINGS.shared : STRINGS.notShared) : null;
+      const value = (key === 'shared' ? shared : filterValue(key, state.filter, lists)) ?? (key === 'lists' || key === 'statuses' ? STRINGS.all : STRINGS.any);
       row.replaceChildren(make(doc, 'span', 'view-options__label', label), make(doc, 'span', 'view-options__value', value),
         spriteIcon(doc, 'chevron-down'));
     }
@@ -674,6 +699,9 @@ export function mountViewOptions(panel, route, context) {
       const key = input.dataset.filter;
       if (input.type === 'checkbox') {
         input.checked = (state.filter[key] ?? []).includes(input.value);
+      }
+      else if (input.type === 'radio') {
+        input.checked = input.value === String(state.filter.shared ?? 'any');
       }
       else {
         const [filterKey, end] = key.split('-');
@@ -733,6 +761,10 @@ export function mountViewOptions(panel, route, context) {
     const key = input.dataset?.filter;
     if (key) {
       apply(({ filter }) => {
+        if (input.type === 'radio') {
+          setFilter(filter, 'shared', input.value === 'any' ? null : input.value === 'true');
+          return;
+        }
         if (input.type === 'checkbox') {
           const values = (filter[key] ?? []).filter((value) => value !== input.value);
           setFilter(filter, key, input.checked ? [...values, input.value] : values);
@@ -774,6 +806,7 @@ export function mountViewOptions(panel, route, context) {
 
   const stops = [
     model.subscribe(sync),
+    ...(context.session?.subscribe ? [context.session.subscribe(sync)] : []),
     model.subscribeCounts((counts) => {
       done.textContent = STRINGS.show(counts);
       if (announceNext) {

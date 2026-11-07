@@ -13,6 +13,7 @@
  */
 
 import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-order.js';
+import { isSharedList } from '../core/permissions.js';
 import { clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
 import { attachMenu } from '../ui/menu.js';
 import { formatRoute } from '../ui/router.js';
@@ -69,6 +70,7 @@ function joinParts(parts) {
  */
 async function readData(store) {
   const snapshot = await store.snapshot();
+  const userId = (await store.queue?.getState?.('user-id')) ?? null;
   const lists = snapshot.lists.filter((list) => !list['deletion-time'])
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
   const notesByTask = new Map();
@@ -80,6 +82,8 @@ async function readData(store) {
     lists,
     listsByTask: indexMemberships(snapshot.memberships, lists.map((list) => list.id)),
     notesByTask,
+    sharedListIds: new Set(lists.filter(isSharedList).map((list) => list.id)),
+    userId,
   };
 }
 
@@ -95,10 +99,11 @@ async function readData(store) {
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device view state
  * @param {() => Date} [options.now] the clock
  * @param {() => Promise<void>} [options.persist] asks for persistent storage
+ * @param {{state: () => string}} [options.session] the session; the Shared filter applies while it is connected (`TV-7`)
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountAllTasks(view, {
-  store, toaster, memory = {}, viewModels, navigate = () => {}, getStorage, now = () => new Date(), persist = requestPersistence,
+  store, toaster, memory = {}, viewModels, navigate = () => {}, getStorage, now = () => new Date(), persist = requestPersistence, session,
 }) {
   const doc = view.ownerDocument;
   const model = viewModels?.tasks ?? createViewModel(VIEW, getStorage);
@@ -266,13 +271,17 @@ export function mountAllTasks(view, {
     if (!info.element.isConnected) {
       addBlock.append(info.element);
     }
-    const state = model.get();
+    const stored = model.get();
     const listIds = new Set(data.lists.map((list) => list.id));
-    const filter = { ...state.filter };
+    const filter = { ...stored.filter };
+    if (!session || session.state() === 'local') {
+      delete filter.shared;
+    }
+    const state = { ...stored, filter };
     if (filter.lists) {
       filter.lists = filter.lists.filter((id) => id === NO_LIST || listIds.has(id));
     }
-    const ctx = { now: now(), lists: new Map(data.lists.map((list) => [list.id, list])), ...data };
+    const ctx = { ...data, now: now(), lists: new Map(data.lists.map((list) => [list.id, list])) };
     const byOptions = filterTasks(data.tasks, { ...filter, text: undefined }, ctx);
     const shown = sortTasks(filterTasks(byOptions, filter, ctx), state.order);
     const groups = state.group && state.group !== 'none'

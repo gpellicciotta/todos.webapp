@@ -5,11 +5,14 @@
  * overdue behavior once a due time is set (`TSK-7`), lists (`TSK-8`), notes (`NOT-1` to `NOT-5`),
  * details (`TSK-12`), and Delete task (`TSK-11`). An invalid value shows a field error and saves nothing.
  * A deleted task opens read-only with a Restore banner (`BIN-6`); an unknown task closes with a toast.
+ * A viewer sees every field read-only under a banner naming the list owner, and only the task owner or the owner of a
+ * list holding the task may delete it; the lists offered follow the roles (`SHR-4`, `SHR-5`).
  * Store changes, also from other tabs, fill the fields again, except a focused or invalid one;
  * a focused field left unchanged then shows the newest value. The due date and time save once focus leaves them,
  * since a date field changes on each typed digit, such as year 0202 on the way to 2026.
  */
 
+import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 import { DESCRIPTION_MAX, STATUSES } from '../store/tasks.js';
 import { createField } from './editor-panel.js';
 import { createNoteThread } from './notes.js';
@@ -24,7 +27,7 @@ const STRINGS = Object.freeze({
   removeFrom: 'Remove from ', notes: 'Notes', details: 'Details', created: 'Created ',
   updated: 'Last updated ', activity: 'Last activity ', delete: 'Delete task',
   deleted: 'Task moved to the recycle bin.', inBin: 'This task is in the recycle bin.',
-  restore: 'Restore', notFound: 'That task was not found.', failed: 'That change could not be saved.',
+  restore: 'Restore', readOnly: (owner) => `You can only view this task${owner ? `. Its list owner is ${owner}` : ''}.`, notFound: 'That task was not found.', failed: 'That change could not be saved.',
   required: 'Enter a description.', tooLong: `A description holds at most ${DESCRIPTION_MAX} characters.`,
   dateFirst: 'Enter a date to set a time.', fullYear: 'Enter a four-digit year.',
 });
@@ -89,6 +92,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   let task = null;
   let lists = [];
   let members = [];
+  let userId = null;
+  let shownDeleted = false;
   let pending = null;
   let destroyed = false;
   const shown = new Map();
@@ -144,6 +149,12 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   restore.type = 'button';
   restore.addEventListener('click', () => store.restoreTask(taskId).catch(fail));
   banner.append(restore);
+  const lock = el(doc, 'div', 'banner');
+  lock.dataset.banner = 'read-only';
+  lock.setAttribute('role', 'status');
+  lock.hidden = true;
+  const lockText = el(doc, 'p', 'banner__text');
+  lock.append(spriteIcon(doc, 'alert', 'icon banner__icon'), lockText);
   const fields = el(doc, 'fieldset', 'task-editor__fields');
   const section = (name, title) => {
     const element = el(doc, 'div', 'editor-panel__section');
@@ -258,7 +269,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   function showOptions(show) {
     const text = input.value.trim();
     const lower = text.toLocaleLowerCase();
-    options = lists.filter((list) => !members.includes(list.id) && list.name.toLocaleLowerCase().includes(lower))
+    options = lists.filter((list) => !members.includes(list.id) && can(listRole(list), 'add-to-list') && list.name.toLocaleLowerCase().includes(lower))
       .map((list) => ({ list, label: list.name }));
     if (text && !lists.some((list) => list.name.trim().toLocaleLowerCase() === lower)) {
       options.push({ create: text, label: STRINGS.createList(text) });
@@ -346,7 +357,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     panel.close();
   }, fail));
   danger.append(remove);
-  panel.body.append(banner, fields, danger);
+  panel.body.append(banner, lock, fields, danger);
 
   /**
    * Tell whether a field keeps its value on a fill: while focused or showing an error.
@@ -361,10 +372,17 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
    */
   function fill(notes) {
     const deleted = Boolean(task['deletion-time']);
-    const wasDeleted = fields.disabled;
+    const wasDeleted = shownDeleted;
+    shownDeleted = Boolean(task['deletion-time']);
+    const held = lists.filter((list) => members.includes(list.id));
+    const role = taskRole(task, held, userId);
+    const locked = !can(role, 'update-task');
+    const owner = held.find((list) => list.owner)?.owner;
     banner.hidden = !deleted;
-    fields.disabled = deleted;
-    danger.hidden = deleted;
+    lock.hidden = deleted || !locked;
+    lockText.textContent = STRINGS.readOnly(owner?.name || owner?.email || '');
+    fields.disabled = deleted || locked;
+    danger.hidden = deleted || !canTrashTask(task, held, userId);
     if (!busy(description.control)) {
       put(description.control, task.description);
     }
@@ -383,6 +401,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       const button = el(doc, 'button', 'icon-button');
       button.type = 'button';
       button.setAttribute('aria-label', `${STRINGS.removeFrom}${list.name}`);
+      button.disabled = !can(listRole(list), 'remove-from-list');
       button.append(spriteIcon(doc, 'close'));
       button.addEventListener('click', () => store.removeFromList(taskId, list.id).then(() => input.focus(), fail));
       chip.append(button);
@@ -390,7 +409,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       return item;
     }));
     showOptions(!listbox.hidden);
-    thread.render(notes, deleted);
+    thread.render(notes, deleted || !can(role, 'add-note'));
     details.textContent = [[STRINGS.created, 'creation-time'], [STRINGS.updated, 'last-update-time'],
       [STRINGS.activity, 'last-activity-time']].map(([label, key]) => `${label}${format.format(new Date(task[key]))}`).join(' · ');
     if (wasDeleted && !deleted) {
@@ -415,11 +434,13 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
         panel.close();
         return;
       }
-      const [all, ids, notes] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId)]);
+      const [all, ids, notes, user] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId),
+        store.queue?.getState?.('user-id')]);
       if (destroyed) {
         return;
       }
       task = next;
+      userId = user ?? null;
       lists = [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
       members = ids;
       fill(notes);

@@ -626,13 +626,78 @@
   border-block-end: 0;
 }
 
-/* The list editor's Sharing section holds one line in local mode, a link to the connect flow. */
-.list-editor__sharing {
+/* A list shared with the user names its owner and the user's role under the description. */
+.list-view__owner {
+  flex: 1 1 100%;
+  order: 1;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.list-row__sharing {
+  grid-column: 1;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The Sharing section of the list editor: the people, each with a role and Remove, then the invite row. */
+.sharing {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sharing > * {
   margin: 0;
 }
 
-.list-editor__connect {
+.sharing [hidden] {
+  display: none;
+}
+
+.sharing__connect {
   color: var(--color-link);
+}
+
+.sharing__role,
+.sharing__status {
+  color: var(--color-text-muted);
+}
+
+.sharing__people {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.sharing__person {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+}
+
+.sharing__email {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.sharing__invite {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.sharing__invite > * {
+  inline-size: 100%;
+}
+
+.sharing__invite > .button {
+  inline-size: auto;
 }
 
 /*

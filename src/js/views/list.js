@@ -18,7 +18,8 @@ import { createLiveRegion } from '../ui/live-region.js';
 import { attachMenu } from '../ui/menu.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
 import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
-import { createListMenu, runListAction } from './list-actions.js';
+import { can, listRole, ROLE_LABELS } from '../core/permissions.js';
+import { createListMenu, fillListMenu, runListAction } from './list-actions.js';
 import { attachReorder } from './reorder.js';
 import { createTaskList, make } from './task-list.js';
 import { createInfoLine, createViewModel, describeFilters } from './view-controls.js';
@@ -30,6 +31,7 @@ let instances = 0;
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   notFound: 'That list was not found. Showing All tasks.',
+  sharedBy: (owner, role) => `Shared by ${owner || 'someone'} · ${role}`,
   moved: (description, position, count) => `${description} moved to position ${position} of ${count}.`,
   empty: 'This list has no tasks yet.',
   noMatch: (parts) => `No tasks match ${parts}.`,
@@ -45,6 +47,7 @@ const STRINGS = Object.freeze({
  */
 async function readData(store, listId) {
   const snapshot = await store.snapshot();
+  const userId = (await store.queue?.getState?.('user-id')) ?? null;
   const lists = snapshot.lists.filter((list) => !list['deletion-time'])
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
   const positions = positionsOfList(snapshot.memberships, listId);
@@ -58,6 +61,7 @@ async function readData(store, listId) {
     lists: new Map(lists.map((list) => [list.id, list])),
     listsByTask: indexMemberships(snapshot.memberships, lists.map((list) => list.id)),
     notesByTask,
+    userId,
   };
 }
 
@@ -102,13 +106,14 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const root = make(doc, 'div', 'task-view list-view');
   const header = make(doc, 'div', 'view-header');
   const description = make(doc, 'p', 'list-view__description');
+  const owner = make(doc, 'p', 'list-view__owner');
   const { more, menu } = createListMenu({ document: doc, id: `${id}-actions`, className: 'list-view__more' });
-  header.append(description, more, menu);
+  header.append(description, owner, more, menu);
 
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
   const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText });
   const addHint = createAddHint({ document: doc });
-  const moves = { enabled: () => model.get().order.field === 'manual' && (model.get().group ?? 'none') === 'none', step: (taskId, step) => reorder.step(taskId, step) };
+  const moves = { enabled: () => can(listRole(data?.list), 'reorder-task') && model.get().order.field === 'manual' && (model.get().group ?? 'none') === 'none', step: (taskId, step) => reorder.step(taskId, step) };
   const taskList = createTaskList({
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
     hrefOf: (task) => formatRoute('list-task', { listId, taskId: task.id }),
@@ -121,6 +126,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });
   const behavior = attachMenu(more, menu, { onSelect: act });
+  let menuRole = null;
 
   /**
    * Store a new task at the end of this list (`LV-5`) and open its editor.
@@ -197,16 +203,24 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     taskList.element.querySelector('.task-list').setAttribute('aria-label', data.list.name);
     description.textContent = data.list.description ?? '';
     description.hidden = !data.list.description;
+    const role = listRole(data.list);
+    owner.textContent = data.list.owner && role !== 'owner' ? STRINGS.sharedBy(data.list.owner.name || data.list.owner.email || '', ROLE_LABELS[role]) : '';
+    owner.hidden = !owner.textContent;
+    if (menuRole !== role) {
+      menuRole = role;
+      fillListMenu(menu, role);
+    }
     const state = model.get();
-    const ctx = { now: now(), lists: data.lists, listsByTask: data.listsByTask, notesByTask: data.notesByTask };
+    const ctx = { now: now(), lists: data.lists, listsByTask: data.listsByTask, notesByTask: data.notesByTask, userId: data.userId };
     const byOptions = filterTasks(data.tasks, { ...state.filter, text: undefined }, ctx);
     const filtered = filterTasks(byOptions, state.filter, ctx);
     const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
     const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx) : null;
     taskList.render(shown, ctx, { groups });
     addBar.setKnown(exactMatchIndex(byOptions));
-    addBar.setViewer(data.list.role === 'viewer');
-    const nothingMatches = addHint.update({ text: state.filter.text ?? '', shown: shown.length, viewer: data.list.role === 'viewer' });
+    const viewer = !can(role, 'create-task');
+    addBar.setViewer(viewer);
+    const nothingMatches = addHint.update({ text: state.filter.text ?? '', shown: shown.length, viewer });
     empty.hidden = shown.length > 0 || nothingMatches;
     empty.textContent = data.tasks.length === 0 ? STRINGS.empty : STRINGS.noMatch(describeFilters(state.filter, []).join(' and '));
     const lists = [...data.lists.values()];

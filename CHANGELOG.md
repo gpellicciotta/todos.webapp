@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.2.1-pre
+- FrontEnd: Added the Sharing section to the list editor: the owner invites an email with a role, changes a role, and removes a person.
+- FrontEnd: Showed other users the owner and their own role, read-only, and disabled every sharing control offline under a banner.
+- FrontEnd: Opened Share list at the Sharing section of the list editor, through the new `#/lists/{{list-id}}/share` route.
+- FrontEnd: Offered each screen only the actions the user's role allows: list menus, task rows, the task editor, and the list editor.
+- FrontEnd: Showed "Shared by {{owner}}" on the Lists rows and the owner and role in the list header of shared lists.
+- FrontEnd: Added the Shared filter to the view options of All tasks while connected, with Any, Shared, and Not shared.
 - FrontEnd: Added a More button to each row of the Lists screen with Edit list, Edit view options, Share list, and Delete list.
 - FrontEnd: Removed the Move up and Move down buttons from the Lists screen; lists reorder by their grips or Alt+Up and Alt+Down, with grips on touch screens too.
 - FrontEnd: Added Group by Due date or Status to the view options of every list, hiding the drag handles while grouped.

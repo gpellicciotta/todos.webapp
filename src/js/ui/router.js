@@ -18,6 +18,7 @@ const ROUTES = [
   { name: 'list-new', path: 'lists/new', view: 'lists', editor: 'list' },
   { name: 'list', path: 'lists/:listId', view: 'list', editor: null },
   { name: 'list-edit', path: 'lists/:listId/edit', view: 'list', editor: 'list' },
+  { name: 'list-share', path: 'lists/:listId/share', view: 'list', editor: 'list' },
   { name: 'list-view-options', path: 'lists/:listId/view-options', view: 'list', editor: 'view-options' },
   { name: 'list-task', path: 'lists/:listId/tasks/:taskId', view: 'list', editor: 'task' },
   { name: 'bin', path: 'bin', view: 'bin', editor: null },

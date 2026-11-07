@@ -314,3 +314,79 @@ describe('mountTaskEditor', () => {
     expect(store.addNote).not.toHaveBeenCalled();
   });
 });
+
+describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
+  let editor;
+  let panel;
+
+  /**
+   * Open the editor of a task of someone else that sits in a list the user holds with a role.
+   * @param {string} role the user's role on the list
+   * @param {object} [extra] fields of the task
+   * @returns {Promise<void>}
+   */
+  async function open(role, extra = {}) {
+    document.body.innerHTML = '<div data-editor-slot hidden></div>';
+    const store = fakeStore();
+    store.getTask = vi.fn(async () => ({ ...TASK, 'owner-id': 9, ...extra }));
+    store.listLists = vi.fn(async () => [
+      { id: 'l1', name: 'Home', role, owner: { id: 9, name: 'Sam Roe' } },
+      { id: 'l2', name: 'Mine', role: 'owner', owner: { id: 3, name: 'Jane Doe' } },
+    ]);
+    store.listsOfTask = vi.fn(async () => ['l1']);
+    store.queue = { getState: vi.fn(async () => 3) };
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() } });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+  }
+
+  const banner = () => document.querySelector('.banner[data-banner="read-only"]');
+  const deleteButton = () => [...document.querySelectorAll('.editor-panel__danger button')][0];
+
+  afterEach(() => {
+    panel.destroy();
+  });
+
+  it('shows a viewer every field read-only under a banner naming the list owner', async () => {
+    await open('viewer');
+    expect(banner().hidden).toBe(false);
+    expect(banner().textContent).toContain('Sam Roe');
+    expect(document.querySelector('.task-editor__fields').disabled).toBe(true);
+    expect(document.querySelector('.editor-panel__danger').hidden).toBe(true);
+    expect(document.querySelector('.note-thread__add').hidden).toBe(true);
+  });
+
+  it('lets a task editor change the task but not delete it', async () => {
+    await open('task-editor');
+    expect(banner().hidden).toBe(true);
+    expect(document.querySelector('.task-editor__fields').disabled).toBe(false);
+    expect(document.querySelector('.editor-panel__danger').hidden).toBe(true);
+  });
+
+  it('offers only the lists the user may add the task to', async () => {
+    await open('task-editor');
+    const input = document.querySelector('input[name="add-to-list"]');
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    expect([...document.querySelectorAll('[role="option"]')].map((item) => item.textContent)).toEqual(['Mine']);
+  });
+
+  it('offers the owner of the list Delete task', async () => {
+    await open('owner');
+    expect(document.querySelector('.editor-panel__danger').hidden).toBe(false);
+    expect(deleteButton().textContent).toBe('Delete task');
+  });
+
+  it('gives the task owner full control whatever the list role', async () => {
+    await open('viewer', { 'owner-id': 3 });
+    expect(banner().hidden).toBe(true);
+    expect(document.querySelector('.task-editor__fields').disabled).toBe(false);
+    expect(document.querySelector('.editor-panel__danger').hidden).toBe(false);
+  });
+});

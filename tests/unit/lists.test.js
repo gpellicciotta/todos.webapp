@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readListOrder } from '../../src/js/core/list-order.js';
 import { mountLists } from '../../src/js/views/lists.js';
-import { freshStore } from './store-helpers.js';
+import { freshStore, setListFields } from './store-helpers.js';
 
 describe('mountLists', () => {
   let store;
@@ -114,7 +114,7 @@ describe('mountLists', () => {
   it('opens the list editor, the view options, and the sharing section of the row list from its More menu', async () => {
     const view = await mountThree();
     const home = (await store.listLists()).find((list) => list.name === 'Home');
-    for (const [action, route] of [['edit', 'edit'], ['view-options', 'view-options'], ['share', 'edit']]) {
+    for (const [action, route] of [['edit', 'edit'], ['view-options', 'view-options'], ['share', 'share']]) {
       button(view, 'List actions: Home').click();
       button(view, 'List actions: Home').closest('.list-item').querySelector(`[data-action="${action}"]`).click();
       expect(navigate).toHaveBeenLastCalledWith(`#/lists/${home.id}/${route}`);
@@ -156,5 +156,28 @@ describe('mountLists', () => {
     await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Garden', 'Work']));
     await store.createList({ name: 'Archive' });
     await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Garden', 'Work', 'Archive']));
+  });
+
+  it('offers each role only the list actions it may use, and shows the owner of lists shared with the user (SHR-3, SHR-4)', async () => {
+    const view = await mount();
+    const sam = { id: 9, email: 'sam@example.com', name: 'Sam Roe' };
+    const ids = {};
+    for (const [name, fields] of [
+      ['Editing', { role: 'editor', owner: sam, sharing: [] }],
+      ['Reading', { role: 'viewer', owner: sam, sharing: [] }],
+      ['Mine', { role: 'owner', owner: { id: 3, name: 'Jane Doe' }, sharing: [{ id: 1 }, { id: 2 }] }],
+    ]) {
+      ids[name] = (await store.createList({ name })).id;
+      await setListFields(store, ids[name], fields);
+    }
+    await vi.waitFor(() => expect(view.querySelector(`[data-list-id="${ids.Mine}"] .list-row__sharing`)).not.toBeNull());
+    const actions = (name) => [...view.querySelector(`[data-list-id="${ids[name]}"]`).querySelectorAll('.menu__item')].map((item) => item.textContent);
+    expect(actions('Mine')).toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
+    expect(actions('Editing')).toEqual(['Edit list', 'Edit view options']);
+    expect(actions('Reading')).toEqual(['List details', 'Edit view options']);
+    const sharing = (name) => view.querySelector(`[data-list-id="${ids[name]}"] .list-row__sharing`)?.textContent ?? null;
+    expect(sharing('Reading')).toBe('Shared by Sam Roe');
+    expect(sharing('Mine')).toBe('Shared with 2 people');
+    expect([...view.querySelectorAll('.list-item')].filter((item) => !item.querySelector('.list-row__sharing'))).toHaveLength(1);
   });
 });

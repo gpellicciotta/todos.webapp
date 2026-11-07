@@ -26,6 +26,8 @@ const STRINGS = Object.freeze({
   newList: 'New list',
   lists: 'Lists',
   counts: (open, total) => `${open} open · ${total} total`,
+  sharedBy: (owner) => (owner ? `Shared by ${owner}` : 'Shared with you'),
+  sharedWith: (count) => `Shared with ${count} ${count === 1 ? 'person' : 'people'}`,
   empty: 'No lists yet. A list groups tasks, such as Home or Work.',
   notSaved: 'The list order could not be saved on this device.',
 });
@@ -52,6 +54,19 @@ export function countTasks(tasks, memberships) {
 }
 
 /**
+ * Tell the sharing state of a list: who shares it with the user, or with how many people the user shares it (`LST-5`, `SHR-3`).
+ * @param {object} list the list
+ * @returns {string} the text, empty for a list that is not shared
+ */
+function sharingText(list) {
+  if (list.role && list.role !== 'owner') {
+    return STRINGS.sharedBy(list.owner?.name || list.owner?.email || '');
+  }
+  const people = list.sharing?.length ?? 0;
+  return people > 0 ? STRINGS.sharedWith(people) : '';
+}
+
+/**
  * Create the row of one list: a drag handle, a link to its List screen, and a More button with its menu.
  * @param {Document} doc the document
  * @param {object} list the list
@@ -72,7 +87,11 @@ function row(doc, list, count) {
     link.append(make(doc, 'span', 'list-row__description', list.description));
   }
   link.append(make(doc, 'span', 'list-row__counts', STRINGS.counts(count.open, count.total)));
-  const { more, menu } = createListMenu({ document: doc, id: `list-actions-${list.id}`, name: list.name, className: 'list-item__more' });
+  const sharing = sharingText(list);
+  if (sharing) {
+    link.append(make(doc, 'span', 'list-row__sharing', sharing));
+  }
+  const { more, menu } = createListMenu({ document: doc, id: `list-actions-${list.id}`, name: list.name, className: 'list-item__more', list });
   more.dataset.role = 'more';
   item.append(grip, link, more, menu);
   return { item, more, menu };

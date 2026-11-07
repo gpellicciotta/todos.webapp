@@ -24,6 +24,7 @@
 
 import { isOverdue } from '../core/overdue.js';
 import { STATUSES } from '../store/tasks.js';
+import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 import { attachMenu } from '../ui/menu.js';
 
 const ICONS = 'img/icons.svg';
@@ -189,10 +190,11 @@ function chip(doc, className, text, { icon, hidden } = {}) {
  * @param {object} ctx the render context of `render`
  * @param {object} options the list options
  * @returns {{key: string, dueKey: string, due: object|null, href: string, handle: boolean, names: string[],
- *   notes: number}} the row content
+ *   notes: number, locked: boolean, menu: boolean}} the row content
  */
 function viewOf(task, ctx, options) {
   const ids = ctx.listsByTask?.get(task.id) ?? [];
+  const access = accessOf(task, ctx, options.listId);
   const names = ids.length === 0 ? [] : [...(ctx.lists?.values() ?? [])]
     .filter((list) => list.id !== options.listId && ids.includes(list.id)).map((list) => list.name);
   const notes = ctx.notesByTask?.get(task.id)?.length ?? 0;
@@ -200,9 +202,28 @@ function viewOf(task, ctx, options) {
   const handle = Boolean(options.moves?.enabled());
   const due = formatDue(task, ctx.now);
   return {
-    key: JSON.stringify([task.status, task.description, href, handle, names, notes]),
-    dueKey: due ? `${due.overdue}|${due.text}` : '', due, href, handle, names, notes,
+    key: JSON.stringify([task.status, task.description, href, handle, names, notes, access.locked, access.menu]),
+    dueKey: due ? `${due.overdue}|${due.text}` : '', due, href, handle, names, notes, locked: access.locked, menu: access.menu,
   };
+}
+
+/**
+ * Work out what the user's roles allow on a task (`SHR-4`, `SHR-5`): changing it, adding it to lists, removing it
+ * from the list of a list view, and sending it to the recycle bin. A local task allows everything.
+ * @param {object} task the task
+ * @param {{lists?: Map<string, object>, listsByTask?: Map<string, string[]>, userId?: number|string|null}} ctx the render context
+ * @param {string|null} listId the list a list view shows
+ * @returns {{locked: boolean, add: boolean, remove: boolean, trash: boolean, menu: boolean}} the allowed actions;
+ *   `menu` tells whether the More menu has an entry beyond the moves
+ */
+function accessOf(task, ctx, listId) {
+  const held = (ctx.listsByTask?.get(task.id) ?? []).map((id) => ctx.lists?.get(id)).filter(Boolean);
+  const userId = ctx.userId ?? null;
+  const role = taskRole(task, held, userId);
+  const trash = canTrashTask(task, held, userId);
+  const add = can(role, 'add-to-list');
+  const remove = listId !== null && can(listRole(ctx.lists?.get(listId)), 'remove-from-list');
+  return { locked: !can(role, 'update-task'), add, remove, trash, menu: add || remove || trash };
 }
 
 /**
@@ -302,6 +323,8 @@ function renderRow(doc, task, view, template, selected) {
     open.append(meta);
   }
   more.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
+  status.disabled = view.locked;
+  more.hidden = !view.menu && !view.handle;
   return row;
 }
 
@@ -512,6 +535,9 @@ export function createTaskList({
    * @param {object} task the task
    */
   function openStatus(trigger, task) {
+    if (accessOf(task, ctx, listId).locked) {
+      return;
+    }
     statusMenu.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}`);
     statusMenu.replaceChildren(...STATUSES.map((status) => menuItem(doc, 'menuitemradio', STATUS_LABELS[status], { status },
       { icon: `status-${status}`, checked: status === task.status })));
@@ -529,7 +555,7 @@ export function createTaskList({
    */
   function freeLists(task) {
     const member = ctx.listsByTask?.get(task.id) ?? [];
-    return [...(ctx.lists?.values() ?? [])].filter((candidate) => !member.includes(candidate.id));
+    return [...(ctx.lists?.values() ?? [])].filter((candidate) => !member.includes(candidate.id) && can(listRole(candidate), 'add-to-list'));
   }
 
   /**
@@ -560,12 +586,13 @@ export function createTaskList({
   function openMore(trigger, task, at) {
     const index = places.get(task.id);
     const movable = moves?.enabled() ?? false;
+    const access = accessOf(task, ctx, listId);
     const entries = [
-      [freeLists(task).length > 0, STRINGS.addToList, 'add-to-list', 'plus'],
-      [listId !== null, STRINGS.removeFromList, 'remove-from-list'],
+      [access.add && freeLists(task).length > 0, STRINGS.addToList, 'add-to-list', 'plus'],
+      [access.remove, STRINGS.removeFromList, 'remove-from-list'],
       [movable && index > 0, STRINGS.moveUp, 'move-up'],
       [movable && index < items.length - 1, STRINGS.moveDown, 'move-down'],
-      [true, STRINGS.delete, 'delete', 'bin'],
+      [access.trash, STRINGS.delete, 'delete', 'bin'],
     ];
     moreMenu.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
     moreMenu.replaceChildren(...entries.filter(([shown]) => shown)
