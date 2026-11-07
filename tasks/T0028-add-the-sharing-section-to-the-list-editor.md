@@ -14,15 +14,14 @@ protocol: standard
 size_status: approved
 size_estimate: 30 files, 1897 lines
 usage:
-  worker: {turns: 4, duration_s: 3245.2, input: 632, output: 214942, cache_read: 62248986, cache_write: 588396}
+  worker: {turns: 6, duration_s: 6561.2, input: 768, output: 248300, cache_read: 84655576, cache_write: 654280}
   review: {turns: 2, duration_s: 424.8, input: 216966, output: 10964, cache_read: 2471096}
 work_duration: 4504.0
 size_approved: 30 files, 1897 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T22:17:42Z"
-review_status: rejected
-review_round: 1
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
 ---
 # T0028: Add the Sharing section to the list editor, role-aware controls, and the Shared filter
 
@@ -117,4 +116,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Doc]**
   Removed the temporary capture scripts from the companion folder; the proof describes the method.
+
+- [2026-11-07] **[Review]**
+  Round 2 requested (mode: agent).
 
