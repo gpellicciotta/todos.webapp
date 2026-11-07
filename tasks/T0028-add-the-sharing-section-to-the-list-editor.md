@@ -14,11 +14,13 @@ protocol: standard
 size_status: approved
 size_estimate: 30 files, 1897 lines
 usage:
-  worker: {turns: 2, duration_s: 3200.8, input: 616, output: 213550, cache_read: 59776482, cache_write: 576138}
+  worker: {turns: 4, duration_s: 3245.2, input: 632, output: 214942, cache_read: 62248986, cache_write: 588396}
 work_duration: 1613.6
 size_approved: 30 files, 1897 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T22:17:42Z"
+review_status: pending
+review_round: 1
 ---
 # T0028: Add the Sharing section to the list editor, role-aware controls, and the Shared filter
 
@@ -97,4 +99,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Review]**
   Size approved by @gpellicciotta for 30 files and 1897 lines. All steps except Review are checked; work is committed and verified.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
