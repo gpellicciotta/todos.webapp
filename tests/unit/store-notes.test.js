@@ -207,7 +207,7 @@ describe('schema upgrade', () => {
       indexedDB: factory, keyRange: IDBKeyRange, name: 'legacy', now: () => new Date(Date.UTC(2026, 10, 4, 9, 0, 0)),
     });
     try {
-      expect(DB_VERSION).toBe(3);
+      expect(DB_VERSION).toBe(4);
       expect(await upgraded.listLists()).toMatchObject([{ id: 'list-1', name: 'Home' }]);
       expect(await upgraded.listTasks()).toMatchObject([{ id: 'task-1', description: 'Fix door' }]);
       expect((await upgraded.tasksOfList('list-1')).map((t) => t.id)).toEqual(['task-1']);

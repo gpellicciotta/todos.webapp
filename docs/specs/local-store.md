@@ -6,9 +6,10 @@ The IndexedDB schema that holds the app's data in the browser.
 
 ## Database
 - Name: `todos`; one database per browser profile (`LOC-5`).
-- Version: 3; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
+- Version: 4; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
 - Version 1 created `lists`, `tasks`, and `memberships`; version 2 adds `notes` and keeps existing data.
 - Version 3 gives existing memberships a `position`, per list in added-time order, then by task id.
+- Version 4 adds the sync stores `sync-queue`, `sync-state`, and `sync-log`; existing stores and data stay unchanged.
 - Records use the field names of the service's `List`, `Task`, and `Note` schemas, in kebab-case.
 - Times are ISO-8601 strings in UTC with milliseconds, such as `2026-11-04T09:00:00.000Z`.
 - Identifiers are UUIDv7 strings from [uuid7.js](../../src/js/lib/uuid7.js), sorting by creation time (`TEC-9`).
@@ -41,6 +42,21 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 - `author` is null for local notes; `edit-time` is null until the first edit.
 - The key order lets one key range read all notes of a task.
 - Editing or deleting by note id scans the keys only, matching the second key part.
+
+### `sync-queue`
+Keyed by `seq`, auto-incremented; holds the change queue (see Sync Queue).
+
+### `sync-state`
+Keyed by `key`, with the record `{key, value}`.
+- `account`: `{email, server}` of the account whose local data was adopted.
+- `adoption`: `{status: running|done, account, done, total}`; the step count lets an interrupted upload resume.
+- `list-map`: local list id to account list id, for local lists merged into account lists.
+- The feed cursor joins them in the download task.
+
+### `sync-log`
+Keyed by `id`, with an index on `time`; records of what sync changed or refused, kept for the Sync log screen.
+- `{id, time, kind: 'rejected', operation, target, fields, status, message}`: a change the service refused and the app undid.
+- `{id, time, kind: 'overwritten', target, field, sent, kept, kept-edit-time}`: a value the merge overwrote.
 
 ---
 
@@ -164,3 +180,54 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 - `openStore({broadcast: true})` also posts each write on the `{{name}}-changes` BroadcastChannel.
 - Stores of other tabs on that channel then notify their subscribers with `remote: true`.
 - Broadcasting is opt-in, so unit tests and scripts open no channel.
+
+---
+
+## Sync Queue
+[queue.js](../../src/js/sync/queue.js) records changes, [push.js](../../src/js/sync/push.js) uploads them,
+[adopt.js](../../src/js/sync/adopt.js) uploads the local data on first connect, and [api.js](../../src/js/sync/api.js) sends the requests.
+- `openStore({tracking})` queues every committed write while `tracking()` is true, that is, while an account is connected or expired (`SYN-1`, `SYN-2`).
+  - Local mode queues nothing.
+  - The entry joins the queue right after the write commits, in a second transaction.
+  - `purgeForever`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
+- An entry holds `seq`, `target`, `operation`, `fields`, `edit-times`, `created`, and `undo`.
+  - `fields` holds only what changed (`SYN-5`). `edit-times` holds the client time of each field. Creates carry all fields.
+  - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type.
+  - Memberships: `add-`, `move-`, and `remove-membership`.
+  - Notes: `create-note`, `edit-note`, and `delete-note`.
+- One request per entry, in `seq` order. A retry repeats the request, and every create is idempotent by identifier (`SYN-10`).
+- Requests send `Authorization`, `Edit-Time`, and `Client-Version: todos.webapp/{{version}}` without `-pre`.
+- Requests never send `If-Match`.
+- Replies map to outcomes:
+
+| Reply                     | Outcome                                                                                 |
+| :------------------------ | :-------------------------------------------------------------------------------------- |
+| 2xx                       | Done; `conflicts` in the reply go to the sync log as `overwritten`.                     |
+| 400, 403, 404, 409, 412   | Rejected: undo the change locally, log it as `rejected`, and tell the user (`SYN-9`).   |
+| 404 on a delete or remove | Done; the row is already gone.                                                          |
+| 401                       | The session expires and the queue pauses, keeping its entries. The app asks to sign in. |
+| 426                       | All syncing stops. The app asks for an update and names the minimum from `Upgrade`.     |
+| No network, 5xx, 408, 429 | Retry the same entry after 1, 2, 5, 15, 30, then 60 seconds.                            |
+
+- Undo changes only fields that still hold the value the rejected change gave them.
+- Later local edits therefore stay.
+- A rejected create removes the row and drops the queued entries that build on it.
+- One tab syncs (`SYN-12`): the holder of the Web Lock `todos-sync` drains the queue.
+  It shares its state on the `todos-sync` BroadcastChannel.
+  Other tabs show that state and take over when the leader closes.
+- The sync state is `idle`, `syncing`, `synced`, `offline`, `error`, `sign-in-needed`, or `update-required`.
+  It also holds the pending count.
+
+### First Connect
+- Once per account and server, before the queue drains, `adopt` uploads the local data (`CON-4`, `CON-5`).
+- It first clears the queue, since the upload covers it.
+- It reads the account's lists from the snapshot of the change feed, then matches each local list:
+  - Same identifier: the same list.
+  - Same name, ignoring case, as a live list the account owns: the local list merges into it.
+    Locally the list takes the account list's identifier and its memberships follow.
+    `list-map` records the old identifier.
+  - Name of a trashed list, or a trashed local list with a taken name: rename to `{{name}} (local)`, `(local 2)`, and so on.
+- It uploads lists, tasks, memberships, and notes, then the recycle bin states, one request each.
+- Memberships go by list and position, so each list keeps its manual order.
+- A create that finds the row (`200`) is followed by an update with the local edit times.
+- A row the service refuses is logged and stays on the device.

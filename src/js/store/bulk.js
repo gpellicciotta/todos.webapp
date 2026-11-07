@@ -36,7 +36,7 @@ export function snapshot(ctx) {
  * Plan and apply bulk writes in one transaction.
  * The planner receives the snapshot and the store clock's current time, and returns
  * `{changes, result}`: `changes.put` maps store names to records to store,
- * `changes.delete` maps `memberships` and `notes` to keys to remove.
+ * `changes.delete` maps `memberships` and `notes` to keys to remove, and `lists` and `tasks` to identifiers to remove.
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {(data: object, now: Date) => {changes: object, result: any}} planner synchronous planner
  * @returns {Promise<any>} the planner's result
@@ -49,6 +49,12 @@ export function applyChanges(ctx, planner) {
     }
     for (const key of changes.delete?.notes ?? []) {
       await request(tx.objectStore(STORES.notes).delete(key));
+    }
+    for (const id of changes.delete?.lists ?? []) {
+      await request(tx.objectStore(STORES.lists).delete(id));
+    }
+    for (const id of changes.delete?.tasks ?? []) {
+      await request(tx.objectStore(STORES.tasks).delete(id));
     }
     for (const list of changes.put?.lists ?? []) {
       await request(tx.objectStore(STORES.lists).put(list));

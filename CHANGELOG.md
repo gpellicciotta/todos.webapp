@@ -18,6 +18,13 @@ All notable changes to this project are documented here.
 - FrontEnd: Loaded the inbox at start, on sign-in, when the tab turns visible, and every 2 minutes; local mode sends no request.
 - FrontEnd: Made a new service worker wait until the user clicks Update on a lasting "A new version is ready" toast, then reload once.
 - FrontEnd: Showed the reload banner in tabs that did not click Update, and the Close other tabs message when an old tab blocks a database upgrade.
+- FrontEnd: Queued every change made while connected and uploaded it in order, without duplicates on retry.
+- FrontEnd: Sent only the changed fields of an update, each with its edit time, so edits of different fields merge.
+- FrontEnd: Uploaded all local data on the first connect, keeping list order and merging lists of the same name.
+- FrontEnd: Undid a change the service rejects and logged it. A 401 pauses the queue, and a 426 stops syncing.
+- FrontEnd: Let one tab upload at a time, with the other tabs following its state.
+- Docs: Described the version 4 store, the change queue, and first-connect adoption in the local store spec.
+- DevEx: Added unit tests for the queue, the API client, the upload, and adoption against a fake service.
 - Docs: Added the NTF-1 to NTF-7 requirements and the Inbox design, and moved the inbox out of Planned After v1.0.0.
 - DevEx: Added unit and end-to-end tests for the update protocol of the worker, the Update toast, and the second-tab banner.
 - DevEx: Added unit and end-to-end tests for the inbox client, the bell, the panel, and the banners.

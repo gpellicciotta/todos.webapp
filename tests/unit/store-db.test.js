@@ -138,3 +138,34 @@ describe('store change notification coverage', () => {
     store.close();
   });
 });
+
+describe('the version 4 migration', () => {
+  it('keeps all data and adds the sync stores', async () => {
+    const factory = new IDBFactory();
+    const raw = await new Promise((resolve, reject) => {
+      const req = factory.open('test', 3);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore('lists', { keyPath: 'id' }).put({ id: 'l1', name: 'Home', 'deletion-time': null });
+        req.result.createObjectStore('tasks', { keyPath: 'id' });
+        req.result.createObjectStore('memberships');
+        req.result.createObjectStore('notes');
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    raw.close();
+    const store = await open(factory);
+    expect((await store.listLists()).map((list) => list.name)).toEqual(['Home']);
+    expect(DB_VERSION).toBe(4);
+    store.close();
+    const upgraded = await new Promise((resolve, reject) => {
+      const req = factory.open('test');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    expect([...upgraded.objectStoreNames].sort()).toEqual(['lists', 'memberships', 'notes', 'sync-log', 'sync-queue', 'sync-state', 'tasks']);
+    expect(upgraded.transaction('sync-log').objectStore('sync-log').indexNames.contains('time')).toBe(true);
+    expect(upgraded.transaction('sync-queue').objectStore('sync-queue').autoIncrement).toBe(true);
+    upgraded.close();
+  });
+});

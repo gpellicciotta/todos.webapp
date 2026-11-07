@@ -8,6 +8,9 @@ export const STORES = {
   tasks: 'tasks',
   memberships: 'memberships',
   notes: 'notes',
+  queue: 'sync-queue',
+  state: 'sync-state',
+  log: 'sync-log',
 };
 
 /** A store operation failed; `code` names the reason, such as `not-found`. */

@@ -11,11 +11,12 @@ import { StoreError, STORES } from './idb.js';
 import * as lists from './lists.js';
 import * as notes from './notes.js';
 import * as tasks from './tasks.js';
+import { createQueue, isTracked, trackChange } from '../sync/queue.js';
 
 export { StoreError, ValidationError } from './idb.js';
 
 export const DB_NAME = 'todos';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 /**
  * Create or upgrade the schema.
@@ -37,6 +38,12 @@ function upgrade(db, oldVersion, tx) {
   if (oldVersion >= 1 && oldVersion < 3) {
     // Memberships gain positions for the manual order, assigned per list in added-time order.
     tasks.backfillPositions(tx.objectStore(STORES.memberships));
+  }
+  if (oldVersion < 4) {
+    // All sync stores land at once, so later sync tasks add none; existing stores and data stay unchanged.
+    db.createObjectStore(STORES.queue, { keyPath: 'seq', autoIncrement: true });
+    db.createObjectStore(STORES.state, { keyPath: 'key' });
+    db.createObjectStore(STORES.log, { keyPath: 'id' }).createIndex('time', 'time');
   }
 }
 
@@ -90,8 +97,10 @@ export function openDatabase(factory, name, onVersionChange = () => {}) {
  * @param {() => Date} [options.now] the clock
  * @param {() => void} [options.onVersionChange] called after a newer app version closed the connection
  * @param {boolean} [options.broadcast] tell stores in other tabs of each write, through a BroadcastChannel
+ * @param {() => boolean} [options.tracking] tells whether the device is connected; while it is, each write also joins the change queue
  * @returns {Promise<object>} the store facade with list, task, membership, note, recycle bin, and bulk operations;
- *   `subscribe(listener)` hears of every write, as `{operation, remote}`, and returns an unsubscribe function
+ *   `subscribe(listener)` hears of every write, as `{operation, remote}`, and returns an unsubscribe function;
+ *   `queue` holds the change queue, the sync state, and the sync log (see sync/queue.js)
  */
 export async function openStore({
   indexedDB = globalThis.indexedDB,
@@ -100,6 +109,7 @@ export async function openStore({
   now = () => new Date(),
   onVersionChange,
   broadcast = false,
+  tracking = () => false,
 } = {}) {
   const db = await openDatabase(indexedDB, name, onVersionChange);
   const ctx = { db, keyRange, now };
@@ -120,7 +130,9 @@ export async function openStore({
   if (channel) {
     channel.onmessage = (event) => emit({ operation: String(event.data?.operation), remote: true });
   }
+  const queue = createQueue(ctx);
   const facade = {
+    queue,
     close: () => {
       channel?.close();
       db.close();
@@ -161,7 +173,9 @@ export async function openStore({
   for (const operation of WRITES) {
     const write = facade[operation];
     facade[operation] = async (...args) => {
+      const record = isTracked(operation) && tracking() ? await trackChange(ctx, queue, operation, args) : null;
       const result = await write(...args);
+      await record?.(result);
       emit({ operation, remote: false });
       channel?.postMessage({ operation });
       return result;

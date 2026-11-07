@@ -15,6 +15,7 @@
 import { startOverdueTimer } from './core/overdue.js';
 import { openStore } from './store/db.js';
 import { createInbox } from './sync/inbox.js';
+import { createPush } from './sync/push.js';
 import { createSession } from './sync/session.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
@@ -92,6 +93,8 @@ async function start() {
     store = await openStore({
       broadcast: true,
       onVersionChange: showUpdatedNotice,
+      // While connected, every change also joins the queue that the push engine uploads (`SYN-1`).
+      tracking: () => session.state() !== 'local',
     });
   }
   catch (error) {
@@ -99,6 +102,10 @@ async function start() {
     shell.showBanner(error?.code === 'blocked' ? error.message : MESSAGES.storeFailed);
     return;
   }
+  // One tab uploads the queue; the others follow its state (`SYN-12`). A rejected change is undone and reported (`SYN-9`).
+  const push = createPush({ store, session, onRejected: ({ message }) => toaster.show(message) });
+  push.start();
+  window.addEventListener('online', () => push.kick());
   let screen = null;
   let shownViewKey = null;
   // The screens and the View options panel share these, so the rows, the info line, and the panel follow one state.
