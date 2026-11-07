@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1597.6, input: 264, output: 181808, cache_read: 20761968, cache_write: 406400}
+review_status: pending
+review_round: 1
 ---
 # T0026: Build sync download: the change feed client, per-field merge, lost access handling, and the sync log store
 
@@ -57,4 +61,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Verify]**
   Red run failed on missing modules; green run passed 1014 unit tests, lint, check:sw, and 30 e2e tests.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
