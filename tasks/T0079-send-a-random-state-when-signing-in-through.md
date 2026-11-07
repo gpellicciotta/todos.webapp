@@ -1,0 +1,55 @@
+---
+id: T0079
+owner: "@claude"
+session: claude-20261107-d8fba7
+needs: []
+branch: task/T0079-send-a-random-state-when-signing-in-through
+worktree: .plan/work/T0079-send-a-random-state-when-signing-in-through
+status: active
+started_at: "2026-11-07T22:54:20Z"
+ended_at: —
+review: agent
+preview: none
+protocol: standard
+---
+# T0079: Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206)
+
+## Goals
+Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206).
+
+## Task Execution Steps
+- [x] **[Implement]** Author failing tests for state generation, matching, and rejection.
+- [x] **[Verify]**    Run the unit tests and prove the new tests fail.
+- [x] **[Implement]** Send a random state and reject a returned state that is missing or differs.
+- [x] **[Verify]**    Run unit, lint, e2e, contract, and service-worker checks and prove they pass.
+- [x] **[Doc]**       Update documentation and CHANGELOG.md.
+- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+
+## Execution Log
+- [2026-11-07] **[Doc]**
+  Companion task file scaffolded at task creation.
+
+- [2026-11-08] **[Implement]**
+  Added app-state and state checking in the Auth adapter and session, plus a connect error message.
+  - Contract from auth T0206.
+
+- [2026-11-08] **[Verify]**
+  Tests pass; the connect e2e test flakes on the baseline too.
+  - Real-server contract tests pass.
+  - Auth T0215 must forward state for password sign-in.
+
+- [2026-11-08] **[Doc]**
+  Documented the flow in devops.md, added a changelog bullet, and bumped the service worker VERSION.
+
+- [2026-11-08] **[Implement]**
+  Authored unit, e2e, and contract tests for the state first.
+
+- [2026-11-08] **[Verify]**
+  Proved the new unit tests fail before the implementation: 5 failed.
+
+- [2026-11-08] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 9.
+  - Lines touched: 144.
+  - Reopenings: 0.
+
