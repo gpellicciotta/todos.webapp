@@ -3,7 +3,7 @@
  *
  * Values are stored as JSON. Storage that is missing, blocked, or full never throws:
  * reads return the fallback and writes report failure, so the app works in private windows.
- * The views store their filters, grouping, and sort here (`TV-12`); Settings stores `theme` and `server-url`.
+ * The views store their filters, grouping, and sort here (`TV-12`), All tasks once and each list on its own; Settings stores `theme` and `server-url`.
  */
 
 export const PREFIX = 'todos.';
@@ -35,6 +35,22 @@ export function readPreference(key, fallback, getStorage = () => globalThis.loca
 export function writePreference(key, value, getStorage = () => globalThis.localStorage) {
   try {
     getStorage().setItem(PREFIX + key, JSON.stringify(value));
+    return true;
+  }
+  catch {
+    return false;
+  }
+}
+
+/**
+ * Remove a preference.
+ * @param {string} key the key without the prefix
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when removed, or when nothing was stored
+ */
+export function removePreference(key, getStorage = () => globalThis.localStorage) {
+  try {
+    getStorage().removeItem(PREFIX + key);
     return true;
   }
   catch {

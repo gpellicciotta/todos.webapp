@@ -16,6 +16,7 @@ function memoryStorage() {
     data,
     getItem: (key) => (data.has(key) ? data.get(key) : null),
     setItem: (key, value) => data.set(key, String(value)),
+    removeItem: (key) => data.delete(key),
   };
 }
 
@@ -211,6 +212,85 @@ describe('createViewModel', () => {
     model.set({ filter: { statuses: [], text: 'x', due: ['today'] }, order: { field: 'status', direction: 'desc' } });
     model.reset();
     expect(model.get()).toEqual(defaultViewState('list'));
+  });
+
+  describe('per list', () => {
+    const grouped = { filter: { statuses: ['completed'] }, order: { field: 'status', direction: 'asc' }, group: 'due' };
+
+    it('keeps the options of each list apart, under one entry per list', () => {
+      const storage = memoryStorage();
+      const model = createViewModel('list', () => storage);
+      model.select('l-home');
+      model.set(grouped);
+      model.select('l-work');
+      expect(model.get()).toEqual(defaultViewState('list'));
+      model.set({ ...defaultViewState('list'), group: 'status' });
+      model.select('l-home');
+      expect(model.get()).toEqual(grouped);
+      expect(storage.data.has('todos.view.list.l-home')).toBe(true);
+      expect(storage.data.has('todos.view.list.l-work')).toBe(true);
+      expect(storage.data.has('todos.view.list')).toBe(false);
+    });
+
+    it('restores the options of a list on a new model', () => {
+      const storage = memoryStorage();
+      const first = createViewModel('list', () => storage);
+      first.select('l-home');
+      first.set(grouped);
+      const second = createViewModel('list', () => storage);
+      second.select('l-home');
+      expect(second.get()).toEqual(grouped);
+      second.select('l-work');
+      expect(second.get()).toEqual(defaultViewState('list'));
+    });
+
+    it('ignores the old entry shared by every list', () => {
+      const storage = memoryStorage();
+      storage.setItem('todos.view.list', JSON.stringify(grouped));
+      const model = createViewModel('list', () => storage);
+      model.select('l-home');
+      expect(model.get()).toEqual(defaultViewState('list'));
+    });
+
+    it('tells its listeners when another list is selected, and not when the same one is selected again', () => {
+      const model = createViewModel('list', () => memoryStorage());
+      const listener = vi.fn();
+      model.select('l-home');
+      model.subscribe(listener);
+      model.select('l-home');
+      expect(listener).not.toHaveBeenCalled();
+      model.select('l-work');
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it('drops the search text when another list is selected', () => {
+      const model = createViewModel('list', () => memoryStorage());
+      model.select('l-home');
+      model.set({ ...defaultViewState('list'), filter: { statuses: ['todo'], text: 'paint' } });
+      model.select('l-work');
+      expect(model.get().filter.text).toBeUndefined();
+    });
+
+    it('resets one list to the defaults and removes its entry, leaving the other lists alone', () => {
+      const storage = memoryStorage();
+      const model = createViewModel('list', () => storage);
+      model.select('l-home');
+      model.set(grouped);
+      model.select('l-work');
+      model.set(grouped);
+      model.reset();
+      expect(model.get()).toEqual(defaultViewState('list'));
+      expect(storage.data.has('todos.view.list.l-work')).toBe(false);
+      model.select('l-home');
+      expect(model.get()).toEqual(grouped);
+    });
+
+    it('does not store options before a list is selected', () => {
+      const storage = memoryStorage();
+      const model = createViewModel('list', () => storage);
+      model.set(grouped);
+      expect(storage.data.size).toBe(0);
+    });
   });
 
   it('reports the shown and total counts to its count listeners', () => {

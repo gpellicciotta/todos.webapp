@@ -53,6 +53,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Built the Sync log screen with the entries of the last 30 days, newest first, and links to items that still exist.
 - FrontEnd: Moved the Sign in button of an expired session from the top bar to the session banner, and added the sync state and Sync log link to Settings.
 - Docs: Redrew the wireframes with the sync indicator in the top bar.
+- FrontEnd: Remembered the view options of each list on its own, so Reset restores the defaults of that list only; the old option shared by every list is no longer read.
 
 ## v0.2.0 [released: 2026-11-07]
 - FrontEnd: Made the add field also search All tasks and every list, with a 150 ms pause, a note under the rows, and no Add on Enter.

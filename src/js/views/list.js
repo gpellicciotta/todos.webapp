@@ -78,7 +78,8 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const listId = view.dataset.listId;
   const id = `list-view-${(instances += 1)}`;
   const model = viewModels?.list ?? createViewModel(VIEW, getStorage);
-  // The text of another list view must not filter this one.
+  model.select(listId);
+  // The text of an earlier visit must not filter this one.
   if (model.get().filter.text) {
     const filter = { ...model.get().filter };
     delete filter.text;

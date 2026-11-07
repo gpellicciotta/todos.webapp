@@ -87,7 +87,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
   It covers the main column in compact layouts; an editor not built yet leaves the slot hidden.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
 - Scroll positions and a memory object are kept per view, for the session; it keeps the search text.
-- Filters, grouping, and sort persist per device in `localStorage`, such as `todos.view.tasks` (`TV-12`).
+- Filters, grouping, and sort persist per device in `localStorage`, such as `todos.view.tasks`, or `todos.view.list.{{list-id}}` for a list (`TV-12`).
   [preferences.js](../../src/js/core/preferences.js) reads and writes these keys; blocked storage falls back to defaults.
 - The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
 - On start the app opens the store, purges expired bin entries, then starts the overdue timer.
@@ -249,8 +249,9 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 - A stored Lists filter whose lists were all deleted filters nothing, so the info line leaves it out.
 - The panel uses native inputs: checkboxes, radios, a select, and date fields.
 - A polite live region announces the count after each change, such as "12 tasks" (`VO-13`).
-- **[Decided]** For now the options persist per device: one entry for All tasks, and one shared by every list view.
-  Remembering them per list is a later task.
+- **[Decided]** The options persist per device: one entry for All tasks, and one entry per list, such as `todos.view.list.{{list-id}}`.
+  A list without an entry shows the list defaults. Reset restores the defaults and removes the entry of that list only.
+  The entry shared by every list view of earlier versions is no longer read.
 
 #### Differences between the views
 | Option      | All tasks                    | List view                                      |
@@ -260,7 +261,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 | Group by    | None, List, Due date, Status | None, Due date, Status (`LV-11`)               |
 | Sort by     | five fields                  | adds Manual order, the default (`LV-6`)        |
 | Defaults    | open, created newest first   | open, manual order                             |
-| Persistence | one entry for All tasks      | one entry shared by every list view (`TV-12`)  |
+| Persistence | one entry for All tasks      | one entry per list (`TV-12`)                   |
 
 #### Grouping
 - A group header is a 32 px row: the name at the left, the count at the right (`VO-10`).
@@ -387,7 +388,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - Delete list asks for confirmation, then opens All tasks with an Undo toast (`LST-6`).
 - The view options replace the order buttons and the status chip (`VO-1`); Manual order is the first sort choice (`LV-6`).
 - **[Decided]** Due, Status, and A–Z sort ascending; Created and Activity show the newest first.
-- **[Decided]** The order, the grouping, and the filters persist per device, shared by every list view (`TV-12`).
+- **[Decided]** The order, the grouping, and the filters persist per device and per list (`TV-12`).
 - Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
 - A drag near the main column's top or bottom edge scrolls it; Escape or a lost pointer capture cancels the drag.
 - Keyboard users move a focused row with Alt+Up and Alt+Down, and focus stays on the moved row.

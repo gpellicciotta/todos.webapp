@@ -70,6 +70,34 @@ describe('mountList', () => {
     expect(view.querySelector('.info-line__text').textContent).toBe('0 tasks · Status: open');
   });
 
+  it('remembers the view options of each list on its own, and Reset restores the defaults of this list only', async () => {
+    const storage = new Map();
+    const getStorage = () => ({ getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) });
+    ({ store } = await freshStore());
+    const [home, work] = [await store.createList({ name: 'Home' }), await store.createList({ name: 'Work' })];
+    models = { list: createViewModel('list', getStorage) };
+    const mountOf = async (list) => {
+      const view = document.body.appendChild(document.createElement('div'));
+      view.dataset.listId = list.id;
+      const mounted = mountList(view, { store, toaster: { show: vi.fn() }, navigate: vi.fn(), viewModels: models, getStorage });
+      await mounted.idle();
+      return { view, mounted };
+    };
+    const first = await mountOf(home);
+    models.list.set({ ...defaultViewState('list'), group: 'status' });
+    expect(first.view.querySelector('.info-line__text').textContent).toContain('Grouped by Status');
+    first.mounted.destroy();
+    const second = await mountOf(work);
+    expect(second.view.querySelector('.info-line__text').textContent).not.toContain('Grouped by');
+    second.mounted.destroy();
+    const again = await mountOf(home);
+    expect(again.view.querySelector('.info-line__text').textContent).toContain('Grouped by Status');
+    again.view.querySelector('.info-line__reset').click();
+    expect(models.list.get()).toEqual(defaultViewState('list'));
+    expect(storage.has(`todos.view.list.${home.id}`)).toBe(false);
+    again.mounted.destroy();
+  });
+
   it('styles only the Delete item of the list menu as danger', async () => {
     const view = await mount();
     const danger = [...view.querySelectorAll('.menu__item--danger')];

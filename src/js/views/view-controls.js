@@ -8,7 +8,7 @@
  * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, Group by, and Sort by.
  */
 
-import { readPreference, writePreference } from '../core/preferences.js';
+import { readPreference, removePreference, writePreference } from '../core/preferences.js';
 import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, GROUPINGS, NO_LIST, SORT_FIELDS } from '../core/query.js';
 import { STATUSES } from '../store/tasks.js';
 import { createLiveRegion } from '../ui/live-region.js';
@@ -79,11 +79,11 @@ const DUE_LABELS = Object.freeze({ overdue: 'Overdue', today: 'Today', 'this-wee
 
 /**
  * Name the kind of a view: All tasks, or a list view.
- * @param {string} view the view key, `tasks` or `list`
+ * @param {string} view the view key, `tasks`, `list`, or `list.{{list-id}}`
  * @returns {'tasks'|'list'} the kind
  */
 function kindOf(view) {
-  return view === 'list' ? 'list' : 'tasks';
+  return view === 'list' || view.startsWith('list.') ? 'list' : 'tasks';
 }
 
 /**
@@ -159,7 +159,7 @@ export function sanitizeViewState(raw, kind = 'tasks') {
 
 /**
  * Read the stored filters, grouping, and order of a view (`TV-12`).
- * @param {string} view the view key, `tasks` or `list`
+ * @param {string} view the view key, `tasks` or `list.{{list-id}}`
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
  * @returns {{filter: object, order: object, group: string}} the view state
  */
@@ -169,7 +169,7 @@ export function loadViewState(view, getStorage) {
 
 /**
  * Store the filters, grouping, and order of a view, leaving out the search text.
- * @param {string} view the view key
+ * @param {string} view the view key, `tasks` or `list.{{list-id}}`
  * @param {{filter: object, order: object, group: string}} state the view state
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
  * @returns {boolean} true when stored
@@ -178,6 +178,16 @@ export function saveViewState(view, state, getStorage) {
   const filter = { ...state.filter };
   delete filter.text;
   return writePreference(`view.${view}`, { filter, order: state.order, group: state.group ?? NONE }, getStorage);
+}
+
+/**
+ * Forget the stored options of a view, so it shows the defaults again.
+ * @param {string} view the view key, `tasks` or `list.{{list-id}}`
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when removed
+ */
+export function clearViewState(view, getStorage) {
+  return removePreference(`view.${view}`, getStorage);
 }
 
 /**
@@ -318,17 +328,26 @@ function copy(state) {
 /**
  * Create the view model of a view: its options, stored per device, and the counts of its screen.
  * The screen and the panel share it, so the rows, the info line, and the panel follow one state.
- * @param {string} view the view key, `tasks` or `list`; every list view shares the `list` model
+ * The list model holds the options of one list at a time: `select` switches to another list, which keeps its own entry (`TV-12`).
+ * @param {string} view the view key, `tasks` or `list`
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
- * @returns {{kind: string, get: Function, set: Function, reset: Function, subscribe: Function,
+ * @returns {{kind: string, get: Function, set: Function, select: Function, reset: Function, subscribe: Function,
  *   counts: Function, setCounts: Function, subscribeCounts: Function}} the model
  */
 export function createViewModel(view, getStorage) {
   const kind = kindOf(view);
-  let state = loadViewState(view, getStorage);
+  // A list model has no entry to read or write until a list is selected.
+  let key = kind === 'list' ? null : view;
+  let selected = null;
+  let state = key ? loadViewState(key, getStorage) : defaultViewState(kind);
   let counts = null;
   const listeners = new Set();
   const countListeners = new Set();
+
+  /** Tell every listener about the state. */
+  function notify() {
+    [...listeners].forEach((listener) => listener(state));
+  }
 
   /**
    * Keep a new state: on this device, and with every listener.
@@ -336,12 +355,28 @@ export function createViewModel(view, getStorage) {
    */
   function set(next) {
     state = copy(next);
-    saveViewState(view, state, getStorage);
-    [...listeners].forEach((listener) => listener(state));
+    if (key) {
+      saveViewState(key, state, getStorage);
+    }
+    notify();
   }
 
   return {
     kind,
+
+    /**
+     * Switch a list model to the options of a list: its stored entry, or the defaults, without the search text of the last list.
+     * @param {string} listId the list
+     */
+    select(listId) {
+      if (kind !== 'list' || listId === selected) {
+        return;
+      }
+      selected = listId;
+      key = `list.${listId}`;
+      state = loadViewState(key, getStorage);
+      notify();
+    },
 
     /**
      * Read the state; treat it as read-only and call `set` to change it.
@@ -350,8 +385,17 @@ export function createViewModel(view, getStorage) {
     get: () => state,
     set,
 
-    /** Restore every option and the search text to their defaults (`VO-8`). */
-    reset: () => set(defaultViewState(kind)),
+    /** Restore every option and the search text to their defaults, and forget the entry of the list (`VO-8`). */
+    reset() {
+      state = defaultViewState(kind);
+      if (key && kind === 'list') {
+        clearViewState(key, getStorage);
+      }
+      else if (key) {
+        saveViewState(key, state, getStorage);
+      }
+      notify();
+    },
 
     /**
      * Follow state changes.
@@ -467,6 +511,9 @@ export function mountViewOptions(panel, route, context) {
   const doc = panel.document;
   const kind = kindOf(route.view);
   const model = context.viewModels[kind];
+  if (kind === 'list' && route.params?.listId) {
+    model.select(route.params.listId);
+  }
   const id = `view-options-${(instances += 1)}`;
   let lists = [];
   let announceNext = false;

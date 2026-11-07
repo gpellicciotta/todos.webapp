@@ -108,7 +108,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-9: Users order by due time, creation time, last activity time, status, or description, ascending or descending.
 - TV-10: Tasks without a due time sort last in both directions when ordering by due time.
 - TV-11: Users create, edit, change status of, and delete tasks directly in the task view.
-- TV-12: The app remembers the last used filters, grouping, and order per device.
+- TV-12: The app remembers the last used filters, grouping, and order per device, for All tasks and for each list on its own.
 - TV-13: The task view orders by creation time, newest first, until the user picks another order.
 
 ### View Options
