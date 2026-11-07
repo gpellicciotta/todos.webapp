@@ -78,6 +78,11 @@ def git(cwd, *args):
     return result.stdout.strip()
 
 
+def git_bytes(cwd, *args):
+    """Run git in a folder and return its raw output."""
+    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, check=True).stdout
+
+
 def make_repo(path, files):
     """Create a git repository with a first commit holding the given files."""
     path.mkdir(parents=True, exist_ok=True)
@@ -128,6 +133,12 @@ def project(tmp_path):
     root = make_repo(tmp_path / "work", files)
     shutil.copytree(ROOT / "src", root / "src", dirs_exist_ok=True)
     (root / "src/js/version.js").write_text(VERSION_JS, encoding="utf-8", newline="\n")
+    worker = root / "src/service-worker.js"
+    worker.write_text(
+        re.sub(r"const VERSION = '[^']+';", "const VERSION = '2026-01-01.1';", worker.read_text(encoding="utf-8")),
+        encoding="utf-8",
+        newline="\n",
+    )
     (root / "scripts").mkdir(exist_ok=True)
     for name in ("check-sw-version.mjs", "sw-precache-hashes.json", "devops.py", "_cli_common.py"):
         shutil.copy(SCRIPTS / name, root / "scripts" / name)
@@ -310,6 +321,7 @@ def test_release_without_confirmation_changes_and_pushes_nothing(project, monkey
     assert "git push --atomic origin main v0.2.0" in capsys.readouterr().out
 
 
+@needs_node
 def test_release_dry_run_changes_nothing_and_asks_nothing(project, monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda _prompt: pytest.fail("a dry run must not ask"))
     before = snapshot(project)
@@ -320,7 +332,7 @@ def test_release_dry_run_changes_nothing_and_asks_nothing(project, monkeypatch, 
 
 
 def test_release_rejects_a_version_not_above_the_last_release(project):
-    with pytest.raises(devops.ReleaseError):
+    with pytest.raises(devops.ReleaseError, match="not above"):
         devops.release(project, options(release_version="0.1.0"))
 
 
@@ -506,14 +518,95 @@ def test_preflight_refuses_a_plan_branch_behind_origin(project, tmp_path):
         devops.preflight(project, "0.2.0")
 
 
-@needs_node
-def test_release_reports_the_steps_left_when_gh_is_missing(project, monkeypatch, capsys):
+def test_release_refuses_a_missing_gh_before_changing_anything(project, monkeypatch):
     real_which = shutil.which
     monkeypatch.setattr(devops.shutil, "which", lambda name: None if name == "gh" else real_which(name))
+    before = snapshot(project)
+    with pytest.raises(devops.ReleaseError, match="no-github-release"):
+        devops.release(project, options(release_version="0.2.0", no_github_release=False))
+    assert snapshot(project) == before
+
+
+def fake_gh(monkeypatch, succeeds):
+    """Pretend gh exists and make its commands succeed or fail."""
+    real_which = shutil.which
+    real_run = devops.run
+    monkeypatch.setattr(devops.shutil, "which", lambda name: "gh" if name == "gh" else real_which(name))
+    monkeypatch.setattr(
+        devops, "run", lambda command, root: succeeds if command[0] == "gh" else real_run(command, root)
+    )
+
+
+@needs_node
+def test_a_failed_github_release_is_listed_after_the_push(project, monkeypatch, capsys):
+    fake_gh(monkeypatch, succeeds=False)
     code = devops.release(project, options(release_version="0.2.0", no_github_release=False))
     assert code == 1
     assert "gh release create v0.2.0" in capsys.readouterr().err
     assert "refs/tags/v0.2.0" in git(project, "ls-remote", "origin")
+
+
+@needs_node
+def test_a_rejected_plan_push_is_listed_and_the_other_steps_still_run(project, backend, tmp_path, capsys):
+    hook = tmp_path / "origin.git" / "hooks" / "update"
+    hook.write_text('#!/bin/sh\n[ "$1" = "refs/heads/plan" ] && exit 1\nexit 0\n', encoding="utf-8", newline="\n")
+    hook.chmod(0o755)
+    git(project, "checkout", "-q", "plan")
+    (project / "plan-note.txt").write_text("x", encoding="utf-8")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "Added a plan note.")
+    git(project, "checkout", "-q", "main")
+    code = devops.release(project, options(release_version="0.2.0", backend_dir=backend))
+    assert code == 1
+    assert "git push origin plan" in capsys.readouterr().err
+    assert "refs/tags/v0.2.0" in git(project, "ls-remote", "origin")
+    assert git(backend, "log", "-1", "--format=%s") == "Pinned todos.webapp v0.2.0."
+
+
+@needs_node
+def test_a_failed_pin_is_listed_after_the_push(project, backend, capsys):
+    hook = backend / ".git" / "hooks" / "pre-commit"
+    hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8", newline="\n")
+    hook.chmod(0o755)
+    code = devops.release(project, options(release_version="0.2.0", backend_dir=backend))
+    assert code == 1
+    assert "todosWebappVersion=0.2.0" in capsys.readouterr().err
+    assert "refs/tags/v0.2.0" in git(project, "ls-remote", "origin")
+    assert git(backend, "status", "--porcelain") == ""
+
+
+def test_a_dirty_backend_is_refused_before_any_local_change(project, backend):
+    (backend / "stray.txt").write_text("x", encoding="utf-8")
+    before = snapshot(project)
+    with pytest.raises(devops.ReleaseError, match="uncommitted"):
+        devops.release(project, options(release_version="0.2.0", backend_dir=backend))
+    assert snapshot(project) == before
+
+
+def test_a_backend_without_a_branch_is_refused(backend):
+    git(backend, "checkout", "-q", "--detach")
+    with pytest.raises(devops.ReleaseError, match="detached"):
+        devops.check_backend(backend)
+
+
+@needs_node
+def test_the_plan_lists_commits_that_the_push_publishes_too(project, capsys):
+    (project / "extra.txt").write_text("x", encoding="utf-8")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "Added an unpublished file.")
+    devops.release(project, options(release_version="0.2.0", dry_run=True))
+    out = capsys.readouterr().out
+    assert "1 commit(s) not yet on origin/main" in out
+    assert "Added an unpublished file." in out
+
+
+def test_the_changelog_must_hold_bullets_and_a_strict_pre_suffix():
+    empty = CHANGELOG.replace("- FrontEnd: Added a thing.\n", "")
+    with pytest.raises(devops.ReleaseError, match="no bullets"):
+        devops.finalize_changelog(empty, "0.2.0", "2026-11-20")
+    loose = CHANGELOG.replace("## v0.1.3-pre", "## v0.1.3-prerelease")
+    with pytest.raises(devops.ReleaseError, match="-pre"):
+        devops.finalize_changelog(loose, "0.2.0", "2026-11-20")
 
 
 def test_a_failing_check_run_changes_nothing(project, monkeypatch):
@@ -524,6 +617,7 @@ def test_a_failing_check_run_changes_nothing(project, monkeypatch):
     assert snapshot(project) == before
 
 
+@needs_node
 def test_a_dry_run_runs_the_checks_unless_they_are_skipped(project, monkeypatch):
     ran = []
     monkeypatch.setattr(devops, "run_all", lambda commands, root: ran.append(commands) or True)
@@ -539,9 +633,12 @@ def test_release_refuses_when_the_tree_changes_during_the_checks(project, monkey
         return True
 
     monkeypatch.setattr(devops, "run_all", dirty)
+    head = git(project, "rev-parse", "HEAD")
     with pytest.raises(devops.ReleaseError, match="changed while"):
         devops.release(project, options(release_version="0.2.0", skip_checks=False))
     assert git(project, "tag") == ""
+    assert git(project, "rev-parse", "HEAD") == head
+    assert git(project, "status", "--porcelain") == "?? stray.txt"
 
 
 def test_release_treats_a_closed_input_as_not_confirmed(project, monkeypatch):
@@ -556,7 +653,7 @@ def test_release_treats_a_closed_input_as_not_confirmed(project, monkeypatch):
 
 @needs_node
 def test_release_keeps_crlf_line_endings(project):
-    names = ["CHANGELOG.md", "package.json", "package-lock.json", "src/js/version.js"]
+    names = ["CHANGELOG.md", "package.json", "package-lock.json", "src/js/version.js", "src/service-worker.js"]
     for name in names:
         path = project / name
         path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
@@ -589,3 +686,20 @@ def test_update_backend_pin_skips_a_pin_that_is_already_current(backend):
 )
 def test_cli_rejects_bad_arguments_with_exit_code_2(args):
     assert run_cli(*args).returncode == 2
+
+
+@needs_node
+def test_release_keeps_a_crlf_working_tree_with_lf_in_the_repository(project):
+    names = ["CHANGELOG.md", "package.json", "package-lock.json", "src/js/version.js", "src/service-worker.js"]
+    git(project, "config", "core.autocrlf", "true")
+    for name in names:
+        (project / name).unlink()
+    git(project, "checkout", "--", *names)
+    assert b"\r\n" in (project / "CHANGELOG.md").read_bytes()
+    assert git(project, "status", "--porcelain") == ""
+    assert devops.release(project, options(release_version="0.2.0")) == 0
+    for name in names:
+        data = (project / name).read_bytes()
+        assert data.count(b"\n") == data.count(b"\r\n"), name
+    assert b"\r" not in git_bytes(project, "show", "HEAD~1:CHANGELOG.md")
+    assert git(project, "status", "--porcelain") == ""

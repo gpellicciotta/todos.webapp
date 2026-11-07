@@ -53,7 +53,7 @@ ACTION_DOCS = {
 }
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
-HEADING = re.compile(r"^## v(\d+\.\d+\.\d+)(-pre)?([^\r\n]*)", re.MULTILINE)
+HEADING = re.compile(r"^## v(\d+\.\d+\.\d+)(-pre)?(?=[ \t\r\n]|$)([^\r\n]*)", re.MULTILINE)
 VERSION_JS = "src/js/version.js"
 SERVICE_WORKER = "src/service-worker.js"
 SW_MANIFEST = "scripts/sw-precache-hashes.json"
@@ -134,7 +134,7 @@ def lint_commands() -> list[list[str]]:
 
 def test_commands() -> list[list[str]]:
     """Return the unit test commands: Vitest and pytest."""
-    return [[tool("npm"), "test"], [sys.executable, "-m", "pytest", "-q"]]
+    return [[tool("npm"), "test"], [sys.executable, "-m", "pytest", "-q", "tests"]]
 
 
 def e2e_commands() -> list[list[str]]:
@@ -152,7 +152,7 @@ def check_commands() -> list[list[str]]:
         [npm, "run", "test:e2e"],
         [*ruff(), "check", "scripts", "tests"],
         [*ruff(), "format", "--check", "scripts", "tests"],
-        [sys.executable, "-m", "pytest", "-q"],
+        [sys.executable, "-m", "pytest", "-q", "tests"],
     ]
 
 
@@ -200,6 +200,8 @@ def finalize_changelog(changelog: str, version: str, today: str) -> str:
     last = latest_released(changelog)
     if last is not None and parse_version(version) <= parse_version(last):
         raise ReleaseError(f"Version {version} is not above the last release, {last}.")
+    if not extract_release_notes(changelog, top_pre_version(changelog)):
+        raise ReleaseError("The -pre entry of CHANGELOG.md has no bullets to release.")
     match = next(match for match in HEADING.finditer(changelog) if match.group(2))
     return changelog[: match.start()] + f"## v{version} [released: {today}]" + changelog[match.end() :]
 
@@ -298,7 +300,7 @@ def check_plan_branch(root: Path) -> None:
     """Raise ReleaseError when the local plan branch is behind origin; warn about unpublished plan changes."""
     if not git(root, "branch", "--list", "plan"):
         return
-    if git(root, "ls-remote", "--heads", "origin", "plan"):
+    if git(root, "ls-remote", "--heads", "origin", "refs/heads/plan"):
         git(root, "fetch", "origin", "plan")
         behind = int(git(root, "rev-list", "--count", "plan..origin/plan"))
         if behind:
@@ -328,6 +330,10 @@ def check_backend(backend_dir: Path) -> Path:
         raise ReleaseError(f"{gradle} does not exist; --backend-dir must name the todos repository.")
     if git(backend_dir, "status", "--porcelain"):
         raise ReleaseError(f"The backend repository {backend_dir} has uncommitted changes; commit them first.")
+    if not git(backend_dir, "branch", "--show-current"):
+        raise ReleaseError(
+            f"The backend repository {backend_dir} has no branch checked out (detached HEAD); check one out first."
+        )
     if not re.search(PIN_PATTERN, read_text(gradle), re.MULTILINE):
         raise ReleaseError("gradle.properties of the backend has no todosWebappVersion line.")
     return gradle
@@ -384,13 +390,14 @@ def edit_phase(root: Path, label: str, tag: str, start_sha: str, action) -> None
     """Run one editing phase; on any failure restore the edited files and say what state is left."""
     try:
         action()
-    except Exception as error:  # noqa: BLE001 - any failure must restore the files and report the state
+    except (Exception, KeyboardInterrupt) as error:
         try:
             restore(root, VERSION_FILES)
             restored = "The edited files were restored."
         except ReleaseError as restore_error:
             restored = f"Restoring the edited files failed too ({restore_error}); check git status."
-        raise ReleaseError(f"{label} failed: {error}. {restored} {local_state(root, tag, start_sha)}") from None
+        reason = error or type(error).__name__
+        raise ReleaseError(f"{label} failed: {reason}. {restored} {local_state(root, tag, start_sha)}") from error
 
 
 def confirm(question: str) -> bool:
@@ -405,6 +412,7 @@ def confirm(question: str) -> bool:
 def describe_plan(root: Path, version: str, next_version: str, opts) -> list[str]:
     """Return the lines that tell the user what a release will do, with the real commands."""
     tag = f"v{version}"
+    unpublished = git(root, "log", "--oneline", "origin/main..HEAD").splitlines()
     lines = [
         f"Release         : {tag}, dated {today_iso()}",
         f"Next version    : v{next_version}-pre",
@@ -425,6 +433,9 @@ def describe_plan(root: Path, version: str, next_version: str, opts) -> list[str
         if opts.no_github_release
         else f"  gh release create {tag} --title {tag} --notes {notes}"
     )
+    if unpublished:
+        lines.append(f"Also published  : {len(unpublished)} commit(s) not yet on origin/main")
+        lines.extend(f"  {line}" for line in unpublished[:10])
     if opts.backend_dir:
         lines.append(
             f"Backend pin     : todosWebappVersion={version} in {opts.backend_dir}; committed locally, never pushed or deployed"
@@ -493,6 +504,8 @@ def release(root: Path, opts) -> int:
     next_version = next_patch(version)
 
     tool("node")
+    if not opts.no_github_release and shutil.which("gh") is None:
+        raise ReleaseError("The gh CLI is missing; install it, or pass --no-github-release.")
     preflight(root, version)
     finalize_changelog(read_text(changelog_path), version, today)
     check_rewritable(root)
@@ -592,8 +605,14 @@ def main(argv: list[str] | None = None) -> int:
             return release(REPO_ROOT, args)
         commands = {"lint": lint_commands, "test": test_commands, "e2e": e2e_commands, "check": check_commands}
         return 0 if run_all(commands[args.action](), REPO_ROOT) else 1
-    except ReleaseError as error:
+    except (ReleaseError, OSError) as error:
         print(f"[ERROR] {error}", file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print(
+            "[ERROR] Interrupted. Check git status; docs/devops.md, Release Procedure, tells how to undo a partial release.",
+            file=sys.stderr,
+        )
         return 1
 
 

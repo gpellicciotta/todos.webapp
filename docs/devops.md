@@ -8,7 +8,7 @@ Development environment, planning workflow, and operational procedures for `todo
 - The [plan](https://github.com/gpellicciotta/plan) CLI.
 - Node.js 22.13 or later, with npm.
 - Python 3.10 or later, with pytest and Ruff 0.17, for the documentation scripts and `scripts/devops.py`.
-- Optional: the GitHub CLI `gh`, logged in, so `devops.py release` can create the GitHub release.
+- The GitHub CLI `gh`, logged in, for the GitHub release of `devops.py release`; pass `--no-github-release` to go without.
 
 ---
 
@@ -160,7 +160,8 @@ python scripts/devops.py release 0.2.0 --backend-dir ../todos             # the 
    and every file the release rewrites must hold the text to replace.
 2. Checks: the service worker check, `npm test`, `npm run lint`, `npm run test:e2e`, Ruff, and pytest.
    A dry run runs them too; `--skip-checks` skips them.
-3. The plan: the files, the local commits and tag, and the exact publish commands. A dry run stops here.
+3. The plan: the files, the local commits and tag, commits that the push publishes with them, and the exact publish commands.
+   A dry run stops here.
    Otherwise the script asks `y/N`; a closed input counts as no. Nothing changes before a yes.
 4. Release commit `Released v0.2.0.`, tagged `v0.2.0`: the `-pre` heading becomes `## v0.2.0 [released: {{date}}]`.
    `package.json`, `package-lock.json`, and [version.js](../src/js/version.js) take the version and the build date.
@@ -169,9 +170,11 @@ python scripts/devops.py release 0.2.0 --backend-dir ../todos             # the 
 6. Publish: `git push --atomic origin main v0.2.0`, so the tag never reaches `origin` without `main`.
    Then `git push origin plan` and a GitHub release with the changelog entry.
 7. With `--backend-dir`: once the tag is on `origin`, the `todosWebappVersion` pin in the todos repository's
-   `gradle.properties` becomes `0.2.0`. The script commits it there and stops.
+   `gradle.properties` becomes `0.2.0`. The script commits it on the checked-out branch there and stops.
+   Run it from the repository root, since a relative `--backend-dir` is resolved against the current folder.
    It never pushes that repository and never deploys the server.
 8. Follow the Pages run in the Actions tab, then open the site, reload once, and check that the new worker is active.
+   One push carries both commits, so the live site reports the next `-pre` version under Settings, About; the tag marks the release commit.
 
 - Options: `--skip-checks` skips the check run and the unit tests of the release commit, `--yes` skips only the question,
   and `--no-github-release` skips the GitHub release.
