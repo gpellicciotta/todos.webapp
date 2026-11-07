@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1569.4, input: 224, output: 167656, cache_read: 15734646, cache_write: 385852}
+review_status: pending
+review_round: 1
 ---
 # T0025: Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes
 
@@ -57,4 +61,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Doc]**
   Updated CHANGELOG.md and docs/specs/local-store.md.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
