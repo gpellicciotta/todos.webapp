@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1100.4, input: 172, output: 53558, cache_read: 7600446, cache_write: 200770}
+review_status: pending
+review_round: 1
 ---
 # T0062: Activate a new service worker only after an Update toast click, and survive blocked database upgrades
 
@@ -58,4 +62,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Visual]**
   Captured before and after screenshots at 390 and 1440 px, light and dark; linked in validation-proof.md.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
