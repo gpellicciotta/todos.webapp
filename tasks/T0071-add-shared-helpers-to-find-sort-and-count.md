@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 561.2, input: 140, output: 45726, cache_read: 5471992, cache_write: 171542}
+review_status: pending
+review_round: 1
 ---
 # T0071: Add shared helpers to find, sort, and count lists, with unit tests
 
@@ -49,4 +53,7 @@ Make layout.js and lists.js use the shared count helper, without a visible chang
 
 - [2026-11-08] **[Implement]**
   Added the new modules to preload, precache, and the hash manifest; bumped service worker VERSION to 2026-11-08.3.
+
+- [2026-11-08] **[Review]**
+  Round 1 requested (mode: agent).
 
