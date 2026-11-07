@@ -1,11 +1,12 @@
 ---
 id: T0048
-owner: ~
-needs: ['T0054']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+session: claude-20261107-85fc2d
+needs: []
+branch: task/T0048-let-the-all-tasks-dashboard-group-tasks-by
+worktree: .plan/work/T0048-let-the-all-tasks-dashboard-group-tasks-by
+status: active
+started_at: "2026-11-07T14:07:38Z"
 ended_at: —
 review: agent
 preview: none
@@ -21,9 +22,9 @@ Adds the Group by control to the View options panel that T0054 builds; see VO-9 
 Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.js`
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read query.js, all-tasks.js, and the virtualization in task-list.js.
-- [ ] **[Implement]** Author tests for the grouping function and for group headers on All tasks.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the expected reason.
+- [x] **[Read]**      Read query.js, all-tasks.js, and the virtualization in task-list.js.
+- [x] **[Implement]** Author tests for the grouping function and for group headers on All tasks.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the expected reason.
 - [ ] **[Implement]** Add groupTasks to query.js with List, Due Date, and Status groupings and ordered buckets.
 - [ ] **[Implement]** Render group headers in the virtualized task list and add the Group by control to the View options panel.
 - [ ] **[Implement]** Persist the grouping choice in preferences.
@@ -34,3 +35,9 @@ Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.j
 ## Execution Log
 - [2026-11-05] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-07] **[Verify]**
+  Wrote unit, e2e, and perf tests; they fail because groupTasks, headers, and Group by are missing.
+  - vitest: 26 failed, 73 passed.
+  - playwright: 2 Group by tests fail.
+
