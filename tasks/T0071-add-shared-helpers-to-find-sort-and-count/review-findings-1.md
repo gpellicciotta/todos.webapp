@@ -3,7 +3,7 @@ task: T0071
 round: 1
 verdict: rejected
 reviewer: "@codex"
-reviewed_at: 2026-11-07T23:26:39Z
+reviewed_at: 2026-11-07T23:27:59Z
 reviewed_commit: "4db5a35"
 base_commit: "92026d5"
 branch: task/T0071-add-shared-helpers-to-find-sort-and-count

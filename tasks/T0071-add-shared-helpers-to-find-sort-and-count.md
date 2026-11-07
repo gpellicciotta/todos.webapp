@@ -13,8 +13,11 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 561.2, input: 140, output: 45726, cache_read: 5471992, cache_write: 171542}
-review_status: pending
+  review: {turns: 2, duration_s: 158.2, input: 62774, output: 4768, cache_read: 679936, cache_write: 0}
+review_status: rejected
 review_round: 1
+reviewed_by: "@codex"
+work_duration: 373.8
 ---
 # T0071: Add shared helpers to find, sort, and count lists, with unit tests
 
@@ -56,4 +59,19 @@ Make layout.js and lists.js use the shared count helper, without a visible chang
 
 - [2026-11-08] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-08] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected pending unknown-sort handling and the specified count integration coverage.
+  - Findings: [review-findings-1.md](T0071-add-shared-helpers-to-find-sort-and-count/review-findings-1.md).
+
+- [2026-11-08] **[Implement]**
+  Review round 1 rework: sortLists now looks up comparators by own key, so inherited keys like __proto__ keep manual order.
+
+- [2026-11-08] **[Verify]**
+  Added __proto__ regression test, red first, and a consumer test comparing sidebar and Lists counts.
+  - 1170 tests, lint, and check:sw pass.
+  - Proof now has verbatim output.
+
+- [2026-11-08] **[Doc]**
+  Size note: the task crossed the typical line because precache tests required 5 undeclared files and tests grew with review.
 
