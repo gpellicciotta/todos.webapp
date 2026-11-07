@@ -1,11 +1,12 @@
 ---
 id: T0043
-owner: ~
-needs: ['T0058']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+session: claude-20261107-55dd42
+needs: []
+branch: task/T0043-speed-up-the-cold-launch-toward-tec-16
+worktree: .plan/work/T0043-speed-up-the-cold-launch-toward-tec-16
+status: active
+started_at: "2026-11-07T18:01:50Z"
 ended_at: —
 review: agent
 preview: none
