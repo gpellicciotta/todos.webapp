@@ -14,11 +14,13 @@ protocol: standard
 size_status: approved
 size_estimate: 21 files, 2227 lines
 usage:
-  worker: {turns: 2, duration_s: 3600.8, input: 4, output: 12}
+  worker: {turns: 4, duration_s: 4902.8, input: 52, output: 11128, cache_read: 6759742, cache_write: 30160}
 work_duration: 1812.2
 size_approved: 21 files, 2227 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T13:08:03Z"
+review_status: pending
+review_round: 1
 ---
 # T0054: Build the View options panel, the More menu entries, and the info line for All tasks and list views
 
@@ -75,4 +77,7 @@ Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.j
 - [2026-11-07] **[Visual]**
   Captured before and after screenshots on compact and wide layouts; the compact Show button now sticks to the bottom.
   - Linked in validation-proof.md.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
