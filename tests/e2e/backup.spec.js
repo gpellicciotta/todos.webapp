@@ -161,7 +161,8 @@ test('on a compact layout the covered Settings stay out of reach, and Cancel ret
   await expect(page.locator('dialog[open]')).toHaveCount(1);
   await dialog.getByRole('button', { name: 'Close' }).click();
   await expect(dialog).toHaveCount(0);
-  expect(await page.locator('.app__main').evaluate((main) => main.inert)).toBe(false);
+  // The role query stops matching once the dialog is closed, but the close event wakes the column a task later.
+  await expect(page.locator('.app__main')).toHaveJSProperty('inert', false);
   await expect(page.getByRole('button', { name: 'Import backup' })).toBeFocused();
   expect(problems).toEqual([]);
 });

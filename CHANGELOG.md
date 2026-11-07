@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.2.1-pre
+- DevEx: Made the Import backup focus end-to-end test wait for the main column to wake, so it passes on slow CI runners.
 
 ## v0.2.0 [released: 2026-11-07]
 - FrontEnd: Made the add field also search All tasks and every list, with a 150 ms pause, a note under the rows, and no Add on Enter.
