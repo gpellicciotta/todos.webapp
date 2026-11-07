@@ -251,7 +251,9 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   The count on the info line counts each task once.
 - Group order (`VO-12`):
   - List: as arranged in the sidebar, then No list.
-  - Due date: Overdue, Today, This week, Later, No due time.
+  - Due date: Overdue, Earlier, Today, Tomorrow, This week, Later, No due date.
+    Earlier holds finished tasks due before today, since a finished task is never overdue.
+    This week runs to the end of the week that starts on Monday.
   - Status: To do, In progress, Completed, Cancelled.
 - Search, filters, and sort apply inside each group; empty groups are left out.
 - While a list view is grouped, drag handles and move entries are hidden, as for any sort (`LV-8`).

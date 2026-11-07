@@ -388,6 +388,124 @@ describe('createTaskList', () => {
     });
   });
 
+  describe('with a long grouped list', () => {
+    const ROW = 48;
+    const HEADER = 32;
+    const groups = Array.from({ length: 50 }, (_, group) => ({
+      key: `g${group}`,
+      label: `Group ${group}`,
+      tasks: Array.from({ length: 100 }, (_, index) => ({ id: `m${group * 100 + index}`, description: `Task ${group * 100 + index}`, status: 'todo' })),
+    }));
+    const TOTAL = 5000 * ROW + 50 * HEADER;
+    let other;
+    let scrolled;
+
+    /**
+     * Return the height above an item: every header before it at 32 px and every task row at 48 px.
+     * @param {number} index the item index; a group takes 101 items
+     * @returns {number} the offset in pixels
+     */
+    function offsetOf(index) {
+      const headers = Math.ceil(index / 101);
+      return headers * HEADER + (index - headers) * ROW;
+    }
+
+    /**
+     * Scroll the list and fire the scroll event.
+     * @param {number} offset the offset from the list's top
+     */
+    function scrollTo(offset) {
+      scrolled = offset;
+      document.dispatchEvent(new Event('scroll'));
+    }
+
+    /**
+     * Add up the padding, the rendered items, and the gaps before them.
+     * @returns {number} the height the list takes in pixels
+     */
+    function heightOfList() {
+      const ul = other.element.querySelector('.task-list');
+      let sum = parseFloat(ul.style.paddingBlockStart) + parseFloat(ul.style.paddingBlockEnd);
+      for (const item of ul.children) {
+        sum += (item.classList.contains('group-header') ? HEADER : ROW) + (parseFloat(item.style.marginBlockStart) || 0);
+      }
+      return sum;
+    }
+
+    beforeEach(async () => {
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(10 * ROW);
+      scrolled = 0;
+      other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
+      document.body.append(other.element);
+      for (const element of [other.element, other.element.querySelector('.task-list')]) {
+        element.getBoundingClientRect = () => ({ top: -scrolled, bottom: TOTAL - scrolled, height: TOTAL });
+      }
+      other.render([], ctx, { groups });
+      await vi.waitFor(() => expect(other.element.querySelectorAll('.task-list > li').length).toBeGreaterThan(20));
+    });
+
+    afterEach(() => {
+      other.destroy();
+      vi.restoreAllMocks();
+    });
+
+    it('renders the first header with the rows in view and a buffer, and keeps the full height', () => {
+      const first = other.element.querySelector('.task-list').firstElementChild;
+      expect(first.classList.contains('group-header')).toBe(true);
+      expect(first.querySelector('h3').textContent).toBe('Group 0');
+      expect(first.querySelector('.group-header__count').textContent).toBe('100');
+      expect(first.getAttribute('aria-posinset')).toBe('1');
+      expect(first.getAttribute('aria-setsize')).toBe('5050');
+      expect(heightOfList()).toBe(TOTAL);
+    });
+
+    it('renders the rows and the header that scroll into view, from the offsets of mixed heights', () => {
+      const index = 101 * 20 + 3;
+      scrollTo(offsetOf(index));
+      const items = [...other.element.querySelectorAll('.task-list > li')];
+      const at = items.findIndex((item) => item.getAttribute('aria-posinset') === String(index + 1));
+      expect(at).toBeGreaterThan(0);
+      expect(items[at].dataset.taskId).toBe('m2002');
+      expect(items.some((item) => item.classList.contains('group-header') && item.querySelector('h3').textContent === 'Group 20')).toBe(true);
+      expect(items.length).toBeLessThan(80);
+      expect(heightOfList()).toBe(TOTAL);
+    });
+
+    it('keeps a task of two groups as two rows with separate keys', () => {
+      const dup = { id: 'dup', description: 'Shared', status: 'todo' };
+      other.render([], ctx, { groups: [
+        { key: 'a', label: 'A', tasks: [dup] }, { key: 'b', label: 'B', tasks: [dup] },
+      ] });
+      const rows = [...other.element.querySelectorAll('.task-row')];
+      expect(rows).toHaveLength(2);
+      expect(new Set(rows.map((row) => row.dataset.rowKey)).size).toBe(2);
+      expect(other.ids()).toEqual(['dup', 'dup']);
+    });
+
+    it('marks every row of the selected task and keeps focus on the same group row after a render', () => {
+      const dup = { id: 'dup', description: 'Shared', status: 'todo' };
+      const two = [{ key: 'a', label: 'A', tasks: [dup] }, { key: 'b', label: 'B', tasks: [dup] }];
+      other.render([], ctx, { groups: two });
+      other.setSelected('dup');
+      expect(other.element.querySelectorAll('[aria-current="page"]')).toHaveLength(2);
+      const second = other.element.querySelectorAll('.task-row')[1];
+      second.querySelector('.status-button').focus();
+      other.render([], ctx, { groups: two });
+      expect(document.activeElement).toBe(other.element.querySelectorAll('.task-row')[1].querySelector('.status-button'));
+      other.setSelected(null);
+      expect(other.element.querySelectorAll('[aria-current="page"]')).toHaveLength(0);
+    });
+
+    it('passes focus from a removed row to the next task row, not to a header', () => {
+      const dup = { id: 'dup', description: 'Shared', status: 'todo' };
+      const next = { id: 'next', description: 'Next', status: 'todo' };
+      other.render([], ctx, { groups: [{ key: 'a', label: 'A', tasks: [dup] }, { key: 'b', label: 'B', tasks: [next] }] });
+      other.element.querySelector('.task-row').querySelector('.status-button').focus();
+      other.render([], ctx, { groups: [{ key: 'b', label: 'B', tasks: [next] }] });
+      expect(document.activeElement.closest('.task-row').dataset.taskId).toBe('next');
+    });
+  });
+
   it('moves focus to the fallback control when the last row leaves', () => {
     const fallback = document.createElement('input');
     document.body.append(fallback);

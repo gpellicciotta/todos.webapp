@@ -7,6 +7,8 @@ import {
   DEFAULT_ORDER,
   exactMatchIndex,
   filterTasks,
+  GROUPINGS,
+  groupTasks,
   hidingFilters,
   indexMemberships,
   NO_LIST,
@@ -390,5 +392,85 @@ describe('exact match and hidden task helpers', () => {
     const filter = { statuses: ['completed'], due: ['today'], lists: [HOME] };
     expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['todo', 'in-progress'], lists: [HOME] });
     expect(filter.due).toEqual(['today']);
+  });
+});
+
+describe('groupTasks (VO-9 to VO-12)', () => {
+  const summary = (groups) => groups.map((group) => [group.key, ids(group.tasks)]);
+
+  it('groups by status in lifecycle order and hides empty groups', () => {
+    const groups = groupTasks(tasks, 'status', ctx);
+    expect(summary(groups)).toEqual([['todo', ['t1', 't5', 't6']], ['in-progress', ['t2']], ['completed', ['t3']], ['cancelled', ['t4']]]);
+    expect(groups.map((group) => group.label)).toEqual(['To do', 'In progress', 'Completed', 'Cancelled']);
+    expect(summary(groupTasks(filterTasks(tasks, DEFAULT_FILTER, ctx), 'status', ctx))).toEqual([['todo', ['t1', 't5', 't6']], ['in-progress', ['t2']]]);
+  });
+
+  it('groups by due date from a fixed clock: Overdue, Today, Tomorrow, This week, Later, No due date', () => {
+    const dated = [
+      task('late', { 'due-time': local(2026, 10, 3, 18) }),
+      task('now', { 'due-time': local(2026, 10, 4, 18) }),
+      task('next', { 'due-time': local(2026, 10, 5, 9) }),
+      task('sunday', { 'due-time': local(2026, 10, 8, 23, 59) }),
+      task('week', { 'due-time': local(2026, 10, 6, 9) }),
+      task('far', { 'due-time': local(2026, 10, 9, 9) }),
+      task('open'),
+    ];
+    const groups = groupTasks(dated, 'due', { now: NOW });
+    expect(summary(groups)).toEqual([
+      ['overdue', ['late']], ['today', ['now']], ['tomorrow', ['next']], ['this-week', ['sunday', 'week']],
+      ['later', ['far']], ['no-due', ['open']],
+    ]);
+    expect(groups.map((group) => group.label)).toEqual(['Overdue', 'Today', 'Tomorrow', 'This week', 'Later', 'No due date']);
+  });
+
+  it('keeps an overdue task in Overdue only while it is open, and a finished past task in Earlier', () => {
+    const past = [
+      task('open', { 'due-time': local(2026, 10, 4, 9) }),
+      task('done', { status: 'completed', 'due-time': local(2026, 10, 4, 9) }),
+      task('old', { status: 'completed', 'due-time': local(2026, 10, 1, 9) }),
+    ];
+    expect(summary(groupTasks(past, 'due', { now: NOW }))).toEqual([['overdue', ['open']], ['earlier', ['old']], ['today', ['done']]]);
+  });
+
+  it('follows the first day of the week for This week', () => {
+    const friday = task('fri', { 'due-time': local(2026, 10, 6, 9) });
+    expect(summary(groupTasks([friday], 'due', { now: NOW, weekStart: 4 }))).toEqual([['later', ['fri']]]);
+    expect(summary(groupTasks([friday], 'due', { now: NOW, weekStart: 1 }))).toEqual([['this-week', ['fri']]]);
+  });
+
+  it('groups by list in the given list order, repeating a multi-list task and putting list-less tasks last', () => {
+    const lists = [{ id: WORK, name: 'Work' }, { id: HOME, name: 'Home' }];
+    const groups = groupTasks(tasks, 'list', { ...ctx, lists });
+    expect(summary(groups)).toEqual([[WORK, ['t2', 't3']], [HOME, ['t1', 't3', 't5']], [NO_LIST, ['t4', 't6']]]);
+    expect(groups.map((group) => group.label)).toEqual(['Work', 'Home', 'No list']);
+  });
+
+  it('accepts the lists as a map and leaves out lists without tasks', () => {
+    const lists = new Map([[WORK, { id: WORK, name: 'Work' }], [HOME, { id: HOME, name: 'Home' }]]);
+    expect(summary(groupTasks([tasks[0]], 'list', { ...ctx, lists }))).toEqual([[HOME, ['t1']]]);
+  });
+
+  it('keeps the input order inside each group, so sort applies per group', () => {
+    const sorted = sortTasks(tasks, { field: 'description', direction: 'desc' });
+    expect(summary(groupTasks(sorted, 'status', ctx))[0]).toEqual(['todo', ['t6', 't5', 't1']]);
+  });
+
+  it('never changes its input and rejects an unknown grouping', () => {
+    const copy = structuredClone(tasks);
+    groupTasks(tasks, 'status', ctx);
+    expect(tasks).toEqual(copy);
+    expect(() => groupTasks(tasks, 'color', ctx)).toThrow(RangeError);
+    expect(GROUPINGS).toEqual(['none', 'list', 'due', 'status']);
+  });
+
+  it('groups 5000 tasks by list quickly', () => {
+    const many = Array.from({ length: 5000 }, (_, index) => task(`m${index}`));
+    const lists = [{ id: HOME, name: 'Home' }, { id: WORK, name: 'Work' }];
+    const listsByTask = new Map(many.map((item, index) => [item.id, index % 3 === 0 ? [] : [lists[index % 2].id]]));
+    const start = performance.now();
+    const groups = groupTasks(many, 'list', { now: NOW, lists, listsByTask });
+    const elapsed = performance.now() - start;
+    expect(groups.reduce((sum, group) => sum + group.tasks.length, 0)).toBe(5000);
+    expect(elapsed, `took ${elapsed.toFixed(1)} ms`).toBeLessThan(50);
   });
 });

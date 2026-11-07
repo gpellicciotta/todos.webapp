@@ -121,6 +121,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - VO-10: A group shows its name and its task count; search, filters, and sort apply inside each group.
 - VO-11: A task in several lists appears in each of its list groups; tasks in no list form the last group.
 - VO-12: Groups appear in a fixed order: lists as arranged, due dates from overdue to none, statuses as listed.
+  Empty groups are left out, and group headers take no part in selection.
 - VO-13: Every control works by keyboard, and a polite announcement states the task count after each change.
 - VO-14: A user who cannot add tasks to the view sees the field as search only, without an Add button.
 

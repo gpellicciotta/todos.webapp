@@ -1,15 +1,15 @@
 /**
  * View options of the task views: the info line, and the View options panel.
  *
- * All tasks and every list view share one set of options: filters and a sort (`VO-1`). The view model holds
+ * All tasks and every list view share one set of options: filters, a grouping, and a sort (`VO-1`). The view model holds
  * them, stores them per device through preferences.js (`TV-12`), and tells the screen and the panel about
  * changes; the search text from the add field stays out of storage, so a reload never hides tasks behind forgotten text.
  * The info line under the add bar names the count and every active option (`VO-7`) and offers Reset (`VO-8`).
- * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, and Sort by.
+ * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, Group by, and Sort by.
  */
 
 import { readPreference, writePreference } from '../core/preferences.js';
-import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, NO_LIST, SORT_FIELDS } from '../core/query.js';
+import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, GROUPINGS, NO_LIST, SORT_FIELDS } from '../core/query.js';
 import { STATUSES } from '../store/tasks.js';
 import { createLiveRegion } from '../ui/live-region.js';
 import { spriteIcon, STATUS_LABELS } from './task-list.js';
@@ -17,6 +17,7 @@ import { spriteIcon, STATUS_LABELS } from './task-list.js';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const OPEN = DEFAULT_FILTER.statuses;
 const MANUAL = 'manual';
+const NONE = 'none';
 let instances = 0;
 
 /** Control strings, for the strings module of TEC-13 to absorb. */
@@ -26,6 +27,8 @@ const STRINGS = Object.freeze({
   reset: 'Reset',
   filter: 'Filter',
   sortBy: 'Sort by',
+  groupBy: 'Group by',
+  groupedBy: (group) => `Grouped by ${group}`,
   direction: 'Direction',
   asc: 'Ascending',
   desc: 'Descending',
@@ -66,6 +69,12 @@ export const NATURAL_DIRECTION = Object.freeze({
   [MANUAL]: 'asc', 'due-time': 'asc', 'creation-time': 'desc', 'last-activity-time': 'desc', status: 'asc', description: 'asc',
 });
 
+/** The groupings with a control, by kind of view; the list view groups with a later task (`LV-11`). */
+const GROUPINGS_OF = Object.freeze({ tasks: GROUPINGS, list: Object.freeze([NONE]) });
+
+/** Grouping names, for the Group by control and the info line (`VO-9`, `VO-7`). */
+export const GROUP_LABELS = Object.freeze({ [NONE]: 'None', list: 'List', due: 'Due date', status: 'Status' });
+
 const DUE_LABELS = Object.freeze({ overdue: 'Overdue', today: 'Today', 'this-week': 'This week', none: 'No due time' });
 
 /**
@@ -80,10 +89,12 @@ function kindOf(view) {
 /**
  * Return the default view state: open tasks, due time ascending, or manual order in a list view (`LV-10`, `TV-10`).
  * @param {'tasks'|'list'} [kind] the kind of view
- * @returns {{filter: object, order: {field: string, direction: string}}} a new state
+ * @returns {{filter: object, order: {field: string, direction: string}, group: string}} a new state, ungrouped
  */
 export function defaultViewState(kind = 'tasks') {
-  return { filter: { statuses: [...OPEN] }, order: kind === 'list' ? { field: MANUAL, direction: 'asc' } : { ...DEFAULT_ORDER } };
+  return {
+    filter: { statuses: [...OPEN] }, order: kind === 'list' ? { field: MANUAL, direction: 'asc' } : { ...DEFAULT_ORDER }, group: NONE,
+  };
 }
 
 /**
@@ -105,7 +116,7 @@ function readRange(value) {
  * The List screen of v0.1.0 stored `{order, statuses}`; that shape still reads.
  * @param {unknown} raw the stored value
  * @param {'tasks'|'list'} [kind] the kind of view
- * @returns {{filter: object, order: object}} the view state, without search text
+ * @returns {{filter: object, order: object, group: string}} the view state, without search text
  */
 export function sanitizeViewState(raw, kind = 'tasks') {
   const state = defaultViewState(kind);
@@ -140,35 +151,38 @@ export function sanitizeViewState(raw, kind = 'tasks') {
   if (order && fields.includes(order.field) && ['asc', 'desc'].includes(order.direction)) {
     state.order = { field: order.field, direction: order.field === MANUAL ? 'asc' : order.direction };
   }
+  if (GROUPINGS_OF[kind].includes(raw.group)) {
+    state.group = raw.group;
+  }
   return state;
 }
 
 /**
- * Read the stored filters and order of a view (`TV-12`).
+ * Read the stored filters, grouping, and order of a view (`TV-12`).
  * @param {string} view the view key, `tasks` or `list`
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
- * @returns {{filter: object, order: object}} the view state
+ * @returns {{filter: object, order: object, group: string}} the view state
  */
 export function loadViewState(view, getStorage) {
   return sanitizeViewState(readPreference(`view.${view}`, null, getStorage), kindOf(view));
 }
 
 /**
- * Store the filters and order of a view, leaving out the search text.
+ * Store the filters, grouping, and order of a view, leaving out the search text.
  * @param {string} view the view key
- * @param {{filter: object, order: object}} state the view state
+ * @param {{filter: object, order: object, group: string}} state the view state
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
  * @returns {boolean} true when stored
  */
 export function saveViewState(view, state, getStorage) {
   const filter = { ...state.filter };
   delete filter.text;
-  return writePreference(`view.${view}`, { filter, order: state.order }, getStorage);
+  return writePreference(`view.${view}`, { filter, order: state.order, group: state.group ?? NONE }, getStorage);
 }
 
 /**
  * Tell whether every option and the search text have their default values (`VO-8`).
- * @param {{filter: object, order: object}} state the view state
+ * @param {{filter: object, order: object, group: string}} state the view state
  * @param {'tasks'|'list'} [kind] the kind of view
  * @returns {boolean} true when Reset would change nothing
  */
@@ -178,7 +192,7 @@ export function isDefaultViewState(state, kind = 'tasks') {
   const statuses = filter.statuses ?? [];
   return !(typeof filter.text === 'string' && filter.text.trim())
     && statuses.length === OPEN.length && OPEN.every((status) => statuses.includes(status))
-    && !filter.lists?.length && !filter.due?.length && !filter.created
+    && !filter.lists?.length && !filter.due?.length && !filter.created && (state.group ?? NONE) === NONE
     && order.field === fallback.field && (order.field === MANUAL || order.direction === fallback.direction);
 }
 
@@ -270,11 +284,11 @@ function describeSort(order, kind) {
 }
 
 /**
- * Describe a view for the info line: the count, each active filter, and a sort other than the default (`VO-7`).
+ * Describe a view for the info line: the count, each active filter, the grouping, and a sort other than the default (`VO-7`).
  * @param {object} view what the view shows
  * @param {number} view.shown the tasks the options show
  * @param {number} view.total the tasks of the view
- * @param {{filter: object, order: object}} view.state the view state, with optional search text
+ * @param {{filter: object, order: object, group: string}} view.state the view state, with optional search text
  * @param {object[]} view.lists the live lists
  * @param {'tasks'|'list'} [view.kind] the kind of view
  * @returns {string[]} the parts, such as `12 of 24 tasks` and `Status: open`
@@ -282,6 +296,9 @@ function describeSort(order, kind) {
 export function describeInfoLine({ shown, total, state, lists, kind = 'tasks' }) {
   const parts = [shown === total ? STRINGS.tasks(total) : STRINGS.tasksOf(shown, total)];
   parts.push(...describeFilters(state.filter, lists, { allStatuses: true }));
+  if (state.group && state.group !== NONE) {
+    parts.push(STRINGS.groupedBy(GROUP_LABELS[state.group]));
+  }
   const sort = describeSort(state.order, kind);
   if (sort) {
     parts.push(sort);
@@ -291,8 +308,8 @@ export function describeInfoLine({ shown, total, state, lists, kind = 'tasks' })
 
 /**
  * Copy a view state, so callers never share its arrays.
- * @param {{filter: object, order: object}} state the view state
- * @returns {{filter: object, order: object}} the copy
+ * @param {{filter: object, order: object, group: string}} state the view state
+ * @returns {{filter: object, order: object, group: string}} the copy
  */
 function copy(state) {
   return structuredClone(state);
@@ -315,7 +332,7 @@ export function createViewModel(view, getStorage) {
 
   /**
    * Keep a new state: on this device, and with every listener.
-   * @param {{filter: object, order: object}} next the view state
+   * @param {{filter: object, order: object, group: string}} next the view state
    */
   function set(next) {
     state = copy(next);
@@ -328,7 +345,7 @@ export function createViewModel(view, getStorage) {
 
     /**
      * Read the state; treat it as read-only and call `set` to change it.
-     * @returns {{filter: object, order: object}} the view state
+     * @returns {{filter: object, order: object, group: string}} the view state
      */
     get: () => state,
     set,
@@ -432,8 +449,8 @@ export function createInfoLine({ document: doc = globalThis.document, onReset })
 
 /**
  * Mount the View options into the editor panel (`VO-5`, `VO-6`).
- * Changes apply at once. The panel holds Reset, the Filter rows with one open at a time, and Sort by;
- * Group by arrives with the grouping task. A polite live region announces the count after each change (`VO-13`).
+ * Changes apply at once. The panel holds Reset, the Filter rows with one open at a time, Group by, and Sort by;
+ * the list view offers no Group by until it groups (`LV-11`). A polite live region announces the count after each change (`VO-13`).
  * @param {object} panel the editor panel
  * @param {HTMLElement} panel.element the panel element
  * @param {HTMLElement} panel.body the body to fill
@@ -534,6 +551,21 @@ export function mountViewOptions(panel, route, context) {
     rows.set(key, { row, region, label });
   }
 
+  const groupings = GROUPINGS_OF[kind];
+  const groupHeading = make(doc, 'h3', 'view-options__heading', STRINGS.groupBy);
+  const groupSet = make(doc, 'fieldset', 'segmented view-options__group');
+  const groupOptions = make(doc, 'div', 'segmented__options');
+  for (const value of groupings) {
+    const label = make(doc, 'label', 'segmented__option');
+    const input = doc.createElement('input');
+    input.type = 'radio';
+    input.name = `${id}-group`;
+    input.value = value;
+    label.append(input, GROUP_LABELS[value]);
+    groupOptions.append(label);
+  }
+  groupSet.append(make(doc, 'legend', 'visually-hidden', STRINGS.groupBy), groupOptions);
+
   const sortHeading = make(doc, 'h3', 'view-options__heading', STRINGS.sortBy);
   sortHeading.id = `${id}-sort`;
   const select = make(doc, 'select', 'field__control view-options__sort');
@@ -558,7 +590,11 @@ export function mountViewOptions(panel, route, context) {
   directions.append(make(doc, 'legend', 'visually-hidden', STRINGS.direction), segments);
 
   const done = button(doc, 'button view-options__done');
-  content.append(make(doc, 'h3', 'view-options__heading', STRINGS.filter), accordion, sortHeading, select, directions);
+  content.append(make(doc, 'h3', 'view-options__heading', STRINGS.filter), accordion);
+  if (groupings.length > 1) {
+    content.append(groupHeading, groupSet);
+  }
+  content.append(sortHeading, select, directions);
   root.append(content, done);
   panel.body.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: panel.element });
@@ -597,6 +633,9 @@ export function mountViewOptions(panel, route, context) {
         input.value = (filterKey === 'due' ? dueRange[end] : state.filter.created?.[end]) ?? '';
       }
     }
+    for (const input of groupSet.querySelectorAll('input')) {
+      input.checked = input.value === (state.group ?? NONE);
+    }
     select.value = state.order.field;
     for (const input of directions.querySelectorAll('input')) {
       input.checked = input.value === state.order.direction;
@@ -623,7 +662,7 @@ export function mountViewOptions(panel, route, context) {
 
   /**
    * Apply a change of the user, and announce the count that follows.
-   * @param {(state: {filter: object, order: object}) => void} change edits a copy of the state
+   * @param {(state: {filter: object, order: object, group: string}) => void} change edits a copy of the state
    */
   function apply(change) {
     const next = copy(model.get());
@@ -666,6 +705,11 @@ export function mountViewOptions(panel, route, context) {
     else if (input === select) {
       apply((state) => {
         state.order = { field: select.value, direction: NATURAL_DIRECTION[select.value] };
+      });
+    }
+    else if (input.name === `${id}-group`) {
+      apply((state) => {
+        state.group = input.value;
       });
     }
     else if (input.name === `${id}-direction`) {

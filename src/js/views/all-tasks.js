@@ -8,9 +8,12 @@
  * A store without tasks shows the first-launch empty state with the add bar, and no sign-in (`LOC-1`).
  * The first added task replaces it, and the app then asks the browser for persistent storage (`TEC-5`).
  * An empty result names the active filters and offers Reset.
+ * A grouping splits the shown tasks into groups with a header and a count; filters and sort apply inside each group,
+ * and list groups follow the list order of the sidebar (`VO-9` to `VO-12`).
  */
 
-import { clearFilters, exactMatchIndex, filterTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
+import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-order.js';
+import { clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
 import { attachMenu } from '../ui/menu.js';
 import { formatRoute } from '../ui/router.js';
 import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
@@ -270,7 +273,10 @@ export function mountAllTasks(view, {
     const ctx = { now: now(), lists: new Map(data.lists.map((list) => [list.id, list])), ...data };
     const byOptions = filterTasks(data.tasks, { ...filter, text: undefined }, ctx);
     const shown = sortTasks(filterTasks(byOptions, filter, ctx), state.order);
-    taskList.render(shown, ctx);
+    const groups = state.group && state.group !== 'none'
+      ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) })
+      : null;
+    taskList.render(shown, ctx, { groups });
     addBar.setKnown(exactMatchIndex(byOptions));
     const nothingMatches = addHint.update({ text: filter.text ?? '', shown: shown.length, viewer: false });
     empty.hidden = shown.length > 0 || nothingMatches;
@@ -295,10 +301,11 @@ export function mountAllTasks(view, {
   }
 
   /**
-   * Follow the clock: a Due filter can change which tasks show, so it renders again; otherwise only due chips change.
+   * Follow the clock: a Due filter or the due date groups can change which tasks show where, so it renders again;
+   * otherwise only due chips change.
    */
   function tick() {
-    if (model.get().filter.due?.length) {
+    if (model.get().filter.due?.length || model.get().group === 'due') {
       render();
     }
     else {
@@ -308,6 +315,7 @@ export function mountAllTasks(view, {
 
   const unsubscribe = store.subscribe(refresh);
   const unfollow = model.subscribe(follow);
+  const unfollowOrder = onListOrderChange(() => model.get().group === 'list' && render());
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`).
   const timer = setInterval(tick, REDRAW_MS);
   const first = refresh();
@@ -332,6 +340,7 @@ export function mountAllTasks(view, {
       destroyed = true;
       addBar.destroy();
       unfollow();
+      unfollowOrder();
       menuBehavior.destroy();
       unsubscribe();
       clearInterval(timer);

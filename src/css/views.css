@@ -26,6 +26,38 @@
   min-inline-size: 0;
 }
 
+/*
+ * Group header: a 32 px row with the group name at the inline start and the task count at the end (`VO-10`).
+ * The list virtualizes by height, so the header keeps a fixed block size.
+ */
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  block-size: var(--group-header-height);
+  padding-inline: var(--space-1);
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.group-header__name {
+  min-inline-size: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: inherit;
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-header__count {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Wide layouts set the add block apart from the rows by 32 px (`VO-7`). */
 @media (width >= 64rem) {
   .add-block {

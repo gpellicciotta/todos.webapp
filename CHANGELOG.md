@@ -10,6 +10,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Removed the separate search field of All tasks, and made Escape clear the add field.
 - FrontEnd: Made lists re-orderable on the device only, by drag handle, Alt+Up and Alt+Down, or Move up and Move down, in the sidebar and the Lists screen.
 - FrontEnd: Added Edit view options to the More menus of All tasks and every list, opening a panel with Reset, filters, and sort.
+- FrontEnd: Let All tasks group its tasks by List, Due date, or Status from the view options, with a count in each group header and a choice kept per device.
 - FrontEnd: Added an info line under the add bar that names the task count, the active filters, and any other sort, with a Reset link.
 - FrontEnd: Replaced the filter chips, the Sort menu, the list order buttons, and the status chip with the view options panel.
 - FrontEnd: Renamed Share to Share list in the list More menu, and made the list view filter by due and created dates too.

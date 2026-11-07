@@ -1,5 +1,6 @@
 /**
- * Task queries for All tasks and the list view: filters, sort orders, and manual order (`TV-2` to `TV-10`, `LV-2`, `LV-6`).
+ * Task queries for All tasks and the list view: filters, sort orders, groups, and manual order
+ * (`TV-2` to `TV-10`, `LV-2`, `LV-6`, `VO-9` to `VO-12`).
  *
  * Pure functions over arrays of task records, run in memory over the local store (`TEC-16`).
  * They never change their inputs and return new arrays.
@@ -23,6 +24,18 @@ export const SORT_FIELDS = Object.freeze(['due-time', 'creation-time', 'last-act
 
 /** The named options of the Due filter; a `{from, to}` range is the other option. */
 export const DUE_OPTIONS = Object.freeze(['overdue', 'today', 'this-week', 'none']);
+
+/** The groupings of a view (`VO-9`); `none` shows the tasks as one list. */
+export const GROUPINGS = Object.freeze(['none', 'list', 'due', 'status']);
+
+const DUE_GROUPS = Object.freeze([
+  ['overdue', 'Overdue'], ['earlier', 'Earlier'], ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['this-week', 'This week'],
+  ['later', 'Later'], ['no-due', 'No due date'],
+]);
+const STATUS_GROUPS = Object.freeze({
+  todo: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
+});
+const NO_LIST_LABEL = 'No list';
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
@@ -78,7 +91,7 @@ function timeOf(value) {
  * Return the time windows of the Due filter around `now`, in local time.
  * @param {Date} now the current time
  * @param {number} weekStart the first day of the week, 0 for Sunday to 6 for Saturday
- * @returns {{today: {from: number, to: number}, week: {from: number, to: number}}} half-open windows
+ * @returns {{today: {from: number, to: number}, tomorrow: {to: number}, week: {from: number, to: number}}} half-open windows
  */
 function dueWindows(now, weekStart) {
   const year = now.getFullYear();
@@ -87,6 +100,7 @@ function dueWindows(now, weekStart) {
   const offset = (now.getDay() - weekStart + 7) % 7;
   return {
     today: { from: new Date(year, month, day).getTime(), to: new Date(year, month, day + 1).getTime() },
+    tomorrow: { to: new Date(year, month, day + 2).getTime() },
     week: { from: new Date(year, month, day - offset).getTime(), to: new Date(year, month, day - offset + 7).getTime() },
   };
 }
@@ -255,6 +269,88 @@ export function clearFilters(filter, keys) {
     }
   }
   return next;
+}
+
+/**
+ * Name the due date group of a task: open tasks past their due time are Overdue; the others go by their due day.
+ * A finished task due on an earlier day goes to Earlier, since it is not overdue.
+ * @param {object} task the task
+ * @param {number} now the current Unix time in milliseconds
+ * @param {ReturnType<typeof dueWindows>} windows the today and week windows
+ * @returns {string} the group key
+ */
+function dueGroupOf(task, now, windows) {
+  const due = timeOf(task['due-time']);
+  if (due === null) {
+    return 'no-due';
+  }
+  if (isOverdue(task, now)) {
+    return 'overdue';
+  }
+  if (due < windows.today.from) {
+    return 'earlier';
+  }
+  if (due < windows.today.to) {
+    return 'today';
+  }
+  if (due < windows.tomorrow.to) {
+    return 'tomorrow';
+  }
+  return due < windows.week.to ? 'this-week' : 'later';
+}
+
+/**
+ * Split tasks into groups for a view (`VO-9` to `VO-12`). Groups come in a fixed order and empty groups are left out;
+ * tasks keep their input order inside a group, so a sort applies within each group.
+ * - `list`: one group per list in the order of `ctx.lists`, then No list. A task of several lists is in each group.
+ * - `due`: Overdue, Earlier, Today, Tomorrow, This week, Later, and No due date.
+ * - `status`: To do, In progress, Completed, and Cancelled.
+ * @param {object[]} tasks the task records, filtered and sorted
+ * @param {'list'|'due'|'status'} grouping the grouping
+ * @param {object} [ctx] the query context
+ * @param {Date|number} [ctx.now] the current time, for the due date groups
+ * @param {number} [ctx.weekStart] the first day of the week, 0 for Sunday; 1, Monday, by default
+ * @param {Map<string, string[]>} [ctx.listsByTask] list identifiers by task identifier
+ * @param {Iterable<{id: string, name: string}>|Map<string, {id: string, name: string}>} [ctx.lists] the live lists in
+ *   display order, as an array or a map
+ * @returns {Array<{key: string, label: string, tasks: object[]}>} the non-empty groups
+ */
+export function groupTasks(tasks, grouping, ctx = {}) {
+  let order;
+  let place;
+  switch (grouping) {
+    case 'status':
+      order = STATUSES.map((status) => [status, STATUS_GROUPS[status]]);
+      place = (task) => [task.status];
+      break;
+    case 'due': {
+      const now = new Date(ctx.now ?? Date.now());
+      const windows = dueWindows(now, ctx.weekStart ?? 1);
+      order = DUE_GROUPS;
+      place = (task) => [dueGroupOf(task, now.getTime(), windows)];
+      break;
+    }
+    case 'list': {
+      const lists = ctx.lists instanceof Map ? [...ctx.lists.values()] : [...(ctx.lists ?? [])];
+      const listsByTask = ctx.listsByTask ?? new Map();
+      const known = new Set(lists.map((list) => list.id));
+      order = [...lists.map((list) => [list.id, list.name]), [NO_LIST, NO_LIST_LABEL]];
+      place = (task) => {
+        const ids = (listsByTask.get(task.id) ?? []).filter((id) => known.has(id));
+        return ids.length > 0 ? ids : [NO_LIST];
+      };
+      break;
+    }
+    default:
+      throw new RangeError(`Unknown grouping: ${grouping}.`);
+  }
+  const buckets = new Map(order.map(([key]) => [key, []]));
+  for (const task of tasks) {
+    for (const key of place(task)) {
+      (buckets.get(key) ?? buckets.get(NO_LIST))?.push(task);
+    }
+  }
+  return order.filter(([key]) => buckets.get(key).length > 0).map(([key, label]) => ({ key, label, tasks: buckets.get(key) }));
 }
 
 /**

@@ -469,3 +469,86 @@ test('adding a task that the view options hide shows a toast whose Show resets t
   await expect(page.locator('.task-row', { hasText: 'Paint the door' })).toBeVisible();
   expect(problems).toEqual([]);
 });
+
+/**
+ * Read the list as text: each group header as `# name count`, each row as its description.
+ * @param {import('@playwright/test').Page} page the page
+ * @returns {Promise<string[]>} the entries, top to bottom
+ */
+function listEntries(page) {
+  return page.locator('.task-list > li').evaluateAll((items) => items.map((item) => (item.classList.contains('group-header')
+    ? `# ${item.querySelector('.group-header__name').textContent} ${item.querySelector('.group-header__count').textContent}`
+    : item.querySelector('.task-row__description').textContent)));
+}
+
+/**
+ * Choose a Group by option in the view options.
+ * @param {import('@playwright/test').Locator} options the view options
+ * @param {string} name the option name, such as `Status`
+ */
+async function groupBy(options, name) {
+  await options.getByRole('radio', { name, exact: true }).check();
+}
+
+test('Group by shows headers with counts for each option, and the choice survives a reload (VO-9 to VO-12, TV-12)', async ({ page }) => {
+  const problems = watch(page);
+  await openApp(page);
+  await seed(page);
+  const options = await openOptions(page);
+  await expect(options.getByRole('radio', { name: 'None', exact: true })).toBeChecked();
+  await expect(page.locator('.group-header')).toHaveCount(0);
+
+  await groupBy(options, 'List');
+  await expect(page.locator('.info-line__text')).toContainText('Grouped by List');
+  expect(await listEntries(page)).toEqual([
+    '# Home 2', 'Call the plumber', 'Buy paint', '# Work 1', 'Write the report', '# No list 1', 'Book flights',
+  ]);
+
+  await groupBy(options, 'Status');
+  expect(await listEntries(page)).toEqual([
+    '# To do 3', 'Write the report', 'Buy paint', 'Book flights', '# In progress 1', 'Call the plumber',
+  ]);
+
+  // The clock decides whether the later tasks fall under Today, Tomorrow, or This week; the ends are fixed.
+  await groupBy(options, 'Due date');
+  const byDue = await listEntries(page);
+  expect(byDue.slice(0, 2)).toEqual(['# Overdue 1', 'Call the plumber']);
+  expect(byDue.slice(-2)).toEqual(['# No due date 1', 'Book flights']);
+  await expect(page.locator('.task-row')).toHaveCount(4);
+  await expect(page.locator('.group-header').first().getByRole('heading', { name: 'Overdue' })).toBeVisible();
+  const headers = await page.locator('.group-header').count();
+  expect(headers).toBeGreaterThanOrEqual(3);
+
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await expect(page.locator('.group-header')).toHaveCount(headers);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('todos.view.tasks')).group)).toBe('due');
+
+  await page.locator('.info-line__reset').click();
+  await expect(page.locator('.group-header')).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
+test('search and sort apply inside each group, and a task of two lists shows in both (VO-10, VO-11)', async ({ page }) => {
+  await openApp(page);
+  await seed(page);
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const [work] = (await store.listLists()).filter((list) => list.name === 'Work');
+    const [paint] = (await store.listTasks()).filter((task) => task.description === 'Buy paint');
+    await store.addToList(paint.id, work.id);
+    store.close();
+  });
+  const options = await openOptions(page);
+  await groupBy(options, 'List');
+  await expect(page.locator('.task-row')).toHaveCount(5);
+  expect(await listEntries(page)).toEqual([
+    '# Home 2', 'Call the plumber', 'Buy paint', '# Work 2', 'Write the report', 'Buy paint', '# No list 1', 'Book flights',
+  ]);
+  await options.locator('select').selectOption('description');
+  expect((await listEntries(page)).slice(0, 3)).toEqual(['# Home 2', 'Buy paint', 'Call the plumber']);
+  await page.getByLabel('Search or add a task').fill('paint');
+  await expect.poll(() => listEntries(page)).toEqual(['# Home 1', 'Buy paint', '# Work 1', 'Buy paint']);
+  await expect(page.locator('.info-line__text')).toContainText('1 of 6 tasks');
+});

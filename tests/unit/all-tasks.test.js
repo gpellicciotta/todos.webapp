@@ -200,4 +200,121 @@ describe('mountAllTasks', () => {
     await Promise.resolve();
     expect(show).not.toHaveBeenCalled();
   });
+
+  describe('grouping (VO-9 to VO-12)', () => {
+    const HOME = 'l-home';
+    const WORK = 'l-work';
+
+    /**
+     * Create a store stand-in with two lists and four tasks; the paint task is in both lists.
+     * @returns {object} the store
+     */
+    function groupedStore() {
+      const make = (id, description, status, due) => ({
+        id, description, status, 'due-time': due,
+        'creation-time': '2026-11-04T09:00:00.000Z', 'last-activity-time': '2026-11-04T09:00:00.000Z',
+      });
+      const tasks = [
+        make('t1', 'Buy paint', 'todo', new Date(2026, 10, 5, 9).toISOString()),
+        make('t2', 'Call plumber', 'in-progress', new Date(2026, 10, 3, 9).toISOString()),
+        make('t3', 'Book flights', 'todo', null),
+        make('t4', 'Water plants', 'completed', null),
+      ];
+      const memberships = [
+        { 'list-id': HOME, 'task-id': 't1' }, { 'list-id': WORK, 'task-id': 't1' }, { 'list-id': WORK, 'task-id': 't2' },
+      ];
+      return {
+        snapshot: async () => ({
+          lists: [{ id: HOME, name: 'Home' }, { id: WORK, name: 'Work' }], tasks, memberships, notes: [],
+        }),
+        subscribe: () => () => {},
+      };
+    }
+
+    /**
+     * Mount All tasks grouped, with a fixed clock of 2026-11-04 12:00.
+     * @param {string} group the grouping
+     * @param {object} [extra] more view state, such as a filter
+     * @param {object} [storage] the per-device storage
+     * @returns {Promise<object>} the view model
+     */
+    async function mountGrouped(group, extra = {}, storage = { getItem: () => null, setItem: vi.fn() }) {
+      document.body.innerHTML = '<div data-view="tasks"></div>';
+      const viewModels = { tasks: createViewModel('tasks', () => storage) };
+      viewModels.tasks.set({ ...defaultViewState(), group, ...extra });
+      screen = mountAllTasks(document.querySelector('[data-view]'), {
+        store: groupedStore(), toaster: { show: vi.fn() }, viewModels, getStorage: () => storage, now: () => new Date(2026, 10, 4, 12),
+      });
+      await screen.idle();
+      return viewModels.tasks;
+    }
+
+    /**
+     * Read the list as text: each header as `# name count`, each row as its description.
+     * @returns {string[]} the entries, top to bottom
+     */
+    function entries() {
+      return [...document.querySelectorAll('.task-list > li')].map((item) => (item.classList.contains('group-header')
+        ? `# ${item.querySelector('.group-header__name').textContent} ${item.querySelector('.group-header__count').textContent}`
+        : item.querySelector('.task-row__description').textContent));
+    }
+
+    it('shows no headers while the grouping is none', async () => {
+      await mountGrouped('none');
+      expect(document.querySelector('.group-header')).toBeNull();
+      expect(document.querySelectorAll('.task-row')).toHaveLength(3);
+    });
+
+    it('groups by status with a count in each header and hides empty groups', async () => {
+      await mountGrouped('status', { filter: { statuses: ['todo', 'in-progress', 'completed'] } });
+      expect(entries()).toEqual(['# To do 2', 'Buy paint', 'Book flights', '# In progress 1', 'Call plumber', '# Completed 1', 'Water plants']);
+    });
+
+    it('groups by list, repeating a task of two lists and ending with No list', async () => {
+      await mountGrouped('list');
+      expect(entries()).toEqual(['# Home 1', 'Buy paint', '# Work 2', 'Call plumber', 'Buy paint', '# No list 1', 'Book flights']);
+      expect(document.querySelectorAll('.task-row')).toHaveLength(4);
+      expect(document.querySelector('.info-line__text').textContent).toBe('3 of 4 tasks · Status: open · Grouped by List');
+    });
+
+    it('groups by due date from the clock', async () => {
+      await mountGrouped('due');
+      expect(entries()).toEqual(['# Overdue 1', 'Call plumber', '# Tomorrow 1', 'Buy paint', '# No due date 1', 'Book flights']);
+    });
+
+    it('applies the search text and the sort inside each group', async () => {
+      const model = await mountGrouped('status', { order: { field: 'description', direction: 'desc' } });
+      expect(entries()).toEqual(['# To do 2', 'Buy paint', 'Book flights', '# In progress 1', 'Call plumber']);
+      model.set({ ...model.get(), filter: { ...model.get().filter, text: 'bo' } });
+      expect(entries()).toEqual(['# To do 1', 'Book flights']);
+    });
+
+    it('keeps headers out of the row controls and gives the list its full size', async () => {
+      await mountGrouped('status');
+      const header = document.querySelector('.group-header');
+      expect(header.querySelector('button, a')).toBeNull();
+      expect(header.querySelector('h3').textContent).toBe('To do');
+      expect(document.querySelector('.task-list').children).toHaveLength(5);
+    });
+
+    it('changes the grouping live and saves it with the other view options', async () => {
+      const data = new Map();
+      const storage = { data, getItem: (key) => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+      const model = await mountGrouped('none', {}, storage);
+      model.set({ ...model.get(), group: 'status' });
+      expect(entries()[0]).toBe('# To do 2');
+      expect(JSON.parse(storage.data.get('todos.view.tasks')).group).toBe('status');
+      screen.destroy();
+      const reloaded = createViewModel('tasks', () => storage);
+      expect(reloaded.get().group).toBe('status');
+    });
+
+    it('shows Reset in the info line while grouped, and Reset ungroups', async () => {
+      const model = await mountGrouped('status');
+      expect(document.querySelector('.info-line__reset').hidden).toBe(false);
+      document.querySelector('.info-line__reset').click();
+      expect(model.get().group).toBe('none');
+      expect(document.querySelector('.group-header')).toBeNull();
+    });
+  });
 });

@@ -26,11 +26,13 @@ describe('view state per device (TV-12)', () => {
     expect(loadViewState('tasks', () => memoryStorage())).toEqual({
       filter: { statuses: ['todo', 'in-progress'] },
       order: { field: 'due-time', direction: 'asc' },
+      group: 'none',
     });
     expect(defaultViewState()).toEqual(loadViewState('tasks', () => memoryStorage()));
     expect(loadViewState('list', () => memoryStorage())).toEqual({
       filter: { statuses: ['todo', 'in-progress'] },
       order: { field: 'manual', direction: 'asc' },
+      group: 'none',
     });
     expect(defaultViewState('list')).toEqual(loadViewState('list', () => memoryStorage()));
   });
@@ -45,6 +47,7 @@ describe('view state per device (TV-12)', () => {
         created: { from: '2026-10-01', to: null },
       },
       order: { field: 'description', direction: 'desc' },
+      group: 'list',
     };
     saveViewState('tasks', state, () => storage);
     expect([...storage.data.keys()]).toEqual(['todos.view.tasks']);
@@ -53,8 +56,20 @@ describe('view state per device (TV-12)', () => {
 
   it('keeps the search text out of the device storage', () => {
     const storage = memoryStorage();
-    saveViewState('tasks', { filter: { statuses: [], text: 'paint' }, order: { field: 'status', direction: 'asc' } }, () => storage);
-    expect(loadViewState('tasks', () => storage)).toEqual({ filter: { statuses: [] }, order: { field: 'status', direction: 'asc' } });
+    saveViewState('tasks', { filter: { statuses: [], text: 'paint' }, order: { field: 'status', direction: 'asc' }, group: 'none' }, () => storage);
+    expect(loadViewState('tasks', () => storage)).toEqual({ filter: { statuses: [] }, order: { field: 'status', direction: 'asc' }, group: 'none' });
+  });
+
+  it('stores the grouping per device and reads only the groupings a view offers (TV-12, VO-9)', () => {
+    const storage = memoryStorage();
+    for (const group of ['list', 'due', 'status']) {
+      saveViewState('tasks', { ...defaultViewState(), group }, () => storage);
+      expect(loadViewState('tasks', () => storage).group).toBe(group);
+    }
+    storage.setItem('todos.view.tasks', JSON.stringify({ group: 'size' }));
+    expect(loadViewState('tasks', () => storage).group).toBe('none');
+    storage.setItem('todos.view.list', JSON.stringify({ group: 'list' }));
+    expect(loadViewState('list', () => storage).group).toBe('none');
   });
 
   it('accepts manual order in a list view only', () => {
@@ -71,9 +86,10 @@ describe('view state per device (TV-12)', () => {
     expect(loadViewState('list', () => storage)).toEqual({
       filter: { statuses: ['completed'] },
       order: { field: 'creation-time', direction: 'desc' },
+      group: 'none',
     });
     storage.setItem('todos.view.list', JSON.stringify({ order: 'manual', statuses: [] }));
-    expect(loadViewState('list', () => storage)).toEqual({ filter: { statuses: [] }, order: { field: 'manual', direction: 'asc' } });
+    expect(loadViewState('list', () => storage)).toEqual({ filter: { statuses: [] }, order: { field: 'manual', direction: 'asc' }, group: 'none' });
   });
 
   it('falls back to the defaults for broken, unknown, or unreachable storage', () => {
@@ -81,8 +97,8 @@ describe('view state per device (TV-12)', () => {
     broken.setItem('todos.view.tasks', '{not json');
     expect(loadViewState('tasks', () => broken)).toEqual(defaultViewState());
     const odd = memoryStorage();
-    odd.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: ['done', 'todo'], due: ['soon'] }, order: { field: 'size', direction: 'up' } }));
-    expect(loadViewState('tasks', () => odd)).toEqual({ filter: { statuses: ['todo'] }, order: defaultViewState().order });
+    odd.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: ['done', 'todo'], due: ['soon'] }, order: { field: 'size', direction: 'up' }, group: 'color' }));
+    expect(loadViewState('tasks', () => odd)).toEqual({ filter: { statuses: ['todo'] }, order: defaultViewState().order, group: 'none' });
     const blocked = () => {
       throw new Error('SecurityError');
     };
@@ -144,6 +160,17 @@ describe('describeInfoLine (VO-7)', () => {
   });
 });
 
+describe('grouping in the info line (VO-7)', () => {
+  it('names a grouping other than none, before the sort', () => {
+    const state = { ...defaultViewState(), group: 'due', order: { field: 'description', direction: 'asc' } };
+    expect(describeInfoLine({ shown: 3, total: 3, state, lists: LISTS }))
+      .toEqual(['3 tasks', 'Status: open', 'Grouped by Due date', 'Sorted by Description']);
+    expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'list' }, lists: LISTS })[2]).toBe('Grouped by List');
+    expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'status' }, lists: LISTS })[2]).toBe('Grouped by Status');
+    expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'none' }, lists: LISTS })).not.toContain('Grouped by None');
+  });
+});
+
 describe('isDefaultViewState (VO-8)', () => {
   it('tells the defaults from any other option or search text', () => {
     expect(isDefaultViewState(defaultViewState())).toBe(true);
@@ -154,6 +181,7 @@ describe('isDefaultViewState (VO-8)', () => {
     expect(isDefaultViewState({ ...state, filter: { statuses: [] } })).toBe(false);
     expect(isDefaultViewState({ ...state, filter: { ...state.filter, due: ['today'] } })).toBe(false);
     expect(isDefaultViewState({ ...state, order: { field: 'status', direction: 'asc' } })).toBe(false);
+    expect(isDefaultViewState({ ...state, group: 'status' })).toBe(false);
     expect(isDefaultViewState({ ...state, filter: { ...state.filter, text: '  ' } })).toBe(true);
   });
 });
@@ -264,14 +292,35 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     controller = null;
   });
 
-  it('titles the panel and holds Reset, the Filter rows, and Sort by, without Group by', async () => {
+  it('titles the panel and holds Reset, the Filter rows, Group by, and Sort by', async () => {
     await mount('tasks');
     expect(panel.setTitle).toHaveBeenCalledWith('View options');
-    expect([...panel.body.querySelectorAll('.view-options__heading')].map((heading) => heading.textContent)).toEqual(['Filter', 'Sort by']);
+    expect([...panel.body.querySelectorAll('.view-options__heading')].map((heading) => heading.textContent))
+      .toEqual(['Filter', 'Group by', 'Sort by']);
     expect(panel.body.querySelector('.view-options__reset').textContent).toBe('Reset');
     const rows = [...panel.body.querySelectorAll('.view-options__row')];
     expect(rows.map((row) => row.dataset.row)).toEqual(['lists', 'statuses', 'due', 'created']);
     expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'open', 'Any', 'Any']);
+  });
+
+  it('offers Group by with None, List, Due date, and Status in All tasks, and changes the grouping (VO-9)', async () => {
+    await mount('tasks');
+    const radios = [...panel.body.querySelectorAll('input[name$="group"]')];
+    expect(radios.map((radio) => radio.parentElement.textContent)).toEqual(['None', 'List', 'Due date', 'Status']);
+    expect(radios.find((radio) => radio.checked).value).toBe('none');
+    toggle(radios.find((radio) => radio.value === 'list'), true);
+    expect(models.tasks.get().group).toBe('list');
+    models.tasks.set({ ...models.tasks.get(), group: 'status' });
+    expect(radios.find((radio) => radio.checked).value).toBe('status');
+    panel.body.querySelector('.view-options__reset').click();
+    expect(models.tasks.get().group).toBe('none');
+    expect(radios.find((radio) => radio.checked).value).toBe('none');
+  });
+
+  it('offers no Group by in a list view until the list view groups', async () => {
+    await mount('list');
+    expect(panel.body.querySelectorAll('input[name$="group"]')).toHaveLength(0);
+    expect([...panel.body.querySelectorAll('.view-options__heading')].map((heading) => heading.textContent)).toEqual(['Filter', 'Sort by']);
   });
 
   it('offers no Lists row in a list view, and Manual order as the first sort choice (LV-6)', async () => {

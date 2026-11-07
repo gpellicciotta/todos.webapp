@@ -3,7 +3,7 @@
  *
  * Values are stored as JSON. Storage that is missing, blocked, or full never throws:
  * reads return the fallback and writes report failure, so the app works in private windows.
- * The views store their filters and sort here (`TV-12`); Settings stores `theme` and `server-url`.
+ * The views store their filters, grouping, and sort here (`TV-12`); Settings stores `theme` and `server-url`.
  */
 
 export const PREFIX = 'todos.';

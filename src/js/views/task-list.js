@@ -9,10 +9,14 @@
  * when rows also show a drag handle (`LV-3`).
  * One status menu and one More menu serve every row: each opening attaches the menu to that row's button.
  * Rendering again keeps an open menu open on the same row and item, and keeps focus on the same row control.
- * Rows are kept by task id: a render builds only the rows whose content changed and moves as few rows as it can,
+ * Rows are kept by key, the task id or, in a grouped list, the group and the task id, since a task of several lists
+ * shows in each group: a render builds only the rows whose content changed and moves as few rows as it can,
  * and the clock tick redraws only due chips (`TEC-16`).
+ * A grouped list shows a header row before each group, with the group name and count (`VO-10`). Headers are
+ * 32 px rows without controls, so they take no focus, selection, or drag; they count as rows of the virtual list.
  * A list of more than 200 tasks renders only the rows in view plus a buffer, so 5000 tasks open fast (`TEC-16`).
- * Padding on the list and a margin on a row after a gap stand in for the rows left out, so the scroll height holds.
+ * Padding on the list and a margin on a row after a gap stand in for the rows left out, so the scroll height holds;
+ * the offsets of the rows add up the row and header heights.
  * The focused row, the row of an open menu, the dragged row, and the selected row stay rendered with their
  * neighbors, so focus, menus, Tab order, and drags survive a scroll. Rows carry `aria-setsize` and `aria-posinset`.
  * The menus live outside the list, since the list is a size container, which would anchor fixed menus.
@@ -35,6 +39,8 @@ const FULL_ROWS = 200;
 const BUFFER_ROWS = 20;
 /** The row height until a row was measured: the 48 px of the `--row-height` token. */
 const ROW_PX = 48;
+/** The header height until a header was measured: 32 px, two thirds of the row height. */
+const HEADER_PX = 32;
 let instances = 0;
 
 /** Status names, in lifecycle order. */
@@ -254,6 +260,18 @@ function rowTemplate(doc, handle) {
 }
 
 /**
+ * Render the header of a group: its name and its task count.
+ * @param {Document} doc the document
+ * @param {{label: string, tasks: object[]}} group the group
+ * @returns {HTMLLIElement} the header
+ */
+function renderHeader(doc, group) {
+  const header = make(doc, 'li', 'group-header');
+  header.append(make(doc, 'h3', 'group-header__name', group.label), make(doc, 'span', 'group-header__count', String(group.tasks.length)));
+  return header;
+}
+
+/**
  * Render the row of a task from the row template.
  * @param {Document} doc the document
  * @param {object} task the task
@@ -423,8 +441,10 @@ export function createTaskList({
   const templates = new Map();
   const places = new Map();
   let rows = new Map();
-  let order = [];
+  let items = [];
+  let offsets = [0];
   let rowPx = ROW_PX;
+  let headerPx = HEADER_PX;
   let fillFrame = null;
   let fillTimer = null;
   let ctx = {};
@@ -537,7 +557,7 @@ export function createTaskList({
       [freeLists(task).length > 0, STRINGS.addToList, 'add-to-list', 'plus'],
       [listId !== null, STRINGS.removeFromList, 'remove-from-list'],
       [movable && index > 0, STRINGS.moveUp, 'move-up'],
-      [movable && index < order.length - 1, STRINGS.moveDown, 'move-down'],
+      [movable && index < items.length - 1, STRINGS.moveDown, 'move-down'],
       [true, STRINGS.delete, 'delete', 'bin'],
     ];
     moreMenu.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
@@ -573,73 +593,125 @@ export function createTaskList({
 
   /**
    * Build the row of a task.
-   * @param {object} task the task
+   * @param {object} item the item of the row: its key and task
    * @param {object} view the row content of `viewOf`
-   * @returns {{row: HTMLLIElement, key: string, dueKey: string}} the row entry
+   * @returns {{row: HTMLLIElement, key: string, dueKey: string, taskId: string}} the row entry
    */
-  function build(task, view) {
+  function build(item, view) {
     if (!templates.has(view.handle)) {
       templates.set(view.handle, rowTemplate(doc, view.handle));
     }
-    return { row: renderRow(doc, task, view, templates.get(view.handle), options.selected), key: view.key, dueKey: view.dueKey };
+    const row = renderRow(doc, item.task, view, templates.get(view.handle), options.selected);
+    row.dataset.rowKey = item.key;
+    return { row, key: view.key, dueKey: view.dueKey, taskId: item.task.id };
+  }
+
+  /** Add up the heights of the items: item `i` starts `offsets[i]` pixels below the top of the list. */
+  function layout() {
+    offsets = new Float64Array(items.length + 1);
+    for (let index = 0; index < items.length; index += 1) {
+      offsets[index + 1] = offsets[index] + (items[index].group ? headerPx : rowPx);
+    }
+  }
+
+  /**
+   * Find the item that covers a height below the top of the list.
+   * @param {number} px the height in pixels
+   * @returns {number} the item index, clamped to the items
+   */
+  function indexAt(px) {
+    let low = 0;
+    let high = items.length - 1;
+    while (low < high) {
+      const middle = (low + high + 1) >> 1;
+      if (offsets[middle] <= px) {
+        low = middle;
+      }
+      else {
+        high = middle - 1;
+      }
+    }
+    return low;
+  }
+
+  /** Measure a row and a header once they show, and lay out the items again when a height differs. */
+  function measure() {
+    const row = list.querySelector('.task-row');
+    const header = list.querySelector('.group-header');
+    const rowHeight = row?.offsetHeight > 0 ? row.offsetHeight : rowPx;
+    const headerHeight = header?.offsetHeight > 0 ? header.offsetHeight : headerPx;
+    if (rowHeight !== rowPx || headerHeight !== headerPx) {
+      rowPx = rowHeight;
+      headerPx = headerHeight;
+      layout();
+    }
   }
 
   /**
    * Compute the rows in view plus a buffer, measuring the row height once a row shows.
-   * The view is the part of the scroller inside the window; row `i` starts `i` row heights below the list's top.
+   * The view is the part of the scroller inside the window; item `i` starts `offsets[i]` pixels below the list's top.
    * @param {number} buffer the rows to add past each edge of the view
    * @returns {{first: number, last: number}} the indexes of the first and last row to render
    */
   function windowOf(buffer) {
-    if (list.firstElementChild?.offsetHeight > 0) {
-      rowPx = list.firstElementChild.offsetHeight;
-    }
+    measure();
     const box = list.getBoundingClientRect();
     const view = (scroller?.() ?? element.closest('.app__main'))?.getBoundingClientRect();
     const top = Math.max(view?.top ?? 0, 0) - box.top;
     const bottom = Math.min(view?.bottom ?? Infinity, doc.defaultView?.innerHeight ?? Infinity) - box.top;
     return {
-      first: Math.max(0, Math.floor(top / rowPx) - buffer),
-      last: Math.min(order.length - 1, Math.ceil(bottom / rowPx) - 1 + buffer),
+      first: Math.max(0, indexAt(top) - buffer),
+      last: Math.min(items.length - 1, indexAt(bottom - 0.001) + buffer),
     };
   }
 
   /**
    * List the tasks whose rows stay rendered out of view: the focused row, the row of the open menu, the dragged row,
    * and the selected row, which gets focus back when its editor closes.
-   * @param {Array<string|undefined>} extra more task identifiers, such as those a render keeps for focus
-   * @returns {Set<string>} the task identifiers
+   * @param {Array<string|undefined>} extra more row keys, such as those a render keeps for focus
+   * @returns {Set<string>} the row keys
    */
   function pinned(extra) {
-    const ids = new Set([...extra, options.selected]);
+    const keys = new Set([...extra, selectedKey()]);
     const focused = doc.activeElement?.closest?.('.task-row');
     for (const row of [focused, active?.trigger.closest('.task-row'), list.querySelector('.task-row[data-dragging]')]) {
       if (row && list.contains(row)) {
-        ids.add(row.dataset.taskId);
+        keys.add(row.dataset.rowKey);
       }
     }
-    return ids;
+    return keys;
+  }
+
+  /**
+   * Find the key of the row of the selected task; in a grouped list it is the first row of the task.
+   * @returns {string|undefined} the key
+   */
+  function selectedKey() {
+    if (options.selected === null || places.has(options.selected)) {
+      return options.selected ?? undefined;
+    }
+    return items.find((item) => item.task?.id === options.selected)?.key;
   }
 
   /**
    * List the indexes of the rows to render: every row of a short list, or the rows in view plus the buffer and each
    * pinned row with its neighbors, so Tab reaches the next row from a pinned one.
-   * @param {Array<string|undefined>} extra more tasks to keep rendered
+   * @param {Array<string|undefined>} extra more row keys to keep rendered
    * @param {number} buffer the rows to add past each edge of the view
    * @returns {number[]} the indexes, in increasing order
    */
   function wanted(extra, buffer) {
-    if (order.length <= FULL_ROWS) {
-      return [...order.keys()];
+    if (items.length <= FULL_ROWS) {
+      return [...items.keys()];
     }
     const { first, last } = windowOf(buffer);
     const indexes = new Set();
     for (let index = first; index <= last; index += 1) {
       indexes.add(index);
     }
-    for (const taskId of pinned(extra)) {
-      const at = places.get(taskId) ?? -2;
-      for (let index = Math.max(0, at - 1); index <= Math.min(order.length - 1, at + 1); index += 1) {
+    for (const key of pinned(extra)) {
+      const at = places.get(key) ?? -2;
+      for (let index = Math.max(0, at - 1); index <= Math.min(items.length - 1, at + 1); index += 1) {
         indexes.add(index);
       }
     }
@@ -653,10 +725,10 @@ export function createTaskList({
    * @param {number} gap the height of the rows left out between it and the rendered row above, in pixels
    */
   function locate(entry, index, gap) {
-    if (entry.index !== index || entry.size !== order.length) {
+    if (entry.index !== index || entry.size !== items.length) {
       entry.row.setAttribute('aria-posinset', String(index + 1));
-      entry.row.setAttribute('aria-setsize', String(order.length));
-      Object.assign(entry, { index, size: order.length });
+      entry.row.setAttribute('aria-setsize', String(items.length));
+      Object.assign(entry, { index, size: items.length });
     }
     if (entry.gap !== gap) {
       entry.row.style.marginBlockStart = gap > 0 ? `${gap}px` : '';
@@ -667,7 +739,7 @@ export function createTaskList({
   /**
    * Render the rows that show, reusing the rendered rows by task id; padding on the list holds the rest of the height.
    * @param {boolean} fresh whether the tasks changed, so reused rows check their content
-   * @param {Array<string|undefined>} [extra] more tasks to keep rendered
+   * @param {Array<string|undefined>} [extra] more row keys to keep rendered
    * @param {number} [buffer] the rows to add past each edge of the view
    */
   function draw(fresh, extra = [], buffer = BUFFER_ROWS) {
@@ -675,31 +747,37 @@ export function createTaskList({
     const entries = new Map();
     let previous = indexes[0] - 1;
     for (const index of indexes) {
-      const task = order[index];
-      let entry = rows.get(task.id);
-      if (!entry || fresh) {
-        const view = viewOf(task, ctx, options);
+      const item = items[index];
+      let entry = rows.get(item.key);
+      if (item.group) {
+        const key = `${item.group.label}|${item.group.tasks.length}`;
+        if (entry?.key !== key) {
+          entry = { row: renderHeader(doc, item.group), key };
+        }
+      }
+      else if (!entry || fresh) {
+        const view = viewOf(item.task, ctx, options);
         if (entry?.key !== view.key) {
-          entry = build(task, view);
+          entry = build(item, view);
         }
         else if (entry.dueKey !== view.dueKey) {
           updateMeta(doc, entry.row, view);
           entry.dueKey = view.dueKey;
         }
       }
-      locate(entry, index, (index - previous - 1) * rowPx);
+      locate(entry, index, offsets[index] - offsets[previous + 1]);
       previous = index;
-      entries.set(task.id, entry);
+      entries.set(item.key, entry);
     }
-    for (const [taskId, entry] of rows) {
-      if (entries.get(taskId) !== entry) {
+    for (const [key, entry] of rows) {
+      if (entries.get(key) !== entry) {
         entry.row.remove();
       }
     }
     rows = entries;
     placeRows(list, [...entries.values()].map((entry) => entry.row));
-    list.style.paddingBlockStart = `${(indexes[0] ?? 0) * rowPx}px`;
-    list.style.paddingBlockEnd = `${(order.length - 1 - (indexes.at(-1) ?? -1)) * rowPx}px`;
+    list.style.paddingBlockStart = `${offsets[indexes[0] ?? 0]}px`;
+    list.style.paddingBlockEnd = `${offsets[items.length] - offsets[(indexes.at(-1) ?? -1) + 1]}px`;
   }
 
   /** Stop a waiting buffer fill. */
@@ -731,14 +809,14 @@ export function createTaskList({
    */
   function onScroll(event) {
     const target = event.target;
-    if (order.length > FULL_ROWS && list.isConnected && (target === doc.defaultView || target.contains?.(list))) {
+    if (items.length > FULL_ROWS && list.isConnected && (target === doc.defaultView || target.contains?.(list))) {
       draw(false);
     }
   }
 
   /**
    * Remember what has focus in the list or its open menu, before the rows render again.
-   * @returns {{id: string, role: string, index: number, kind?: string, item?: string}|null} the memo
+   * @returns {{key: string, taskId: string, role: string, index: number, kind?: string, item?: string}|null} the memo
    */
   function remember() {
     if (active?.controller.isOpen()) {
@@ -746,14 +824,30 @@ export function createTaskList({
       const menu = active.kind === 'status' ? statusMenu : moreMenu;
       const item = doc.activeElement?.closest?.('.menu__item');
       return {
-        id: row.dataset.taskId, role: active.trigger.dataset.role, index: places.get(row.dataset.taskId),
+        key: row.dataset.rowKey, taskId: row.dataset.taskId, role: active.trigger.dataset.role, index: places.get(row.dataset.rowKey),
         kind: active.kind, item: item && menu.contains(item) ? itemKey(item) : undefined,
       };
     }
     const focused = doc.activeElement?.closest?.('.task-row');
     return focused && list.contains(focused)
-      ? { id: focused.dataset.taskId, role: doc.activeElement.dataset.role ?? 'open', index: places.get(focused.dataset.taskId) }
+      ? {
+        key: focused.dataset.rowKey, taskId: focused.dataset.taskId, role: doc.activeElement.dataset.role ?? 'open',
+        index: places.get(focused.dataset.rowKey),
+      }
       : null;
+  }
+
+  /**
+   * Find the task row at or after an index, since a header takes no focus.
+   * @param {number} index the index, clamped to the items
+   * @returns {number} the index of a task item
+   */
+  function taskIndexNear(index) {
+    let at = Math.min(index, items.length - 1);
+    while (at < items.length - 1 && items[at].group) {
+      at += 1;
+    }
+    return at;
   }
 
   /**
@@ -766,23 +860,23 @@ export function createTaskList({
     if (!memo) {
       return;
     }
-    if (order.length === 0) {
+    if (items.length === 0) {
       fallbackFocus?.()?.focus();
       return;
     }
-    const same = rows.get(memo.id)?.row;
-    const row = same ?? rows.get(order[Math.min(memo.index, order.length - 1)].id)?.row;
+    const same = rows.get(memo.key)?.row;
+    const row = same ?? rows.get(items[taskIndexNear(memo.index)].key)?.row;
     const trigger = row?.querySelector(`[data-role="${memo.role}"]`);
     if (same && memo.kind) {
       const reopen = { status: openStatus, more: openMore, 'add-to-list': openAddToList }[memo.kind];
-      reopen(trigger, byId.get(memo.id), 'first');
+      reopen(trigger, byId.get(memo.taskId), 'first');
       const menu = memo.kind === 'status' ? statusMenu : moreMenu;
       [...menu.querySelectorAll('.menu__item')].find((item) => itemKey(item) === memo.item)?.focus();
     }
     else {
       trigger?.focus();
     }
-    if (same && places.get(memo.id) !== memo.index) {
+    if (same && places.get(memo.key) !== memo.index) {
       same.scrollIntoView?.({ block: 'nearest' });
     }
   }
@@ -835,26 +929,44 @@ export function createTaskList({
     /**
      * Show tasks as rows, in the given order, keeping focus on the same row control and an open menu open.
      * A focused row that left the list passes focus to the row now at its place, or to the fallback control.
+     * With groups, a header row starts each group and the tasks of the groups show instead of `tasks`.
      * @param {object[]} tasks the tasks to show
      * @param {{now?: Date, lists?: Map<string, object>, listsByTask?: Map<string, string[]>,
      *   notesByTask?: Map<string, string[]>}} context the time, the live lists in display order,
      *   list identifiers by task, and note texts by task
+     * @param {{groups?: Array<{key: string, label: string, tasks: object[]}>|null}} [grouping] the groups of `groupTasks`
      */
-    render(tasks, context) {
+    render(tasks, context, { groups = null } = {}) {
       ctx = context;
       const memo = remember();
       detach();
       cancelFill();
-      const lean = rows.size === 0 && tasks.length > FULL_ROWS;
-      order = tasks;
+      items = [];
+      if (groups) {
+        for (const group of groups) {
+          items.push({ key: `#${group.key}`, group });
+          for (const task of group.tasks) {
+            items.push({ key: `${group.key}\u0000${task.id}`, task });
+          }
+        }
+      }
+      else {
+        for (const task of tasks) {
+          items.push({ key: task.id, task });
+        }
+      }
+      const lean = rows.size === 0 && items.length > FULL_ROWS;
       byId.clear();
       places.clear();
-      tasks.forEach((task, index) => {
-        byId.set(task.id, task);
-        places.set(task.id, index);
+      items.forEach((item, index) => {
+        places.set(item.key, index);
+        if (item.task) {
+          byId.set(item.task.id, item.task);
+        }
       });
+      layout();
       // The focused row stays rendered, or the row now at its place when it left, so focus can stay or pass on.
-      draw(true, memo ? [memo.id, tasks[Math.min(memo.index, tasks.length - 1)]?.id] : [], lean ? 0 : BUFFER_ROWS);
+      draw(true, memo ? [memo.key, items[Math.min(memo.index, items.length - 1)]?.key] : [], lean ? 0 : BUFFER_ROWS);
       restore(memo);
       if (lean) {
         fillLater();
@@ -867,8 +979,11 @@ export function createTaskList({
      */
     tick(now) {
       ctx = { ...ctx, now };
-      for (const [taskId, entry] of rows) {
-        const view = viewOf(byId.get(taskId), ctx, options);
+      for (const entry of rows.values()) {
+        if (!entry.taskId) {
+          continue;
+        }
+        const view = viewOf(byId.get(entry.taskId), ctx, options);
         if (view.dueKey !== entry.dueKey) {
           updateMeta(doc, entry.row, view);
           entry.dueKey = view.dueKey;
@@ -881,8 +996,17 @@ export function createTaskList({
      * @param {string|null} taskId the task identifier, or null
      */
     setSelected(taskId) {
-      rows.get(options.selected)?.row.querySelector('.task-row__open').removeAttribute('aria-current');
-      rows.get(taskId)?.row.querySelector('.task-row__open').setAttribute('aria-current', 'page');
+      for (const entry of rows.values()) {
+        if (entry.taskId && (entry.taskId === options.selected || entry.taskId === taskId)) {
+          const open = entry.row.querySelector('.task-row__open');
+          if (entry.taskId === taskId) {
+            open.setAttribute('aria-current', 'page');
+          }
+          else {
+            open.removeAttribute('aria-current');
+          }
+        }
+      }
       options.selected = taskId;
     },
 
@@ -890,7 +1014,7 @@ export function createTaskList({
      * List the shown tasks, rendered or not, for moves and drags across the whole list.
      * @returns {string[]} the task identifiers, in order
      */
-    ids: () => order.map((task) => task.id),
+    ids: () => items.filter((item) => item.task).map((item) => item.task.id),
 
     /** Close any open menu, and stop adding rows and following scrolls. */
     destroy() {

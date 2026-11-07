@@ -219,3 +219,82 @@ test('All tasks opens with 5000 tasks within 200 ms under 4x CPU throttling (TEC
   expect(median(phone.opens)).toBeLessThan(OPEN_BUDGET_MS);
   expect(median(desktop.updates)).toBeLessThan(UPDATE_BUDGET_MS);
 });
+
+/**
+ * Open All tasks four times under CPU throttling with a grouping, and return the three last opening times.
+ * @param {import('@playwright/test').Page} page the page, with the tasks stored
+ * @param {import('@playwright/test').CDPSession} cdp the throttling session
+ * @param {string} group the grouping, `none`, `list`, `due`, or `status`
+ * @returns {Promise<number[]>} the times in milliseconds
+ */
+async function opensGrouped(page, cdp, group) {
+  await page.evaluate((value) => localStorage.setItem('todos.view.tasks', JSON.stringify({ group: value })), group);
+  await page.goto('about:blank');
+  await page.goto('/#/tasks');
+  await page.waitForFunction(() => window.firstRowsPainted, null, { timeout: 30_000 });
+  expect(await page.locator('.group-header').count() > 0).toBe(group !== 'none');
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU_RATE });
+  const opens = [];
+  for (let run = 0; run < 4; run += 1) {
+    opens.push(await openToRows(page));
+  }
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  return opens.slice(1);
+}
+
+test('All tasks grouped by due date opens with 5000 tasks within 200 ms under 4x CPU throttling (TEC-16, VO-9)', async ({ page }, info) => {
+  test.setTimeout(240_000);
+  await page.goto('/#/tasks');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await seed(page, COUNT);
+  await page.addInitScript(watchRows);
+  const cdp = await page.context().newCDPSession(page);
+  const opens = await opensGrouped(page, cdp, 'due');
+  const scroll = await scrollFrames(page);
+  const numbers = `grouped by due date, ${CPU_RATE}x CPU throttling: view open ${opens.map(Math.round).join(', ')} ms `
+    + `(median ${Math.round(median(opens))} ms); scroll frames median ${Math.round(scroll.median)} ms, `
+    + `p95 ${Math.round(scroll.p95)} ms, at most ${scroll.rows} rows`;
+  console.log(numbers);
+  info.annotations.push({ type: 'performance', description: numbers });
+  expect(median(opens)).toBeLessThan(OPEN_BUDGET_MS);
+});
+
+// The lists and their memberships add store reads that no grouping causes, so this test compares the two openings
+// on the same data instead of judging the 200 ms budget, which the test above covers for the standard data.
+test('grouping 5000 tasks by list in 12 lists opens as fast as showing them ungrouped (TEC-16, VO-9)', async ({ page }, info) => {
+  test.setTimeout(240_000);
+  await page.goto('/#/tasks');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await seed(page, COUNT);
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const { uuid7 } = await import('/js/lib/uuid7.js');
+    const store = await openStore({ broadcast: true });
+    const time = new Date().toISOString();
+    const lists = Array.from({ length: 12 }, (_, index) => ({
+      id: uuid7(), name: `List ${String(index).padStart(2, '0')}`, description: '', owner: null,
+      'creation-time': time, 'last-update-time': time, 'deletion-time': null,
+    }));
+    const tasks = await store.listTasks();
+    const memberships = tasks.flatMap((task, index) => [
+      ...(index % 4 === 3 ? [] : [{ 'list-id': lists[index % 12].id, 'task-id': task.id, position: 'a', 'added-time': time }]),
+      ...(index % 10 === 0 ? [{ 'list-id': lists[(index + 5) % 12].id, 'task-id': task.id, position: 'a', 'added-time': time }] : []),
+    ]);
+    await store.applyChanges(() => ({ changes: { put: { lists, memberships } }, result: null }));
+    store.close();
+  });
+  await page.addInitScript(watchRows);
+  const cdp = await page.context().newCDPSession(page);
+  const plain = [];
+  const grouped = [];
+  // The runs alternate, so a change of machine load hits both sides.
+  for (let pass = 0; pass < 3; pass += 1) {
+    plain.push(...await opensGrouped(page, cdp, 'none'));
+    grouped.push(...await opensGrouped(page, cdp, 'list'));
+  }
+  const numbers = `${CPU_RATE}x CPU throttling, 12 lists: ungrouped median ${Math.round(median(plain))} ms (${plain.map(Math.round).join(', ')}); `
+    + `grouped by list median ${Math.round(median(grouped))} ms (${grouped.map(Math.round).join(', ')})`;
+  console.log(numbers);
+  info.annotations.push({ type: 'performance', description: numbers });
+  expect(median(grouped)).toBeLessThan(median(plain) * 1.25 + 30);
+});
