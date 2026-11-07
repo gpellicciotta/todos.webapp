@@ -13,8 +13,10 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1258.4, input: 144, output: 35458, cache_read: 5175500, cache_write: 153784}
+  review: {turns: 2, duration_s: 317.6, input: 152600, output: 5432, cache_read: 990598}
 review_status: pending
 review_round: 1
+work_duration: 808.1
 ---
 # T0079: Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206)
 
