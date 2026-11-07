@@ -119,4 +119,29 @@ describe('mountList', () => {
     expect(models.list.get().filter.statuses).toEqual(['todo', 'in-progress']);
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
   });
+
+  it('opens the task editor of a new task in this list and leaves focus to the editor', async () => {
+    const view = await mount();
+    const field = view.querySelector('[data-shortcut~="add"]');
+    field.focus();
+    const refocus = vi.spyOn(field, 'focus');
+    field.value = 'Paint the door';
+    view.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
+    const [task] = (await store.snapshot()).tasks;
+    expect(navigate).toHaveBeenCalledWith(`#/lists/${view.dataset.listId}/tasks/${task.id}`);
+    await vi.waitFor(() => expect(field.value).toBe(''));
+    expect(refocus).not.toHaveBeenCalled();
+  });
+
+  it('opens no editor when adding fails', async () => {
+    const view = await mount();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(store, 'createTask').mockRejectedValue(new Error('quota'));
+    const field = view.querySelector('[data-shortcut~="add"]');
+    field.value = 'Paint the door';
+    view.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledWith('The task could not be added.'));
+    expect(navigate).not.toHaveBeenCalled();
+  });
 });

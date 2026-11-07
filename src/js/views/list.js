@@ -148,9 +148,9 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const behavior = attachMenu(more, menu, { onSelect: act });
 
   /**
-   * Store a new task at the end of this list (`LV-5`).
+   * Store a new task at the end of this list (`LV-5`) and open its editor.
    * @param {string} text the trimmed description
-   * @returns {Promise<void>} rejects when the task could not be stored
+   * @returns {Promise<boolean>} false, since the editor takes the focus; rejects when the task could not be stored
    */
   async function add(text) {
     let task;
@@ -166,6 +166,8 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
       task, listIds: [listId], filter: model.get().filter, lists: [...(data?.lists.values() ?? [])], now: now(), toaster,
       onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
     });
+    navigate(formatRoute('list-task', { listId, taskId: task.id }));
+    return false;
   }
 
   /**

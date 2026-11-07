@@ -142,12 +142,13 @@ test('Enter adds a task, keeps focus in the add bar, and asks for persistent sto
   await expect(page.locator('.task-row')).toHaveCount(1);
   await expect(page.locator('.task-row__description')).toHaveText('Buy paint');
   await expect(page.locator('.empty-state')).toBeHidden();
-  await expect(add).toBeFocused();
+  await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
+  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
   await expect(add).toHaveValue('');
   await add.fill('Call the plumber');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.locator('.task-row')).toHaveCount(2);
-  await expect(add).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
   expect(await page.evaluate(() => window.persistCalls)).toBe(1);
   await page.reload();
   await expect(page.locator('.task-row')).toHaveCount(2);
@@ -177,7 +178,7 @@ test('the status menu changes a status by mouse and by keyboard (TSK-4)', async 
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(paint).toHaveCount(0);
-  await expect(page.locator('.task-row', { hasText: 'Book flights' }).locator('.status-button')).toBeFocused();
+  await expect(page.locator('.task-row', { hasText: 'Call the plumber' }).locator('.status-button')).toBeFocused();
   const statuses = await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore();
@@ -196,8 +197,8 @@ for (const viewport of [COMPACT, WIDE]) {
     await page.setViewportSize(viewport);
     await openApp(page);
     await seed(page);
-    // Default: open tasks, due time ascending, tasks without a due time last.
-    expect(await rows(page)).toEqual(['Call the plumber', 'Write the report', 'Buy paint', 'Book flights']);
+    // Default: open tasks, created newest first.
+    expect(await rows(page)).toEqual(['Book flights', 'Write the report', 'Buy paint', 'Call the plumber']);
     await expect(page.locator('.task-row', { hasText: 'Call the plumber' }).locator('.chip--overdue')).toHaveText('Overdue');
     await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open');
     await expect(page.locator('.info-line__reset')).toBeHidden();
@@ -234,7 +235,7 @@ for (const viewport of [COMPACT, WIDE]) {
     expect(await rows(page)).toEqual(['Call the plumber']);
     await region.getByLabel('Overdue').uncheck();
     await region.getByLabel('No due time').check();
-    expect(await rows(page)).toEqual(['Book flights', 'Water the plants']);
+    expect(await rows(page)).toEqual(['Water the plants', 'Book flights']);
     await region.getByLabel('No due time').uncheck();
 
     await options.getByLabel('Sort by').selectOption({ label: 'Description' });
@@ -342,7 +343,7 @@ test('the view options open from their route after a reload, and Reset in the pa
   await expect(reopened.getByLabel('Sort by')).toHaveValue('status');
   await reopened.getByRole('button', { name: 'Reset' }).click();
   await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open');
-  await expect(reopened.getByLabel('Sort by')).toHaveValue('due-time');
+  await expect(reopened.getByLabel('Sort by')).toHaveValue('creation-time');
   expect(problems).toEqual([]);
 });
 
@@ -443,7 +444,8 @@ test('typing in the add field searches, Enter never adds, and Add creates the ta
   await field.fill('paint');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(field).toHaveValue('');
-  await expect(field).toBeFocused();
+  await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
+  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
   await expect(page.locator('.task-row')).toHaveCount(5);
   await expect(page.locator(INFO)).toHaveText('5 of 7 tasks · Status: open');
   expect(problems).toEqual([]);
@@ -501,12 +503,12 @@ test('Group by shows headers with counts for each option, and the choice survive
   await groupBy(options, 'List');
   await expect(page.locator('.info-line__text')).toContainText('Grouped by List');
   expect(await listEntries(page)).toEqual([
-    '# Home 2', 'Call the plumber', 'Buy paint', '# Work 1', 'Write the report', '# No list 1', 'Book flights',
+    '# Home 2', 'Buy paint', 'Call the plumber', '# Work 1', 'Write the report', '# No list 1', 'Book flights',
   ]);
 
   await groupBy(options, 'Status');
   expect(await listEntries(page)).toEqual([
-    '# To do 3', 'Write the report', 'Buy paint', 'Book flights', '# In progress 1', 'Call the plumber',
+    '# To do 3', 'Book flights', 'Write the report', 'Buy paint', '# In progress 1', 'Call the plumber',
   ]);
 
   // The clock decides whether the later tasks fall under Today, Tomorrow, or This week; the ends are fixed.
@@ -544,7 +546,7 @@ test('search and sort apply inside each group, and a task of two lists shows in 
   await groupBy(options, 'List');
   await expect(page.locator('.task-row')).toHaveCount(5);
   expect(await listEntries(page)).toEqual([
-    '# Home 2', 'Call the plumber', 'Buy paint', '# Work 2', 'Write the report', 'Buy paint', '# No list 1', 'Book flights',
+    '# Home 2', 'Buy paint', 'Call the plumber', '# Work 2', 'Write the report', 'Buy paint', '# No list 1', 'Book flights',
   ]);
   await options.locator('select').selectOption('description');
   expect((await listEntries(page)).slice(0, 3)).toEqual(['# Home 2', 'Buy paint', 'Call the plumber']);

@@ -163,7 +163,10 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 
 ### Add Bar
 - One text field and an Add button; only the Add button creates the task (`TSK-1`, `VO-3`).
-  Enter applies the typed search at once but never adds; after an add, focus returns to the field.
+  Enter applies the typed search at once but never adds.
+- **[Decided]** After an add, the new task opens in the task editor, which takes the focus (`TSK-13`).
+  The route is `#/tasks/{{task-id}}` in All tasks and `#/lists/{{list-id}}/tasks/{{task-id}}` in a list view.
+  A failed add opens nothing and keeps the text in the field.
 - The field also searches the view; [Search and Add](#search-and-add) describes this.
 - In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
 - In All tasks, the new task joins the lists of the active list filter, or no list.
@@ -228,7 +231,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - Group by: a segmented control with None, List, Due date, and Status (`VO-9`).
   - Sort by: a field menu and an Ascending or Descending toggle (`TV-9`).
   - Reset at the top: restores every option to its default (`VO-8`).
-- Defaults: open statuses, due time ascending (manual order in a list view), no grouping, no other filter.
+- Defaults: open statuses, creation time descending (manual order in a list view), no grouping, no other filter.
 - A stored Lists filter whose lists were all deleted filters nothing, so the info line leaves it out.
 - The panel uses native inputs: checkboxes, radios, a select, and date fields.
 - A polite live region announces the count after each change, such as "12 tasks" (`VO-13`).
@@ -312,7 +315,8 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - The Lists filter offers every list plus "In no list"; the Due filter offers Overdue, Today, This week, a range, and No due time.
 - **[Decided]** The default status filter is "open", `todo` and `in-progress`, matching the list view (`LV-10`).
 - Sort fields: Due time, Created, Last activity, Status, and Description (`TV-9`).
-- The default sort is Due time ascending, with tasks without a due time last (`TV-10`).
+- **[Decided]** The default sort is Created, newest first, so a new task comes first (`TV-13`).
+  Sorting by Due time still puts tasks without a due time last (`TV-10`).
 - Grouping by List, Due date, or Status is available here first (`VO-9`); see [View Options](#view-options).
 - A More menu with Edit view options sits in the page header; the shell's top bar has no More menu.
 - An empty result names the active filters and offers Reset.

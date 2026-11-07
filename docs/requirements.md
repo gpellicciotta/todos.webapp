@@ -65,6 +65,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-10: A task in no list stays visible in the task view.
 - TSK-11: Deleting a task moves it to the recycle bin and hides it from every list and view.
 - TSK-12: Every task records its creation time, last update time, and last activity time.
+- TSK-13: A task created from the add field opens in the task editor.
 
 ### Notes
 - NOT-1: Users add notes to a task; each note holds 1 to 2000 characters of plain text.
@@ -107,6 +108,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-10: Tasks without a due time sort last in both directions when ordering by due time.
 - TV-11: Users create, edit, change status of, and delete tasks directly in the task view.
 - TV-12: The app remembers the last used filters, grouping, and order per device.
+- TV-13: The task view orders by creation time, newest first, until the user picks another order.
 
 ### View Options
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.

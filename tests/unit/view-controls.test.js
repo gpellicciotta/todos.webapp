@@ -22,10 +22,10 @@ function memoryStorage() {
 const LISTS = [{ id: 'l-home', name: 'Home' }, { id: 'l-work', name: 'Work' }];
 
 describe('view state per device (TV-12)', () => {
-  it('starts with the open status filter and due time ascending, or manual order in a list view', () => {
+  it('starts with the open status filter and created newest first, or manual order in a list view', () => {
     expect(loadViewState('tasks', () => memoryStorage())).toEqual({
       filter: { statuses: ['todo', 'in-progress'] },
-      order: { field: 'due-time', direction: 'asc' },
+      order: { field: 'creation-time', direction: 'desc' },
       group: 'none',
     });
     expect(defaultViewState()).toEqual(loadViewState('tasks', () => memoryStorage()));
@@ -76,7 +76,7 @@ describe('view state per device (TV-12)', () => {
     const storage = memoryStorage();
     storage.setItem('todos.view.tasks', JSON.stringify({ order: { field: 'manual', direction: 'asc' } }));
     storage.setItem('todos.view.list', JSON.stringify({ order: { field: 'manual', direction: 'desc' } }));
-    expect(loadViewState('tasks', () => storage).order).toEqual({ field: 'due-time', direction: 'asc' });
+    expect(loadViewState('tasks', () => storage).order).toEqual({ field: 'creation-time', direction: 'desc' });
     expect(loadViewState('list', () => storage).order).toEqual({ field: 'manual', direction: 'asc' });
   });
 
@@ -150,10 +150,10 @@ describe('describeInfoLine (VO-7)', () => {
     const sorted = (field, direction, kind) => describeInfoLine({
       shown: 3, total: 3, state: { filter: open.filter, order: { field, direction } }, lists: LISTS, kind,
     });
-    expect(sorted('due-time', 'asc')).toEqual(['3 tasks', 'Status: open']);
+    expect(sorted('creation-time', 'desc')).toEqual(['3 tasks', 'Status: open']);
+    expect(sorted('due-time', 'asc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Due time']);
     expect(sorted('description', 'asc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Description']);
     expect(sorted('description', 'desc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Description, descending']);
-    expect(sorted('creation-time', 'desc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Created']);
     expect(sorted('creation-time', 'asc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Created, ascending']);
     expect(sorted('manual', 'asc', 'list')).toEqual(['3 tasks', 'Status: open']);
     expect(sorted('due-time', 'asc', 'list')).toEqual(['3 tasks', 'Status: open', 'Sorted by Due time']);
@@ -242,7 +242,7 @@ describe('createInfoLine (VO-7, VO-8)', () => {
     expect(line.element.querySelector('.info-line__reset').hidden).toBe(true);
     line.update({ shown: 1, total: 1, state: defaultViewState('tasks'), lists: [], kind: 'list' });
     expect(line.element.querySelector('.info-line__reset').hidden).toBe(false);
-    expect(line.element.querySelector('.info-line__text').textContent).toBe('1 task · Status: open · Sorted by Due time');
+    expect(line.element.querySelector('.info-line__text').textContent).toBe('1 task · Status: open · Sorted by Created');
   });
 });
 
@@ -331,12 +331,12 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(panel.body.querySelector('select').value).toBe('manual');
   });
 
-  it('offers five sort fields in All tasks, starting at Due time ascending', async () => {
+  it('offers five sort fields in All tasks, starting at Created descending', async () => {
     await mount('tasks');
     expect([...panel.body.querySelectorAll('select option')].map((option) => option.textContent))
       .toEqual(['Due time', 'Created', 'Last activity', 'Status', 'Description']);
-    expect(panel.body.querySelector('select').value).toBe('due-time');
-    expect(panel.body.querySelector('input[name$="direction"]:checked').value).toBe('asc');
+    expect(panel.body.querySelector('select').value).toBe('creation-time');
+    expect(panel.body.querySelector('input[name$="direction"]:checked').value).toBe('desc');
   });
 
   it('opens one filter row at a time, keeping aria-expanded in step', async () => {
@@ -429,7 +429,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(panel.body.querySelector('[data-region="due"] input[value="today"]').checked).toBe(true);
     panel.body.querySelector('.view-options__reset').click();
     expect(models.tasks.get()).toEqual(defaultViewState());
-    expect(panel.body.querySelector('select').value).toBe('due-time');
+    expect(panel.body.querySelector('select').value).toBe('creation-time');
     expect(panel.body.querySelector('[data-region="statuses"] input[value="todo"]').checked).toBe(true);
   });
 

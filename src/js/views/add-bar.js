@@ -2,7 +2,8 @@
  * Add bar: one text field that searches the view, and an Add button that creates a task (`TSK-1`, `VO-3`).
  *
  * Typing reports the text to `onSearch` once it pauses for 150 ms; Enter reports it at once and never adds.
- * Only the Add button creates the task, then clears the field and the filter, and keeps the field focused.
+ * Only the Add button creates the task, then clears the field and the filter, and keeps the field focused
+ * unless `onAdd` resolves `false`, because it opened the task editor, which takes the focus.
  * The button reads "Add anyway" while the typed text equals a known description, ignoring case and spaces.
  * A viewer, who cannot add tasks, sees "Search tasks" and no Add button (`VO-14`).
  * The field holds at most 500 characters; a counter appears from 450.
@@ -34,8 +35,9 @@ const STRINGS = Object.freeze({
  * Create an add bar.
  * @param {object} options add bar options
  * @param {Document} [options.document] the document
- * @param {(description: string) => Promise<void>} options.onAdd stores a task with the trimmed description
- *   and reports its own failures; the field clears once it resolves and keeps its text when it rejects
+ * @param {(description: string) => Promise<void|boolean>} options.onAdd stores a task with the trimmed description
+ *   and reports its own failures; the field clears once it resolves and keeps its text when it rejects;
+ *   resolving `false` leaves the focus where `onAdd` moved it
  * @param {(text: string) => void} [options.onSearch] receives the search text once typing pauses, on Enter, and when
  *   the field clears
  * @param {string} [options.text] the starting text
@@ -105,8 +107,9 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
       return;
     }
     busy = true;
+    let focus = true;
     try {
-      await onAdd(description);
+      focus = (await onAdd(description)) !== false;
       clear();
     }
     catch {
@@ -114,7 +117,9 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
     }
     finally {
       busy = false;
-      input.focus();
+      if (focus) {
+        input.focus();
+      }
     }
   });
   // Typing reports the text once it pauses, so a word runs one query, not one per key (`TEC-16`).

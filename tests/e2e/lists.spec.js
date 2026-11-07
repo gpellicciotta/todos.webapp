@@ -295,7 +295,7 @@ test('Edit list renames the list, and deleting it keeps its tasks visible in All
   await dialog.getByRole('button', { name: 'Delete list' }).click();
   await expect(page).toHaveURL(/#\/tasks$/);
   await expect(page.locator('.toast')).toHaveText([/List moved to the recycle bin\./]);
-  await expect(page.locator('.task-row__description')).toHaveText(['Buy paint', 'Fix the door']);
+  await expect(page.locator('.task-row__description')).toHaveText(['Fix the door', 'Buy paint']);
   await expect(page.locator('.app__sidebar .nav-item--list .nav-item__label')).toHaveText(['Work']);
   expect(problems).toEqual([]);
 });

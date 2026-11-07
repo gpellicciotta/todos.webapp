@@ -200,9 +200,18 @@ describe('filterTasks', () => {
 });
 
 describe('sortTasks', () => {
-  it('defaults to due time ascending', () => {
-    expect(DEFAULT_ORDER).toEqual({ field: 'due-time', direction: 'asc' });
-    expect(ids(sortTasks(tasks))).toEqual(['t3', 't1', 't2', 't4', 't5', 't6']);
+  it('defaults to creation time descending, so a new task comes first', () => {
+    expect(DEFAULT_ORDER).toEqual({ field: 'creation-time', direction: 'desc' });
+    const created = [
+      task('a', { 'creation-time': '2026-11-01T09:00:00.000Z' }),
+      task('c', { 'creation-time': '2026-11-03T09:00:00.000Z' }),
+      task('b', { 'creation-time': '2026-11-02T09:00:00.000Z' }),
+    ];
+    expect(ids(sortTasks(created))).toEqual(['c', 'b', 'a']);
+  });
+
+  it('sorts by due time ascending when asked', () => {
+    expect(ids(sortTasks(tasks, { field: 'due-time', direction: 'asc' }))).toEqual(['t3', 't1', 't2', 't4', 't5', 't6']);
   });
 
   it('puts tasks without a due time last in both directions', () => {

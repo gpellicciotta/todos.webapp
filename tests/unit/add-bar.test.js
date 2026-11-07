@@ -33,6 +33,20 @@ describe('createAddBar', () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it('leaves focus alone when onAdd resolves false, because focus moved elsewhere', async () => {
+    const other = document.body.appendChild(document.createElement('button'));
+    onAdd.mockImplementationOnce(async () => {
+      other.focus();
+      return false;
+    });
+    input.value = 'Buy paint';
+    bar.element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(input.value).toBe(''));
+    await Promise.resolve();
+    expect(document.activeElement).toBe(other);
+    other.remove();
+  });
+
   it('ignores an empty description and keeps the text when adding fails', async () => {
     input.value = '   ';
     bar.element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));

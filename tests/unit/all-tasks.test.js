@@ -185,6 +185,42 @@ describe('mountAllTasks', () => {
     expect(viewModels.tasks.get().filter.statuses).toEqual(['todo', 'in-progress']);
   });
 
+  it('opens the task editor of a new task and leaves focus to the editor', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
+    const navigate = vi.fn();
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show: vi.fn() }, navigate, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    const field = document.querySelector('[data-shortcut~="add"]');
+    field.focus();
+    const refocus = vi.spyOn(field, 'focus');
+    field.value = 'Paint the door';
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('#/tasks/t2'));
+    await vi.waitFor(() => expect(field.value).toBe(''));
+    expect(refocus).not.toHaveBeenCalled();
+  });
+
+  it('opens no editor when adding fails', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const store = { ...fakeStore(), createTask: vi.fn(async () => {
+      throw new Error('quota'); 
+    }) };
+    const navigate = vi.fn();
+    const show = vi.fn();
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show }, navigate, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    document.querySelector('[data-shortcut~="add"]').value = 'Paint the door';
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(show).toHaveBeenCalledWith('The task could not be added.'));
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('shows no toast when the new task is visible', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
@@ -267,7 +303,7 @@ describe('mountAllTasks', () => {
 
     it('groups by status with a count in each header and hides empty groups', async () => {
       await mountGrouped('status', { filter: { statuses: ['todo', 'in-progress', 'completed'] } });
-      expect(entries()).toEqual(['# To do 2', 'Buy paint', 'Book flights', '# In progress 1', 'Call plumber', '# Completed 1', 'Water plants']);
+      expect(entries()).toEqual(['# To do 2', 'Book flights', 'Buy paint', '# In progress 1', 'Call plumber', '# Completed 1', 'Water plants']);
     });
 
     it('groups by list, repeating a task of two lists and ending with No list', async () => {

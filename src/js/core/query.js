@@ -16,8 +16,8 @@ export const NO_LIST = 'no-list';
 /** The default filter of All tasks and the list view: open tasks only (`LV-10`). */
 export const DEFAULT_FILTER = Object.freeze({ statuses: Object.freeze(['todo', 'in-progress']) });
 
-/** The default order of All tasks: due time ascending, tasks without a due time last (`TV-10`). */
-export const DEFAULT_ORDER = Object.freeze({ field: 'due-time', direction: 'asc' });
+/** The default order of All tasks: creation time descending, so a new task comes first (`TV-13`). */
+export const DEFAULT_ORDER = Object.freeze({ field: 'creation-time', direction: 'desc' });
 
 /** The sortable task fields (`TV-9`, `LV-6`). */
 export const SORT_FIELDS = Object.freeze(['due-time', 'creation-time', 'last-activity-time', 'status', 'description']);

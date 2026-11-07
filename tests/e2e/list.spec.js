@@ -85,6 +85,8 @@ test.describe('List screen', () => {
     await expect(page.locator('.add-hint')).toHaveText('No task matches. Add creates it.');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(field).toHaveValue('');
+    await expect(page).toHaveURL(new RegExp('#/lists/[0-9a-f-]+/tasks/[0-9a-f-]+$'));
+    await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
     await expect(page.locator('.list-view .task-row')).toHaveCount(4);
     expect((await rows(page)).at(-1)).toBe('Paint the door');
     expect(problems).toEqual([]);
