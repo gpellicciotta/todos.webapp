@@ -12,8 +12,10 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 3602.4, input: 4, output: 40}
+  worker: {turns: 4, duration_s: 5941.2, input: 80, output: 16808, cache_read: 6730558, cache_write: 41516}
 work_duration: 1820.4
+review_status: pending
+review_round: 1
 ---
 # T0043: Speed up the cold launch toward TEC-16, smooth throttled scrolling, and support rows taller than 48 px in long lists
 
@@ -39,4 +41,7 @@ Speed up the cold launch toward TEC-16, smooth throttled scrolling, and support 
   - Files touched: 14.
   - Lines touched: 800.
   - Reopenings: 0.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
