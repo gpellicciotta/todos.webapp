@@ -14,15 +14,14 @@ protocol: standard
 size_status: approved
 size_estimate: 21 files, 2227 lines
 usage:
-  worker: {turns: 4, duration_s: 4902.8, input: 52, output: 11128, cache_read: 6759742, cache_write: 30160}
+  worker: {turns: 6, duration_s: 5957.2, input: 132, output: 35800, cache_read: 18780928, cache_write: 82486}
   review: {turns: 2, duration_s: 564.6, input: 263954, output: 11700, cache_read: 3065336}
 work_duration: 5412.2
 size_approved: 21 files, 2227 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T13:08:03Z"
-review_status: rejected
-review_round: 1
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
 ---
 # T0054: Build the View options panel, the More menu entries, and the info line for All tasks and list views
 
@@ -95,4 +94,7 @@ Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.j
 - [2026-11-07] **[Verify]**
   Clean after rebase: lint, 804 unit, 153 end-to-end, check:sw, and the 5000-task budget at 171 and 166 ms.
   - Output and screenshots in validation-proof.md.
+
+- [2026-11-07] **[Review]**
+  Round 2 requested (mode: agent).
 
