@@ -1,0 +1,6 @@
+
+> todos-webapp@0.2.1-pre check:sw
+> node scripts/check-sw-version.mjs
+
+OK: 72 precached files match VERSION 2026-11-08.1.
+exit=0

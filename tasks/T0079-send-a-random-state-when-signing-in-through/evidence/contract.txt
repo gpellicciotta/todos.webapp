@@ -1,0 +1,14 @@
+
+> todos-webapp@0.2.1-pre test:contract
+> vitest run --config vitest.contract.config.js
+
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0079-send-a-random-state-when-signing-in-through
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed | 1 expected fail (7)
+   Start at  00:10:20
+   Duration  5.12s (tests 96%, import 2%, transform 1%)
+
+exit=0

@@ -13,10 +13,11 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1258.4, input: 144, output: 35458, cache_read: 5175500, cache_write: 153784}
-  review: {turns: 2, duration_s: 317.6, input: 152600, output: 5432, cache_read: 990598}
-review_status: pending
+  review: {turns: 4, duration_s: 497.0, input: 227122, output: 9670, cache_read: 1585286, cache_write: 0}
+review_status: rejected
 review_round: 1
-work_duration: 808.1
+work_duration: 917.4
+reviewed_by: "@codex"
 ---
 # T0079: Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206)
 
@@ -61,4 +62,12 @@ Send a random state when signing in through Auth and reject a callback whose sta
 
 - [2026-11-08] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-08] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected pending required verification evidence.
+  - Findings: [review-findings-1.md](T0079-send-a-random-state-when-signing-in-through/review-findings-1.md).
+
+- [2026-11-08] **[Verify]**
+  Reworked validation-proof.md after review round 1: verbatim output, exit codes, red phase, baseline flake.
+  - Flaky connect test fails on base too; backlog T0080.
 

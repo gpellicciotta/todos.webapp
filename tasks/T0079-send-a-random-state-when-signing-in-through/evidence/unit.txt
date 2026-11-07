@@ -1,0 +1,17 @@
+
+> todos-webapp@0.2.1-pre test
+> vitest run
+
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0079-send-a-random-state-when-signing-in-through
+
+
+ Test Files  55 passed (55)
+      Tests  1134 passed (1134)
+   Start at  00:10:03
+   Duration  11.12s (environment 60%, tests 28%, import 9%, transform 1%, worker 1%)
+
+    Isolate  55 workers spawned · ~911ms startup each (spawn + environment, per file)
+             at least ~6.25s faster with isolate: false — reuses workers across files instead of one per file
+
+exit=0

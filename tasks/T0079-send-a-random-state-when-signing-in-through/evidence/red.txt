@@ -1,0 +1,134 @@
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0079-send-a-random-state-when-signing-in-through
+
+ ❯ tests/unit/session.test.js (18 tests | 5 failed) 41ms
+   ❯ the Auth adapter (6)
+     ✓ builds the sign-in URL with the app name, the return URL, and the logo 2ms
+     × adds the state to the sign-in URL only when there is one 9ms
+     × reads the code or the error that Auth appends to the connect route, and nothing else 3ms
+     ✓ exchanges the code at the callback, then signs in with the one-time passcode 1ms
+     ✓ reads the one-time passcode from the JSON answer of the callback 2ms
+     ✓ reports a 403 as not invited, a 401 as rejected, and a failed request as a network problem 1ms
+   ❯ the session (12)
+     ✓ starts local and sends no request 1ms
+     ✓ stores the token and the account after sign-in, and reads them back in a new session 1ms
+     ✓ accepts a returned code only after a sign-in started on this device within 15 minutes 1ms
+     × sends a random state, a new one for each sign-in 1ms
+     × rejects a callback whose state is missing or differs, sends nothing, and uses the state once 2ms
+     ✓ turns to sign in needed once the token expires, removing the stored token but keeping the account 1ms
+     ✓ expires on request, as after a 401, and stores no token any more 0ms
+     ✓ keeps local operations working while sign in is needed 10ms
+     ✓ deletes the token on disconnect, ends the server session, and returns to local 1ms
+     ✓ deletes the token even when the server cannot be reached 0ms
+     × captures the returned code from the address and strips it before routing 1ms
+     ✓ finishes a captured return that carries the state of the started sign-in 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/session.test.js > the Auth adapter > adds the state to the sign-in URL only when there is one
+AssertionError: expected null to be 'a b&c' // Object.is equality
+
+- Expected:
+"a b&c"
+
++ Received:
+null
+
+ ❯ tests/unit/session.test.js:87:115
+     85|
+     86|   it('adds the state to the sign-in URL only when there is one', () =>…
+     87|     expect(new URL(signInUrl('https://app.example/#/connect', { state:…
+       |                                                                                                                   ^
+     88|     expect(new URL(signInUrl('https://app.example/#/connect')).searchP…
+     89|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  tests/unit/session.test.js > the Auth adapter > reads the code or the error that Auth appends to the connect route, and nothing else
+AssertionError: expected { code: 'a+b' } to deeply equal { code: 'a+b', state: null }
+
+- Expected
++ Received
+
+  {
+    "code": "a+b",
+-   "state": null,
+  }
+
+ ❯ tests/unit/session.test.js:92:62
+     90|
+     91|   it('reads the code or the error that Auth appends to the connect rou…
+     92|     expect(readReturn('#/connect?authorization-code=a%2Bb')).toEqual({…
+       |                                                              ^
+     93|     expect(readReturn('#/connect?state=s1&authorization-code=a')).toEq…
+     94|     expect(readReturn('#/connect?state=s1&error=denied')).toEqual({ er…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  tests/unit/session.test.js > the session > sends a random state, a new one for each sign-in
+TypeError: .toMatch() expects to receive a string, but got object
+ ❯ tests/unit/session.test.js:164:19
+    162|     const first = new URL(session.start({ returnUrl: 'https://app.exam…
+    163|     const second = new URL(session.start({ returnUrl: 'https://app.exa…
+    164|     expect(first).toMatch(/^[A-Za-z0-9_-]{22,}$/);
+       |                   ^
+    165|     expect(second).toMatch(/^[A-Za-z0-9_-]{22,}$/);
+    166|     expect(second).not.toBe(first);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  tests/unit/session.test.js > the session > rejects a callback whose state is missing or differs, sends nothing, and uses the state once
+AssertionError: promise resolved "{ name: 'Jane Doe', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "email": "jane@example.com",
++   "name": "Jane Doe",
++   "server": "https://todos.pellicciotta.com",
+  }
+
+ ❯ tests/unit/session.test.js:173:59
+    171|     const url = new URL(session.start({ returnUrl: 'https://app.exampl…
+    172|     const state = url.searchParams.get('app-state');
+    173|     await expect(session.complete('auth-code-1', 'other')).rejects.toM…
+       |                                                           ^
+    174|     expect(fetch.calls).toEqual([]);
+    175|     expect(session.state()).toBe('local');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  tests/unit/session.test.js > the session > captures the returned code from the address and strips it before routing
+AssertionError: promise resolved "{ name: 'Jane Doe', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "email": "jane@example.com",
++   "name": "Jane Doe",
++   "server": "https://todos.pellicciotta.com",
+  }
+
+ ❯ tests/unit/session.test.js:241:35
+    239|     expect(win.location.hash).toBe('#/connect');
+    240|     session.start({ returnUrl: 'https://app.example/#/connect' });
+    241|     await expect(session.finish()).rejects.toMatchObject({ reason: 'st…
+       |                                   ^
+    242|     expect(session.finish()).toBeNull();
+    243|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 13 passed (18)
+   Start at  00:09:55
+   Duration  370ms (import 49%, transform 24%, tests 23%, worker 4%)
+
+exit=1

@@ -1,0 +1,13 @@
+
+Running 7 tests using 4 workers
+
+  ✓  4 [chromium] › tests\e2e\connect.spec.js:115:1 › a code that no sign-in on this device started is ignored (1.3s)
+  ✓  1 [chromium] › tests\e2e\connect.spec.js:72:1 › local mode makes no network request outside the app origin (1.7s)
+  ✓  2 [chromium] › tests\e2e\connect.spec.js:104:1 › an uninvited user sees that access is by invitation only, and stays local (2.0s)
+  ✓  3 [chromium] › tests\e2e\connect.spec.js:88:1 › a mocked Auth redirect returns to #/connect signed in (2.3s)
+  ✓  5 [chromium] › tests\e2e\connect.spec.js:123:1 › a return whose state differs from the one sent is rejected before any request (1.5s)
+  ✓  6 [chromium] › tests\e2e\connect.spec.js:140:1 › disconnecting deletes the token and shows Local only (1.7s)
+  ✓  7 [chromium] › tests\e2e\connect.spec.js:164:1 › an expired session asks to sign in again and keeps local work going (1.4s)
+
+  7 passed (5.1s)
+exit=0

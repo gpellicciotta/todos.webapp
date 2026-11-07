@@ -1,0 +1,5 @@
+
+> todos-webapp@0.2.1-pre lint
+> eslint .
+
+exit=0
