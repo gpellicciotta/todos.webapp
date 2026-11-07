@@ -1,9 +1,9 @@
 /**
- * View options of the task views: the search field, the info line, and the View options panel.
+ * View options of the task views: the info line, and the View options panel.
  *
  * All tasks and every list view share one set of options: filters and a sort (`VO-1`). The view model holds
  * them, stores them per device through preferences.js (`TV-12`), and tells the screen and the panel about
- * changes; the search text stays out of storage, so a reload never hides tasks behind forgotten text.
+ * changes; the search text from the add field stays out of storage, so a reload never hides tasks behind forgotten text.
  * The info line under the add bar names the count and every active option (`VO-7`) and offers Reset (`VO-8`).
  * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, and Sort by.
  */
@@ -16,14 +16,11 @@ import { spriteIcon, STATUS_LABELS } from './task-list.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const OPEN = DEFAULT_FILTER.statuses;
-const SEARCH_DELAY_MS = 150;
 const MANUAL = 'manual';
 let instances = 0;
 
 /** Control strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
-  search: 'Search tasks and notes',
-  searchPlaceholder: 'Search',
   searchValue: 'Search',
   title: 'View options',
   reset: 'Reset',
@@ -404,69 +401,6 @@ function button(doc, className, text) {
   const element = make(doc, 'button', className, text);
   element.type = 'button';
   return element;
-}
-
-/**
- * Create the search field. Search filters by text in descriptions and notes (`TV-6`).
- * @param {object} options field options
- * @param {Document} [options.document] the document
- * @param {string} options.text the starting text
- * @param {(text: string) => void} options.onChange receives the text once typing pauses, or on Enter
- * @returns {{element: HTMLElement, input: HTMLInputElement, setText: Function, destroy: Function}} the field
- */
-export function createSearchField({ document: doc = globalThis.document, text, onChange }) {
-  const element = make(doc, 'div', 'field search-field');
-  const label = make(doc, 'label', 'field__label visually-hidden', STRINGS.search);
-  const input = make(doc, 'input', 'field__control');
-  input.type = 'search';
-  input.id = `search-field-${(instances += 1)}`;
-  input.placeholder = STRINGS.searchPlaceholder;
-  input.dataset.shortcut = 'search';
-  input.value = text;
-  label.htmlFor = input.id;
-  element.append(label, input);
-  let timer = null;
-
-  /** Report the text. */
-  function emit() {
-    clearTimeout(timer);
-    timer = null;
-    onChange(input.value);
-  }
-
-  // Typing reports the text once it pauses or on Enter, so a word runs one query, not one per key (`TEC-16`).
-  input.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(emit, SEARCH_DELAY_MS);
-  });
-  input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && timer !== null) {
-      emit();
-    }
-  });
-
-  return {
-    element, input,
-
-    /**
-     * Show text set from outside, such as Reset, without reporting it.
-     * @param {string} next the text
-     */
-    setText(next) {
-      clearTimeout(timer);
-      timer = null;
-      if (input.value !== next) {
-        input.value = next;
-      }
-    },
-
-    /** Report text still waiting, so the session memory keeps it. */
-    destroy() {
-      if (timer !== null) {
-        emit();
-      }
-    },
-  };
 }
 
 /**

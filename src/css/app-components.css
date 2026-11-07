@@ -330,10 +330,21 @@
   font-size: inherit;
 }
 
+.add-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
 .add-bar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.add-bar > .button {
+  flex: none;
+  white-space: nowrap;
 }
 
 .add-bar__field {

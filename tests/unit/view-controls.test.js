@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NO_LIST } from '../../src/js/core/query.js';
 import {
-  createInfoLine, createSearchField, createViewModel, defaultViewState, describeFilters, describeInfoLine,
+  createInfoLine, createViewModel, defaultViewState, describeFilters, describeInfoLine,
   isDefaultViewState, loadViewState, mountViewOptions, saveViewState,
 } from '../../src/js/views/view-controls.js';
 
@@ -215,76 +215,6 @@ describe('createInfoLine (VO-7, VO-8)', () => {
     line.update({ shown: 1, total: 1, state: defaultViewState('tasks'), lists: [], kind: 'list' });
     expect(line.element.querySelector('.info-line__reset').hidden).toBe(false);
     expect(line.element.querySelector('.info-line__text').textContent).toBe('1 task · Status: open · Sorted by Due time');
-  });
-});
-
-describe('createSearchField', () => {
-  let field;
-  let onChange;
-
-  beforeEach(() => {
-    document.body.innerHTML = '';
-    onChange = vi.fn();
-    field = createSearchField({ document, text: '', onChange });
-    document.body.append(field.element);
-  });
-
-  afterEach(() => {
-    field.destroy();
-  });
-
-  it('is a labelled search field that the / shortcut finds', () => {
-    const input = document.querySelector('[data-shortcut="search"]');
-    expect(input.type).toBe('search');
-    expect(document.querySelector(`label[for="${input.id}"]`).textContent).toBe('Search tasks and notes');
-  });
-
-  it('reports the search text once typing pauses, with one query for the whole word (TEC-16)', () => {
-    vi.useFakeTimers();
-    try {
-      const search = document.querySelector('[data-shortcut="search"]');
-      for (const text of ['p', 'pa', 'pai', 'paint']) {
-        search.value = text;
-        search.dispatchEvent(new Event('input', { bubbles: true }));
-        vi.advanceTimersByTime(100);
-      }
-      expect(onChange).not.toHaveBeenCalled();
-      vi.advanceTimersByTime(50);
-      expect(onChange).toHaveBeenCalledTimes(1);
-      expect(onChange).toHaveBeenLastCalledWith('paint');
-    }
-    finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('reports waiting text at once on Enter, and once more on destroy', () => {
-    vi.useFakeTimers();
-    try {
-      const search = document.querySelector('[data-shortcut="search"]');
-      search.value = 'paint';
-      search.dispatchEvent(new Event('input', { bubbles: true }));
-      search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-      expect(onChange).toHaveBeenCalledTimes(1);
-      search.value = 'paints';
-      search.dispatchEvent(new Event('input', { bubbles: true }));
-      field.destroy();
-      expect(onChange).toHaveBeenCalledTimes(2);
-      expect(onChange).toHaveBeenLastCalledWith('paints');
-      vi.advanceTimersByTime(150);
-      expect(onChange).toHaveBeenCalledTimes(2);
-    }
-    finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('shows text set from outside without reporting it', () => {
-    field.setText('paint');
-    expect(document.querySelector('[data-shortcut="search"]').value).toBe('paint');
-    field.setText('');
-    expect(document.querySelector('[data-shortcut="search"]').value).toBe('');
-    expect(onChange).not.toHaveBeenCalled();
   });
 });
 

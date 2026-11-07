@@ -1,7 +1,7 @@
 /**
  * All tasks screen: every task outside the recycle bin, in any list or none (`TV-1`).
  *
- * It fills the shell's `[data-view="tasks"]` element with the More menu, the search field, the add bar with its
+ * It fills the shell's `[data-view="tasks"]` element with the More menu, the add bar, which also searches, its
  * info line, and the task list, and renders again after every store change, local or from another tab.
  * The More menu holds Edit view options, which opens the View options panel (`VO-4`); the options live in a view
  * model that the panel shares, and the info line names them and offers Reset (`VO-7`, `VO-8`).
@@ -10,12 +10,12 @@
  * An empty result names the active filters and offers Reset.
  */
 
-import { filterTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
+import { clearFilters, exactMatchIndex, filterTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
 import { attachMenu } from '../ui/menu.js';
 import { formatRoute } from '../ui/router.js';
-import { createAddBar } from './add-bar.js';
+import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
 import { createTaskList, make, spriteIcon } from './task-list.js';
-import { createInfoLine, createSearchField, createViewModel, describeFilters } from './view-controls.js';
+import { createInfoLine, createViewModel, describeFilters } from './view-controls.js';
 
 const VIEW = 'tasks';
 const REDRAW_MS = 60_000;
@@ -124,9 +124,9 @@ export function mountAllTasks(view, {
   menu.append(item);
   header.append(more, menu);
   const menuBehavior = attachMenu(more, menu, { onSelect: () => navigate(formatRoute('view-options')) });
-  const search = createSearchField({ document: doc, text: model.get().filter.text ?? '', onChange: setText });
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
-  const addBar = createAddBar({ document: doc, onAdd: add });
+  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, text: model.get().filter.text ?? '' });
+  const addHint = createAddHint({ document: doc });
   const addBlock = make(doc, 'div', 'add-block');
   addBlock.append(addBar.element);
   const taskList = createTaskList({
@@ -135,7 +135,7 @@ export function mountAllTasks(view, {
   });
   const empty = doc.createElement('div');
   empty.className = 'empty-state';
-  root.append(addBlock, taskList.element, empty);
+  root.append(addBlock, taskList.element, addHint.element, empty);
   view.replaceChildren(root);
 
   /**
@@ -147,14 +147,19 @@ export function mountAllTasks(view, {
     const listIds = new Set(data?.lists.map((list) => list.id) ?? []);
     const lists = (model.get().filter.lists ?? []).filter((id) => id !== NO_LIST && listIds.has(id));
     const first = data?.tasks.length === 0;
+    let task;
     try {
-      await store.createTask({ description }, { lists });
+      task = await store.createTask({ description }, { lists });
     }
     catch (error) {
       console.error('Adding the task failed:', error);
       toaster.show(STRINGS.addFailed);
       throw error;
     }
+    notifyIfHidden({
+      task, listIds: lists, filter: model.get().filter, lists: data?.lists ?? [], now: now(), toaster,
+      onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
+    });
     if (first && !asked) {
       asked = true;
       persist();
@@ -166,6 +171,9 @@ export function mountAllTasks(view, {
    * @param {string} text the search text
    */
   function setText(text) {
+    if (text === (model.get().filter.text ?? '')) {
+      return;
+    }
     const next = structuredClone(model.get());
     if (text) {
       next.filter.text = text;
@@ -180,7 +188,7 @@ export function mountAllTasks(view, {
   function follow() {
     const text = model.get().filter.text ?? '';
     memory.text = text;
-    search.setText(text);
+    addBar.setText(text);
     render();
   }
 
@@ -223,7 +231,7 @@ export function mountAllTasks(view, {
     clear.addEventListener('click', () => {
       model.reset();
       // The button hides with the empty result, so focus moves to search.
-      root.querySelector('[data-shortcut="search"]')?.focus();
+      addBar.input.focus();
     });
     actions.append(clear);
     empty.append(text, actions);
@@ -239,8 +247,8 @@ export function mountAllTasks(view, {
     taskList.element.hidden = firstLaunch;
     if (firstLaunch) {
       header.remove();
-      search.element.remove();
       info.element.remove();
+      addHint.update({ text: '', shown: 0, viewer: false });
       taskList.render([], {});
       model.setCounts({ shown: 0, total: 0 });
       showFirstLaunch();
@@ -248,7 +256,7 @@ export function mountAllTasks(view, {
       return;
     }
     if (!header.isConnected) {
-      root.prepend(header, search.element);
+      root.prepend(header);
     }
     if (!info.element.isConnected) {
       addBlock.append(info.element);
@@ -260,10 +268,13 @@ export function mountAllTasks(view, {
       filter.lists = filter.lists.filter((id) => id === NO_LIST || listIds.has(id));
     }
     const ctx = { now: now(), lists: new Map(data.lists.map((list) => [list.id, list])), ...data };
-    const shown = sortTasks(filterTasks(data.tasks, filter, ctx), state.order);
+    const byOptions = filterTasks(data.tasks, { ...filter, text: undefined }, ctx);
+    const shown = sortTasks(filterTasks(byOptions, filter, ctx), state.order);
     taskList.render(shown, ctx);
-    empty.hidden = shown.length > 0;
-    if (shown.length === 0) {
+    addBar.setKnown(exactMatchIndex(byOptions));
+    const nothingMatches = addHint.update({ text: filter.text ?? '', shown: shown.length, viewer: false });
+    empty.hidden = shown.length > 0 || nothingMatches;
+    if (!empty.hidden) {
       showNoMatch(describeFilters(filter, data.lists));
     }
     info.update({ shown: shown.length, total: data.tasks.length, state, lists: data.lists });
@@ -319,7 +330,7 @@ export function mountAllTasks(view, {
     /** Stop following the store and the clock; search text still waiting reaches the session memory. */
     destroy() {
       destroyed = true;
-      search.destroy();
+      addBar.destroy();
       unfollow();
       menuBehavior.destroy();
       unsubscribe();

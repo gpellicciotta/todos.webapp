@@ -1,8 +1,8 @@
 /**
  * List screen: the tasks of one list, in its manual order by default (`LV-1` to `LV-10`).
  *
- * It fills the shell's `[data-view="list"]` element with the header, the add bar with its info line,
- * and the shared task list, and renders again after every store change.
+ * It fills the shell's `[data-view="list"]` element with the header, the add bar, which also searches, with its
+ * info line, and the shared task list, and renders again after every store change.
  * The More menu holds Edit list, Edit view options, Share list, and Delete list (`VO-4`).
  * Manual order shows drag handles and Move up and Move down; another sort affects the view only (`LV-7`, `LV-8`).
  * The options live in a view model that the View options panel shares; they persist per device,
@@ -10,11 +10,13 @@
  * A list that leaves the store, such as one deleted in another tab, opens All tasks with a toast.
  */
 
-import { filterTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks } from '../core/query.js';
+import {
+  clearFilters, exactMatchIndex, filterTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks,
+} from '../core/query.js';
 import { createLiveRegion } from '../ui/live-region.js';
 import { attachMenu } from '../ui/menu.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
-import { createAddBar } from './add-bar.js';
+import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
 import { confirmListDelete } from './list-editor.js';
 import { attachReorder } from './reorder.js';
 import { createTaskList, make, spriteIcon } from './task-list.js';
@@ -88,6 +90,12 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const listId = view.dataset.listId;
   const id = `list-view-${(instances += 1)}`;
   const model = viewModels?.list ?? createViewModel(VIEW, getStorage);
+  // The text of another list view must not filter this one.
+  if (model.get().filter.text) {
+    const filter = { ...model.get().filter };
+    delete filter.text;
+    model.set({ ...model.get(), filter });
+  }
   let data = null;
   let pending = null;
   let gone = false;
@@ -123,7 +131,8 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   header.append(description, more, menu);
 
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
-  const addBar = createAddBar({ document: doc, onAdd: add });
+  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText });
+  const addHint = createAddHint({ document: doc });
   const moves = { enabled: () => model.get().order.field === 'manual', step: (taskId, step) => reorder.step(taskId, step) };
   const taskList = createTaskList({
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
@@ -133,7 +142,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const empty = make(doc, 'p', 'empty-state empty-state__text');
   const addBlock = make(doc, 'div', 'add-block');
   addBlock.append(addBar.element, info.element);
-  root.append(header, addBlock, taskList.element, empty);
+  root.append(header, addBlock, taskList.element, addHint.element, empty);
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });
   const behavior = attachMenu(more, menu, { onSelect: act });
@@ -144,14 +153,43 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
    * @returns {Promise<void>} rejects when the task could not be stored
    */
   async function add(text) {
+    let task;
     try {
-      await store.createTask({ description: text }, { lists: [listId] });
+      task = await store.createTask({ description: text }, { lists: [listId] });
     }
     catch (error) {
       console.error('Adding the task failed:', error);
       toaster.show(STRINGS.addFailed);
       throw error;
     }
+    notifyIfHidden({
+      task, listIds: [listId], filter: model.get().filter, lists: [...(data?.lists.values() ?? [])], now: now(), toaster,
+      onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
+    });
+  }
+
+  /**
+   * Filter by the search text, which lasts for the session only (`TV-6`).
+   * @param {string} text the search text
+   */
+  function setText(text) {
+    if (text === (model.get().filter.text ?? '')) {
+      return;
+    }
+    const next = structuredClone(model.get());
+    if (text) {
+      next.filter.text = text;
+    }
+    else {
+      delete next.filter.text;
+    }
+    model.set(next);
+  }
+
+  /** Show a state set by the add field, the panel, or Reset: the search text and the rows. */
+  function follow() {
+    addBar.setText(model.get().filter.text ?? '');
+    render();
   }
 
   /**
@@ -190,10 +228,14 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     description.hidden = !data.list.description;
     const state = model.get();
     const ctx = { now: now(), lists: data.lists, listsByTask: data.listsByTask, notesByTask: data.notesByTask };
-    const filtered = filterTasks(data.tasks, state.filter, ctx);
+    const byOptions = filterTasks(data.tasks, { ...state.filter, text: undefined }, ctx);
+    const filtered = filterTasks(byOptions, state.filter, ctx);
     const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
     taskList.render(shown, ctx);
-    empty.hidden = shown.length > 0;
+    addBar.setKnown(exactMatchIndex(byOptions));
+    addBar.setViewer(data.list.role === 'viewer');
+    const nothingMatches = addHint.update({ text: state.filter.text ?? '', shown: shown.length, viewer: data.list.role === 'viewer' });
+    empty.hidden = shown.length > 0 || nothingMatches;
     empty.textContent = data.tasks.length === 0 ? STRINGS.empty : STRINGS.noMatch(describeFilters(state.filter, []).join(' and '));
     const lists = [...data.lists.values()];
     info.update({ shown: shown.length, total: data.tasks.length, state, lists, kind: VIEW });
@@ -223,7 +265,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   }
 
   // A delete in this tab, here or in the list editor, opens All tasks itself; only other deletes toast here.
-  const unfollow = model.subscribe(render);
+  const unfollow = model.subscribe(follow);
   const unsubscribe = store.subscribe((change) => {
     deletedHere ||= change?.operation === 'deleteList' && !change.remote;
     refresh();
@@ -251,6 +293,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     destroy() {
       unsubscribe();
       unfollow();
+      addBar.destroy();
       clearInterval(timer);
       reorder.destroy();
       taskList.destroy();

@@ -73,6 +73,23 @@ function rows(page) {
 }
 
 test.describe('List screen', () => {
+  test('the add field filters the list rows, and Add puts the new task at the end of the list (VO-3, LV-5)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    const field = page.getByLabel('Search or add a task');
+    await field.fill('paint');
+    await expect(page.locator('.list-view .task-row')).toHaveCount(1);
+    await field.press('Enter');
+    await expect(page.locator('.list-view .task-row')).toHaveCount(1);
+    await field.fill('Paint the door');
+    await expect(page.locator('.add-hint')).toHaveText('No task matches. Add creates it.');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(field).toHaveValue('');
+    await expect(page.locator('.list-view .task-row')).toHaveCount(4);
+    expect((await rows(page)).at(-1)).toBe('Paint the door');
+    expect(problems).toEqual([]);
+  });
+
   test('shows the header, the open tasks in manual order, and the info line (LV-1, LV-2, LV-10, VO-2)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);

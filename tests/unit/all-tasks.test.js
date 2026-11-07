@@ -26,19 +26,21 @@ describe('mountAllTasks', () => {
     screen?.destroy();
   });
 
-  it('moves focus to search when Reset in an empty result hides itself', async () => {
+  it('moves focus to the add field when Reset in an empty result hides itself', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const storage = { getItem: () => null, setItem: vi.fn() };
+    const viewModels = { tasks: createViewModel('tasks', () => storage) };
     screen = mountAllTasks(document.querySelector('[data-view]'), {
-      store: fakeStore(), toaster: { show: vi.fn() }, memory: { text: 'nothing like this' }, getStorage: () => storage,
+      store: fakeStore(), toaster: { show: vi.fn() }, viewModels, getStorage: () => storage,
     });
     await screen.idle();
+    viewModels.tasks.set({ filter: { statuses: ['completed'] }, order: defaultViewState().order });
     const clear = document.querySelector('.empty-state button');
     expect(clear.textContent).toBe('Reset');
     clear.focus();
     clear.click();
     expect(document.querySelector('.empty-state').hidden).toBe(true);
-    expect(document.activeElement).toBe(document.querySelector('[data-shortcut="search"]'));
+    expect(document.activeElement).toBe(document.querySelector('[data-shortcut~="add"]'));
   });
 
   it('keeps search text still waiting for the debounce in the session memory when the screen closes', async () => {
@@ -48,7 +50,7 @@ describe('mountAllTasks', () => {
       store: fakeStore(), toaster: { show: vi.fn() }, memory, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
     });
     await screen.idle();
-    const search = document.querySelector('[data-shortcut="search"]');
+    const search = document.querySelector('[data-shortcut~="search"]');
     search.value = 'paint';
     search.dispatchEvent(new Event('input', { bubbles: true }));
     screen.destroy();
@@ -123,10 +125,79 @@ describe('mountAllTasks', () => {
       store: fakeStore(), toaster: { show: vi.fn() }, memory: { text: 'paint' }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
     });
     await screen.idle();
-    const search = document.querySelector('[data-shortcut="search"]');
+    const search = document.querySelector('[data-shortcut~="search"]');
     expect(search.value).toBe('paint');
     expect(document.querySelector('.info-line__text').textContent).toBe('1 task · Search: paint · Status: open');
     document.querySelector('.info-line__reset').click();
     expect(search.value).toBe('');
+  });
+
+  it('has no separate search field, since the add field also searches (VO-3)', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    expect(document.querySelectorAll('input[type="search"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-shortcut~="search"]')).toHaveLength(1);
+  });
+
+  it('filters the rows from the add field and says what Add creates, or that nothing matches', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, memory: { text: 'paint' }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    const hint = document.querySelector('.add-hint');
+    expect(document.querySelectorAll('.task-row, [data-task-id]')).toHaveLength(1);
+    expect(hint.hidden).toBe(false);
+    expect(hint.textContent).toBe('Add creates a new task “paint”.');
+    expect(document.querySelector('button[type="submit"]').textContent.trim()).toBe('Add');
+    const field = document.querySelector('[data-shortcut~="search"]');
+    field.value = 'nothing like this';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(document.querySelectorAll('.task-row, [data-task-id]')).toHaveLength(0);
+    expect(hint.textContent).toBe('No task matches. Add creates it.');
+    field.value = '  BUY paint ';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(document.querySelector('button[type="submit"]').textContent.trim()).toBe('Add anyway');
+  });
+
+  it('shows a toast with Show when the new task is hidden by the view options', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
+    const show = vi.fn();
+    const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show }, viewModels, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    viewModels.tasks.set({ filter: { statuses: ['completed'] }, order: defaultViewState().order });
+    const field = document.querySelector('[data-shortcut~="add"]');
+    field.value = 'Paint the door';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(show).toHaveBeenCalledTimes(1));
+    expect(show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
+    expect(show.mock.calls[0][1].actionLabel).toBe('Show');
+    show.mock.calls[0][1].onAction();
+    expect(viewModels.tasks.get().filter.statuses).toEqual(['todo', 'in-progress']);
+  });
+
+  it('shows no toast when the new task is visible', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
+    const show = vi.fn();
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    const field = document.querySelector('[data-shortcut~="add"]');
+    field.value = 'Paint the door';
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(store.createTask).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(show).not.toHaveBeenCalled();
   });
 });

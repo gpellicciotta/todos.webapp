@@ -5,8 +5,8 @@
  * whose first run cancels overdue `cancel` tasks (`OVD-4`, `OVD-5`, `BIN-5`).
  * A newer version in another tab shows a lasting banner with Reload; a start-up failure shows an error banner.
  * Moving to another view moves focus to the main column, which the route title labels.
- * Shortcuts, outside text fields: `n` focuses the view's `[data-shortcut="add"]` element and `/` its
- * `[data-shortcut="search"]` element, each a no-op while the view has none; Escape closes an open editor.
+ * Shortcuts, outside text fields: `n` focuses the view's `[data-shortcut~="add"]` element and `/` its
+ * `[data-shortcut~="search"]` element, each a no-op while the view has none; Escape closes an open editor.
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
  */
 
@@ -94,7 +94,7 @@ async function start() {
   const editorPanel = createEditorPanel({
     slot: shell.editor, editors: EDITORS, context: { store, toaster, viewModels, navigate: (hash) => router.navigate(hash) },
     close: () => router.navigate(formatRoute(router.current().view, router.current().params)),
-    fallbackFocus: () => shell.main.querySelector('[data-shortcut="add"]') ?? shell.main,
+    fallbackFocus: () => shell.main.querySelector('[data-shortcut~="add"]') ?? shell.main,
   });
 
   /**
@@ -162,7 +162,7 @@ async function start() {
     }
     const route = router.current();
     if (event.key === 'n' || event.key === '/') {
-      const target = shell.main.querySelector(`[data-shortcut="${event.key === 'n' ? 'add' : 'search'}"]`);
+      const target = shell.main.querySelector(`[data-shortcut~="${event.key === 'n' ? 'add' : 'search'}"]`);
       if (target) {
         event.preventDefault();
         target.focus();

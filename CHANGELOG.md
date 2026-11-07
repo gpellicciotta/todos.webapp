@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.2.0-pre
+- FrontEnd: Made the add field also search All tasks and every list, with a 150 ms pause, a note under the rows, and no Add on Enter.
+- FrontEnd: Renamed Add to Add anyway on an exact match, and showed a toast with Show when the view options hide a new task.
+- FrontEnd: Removed the separate search field of All tasks, and made Escape clear the add field.
 - FrontEnd: Made lists re-orderable on the device only, by drag handle, Alt+Up and Alt+Down, or Move up and Move down, in the sidebar and the Lists screen.
 - FrontEnd: Added Edit view options to the More menus of All tasks and every list, opening a panel with Reset, filters, and sort.
 - FrontEnd: Added an info line under the add bar that names the task count, the active filters, and any other sort, with a Reset link.

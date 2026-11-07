@@ -3,10 +3,14 @@ import { isOverdue } from '../../src/js/core/overdue.js';
 import { freshStore } from './store-helpers.js';
 import {
   DEFAULT_FILTER,
+  clearFilters,
   DEFAULT_ORDER,
+  exactMatchIndex,
   filterTasks,
+  hidingFilters,
   indexMemberships,
   NO_LIST,
+  normalizeDescription,
   positionsOfList,
   sortByPosition,
   sortTasks,
@@ -361,5 +365,30 @@ describe('performance', () => {
     expect(result.length).toBeGreaterThan(0);
     expect(elapsed, `took ${elapsed.toFixed(1)} ms`).toBeLessThan(50);
     console.log(`filter+sort of 5000 tasks: ${elapsed.toFixed(1)} ms, ${result.length} results`);
+  });
+});
+
+describe('exact match and hidden task helpers', () => {
+  it('normalizes a description by case and surrounding spaces', () => {
+    expect(normalizeDescription('  Buy PAINT ')).toBe('buy paint');
+  });
+
+  it('indexes the normalized descriptions of tasks', () => {
+    const index = exactMatchIndex([task('a', { description: 'Buy paint' }), task('b', { description: ' Call Dana ' })]);
+    expect(index.has(normalizeDescription('  BUY paint '))).toBe(true);
+    expect(index.has(normalizeDescription('paint'))).toBe(false);
+  });
+
+  it('names the filters that hide a task, each tested alone', () => {
+    const fresh = task('n', { 'creation-time': '2026-11-04T12:00:00.000Z' });
+    const filter = { statuses: ['completed'], due: ['today'], created: { from: '2026-11-01' }, text: 'x' };
+    expect(hidingFilters(fresh, filter, { now: NOW })).toEqual(['statuses', 'due']);
+    expect(hidingFilters(fresh, DEFAULT_FILTER, { now: NOW })).toEqual([]);
+  });
+
+  it('clears the named filters, restoring the default statuses', () => {
+    const filter = { statuses: ['completed'], due: ['today'], lists: [HOME] };
+    expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['todo', 'in-progress'], lists: [HOME] });
+    expect(filter.due).toEqual(['today']);
   });
 });

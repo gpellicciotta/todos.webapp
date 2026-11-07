@@ -9,6 +9,7 @@ describe('mountList', () => {
   let screen;
   let navigate;
   let models;
+  let toaster;
 
   afterEach(() => {
     screen?.destroy();
@@ -26,8 +27,9 @@ describe('mountList', () => {
     const view = document.body.appendChild(document.createElement('div'));
     view.dataset.listId = home.id;
     navigate = vi.fn();
+    toaster = { show: vi.fn() };
     models = { list: createViewModel('list', () => null) };
-    screen = mountList(view, { store, toaster: { show: vi.fn() }, navigate, viewModels: models, getStorage: () => null });
+    screen = mountList(view, { store, toaster, navigate, viewModels: models, getStorage: () => null });
     await screen.idle();
     return view;
   }
@@ -85,5 +87,36 @@ describe('mountList', () => {
     expect(dialog.open).toBe(false);
     await vi.waitFor(() => expect(dialog.isConnected).toBe(false));
     expect((await store.listLists()).map((list) => list.name)).toEqual(['Home']);
+  });
+
+  it('filters its rows from the add field, and only the Add button adds (VO-3)', async () => {
+    const view = await mount();
+    const home = (await store.listLists())[0];
+    await store.createTask({ description: 'Buy paint' }, { lists: [home.id] });
+    await store.createTask({ description: 'Call Dana' }, { lists: [home.id] });
+    await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(2));
+    const field = view.querySelector('[data-shortcut~="add"]');
+    expect(field.placeholder).toBe('Search or add a task');
+    field.value = 'PAINT';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
+    expect(view.querySelector('.info-line__text').textContent).toBe('1 of 2 tasks · Search: PAINT · Status: open');
+    expect((await store.snapshot()).tasks).toHaveLength(2);
+    expect(view.querySelector('.add-hint').textContent).toBe('Add creates a new task “PAINT”.');
+  });
+
+  it('adds the task to the list at its end, clears the field, and toasts with Show when the options hide it', async () => {
+    const view = await mount();
+    models.list.set({ filter: { statuses: ['completed'] }, order: defaultViewState('list').order });
+    const field = view.querySelector('[data-shortcut~="add"]');
+    field.value = 'Paint the door';
+    view.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
+    expect(field.value).toBe('');
+    expect(toaster.show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
+    toaster.show.mock.calls[0][1].onAction();
+    expect(models.list.get().filter.statuses).toEqual(['todo', 'in-progress']);
+    await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
   });
 });

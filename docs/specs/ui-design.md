@@ -182,7 +182,6 @@ Home                                                              3
 ( ) Buy paint for the hallway   ...
 ```
 
-- Until the add field also searches, a separate search field sits above the add bar.
 - **[Decided]** The add field doubles as search (`VO-3`): its placeholder reads "Search or add a task".
   Typing filters the rows to tasks whose description or notes match, on top of the view options (`TV-6`, `TV-8`).
   A duplicate is hard to miss, since an existing task appears while the user types.
@@ -584,7 +583,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` and `/` focus the add and search field, and Escape closes the editor or a dialog.
-- `n` and `/` both focus the view's `[data-shortcut="add"]` element, the add and search field, and do nothing without it.
+- `n` and `/` both focus the view's `[data-shortcut~="add"]` element, the add and search field, and do nothing without it.
 - Ctrl+Z or Cmd+Z, outside text fields and modal dialogs, runs the Undo of the newest toast.
   It never runs another toast action, such as Reload.
 - Shortcuts never fire while a text field has focus, and the About section lists them.

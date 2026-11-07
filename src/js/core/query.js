@@ -207,6 +207,57 @@ export function filterTasks(tasks, filter = {}, ctx = {}) {
 }
 
 /**
+ * Normalize a description for the exact-match check: lowercase, without surrounding spaces.
+ * @param {string} text the description or typed text
+ * @returns {string} the normalized text
+ */
+export function normalizeDescription(text) {
+  return text.trim().toLowerCase();
+}
+
+/**
+ * Index the descriptions of tasks for the exact-match check of the Add button.
+ * @param {object[]} tasks the tasks the view options show
+ * @returns {Set<string>} the normalized descriptions
+ */
+export function exactMatchIndex(tasks) {
+  return new Set(tasks.map((task) => normalizeDescription(task.description)));
+}
+
+/** The filters that can hide a new task from its view, in display order. */
+const HIDING_FILTERS = Object.freeze(['lists', 'statuses', 'due', 'created']);
+
+/**
+ * Name the filters that hide a task, testing each one alone; the search text and sharing never count.
+ * @param {object} task the task
+ * @param {object} filter the filter
+ * @param {object} [ctx] the query context, as for `filterTasks`
+ * @returns {string[]} the hiding filter keys, such as `['statuses', 'due']`
+ */
+export function hidingFilters(task, filter, ctx = {}) {
+  return HIDING_FILTERS.filter((key) => isSet(filter[key]) && filterTasks([task], { [key]: filter[key] }, ctx).length === 0);
+}
+
+/**
+ * Copy a filter with some filters back at their defaults: open statuses, and no other filter.
+ * @param {object} filter the filter
+ * @param {string[]} keys the filter keys to reset
+ * @returns {object} the new filter
+ */
+export function clearFilters(filter, keys) {
+  const next = { ...filter };
+  for (const key of keys) {
+    if (key === 'statuses') {
+      next.statuses = [...DEFAULT_FILTER.statuses];
+    }
+    else {
+      delete next[key];
+    }
+  }
+  return next;
+}
+
+/**
  * Compare two identifiers by code unit order.
  * @param {string} a an identifier
  * @param {string} b another identifier

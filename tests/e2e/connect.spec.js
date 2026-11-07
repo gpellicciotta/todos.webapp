@@ -143,7 +143,7 @@ test('an expired session asks to sign in again and keeps local work going', asyn
   await expect(card).toContainText('Your session expired.');
   await expect(card.getByRole('link', { name: 'Sign in again' })).toHaveAttribute('href', '#/connect');
   await open(page, '#/tasks');
-  await page.getByRole('textbox', { name: 'Add a task' }).fill('Water the plants');
-  await page.keyboard.press('Enter');
+  await page.getByRole('textbox', { name: 'Search or add a task' }).fill('Water the plants');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByText('Water the plants')).toBeVisible();
 });
