@@ -30,6 +30,16 @@ npm run test:e2e     # Playwright end-to-end tests, from tests/e2e/
 npm run test:perf    # Playwright performance spec with 5000 tasks, alone
 ```
 
+[devops.py](../scripts/devops.py) wraps the same checks, and adds the release:
+
+```bash
+python scripts/devops.py lint      # ESLint, Ruff check, and Ruff format check
+python scripts/devops.py test      # Vitest, then pytest
+python scripts/devops.py e2e       # Playwright end-to-end tests
+python scripts/devops.py check     # everything the Pages test job runs, plus Ruff and pytest
+python scripts/devops.py release   # see Release Procedure
+```
+
 - [serve.mjs](../scripts/serve.mjs) uses Node.js built-ins only and disables caching; pass `--port` or `--root` to change them.
 - Playwright starts and stops its own server on port 8754; set `E2E_PORT` to use another port.
 - `test:e2e` leaves out [performance.spec.js](../tests/e2e/performance.spec.js), since parallel tests skew its timings.
@@ -137,12 +147,30 @@ Settings, then Environments, then `github-pages` limits which branches may deplo
 Keep it limited to `main`.
 
 ### Release Procedure
-1. Pass the checks locally: `npm run check:sw`, `npm test`, `npm run lint`, and `npm run test:e2e`.
-2. Bump `VERSION` and rewrite the hash manifest whenever a precached file changed.
-3. Push `main`, then follow the Pages run in the Actions tab.
-4. Open the site, reload once, and check that the new worker is active in DevTools.
+[devops.py](../scripts/devops.py) cuts a release from `main`; the sections above describe what it automates.
 
-Run the workflow by hand to redeploy without a new commit.
+```bash
+python scripts/devops.py release 0.2.0 --dry-run --backend-dir ../todos   # check and print the plan
+python scripts/devops.py release 0.2.0 --backend-dir ../todos             # run it, after a y/N question
+```
+
+1. Preconditions: on `main`, a clean tree, not behind `origin/main`, and the tag `v0.2.0` free locally and on `origin`.
+   The changelog must start with one `-pre` heading, and the version must exceed the last release.
+2. Checks: the service worker check, `npm test`, `npm run lint`, `npm run test:e2e`, Ruff, and pytest.
+3. Release commit `Released v0.2.0.`, tagged `v0.2.0`: the `-pre` heading becomes `## v0.2.0 [released: {{date}}]`.
+   `package.json`, `package-lock.json`, and [version.js](../src/js/version.js) take the version and the build date.
+   The service worker `VERSION` and the hash manifest are bumped, then `check:sw` and `npm test` verify the commit.
+4. Next commit `Opened v0.2.1-pre development after releasing v0.2.0.`: an empty `-pre` heading and `-pre` versions.
+5. Publish: `git push origin main v0.2.0`, `git push origin plan`, and a GitHub release with the changelog entry.
+6. With `--backend-dir`: the `todosWebappVersion` pin in the todos repository's `gradle.properties` becomes `0.2.0`.
+   The script commits it there and stops. It never pushes that repository and never deploys the server.
+7. Follow the Pages run in the Actions tab, then open the site, reload once, and check that the new worker is active.
+
+- Options: `--skip-checks` skips the check run and the unit tests of the release commit, `--yes` skips only the question,
+  and `--no-github-release` skips the GitHub release.
+- A failed verification restores the edited files; a failure after the commits names what exists locally.
+- To redeploy without a new commit, run the Pages workflow by hand from the Actions tab.
+- To deploy the server afterward, deploy it from the todos repository, then push its pin commit.
 
 ### Hosting Origins
 `TEC-11` splits hosting across two origins:
