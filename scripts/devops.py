@@ -396,7 +396,7 @@ def edit_phase(root: Path, label: str, tag: str, start_sha: str, action) -> None
             restored = "The edited files were restored."
         except ReleaseError as restore_error:
             restored = f"Restoring the edited files failed too ({restore_error}); check git status."
-        reason = error or type(error).__name__
+        reason = str(error) or type(error).__name__
         raise ReleaseError(f"{label} failed: {reason}. {restored} {local_state(root, tag, start_sha)}") from error
 
 
@@ -610,7 +610,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     except KeyboardInterrupt:
         print(
-            "[ERROR] Interrupted. Check git status; docs/devops.md, Release Procedure, tells how to undo a partial release.",
+            "[ERROR] Interrupted. Check git status and git ls-remote origin: if the tag is on origin, the release is published.",
             file=sys.stderr,
         )
         return 1

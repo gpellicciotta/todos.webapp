@@ -703,3 +703,15 @@ def test_release_keeps_a_crlf_working_tree_with_lf_in_the_repository(project):
         assert data.count(b"\n") == data.count(b"\r\n"), name
     assert b"\r" not in git_bytes(project, "show", "HEAD~1:CHANGELOG.md")
     assert git(project, "status", "--porcelain") == ""
+
+
+def test_an_interrupt_while_editing_restores_the_files_and_names_the_state(project, monkeypatch):
+    def interrupt(root, today):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(devops, "bump_service_worker", interrupt)
+    before = snapshot(project)
+    with pytest.raises(devops.ReleaseError, match="KeyboardInterrupt") as caught:
+        devops.release(project, options(release_version="0.2.0"))
+    assert "restored" in str(caught.value)
+    assert snapshot(project) == before
