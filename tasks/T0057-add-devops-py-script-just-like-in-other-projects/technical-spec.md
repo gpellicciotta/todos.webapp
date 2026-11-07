@@ -12,22 +12,26 @@
 - **[Decided]** Usage: `python scripts/devops.py release [{{version}}] [--dry-run] [--skip-checks] [--yes] [--no-github-release] [--backend-dir {{path}}]`.
 - **[Decided]** Without `{{version}}` the release uses the top `-pre` heading; with it, the single `-pre` heading is renamed in place.
   The version must exceed the newest released heading, and the tag `v{{version}}` must not exist.
-- **[Decided]** Exit codes: 0 success; 1 a precondition or check failed; 2 a release step failed.
+- **[Decided]** Exit codes follow the CLI guidelines: 0 success; 1 an operation, check, precondition, or release step failed, or the release was not confirmed; 2 invalid arguments.
+  The template's code 2 for a failed release step is not adopted.
 
 ### Release Flow
-1. Preflight: branch is `main`; the working tree is clean; `git fetch` shows `main` not behind `origin/main`; `check` passes unless `--skip-checks`.
-2. Release commit: the top heading becomes `## v{{version}} [released: {{date}}]`; `package.json` and `package-lock.json` carry the version;
-   `src/js/version.js` sets `VERSION` and `BUILD_DATE`; the service worker `VERSION` and the hash manifest are bumped through `check-sw-version.mjs --update`.
-3. Verify: `npm run check:sw` and `npm test` pass on the release commit.
-4. Tag: annotated `v{{version}}` on the release commit.
-5. Next development commit: a new `## v{{next-patch}}-pre` heading on top, and `-pre` version files, with another service worker bump.
-6. Confirm: print the exact commands, then ask `y/N`; `--yes` skips only the question. `--dry-run` runs steps 1 and prints the rest, changing nothing.
-7. Push: `git push origin main v{{version}}`, then `git push origin plan`, since the plan store travels with the code.
-8. GitHub release: `gh release create v{{version}}` with the changelog entry as notes; skipped with a warning when `gh` is missing or `--no-github-release` is set.
-9. Pin, only with `--backend-dir`: after `git ls-remote --tags origin v{{version}}` shows the tag, set `todosWebappVersion={{version}}` in `{{backend-dir}}/gradle.properties` and commit it there.
-   The commit message is one past-tense sentence, `Pinned todos.webapp v{{version}}.`; the script never pushes that repository and never deploys it.
-   It refuses when that repository has other uncommitted changes, and prints the manual next steps: deploy, then push.
-10. Print the Pages run address, `https://github.com/gpellicciotta/todos.webapp/actions`, and the checks of the Release Procedure.
+1. Preflight: `node` is available; the branch is `main`; the tree is clean; `main` is not behind `origin/main`, and `plan` not behind `origin/plan`;
+   the tag is free locally and on `origin`; the changelog and version rewrites are proven to match before any write; a given backend repository is clean and holds the pin line.
+2. Checks: `check` runs unless `--skip-checks`; a dry run runs them too.
+3. Plan: print the files, the local commands, and the exact publish commands. `--dry-run` stops here, changing nothing but fetched refs.
+4. Confirm `y/N`; a closed input or an interrupt counts as no; `--yes` skips only the question. Then re-check that the tree is still clean.
+5. Release commit `Released v{{version}}.` and annotated tag `v{{version}}`: heading, `package.json`, `package-lock.json`, `version.js`, service worker `VERSION`, and manifest.
+   `check:sw` and, unless `--skip-checks`, `npm test` verify it. Any failure restores the files and prints the local state and the undo commands.
+6. Next development commit with a `-pre` heading and `-pre` versions, with another service worker bump and `check:sw`.
+7. Publish: fetch again, then `git push --atomic origin main v{{version}}`, so the tag never reaches `origin` without `main`.
+   Then `git push origin plan`, and `gh release create` unless `--no-github-release`.
+8. Pin, only with `--backend-dir` and only when the tag is on `origin`: set `todosWebappVersion={{version}}` and commit `Pinned todos.webapp v{{version}}.` locally.
+   A failed commit restores the file; a pin already current is skipped. The script never pushes that repository and never deploys it.
+9. A failed step after the push does not stop the others: the script lists what is left, each with its command, and exits 1.
+
+- **[Decided]** The question comes before any local change, so declining leaves the repository untouched. This differs from the first draft, which asked after the local commits.
+- **[Decided]** Review round 1 (an independent subagent) found three major issues, now fixed: a non-atomic push, files left edited after a failure, and silent failures after the push.
 
 ### Declared Files
 - scripts/devops.py
@@ -48,5 +52,9 @@ Size note: Above the typical line. The script, its helpers, and its tests share 
 - Integration: in a scratch clone with a bare local `origin` and a scratch backend repository, `release 0.2.0 --skip-checks --yes --no-github-release --backend-dir {{scratch}}`
   creates the release commit, tags it `v0.2.0`, adds the next `-pre` commit, pushes `main`, `plan`, and the tag to the bare origin,
   commits the pin in the backend without a push, and `node scripts/check-sw-version.mjs` passes on the result.
+- Unit: a failed rewrite or verification restores the files, and names the local state and the undo commands.
+- Unit: a rejected push is atomic and leaves the tag off `origin`; a failed step after the push is listed with its command, with exit code 1.
+- Unit: a failing check run, a tree that changes during the checks, and a closed input change nothing.
+- Unit: CRLF files keep their line endings, and malformed arguments exit with code 2.
 
 Completion check: `python -m pytest tests`, `ruff check scripts tests`, and `ruff format --check scripts tests`.
