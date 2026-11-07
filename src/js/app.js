@@ -14,8 +14,8 @@
 
 import { startOverdueTimer } from './core/overdue.js';
 import { openStore } from './store/db.js';
+import { createEngine } from './sync/engine.js';
 import { createInbox } from './sync/inbox.js';
-import { createPush } from './sync/push.js';
 import { createSession } from './sync/session.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
@@ -102,10 +102,15 @@ async function start() {
     shell.showBanner(error?.code === 'blocked' ? error.message : MESSAGES.storeFailed);
     return;
   }
-  // One tab uploads the queue; the others follow its state (`SYN-12`). A rejected change is undone and reported (`SYN-9`).
-  const push = createPush({ store, session, onRejected: ({ message }) => toaster.show(message) });
-  push.start();
-  window.addEventListener('online', () => push.kick());
+  // One tab uploads the queue and pulls the change feed; the others follow its state (`SYN-12`).
+  // A rejected change is undone and reported (`SYN-9`), and so is the loss of access to a list (`SHR-8`).
+  const engine = createEngine({
+    store,
+    session,
+    onRejected: ({ message }) => toaster.show(message),
+    onLostAccess: ({ message }) => toaster.show(message),
+  });
+  engine.start();
   let screen = null;
   let shownViewKey = null;
   // The screens and the View options panel share these, so the rows, the info line, and the panel follow one state.

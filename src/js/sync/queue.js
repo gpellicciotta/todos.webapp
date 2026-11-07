@@ -9,8 +9,8 @@
  * See docs/specs/local-store.md, Sync Queue.
  */
 
-import { uuid7 } from '../lib/uuid7.js';
 import { request, STORES, transact } from '../store/idb.js';
+import { createSyncLog } from './sync-log.js';
 
 const LIST_FIELDS = ['name', 'description'];
 const TASK_FIELDS = ['description', 'status', 'due-time', 'overdue-handling'];
@@ -36,6 +36,7 @@ export function isTracked(operation) {
 export function createQueue(ctx) {
   const read = (store, work) => transact(ctx.db, [store], 'readonly', (tx) => work(tx.objectStore(store)));
   const write = (store, work) => transact(ctx.db, [store], 'readwrite', (tx) => work(tx.objectStore(store)));
+  const log = createSyncLog(ctx);
   const queue = {
     /**
      * Append entries in one transaction, in the given order.
@@ -83,17 +84,14 @@ export function createQueue(ctx) {
 
     /**
      * Append records to the sync log; each gets an identifier and the time.
-     * @param {object[]} records the records, each with a `kind`: `rejected` or `overwritten`
+     * @param {object[]} records the records, each with a `kind` (see sync-log.js)
      * @returns {Promise<void>}
      */
-    appendLog: (records) => write(STORES.log, async (store) => {
-      const time = ctx.now().toISOString();
-      for (const record of records) {
-        await request(store.add({ id: uuid7(() => ctx.now().getTime()), time, ...record }));
-      }
-    }),
+    appendLog: (records) => log.append(records),
     /** @returns {Promise<object[]>} the log records, oldest first */
-    log: () => read(STORES.log, (store) => request(store.index('time').getAll())),
+    log: () => log.all(),
+    /** @returns {Promise<number>} how many records older than 30 days were removed */
+    purgeLog: () => log.purge(),
 
     /**
      * Roll an entry's change back on the local data, without queueing anything.

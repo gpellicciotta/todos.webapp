@@ -11,7 +11,7 @@
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-07.18';
+const VERSION = '2026-11-07.20';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 
@@ -50,10 +50,14 @@ const PRECACHE = [
   'js/sync/adopt.js',
   'js/sync/api.js',
   'js/sync/auth.js',
+  'js/sync/engine.js',
   'js/sync/inbox.js',
+  'js/sync/merge.js',
+  'js/sync/pull.js',
   'js/sync/push.js',
   'js/sync/queue.js',
   'js/sync/session.js',
+  'js/sync/sync-log.js',
   'js/ui/dialog.js',
   'js/ui/inbox.js',
   'js/ui/layout.js',

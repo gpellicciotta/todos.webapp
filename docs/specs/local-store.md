@@ -51,12 +51,17 @@ Keyed by `key`, with the record `{key, value}`.
 - `account`: `{email, server}` of the account whose local data was adopted.
 - `adoption`: `{status: running|done, account, done, total}`; the step count lets an interrupted upload resume.
 - `list-map`: local list id to account list id, for local lists merged into account lists.
-- The feed cursor joins them in the download task.
+- `cursor`: `{account, value}`, the opaque cursor of the change feed for one account and server.
+- `user-id`: the connected user, from `/api/users/me`; it tells own lists and tasks from those of others.
+- Disconnecting clears `cursor`, `user-id`, `account`, `adoption`, and `list-map`.
 
 ### `sync-log`
-Keyed by `id`, with an index on `time`; records of what sync changed or refused, kept for the Sync log screen.
+Keyed by `id`, with an index on `time`; records of what sync changed or refused, kept for 30 days for the Sync log screen (`SYN-8`).
 - `{id, time, kind: 'rejected', operation, target, fields, status, message}`: a change the service refused and the app undid.
 - `{id, time, kind: 'overwritten', target, field, sent, kept, kept-edit-time}`: a value the merge overwrote.
+- `{id, time, kind: 'lost-access', target, name, undone, message}`: a list the user lost access to.
+- `{id, time, kind: 'error', message, detail}`: a failed sync run; a repeat of the same failure is logged once.
+- Every pull run first removes the records older than 30 days (`queue.purgeLog`).
 
 ---
 
@@ -231,3 +236,33 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - Memberships go by list and position, so each list keeps its manual order.
 - A create that finds the row (`200`) is followed by an update with the local edit times.
 - A row the service refuses is logged and stays on the device.
+
+---
+
+## Change Feed Download
+[pull.js](../../src/js/sync/pull.js) downloads the feed, [merge.js](../../src/js/sync/merge.js) plans how it changes the data,
+and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6`).
+- Lists, tasks, memberships, and notes store the feed's `revision`; lists also keep `role` and `sharing`, and notes keep `author`.
+- Computed fields are not stored: `overdue`, `role` of tasks, `task-count`, and `lists` of tasks. Screens derive them.
+- A run replays the queue, then pulls every page after the stored cursor until `has-more` is false. Without a cursor it fetches a snapshot.
+- The leader tab pulls every 30 seconds while the page is visible, and after going online, gaining focus, becoming visible, or replaying the queue.
+  A hidden page still replays the queue.
+- A page applies its tombstones first, then its entries. Each applies only when its revision is above the stored one, or the row is absent.
+- The merge keeps what the user changed and the service has not heard of yet:
+  - A field with an entry in the queue keeps its local value; the other fields take the pulled value (`SYN-5`, `SYN-6`).
+  - A row whose creation is still queued is never replaced. A pending trash, membership change, or note edit or delete stays.
+  - A replay that loses a field gets `conflicts` in its reply. The app logs `overwritten` and applies the kept value, unless a later queued change sets that field.
+  - Conflicts on `existence` of a membership are logged only; the next feed change corrects the row.
+  - Notes never conflict with each other, since each is its own record (`SYN-7`).
+- A task owned by another user stays while a visible list holds it. Tasks without one go after the last page, since memberships may follow their tasks.
+- A list tombstone with `access-lost` removes the list and, through the rule above, the tasks owned by others. Own tasks stay (`SHR-8`).
+  The queued changes to the list and to the removed tasks are dropped, the sync log records `lost-access`,
+  and the app shows "You no longer have access to {{list}}. {{n}} changes were undone."
+- A `410` (or a `400` for the stored cursor) keeps the queue and drops the rows that came from the service, those with a `revision`.
+  Never-uploaded rows stay. A row with queued changes loses only its revision, so the new snapshot merges into it.
+  The pull then fetches a snapshot without a message.
+- A feed `protocol` other than `1` stops syncing, and the state becomes `update-required` (`SYN-11`).
+- Sync states: `local-only`, `synced`, `syncing`, `offline`, `sign-in-needed`, `error`, and `update-required`.
+- Disconnecting (`CON-8`, `CON-9`) keeps own lists and tasks, and removes the rest with its memberships and notes.
+  Kept rows lose `revision`, `role`, and `sharing`. The queue, the cursor, and the adoption state go. No route is called.
+- A local write between the pull's read of the queue and the entry joining it can lose to the pulled value; the next replay restores it.

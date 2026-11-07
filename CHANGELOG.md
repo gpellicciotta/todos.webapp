@@ -23,8 +23,16 @@ All notable changes to this project are documented here.
 - FrontEnd: Uploaded all local data on the first connect, keeping list order and merging lists of the same name.
 - FrontEnd: Undid a change the service rejects and logged it. A 401 pauses the queue, and a 426 stops syncing.
 - FrontEnd: Let one tab upload at a time, with the other tabs following its state.
+- FrontEnd: Pulled the service's change feed while connected, every 30 seconds and after going online, gaining focus, or replaying the queue.
+- FrontEnd: Merged pulled rows per field: a field with a queued change keeps its local value, and a lost replay applies the value the service kept.
+- FrontEnd: Removed a list the user lost access to, with the tasks of others in it, and told the user how many changes were undone.
+- FrontEnd: Rebuilt service data from a new snapshot when the cursor expires, and stopped syncing on a newer sync protocol.
+- FrontEnd: Kept own lists and tasks and removed the rest when disconnecting, without calling the service.
+- FrontEnd: Logged lost access and sync errors next to overwritten and rejected changes, and purged log entries after 30 days.
 - Docs: Described the version 4 store, the change queue, and first-connect adoption in the local store spec.
+- Docs: Described the change feed download, the per-field merge, lost access, and the sync log kinds in the local store spec.
 - DevEx: Added unit tests for the queue, the API client, the upload, and adoption against a fake service.
+- DevEx: Added unit tests for the merge, the pull, the sync log, and the engine against a fake change feed with two devices.
 - Docs: Added the NTF-1 to NTF-7 requirements and the Inbox design, and moved the inbox out of Planned After v1.0.0.
 - DevEx: Added unit and end-to-end tests for the update protocol of the worker, the Update toast, and the second-tab banner.
 - DevEx: Added unit and end-to-end tests for the inbox client, the bell, the panel, and the banners.

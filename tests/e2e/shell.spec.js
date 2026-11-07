@@ -190,6 +190,7 @@ for (const [name, viewport] of [['narrow', { width: 320, height: 700 }], ['deskt
 test('a connected account shows its initials and name, and Connected in the panel', async ({ page }) => {
   const problems = watch(page);
   await page.route('http://127.0.0.1:1/api/notifications', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.route('http://127.0.0.1:1/api/users/me', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"id":7}' }));
   await page.route('http://127.0.0.1:1/api/changes?**', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ cursor: 'c1', 'has-more': false, lists: [], tasks: [], memberships: [], notes: [], tombstones: [], protocol: 1 }),
   }));

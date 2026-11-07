@@ -4,7 +4,7 @@
  * Only one tab uploads: the tab that holds the Web Lock `todos-sync` is the leader and drains the queue.
  * The other tabs read its state through a BroadcastChannel, and take over when the leader closes.
  * Replies map to outcomes (docs/specs/local-store.md, Sync Queue):
- * - 2xx: the entry is done; fields the merge overwrote go to the sync log.
+ * - 2xx: the entry is done; fields the merge overwrote go to the sync log, and the value the service kept applies locally.
  * - 400, 403, 404, 409, 412: the change is rolled back locally and logged, except a 404 on a delete or remove.
  * - 401: pause and report Sign in needed; the queue keeps its entries.
  * - 426: stop all syncing and report Update required.
@@ -14,6 +14,7 @@
 
 import { adopt } from './adopt.js';
 import { createApi, judge, SyncStop } from './api.js';
+import { planConflicts } from './merge.js';
 
 export const LOCK_NAME = 'todos-sync';
 const POLL_MS = 30_000;
@@ -102,6 +103,7 @@ function refersTo(entry, id) {
  * @param {(ms: number) => Promise<void>} [options.wait] waits; stopped early by `kick`
  * @param {string} [options.channelName] the BroadcastChannel name
  * @param {(info: {entry: object, status: number, message: string}) => void} [options.onRejected] called after a rollback
+ * @param {() => Promise<void>} [options.afterDrain] runs once the queue is empty, as the pull does; its stops and failures count as the run's
  * @returns {object} the engine: `start`, `stop`, `kick`, `drainOnce`, `state`, `subscribe`, `isLeader`
  */
 export function createPush({
@@ -113,6 +115,7 @@ export function createPush({
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   channelName = 'todos-sync',
   onRejected = () => {},
+  afterDrain = async () => {},
 }) {
   const listeners = new Set();
   const queue = store.queue;
@@ -125,6 +128,7 @@ export function createPush({
   let wake = null;
   let woken = false;
   let unsubscribe = [];
+  let lastError = null;
 
   /**
    * Replace the state, then tell the listeners and the other tabs.
@@ -170,6 +174,8 @@ export function createPush({
       const conflicts = response.body?.conflicts ?? [];
       if (conflicts.length > 0) {
         await queue.appendLog(conflicts.map((conflict) => ({ kind: 'overwritten', target: entry.target, ...conflict })));
+        const pending = await queue.all();
+        await store.applyChanges((data) => ({ changes: planConflicts(data, entry, conflicts, pending), result: null }));
       }
       await queue.remove([entry.seq]);
     }
@@ -216,12 +222,18 @@ export function createPush({
       for (let entry = await queue.first(); entry; entry = await queue.first()) {
         await upload(entry, listMap);
       }
+      await afterDrain();
+      lastError = null;
       await publish({ status: 'synced', progress: null });
       return 'synced';
     }
     catch (error) {
       if (!(error instanceof SyncStop)) {
         console.error('Sync failed:', error);
+        if (lastError !== error.message) {
+          lastError = error.message;
+          await queue.appendLog([{ kind: 'error', message: 'Syncing failed. It will try again.', detail: error.message }]).catch(() => {});
+        }
         await publish({ status: 'error' });
         return 'retry';
       }

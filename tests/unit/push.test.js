@@ -106,7 +106,7 @@ describe('uploading the queue', () => {
 });
 
 describe('handling replies', () => {
-  it('logs the fields a merge overwrote and keeps the change', async () => {
+  it('logs the fields a merge overwrote and applies the value the service kept', async () => {
     const { store, service, push, rejected } = await setup();
     const task = await store.createTask({ description: 'Paint' });
     await push.drainOnce();
@@ -114,7 +114,7 @@ describe('handling replies', () => {
     const conflict = { field: 'description', sent: 'Paint it', kept: 'Repaint', 'kept-edit-time': '2026-11-04T10:00:00.000Z' };
     service.fail = (call) => (call.method === 'PUT' ? { status: 200, body: { id: task.id, conflicts: [conflict] } } : null);
     expect(await push.drainOnce()).toBe('synced');
-    expect((await store.getTask(task.id)).description).toBe('Paint it');
+    expect((await store.getTask(task.id)).description).toBe('Repaint');
     expect(rejected).toEqual([]);
     const log = await store.queue.log();
     expect(log).toHaveLength(1);
