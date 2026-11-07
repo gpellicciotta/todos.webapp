@@ -155,7 +155,7 @@ async function start() {
     if (screen?.element !== element) {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
-      const options = { store, toaster, session, viewModels, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
+      const options = { store, toaster, session, sync: engine, viewModels, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
       screen = { element, controller: mount ? mount(element, options) : null };
     }
     screen.controller?.update(route);

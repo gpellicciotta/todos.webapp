@@ -10,6 +10,7 @@ import { NAME_MAX, DESCRIPTION_MAX as LIST_DESCRIPTION_MAX } from '../store/list
 import { TEXT_MAX } from '../store/notes.js';
 import { OVERDUE_HANDLINGS, STATUSES, DESCRIPTION_MAX as TASK_DESCRIPTION_MAX } from '../store/tasks.js';
 import { isValidKey, keyBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
+import { importEntries } from '../sync/queue.js';
 
 export const FORMAT = 'todos-backup';
 export const FORMAT_VERSION = 1;
@@ -415,10 +416,12 @@ function same(a, b, type) {
  * @param {{lists: object[], tasks: object[], memberships: object[], notes: object[]}} data the store snapshot
  * @param {object} backup a validated backup
  * @param {string} mode `merge` or `overwrite`
- * @param {{now: Date, ownerId?: number|string|null}} options the time for binning, and the connected user
+ * @param {{now: Date, ownerId?: number|string|null, connected?: boolean}} options the time for binning, the connected user,
+ *   and whether the device is connected, which adds the queue entries to `changes.queue` and keeps existing notes
  * @returns {{changes: object, result: object}} the writes, and the counts
  */
-export function planImport(data, backup, mode, { now, ownerId = null }) {
+export function planImport(data, backup, mode, { now, ownerId = null, connected = false }) {
+  checkMode(mode, connected);
   const time = now.toISOString();
   const overwrite = mode === 'overwrite';
   const result = emptyCounts();
@@ -585,7 +588,8 @@ export function planImport(data, backup, mode, { now, ownerId = null }) {
   const localNotes = new Map(data.notes.map((note) => [note.id, note]));
   for (const incoming of backup.notes) {
     const current = localNotes.get(incoming.id);
-    const changed = current && (overwrite ? !same(current, incoming, 'notes') : later(noteTime(incoming), noteTime(current)));
+    // Connected, an import only creates missing notes: the service takes no edit time for a note text.
+    const changed = current && !connected && (overwrite ? !same(current, incoming, 'notes') : later(noteTime(incoming), noteTime(current)));
     if (!final.tasks.has(incoming['task-id']) || lockedTasks.has(incoming['task-id']) || (current && !changed)) {
       count('notes', 'skipped');
       continue;
@@ -609,16 +613,23 @@ export function planImport(data, backup, mode, { now, ownerId = null }) {
 
   changes.put.lists = [...written.lists.values()];
   changes.put.tasks = [...written.tasks.values()];
+  if (connected) {
+    changes.queue = importEntries(data, changes, now);
+  }
   return { changes, result };
 }
 
 /**
- * Check an import mode.
+ * Check an import mode. While connected only merge works, since an import never removes data from the account.
  * @param {unknown} mode the mode
+ * @param {boolean} [connected] whether the device is connected
  */
-function checkMode(mode) {
+function checkMode(mode, connected = false) {
   if (!MODES.includes(mode)) {
     throw new BackupError('invalid', `Unknown import mode: ${mode}; use merge or overwrite.`, 'mode');
+  }
+  if (connected && mode === 'overwrite') {
+    throw new BackupError('invalid', 'Overwrite is not available while connected; an import never removes data from your account.', 'mode');
   }
 }
 
@@ -627,13 +638,14 @@ function checkMode(mode) {
  * @param {object} store the store facade
  * @param {object} backup the backup, as `parseBackup` returns it
  * @param {string} mode `merge` or `overwrite`
- * @param {{ownerId?: number|string|null}} [options] the connected user, null in local mode
+ * @param {{ownerId?: number|string|null, connected?: boolean}} [options] the connected user, null in local mode,
+ *   and whether the device is connected
  * @returns {Promise<object>} counts of added, updated, binned, removed, and skipped records
  */
-export async function previewImport(store, backup, mode, { ownerId = null } = {}) {
-  checkMode(mode);
+export async function previewImport(store, backup, mode, { ownerId = null, connected = false } = {}) {
+  checkMode(mode, connected);
   const valid = validateBackup(backup);
-  return planImport(await store.snapshot(), valid, mode, { now: new Date(), ownerId }).result;
+  return planImport(await store.snapshot(), valid, mode, { now: new Date(), ownerId, connected }).result;
 }
 
 /**
@@ -641,11 +653,12 @@ export async function previewImport(store, backup, mode, { ownerId = null } = {}
  * @param {object} store the store facade
  * @param {object} backup the backup, as `parseBackup` returns it
  * @param {string} mode `merge` or `overwrite`
- * @param {{ownerId?: number|string|null}} [options] the connected user, null in local mode
+ * @param {{ownerId?: number|string|null, connected?: boolean}} [options] the connected user, null in local mode;
+ *   `connected` queues the changes for upload in the same transaction (`BAK-6`), and only merge works
  * @returns {Promise<object>} counts of added, updated, binned, removed, and skipped records
  */
-export async function importBackup(store, backup, mode, { ownerId = null } = {}) {
-  checkMode(mode);
+export async function importBackup(store, backup, mode, { ownerId = null, connected = false } = {}) {
+  checkMode(mode, connected);
   const valid = validateBackup(backup);
-  return store.applyChanges((data, now) => planImport(data, valid, mode, { now, ownerId }));
+  return store.applyChanges((data, now) => planImport(data, valid, mode, { now, ownerId, connected }), connected ? { queue: true } : undefined);
 }

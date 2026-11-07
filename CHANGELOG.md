@@ -41,6 +41,12 @@ All notable changes to this project are documented here.
 - FrontEnd: Read the one-time passcode from the JSON answer of the sign-in callback, as the server sends it; the redirect of older servers still works.
 - DevEx: Added the opt-in `npm run test:contract`, which runs the sync client against a real todos server named by `TODOS_SERVER_DIR`.
 - Docs: Described the contract tests in the DevOps guide, and the JSON answer of the sign-in callback.
+- FrontEnd: Queued the changes of a merge import while connected: a newer row sends all its fields without an edit time, an older row sends nothing.
+- FrontEnd: Created only missing notes and added only missing memberships in a connected import, which never removes data or changes lists of other owners.
+- FrontEnd: Turned Overwrite off in the Import backup dialog while connected, and kept the dialog open on Syncing and Synced until Done.
+- FrontEnd: Passed the sync engine to Settings, so Sync and disconnect works.
+- Docs: Described the connected import in the UI design and the backup format.
+- DevEx: Added unit and end-to-end tests for the connected import, its queue entries, and the sync progress.
 
 ## v0.2.0 [released: 2026-11-07]
 - FrontEnd: Made the add field also search All tasks and every list, with a 150 ms pause, a note under the rows, and no Add on Enter.

@@ -307,6 +307,77 @@ export async function trackChange(ctx, queue, operation, args) {
 }
 
 /**
+ * Describe the queue entries of a merge import (`BAK-6`).
+ * A row the import adds becomes a create; a row it replaces sends all its mergeable fields.
+ * No entry carries an edit time, so the service takes its receive time and the whole row wins.
+ * Restores go first and bin moves last, since the service refuses writes to a binned row without an edit time.
+ * An import adds memberships and notes only, so it never queues a removal.
+ * @param {{lists: object[], tasks: object[], memberships: object[], notes: object[]}} data the store snapshot before the import
+ * @param {{put: object}} changes the planned writes, which hold the final records
+ * @param {Date} now the import time
+ * @returns {object[]} the entries without `seq`, in upload order
+ */
+export function importEntries(data, changes, now) {
+  const created = now.toISOString();
+  const restores = [];
+  const content = [];
+  const bins = [];
+  const entry = (target, operation, fields, undo) => ({ target, operation, fields, 'edit-times': {}, undo, created });
+  const rows = [
+    ['list', 'lists', LIST_FIELDS, (record) => ({ id: record.id, name: record.name, description: record.description, 'creation-time': record['creation-time'] })],
+    ['task', 'tasks', TASK_FIELDS, (record) => ({
+      id: record.id,
+      description: record.description,
+      status: record.status,
+      'due-time': record['due-time'],
+      'overdue-handling': record['overdue-handling'],
+      'creation-time': record['creation-time'],
+      lists: [],
+    })],
+  ];
+  for (const [type, store, names, createFields] of rows) {
+    const known = new Map(data[store].map((record) => [record.id, record]));
+    for (const record of changes.put[store] ?? []) {
+      const old = known.get(record.id);
+      const target = { type, id: record.id };
+      if (old) {
+        content.push(entry(target, `update-${type}`, Object.fromEntries(names.map((name) => [name, record[name]])), {
+          kind: 'fields', type, id: record.id, fields: Object.fromEntries(names.map((name) => [name, { from: old[name], to: record[name] }])),
+        }));
+      }
+      else {
+        content.push(entry(target, `create-${type}`, createFields(record), { kind: `remove-${type}`, id: record.id }));
+      }
+      const from = old?.['deletion-time'] ?? null;
+      const to = record['deletion-time'] ?? null;
+      if ((from === null) !== (to === null)) {
+        const undo = { kind: 'fields', type, id: record.id, fields: { 'deletion-time': { from, to } } };
+        (to === null ? restores : bins).push(entry(target, `${to === null ? 'restore' : 'delete'}-${type}`, {}, undo));
+      }
+    }
+  }
+  const members = new Set(data.memberships.map((m) => `${m['list-id']}\n${m['task-id']}`));
+  for (const m of changes.put.memberships ?? []) {
+    if (!members.has(`${m['list-id']}\n${m['task-id']}`)) {
+      content.push(entry({ type: 'membership', id: m['task-id'], 'list-id': m['list-id'] }, 'add-membership', {},
+        { kind: 'remove-membership', listId: m['list-id'], taskId: m['task-id'] }));
+    }
+  }
+  const noted = new Set(data.notes.map((note) => note.id));
+  for (const note of changes.put.notes ?? []) {
+    if (!noted.has(note.id)) {
+      const fields = { id: note.id, text: note.text, 'creation-time': note['creation-time'] };
+      if (note['edit-time']) {
+        fields['last-edit-time'] = note['edit-time'];
+      }
+      content.push(entry({ type: 'note', id: note.id, 'task-id': note['task-id'] }, 'create-note', fields,
+        { kind: 'remove-note', taskId: note['task-id'], id: note.id }));
+    }
+  }
+  return [...restores, ...content, ...bins];
+}
+
+/**
  * Plan the bulk changes that roll back one change.
  * @param {{lists: object[], tasks: object[], memberships: object[], notes: object[]}} data the store snapshot
  * @param {object} undo the entry's undo data

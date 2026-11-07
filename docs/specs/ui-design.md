@@ -609,6 +609,10 @@ Wireframe: [import.svg](../img/ui/import.svg).
 6. Import applies the change and a toast repeats the counts; Cancel, Close, and Escape change nothing (`BAK-12`).
    The actions follow the dialog component: Cancel, then Import at the end.
 7. When connected, the dialog notes that lists of other owners stay unchanged (`BAK-10`).
+8. When connected, Overwrite is disabled with the reason "Replacing data is not available while connected: an import never removes data from your account."
+   Merge queues its changes for upload, and Import then leaves the dialog open on the counts and a sync line (`BAK-6`).
+   The line reads "Syncing N changes…", then "Synced."; offline, sign-in needed, and failures show their own text.
+   Done closes the dialog and a toast repeats the counts; Close and Escape also work, and syncing continues.
 
 ---
 

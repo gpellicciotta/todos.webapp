@@ -176,9 +176,10 @@ async function saveBackup(doc, store, toaster) {
  * @param {Document} doc the document
  * @param {object} store the store facade
  * @param {{show: (message: string) => void}} [toaster] shows the confirmations
+ * @param {{session: object, sync?: object}} [connection] the session and the sync engine, for importing while connected
  * @returns {HTMLElement} the section
  */
-function dataSection(doc, store, toaster) {
+function dataSection(doc, store, toaster, connection = {}) {
   const element = section(doc, 'data', STRINGS.data);
   const actions = make(doc, 'div', 'settings__actions');
   const exportButton = make(doc, 'button', 'button button--secondary', STRINGS.exportBackup);
@@ -198,7 +199,7 @@ function dataSection(doc, store, toaster) {
   });
   const importButton = make(doc, 'button', 'button button--secondary', STRINGS.importBackup);
   importButton.type = 'button';
-  importButton.addEventListener('click', () => openImportDialog(doc, { store, toaster, opener: importButton }));
+  importButton.addEventListener('click', () => openImportDialog(doc, { store, toaster, opener: importButton, ...connection }));
   actions.append(exportButton, importButton);
   element.append(actions);
   return element;
@@ -368,7 +369,7 @@ function aboutSection(doc) {
  * @param {object} [options.store] the store facade, for the backups
  * @param {{show: (message: string) => void}} [options.toaster] shows confirmations and problems
  * @param {object} [options.session] the session, for the Connection section
- * @param {{pendingCount: () => Promise<number>, syncNow: () => Promise<void>}} [options.sync] the change queue, once sync exists
+ * @param {{pendingCount: () => Promise<number>, syncNow: () => Promise<void>, state: () => object, subscribe: Function}} [options.sync] the sync engine
  * @param {(hash: string) => void} [options.navigate] opens a route, setting the location hash by default
  * @returns {{update: () => void, destroy: () => void}} the screen
  */
@@ -380,7 +381,7 @@ export function mountSettings(view, {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, navigate });
-  root.append(appearanceSection(doc, getStorage, toaster), dataSection(doc, store, toaster), connection.element, aboutSection(doc));
+  root.append(appearanceSection(doc, getStorage, toaster), dataSection(doc, store, toaster, { session, sync }), connection.element, aboutSection(doc));
   view.replaceChildren(root);
   return {
     /** Follow a route of this view; Settings has no sub-routes of its own. */

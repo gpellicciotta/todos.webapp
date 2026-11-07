@@ -168,7 +168,7 @@ export async function openStore({
     listBin: () => bin.listBin(ctx),
     purgeExpired: (now) => bin.purgeExpired(ctx, now),
     snapshot: () => bulk.snapshot(ctx),
-    applyChanges: (planner) => bulk.applyChanges(ctx, planner),
+    applyChanges: (planner, options) => bulk.applyChanges(ctx, planner, options),
   };
   for (const operation of WRITES) {
     const write = facade[operation];

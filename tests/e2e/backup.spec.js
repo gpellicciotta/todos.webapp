@@ -2,7 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { VERSION } from '../../src/js/version.js';
 
-// Export backup and the Import backup dialog in Settings (BAK-1, BAK-4, BAK-5, BAK-9, BAK-11 to BAK-13).
+// Export backup and the Import backup dialog in Settings (BAK-1, BAK-4, BAK-5, BAK-9, BAK-11 to BAK-13),
+// and a merge import while connected to a mock of the ToDo's service on the app's own origin (BAK-6, BAK-10).
+
+const SERVER = `http://127.0.0.1:${process.env.E2E_PORT ?? 8754}`;
+const SESSION = { token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server: SERVER };
 
 /**
  * Collect console errors, page errors, failed requests, and HTTP errors of a page.
@@ -264,5 +268,84 @@ test('an invalid file shows its reason, keeps Import disabled, and changes nothi
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   expect(await snapshot(page)).toEqual(before);
+  expect(problems).toEqual([]);
+});
+
+/**
+ * Connect the app to a mock service that records every call and holds back task creates until released.
+ * @param {import('@playwright/test').Page} page the page
+ * @returns {Promise<{calls: {method: string, path: string}[], release: () => void}>} the recorded calls, and the gate
+ */
+async function connectToMock(page) {
+  const calls = [];
+  let release = () => {};
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.addInitScript((session) => localStorage.setItem('todos.session', JSON.stringify(session)), SESSION);
+  await page.route(`${SERVER}/api/**`, async (route) => {
+    const request = route.request();
+    const { pathname } = new URL(request.url());
+    const json = (body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    if (pathname === '/api/notifications') {
+      return json([]);
+    }
+    if (pathname === '/api/changes') {
+      return json({ cursor: 'c1', 'has-more': false, lists: [], tasks: [], memberships: [], notes: [], tombstones: [], protocol: 1 });
+    }
+    if (pathname === '/api/users/me') {
+      return json({ id: 3, name: 'Jane Doe', email: 'jane@example.com' });
+    }
+    calls.push({ method: request.method(), path: pathname });
+    if (request.method() === 'POST' && pathname === '/api/tasks') {
+      await gate;
+    }
+    return json({});
+  });
+  return { calls, release };
+}
+
+test('connected, a merge import queues its changes, shows Syncing then Synced, and drains the queue', async ({ page }) => {
+  const problems = watch(page);
+  const { calls, release } = await connectToMock(page);
+  await page.goto('/#/settings');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  const adopted = () => page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const state = await store.queue.getState('adoption');
+    store.close();
+    return state?.status;
+  });
+  await expect.poll(adopted).toBe('done');
+  const ids = await openSeeded(page);
+  const file = await exportFile(page);
+  await changeTasks(page, ids.billId);
+  const dialog = await pickFile(page, file);
+  const overwrite = dialog.getByRole('radio', { name: 'Overwrite' });
+  await expect(overwrite).toBeDisabled();
+  await expect(overwrite).toHaveAccessibleDescription(/not available while connected/);
+  await expect(dialog.getByRole('radio', { name: 'Merge' })).toBeChecked();
+  await expect(dialog.getByRole('status').first()).toHaveText('2 added · 0 updated · 0 to recycle bin');
+  calls.length = 0;
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  const sync = dialog.locator('.import-dialog__sync');
+  await expect(sync).toHaveText(/^Syncing \d+ changes?…$/);
+  release();
+  await expect(sync).toHaveText('Synced.');
+  const queued = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const count = await store.queue.count();
+    store.close();
+    return count;
+  });
+  expect(queued).toBe(0);
+  expect(calls.filter((call) => call.method !== 'GET').map((call) => `${call.method} ${call.path}`)).toEqual([
+    'POST /api/tasks', `PUT /api/lists/${ids.listId}/tasks/${ids.billId}`,
+  ]);
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('.toast', { hasText: 'Imported' })).toContainText(`Imported ${file.name}: 2 added`);
   expect(problems).toEqual([]);
 });

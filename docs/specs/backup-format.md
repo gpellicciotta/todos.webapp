@@ -115,6 +115,17 @@ Replaces all data the user owns with the backup contents (`BAK-8`).
   - Their backup versions count as skipped; overwrite never bins them.
   - Owned means an `owner` or `owner-id` that is null or the user's; overwrite bins only owned records.
 
+### Import While Connected
+- The import takes a `connected` option; the dialog sets it whenever the session is not local.
+- Overwrite mode throws a `BackupError` with path `mode`, since an import never removes data from the account.
+- The writes and the queue entries commit in one transaction; the preview counts the same changes.
+- A newer row (later `last-update-time`) queues all its mergeable fields with no edit time, so the service takes its receive time.
+  An older row queues nothing.
+- A row missing locally queues a create; a bin move queues a delete or restore, restores first and deletes last.
+- Existing notes stay as they are and never queue; only missing notes queue a create.
+- Memberships only add: new ones queue an add in list order, and existing ones keep their positions.
+- The `ownerId` option is the `user-id` of the sync state, so lists of other owners and their tasks stay unchanged.
+
 ### Name Clashes
 - List names stay unique per owner, including lists in the recycle bin (`LST-3`).
 - In overwrite mode, a local list that the same import bins yields its name to an imported list.

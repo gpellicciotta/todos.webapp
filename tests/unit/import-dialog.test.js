@@ -246,3 +246,126 @@ describe('openImportDialog', () => {
     expect(importButton.disabled).toBe(false);
   });
 });
+
+describe('openImportDialog while connected', () => {
+  /**
+   * Open the dialog on a connected session with a sync stand-in, and pick the fixture backup.
+   * @returns {Promise<object>} the parts of `open`, the sync stand-in, and the toaster
+   */
+  async function openConnected() {
+    const imports = [];
+    const store = {
+      snapshot: async () => ({ lists: [], tasks: [], memberships: [], notes: [] }),
+      applyChanges: vi.fn(() => imports[imports.push(Promise.withResolvers()) - 1].promise),
+      queue: { getState: async () => 12 },
+    };
+    const listeners = new Set();
+    const sync = {
+      pending: 3,
+      status: 'syncing',
+      progress: null,
+      pendingCount: async () => sync.pending,
+      state: () => ({ status: sync.status, pending: sync.pending, progress: sync.progress }),
+      subscribe: (listener) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+      /**
+       * Change the sync state and tell the listeners.
+       * @param {string} status the new status
+       * @param {number} pending the changes left
+       */
+      emit(status, pending) {
+        Object.assign(sync, { status, pending });
+        listeners.forEach((listener) => listener(sync.state()));
+      },
+      listeners,
+    };
+    const toaster = { show: vi.fn() };
+    const opener = document.body.appendChild(document.createElement('button'));
+    const closed = openImportDialog(document, { store, toaster, opener, session: { state: () => 'connected' }, sync });
+    const dialog = document.querySelector('dialog');
+    const input = dialog.querySelector('input[type="file"]');
+    pick(input, async () => BACKUP);
+    await settle();
+    const [cancel, importButton] = dialog.querySelectorAll('.dialog__actions button');
+    return {
+      dialog, store, imports, sync, toaster, closed, cancel, importButton,
+      radios: [...dialog.querySelectorAll('input[type="radio"]')],
+      status: () => dialog.querySelector('.import-dialog__sync').textContent,
+    };
+  }
+
+  it('disables Overwrite with a reason, keeps Merge chosen, and previews the merge', async () => {
+    const { radios, dialog } = await openConnected();
+    const [merge, overwrite] = radios;
+    expect(merge.checked).toBe(true);
+    expect(overwrite.disabled).toBe(true);
+    expect(dialog.querySelector(`#${overwrite.getAttribute('aria-describedby')}`).textContent).toMatch(/not available while connected/);
+    expect(dialog.querySelector('.import-dialog__counts').textContent).toBe('10 added · 0 updated · 0 to recycle bin');
+  });
+
+  it('queues the import through the store, then shows Syncing and Synced until Done closes it', async () => {
+    const { store, imports, sync, toaster, closed, dialog, importButton, cancel, status } = await openConnected();
+    importButton.click();
+    await settle();
+    expect(store.applyChanges).toHaveBeenCalledTimes(1);
+    expect(store.applyChanges.mock.calls[0][1]).toEqual({ queue: true });
+    imports[0].resolve(COUNTS);
+    await settle();
+    expect(document.querySelector('dialog')).toBe(dialog);
+    expect(status()).toBe('Syncing 3 changes…');
+    expect(cancel.hidden).toBe(true);
+    expect(importButton.textContent).toBe('Done');
+    sync.emit('syncing', 1);
+    await settle();
+    expect(status()).toBe('Syncing 1 change…');
+    sync.emit('synced', 0);
+    await settle();
+    expect(status()).toBe('Synced.');
+    importButton.click();
+    await expect(closed).resolves.toEqual(COUNTS);
+    expect(toaster.show).toHaveBeenCalledWith('Imported todos-backup.json: 1 added · 0 updated · 0 to recycle bin.');
+    expect(sync.listeners.size).toBe(0);
+  });
+
+  it('does not say Synced while changes are still queued', async () => {
+    const { imports, sync, importButton, status } = await openConnected();
+    importButton.click();
+    await settle();
+    imports[0].resolve(COUNTS);
+    await settle();
+    sync.status = 'synced';
+    sync.emit('synced', 2);
+    await settle();
+    expect(status()).toBe('Syncing 2 changes…');
+  });
+
+  it('says when the changes wait for a connection or a sign-in, and still closes', async () => {
+    const { imports, sync, importButton, status, closed } = await openConnected();
+    importButton.click();
+    await settle();
+    imports[0].resolve(COUNTS);
+    await settle();
+    sync.emit('offline', 3);
+    await settle();
+    expect(status()).toBe('Offline. 3 changes will sync when you are back online.');
+    sync.emit('sign-in-needed', 3);
+    await settle();
+    expect(status()).toBe('Sign in again to sync 3 changes.');
+    sync.emit('error', 3);
+    await settle();
+    expect(status()).toBe('Syncing failed. It will try again.');
+    importButton.click();
+    await expect(closed).resolves.toEqual(COUNTS);
+  });
+
+  it('leaves no sync status in local mode, where the dialog closes after the import', async () => {
+    const { dialog, importButton, imports, input } = await startImport();
+    expect(input).toBeTruthy();
+    imports[0].resolve(COUNTS);
+    await settle();
+    expect(dialog.isConnected).toBe(false);
+    expect(importButton.textContent).toBe('Import');
+  });
+});

@@ -4,6 +4,8 @@
  * An invalid file shows its reason and keeps Import disabled (`BAK-13`).
  * The counts of added, updated, and binned items follow the chosen mode (`BAK-11`).
  * Import applies the backup in one transaction; Cancel, Escape, and Close change nothing (`BAK-12`).
+ * While connected, Overwrite is off, since an import never removes data from the account, and Merge queues
+ * its changes for upload. The dialog then stays open on the sync progress, Syncing and then Synced, until Done.
  * While the import runs, every control is locked and the dialog cannot be cancelled.
  * Below 64rem it opens in the main view, between the bars, as the editors do: not modal, without a scrim,
  * and a route change or growing to 64rem cancels it. The main column it covers is inert meanwhile.
@@ -25,6 +27,7 @@ const STRINGS = Object.freeze({
     merge: Object.freeze({ label: 'Merge', hint: 'Add and update items; keep the rest.' }),
     overwrite: Object.freeze({ label: 'Overwrite', hint: 'Replace your data; missing items go to the recycle bin.' }),
   }),
+  overwriteConnected: 'Replacing data is not available while connected: an import never removes data from your account.',
   summary: (date, lists, tasks) => `Exported ${date} · ${plural(lists, 'list')} · ${plural(tasks, 'task')}`,
   counts: ({ added, updated, binned, removed }) => [`${added} added`, `${updated} updated`, `${binned} to recycle bin`,
     ...(removed > 0 ? [`${removed} removed`] : [])].join(' · '),
@@ -32,7 +35,20 @@ const STRINGS = Object.freeze({
   failed: 'The import failed, and nothing changed. Try again.',
   imported: (name, counts) => `Imported ${name}: ${STRINGS.counts(counts)}.`,
   importAction: 'Import',
+  done: 'Done',
   cancel: 'Cancel',
+  syncing: (pending, progress) => {
+    if (progress) {
+      return `Syncing ${progress.done} of ${progress.total}…`;
+    }
+    return pending > 0 ? `Syncing ${plural(pending, 'change')}…` : 'Syncing…';
+  },
+  synced: 'Synced.',
+  offline: (pending) => (pending > 0 ? `Offline. ${plural(pending, 'change')} will sync when you are back online.` : 'Offline. Changes sync when you are back online.'),
+  signIn: (pending) => (pending > 0 ? `Sign in again to sync ${plural(pending, 'change')}.` : 'Sign in again to sync.'),
+  syncFailed: 'Syncing failed. It will try again.',
+  updateRequired: 'Update the app to sync your changes.',
+  localOnly: 'You are not connected. The changes stay on this device.',
 });
 
 const COMPACT = '(width < 64rem)';
@@ -59,18 +75,44 @@ function formatDate(iso) {
 }
 
 /**
+ * Describe the sync progress for the sync status line.
+ * @param {{status: string, progress?: {done: number, total: number}|null}} state the sync state
+ * @param {number} pending the changes not uploaded yet
+ * @returns {string} the line
+ */
+function syncLine({ status, progress = null }, pending) {
+  switch (status) {
+    case 'offline':
+      return STRINGS.offline(pending);
+    case 'sign-in-needed':
+      return STRINGS.signIn(pending);
+    case 'error':
+      return STRINGS.syncFailed;
+    case 'update-required':
+      return STRINGS.updateRequired;
+    case 'local-only':
+      return STRINGS.localOnly;
+    case 'synced':
+      return pending === 0 ? STRINGS.synced : STRINGS.syncing(pending, null);
+    default:
+      return STRINGS.syncing(pending, progress);
+  }
+}
+
+/**
  * Create a mode option: a radio in its label, with a hint that describes it.
  * @param {Document} doc the document
  * @param {string} id the identifier prefix
  * @param {string} mode `merge` or `overwrite`
+ * @param {string} [unavailable] why the option is off, which disables it
  * @returns {{element: HTMLElement, input: HTMLInputElement}} the option and its radio
  */
-function modeOption(doc, id, mode) {
+function modeOption(doc, id, mode, unavailable = '') {
   const element = make(doc, 'div', 'import-dialog__mode');
   const label = make(doc, 'label', 'choice');
   const input = doc.createElement('input');
-  Object.assign(input, { type: 'radio', name: `${id}-mode`, value: mode, checked: mode === 'merge' });
-  const hint = make(doc, 'p', 'field__hint import-dialog__mode-hint', STRINGS.modes[mode].hint);
+  Object.assign(input, { type: 'radio', name: `${id}-mode`, value: mode, checked: mode === 'merge', disabled: unavailable !== '' });
+  const hint = make(doc, 'p', 'field__hint import-dialog__mode-hint', unavailable || STRINGS.modes[mode].hint);
   hint.id = `${id}-${mode}-hint`;
   input.setAttribute('aria-describedby', hint.id);
   label.append(input, doc.createTextNode(STRINGS.modes[mode].label));
@@ -85,10 +127,14 @@ function modeOption(doc, id, mode) {
  * @param {object} context.store the store facade
  * @param {{show: (message: string) => void}} [context.toaster] shows the confirmation toast
  * @param {HTMLElement} [context.opener] the control that gets focus back, the focused one by default
+ * @param {{state: () => string}} [context.session] the session; connected unless it is local
+ * @param {object} [context.sync] the sync engine (`state`, `subscribe`, `pendingCount`), for the progress after a connected import
  * @returns {Promise<object|null>} the import counts, or null when the dialog closed without importing
  */
-export function openImportDialog(doc, { store, toaster, opener }) {
+export function openImportDialog(doc, { store, toaster, opener, session, sync }) {
   dialogs += 1;
+  const connected = () => (session?.state() ?? 'local') !== 'local';
+  const watching = connected() && Boolean(sync);
   const id = `import-dialog-${dialogs}`;
   const dialog = make(doc, 'dialog', 'dialog import-dialog');
   dialog.setAttribute('aria-labelledby', `${id}-title`);
@@ -125,13 +171,16 @@ export function openImportDialog(doc, { store, toaster, opener }) {
   summary.append(fileName, fileMeta);
   const modes = make(doc, 'fieldset', 'choice-group import-dialog__modes');
   modes.append(make(doc, 'legend', 'visually-hidden', STRINGS.mode));
-  const options = ['merge', 'overwrite'].map((mode) => modeOption(doc, id, mode));
+  const options = ['merge', 'overwrite'].map((mode) => modeOption(doc, id, mode, mode === 'overwrite' && connected() ? STRINGS.overwriteConnected : ''));
   modes.append(...options.map((option) => option.element));
   const counts = make(doc, 'p', 'import-dialog__counts');
   counts.setAttribute('role', 'status');
+  const syncStatus = make(doc, 'p', 'import-dialog__counts import-dialog__sync');
+  syncStatus.setAttribute('role', 'status');
+  syncStatus.hidden = true;
   const preview = make(doc, 'div', 'import-dialog__preview');
   preview.hidden = true;
-  preview.append(summary, modes, counts);
+  preview.append(summary, modes, counts, syncStatus);
 
   const body = make(doc, 'div', 'dialog__body import-dialog__body');
   body.append(field, preview);
@@ -157,6 +206,43 @@ export function openImportDialog(doc, { store, toaster, opener }) {
   let result = null;
   let close = () => {};
   let importing = false;
+  let finished = false;
+  let syncRequest = 0;
+  let stopWatching = () => {};
+
+  /**
+   * Return what the import needs to know of the connection.
+   * @returns {Promise<{connected?: boolean, ownerId?: number|string|null}>} the options of `previewImport` and `importBackup`
+   */
+  async function importOptions() {
+    return connected() ? { connected: true, ownerId: (await store.queue.getState('user-id')) ?? null } : {};
+  }
+
+  /**
+   * Show the sync progress, ignoring answers that a newer state made stale.
+   * @returns {Promise<void>}
+   */
+  async function refreshSync() {
+    const current = ++syncRequest;
+    const state = sync.state();
+    const pending = await sync.pendingCount();
+    if (current === syncRequest) {
+      syncStatus.textContent = syncLine(state, pending);
+    }
+  }
+
+  /** Leave the import view for the sync progress: the dialog stays open until Done. */
+  function showSync() {
+    finished = true;
+    field.hidden = true;
+    modes.hidden = true;
+    cancelButton.hidden = true;
+    importButton.textContent = STRINGS.done;
+    counts.textContent = STRINGS.imported(name, result);
+    syncStatus.hidden = false;
+    stopWatching = sync.subscribe(() => refreshSync());
+    refreshSync();
+  }
 
   /** @returns {string} the chosen mode */
   const mode = () => options.find((option) => option.input.checked).input.value;
@@ -186,7 +272,7 @@ export function openImportDialog(doc, { store, toaster, opener }) {
     const current = ++request;
     importButton.disabled = true;
     try {
-      const planned = await previewImport(store, backup, mode());
+      const planned = await previewImport(store, backup, mode(), await importOptions());
       if (current === request) {
         counts.textContent = STRINGS.counts(planned);
         importButton.disabled = false;
@@ -247,13 +333,13 @@ export function openImportDialog(doc, { store, toaster, opener }) {
    * @returns {Promise<void>}
    */
   async function onImport() {
-    const locked = [input, ...options.map((option) => option.input), closeButton, cancelButton, importButton];
+    const locked = [input, ...options.map((option) => option.input), closeButton, cancelButton, importButton].filter((control) => !control.disabled);
     importing = true;
     locked.forEach((control) => {
       control.disabled = true;
     });
     try {
-      result = await importBackup(store, backup, mode());
+      result = await importBackup(store, backup, mode(), await importOptions());
     }
     catch (problem) {
       console.error('Import failed:', problem);
@@ -269,6 +355,11 @@ export function openImportDialog(doc, { store, toaster, opener }) {
         importButton.focus();
       }
     }
+    if (watching) {
+      showSync();
+      importButton.focus();
+      return;
+    }
     close('import');
     toaster?.show(STRINGS.imported(name, result));
   }
@@ -277,7 +368,7 @@ export function openImportDialog(doc, { store, toaster, opener }) {
   for (const option of options) {
     option.input.addEventListener('change', () => importing || refreshCounts());
   }
-  importButton.addEventListener('click', () => importing || onImport());
+  importButton.addEventListener('click', () => importing || (finished ? close('import') : onImport()));
   /**
    * Keep the dialog open while importing; registered before openDialog's listeners, it runs first.
    * @param {Event} event an Escape keydown or a cancel request
@@ -318,6 +409,10 @@ export function openImportDialog(doc, { store, toaster, opener }) {
       modal: !app,
       onClose() {
         request += 1;
+        stopWatching();
+        if (finished) {
+          toaster?.show(STRINGS.imported(name, result));
+        }
         doc.defaultView.removeEventListener('hashchange', onRoute);
         media?.removeEventListener('change', onResize);
         dialog.remove();

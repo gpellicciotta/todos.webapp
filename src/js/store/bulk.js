@@ -4,6 +4,7 @@
  * `snapshot` reads every record in one transaction. `applyChanges` reads the same snapshot,
  * lets a synchronous planner compute the writes, and stores them in that one transaction,
  * so nothing can change between planning and writing, and a failure stores nothing.
+ * With the `queue` option, the planner's `changes.queue` entries join the change queue in that same transaction.
  * The planner must return records that already follow the store rules: these writes skip validation.
  */
 
@@ -37,12 +38,14 @@ export function snapshot(ctx) {
  * The planner receives the snapshot and the store clock's current time, and returns
  * `{changes, result}`: `changes.put` maps store names to records to store,
  * `changes.delete` maps `memberships` and `notes` to keys to remove, and `lists` and `tasks` to identifiers to remove.
+ * With `options.queue`, `changes.queue` lists change queue entries without `seq` to append.
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {(data: object, now: Date) => {changes: object, result: any}} planner synchronous planner
+ * @param {{queue?: boolean}} [options] `queue` opens the change queue in the transaction
  * @returns {Promise<any>} the planner's result
  */
-export function applyChanges(ctx, planner) {
-  return transact(ctx.db, ALL_STORES, 'readwrite', async (tx) => {
+export function applyChanges(ctx, planner, { queue = false } = {}) {
+  return transact(ctx.db, queue ? [...ALL_STORES, STORES.queue] : ALL_STORES, 'readwrite', async (tx) => {
     const { changes, result } = planner(await readAll(tx), ctx.now());
     for (const key of changes.delete?.memberships ?? []) {
       await request(tx.objectStore(STORES.memberships).delete(key));
@@ -67,6 +70,9 @@ export function applyChanges(ctx, planner) {
     }
     for (const note of changes.put?.notes ?? []) {
       await request(tx.objectStore(STORES.notes).put(note, [note['task-id'], note.id]));
+    }
+    for (const entry of queue ? changes.queue ?? [] : []) {
+      await request(tx.objectStore(STORES.queue).add(entry));
     }
     return result;
   });

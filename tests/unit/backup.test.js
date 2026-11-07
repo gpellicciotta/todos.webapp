@@ -429,3 +429,148 @@ describe('round trip', () => {
     }
   });
 });
+
+describe('import while connected', () => {
+  const OLD = '2026-10-01T08:00:00.000Z';
+  const NEWER_LOCAL = '2026-12-01T08:00:00.000Z';
+
+  /**
+   * Build the local data a connected import meets: older rows L1 and T101, a newer local T102, and note N201.
+   * Rows L2, T103, and N202 are missing, so the import adds them.
+   * @returns {object} the backup to import locally
+   */
+  function localData() {
+    const old = fixture();
+    old.lists = [{ ...old.lists[0], name: 'Old name', description: 'Old description', 'last-update-time': OLD }];
+    old.tasks = [
+      { ...old.tasks[0], description: 'Old milk', status: 'in-progress', 'last-update-time': OLD },
+      { ...old.tasks[1], description: 'Local bread', 'last-update-time': NEWER_LOCAL },
+    ];
+    old.memberships = old.memberships.filter((m) => m['list-id'] === L1);
+    old.notes = [{ ...old.notes[0], text: 'Local text' }];
+    return old;
+  }
+
+  /**
+   * Import the fixture while connected, after loading the local data in local mode.
+   * @param {object} [options] import options
+   * @returns {Promise<{result: object, entries: object[]}>} the counts and the queued entries
+   */
+  async function connectedImport(options = {}) {
+    await importBackup(store, localData(), 'merge');
+    expect(await store.queue.all()).toEqual([]);
+    at('2026-11-07T10:00:00.000Z');
+    const result = await importBackup(store, fixture(), 'merge', { connected: true, ...options });
+    return { result, entries: await store.queue.all() };
+  }
+
+  it('queues all fields of a newer row without an edit time, nothing for an older row, and only missing notes', async () => {
+    const { result, entries } = await connectedImport();
+    expect(entries.map((entry) => `${entry.operation} ${entry.target.type}`)).toEqual([
+      'update-list list', 'create-list list', 'update-task task', 'create-task task',
+      'add-membership membership', 'create-note note', 'delete-list list', 'delete-task task',
+    ]);
+    const [updateList, createList, updateTask, createTask, addMembership, createNote] = entries;
+    expect(updateList).toMatchObject({
+      target: { type: 'list', id: L1 },
+      fields: { name: 'Groceries', description: 'Weekly shopping\n  - fruit first\n' },
+      'edit-times': {},
+    });
+    expect(updateTask).toMatchObject({
+      target: { type: 'task', id: T101 },
+      fields: { description: 'Almond milk\n\nunsweetened', status: 'todo', 'due-time': '2026-11-05T22:59:00.000Z', 'overdue-handling': 'keep' },
+      'edit-times': {},
+    });
+    expect(createList.fields).toMatchObject({ id: L2, name: 'Old projects', 'creation-time': '2026-11-01T08:00:00.000Z' });
+    expect(createTask.fields).toMatchObject({ id: T103, description: 'Paint the shed', lists: [] });
+    expect(addMembership.target).toMatchObject({ id: T103, 'list-id': L2 });
+    expect(createNote).toMatchObject({ target: { id: N202, 'task-id': T103 }, fields: { id: N202, text: 'Needs two coats\n  of paint' } });
+    expect(entries.every((entry) => entry.created === '2026-11-07T10:00:00.000Z')).toBe(true);
+    expect(entries.map((entry) => entry.seq)).toEqual([...entries.map((entry) => entry.seq)].sort((a, b) => a - b));
+    expect((await store.getTask(T102)).description).toBe('Local bread');
+    expect((await store.notesOfTask(T101)).map((note) => note.text)).toEqual(['Local text']);
+    expect(result.notes).toEqual(counts({ added: 1, skipped: 1 }));
+    expect(result.tasks).toEqual(counts({ added: 1, updated: 1, skipped: 1 }));
+  });
+
+  it('sends the final name of a renamed list, and adds new memberships in their list order', async () => {
+    await store.createList({ name: 'Groceries' });
+    const result = await importBackup(store, fixture(), 'merge', { connected: true });
+    const entries = await store.queue.all();
+    expect(entries.find((entry) => entry.operation === 'create-list' && entry.target.id === L1).fields.name).toBe('Groceries (2)');
+    expect(entries.filter((entry) => entry.operation === 'add-membership' && entry.target['list-id'] === L1).map((entry) => entry.target.id))
+      .toEqual([T102, T101]);
+    expect(result.lists).toMatchObject({ added: 2 });
+  });
+
+  it('sends a restore before the update when the newer row leaves the recycle bin', async () => {
+    const old = localData();
+    old.lists[0]['deletion-time'] = OLD;
+    await importBackup(store, old, 'merge');
+    await importBackup(store, fixture(), 'merge', { connected: true });
+    const entries = (await store.queue.all()).filter((entry) => entry.target.id === L1);
+    expect(entries.map((entry) => entry.operation)).toEqual(['restore-list', 'update-list']);
+  });
+
+  it('never queues a removal, and refuses overwrite mode', async () => {
+    const { entries } = await connectedImport();
+    const inBackup = new Set([...fixture().lists, ...fixture().tasks, ...fixture().notes].map((record) => record.id));
+    expect(entries.every((entry) => inBackup.has(entry.target.id))).toBe(true);
+    expect(entries.map((entry) => entry.operation)).not.toContain('remove-membership');
+    expect(entries.map((entry) => entry.operation)).not.toContain('delete-note');
+    const before = await store.snapshot();
+    const queued = entries.length;
+    for (const call of [
+      () => importBackup(store, fixture(), 'overwrite', { connected: true }),
+      () => previewImport(store, fixture(), 'overwrite', { connected: true }),
+    ]) {
+      const error = await call().then(() => null, (problem) => problem);
+      expect(error).toBeInstanceOf(BackupError);
+      expect(error).toMatchObject({ code: 'invalid', path: 'mode' });
+    }
+    expect(await store.snapshot()).toEqual(before);
+    expect(await store.queue.count()).toBe(queued);
+  });
+
+  it('never changes or queues a list owned by another user, nor its tasks', async () => {
+    const foreign = { id: 99, name: 'Ada' };
+    const old = localData();
+    old.lists[0].owner = foreign;
+    await importBackup(store, old, 'merge');
+    const data = fixture();
+    data.lists[0].owner = foreign;
+    const before = await store.snapshot();
+    const result = await importBackup(store, data, 'merge', { connected: true, ownerId: 12 });
+    const entries = await store.queue.all();
+    expect(entries.map((entry) => entry.target.id)).not.toContain(L1);
+    expect(entries.map((entry) => entry.target.id)).not.toContain(T101);
+    expect(entries.map((entry) => entry.target['list-id'])).not.toContain(L1);
+    expect(await store.getList(L1)).toEqual(before.lists.find((list) => list.id === L1));
+    expect(await store.getTask(T101)).toEqual(before.tasks.find((task) => task.id === T101));
+    expect(result.lists).toMatchObject({ skipped: 1, added: 1 });
+  });
+
+  it('counts the same changes in the preview as the import makes', async () => {
+    await importBackup(store, localData(), 'merge');
+    const preview = await previewImport(store, fixture(), 'merge', { connected: true });
+    const result = await importBackup(store, fixture(), 'merge', { connected: true });
+    expect(preview).toEqual(result);
+  });
+
+  it('queues nothing in local mode, and nothing when the file is invalid', async () => {
+    await importBackup(store, fixture(), 'merge');
+    expect(await store.queue.count()).toBe(0);
+    const bad = fixture();
+    bad.tasks[0].status = 'nope';
+    await expect(importBackup(store, bad, 'merge', { connected: true })).rejects.toBeInstanceOf(BackupError);
+    expect(await store.queue.count()).toBe(0);
+  });
+
+  it('rolls an entry back through the queue undo, as for a refused change', async () => {
+    const { entries } = await connectedImport();
+    await store.queue.undo(store, entries.find((entry) => entry.operation === 'update-list'));
+    expect(await store.getList(L1)).toMatchObject({ name: 'Old name', description: 'Old description' });
+    await store.queue.undo(store, entries.find((entry) => entry.operation === 'create-task'));
+    expect(await store.getTask(T103)).toBeUndefined();
+  });
+});
