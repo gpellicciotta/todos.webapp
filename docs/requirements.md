@@ -49,6 +49,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LST-5: Users see all lists with their task count, their open task count, and, when connected, their sharing state.
 - LST-6: Deleting a list moves it to the recycle bin and never deletes its tasks.
 - LST-7: A deleted list's tasks stay in their other lists, or end up in no list.
+- LST-8: Users reorder lists by drag or keyboard, in the sidebar and the Lists screen; the order stays on the device.
+  New lists append at the end; the store and the sync feed never hold the order.
 
 ### Tasks
 - TSK-1: Users create a task with a description of 1 to 500 characters.

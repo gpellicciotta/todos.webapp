@@ -209,6 +209,59 @@ test('New list creates only through Create and discards drafts on close (LST-1, 
   expect(problems).toEqual([]);
 });
 
+test('dragging a list handle reorders the Lists screen, and the sidebar and a reload keep the order', async ({ page }) => {
+  const problems = watch(page);
+  await seed(page);
+  await page.goto('/#/lists');
+  const names = page.locator('.lists-view .list-row__name');
+  const sidebar = page.locator('.app__sidebar .nav-item--list .nav-item__label');
+  await expect(names).toHaveText(['Home', 'Work']);
+  const handle = await page.locator('.lists-view .list-item__handle').first().boundingBox();
+  const last = await page.locator('.lists-view .list-item').last().boundingBox();
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + handle.width / 2, last.y + last.height - 4, { steps: 8 });
+  await page.mouse.up();
+  await expect(names).toHaveText(['Work', 'Home']);
+  await expect(sidebar).toHaveText(['Work', 'Home']);
+  await page.reload();
+  await expect(names).toHaveText(['Work', 'Home']);
+  await expect(sidebar).toHaveText(['Work', 'Home']);
+  expect(problems).toEqual([]);
+});
+
+test('Move up and Move down reorder lists by keyboard, announce the move, and keep new lists last', async ({ page }) => {
+  const problems = watch(page);
+  await seed(page);
+  await page.goto('/#/lists');
+  const names = page.locator('.lists-view .list-row__name');
+  const sidebar = page.locator('.app__sidebar .nav-item--list .nav-item__label');
+  await expect(names).toHaveText(['Home', 'Work']);
+  await expect(page.getByRole('button', { name: 'Move up: Home' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Move down: Home' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(names).toHaveText(['Work', 'Home']);
+  await expect(page.getByRole('button', { name: 'Move up: Home' })).toBeFocused();
+  await expect(page.locator('[aria-live="polite"]').filter({ hasText: 'Home moved to position 2 of 2.' })).toHaveCount(1);
+  await expect(sidebar).toHaveText(['Work', 'Home']);
+  await page.keyboard.press('Enter');
+  await expect(names).toHaveText(['Home', 'Work']);
+  await page.locator('.app__sidebar [data-nav^="list:"]').nth(1).focus();
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect(sidebar).toHaveText(['Work', 'Home']);
+  await expect(page.locator('.app__sidebar [data-nav^="list:"]').first()).toBeFocused();
+  await expect(names).toHaveText(['Work', 'Home']);
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    await store.createList({ name: 'Archive' });
+    store.close();
+  });
+  await expect(names).toHaveText(['Work', 'Home', 'Archive']);
+  await expect(sidebar).toHaveText(['Work', 'Home', 'Archive']);
+  expect(problems).toEqual([]);
+});
+
 test('Enter in the new list name creates the draft', async ({ page }) => {
   const problems = watch(page);
   await page.goto('/#/lists/new');

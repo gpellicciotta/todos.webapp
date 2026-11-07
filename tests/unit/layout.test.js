@@ -5,6 +5,7 @@ import { renderShell } from '../../src/js/ui/layout.js';
 afterEach(() => {
   vi.useRealTimers();
   document.body.replaceChildren();
+  localStorage.clear();
 });
 
 /**
@@ -73,5 +74,50 @@ describe('renderShell', () => {
     expect(region.textContent).toBe('ToDo\'s was updated in another tab. Reload to continue.');
     banner.querySelector('button').click();
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('renderShell list order', () => {
+  const LISTS = [{ id: 'g', name: 'Garden' }, { id: 'h', name: 'Home' }, { id: 'w', name: 'Work' }];
+  const COUNTS = { all: 0, byList: new Map() };
+  const labels = (root) => [...root.querySelectorAll('.app__sidebar .nav-item--list .nav-item__label')].map((label) => label.textContent);
+  const press = (target, key, altKey = true) => target.dispatchEvent(new KeyboardEvent('keydown', { key, altKey, bubbles: true }));
+
+  it('shows the lists in the stored device order, unlisted lists last', () => {
+    localStorage.setItem('todos.lists.order', JSON.stringify(['w', 'h']));
+    const { root, shell } = render();
+    shell.setLists(LISTS, COUNTS);
+    expect(labels(root)).toEqual(['Work', 'Home', 'Garden']);
+  });
+
+  it('moves the focused list with Alt+ArrowDown and Alt+ArrowUp, keeps focus, and announces it', async () => {
+    const { root, shell } = render();
+    shell.setLists(LISTS, COUNTS);
+    const link = root.querySelector('[data-nav="list:g"]');
+    link.focus();
+    press(link, 'ArrowDown');
+    expect(labels(root)).toEqual(['Home', 'Garden', 'Work']);
+    expect(document.activeElement).toBe(root.querySelector('[data-nav="list:g"]'));
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Garden moved to position 2 of 3.'));
+    press(document.activeElement, 'ArrowUp');
+    expect(labels(root)).toEqual(['Garden', 'Home', 'Work']);
+  });
+
+  it('leaves the order alone at the ends and for keys without Alt', () => {
+    const { root, shell } = render();
+    shell.setLists(LISTS, COUNTS);
+    const first = root.querySelector('[data-nav="list:g"]');
+    press(first, 'ArrowUp');
+    press(first, 'ArrowDown', false);
+    expect(labels(root)).toEqual(['Garden', 'Home', 'Work']);
+    expect(localStorage.getItem('todos.lists.order')).toBeNull();
+  });
+
+  it('follows an order stored elsewhere, such as the Lists screen', async () => {
+    const { root, shell } = render();
+    shell.setLists(LISTS, COUNTS);
+    const { writeListOrder } = await import('../../src/js/core/list-order.js');
+    writeListOrder(['w', 'g', 'h']);
+    expect(labels(root)).toEqual(['Work', 'Garden', 'Home']);
   });
 });

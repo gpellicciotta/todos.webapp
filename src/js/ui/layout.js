@@ -6,9 +6,11 @@
  * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
  * the account, Recycle bin, and Settings (see user-menu.js).
  * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
+ * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it (`LST-8`).
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
+import { applyListOrder, movedMessage, moveList, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
 import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { createLiveRegion } from './live-region.js';
@@ -161,6 +163,8 @@ export function renderShell(root, { session = createSession() } = {}) {
   let route = null;
   let view = null;
   let announcer = null;
+  let shownLists = [];
+  let shownCounts = { all: 0, byList: new Map() };
 
   /** Mark the links of the current route with `aria-current="page"`. */
   function markCurrent() {
@@ -177,6 +181,62 @@ export function renderShell(root, { session = createSession() } = {}) {
       }
     }
   }
+
+  /** Render the sidebar lists from the last lists and counts, in the stored order. */
+  function renderLists() {
+    setCount(root.querySelector('[data-count="all"]'), shownCounts.all);
+    listNav.replaceChildren(...applyListOrder(shownLists, readListOrder()).map((list) => {
+      const item = doc.createElement('li');
+      const link = doc.createElement('a');
+      link.className = 'nav-item nav-item--list';
+      link.href = `#/lists/${encodeURIComponent(list.id)}`;
+      link.dataset.nav = `list:${list.id}`;
+      const label = doc.createElement('span');
+      label.className = 'nav-item__label';
+      label.textContent = list.name;
+      const count = doc.createElement('span');
+      count.className = 'nav-item__count';
+      setCount(count, shownCounts.byList.get(list.id) ?? 0);
+      link.append(label, count);
+      item.append(link);
+      return item;
+    }));
+    markCurrent();
+  }
+
+  /**
+   * Move the focused list link with Alt+Up and Alt+Down, keeping focus on it and announcing the position.
+   * @param {KeyboardEvent} event the key event
+   */
+  function onListKeydown(event) {
+    const link = event.target.closest?.('[data-nav^="list:"]');
+    if (!link || !event.altKey || event.ctrlKey || event.metaKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) {
+      return;
+    }
+    event.preventDefault();
+    const ordered = applyListOrder(shownLists, readListOrder());
+    const id = link.dataset.nav.slice('list:'.length);
+    const ids = ordered.map((list) => list.id);
+    const next = moveList(ids, id, event.key === 'ArrowUp' ? -1 : 1);
+    if (next.join() === ids.join()) {
+      return;
+    }
+    if (writeListOrder(next)) {
+      [...listNav.querySelectorAll('[data-nav]')].find((candidate) => candidate.dataset.nav === `list:${id}`)?.focus();
+      announcer ??= createLiveRegion({ document: doc, parent: root });
+      announcer.announce(movedMessage(ordered.find((list) => list.id === id).name, next.indexOf(id) + 1, next.length));
+    }
+  }
+
+  listNav.addEventListener('keydown', onListKeydown);
+  const unsubscribeOrder = onListOrderChange(() => {
+    if (root.isConnected) {
+      renderLists();
+    }
+    else {
+      unsubscribeOrder();
+    }
+  });
 
   return {
     main,
@@ -211,29 +271,14 @@ export function renderShell(root, { session = createSession() } = {}) {
     },
 
     /**
-     * Show the lists in the sidebar, each with its open task count.
-     * @param {object[]} lists the lists outside the recycle bin, in display order
+     * Show the lists in the sidebar in the order of this device, each with its open task count.
+     * @param {object[]} lists the lists outside the recycle bin, in any order
      * @param {{all: number, byList: Map<string, number>}} counts the open counts
      */
     setLists(lists, counts) {
-      setCount(root.querySelector('[data-count="all"]'), counts.all);
-      listNav.replaceChildren(...lists.map((list) => {
-        const item = doc.createElement('li');
-        const link = doc.createElement('a');
-        link.className = 'nav-item nav-item--list';
-        link.href = `#/lists/${encodeURIComponent(list.id)}`;
-        link.dataset.nav = `list:${list.id}`;
-        const label = doc.createElement('span');
-        label.className = 'nav-item__label';
-        label.textContent = list.name;
-        const count = doc.createElement('span');
-        count.className = 'nav-item__count';
-        setCount(count, counts.byList.get(list.id) ?? 0);
-        link.append(label, count);
-        item.append(link);
-        return item;
-      }));
-      markCurrent();
+      shownLists = lists;
+      shownCounts = counts;
+      renderLists();
     },
 
     /**

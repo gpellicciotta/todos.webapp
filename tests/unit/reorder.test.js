@@ -75,6 +75,23 @@ describe('attachReorder', () => {
     reorder.destroy();
   });
 
+  it('reorders other rows through the row, handle, and identifier options', () => {
+    const list = document.createElement('ul');
+    list.innerHTML = ['a', 'b', 'c'].map((id) => `<li class="item" data-list-id="${id}"><span class="grip"></span><a href="#"></a></li>`).join('');
+    document.body.append(list);
+    const onMove = vi.fn();
+    const reorder = attachReorder(list, { enabled: () => true, onMove, row: '.item', handle: '.grip', idKey: 'listId' });
+    list.querySelector('[data-list-id="b"] a').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true }));
+    expect(onMove).toHaveBeenLastCalledWith('b', { placement: { after: 'c' }, index: 2 });
+    const item = list.querySelector('[data-list-id="c"]');
+    item.querySelector('.grip').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0, pointerId: 1, clientY: 5 }));
+    expect(item.dataset.dragging).toBe('true');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(item.hasAttribute('data-dragging')).toBe(false);
+    reorder.destroy();
+    list.remove();
+  });
+
   it('moves a task by step for the Move up and Move down menu entries', () => {
     const list = rows();
     const onMove = vi.fn();

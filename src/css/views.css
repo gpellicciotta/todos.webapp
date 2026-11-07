@@ -464,21 +464,91 @@
   list-style: none;
 }
 
-.list-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-content: center;
-  gap: 0 var(--space-3);
+/* A list item holds the drag handle, the row link, and the Move up and Move down buttons (`LST-8`). */
+.list-item {
+  position: relative;
+  display: flex;
+  align-items: center;
   min-block-size: var(--row-height);
-  padding: var(--space-2) var(--space-3);
   border-block-end: var(--border-width) solid var(--color-border);
   background-color: var(--color-surface);
-  color: var(--color-text);
-  text-decoration: none;
 }
 
-.list-row:hover {
+.list-item:hover {
   background-color: var(--color-hover-bg);
+}
+
+.list-item[data-dragging='true'] {
+  z-index: var(--layer-sticky);
+  border-block-end-color: transparent;
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-2);
+  cursor: grabbing;
+}
+
+.list-item[data-drop]::before {
+  position: absolute;
+  inset-inline: 0;
+  z-index: var(--layer-sticky);
+  block-size: var(--border-width-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-signal);
+  content: '';
+  pointer-events: none;
+}
+
+.list-item[data-drop='before']::before {
+  inset-block-start: 0;
+  translate: 0 -50%;
+}
+
+.list-item[data-drop='after']::before {
+  inset-block-end: 0;
+  translate: 0 calc(50% + var(--border-width));
+}
+
+.list-item__handle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  align-self: stretch;
+  inline-size: var(--space-5);
+  color: var(--color-text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Touch screens have no hover to drag with, so they keep the buttons only. */
+@media (hover: none) {
+  .list-item__handle {
+    display: none;
+  }
+}
+
+.list-item__move {
+  flex: none;
+}
+
+.list-item__move:disabled {
+  color: var(--color-text-disabled);
+  cursor: default;
+}
+
+.list-item__up {
+  rotate: 180deg;
+}
+
+.list-row {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  align-self: stretch;
+  gap: 0 var(--space-3);
+  min-inline-size: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  text-decoration: none;
 }
 
 /* The ring sits inside the row, so the rows around it never cover it. */

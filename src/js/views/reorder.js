@@ -1,5 +1,6 @@
 /**
  * Reordering of the list view rows: drag by the handle, Alt+Up and Alt+Down, and Move up and Move down (`LV-3`).
+ * The Lists screen reuses it for its list rows, through the row, handle, and identifier options.
  *
  * Every move turns into one before or after neighbor for the store's `moveInList`.
  * Neighbors come from the shown tasks, rendered or not, so a move skips the tasks the status filter hides.
@@ -69,25 +70,33 @@ export function slotAt(midpoints, y) {
  * @param {(taskId: string, move: {placement: object, index: number}) => void} options.onMove stores a move
  * @param {() => HTMLElement|null} [options.scroller] the element a drag scrolls, the main column by default
  * @param {() => string[]} [options.ids] the shown task identifiers in order, rendered or not; the rows by default
+ * @param {string} [options.row] the selector of a row, `.task-row` by default
+ * @param {string} [options.handle] the selector of a drag handle inside a row, `.task-row__handle` by default
+ * @param {string} [options.idKey] the `data-` key holding a row's identifier, `taskId` by default
  * @returns {{step: (taskId: string, step: -1|1) => void, destroy: () => void}} the controller
  */
-export function attachReorder(list, { enabled, onMove, scroller = () => list.closest('.app__main'), ids = null }) {
+export function attachReorder(list, {
+  enabled, onMove, scroller = () => list.closest('.app__main'), ids = null,
+  row: rowSelector = '.task-row', handle: handleSelector = '.task-row__handle', idKey = 'taskId',
+}) {
   let drag = null;
+  /** Rows of one list, all rendered, are measured at the drag start, since they may differ in height. */
+  const measured = ids === null;
 
   /**
    * List the rendered rows.
    * @returns {HTMLElement[]} the rows, top to bottom
    */
-  const rowsOf = () => [...list.querySelectorAll('.task-row')];
+  const rowsOf = () => [...list.querySelectorAll(rowSelector)];
 
   /**
    * List the shown task identifiers.
    * @returns {string[]} the identifiers, in order
    */
-  const idsOf = ids ?? (() => rowsOf().map((row) => row.dataset.taskId));
+  const idsOf = ids ?? (() => rowsOf().map((row) => row.dataset[idKey]));
 
   /** Clear the drop spot. */
-  const unmark = () => list.querySelectorAll('.task-row[data-drop]').forEach((row) => row.removeAttribute('data-drop'));
+  const unmark = () => list.querySelectorAll(`${rowSelector}[data-drop]`).forEach((row) => row.removeAttribute('data-drop'));
 
   /**
    * Move a task one row, when moves are on and a row is left in that direction.
@@ -111,7 +120,7 @@ export function attachReorder(list, { enabled, onMove, scroller = () => list.clo
     if (move) {
       const below = drag.slot < drag.ids.length;
       const target = drag.ids[below ? drag.slot : drag.ids.length - 1];
-      const row = rowsOf().find((candidate) => candidate.dataset.taskId === target);
+      const row = rowsOf().find((candidate) => candidate.dataset[idKey] === target);
       if (row) {
         row.dataset.drop = below ? 'before' : 'after';
       }
@@ -146,18 +155,21 @@ export function attachReorder(list, { enabled, onMove, scroller = () => list.clo
    * @param {PointerEvent} event the pointer down event
    */
   function onPointerDown(event) {
-    const handle = event.target.closest?.('.task-row__handle');
+    const handle = event.target.closest?.(handleSelector);
     if (!handle || event.button !== 0 || !enabled()) {
       return;
     }
     event.preventDefault();
-    const row = handle.closest('.task-row');
+    const row = handle.closest(rowSelector);
     const ids = idsOf();
     const height = row.getBoundingClientRect().height || ROW_PX;
+    const top = list.getBoundingClientRect().top;
     drag = {
-      row, taskId: row.dataset.taskId, ids, slot: ids.indexOf(row.dataset.taskId),
-      startY: event.clientY - list.getBoundingClientRect().top, y: event.clientY, frame: null,
-      midpoints: ids.map((_, index) => (index + 0.5) * height),
+      row, taskId: row.dataset[idKey], ids, slot: ids.indexOf(row.dataset[idKey]),
+      startY: event.clientY - top, y: event.clientY, frame: null,
+      midpoints: measured
+        ? rowsOf().map((each) => each.getBoundingClientRect().top - top + each.getBoundingClientRect().height / 2)
+        : ids.map((_, index) => (index + 0.5) * height),
     };
     handle.setPointerCapture?.(event.pointerId);
     row.dataset.dragging = 'true';
@@ -221,12 +233,12 @@ export function attachReorder(list, { enabled, onMove, scroller = () => list.clo
    * @param {KeyboardEvent} event the key event
    */
   function onKeydown(event) {
-    const row = event.target.closest?.('.task-row');
+    const row = event.target.closest?.(rowSelector);
     if (!row || !event.altKey || event.ctrlKey || event.metaKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) {
       return;
     }
     event.preventDefault();
-    step(row.dataset.taskId, event.key === 'ArrowUp' ? -1 : 1);
+    step(row.dataset[idKey], event.key === 'ArrowUp' ? -1 : 1);
   }
 
   const onPointerUp = () => finish(true);
