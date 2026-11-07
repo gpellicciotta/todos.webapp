@@ -11,9 +11,19 @@
 - tests/unit/view-controls.test.js
 - tests/e2e/all-tasks.spec.js
 - tests/e2e/list.spec.js
+- tests/e2e/gallery-app.spec.js
+- tests/unit/all-tasks.test.js
+- tests/unit/list.test.js
+- tests/unit/router.test.js
+- src/service-worker.js
+- CHANGELOG.md
+- docs/specs/ui-design.md
+- docs/specs/visual-style-guide.md
 
-Size estimate: 12 files, 700 lines
-Size note: Above the typical line. The panel, menu entries, and info line replace one control bar and cannot merge apart.
+Mechanical command: `node scripts/check-sw-version.mjs --update` writes scripts/sw-precache-hashes.json, which is not counted.
+
+Size estimate: 21 files, 2227 lines
+Size note: Above the typical line. The panel, menu entries, and info line replace one control bar and cannot merge apart. A human approved 21 files, 2227 lines.
 
 ### Tests
 - Unit: info line text for the defaults, each filter, the sort, and Reset; the count reads "12 of 24 tasks" when narrowed.

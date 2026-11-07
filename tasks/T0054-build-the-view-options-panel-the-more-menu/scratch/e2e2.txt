@@ -1,0 +1,28 @@
+
+Running 22 tests using 4 workers
+
+  ✓   3 [chromium] › tests\e2e\all-tasks.spec.js:105:3 › a first visit shows the empty state without any sign-in at 1440 px (LOC-1) (1.6s)
+  ✓   2 [chromium] › tests\e2e\all-tasks.spec.js:105:3 › a first visit shows the empty state without any sign-in at 390 px (LOC-1) (1.7s)
+  ✓   4 [chromium] › tests\e2e\all-tasks.spec.js:154:1 › the status menu changes a status by mouse and by keyboard (TSK-4) (1.8s)
+  ✓   1 [chromium] › tests\e2e\all-tasks.spec.js:124:1 › Enter adds a task, keeps focus in the add bar, and asks for persistent storage once (TSK-1, TEC-5) (2.8s)
+  ✓   7 [chromium] › tests\e2e\all-tasks.spec.js:267:1 › the All tasks More menu holds only Edit view options (VO-4) (926ms)
+  ✓   8 [chromium] › tests\e2e\all-tasks.spec.js:277:1 › the view options open beside the rows on a wide layout, with Reset at the top and no Show button (VO-5, VO-6) (1.4s)
+  ✓   9 [chromium] › tests\e2e\all-tasks.spec.js:295:1 › the view options fill the screen on a compact layout, end with Show N tasks, and work by keyboard (VO-5, VO-13) (1.9s)
+  ✓  10 [chromium] › tests\e2e\all-tasks.spec.js:326:1 › the view options open from their route after a reload, and Reset in the panel restores the defaults (VO-8) (1.4s)
+  ✓  11 [chromium] › tests\e2e\all-tasks.spec.js:345:1 › Delete moves a task to the recycle bin and Undo brings it back, also with Ctrl+Z (TSK-11) (1.3s)
+  ✓  12 [chromium] › tests\e2e\all-tasks.spec.js:365:1 › a row opens the task editor route, and the selected row is marked (777ms)
+  ✓  13 [chromium] › tests\e2e\all-tasks.spec.js:377:1 › a store change while the status menu is open keeps the menu open and focused (1.1s)
+  ✓   6 [chromium] › tests\e2e\all-tasks.spec.js:191:3 › the view options, search, and the info line change the rows at 1440 px (TV-1 to TV-12, VO-1 to VO-8) (6.3s)
+  ✓  15 [chromium] › tests\e2e\list.spec.js:76:3 › List screen › shows the header, the open tasks in manual order, and the info line (LV-1, LV-2, LV-10, VO-2) (891ms)
+  ✓  14 [chromium] › tests\e2e\all-tasks.spec.js:401:1 › Reset in an empty result focuses search, and deleting the last shown row focuses the add bar (2.1s)
+  ✓   5 [chromium] › tests\e2e\all-tasks.spec.js:191:3 › the view options, search, and the info line change the rows at 390 px (TV-1 to TV-12, VO-1 to VO-8) (7.6s)
+  ✓  18 [chromium] › tests\e2e\list.spec.js:136:3 › List screen › the More menu holds Edit list, Edit view options, Share list, and Delete list (VO-4) (1.2s)
+  ✓  17 [chromium] › tests\e2e\list.spec.js:109:3 › List screen › Alt+Down moves the focused row, keeps focus on it, and announces the move (LV-3) (2.1s)
+  ✓  19 [chromium] › tests\e2e\list.spec.js:145:3 › List screen › the list view options offer no Lists filter and put Manual order first, and Show N tasks is hidden when wide (VO-6, LV-6) (1.2s)
+  ✓  16 [chromium] › tests\e2e\list.spec.js:89:3 › List screen › dragging a row by its handle stores the new order, which survives a reload (LV-3) (3.1s)
+  ✓  20 [chromium] › tests\e2e\list.spec.js:158:3 › List screen › a sorted view hides the move controls and leaves the stored order unchanged (LV-7, LV-8) (2.0s)
+  ✓  21 [chromium] › tests\e2e\list.spec.js:182:3 › List screen › the status, due, and created filters apply, persist, and Reset restores manual order and open tasks (TV-12, VO-8) (2.2s)
+  ✓  22 [chromium] › tests\e2e\list.spec.js:201:3 › List screen › a list of 300 tasks renders the rows in view, and moves and drags reach rows past them (TEC-16) (14.7s)
+
+  22 passed (27.6s)
+exit 0

@@ -15,12 +15,14 @@ size_status: approved
 size_estimate: 21 files, 2227 lines
 usage:
   worker: {turns: 4, duration_s: 4902.8, input: 52, output: 11128, cache_read: 6759742, cache_write: 30160}
-work_duration: 1812.2
+  review: {turns: 2, duration_s: 564.6, input: 263954, output: 11700, cache_read: 3065336}
+work_duration: 5412.2
 size_approved: 21 files, 2227 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T13:08:03Z"
-review_status: pending
+review_status: rejected
 review_round: 1
+reviewed_by: "@gemini"
 ---
 # T0054: Build the View options panel, the More menu entries, and the info line for All tasks and list views
 
@@ -80,4 +82,17 @@ Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.j
 
 - [2026-11-07] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-07] **[Review]**
+  Round 1 rejected by @gemini: The View options panel, More menu entries, info line, and unit/E2E test coverage in commit `fb4f38d` are well-implemented and satisfy.
+  - Findings: [review-findings-1.md](T0054-build-the-view-options-panel-the-more-menu/review-findings-1.md).
+
+- [2026-11-07] **[Implement]**
+  Review rework: resolved rebase conflicts, regenerated precache hashes, and moved the compact Show button below a scrolling options area.
+  - Declared Files now list all 21 touched files.
+  - Compact end-to-end test asserts no overlap.
+
+- [2026-11-07] **[Verify]**
+  Clean after rebase: lint, 804 unit, 153 end-to-end, check:sw, and the 5000-task budget at 171 and 166 ms.
+  - Output and screenshots in validation-proof.md.
 

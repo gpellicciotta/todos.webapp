@@ -36,6 +36,8 @@ for (const [phase, port] of [['before', 8761], ['after', 8762]]) {
         await page.locator('.view-options').waitFor();
         await page.locator('.view-options').getByRole('button', { name: /^Status/ }).click();
         await page.screenshot({ path: `${OUT}/after-all-tasks-view-options-${layout}.png` });
+        await page.locator('.view-options__content').evaluate((element) => element.scrollTo(0, element.scrollHeight));
+        await page.screenshot({ path: `${OUT}/after-all-tasks-view-options-scrolled-${layout}.png` });
         await page.getByLabel('Completed').check();
         await page.getByLabel('Sort by').selectOption({ label: 'Description' });
         await page.screenshot({ path: `${OUT}/after-all-tasks-narrowed-${layout}.png` });

@@ -1,0 +1,13 @@
+
+> todos-webapp@0.2.0-pre test:perf
+> playwright test --config playwright.perf.config.js
+
+
+Running 1 test using 1 worker
+
+desktop: view open 55, 63, 72 ms (median 63 ms), warm-up 60 ms; cold start to first rows 247, 289, 250 ms (median 250 ms); one-task update 98, 83, 87 ms (median 87 ms); scroll frames median 17 ms, p95 17 ms, 0 of 300 over 50 ms, at most 55 rows
+4x CPU throttling: view open 217, 171, 165 ms (median 171 ms), warm-up 230 ms; cold start to first rows 1090, 1199, 1191 ms (median 1191 ms); one-task update 205, 238, 169 ms (median 205 ms); scroll frames median 50 ms, p95 83 ms, 133 of 300 over 50 ms, at most 55 rows
+  ✓  1 [performance] › tests\e2e\performance.spec.js:204:1 › All tasks opens with 5000 tasks within 200 ms under 4x CPU throttling (TEC-16) (34.2s)
+
+  1 passed (35.5s)
+exit 0
