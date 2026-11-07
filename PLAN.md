@@ -12,10 +12,10 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0063 Add an opt-in contract test that runs the sync client against a real todos server.
 - [x] T0064 Queue and sync the changes of a backup import while connected, comparing rows by last update.
 - [x] T0027 Show every sync state in the sync indicator and build the Sync log screen.
-- [~] T0056 [owner: @claude] Design how the sidebar and Lists screen look and behave with many lists, 100 and more.
+- [x] T0056 Design how the sidebar and Lists screen look and behave with many lists, 100 and more.
 - [x] T0028 Add the Sharing section to the list editor, role-aware controls, and the Shared filter.
 - [x] T0053 Remember view options per list instead of one shared setting, with a reset to the shared defaults.
-- [ ] T0065 [needs: T0056] Release (and publish) all changes as v0.3.0, via the devops.py script
+- [ ] T0065 Release (and publish) all changes as v0.3.0, via the devops.py script
 
 ## Backlog
 - [ ] T0070 Make throttled scrolling smoother by cutting the work per entering row in long lists.
