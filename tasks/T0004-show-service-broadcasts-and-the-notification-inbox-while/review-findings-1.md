@@ -3,7 +3,7 @@ task: T0004
 round: 1
 verdict: approved
 reviewer: "@gemini"
-reviewed_at: 2026-11-07T19:10:22Z
+reviewed_at: 2026-11-07T19:13:46Z
 reviewed_commit: "d53577f"
 base_commit: "5127588"
 branch: task/T0004-show-service-broadcasts-and-the-notification-inbox-while
