@@ -2,7 +2,8 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## v0.2.0 Milestone
-- [ ] T0058 [protocol: adhoc] Release (and publish) all changes as v0.2.0, via the devops.py script
+- [x] T0066 [owner: @claude] [protocol: adhoc] Make the covered Settings end-to-end test wait for the inert main column to wake.
+- [~] T0058 [owner: @claude] Release (and publish) all changes as v0.2.0, via the devops.py script
 - [x] T0055 Make the add field also search, with Add anyway, a hidden-task toast, and Add-only creation.
 - [x] T0054 Build the View options panel, the More menu entries, and the info line for All tasks and list views.
 - [x] T0046 Make lists re-orderable in the front-end only, without back-end storage.
