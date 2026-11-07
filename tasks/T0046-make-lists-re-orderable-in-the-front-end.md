@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1117.4, input: 224, output: 84764, cache_read: 12281698, cache_write: 255408}
+review_status: pending
+review_round: 1
 ---
 # T0046: Make lists re-orderable in the front-end only, without back-end storage
 
@@ -56,4 +60,7 @@ Completion check: `npm test` and `npx playwright test tests/e2e/lists.spec.js`
   - Files touched: 14.
   - Lines touched: 735.
   - Reopenings: 0.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
