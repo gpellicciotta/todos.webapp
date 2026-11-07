@@ -12,8 +12,10 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 3600.8, input: 4, output: 14}
+  worker: {turns: 4, duration_s: 4217.6, input: 72, output: 13684, cache_read: 7488746, cache_write: 30854}
 work_duration: 1813.7
+review_status: pending
+review_round: 1
 ---
 # T0048: Let the All tasks dashboard group tasks by List, Due Date, or Status
 
@@ -72,4 +74,7 @@ Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.j
 
 - [2026-11-07] **[Doc]**
   Updated CHANGELOG.md, requirements VO-12, and the grouping section of ui-design.md; wrote validation-proof.md with screenshots.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
