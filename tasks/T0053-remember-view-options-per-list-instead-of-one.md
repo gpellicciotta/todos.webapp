@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 417.8, input: 124, output: 29474, cache_read: 4433380, cache_write: 153832}
+review_status: pending
+review_round: 1
 ---
 # T0053: Remember view options per list instead of one shared setting, with a reset to the shared defaults
 
@@ -40,4 +44,7 @@ Remember view options per list instead of one shared setting, with a reset to th
 
 - [2026-11-07] **[Doc]**
   Updated ui-design.md, requirements TV-12, and the CHANGELOG for per-list view options.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
