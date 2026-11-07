@@ -1,0 +1,2 @@
+after: captured new-list editor at 390/1440 px in light/dark themes.
+[]
