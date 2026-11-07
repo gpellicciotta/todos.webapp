@@ -13,8 +13,11 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1569.4, input: 224, output: 167656, cache_read: 15734646, cache_write: 385852}
-review_status: pending
+  review: {turns: 2, duration_s: 536.4, input: 317740, output: 34426, cache_read: 2467314}
+review_status: rejected
 review_round: 1
+reviewed_by: "@gemini"
+work_duration: 1070.8
 ---
 # T0025: Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes
 
@@ -64,4 +67,12 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-07] **[Review]**
+  Round 1 rejected by @gemini: The change queue, API client, upload engine, rollback logic, tab leadership, and version 4 store migration are well-designed and pass.
+  - Findings: [review-findings-1.md](T0025-build-sync-upload-the-change-queue-first-connect/review-findings-1.md).
+
+- [2026-11-07] **[Implement]**
+  Review round 1: sorted adoption memberships by list and position, added a test, fixed table alignment, trimmed sentences.
+  - Bumped service worker VERSION for adopt.js.
 

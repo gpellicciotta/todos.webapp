@@ -61,3 +61,38 @@ Exit code: 0
 Notes:
 - connect.spec.js and shell.spec.js now answer `GET /api/changes`, since a connected app reads the snapshot for first-connect adoption.
 - Purged rows (`purgeForever`, `purgeExpired`) and `applyChanges` queue nothing; T0064 queues backup imports.
+
+### Review round 1 rework
+Red phase for the membership order test.
+Command: `npx vitest run tests/unit/adopt.test.js`
+Exit code: 1
+
+```text
+ FAIL  tests/unit/adopt.test.js > adopting local data on first connect > uploads the memberships of a list in its manual order
+AssertionError: expected [ …(3) ] to deeply equal [ …(3) ]
+      Tests  1 failed | 6 passed (7)
+```
+
+Green phase after sorting memberships by list and position.
+Command: `npm test`
+Exit code: 0
+
+```text
+ Test Files  46 passed (46)
+      Tests  963 passed (963)
+```
+
+Command: `npm run check:sw`
+Exit code: 0
+
+```text
+OK: 64 precached files match VERSION 2026-11-07.18.
+```
+
+Command: `lint-markdown check CHANGELOG.md docs/specs/local-store.md`
+Exit code: 0
+
+```text
+All 2 markdown files passed linting.
+Finished lint-markdown check in 0.0s with status: succeeded
+```

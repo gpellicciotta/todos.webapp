@@ -3,7 +3,7 @@ task: T0025
 round: 1
 verdict: rejected
 reviewer: "@gemini"
-reviewed_at: 2026-11-07T19:40:35Z
+reviewed_at: 2026-11-07T19:45:08Z
 reviewed_commit: "578da7d"
 base_commit: "6dd6887"
 branch: task/T0025-build-sync-upload-the-change-queue-first-connect
