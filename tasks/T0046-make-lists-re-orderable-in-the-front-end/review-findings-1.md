@@ -3,7 +3,7 @@ task: T0046
 round: 1
 verdict: approved
 reviewer: "@gemini"
-reviewed_at: 2026-11-07T12:34:07Z
+reviewed_at: 2026-11-07T12:37:59Z
 reviewed_commit: "f3ce9b6"
 base_commit: "7aa1982"
 branch: task/T0046-make-lists-re-orderable-in-the-front-end
