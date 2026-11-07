@@ -18,8 +18,9 @@ async function mockServices(page, { callbackStatus = 302 } = {}) {
   const calls = [];
   await page.addInitScript((server) => localStorage.setItem('todos.server-url', JSON.stringify(server)), SERVER);
   await page.route(`${AUTH}/**`, (route) => {
-    const returnUrl = new URL(route.request().url()).searchParams.get('app-redirect-url');
-    return route.fulfill({ status: 302, headers: { location: `${returnUrl}?authorization-code=auth-code-1` } });
+    const params = new URL(route.request().url()).searchParams;
+    const state = encodeURIComponent(params.get('app-state') ?? '');
+    return route.fulfill({ status: 302, headers: { location: `${params.get('app-redirect-url')}?state=${state}&authorization-code=auth-code-1` } });
   });
   await page.route(`${SERVER}/api/**`, (route) => {
     const request = route.request();
@@ -117,6 +118,23 @@ test('a code that no sign-in on this device started is ignored', async ({ page }
   await expect(page).toHaveURL(/#\/connect$/);
   await expect(page.locator('[data-view="connect"]')).toContainText('Sign-in did not finish.');
   expect(calls).toEqual([]);
+});
+
+test('a return whose state differs from the one sent is rejected before any request', async ({ page }) => {
+  const calls = await mockServices(page);
+  let sent = null;
+  await page.route(`${AUTH}/**`, (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    sent = params.get('app-state');
+    return route.fulfill({ status: 302, headers: { location: `${params.get('app-redirect-url')}?state=forged&authorization-code=auth-code-1` } });
+  });
+  await open(page, '#/connect');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.locator('[data-view="connect"]')).toContainText('Sign-in did not finish.');
+  await expect(page).toHaveURL(/#\/connect$/);
+  expect(sent).toMatch(/^[A-Za-z0-9_-]{22,}$/);
+  expect(calls).toEqual([]);
+  expect(await storedSession(page)).toBeNull();
 });
 
 test('disconnecting deletes the token and shows Local only', async ({ page }) => {

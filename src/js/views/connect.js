@@ -26,6 +26,7 @@ const STRINGS = Object.freeze({
   reasons: Object.freeze({
     network: 'The server could not be reached. Check the connection and try again.',
     'not-started': 'Start the sign-in from this screen, then try again.',
+    'state-mismatch': 'The sign-in did not come from this screen. Start it again from here.',
     rejected: 'The server did not accept the sign-in. Try again.',
   }),
   expired: 'Your session expired. Sign in again to keep syncing; your changes stay on this device.',

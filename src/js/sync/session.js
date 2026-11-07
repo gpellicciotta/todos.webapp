@@ -7,10 +7,11 @@
  * Local mode sends nothing; only completing a sign-in and disconnecting reach the server (`LOC-3`).
  * A returned code counts only after a sign-in started on this device within 15 minutes,
  * so a crafted link cannot connect the device to another account.
+ * The sign-in sends a random state that Auth returns; a return with another state is rejected (login CSRF).
  */
 
 import { readPreference, readServerUrl, writePreference } from '../core/preferences.js';
-import { AuthError, endSession, exchangeCode, readReturn, signInUrl } from './auth.js';
+import { AuthError, endSession, exchangeCode, randomState, readReturn, signInUrl } from './auth.js';
 
 const RECORD = 'session';
 const PENDING = 'sign-in';
@@ -113,20 +114,26 @@ export function createSession({ getStorage = () => globalThis.localStorage, fetc
      * @returns {string} the Auth URL
      */
     start({ returnUrl, logoUrl }) {
-      writePreference(PENDING, { server: session.serverUrl(), started: now() }, getStorage);
-      return signInUrl(returnUrl, { authUrl, logoUrl });
+      const state = randomState();
+      writePreference(PENDING, { server: session.serverUrl(), started: now(), state }, getStorage);
+      return signInUrl(returnUrl, { authUrl, logoUrl, state });
     },
 
     /**
      * Complete a started sign-in with the code Auth returned, and store the session.
+     * The started sign-in is used up; a state that is missing or differs from the one sent rejects it.
      * @param {string} code the authorization code
+     * @param {string|null} state the state Auth returned
      * @returns {Promise<{name: string|null, email: string, server: string}>} the account
      */
-    async complete(code) {
+    async complete(code, state) {
       const pending = readPreference(PENDING, null, getStorage);
       writePreference(PENDING, null, getStorage);
       if (!pending?.server || !(now() - pending.started <= START_WINDOW)) {
         throw new AuthError('not-started');
+      }
+      if (!pending.state || state !== pending.state) {
+        throw new AuthError('state-mismatch');
       }
       const { token, expiry, user } = await exchangeCode(pending.server, code, fetch);
       save({ token, expiry, name: user.name, email: user.email, server: pending.server });
@@ -160,7 +167,7 @@ export function createSession({ getStorage = () => globalThis.localStorage, fetc
         writePreference(PENDING, null, getStorage);
         return Promise.reject(new AuthError('rejected', taken.error));
       }
-      return session.complete(taken.code);
+      return session.complete(taken.code, taken.state);
     },
 
     /** Mark the session expired, as after a `401`: drop the token and keep the account. */

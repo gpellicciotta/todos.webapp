@@ -2,13 +2,14 @@
  * Auth adapter: the sign-in contract of the Auth service and the ToDo's service, in one place.
  * Steps, sources, and open points: docs/devops.md, Auth Integration.
  * Auth returns the code to `#/connect`; the ToDo's callback trades it for a one-time passcode (JSON), then a session.
+ * The sign-in sends a random `app-state`; Auth returns it as `state`, and the session rejects a mismatch (login CSRF).
  * A `403` from the callback means the account has no invitation for ToDo's (`CON-3`).
  */
 
 export const AUTH_URL = 'https://auth.pellicciotta.com';
 export const APP_NAME = 'todos';
 
-/** A sign-in that did not finish, with its reason: `not-invited`, `rejected`, `network`, or `not-started`. */
+/** A sign-in that did not finish, with its reason: `not-invited`, `rejected`, `network`, `not-started`, or `state-mismatch`. */
 export class AuthError extends Error {
   /**
    * Create the error.
@@ -25,11 +26,14 @@ export class AuthError extends Error {
 /**
  * Build the Auth sign-in URL.
  * @param {string} returnUrl where Auth sends the browser back to
- * @param {{authUrl?: string, logoUrl?: string}} [options] the Auth origin and the logo it shows
+ * @param {{authUrl?: string, logoUrl?: string, state?: string}} [options] the Auth origin, the logo it shows, and the state it returns
  * @returns {string} the URL
  */
-export function signInUrl(returnUrl, { authUrl = AUTH_URL, logoUrl } = {}) {
+export function signInUrl(returnUrl, { authUrl = AUTH_URL, logoUrl, state } = {}) {
   const params = new URLSearchParams({ 'app-name': APP_NAME, 'app-redirect-url': returnUrl });
+  if (state) {
+    params.set('app-state', state);
+  }
   if (logoUrl) {
     params.set('app-logo-url', logoUrl);
   }
@@ -37,20 +41,30 @@ export function signInUrl(returnUrl, { authUrl = AUTH_URL, logoUrl } = {}) {
 }
 
 /**
+ * Create a random state: 16 random bytes as 22 base64url characters.
+ * @returns {string} the state
+ */
+export function randomState() {
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+}
+
+/**
  * Read what Auth appended to the connect route.
  * @param {string} hash the location hash
- * @returns {{code: string}|{error: string}|null} the code, the error, or null when this is no return
+ * @returns {{code: string, state: string|null}|{error: string, state: string|null}|null} the code or the error with the returned state, or null when this is no return
  */
 export function readReturn(hash) {
   if (!hash.startsWith('#/connect?')) {
     return null;
   }
   const params = new URLSearchParams(hash.slice(hash.indexOf('?') + 1));
+  const state = params.get('state');
   const code = params.get('authorization-code');
   if (code) {
-    return { code };
+    return { code, state };
   }
-  return { error: params.get('error') ?? 'missing code' };
+  return { error: params.get('error') ?? 'missing code', state };
 }
 
 /**

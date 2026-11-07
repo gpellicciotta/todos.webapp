@@ -70,8 +70,8 @@ function setup({ storage = memoryStorage(), fetch = fakeFetch(), clock = { now: 
  * @returns {Promise<object>} the account
  */
 function signIn(session) {
-  session.start({ returnUrl: 'https://app.example/#/connect' });
-  return session.complete('auth-code-1');
+  const url = new URL(session.start({ returnUrl: 'https://app.example/#/connect' }));
+  return session.complete('auth-code-1', url.searchParams.get('app-state'));
 }
 
 describe('the Auth adapter', () => {
@@ -83,9 +83,16 @@ describe('the Auth adapter', () => {
     expect(url.searchParams.get('app-logo-url')).toBe('https://app.example/img/app-icon-192.png');
   });
 
+  it('adds the state to the sign-in URL only when there is one', () => {
+    expect(new URL(signInUrl('https://app.example/#/connect', { state: 'a b&c' })).searchParams.get('app-state')).toBe('a b&c');
+    expect(new URL(signInUrl('https://app.example/#/connect')).searchParams.has('app-state')).toBe(false);
+  });
+
   it('reads the code or the error that Auth appends to the connect route, and nothing else', () => {
-    expect(readReturn('#/connect?authorization-code=a%2Bb')).toEqual({ code: 'a+b' });
-    expect(readReturn('#/connect?error=denied')).toEqual({ error: 'denied' });
+    expect(readReturn('#/connect?authorization-code=a%2Bb')).toEqual({ code: 'a+b', state: null });
+    expect(readReturn('#/connect?state=s1&authorization-code=a')).toEqual({ code: 'a', state: 's1' });
+    expect(readReturn('#/connect?state=s1&error=denied')).toEqual({ error: 'denied', state: 's1' });
+    expect(readReturn('#/connect?error=denied')).toEqual({ error: 'denied', state: null });
     expect(readReturn('#/connect')).toBeNull();
     expect(readReturn('#/tasks?authorization-code=x')).toBeNull();
   });
@@ -130,7 +137,7 @@ describe('the session', () => {
     expect(url.searchParams.get('app-redirect-url')).toBe('https://app.example/#/connect');
     const changes = [];
     session.subscribe((state) => changes.push(state));
-    await expect(session.complete('auth-code-1')).resolves.toEqual({ name: 'Jane Doe', email: 'jane@example.com', server: SERVER });
+    await expect(session.complete('auth-code-1', url.searchParams.get('app-state'))).resolves.toEqual({ name: 'Jane Doe', email: 'jane@example.com', server: SERVER });
     expect(session.state()).toBe('connected');
     expect(session.token()).toBe('session-1');
     expect(changes).toEqual(['connected']);
@@ -142,12 +149,36 @@ describe('the session', () => {
 
   it('accepts a returned code only after a sign-in started on this device within 15 minutes', async () => {
     const { session, fetch, clock } = setup();
-    await expect(session.complete('crafted')).rejects.toMatchObject({ reason: 'not-started' });
-    session.start({ returnUrl: 'https://app.example/#/connect' });
+    await expect(session.complete('crafted', 'x')).rejects.toMatchObject({ reason: 'not-started' });
+    const url = new URL(session.start({ returnUrl: 'https://app.example/#/connect' }));
     clock.now += 16 * 60 * 1000;
-    await expect(session.complete('late')).rejects.toMatchObject({ reason: 'not-started' });
+    await expect(session.complete('late', url.searchParams.get('app-state'))).rejects.toMatchObject({ reason: 'not-started' });
     expect(fetch.calls).toEqual([]);
     expect(session.state()).toBe('local');
+  });
+
+  it('sends a random state, a new one for each sign-in', () => {
+    const { session } = setup();
+    const first = new URL(session.start({ returnUrl: 'https://app.example/#/connect' })).searchParams.get('app-state');
+    const second = new URL(session.start({ returnUrl: 'https://app.example/#/connect' })).searchParams.get('app-state');
+    expect(first).toMatch(/^[A-Za-z0-9_-]{22,}$/);
+    expect(second).toMatch(/^[A-Za-z0-9_-]{22,}$/);
+    expect(second).not.toBe(first);
+  });
+
+  it('rejects a callback whose state is missing or differs, sends nothing, and uses the state once', async () => {
+    const { session, storage, fetch } = setup();
+    const url = new URL(session.start({ returnUrl: 'https://app.example/#/connect' }));
+    const state = url.searchParams.get('app-state');
+    await expect(session.complete('auth-code-1', 'other')).rejects.toMatchObject({ reason: 'state-mismatch' });
+    expect(fetch.calls).toEqual([]);
+    expect(session.state()).toBe('local');
+    await expect(session.complete('auth-code-1', state)).rejects.toMatchObject({ reason: 'not-started' });
+    session.start({ returnUrl: 'https://app.example/#/connect' });
+    await expect(session.complete('auth-code-1', null)).rejects.toMatchObject({ reason: 'state-mismatch' });
+    await expect(session.complete('auth-code-1', '')).rejects.toMatchObject({ reason: 'not-started' });
+    expect(JSON.parse(storage.getItem('todos.sign-in'))).toBeNull();
+    expect(fetch.calls).toEqual([]);
   });
 
   it('turns to sign in needed once the token expires, removing the stored token but keeping the account', async () => {
@@ -207,6 +238,17 @@ describe('the session', () => {
     expect(session.capture(win)).toBe(true);
     expect(win.location.hash).toBe('#/connect');
     session.start({ returnUrl: 'https://app.example/#/connect' });
+    await expect(session.finish()).rejects.toMatchObject({ reason: 'state-mismatch' });
+    expect(session.finish()).toBeNull();
+  });
+
+  it('finishes a captured return that carries the state of the started sign-in', async () => {
+    const { session } = setup();
+    const url = new URL(session.start({ returnUrl: 'https://app.example/#/connect' }));
+    const state = encodeURIComponent(url.searchParams.get('app-state'));
+    const win = { location: { hash: `#/connect?state=${state}&authorization-code=auth-code-1` }, history: { replaceState: (s, title, to) => (win.location.hash = to) } };
+    expect(session.capture(win)).toBe(true);
+    expect(win.location.hash).toBe('#/connect');
     await expect(session.finish()).resolves.toMatchObject({ email: 'jane@example.com' });
     expect(session.finish()).toBeNull();
   });

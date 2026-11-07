@@ -75,8 +75,8 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     writeServerUrl(stack.url, () => storage);
     const fetchRecorded = recordingFetch();
     const session = createSession({ getStorage: () => storage, fetch: fetchRecorded });
-    session.start({ returnUrl: 'http://127.0.0.1/' });
-    await session.complete(code);
+    const started = new URL(session.start({ returnUrl: 'http://127.0.0.1/' }));
+    await session.complete(code, started.searchParams.get('app-state'));
     const api = createApi({ session, fetch: fetchRecorded, ...(version ? { version } : {}) });
     const engine = createEngine({ store, session, fetch: fetchRecorded, api, locks: null, win: null, doc: null, channelName: `contract-${channelCount++}` });
     const raw = (method, path, headers = {}) => fetch(`${stack.url}${path}`, { method, headers: { Authorization: `Bearer ${session.token()}`, ...headers } });

@@ -68,8 +68,11 @@ It also checks the manifest type and fields, and Chromium's installability error
 
 ### Auth Integration
 [auth.js](../src/js/sync/auth.js) holds the sign-in contract; [session.js](../src/js/sync/session.js) stores the session.
-1. Sign in opens `https://auth.pellicciotta.com/sign-in?app-name=todos&app-redirect-url={{app}}/#/connect`.
-2. Auth returns to `{{app}}/#/connect?authorization-code={{code}}`; the shell strips the code before routing.
+1. Sign in opens `https://auth.pellicciotta.com/sign-in?app-name=todos&app-redirect-url={{app}}/#/connect&app-state={{state}}`.
+   The state is 16 random bytes in base64url, new for each sign-in, and stored with the pending sign-in on the device.
+2. Auth returns to `{{app}}/#/connect?state={{state}}&authorization-code={{code}}`; the shell strips both before routing.
+   The session rejects a return whose state is missing or differs, before any request, which stops login CSRF.
+   A started sign-in is used up by its first return, matching or not.
 3. `GET {{server}}/api/auth-token/callback?authorization-code={{code}}` answers JSON with `email` and `one-time-passcode`; older servers redirected to `/sign-in?opc=…&email=…`.
 4. `POST {{server}}/api/auth-token` with `Basic {{email}}:{{opc}}` returns `bearer-token` and `expiration-time`.
 5. `GET {{server}}/api/users/me` names the account; `DELETE {{server}}/api/auth-token` signs out.
@@ -80,6 +83,8 @@ Sources, read in the sibling repositories:
 - support.js: `redirectToAuth` in `src/net.mjs`, which the legacy web app uses.
 
 Before connecting works in production, the services need these changes:
+- Auth must return `state` on every redirect to the app (auth T0206 does it for social sign-in; auth T0215 covers password, OTP, and cookie sign-in).
+  Until then a sign-in without a returned state is rejected.
 - Auth must accept `{{app}}/#/connect` as the `app-redirect-url` of the `todos` application.
 - ToDo's sends CORS headers only in test mode; the app's origin needs them on the routes above.
   They include `/sign-in`, where the callback redirects, since the app's fetch follows that redirect.
