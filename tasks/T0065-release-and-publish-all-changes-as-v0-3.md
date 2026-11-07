@@ -1,11 +1,12 @@
 ---
 id: T0065
-owner: ~
-needs: ['T0027', 'T0028', 'T0043', 'T0053', 'T0056', 'T0062', 'T0063']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+session: claude-20261108-8fbe10
+needs: []
+branch: task/T0065-release-and-publish-all-changes-as-v0-3
+worktree: .plan/work/T0065-release-and-publish-all-changes-as-v0-3
+status: suspended
+started_at: "2026-11-07T23:31:58Z"
 ended_at: —
 review: none
 preview: none
