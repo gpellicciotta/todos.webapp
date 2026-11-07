@@ -277,7 +277,10 @@ def user_button(f, right, y, account="local"):
 
 def bin_glyph(f, x, y):
     """Draw the 18 px Recycle bin icon with its top left at (x, y)."""
-    f.path(f"M {x + 2:g} {y + 4:g} H {x + 16:g} M {x + 6:g} {y + 4:g} V {y + 1:g} H {x + 12:g} V {y + 4:g}", "icon-line-open")
+    f.path(
+        f"M {x + 2:g} {y + 4:g} H {x + 16:g} M {x + 6:g} {y + 4:g} V {y + 1:g} H {x + 12:g} V {y + 4:g}",
+        "icon-line-open",
+    )
     f.path(f"M {x + 4:g} {y + 4:g} L {x + 5:g} {y + 17:g} H {x + 13:g} L {x + 14:g} {y + 4:g}", "icon-line-open")
 
 
@@ -543,7 +546,15 @@ def add_bar(f, x, y, width, placeholder="Search or add a task", typed=False, inf
 
 
 def compact_task_screen(
-    f, title, tasks, account="local", back=False, nav="Tasks", grouped=False, info="24 tasks · Status: open", reset=False
+    f,
+    title,
+    tasks,
+    account="local",
+    back=False,
+    nav="Tasks",
+    grouped=False,
+    info="24 tasks · Status: open",
+    reset=False,
 ):
     """Draw a compact task list screen with rows, the pinned add bar and info line, and bottom navigation."""
     top_bar(f, title, account, back)
@@ -585,8 +596,15 @@ def wide_dialog(f, title, width, height):
 
 
 def wide_all_tasks(
-    f, account="local", selected=None, right=MAIN_RIGHT, grouped=False, typed=None,
-    info="24 tasks · Status: open", reset=False, more=True,
+    f,
+    account="local",
+    selected=None,
+    right=MAIN_RIGHT,
+    grouped=False,
+    typed=None,
+    info="24 tasks · Status: open",
+    reset=False,
+    more=True,
 ):
     """Draw the wide All tasks screen as a background or main view, with the view's More button unless `more` is off."""
     sidebar(f, "All tasks")
@@ -598,7 +616,13 @@ def wide_all_tasks(
     elif typed:
         matches = [task for task in TASKS if typed in task["text"].lower()]
         end = task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, matches, True, f.height - 24)
-        f.text(MAIN_LEFT, end + 32, f"Add creates \u201c{typed}\u201d as a new task; matching tasks stay listed above.", 13, "muted")
+        f.text(
+            MAIN_LEFT,
+            end + 32,
+            f"Add creates \u201c{typed}\u201d as a new task; matching tasks stay listed above.",
+            13,
+            "muted",
+        )
     else:
         task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, TASKS, True, f.height - 24, selected=selected)
 
@@ -701,7 +725,10 @@ def view_options():
     view_options_fields(compact, 16, 76, compact.width - 32, compact=True)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_all_tasks(
-        wide, right=EDITOR_LEFT - 20, grouped=True, reset=True,
+        wide,
+        right=EDITOR_LEFT - 20,
+        grouped=True,
+        reset=True,
         info="24 tasks · Status: open · Grouped by List · Sorted by Created, newest",
     )
     left, width = editor_panel(wide, "View options")
@@ -1041,7 +1068,13 @@ def sync_log():
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "Settings")
     page_header(
-        wide, MAIN_LEFT, 28, MAIN_RIGHT, "Sync log", "Values that sync overwrote or undid in the last 30 days.", account="connected"
+        wide,
+        MAIN_LEFT,
+        28,
+        MAIN_RIGHT,
+        "Sync log",
+        "Values that sync overwrote or undid in the last 30 days.",
+        account="connected",
     )
     y = 116
     for entry in LOG_ENTRIES:
