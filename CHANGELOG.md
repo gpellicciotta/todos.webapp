@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.1.3-pre
+## v0.2.0-pre
 - DevEx: Added `devops.py` with lint, test, e2e, check, and release actions that tag and publish versions.
 - Docs: Specified how sync handles server errors, tab leadership, the version 4 store, and controlled updates, adding SYN-11, SYN-12, and TEC-19.
 - FrontEnd: Required Create or Enter to save new lists; closing discards drafts while existing lists still save automatically.
