@@ -230,21 +230,38 @@ test('dragging a list handle reorders the Lists screen, and the sidebar and a re
   expect(problems).toEqual([]);
 });
 
-test('Move up and Move down reorder lists by keyboard, announce the move, and keep new lists last', async ({ page }) => {
+test('the More button of a list row opens the menu of the list view, and Edit list opens the list editor (LST-9, VO-4)', async ({ page }) => {
+  const problems = watch(page);
+  const homeId = await seed(page);
+  await page.goto('/#/lists');
+  await page.getByRole('button', { name: 'List actions: Home' }).click();
+  await expect(page.getByRole('menuitem')).toHaveText(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
+  await page.getByRole('menuitem', { name: 'Edit list' }).click();
+  await expect(page).toHaveURL(new RegExp(`#/lists/${homeId}/edit$`));
+  await expect(page.locator('[data-editor-slot] .editor-panel').getByRole('textbox', { name: 'Name' })).toHaveValue('Home');
+  await page.goto('/#/lists');
+  await page.getByRole('button', { name: 'List actions: Home' }).click();
+  await page.getByRole('menuitem', { name: 'Edit view options' }).click();
+  await expect(page).toHaveURL(new RegExp(`#/lists/${homeId}/view-options$`));
+  await expect(page.locator('[data-editor-slot] .view-options')).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test('Alt+Up and Alt+Down reorder lists by keyboard, announce the move, and keep new lists last', async ({ page }) => {
   const problems = watch(page);
   await seed(page);
   await page.goto('/#/lists');
   const names = page.locator('.lists-view .list-row__name');
   const sidebar = page.locator('.app__sidebar .nav-item--list .nav-item__label');
   await expect(names).toHaveText(['Home', 'Work']);
-  await expect(page.getByRole('button', { name: 'Move up: Home' })).toBeDisabled();
-  await page.getByRole('button', { name: 'Move down: Home' }).focus();
-  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: /^Move (up|down)/ })).toHaveCount(0);
+  await page.locator('.lists-view .list-row', { hasText: 'Home' }).focus();
+  await page.keyboard.press('Alt+ArrowDown');
   await expect(names).toHaveText(['Work', 'Home']);
-  await expect(page.getByRole('button', { name: 'Move up: Home' })).toBeFocused();
+  await expect(page.locator('.lists-view .list-row', { hasText: 'Home' })).toBeFocused();
   await expect(page.locator('[aria-live="polite"]').filter({ hasText: 'Home moved to position 2 of 2.' })).toHaveCount(1);
   await expect(sidebar).toHaveText(['Work', 'Home']);
-  await page.keyboard.press('Enter');
+  await page.keyboard.press('Alt+ArrowUp');
   await expect(names).toHaveText(['Home', 'Work']);
   await page.locator('.app__sidebar [data-nav^="list:"]').nth(1).focus();
   await page.keyboard.press('Alt+ArrowUp');

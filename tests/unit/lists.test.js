@@ -7,6 +7,8 @@ import { freshStore } from './store-helpers.js';
 describe('mountLists', () => {
   let store;
   let screen;
+  let navigate;
+  let toaster;
 
   afterEach(() => {
     screen?.destroy();
@@ -77,7 +79,9 @@ describe('mountLists', () => {
       localStorage.setItem('todos.lists.order', JSON.stringify(stored));
     }
     const view = document.body.appendChild(document.createElement('div'));
-    screen = mountLists(view, { store });
+    navigate = vi.fn();
+    toaster = { show: vi.fn() };
+    screen = mountLists(view, { store, navigate, toaster });
     await screen.idle();
     return view;
   }
@@ -90,44 +94,65 @@ describe('mountLists', () => {
     expect(names(view)).toEqual(['Work', 'Garden', 'Home']);
   });
 
-  it('gives each row a drag handle and Move up and Move down buttons', async () => {
+  it('gives each row a drag handle and a More button, and no Move up or Move down buttons', async () => {
     const view = await mountThree();
     expect(view.querySelectorAll('.list-item__handle')).toHaveLength(3);
-    expect(button(view, 'Move up: Garden').disabled).toBe(true);
-    expect(button(view, 'Move down: Garden').disabled).toBe(false);
-    expect(button(view, 'Move down: Work').disabled).toBe(true);
-    expect(button(view, 'Move up: Work').title).toBe('Move up');
+    expect(view.querySelectorAll('.list-item__more')).toHaveLength(3);
+    expect(button(view, 'List actions: Garden')).not.toBeNull();
+    expect(view.querySelectorAll('.list-item__move')).toHaveLength(0);
+    expect(view.querySelector('button[aria-label^="Move up"], button[aria-label^="Move down"]')).toBeNull();
   });
 
-  it('moves a list with Move down, stores the order on the device, and announces the position', async () => {
+  it('holds Edit list, Edit view options, Share list, and Delete list in the More menu of a row (VO-4)', async () => {
     const view = await mountThree();
-    button(view, 'Move down: Garden').click();
-    await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Garden', 'Work']));
-    expect(readListOrder()).toHaveLength(3);
-    await vi.waitFor(() => expect(document.body.textContent).toContain('Garden moved to position 2 of 3.'));
-    button(view, 'Move up: Work').click();
-    await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Work', 'Garden']));
+    const menu = button(view, 'List actions: Home').closest('.list-item').querySelector('.menu');
+    expect([...menu.querySelectorAll('.menu__item')].map((item) => item.textContent))
+      .toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
+    expect(menu.querySelector('[data-action="delete"]').classList.contains('menu__item--danger')).toBe(true);
   });
 
-  it('keeps focus on the moved list\'s button, or on its sibling once the end is reached', async () => {
+  it('opens the list editor, the view options, and the sharing section of the row list from its More menu', async () => {
     const view = await mountThree();
-    button(view, 'Move down: Garden').click();
-    await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Garden', 'Work']));
-    expect(document.activeElement).toBe(button(view, 'Move down: Garden'));
-    button(view, 'Move down: Garden').click();
-    await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Work', 'Garden']));
-    expect(document.activeElement).toBe(button(view, 'Move up: Garden'));
+    const home = (await store.listLists()).find((list) => list.name === 'Home');
+    for (const [action, route] of [['edit', 'edit'], ['view-options', 'view-options'], ['share', 'edit']]) {
+      button(view, 'List actions: Home').click();
+      button(view, 'List actions: Home').closest('.list-item').querySelector(`[data-action="${action}"]`).click();
+      expect(navigate).toHaveBeenLastCalledWith(`#/lists/${home.id}/${route}`);
+    }
+  });
+
+  it('asks before Delete list, and moves the list to the recycle bin once confirmed', async () => {
+    const view = await mountThree();
+    button(view, 'List actions: Home').click();
+    button(view, 'List actions: Home').closest('.list-item').querySelector('[data-action="delete"]').click();
+    const dialog = await vi.waitFor(() => {
+      const found = view.querySelector('dialog');
+      expect(found).not.toBeNull();
+      return found;
+    });
+    expect(dialog.textContent).toContain('Its tasks stay in your other lists.');
+    dialog.querySelector('[data-dialog-close="delete"]').click();
+    await vi.waitFor(() => expect(names(view)).toEqual(['Garden', 'Work']));
+    expect(navigate).toHaveBeenLastCalledWith('#/tasks');
+  });
+
+  it('does not open the list when the More button is used', async () => {
+    const view = await mountThree();
+    button(view, 'List actions: Home').click();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('moves the focused row with Alt+ArrowUp', async () => {
     const view = await mountThree();
     view.querySelectorAll('.list-row')[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }));
     await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Garden', 'Work']));
+    expect(readListOrder()).toHaveLength(3);
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Home moved to position 1 of 3.'));
   });
 
   it('adds a new list at the end of the stored order', async () => {
     const view = await mountThree();
-    button(view, 'Move down: Garden').click();
+    view.querySelectorAll('.list-row')[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true }));
     await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Garden', 'Work']));
     await store.createList({ name: 'Archive' });
     await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Garden', 'Work', 'Archive']));

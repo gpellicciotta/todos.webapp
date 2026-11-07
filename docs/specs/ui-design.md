@@ -386,9 +386,12 @@ Wireframe: [lists.svg](../img/ui/lists.svg).
 - Each row links to its list; without lists, the screen says that a list groups tasks.
 - Sharing state and the owner's name arrive with sharing (`SHR-3`); local lists show neither.
 - Rows follow the order of this device (`LST-8`); the sidebar shows the same order.
-  Drag a row by its handle, press Alt+Up or Alt+Down on a row, or use its Move up and Move down buttons.
-  Touch screens hide the handle and keep the buttons; the first Move up and the last Move down are disabled.
+  Drag a row by its handle, or press Alt+Up or Alt+Down on a row; the rows have no Move up or Move down buttons.
+  **[Decided]** The handle also shows on touch screens, since it is the only way to reorder by pointer.
   A move announces "{{list}} moved to position 2 of 5." and focus stays on the moved row's control.
+- **[Decided]** Each row ends with a More button, named "List actions: {{list}}", with the menu of the list view (`LST-9`):
+  Edit list, Edit view options, Share list, and Delete list, which asks first and then opens All tasks with an Undo toast.
+  The menu comes from [list-actions.js](../../src/js/views/list-actions.js), shared with the List screen.
 - In the sidebar, Alt+Up and Alt+Down on a focused list link move it; the sidebar has no drag handle.
 - The order is the `todos.lists.order` preference, a JSON array of list identifiers, never stored or synced.
   Unknown identifiers are dropped; lists missing from it, such as new lists, follow in name order.

@@ -18,9 +18,9 @@ import { createLiveRegion } from '../ui/live-region.js';
 import { attachMenu } from '../ui/menu.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
 import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
-import { confirmListDelete } from './list-editor.js';
+import { createListMenu, runListAction } from './list-actions.js';
 import { attachReorder } from './reorder.js';
-import { createTaskList, make, spriteIcon } from './task-list.js';
+import { createTaskList, make } from './task-list.js';
 import { createInfoLine, createViewModel, describeFilters } from './view-controls.js';
 
 const VIEW = 'list';
@@ -29,11 +29,6 @@ let instances = 0;
 
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
-  actions: 'List actions',
-  edit: 'Edit list',
-  editViewOptions: 'Edit view options',
-  share: 'Share list',
-  delete: 'Delete list',
   notFound: 'That list was not found. Showing All tasks.',
   moved: (description, position, count) => `${description} moved to position ${position} of ${count}.`,
   empty: 'This list has no tasks yet.',
@@ -41,14 +36,6 @@ const STRINGS = Object.freeze({
   addFailed: 'The task could not be added.',
   failed: 'That change could not be saved.',
 });
-
-/** The More menu entries and the routes that Edit list, Edit view options, and Share list open. */
-const ACTIONS = Object.freeze([
-  { action: 'edit', text: STRINGS.edit, route: 'list-edit' },
-  { action: 'view-options', text: STRINGS.editViewOptions, route: 'list-view-options' },
-  { action: 'share', text: STRINGS.share, route: 'list-edit' },
-  { action: 'delete', text: STRINGS.delete },
-]);
 
 /**
  * Read the store into the shape the screen renders.
@@ -114,21 +101,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const root = make(doc, 'div', 'task-view list-view');
   const header = make(doc, 'div', 'view-header');
   const description = make(doc, 'p', 'list-view__description');
-  const more = make(doc, 'button', 'icon-button list-view__more');
-  more.type = 'button';
-  more.setAttribute('aria-label', STRINGS.actions);
-  more.append(spriteIcon(doc, 'more'));
-  const menu = make(doc, 'div', 'menu');
-  menu.id = `${id}-actions`;
-  menu.setAttribute('aria-label', STRINGS.actions);
-  menu.hidden = true;
-  for (const { action, text } of ACTIONS) {
-    const item = make(doc, 'button', action === 'delete' ? 'menu__item menu__item--danger' : 'menu__item', text);
-    item.type = 'button';
-    item.setAttribute('role', 'menuitem');
-    item.dataset.action = action;
-    menu.append(item);
-  }
+  const { more, menu } = createListMenu({ document: doc, id: `${id}-actions`, className: 'list-view__more' });
   header.append(description, more, menu);
 
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
@@ -212,13 +185,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
    * @param {HTMLElement} item the picked menu item
    */
   function act(item) {
-    const { route } = ACTIONS.find(({ action }) => action === item.dataset.action);
-    if (route) {
-      navigate(formatRoute(route, { listId }));
-    }
-    else if (data?.list) {
-      confirmListDelete({ parent: root, opener: more, list: data.list, store, toaster, navigate });
-    }
+    runListAction(item, { listId, list: data?.list ?? null, parent: root, opener: more, store, toaster, navigate });
   }
 
   /** Render the current data with the current view options. */

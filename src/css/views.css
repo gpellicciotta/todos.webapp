@@ -571,24 +571,12 @@
   touch-action: none;
 }
 
-/* Touch screens have no hover to drag with, so they keep the buttons only. */
-@media (hover: none) {
-  .list-item__handle {
-    display: none;
-  }
-}
-
-.list-item__move {
+/* The grip shows on touch screens too, since it is the only way to reorder the lists. */
+.list-item__more {
   flex: none;
-}
-
-.list-item__move:disabled {
-  color: var(--color-text-disabled);
-  cursor: default;
-}
-
-.list-item__up {
-  rotate: 180deg;
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--color-text-muted);
 }
 
 .list-row {

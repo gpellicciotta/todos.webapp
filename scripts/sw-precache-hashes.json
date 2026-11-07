@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-07.11",
+  "version": "2026-11-07.12",
   "files": {
     "index.html": "5f94dfd7e94c794eef59314518fb03b75e16ec31ead2306f4d6dae229e6d1a52",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -10,7 +10,7 @@
     "css/app-components.css": "357b65bc5f2520c83d2721860aeb6dfed8b90e997c623303770391ea1bf4a3ea",
     "css/app-chrome.css": "f68f96c3deba74fff2faee0f2218352bc46a4df11c7029a3f418b953f0be1b47",
     "css/app-shell.css": "8d92533cb53f785f0fd1e1811a899bcba3771f2df18c5a64e35d70687970a084",
-    "css/views.css": "bbb58777e3b6ce7c3690e52b40e5665c5df1117c88b44e414884e8b5a48f1e5a",
+    "css/views.css": "88a726498b750e76f2ce2b447dec9c62c9d9e52c1227d063cb06e76b655480e8",
     "fonts/InterVariable.woff2": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
     "img/icons.svg": "51f4ee739f0ef9857ba67e95352ddda03cbe1961b15f753acb098f8f1ff59baa",
     "img/app-icon.svg": "ff5a2a158422fe755ee0107a5ea5468d45c5c2b2c2f455314fdc01d2fb5cc76a",
@@ -46,9 +46,10 @@
     "js/views/connect.js": "80dfe8eac2bb0690a14dbfb151b598ace25e1db81745c3e2dc7241d7afb1fbd4",
     "js/views/editor-panel.js": "42c39698e458b56ccad42496fb65b74bf3e1b85724375744bc9d94b3e85f5f9c",
     "js/views/import-dialog.js": "b698ccc7ac4615c4960b580461d257a97c49fe7ca29ef24b4bdfb9bd074db3a9",
+    "js/views/list-actions.js": "6ff308de32f106495ee58b271147f0b4c650fbcb9f60616ee471a74ba0254e7a",
     "js/views/list-editor.js": "c4c0030578de963537159d297d8a2647dfea8326a66fc2440a18142570dc60c7",
-    "js/views/list.js": "641d09d410b3343742287d21a5efc211fb67bec3a215095652b49caaae664aaf",
-    "js/views/lists.js": "1bc30c59637355dfa82ac6ddcac2b3e8cfb73c47cd437afaa562a8f79d6587ae",
+    "js/views/list.js": "3ff0516b025511ab303df01717c3c71b1e4dc482ed07a797ba39cc553a5280c2",
+    "js/views/lists.js": "ac1ed9ae3dbd033daab55e83e06ed73c2938999d3688c1ef49f456b6d6213545",
     "js/views/notes.js": "4df19c195737f3c15fdfce9488070dfaf1d44a959dad8e3ec7be3a8f14ea8056",
     "js/views/recycle-bin.js": "b8f9d1200472d39a7389bb19c4a8b218763aaccc7f9f8c918096db2076f2ece8",
     "js/views/reorder.js": "9c61a0e05e04808305e980fe31abccd720aff966da991f16fd6c89a0cb8aa687",

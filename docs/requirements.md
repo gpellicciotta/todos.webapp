@@ -51,6 +51,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LST-7: A deleted list's tasks stay in their other lists, or end up in no list.
 - LST-8: Users reorder lists by drag or keyboard, in the sidebar and the Lists screen; the order stays on the device.
   New lists append at the end; the store and the sync feed never hold the order.
+- LST-9: Each row of the Lists screen has a More button with the actions of the list view: edit, view options, share, and delete.
 
 ### Tasks
 - TSK-1: Users create a task with a description of 1 to 500 characters.
