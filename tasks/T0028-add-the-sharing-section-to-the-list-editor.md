@@ -15,12 +15,14 @@ size_status: approved
 size_estimate: 30 files, 1897 lines
 usage:
   worker: {turns: 4, duration_s: 3245.2, input: 632, output: 214942, cache_read: 62248986, cache_write: 588396}
-work_duration: 1613.6
+  review: {turns: 2, duration_s: 424.8, input: 216966, output: 10964, cache_read: 2471096}
+work_duration: 4504.0
 size_approved: 30 files, 1897 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T22:17:42Z"
-review_status: pending
+review_status: rejected
 review_round: 1
+reviewed_by: "@gemini"
 ---
 # T0028: Add the Sharing section to the list editor, role-aware controls, and the Shared filter
 
@@ -102,4 +104,17 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-07] **[Review]**
+  Round 1 rejected by @gemini: Rejected.
+  - Findings: [review-findings-1.md](T0028-add-the-sharing-section-to-the-list-editor/review-findings-1.md).
+
+- [2026-11-07] **[Implement]**
+  Rework for round 1: resolved the rebase conflicts, counted lists shared with the user as shared, and steadied two e2e specs.
+
+- [2026-11-07] **[Verify]**
+  Fresh green run after rework: 1130 unit tests, lint, check:sw, and 184 e2e tests passed.
+
+- [2026-11-07] **[Doc]**
+  Removed the temporary capture scripts from the companion folder; the proof describes the method.
 

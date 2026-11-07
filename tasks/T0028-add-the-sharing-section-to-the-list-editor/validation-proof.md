@@ -77,14 +77,38 @@ Command: `npx vitest run tests/unit/task-editor.test.js`, exit code 1
       Tests  3 failed | 21 passed (24)
 ```
 
+### Review round 1 rework
+The rebase onto main (`1857838`) had stopped with conflicts in `views.css`, `index.html`, `service-worker.js`, and the hash manifest. I resolved them, bumped VERSION, and regenerated the manifest.
+The reviewer also found that the Shared filter ignored lists shared with the user. The new tests failed first.
+
+Command: `npx vitest run tests/unit/all-tasks.test.js tests/unit/permissions.test.js`, exit code 1
+
+```text
+     × counts a list the user shares with people and a list shared with the user 6ms
+     × leaves out an owned list without people and a local list 1ms
+       × shows the tasks in a list the user shares or that is shared with them for Shared 12ms
+       × shows the others for Not shared 4ms
+AssertionError: expected [ 'Plan trip' ] to deeply equal [ 'Plan trip', 'Their task' ]
+AssertionError: expected [ 'Buy paint', 'Loose task', …(1) ] to deeply equal [ 'Buy paint', 'Loose task' ]
+TypeError: isSharedList is not a function
+ Test Files  2 failed (2)
+```
+
+Two e2e flakes also showed up under load. `sync.spec.js` failed once in a full run and passed alone, with no code change in between. The sharing spec asserted the service state before a role change had finished, so I made it wait for the status line. After that it passed 270 of 270 repeated runs.
+
 ### Green phase (after the final code change)
 Command: `npm test`, exit code 0
 
 ```text
- Test Files  53 passed (53)
-      Tests  1084 passed (1084)
-   Start at  22:29:48
-   Duration  12.32s (environment 61%, tests 27%, import 9%, worker 2%, transform 2%)
+ Test Files  55 passed (55)
+      Tests  1130 passed (1130)
+   Start at  23:47:39
+   Duration  14.30s (environment 62%, tests 25%, import 9%, transform 2%, worker 2%)
+
+    Isolate  55 workers spawned · ~1.18s startup each (spawn + environment, per file)
+             at least ~8.07s faster with isolate: false — reuses workers across files instead of one per file
+
+exit=0
 ```
 
 Command: `npm run lint`, exit code 0
@@ -102,17 +126,17 @@ Command: `npm run check:sw`, exit code 0
 ```text
 > node scripts/check-sw-version.mjs
 
-OK: 70 precached files match VERSION 2026-11-07.24.
+OK: 72 precached files match VERSION 2026-11-07.28.
 exit=0
 ```
 
 Command: `npm run test:e2e`, exit code 0
 
 ```text
-  ✓  178 [chromium] › tests\e2e\task-editor.spec.js:205:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6) (2.3s)
-  ✓  177 [chromium] › tests\e2e\task-editor.spec.js:173:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5) (3.8s)
+  ✓  183 [chromium] › tests\e2e\task-editor.spec.js:173:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5) (3.3s)
+  ✓  184 [chromium] › tests\e2e\task-editor.spec.js:205:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6) (2.0s)
 
-  178 passed (1.9m)
+  184 passed (1.8m)
 exit=0
 ```
 
