@@ -5,18 +5,20 @@ session: claude-20261107-124fd3
 needs: []
 branch: task/T0025-build-sync-upload-the-change-queue-first-connect
 worktree: .plan/work/T0025-build-sync-upload-the-change-queue-first-connect
-status: active
+status: completed
 started_at: "2026-11-07T19:27:18Z"
-ended_at: —
+ended_at: "2026-11-07T19:48:21Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 1730.4, input: 272, output: 179418, cache_read: 21026968, cache_write: 419998}
-  review: {turns: 2, duration_s: 536.4, input: 317740, output: 34426, cache_read: 2467314}
-review_status: pending
+  review: {turns: 4, duration_s: 695.4, input: 393558, output: 38190, cache_read: 2938876}
+review_status: approved
 review_round: 2
-work_duration: 1070.8
+work_duration: 1262.0
+reviewed_by: "@gemini"
+completion-commit: 509761c4d4135f7a16b7014e5b39e156908d1fa8
 ---
 # T0025: Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes
 
@@ -34,7 +36,7 @@ See technical-spec.md for decisions, files, size, and tests.
 - [x] **[Implement]** Write the API client, the change queue, upload, and first-connect adoption.
 - [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
@@ -77,4 +79,11 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-07] **[Review]**
+  Round 2 approved by @gemini: All round 1 findings are resolved: `adopt.js` sorts memberships by `list-id`, `position`, and `task-id` before upload (verified by a new.
+  - Findings: [review-findings-2.md](T0025-build-sync-upload-the-change-queue-first-connect/review-findings-2.md).
+
+- [2026-11-07] **[Complete]**
+  Task completed successfully.
 
