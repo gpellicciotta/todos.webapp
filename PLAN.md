@@ -8,7 +8,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0025 Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes.
 - [x] T0026 Build sync download: the change feed client, per-field merge, lost access handling, and the sync log store.
 - [x] T0063 Add an opt-in contract test that runs the sync client against a real todos server.
-- [ ] T0064 Queue and sync the changes of a backup import while connected, comparing rows by last update.
+- [x] T0064 Queue and sync the changes of a backup import while connected, comparing rows by last update.
 - [ ] T0027 Show every sync state in the sync indicator and build the Sync log screen.
 - [ ] T0056 Design how the sidebar and Lists screen look and behave with many lists, 100 and more.
 - [ ] T0028 Add the Sharing section to the list editor, role-aware controls, and the Shared filter.
