@@ -2,8 +2,8 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## v0.2.0 Milestone
-- [ ] T0058 [protocol: adhoc] [needs: T0055, T0048] Release (and publish) all changes as v0.2.0, via the devops.py script
-- [ ] T0055 Make the add field also search, with Add anyway, a hidden-task toast, and Add-only creation.
+- [ ] T0058 [protocol: adhoc] [needs: T0048] Release (and publish) all changes as v0.2.0, via the devops.py script
+- [x] T0055 Make the add field also search, with Add anyway, a hidden-task toast, and Add-only creation.
 - [x] T0054 Build the View options panel, the More menu entries, and the info line for All tasks and list views.
 - [x] T0046 Make lists re-orderable in the front-end only, without back-end storage.
 - [ ] T0048 Let the All tasks dashboard group tasks by List, Due Date, or Status.
