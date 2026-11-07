@@ -14,7 +14,7 @@ protocol: standard
 # T0027: Show every sync state in the sync indicator and build the Sync log screen
 
 ## Goals
-Drive the sync indicator from the sync engine: Local only, Synced, Syncing, Offline, Sign in needed, and Sync error (`SYN-4`).
+Drive the sync indicator from the sync engine: Local only, Synced, Syncing, Offline, Sign in needed, Sync error, and Update required (`SYN-4`, `SYN-11`).
 Show the unseen-entries dot, the popover with Sync now and Retry, and the session banner.
 Build the Sync log screen per docs/specs/ui-design.md and its wireframe sync-log.svg (`SYN-8`).
 See technical-spec.md for decisions, files, size, and tests.

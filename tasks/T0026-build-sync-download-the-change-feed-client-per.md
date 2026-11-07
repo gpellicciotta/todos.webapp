@@ -18,6 +18,7 @@ Pull remote changes through the service's change feed and apply them without a r
 Merge concurrent edits per field, keeping the most recent edit of each field (`SYN-5`, `SYN-6`).
 Record overwritten values, rejected changes, lost access, and errors in a 30-day sync log store (`SYN-8`).
 Remove lists and tasks the user lost access to (`SHR-8`), and handle disconnect data rules (`CON-8`, `CON-9`).
+Run the sync engine: polling, expired cursors, and an unknown protocol (`SYN-3`, `SYN-11`).
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps

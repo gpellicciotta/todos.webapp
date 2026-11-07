@@ -1,7 +1,7 @@
 ---
 id: T0025
 owner: ~
-needs: [T0024, T0021]
+needs: ['T0058', 'T0062']
 branch: —
 worktree: —
 status: ready
@@ -17,7 +17,7 @@ protocol: standard
 Queue every local change while connected and upload it in order, without duplicates on retry (`SYN-1`, `SYN-2`, `SYN-10`).
 On first connect, upload all local data and merge local lists into same-named account lists (`CON-4`, `CON-5`).
 Undo a change the service rejects and record it for the sync log (`SYN-9`).
-Send only changed fields in updates, so per-field merge works (`SYN-5`).
+Send only changed fields in updates, so per-field merge works (`SYN-5`), and sync from one tab only (`SYN-12`).
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
