@@ -185,6 +185,7 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Never use a toast as the only place an error appears.
   `createToaster().show(message, { onAction })` in [toast.js](../../src/js/ui/toast.js) adds an Undo button.
   Toasts expire after 8 seconds, pause while hovered or focused, and stack at most three.
+  `persistent: true` keeps a toast until Escape, its action, or its dismiss function; the Update toast uses it.
   While a modal dialog is open the page is inert, so toasts wait until it closes.
   With `undoShortcut: true`, Ctrl+Z or Cmd+Z outside text fields runs the newest Undo; `undoLatest()` does the same.
   [live-region.js](../../src/js/ui/live-region.js) announces them; `announce(message, { politeness: 'assertive' })` suits blocking errors.

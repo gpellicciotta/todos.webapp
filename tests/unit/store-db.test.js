@@ -50,6 +50,7 @@ describe('openStore connection handling', () => {
     const error = await open(factory).catch((caught) => caught);
     expect(error).toBeInstanceOf(StoreError);
     expect(error.code).toBe('blocked');
+    expect(error.message).toBe("Close other tabs of ToDo's to finish the update.");
     older.close();
     await new Promise((resolve) => setTimeout(resolve, 20));
     const store = await open(factory);

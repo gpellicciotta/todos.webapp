@@ -63,7 +63,7 @@ export function openDatabase(factory, name, onVersionChange = () => {}) {
     req.onupgradeneeded = (event) => upgrade(req.result, event.oldVersion, req.transaction);
     req.onblocked = () => {
       blocked = true;
-      reject(new StoreError('blocked', 'Another tab still uses an older version of the app. Close it and reload.'));
+      reject(new StoreError('blocked', "Close other tabs of ToDo's to finish the update."));
     };
     req.onsuccess = () => {
       const db = req.result;

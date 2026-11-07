@@ -150,8 +150,9 @@ Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 ## Connections
 - `openStore({onVersionChange})` keeps one connection open for the page.
 - A newer version opened in another tab closes this connection, then calls `onVersionChange`.
-- The app answers with a Reload toast, since the closed connection serves no more operations.
+- The app answers with the reload banner, since the closed connection serves no more operations.
 - An older connection that stays open blocks an upgrade; the open then fails with a `blocked` StoreError.
+  Its message reads "Close other tabs of ToDo's to finish the update.", and the app shows it as an error banner.
 - The upgrade finishes once that connection closes; the late connection is closed at once.
 
 ---

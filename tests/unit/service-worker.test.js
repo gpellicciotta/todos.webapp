@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const SOURCE = readFileSync(fileURLToPath(new URL('../../src/service-worker.js', import.meta.url)), 'utf8');
 
@@ -72,5 +72,70 @@ describe.each([
   it('does not treat names that merely start with admin or api as reserved', async () => {
     const result = await send(scope, `${base}administrators`, { cached: ['./'] });
     expect(result.handled).toBe(true);
+  });
+});
+
+/**
+ * Load the service worker in a sandbox that records its lifecycle calls.
+ * @returns {{handlers: object, skipWaiting: import('vitest').Mock, claim: import('vitest').Mock, added: string[]}} the handlers and spies
+ */
+function loadWorker() {
+  const handlers = {};
+  const added = [];
+  const skipWaiting = vi.fn(() => Promise.resolve());
+  const claim = vi.fn(() => Promise.resolve());
+  const context = {
+    URL,
+    Promise,
+    Request,
+    self: {
+      location: new URL('https://todos.example/service-worker.js'),
+      addEventListener: (type, handler) => {
+        handlers[type] = handler;
+      },
+      skipWaiting,
+      clients: { claim },
+    },
+    caches: {
+      open: async () => ({ addAll: async (requests) => added.push(...requests.map((request) => request.url)) }),
+      keys: async () => [],
+    },
+  };
+  runInNewContext(SOURCE, context);
+  return { handlers, skipWaiting, claim, added };
+}
+
+describe('service worker update protocol', () => {
+  it('precaches on install and waits, without calling skipWaiting', async () => {
+    const { handlers, skipWaiting, added } = loadWorker();
+    let work = null;
+    handlers.install({ waitUntil: (promise) => {
+      work = promise;
+    } });
+    await work;
+    expect(added.length).toBeGreaterThan(10);
+    expect(skipWaiting).not.toHaveBeenCalled();
+  });
+
+  it('calls skipWaiting on the skip-waiting message', () => {
+    const { handlers, skipWaiting } = loadWorker();
+    handlers.message({ data: { type: 'skip-waiting' } });
+    expect(skipWaiting).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([[{ type: 'other' }], ['skip-waiting'], [null], [undefined]])('ignores the message %j', (data) => {
+    const { handlers, skipWaiting } = loadWorker();
+    handlers.message({ data });
+    expect(skipWaiting).not.toHaveBeenCalled();
+  });
+
+  it('claims the open pages when it activates', async () => {
+    const { handlers, claim } = loadWorker();
+    let work = null;
+    handlers.activate({ waitUntil: (promise) => {
+      work = promise;
+    } });
+    await work;
+    expect(claim).toHaveBeenCalledTimes(1);
   });
 });

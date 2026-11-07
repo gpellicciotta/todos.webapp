@@ -3,7 +3,8 @@
  *
  * On start the app purges expired recycle bin entries, then starts the overdue timer,
  * whose first run cancels overdue `cancel` tasks (`OVD-4`, `OVD-5`, `BIN-5`).
- * A newer version in another tab shows a lasting banner with Reload; a start-up failure shows an error banner.
+ * A new service worker waits for the Update toast (`TEC-19`); a newer version in another tab shows a lasting banner with Reload.
+ * A start-up failure shows an error banner.
  * Moving to another view moves focus to the main column, which the route title labels.
  * Shortcuts, outside text fields: `n` focuses the view's `[data-shortcut~="add"]` element and `/` its
  * `[data-shortcut~="search"]` element, each a no-op while the view has none; Escape closes an open editor.
@@ -17,6 +18,7 @@ import { createInbox } from './sync/inbox.js';
 import { createSession } from './sync/session.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
+import { watchWorkerUpdates } from './ui/sw-update.js';
 import { createToaster } from './ui/toast.js';
 import { mountAllTasks } from './views/all-tasks.js';
 import { mountConnect } from './views/connect.js';
@@ -33,6 +35,8 @@ import { createViewModel, mountViewOptions } from './views/view-controls.js';
 const MESSAGES = Object.freeze({
   updated: 'ToDo\'s was updated in another tab. Reload to continue.',
   reload: 'Reload',
+  updateReady: 'A new version is ready',
+  update: 'Update',
   storeFailed: 'The local data could not be opened. Reload to try again.',
   startFailed: 'ToDo\'s could not start. Reload to try again.',
 });
@@ -46,12 +50,10 @@ const EDITORS = { task: mountTaskEditor, list: mountListEditor, 'view-options': 
 let shell = null;
 
 /**
- * Register the service worker that precaches the app shell, so the app starts offline (`TEC-1`).
+ * Show the lasting banner that another tab updated the app, with Reload.
  */
-function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js').catch((error) => console.error('Service worker failed:', error));
-  }
+function showUpdatedNotice() {
+  shell.showNotice(MESSAGES.updated, { actionLabel: MESSAGES.reload, onAction: () => location.reload() });
 }
 
 /**
@@ -77,12 +79,19 @@ async function start() {
   // The inbox loads only while connected; local mode sends no request (`LOC-3`).
   const inbox = createInbox({ session });
   shell.showInbox({ inbox, toaster });
+  // Registers the worker that precaches the app shell, so the app starts offline (`TEC-1`); a new one waits for Update.
+  watchWorkerUpdates({
+    script: 'service-worker.js',
+    toaster,
+    messages: { ready: MESSAGES.updateReady, action: MESSAGES.update },
+    onUpdatedElsewhere: showUpdatedNotice,
+  });
   inbox.start();
   let store;
   try {
     store = await openStore({
       broadcast: true,
-      onVersionChange: () => shell.showNotice(MESSAGES.updated, { actionLabel: MESSAGES.reload, onAction: () => location.reload() }),
+      onVersionChange: showUpdatedNotice,
     });
   }
   catch (error) {
@@ -196,7 +205,6 @@ async function start() {
 }
 
 applyTheme(document, readThemePreference());
-registerServiceWorker();
 start().catch((error) => {
   console.error('Start-up failed:', error);
   if (shell) {

@@ -36,6 +36,23 @@ describe('createToaster', () => {
     expect(liveRegion.announce).toHaveBeenCalledWith('List created.');
   });
 
+  it('keeps a persistent toast past the expiry time until it is dismissed', () => {
+    const onDismiss = vi.fn();
+    const dismiss = toaster.show('A new version is ready', { onAction: vi.fn(), actionLabel: 'Update', persistent: true, onDismiss });
+    vi.advanceTimersByTime(60_000);
+    expect(texts(region)).toEqual(['A new version is ready']);
+    expect(onDismiss).not.toHaveBeenCalled();
+    dismiss();
+    expect(texts(region)).toEqual([]);
+    expect(onDismiss).toHaveBeenCalledWith('dismiss');
+  });
+
+  it('lets Escape dismiss a persistent toast', () => {
+    toaster.show('A new version is ready', { persistent: true });
+    region.querySelector('.toast').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(texts(region)).toEqual([]);
+  });
+
   it('calls the Undo callback once and removes the toast', () => {
     const onAction = vi.fn();
     const onDismiss = vi.fn();

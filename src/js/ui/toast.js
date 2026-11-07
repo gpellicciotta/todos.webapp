@@ -3,6 +3,7 @@
  *
  * Each toast announces its message through the polite live region and expires after 8 seconds.
  * Expiry pauses while the pointer is over the toast or focus is inside it.
+ * A persistent toast never expires; it goes on Escape, its action, or its dismiss function.
  * Escape inside a toast dismisses it; at most three toasts stack, and the oldest goes first.
  * While a modal dialog is open the rest of the page is inert, so toasts wait until it closes.
  * With `undoShortcut`, Ctrl+Z or Cmd+Z outside text fields and modal dialogs runs the newest toast's Undo.
@@ -93,7 +94,7 @@ export function createToaster(options = {}) {
    * @param {object} toast toast record
    */
   function resume(toast) {
-    if (toast.done || toast.hovered || toast.focused || toast.timer !== null) {
+    if (toast.done || toast.persistent || toast.hovered || toast.focused || toast.timer !== null) {
       return;
     }
     toast.startedAt = now();
@@ -190,6 +191,7 @@ export function createToaster(options = {}) {
    * @param {object} [settings] toast settings
    * @param {() => void} [settings.onAction] adds an action button that calls this and dismisses the toast
    * @param {string} [settings.actionLabel] action button text, `Undo` by default
+   * @param {boolean} [settings.persistent] keep the toast until it is dismissed, without the 8 second expiry
    * @param {boolean} [settings.undo] whether the action is an Undo for Ctrl+Z; true without an `actionLabel`
    * @param {(reason: string) => void} [settings.onDismiss] called once when the toast goes, with its reason
    * @returns {() => void} a function that dismisses the toast
@@ -199,6 +201,7 @@ export function createToaster(options = {}) {
       onAction: settings.onAction,
       undo: Boolean(settings.onAction) && (settings.undo ?? settings.actionLabel === undefined),
       onDismiss: settings.onDismiss,
+      persistent: Boolean(settings.persistent),
       remaining: duration,
       startedAt: 0,
       timer: null,

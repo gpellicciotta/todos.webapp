@@ -2,6 +2,8 @@
  * Service worker: precaches the app shell so the app starts and runs offline (`TEC-1`).
  *
  * Install caches every file of PRECACHE in a cache named after VERSION; activate deletes older caches.
+ * A new worker waits after it installs; the page's Update toast sends `{type: 'skip-waiting'}` to activate it,
+ * so open pages never mix old and new files (`TEC-19`). The first install has no page to protect and just claims it.
  * Same-origin GET requests are served cache first; page navigations fall back to the cached start page.
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
  * a navigation to `/admin` reaches the server and never falls back to the app shell.
@@ -9,7 +11,7 @@
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-07.14';
+const VERSION = '2026-11-07.16';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 
@@ -55,6 +57,7 @@ const PRECACHE = [
   'js/ui/menu.js',
   'js/ui/popover.js',
   'js/ui/router.js',
+  'js/ui/sw-update.js',
   'js/ui/toast.js',
   'js/ui/user-menu.js',
   'js/views/add-bar.js',
@@ -93,7 +96,13 @@ function isServerPath(url) {
 self.addEventListener('install', (event) => {
   // `cache: 'reload'` skips the HTTP cache, so a new VERSION never stores files cached before the deploy.
   const requests = PRECACHE.map((url) => new Request(new URL(url, self.location.href), { cache: 'reload' }));
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(requests)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(requests)));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'skip-waiting') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {

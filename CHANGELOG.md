@@ -16,7 +16,10 @@ All notable changes to this project are documented here.
 - FrontEnd: Added an Inbox bell before the user button, while connected, with an unread badge and a panel to mark read, discard, or clear all.
 - FrontEnd: Showed each unread service broadcast marked as a banner above every view, with Open and Dismiss.
 - FrontEnd: Loaded the inbox at start, on sign-in, when the tab turns visible, and every 2 minutes; local mode sends no request.
+- FrontEnd: Made a new service worker wait until the user clicks Update on a lasting "A new version is ready" toast, then reload once.
+- FrontEnd: Showed the reload banner in tabs that did not click Update, and the Close other tabs message when an old tab blocks a database upgrade.
 - Docs: Added the NTF-1 to NTF-7 requirements and the Inbox design, and moved the inbox out of Planned After v1.0.0.
+- DevEx: Added unit and end-to-end tests for the update protocol of the worker, the Update toast, and the second-tab banner.
 - DevEx: Added unit and end-to-end tests for the inbox client, the bell, the panel, and the banners.
 - DevEx: Added end-to-end tests for rows taller than 48 px and for the first rows painting before the start-up maintenance.
 - DevEx: Made the Import backup focus end-to-end test wait for the main column to wake, so it passes on slow CI runners.

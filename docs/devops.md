@@ -106,15 +106,19 @@ npm run check:sw
 `--update` refuses to write while `VERSION` is unchanged, so the bump cannot be skipped.
 
 ### Service Worker Updates
-The new worker calls `skipWaiting()` right after it precaches, then claims every open page.
-Its `activate` handler then deletes the previous cache.
-- Benefit: every page uses the new version on its next request, without closing all tabs.
-- Cost: a page opened before the update keeps its loaded modules but fetches later files from the new cache.
-  A long-open tab can therefore mix old and new code until it reloads.
-- Today the risk is small: the app loads all its modules at start-up.
-- Alternative: wait in the `waiting` state and show an Update toast.
-  The toast posts a message, and the worker calls `skipWaiting()` only then.
-- Revisit this when the app loads modules lazily or changes its stored data format.
+A new worker precaches its files, then waits; it does not call `skipWaiting()` on install (`TEC-19`).
+The page shows a lasting Update toast, "A new version is ready", through [sw-update.js](../src/js/ui/sw-update.js).
+- Update posts `{type: 'skip-waiting'}` to the waiting worker, which calls `skipWaiting()`.
+  The page reloads once, when `controllerchange` fires after that click.
+- The worker's `activate` handler deletes the previous cache, then claims every open page.
+- An ignored toast leaves the app fully usable on the old version; the old worker and its cache keep serving.
+- Dismissing the toast hides it until the next start; the waiting worker stays.
+- The first install has no waiting worker and no toast: the page already runs the new files.
+- Another tab that sees `controllerchange` without an Update click shows the reload banner.
+- Benefit: no open page mixes old modules with new files, so a store migration can rely on one version per tab.
+- Database upgrades: a tab closes its connection on `versionchange` and shows the reload banner.
+  An upgrade that an old tab blocks fails with "Close other tabs of ToDo's to finish the update."
+- Test it by hand: serve version A, load it, serve version B, reload, and confirm the toast appears while the page stays on A.
 
 ### App Icons
 The app icon and the favicon are one file: the slightly rounded hexagon with a fat navy 600 border, a white inside, and a navy check.
