@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1439.6, input: 332, output: 126792, cache_read: 22676886, cache_write: 367242}
+review_status: pending
+review_round: 1
 ---
 # T0064: Queue and sync the changes of a backup import while connected, comparing rows by last update
 
@@ -67,4 +71,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Doc]**
   Updated ui-design.md, backup-format.md, and CHANGELOG.md for the connected import.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
