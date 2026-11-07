@@ -1,11 +1,12 @@
 ---
 id: T0026
-owner: ~
-needs: [T0025]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+session: claude-20261107-ceb05a
+needs: []
+branch: task/T0026-build-sync-download-the-change-feed-client-per
+worktree: .plan/work/T0026-build-sync-download-the-change-feed-client-per
+status: active
+started_at: "2026-11-07T19:48:39Z"
 ended_at: —
 review: agent
 preview: none
@@ -22,14 +23,38 @@ Run the sync engine: polling, expired cursors, and an unknown protocol (`SYN-3`,
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the requirements' Sync section and the todos change feed spec from todos task T0138.
-- [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
-- [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Write the change feed client, the per-field merge, and the sync log store.
-- [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Doc]**       Update CHANGELOG.md.
+- [x] **[Read]**      Read the requirements' Sync section and the todos change feed spec from todos task T0138.
+- [x] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
+- [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
+- [x] **[Implement]** Write the change feed client, the per-field merge, and the sync log store.
+- [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
+- [x] **[Doc]**       Update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-07] **[Implement]**
+  Added merge, pull, sync log, and engine; wired the engine into app.js with a fake change feed in tests.
+  - Replay conflicts now apply the kept value.
+  - Existence conflicts are logged only.
+
+- [2026-11-07] **[Decided]**
+  Size note: 18 files, 1894 lines, above the large line but under three times the 750-line estimate; tests are about half.
+
+- [2026-11-07] **[Verify]**
+  Unit, lint, check:sw, and e2e checks pass; undeclared files touched: queue, push, app, index, service worker, specs.
+  - Files touched: 18.
+  - Lines touched: 1894.
+  - Reopenings: 0.
+
+- [2026-11-07] **[Read]**
+  Read the sync requirements and the todos change feed, tombstone, and merge rules.
+
+- [2026-11-07] **[Doc]**
+  Updated CHANGELOG.md and the local store spec with the download rules and log kinds.
+
+- [2026-11-07] **[Verify]**
+  Red run failed on missing modules; green run passed 1014 unit tests, lint, check:sw, and 30 e2e tests.
+
