@@ -26,6 +26,7 @@ Day-to-day commands:
 ```bash
 npm run serve        # serve src/ at http://127.0.0.1:8080/
 npm test             # unit tests with Vitest, from tests/unit/
+npm run test:contract # opt-in: the sync client against a real todos server; see Contract Tests
 npm run lint         # ESLint, including Stroustrup brace style
 npm run test:e2e     # Playwright end-to-end tests, from tests/e2e/
 npm run test:perf    # Playwright performance spec with 5000 tasks, alone
@@ -69,7 +70,7 @@ It also checks the manifest type and fields, and Chromium's installability error
 [auth.js](../src/js/sync/auth.js) holds the sign-in contract; [session.js](../src/js/sync/session.js) stores the session.
 1. Sign in opens `https://auth.pellicciotta.com/sign-in?app-name=todos&app-redirect-url={{app}}/#/connect`.
 2. Auth returns to `{{app}}/#/connect?authorization-code={{code}}`; the shell strips the code before routing.
-3. `GET {{server}}/api/auth-token/callback?authorization-code={{code}}` redirects to `/sign-in?opc=…&email=…`.
+3. `GET {{server}}/api/auth-token/callback?authorization-code={{code}}` answers JSON with `email` and `one-time-passcode`; older servers redirected to `/sign-in?opc=…&email=…`.
 4. `POST {{server}}/api/auth-token` with `Basic {{email}}:{{opc}}` returns `bearer-token` and `expiration-time`.
 5. `GET {{server}}/api/users/me` names the account; `DELETE {{server}}/api/auth-token` signs out.
 
@@ -87,6 +88,31 @@ Before connecting works in production, the services need these changes:
 The end-to-end tests mock Auth and ToDo's with Playwright routes on the app's own origin.
 Playwright skips the request a mocked redirect leads to, so a cross-origin mock would reach a live host.
 [playwright.config.js](../playwright.config.js) blocks every host but the local server; network-guard.spec.js proves it.
+
+### Contract Tests
+[sync.contract.test.js](../tests/contract/sync.contract.test.js) runs the sync client against a real todos server, so protocol drift shows before a release.
+The mocked tests in `tests/unit` cannot see a change of the server; this suite can.
+
+```bash
+TODOS_SERVER_DIR=../todos npm run test:contract
+```
+```powershell
+$env:TODOS_SERVER_DIR = "../todos"; npm run test:contract
+```
+
+- The suite is opt-in: without `TODOS_SERVER_DIR` it skips with one message. `npm test` and CI never run it.
+- `TODOS_SERVER_DIR` names a todos checkout that has Java, Python, and a built server, as `python scripts/devops.py server start` needs.
+- [server.js](../tests/contract/server.js) starts it with `devops.py server start --memory-db --background` on a free port, and stops it afterwards.
+  It passes a temporary environment file with no secrets, so the checkout needs no `.env`.
+- The server signs users in through Auth, so the helper runs a local stand-in for Auth that grants two known codes: a user and an admin.
+  The tests sign in through the real `/api/auth-token` routes of the server with the session code of the app.
+- The environment file turns off the per-IP throttle and sets `TODOS_SYNC_MIN_CLIENT_VERSIONS=todos.webapp=0.1.0`.
+  A client that reports version `0.0.1` then gets `426`.
+- The tests use the sync modules directly on `fake-indexeddb`, with real `fetch` and no browser.
+  They cover first-connect adoption, same-named list merge, two-device merge, a purged-list tombstone, `410`, and `426`.
+- The `410` test forges a cursor above the newest revision. Only the purge job raises the tombstone floor, and a running server has no route for it; the todos tests cover that path.
+- A server started with `--memory-db` answers `500` to a new note, since its two in-memory repositories do not share users.
+  The note test uses `it.fails` until the todos task T0207 fixes that; it then turns red, so switch it to `it`.
 
 ### Service Worker Version Check
 [sw-precache-hashes.json](../scripts/sw-precache-hashes.json) records `VERSION` and a SHA-256 hash per precached file.

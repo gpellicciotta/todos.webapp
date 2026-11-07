@@ -15,6 +15,7 @@
   "scripts": {
     "serve": "node scripts/serve.mjs",
     "test": "vitest run",
+    "test:contract": "vitest run --config vitest.contract.config.js",
     "test:e2e": "playwright test",
     "test:perf": "playwright test --config playwright.perf.config.js",
     "lint": "eslint .",

@@ -1,7 +1,7 @@
 /**
  * Auth adapter: the sign-in contract of the Auth service and the ToDo's service, in one place.
  * Steps, sources, and open points: docs/devops.md, Auth Integration.
- * Auth returns the code to `#/connect`; the ToDo's callback trades it for a one-time passcode, then a session.
+ * Auth returns the code to `#/connect`; the ToDo's callback trades it for a one-time passcode (JSON), then a session.
  * A `403` from the callback means the account has no invitation for ToDo's (`CON-3`).
  */
 
@@ -92,9 +92,11 @@ export async function exchangeCode(server, code, fetch) {
   if (callback.status === 403) {
     throw new AuthError('not-invited');
   }
-  // The landing page itself does not matter; its address carries the one-time passcode.
+  // The service answers with JSON; an older one redirected to a landing address that carries the one-time passcode.
+  const answer = callback.ok ? await callback.json().catch(() => ({})) : {};
   const landing = callback.url ? new URL(callback.url).searchParams : new URLSearchParams();
-  const [opc, email] = [landing.get('opc'), landing.get('email')];
+  const opc = answer['one-time-passcode'] ?? landing.get('opc');
+  const email = answer.email ?? landing.get('email');
   if (!opc || !email) {
     throw new AuthError('rejected', `callback answered ${callback.status}`);
   }

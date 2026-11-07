@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-07.20",
+  "version": "2026-11-07.22",
   "files": {
     "index.html": "e88ac5b619d42e390b1319d1e8306f9025efccc785bedff6f28faa4a1b29830e",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -33,7 +33,7 @@
     "js/store/tasks.js": "e93738cdec482d3b53bc2a58db9a4f9eb88825b9b87fc386c754715d9df05e41",
     "js/sync/adopt.js": "ff4b046945f3386bedb9fb041792926a9f007eacbf0f8dd61179d9c6bd5f92ab",
     "js/sync/api.js": "92c2f98a2d5d7ef3c9dcad53e4233c3f62e9a50a84bee07a75192c1156d0268f",
-    "js/sync/auth.js": "5fceafeaae42d967991e14fbe64a0f53b6226ef7b86ffbeb79a542a05b9c813a",
+    "js/sync/auth.js": "42ca2ef76cff432080e4986281e47b8954d9a78fe8d263d5e61e02203d7785c5",
     "js/sync/engine.js": "6712a22506e841b0a83f5db081c09185912084598b4710a47cc4beea0c8fd565",
     "js/sync/inbox.js": "d7e473818cdf7910acd6770af85eaeca6831774217ef92e48dca5dee907dfa32",
     "js/sync/merge.js": "6d2bbb579c85543dbf02eea5d272715a52ffc14ccceac7cf6e7cc56e22c78b23",

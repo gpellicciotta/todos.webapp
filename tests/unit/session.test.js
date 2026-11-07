@@ -22,10 +22,10 @@ function memoryStorage() {
 
 /**
  * Create a fake fetch that answers like Auth and ToDo's, and records every call.
- * @param {{callbackStatus?: number, fail?: boolean}} [options] the callback status, or a network failure
+ * @param {{callbackStatus?: number, fail?: boolean, json?: boolean}} [options] the callback status, a network failure, or a JSON callback answer
  * @returns {Function & {calls: {url: string, init: object}[]}} the fetch
  */
-function fakeFetch({ callbackStatus = 200, fail = false } = {}) {
+function fakeFetch({ callbackStatus = 200, fail = false, json = false } = {}) {
   const calls = [];
   const answer = (status, body = {}, url = '') => ({ ok: status < 300, status, url, json: async () => body });
   const fetch = async (url, init = {}) => {
@@ -34,6 +34,10 @@ function fakeFetch({ callbackStatus = 200, fail = false } = {}) {
       throw new TypeError('Failed to fetch');
     }
     const { pathname } = new URL(url);
+    if (pathname === '/api/auth-token/callback' && json) {
+      // The service answers 200 with JSON and no redirect.
+      return answer(callbackStatus, callbackStatus === 200 ? { email: 'jane@example.com', 'one-time-passcode': '123456' } : {}, url);
+    }
     if (pathname === '/api/auth-token/callback') {
       // A followed redirect reports the landing address; a refusal reports the callback's own.
       return answer(callbackStatus, {}, callbackStatus === 200 ? `${SERVER}/sign-in?opc=123456&email=jane%40example.com` : url);
@@ -93,6 +97,14 @@ describe('the Auth adapter', () => {
     expect(fetch.calls[0].url).toBe(`${SERVER}/api/auth-token/callback?authorization-code=auth-code-1`);
     expect(fetch.calls[1].init.headers.Authorization).toBe(`Basic ${btoa('jane@example.com:123456')}`);
     expect(fetch.calls[2].init.headers.Authorization).toBe('Bearer session-1');
+  });
+
+  it('reads the one-time passcode from the JSON answer of the callback', async () => {
+    const fetch = fakeFetch({ json: true });
+    const result = await exchangeCode(SERVER, 'auth-code-1', fetch);
+    expect(result).toEqual({ token: 'session-1', expiry: '2026-11-05T09:00:00Z', user: { name: 'Jane Doe', email: 'jane@example.com' } });
+    expect(fetch.calls[1].init.headers.Authorization).toBe(`Basic ${btoa('jane@example.com:123456')}`);
+    await expect(exchangeCode(SERVER, 'c', fakeFetch({ json: true, callbackStatus: 403 }))).rejects.toMatchObject({ reason: 'not-invited' });
   });
 
   it('reports a 403 as not invited, a 401 as rejected, and a failed request as a network problem', async () => {

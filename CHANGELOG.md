@@ -38,6 +38,9 @@ All notable changes to this project are documented here.
 - DevEx: Added unit and end-to-end tests for the inbox client, the bell, the panel, and the banners.
 - DevEx: Added end-to-end tests for rows taller than 48 px and for the first rows painting before the start-up maintenance.
 - DevEx: Made the Import backup focus end-to-end test wait for the main column to wake, so it passes on slow CI runners.
+- FrontEnd: Read the one-time passcode from the JSON answer of the sign-in callback, as the server sends it; the redirect of older servers still works.
+- DevEx: Added the opt-in `npm run test:contract`, which runs the sync client against a real todos server named by `TODOS_SERVER_DIR`.
+- Docs: Described the contract tests in the DevOps guide, and the JSON answer of the sign-in callback.
 
 ## v0.2.0 [released: 2026-11-07]
 - FrontEnd: Made the add field also search All tasks and every list, with a 150 ms pause, a note under the rows, and no Add on Enter.
