@@ -3,7 +3,7 @@ task: T0027
 round: 1
 verdict: approved
 reviewer: "@gemini"
-reviewed_at: 2026-11-07T21:35:01Z
+reviewed_at: 2026-11-07T21:39:51Z
 reviewed_commit: "b6fb41e"
 base_commit: "25ae1fc"
 branch: task/T0027-show-every-sync-state-in-the-sync-indicator
