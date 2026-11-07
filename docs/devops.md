@@ -7,7 +7,8 @@ Development environment, planning workflow, and operational procedures for `todo
 - Git, with access to the `gpellicciotta/todos.webapp` GitHub repository.
 - The [plan](https://github.com/gpellicciotta/plan) CLI.
 - Node.js 22.13 or later, with npm.
-- Python 3.10 or later, with pytest and Ruff 0.17, for the documentation scripts.
+- Python 3.10 or later, with pytest and Ruff 0.17, for the documentation scripts and `scripts/devops.py`.
+- Optional: the GitHub CLI `gh`, logged in, so `devops.py release` can create the GitHub release.
 
 ---
 
@@ -150,25 +151,34 @@ Keep it limited to `main`.
 [devops.py](../scripts/devops.py) cuts a release from `main`; the sections above describe what it automates.
 
 ```bash
-python scripts/devops.py release 0.2.0 --dry-run --backend-dir ../todos   # check and print the plan
-python scripts/devops.py release 0.2.0 --backend-dir ../todos             # run it, after a y/N question
+python scripts/devops.py release 0.2.0 --dry-run --backend-dir ../todos   # run the checks, print the plan, change nothing
+python scripts/devops.py release 0.2.0 --backend-dir ../todos             # the same, then ask y/N and release
 ```
 
-1. Preconditions: on `main`, a clean tree, not behind `origin/main`, and the tag `v0.2.0` free locally and on `origin`.
-   The changelog must start with one `-pre` heading, and the version must exceed the last release.
+1. Preconditions: on `main`, a clean tree, not behind `origin/main` or `origin/plan`, and the tag `v0.2.0` free locally and on `origin`.
+   The changelog must start with one `-pre` heading, the version must exceed the last release,
+   and every file the release rewrites must hold the text to replace.
 2. Checks: the service worker check, `npm test`, `npm run lint`, `npm run test:e2e`, Ruff, and pytest.
-3. Release commit `Released v0.2.0.`, tagged `v0.2.0`: the `-pre` heading becomes `## v0.2.0 [released: {{date}}]`.
+   A dry run runs them too; `--skip-checks` skips them.
+3. The plan: the files, the local commits and tag, and the exact publish commands. A dry run stops here.
+   Otherwise the script asks `y/N`; a closed input counts as no. Nothing changes before a yes.
+4. Release commit `Released v0.2.0.`, tagged `v0.2.0`: the `-pre` heading becomes `## v0.2.0 [released: {{date}}]`.
    `package.json`, `package-lock.json`, and [version.js](../src/js/version.js) take the version and the build date.
    The service worker `VERSION` and the hash manifest are bumped, then `check:sw` and `npm test` verify the commit.
-4. Next commit `Opened v0.2.1-pre development after releasing v0.2.0.`: an empty `-pre` heading and `-pre` versions.
-5. Publish: `git push origin main v0.2.0`, `git push origin plan`, and a GitHub release with the changelog entry.
-6. With `--backend-dir`: the `todosWebappVersion` pin in the todos repository's `gradle.properties` becomes `0.2.0`.
-   The script commits it there and stops. It never pushes that repository and never deploys the server.
-7. Follow the Pages run in the Actions tab, then open the site, reload once, and check that the new worker is active.
+5. Next commit `Opened v0.2.1-pre development after releasing v0.2.0.`: an empty `-pre` heading and `-pre` versions.
+6. Publish: `git push --atomic origin main v0.2.0`, so the tag never reaches `origin` without `main`.
+   Then `git push origin plan` and a GitHub release with the changelog entry.
+7. With `--backend-dir`: once the tag is on `origin`, the `todosWebappVersion` pin in the todos repository's
+   `gradle.properties` becomes `0.2.0`. The script commits it there and stops.
+   It never pushes that repository and never deploys the server.
+8. Follow the Pages run in the Actions tab, then open the site, reload once, and check that the new worker is active.
 
 - Options: `--skip-checks` skips the check run and the unit tests of the release commit, `--yes` skips only the question,
   and `--no-github-release` skips the GitHub release.
-- A failed verification restores the edited files; a failure after the commits names what exists locally.
+- If editing or verifying fails, the script restores the edited files and prints the local state and how to undo it:
+  `git tag -d v0.2.0` and `git reset --hard {{sha}}`. A rejected push leaves `origin` unchanged.
+- If a step after the push fails, such as the `plan` push, the GitHub release, or the pin, the script finishes the others,
+  lists what is left with the command to run, and exits with code 1.
 - To redeploy without a new commit, run the Pages workflow by hand from the Actions tab.
 - To deploy the server afterward, deploy it from the todos repository, then push its pin commit.
 

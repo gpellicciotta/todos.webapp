@@ -168,7 +168,7 @@ def test_open_next_heading_puts_a_pre_heading_on_top():
     assert result.count("-pre") == 1
 
 
-@pytest.mark.parametrize("version", ["0.1.0", "0.0.9", "1.0", "v0.2.0", "0.2.0-pre"])
+@pytest.mark.parametrize("version", ["0.1.0", "0.0.9"])
 def test_finalize_changelog_rejects_a_version_that_is_not_above_the_last_release(version):
     with pytest.raises(devops.ReleaseError):
         devops.finalize_changelog(CHANGELOG, version, "2026-11-20")
@@ -307,7 +307,7 @@ def test_release_without_confirmation_changes_and_pushes_nothing(project, monkey
     assert code == 1
     assert snapshot(project) == before
     assert git(project, "ls-remote", "origin") == origin_before
-    assert "git push origin main v0.2.0" in capsys.readouterr().out
+    assert "git push --atomic origin main v0.2.0" in capsys.readouterr().out
 
 
 def test_release_dry_run_changes_nothing_and_asks_nothing(project, monkeypatch, capsys):
@@ -326,6 +326,11 @@ def test_release_rejects_a_version_not_above_the_last_release(project):
 
 @needs_node
 def test_release_cuts_the_release_end_to_end(project, backend, tmp_path):
+    git(project, "checkout", "-q", "plan")
+    (project / "plan-note.txt").write_text("x", encoding="utf-8")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "Added a plan note.")
+    git(project, "checkout", "-q", "main")
     code = devops.release(project, options(release_version="0.2.0", backend_dir=backend))
     assert code == 0
 
@@ -420,5 +425,167 @@ def test_cli_release_dry_run_in_a_scratch_project_changes_nothing(project):
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "git push origin main v0.2.0" in result.stdout
+    assert "git push --atomic origin main v0.2.0" in result.stdout
     assert snapshot(project) == before
+
+
+# --- Failure paths -----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("version", ["1.0", "v0.2.0", "0.2.0-pre", "abc"])
+def test_finalize_changelog_rejects_a_malformed_version(version):
+    with pytest.raises(devops.ReleaseError, match="not a version"):
+        devops.finalize_changelog(CHANGELOG, version, "2026-11-20")
+
+
+def test_release_refuses_a_rewrite_that_cannot_match_before_changing_anything(project):
+    package = project / "package.json"
+    package.write_text(
+        '{\n    "name": "todos-webapp",\n    "version": "0.1.3-pre"\n}\n', encoding="utf-8", newline="\n"
+    )
+    git(project, "commit", "-q", "-am", "Indented package.json by four spaces.")
+    before = snapshot(project)
+    with pytest.raises(devops.ReleaseError, match="package.json"):
+        devops.release(project, options(release_version="0.2.0"))
+    assert snapshot(project) == before
+
+
+def test_release_restores_the_files_when_a_rewrite_fails_midway(project, monkeypatch):
+    def fail(root, today):
+        raise devops.ReleaseError("the manifest could not be written")
+
+    monkeypatch.setattr(devops, "bump_service_worker", fail)
+    before = snapshot(project)
+    with pytest.raises(devops.ReleaseError, match="restored"):
+        devops.release(project, options(release_version="0.2.0"))
+    assert snapshot(project) == before
+
+
+@needs_node
+def test_second_phase_failure_names_the_local_commits_and_pushes_nothing(project, monkeypatch):
+    real = devops.verify_service_worker
+    calls = []
+
+    def flaky(root):
+        calls.append(root)
+        return real(root) if len(calls) == 1 else False
+
+    monkeypatch.setattr(devops, "verify_service_worker", flaky)
+    origin_before = git(project, "ls-remote", "origin")
+    start = git(project, "rev-parse", "HEAD")
+    with pytest.raises(devops.ReleaseError) as caught:
+        devops.release(project, options(release_version="0.2.0"))
+    assert "git tag -d v0.2.0" in str(caught.value)
+    assert f"git reset --hard {start}" in str(caught.value)
+    assert git(project, "status", "--porcelain") == ""
+    assert git(project, "tag") == "v0.2.0"
+    assert git(project, "ls-remote", "origin") == origin_before
+
+
+@needs_node
+def test_a_rejected_push_is_atomic_and_leaves_the_tag_off_origin(project, tmp_path):
+    hook = tmp_path / "origin.git" / "hooks" / "update"
+    hook.write_text('#!/bin/sh\n[ "$1" = "refs/heads/main" ] && exit 1\nexit 0\n', encoding="utf-8", newline="\n")
+    hook.chmod(0o755)
+    origin_before = git(project, "ls-remote", "origin")
+    with pytest.raises(devops.ReleaseError, match="nothing reached origin") as caught:
+        devops.release(project, options(release_version="0.2.0"))
+    assert "git tag -d v0.2.0" in str(caught.value)
+    assert git(project, "ls-remote", "origin") == origin_before
+
+
+def test_preflight_refuses_a_plan_branch_behind_origin(project, tmp_path):
+    other = tmp_path / "other"
+    git(tmp_path, "clone", "-q", str(tmp_path / "origin.git"), str(other))
+    git(other, "checkout", "-q", "plan")
+    (other / "note.txt").write_text("x", encoding="utf-8")
+    git(other, "add", "-A")
+    git(other, "commit", "-q", "-m", "Added a note.")
+    git(other, "push", "-q", "origin", "plan")
+    with pytest.raises(devops.ReleaseError, match="plan"):
+        devops.preflight(project, "0.2.0")
+
+
+@needs_node
+def test_release_reports_the_steps_left_when_gh_is_missing(project, monkeypatch, capsys):
+    real_which = shutil.which
+    monkeypatch.setattr(devops.shutil, "which", lambda name: None if name == "gh" else real_which(name))
+    code = devops.release(project, options(release_version="0.2.0", no_github_release=False))
+    assert code == 1
+    assert "gh release create v0.2.0" in capsys.readouterr().err
+    assert "refs/tags/v0.2.0" in git(project, "ls-remote", "origin")
+
+
+def test_a_failing_check_run_changes_nothing(project, monkeypatch):
+    monkeypatch.setattr(devops, "check_commands", lambda: [[sys.executable, "-c", "raise SystemExit(1)"]])
+    before = snapshot(project)
+    with pytest.raises(devops.ReleaseError, match="checks failed"):
+        devops.release(project, options(release_version="0.2.0", skip_checks=False))
+    assert snapshot(project) == before
+
+
+def test_a_dry_run_runs_the_checks_unless_they_are_skipped(project, monkeypatch):
+    ran = []
+    monkeypatch.setattr(devops, "run_all", lambda commands, root: ran.append(commands) or True)
+    devops.release(project, options(release_version="0.2.0", dry_run=True, skip_checks=False))
+    assert len(ran) == 1
+    devops.release(project, options(release_version="0.2.0", dry_run=True, skip_checks=True))
+    assert len(ran) == 1
+
+
+def test_release_refuses_when_the_tree_changes_during_the_checks(project, monkeypatch):
+    def dirty(commands, root):
+        (root / "stray.txt").write_text("x", encoding="utf-8")
+        return True
+
+    monkeypatch.setattr(devops, "run_all", dirty)
+    with pytest.raises(devops.ReleaseError, match="changed while"):
+        devops.release(project, options(release_version="0.2.0", skip_checks=False))
+    assert git(project, "tag") == ""
+
+
+def test_release_treats_a_closed_input_as_not_confirmed(project, monkeypatch):
+    def closed(_prompt):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", closed)
+    before = snapshot(project)
+    assert devops.release(project, options(release_version="0.2.0", yes=False)) == 1
+    assert snapshot(project) == before
+
+
+@needs_node
+def test_release_keeps_crlf_line_endings(project):
+    names = ["CHANGELOG.md", "package.json", "package-lock.json", "src/js/version.js"]
+    for name in names:
+        path = project / name
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+    git(project, "commit", "-q", "-am", "Switched to CRLF line endings.")
+    assert devops.release(project, options(release_version="0.2.0")) == 0
+    for name in names:
+        data = (project / name).read_bytes()
+        assert data.count(b"\n") == data.count(b"\r\n"), name
+
+
+def test_update_backend_pin_restores_the_file_when_the_commit_fails(backend):
+    hook = backend / ".git" / "hooks" / "pre-commit"
+    hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8", newline="\n")
+    hook.chmod(0o755)
+    with pytest.raises(devops.ReleaseError):
+        devops.update_backend_pin(backend, "0.2.0")
+    assert git(backend, "status", "--porcelain") == ""
+    assert "todosWebappVersion=0.1.0" in (backend / "gradle.properties").read_text(encoding="utf-8")
+
+
+def test_update_backend_pin_skips_a_pin_that_is_already_current(backend):
+    before = git(backend, "rev-parse", "HEAD")
+    assert devops.update_backend_pin(backend, "0.1.0") is False
+    assert git(backend, "rev-parse", "HEAD") == before
+
+
+@pytest.mark.parametrize(
+    "args",
+    [["release", "v0.2.0"], ["release", "1.0"], ["lint", "0.2.0"], ["test", "--yes"], ["check", "--dry-run"]],
+)
+def test_cli_rejects_bad_arguments_with_exit_code_2(args):
+    assert run_cli(*args).returncode == 2

@@ -39,11 +39,11 @@ ACTION_DOCS = {
     "lint": "Run ESLint, then Ruff check and format check on scripts and tests.",
     "test": "Run the Vitest unit tests, then the pytest tests.",
     "e2e": "Run the Playwright end-to-end tests.",
-    "check": "Run what the Pages test job runs, plus the Python checks: service worker check, unit, lint, e2e, Ruff, pytest.",
+    "check": "Run what the Pages test job runs, plus the Python checks: service worker, unit, lint, e2e, Ruff, pytest.",
     "release": (
         "Cut a release from main. With {{version}}, rename the single -pre changelog heading to it.\n"
-        "      --dry-run              check the preconditions and print the plan; change nothing but fetched refs\n"
-        "      --skip-checks          skip the full check run and the unit tests of the release commit\n"
+        "      --dry-run              run the checks, check the preconditions, print the plan, and change nothing\n"
+        "      --skip-checks          skip the check run and the unit tests of the release commit\n"
         "      --yes                  skip the confirmation question; never skips the preconditions\n"
         "      --no-github-release    do not create the GitHub release\n"
         "      --backend-dir {{path}}  commit the todosWebappVersion pin in the todos repository; never pushed"
@@ -59,6 +59,13 @@ SERVICE_WORKER = "src/service-worker.js"
 SW_MANIFEST = "scripts/sw-precache-hashes.json"
 SW_CHECK = "scripts/check-sw-version.mjs"
 VERSION_FILES = ["CHANGELOG.md", "package.json", "package-lock.json", VERSION_JS, SERVICE_WORKER, SW_MANIFEST]
+# The text each release rewrite replaces; check_rewritable proves they match before anything is written.
+PACKAGE_PATTERN = r'^(  "version":\s*")[^"]+(")'
+LOCK_PATTERN = r'("name":\s*"todos-webapp",\s*"version":\s*")[^"]+(")'
+VERSION_PATTERN = r"(export const VERSION = ')[^']*(';)"
+BUILD_DATE_PATTERN = r"(export const BUILD_DATE = ')[^']*(';)"
+WORKER_PATTERN = r"(const VERSION = ')[^']+(';)"
+PIN_PATTERN = r"^todosWebappVersion=[^\r\n]*"
 
 
 class ReleaseError(Exception):
@@ -227,17 +234,17 @@ def replace_once(path: Path, pattern: str, replacement: str, count: int = 1) -> 
 
 def set_package_versions(root: Path, version: str) -> None:
     """Set the version in package.json and in the root entries of package-lock.json."""
-    replace_once(root / "package.json", r'^(  "version":\s*")[^"]+(")', rf"\g<1>{version}\g<2>")
+    replace_once(root / "package.json", PACKAGE_PATTERN, rf"\g<1>{version}\g<2>")
     lock = root / "package-lock.json"
     if lock.exists():
-        replace_once(lock, r'("name":\s*"todos-webapp",\s*"version":\s*")[^"]+(")', rf"\g<1>{version}\g<2>", count=0)
+        replace_once(lock, LOCK_PATTERN, rf"\g<1>{version}\g<2>", count=0)
 
 
 def set_version_js(root: Path, version: str, build_date: str) -> None:
     """Set VERSION and BUILD_DATE, which Settings shows under About."""
     path = root / VERSION_JS
-    replace_once(path, r"(export const VERSION = ')[^']*(';)", rf"\g<1>{version}\g<2>")
-    replace_once(path, r"(export const BUILD_DATE = ')[^']*(';)", rf"\g<1>{build_date}\g<2>")
+    replace_once(path, VERSION_PATTERN, rf"\g<1>{version}\g<2>")
+    replace_once(path, BUILD_DATE_PATTERN, rf"\g<1>{build_date}\g<2>")
 
 
 def next_sw_version(current: str, today: str) -> str:
@@ -252,12 +259,53 @@ def bump_service_worker(root: Path, today: str) -> None:
     found = re.search(r"const VERSION = '([^']+)';", read_text(path))
     if found is None:
         raise ReleaseError("service-worker.js has no VERSION line.")
-    replace_once(path, r"(const VERSION = ')[^']+(';)", rf"\g<1>{next_sw_version(found.group(1), today)}\g<2>")
+    replace_once(path, WORKER_PATTERN, rf"\g<1>{next_sw_version(found.group(1), today)}\g<2>")
     if not run([tool("node"), SW_CHECK, "--update"], root):
         raise ReleaseError("Rewriting the service worker hash manifest failed.")
 
 
+def check_rewritable(root: Path) -> None:
+    """Prove that every file the release rewrites exists and holds the text to replace; write nothing."""
+    targets = [
+        ("package.json", PACKAGE_PATTERN, True),
+        ("package-lock.json", LOCK_PATTERN, False),
+        (VERSION_JS, VERSION_PATTERN, True),
+        (VERSION_JS, BUILD_DATE_PATTERN, True),
+        (SERVICE_WORKER, WORKER_PATTERN, True),
+    ]
+    for name, pattern, required in targets:
+        path = root / name
+        if not path.exists():
+            if required:
+                raise ReleaseError(f"{name} does not exist; the release cannot rewrite it.")
+            continue
+        if not re.search(pattern, read_text(path), re.MULTILINE):
+            raise ReleaseError(f"{name} has no text matching {pattern}; the release cannot rewrite it.")
+
+
 # --- Release -----------------------------------------------------------------------------------
+
+
+def ensure_not_behind(root: Path) -> None:
+    """Fetch main and the tags; raise ReleaseError when main is behind origin/main."""
+    git(root, "fetch", "origin", "main", "--tags")
+    behind = int(git(root, "rev-list", "--count", "HEAD..origin/main"))
+    if behind:
+        raise ReleaseError(f"main is {behind} commit(s) behind origin/main; pull first.")
+
+
+def check_plan_branch(root: Path) -> None:
+    """Raise ReleaseError when the local plan branch is behind origin; warn about unpublished plan changes."""
+    if not git(root, "branch", "--list", "plan"):
+        return
+    if git(root, "ls-remote", "--heads", "origin", "plan"):
+        git(root, "fetch", "origin", "plan")
+        behind = int(git(root, "rev-list", "--count", "plan..origin/plan"))
+        if behind:
+            raise ReleaseError(f"The plan branch is {behind} commit(s) behind origin/plan; update it first.")
+    store = root / ".plan"
+    if store.exists() and git(store, "status", "--porcelain"):
+        print("[!] .plan has uncommitted changes; the release does not publish them.")
 
 
 def preflight(root: Path, version: str) -> None:
@@ -266,13 +314,11 @@ def preflight(root: Path, version: str) -> None:
         raise ReleaseError("Releases are cut from the 'main' branch.")
     if git(root, "status", "--porcelain"):
         raise ReleaseError("There are uncommitted changes; commit them before releasing.")
-    git(root, "fetch", "origin", "main", "--tags")
-    behind = int(git(root, "rev-list", "--count", "HEAD..origin/main"))
-    if behind:
-        raise ReleaseError(f"main is {behind} commit(s) behind origin/main; pull first.")
+    ensure_not_behind(root)
     tag = f"v{version}"
     if git(root, "tag", "--list", tag) or git(root, "ls-remote", "--tags", "origin", f"refs/tags/{tag}"):
         raise ReleaseError(f"The tag {tag} already exists.")
+    check_plan_branch(root)
 
 
 def check_backend(backend_dir: Path) -> Path:
@@ -282,17 +328,27 @@ def check_backend(backend_dir: Path) -> Path:
         raise ReleaseError(f"{gradle} does not exist; --backend-dir must name the todos repository.")
     if git(backend_dir, "status", "--porcelain"):
         raise ReleaseError(f"The backend repository {backend_dir} has uncommitted changes; commit them first.")
-    if not re.search(r"^todosWebappVersion=", read_text(gradle), re.MULTILINE):
+    if not re.search(PIN_PATTERN, read_text(gradle), re.MULTILINE):
         raise ReleaseError("gradle.properties of the backend has no todosWebappVersion line.")
     return gradle
 
 
-def update_backend_pin(backend_dir: Path, version: str) -> None:
-    """Set todosWebappVersion in the todos repository and commit it locally. Never pushes or deploys."""
+def update_backend_pin(backend_dir: Path, version: str) -> bool:
+    """Set todosWebappVersion in the todos repository and commit it locally; return whether it changed.
+
+    It never pushes or deploys. A failed commit restores gradle.properties.
+    """
     gradle = check_backend(backend_dir)
-    replace_once(gradle, r"^todosWebappVersion=[^\r\n]*", f"todosWebappVersion={version}")
-    git(backend_dir, "add", "gradle.properties")
-    git(backend_dir, "commit", "-m", f"Pinned todos.webapp v{version}.")
+    if re.search(rf"^todosWebappVersion={re.escape(version)}\s*$", read_text(gradle), re.MULTILINE):
+        return False
+    replace_once(gradle, PIN_PATTERN, f"todosWebappVersion={version}")
+    try:
+        git(backend_dir, "add", "gradle.properties")
+        git(backend_dir, "commit", "-m", f"Pinned todos.webapp v{version}.")
+    except ReleaseError:
+        git(backend_dir, "restore", "--source=HEAD", "--staged", "--worktree", "--", "gradle.properties")
+        raise
+    return True
 
 
 def verify_service_worker(root: Path) -> bool:
@@ -311,34 +367,121 @@ def existing(root: Path, names: list[str]) -> list[str]:
 
 
 def restore(root: Path, names: list[str]) -> None:
-    """Restore edited files from the last commit."""
-    git(root, "checkout", "--", *existing(root, names))
+    """Restore edited files, staged or not, from the last commit."""
+    git(root, "restore", "--source=HEAD", "--staged", "--worktree", "--", *existing(root, names))
+
+
+def local_state(root: Path, tag: str, start_sha: str) -> str:
+    """Describe what a failed release left in the local repository, and how to undo it."""
+    if git(root, "rev-parse", "HEAD") == start_sha:
+        return "Nothing was committed or pushed."
+    tagged = bool(git(root, "tag", "--list", tag))
+    undo = (f"git tag -d {tag}; " if tagged else "") + f"git reset --hard {start_sha}"
+    return f"Local commits{' and the tag ' + tag if tagged else ''} exist and nothing was pushed. To undo them: {undo}"
+
+
+def edit_phase(root: Path, label: str, tag: str, start_sha: str, action) -> None:
+    """Run one editing phase; on any failure restore the edited files and say what state is left."""
+    try:
+        action()
+    except Exception as error:  # noqa: BLE001 - any failure must restore the files and report the state
+        try:
+            restore(root, VERSION_FILES)
+            restored = "The edited files were restored."
+        except ReleaseError as restore_error:
+            restored = f"Restoring the edited files failed too ({restore_error}); check git status."
+        raise ReleaseError(f"{label} failed: {error}. {restored} {local_state(root, tag, start_sha)}") from None
+
+
+def confirm(question: str) -> bool:
+    """Ask a yes or no question; a closed input or an interrupt counts as no."""
+    try:
+        return input(question).strip().lower() in {"y", "yes"}
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return False
 
 
 def describe_plan(root: Path, version: str, next_version: str, opts) -> list[str]:
-    """Return the lines that tell the user what a release will do, ending with the commands that publish."""
+    """Return the lines that tell the user what a release will do, with the real commands."""
     tag = f"v{version}"
     lines = [
         f"Release         : {tag}, dated {today_iso()}",
         f"Next version    : v{next_version}-pre",
-        f"Commits         : 'Released {tag}.', then 'Opened v{next_version}-pre development after releasing {tag}.'",
         f"Files           : {', '.join(existing(root, VERSION_FILES))}",
-        f"Checks          : {'skipped' if opts.skip_checks else 'service worker, unit, lint, e2e, Ruff, pytest'}",
+        f"Checks          : {'skipped' if opts.skip_checks else 'ran: service worker, unit, lint, e2e, Ruff, pytest'}",
+        "Local commands, after the question:",
+        f'  git commit -m "Released {tag}."',
+        f'  git tag -a {tag} -m "Released {tag}."',
+        f'  git commit -m "Opened v{next_version}-pre development after releasing {tag}."',
         "Commands that publish:",
-        f"  git push origin main {tag}",
+        f"  git push --atomic origin main {tag}",
     ]
     if git(root, "branch", "--list", "plan"):
         lines.append("  git push origin plan")
+    notes = '"<the changelog entry of ' + tag + '>"'
     lines.append(
         "  (no GitHub release)"
         if opts.no_github_release
-        else f"  gh release create {tag} --title {tag} --notes {{{{changelog entry}}}}"
+        else f"  gh release create {tag} --title {tag} --notes {notes}"
     )
     if opts.backend_dir:
         lines.append(
             f"Backend pin     : todosWebappVersion={version} in {opts.backend_dir}; committed locally, never pushed or deployed"
         )
     return lines
+
+
+def publish(root: Path, opts, version: str, notes: str, start_sha: str) -> int:
+    """Push and register the release. Return 0, or 1 when a step after the push is left for the user."""
+    tag = f"v{version}"
+    try:
+        ensure_not_behind(root)
+        git(root, "push", "--atomic", "origin", "main", tag)
+    except ReleaseError as error:
+        raise ReleaseError(
+            f"Publishing failed and nothing reached origin: {error}. {local_state(root, tag, start_sha)}"
+        ) from None
+    print(f"[OK] Pushed main and {tag} together.")
+
+    left: list[tuple[str, str]] = []
+    if git(root, "branch", "--list", "plan"):
+        try:
+            git(root, "push", "origin", "plan")
+            print("[OK] Pushed plan.")
+        except ReleaseError as error:
+            left.append((f"The plan push failed: {error}", "git push origin plan"))
+    if not opts.no_github_release:
+        command = f'gh release create {tag} --title {tag} --notes "<the changelog entry of {tag}>"'
+        if shutil.which("gh") is None:
+            left.append(("The gh CLI is missing.", command))
+        elif run(["gh", "release", "create", tag, "--title", tag, "--notes", notes], root):
+            print(f"[OK] Created the GitHub release {tag}.")
+        else:
+            left.append(("Creating the GitHub release failed.", command))
+    if opts.backend_dir:
+        pin = f"edit todosWebappVersion={version} in gradle.properties of {opts.backend_dir}, and commit it"
+        try:
+            if not git(root, "ls-remote", "--tags", "origin", f"refs/tags/{tag}"):
+                raise ReleaseError(f"{tag} is not on origin")
+            if update_backend_pin(Path(opts.backend_dir), version):
+                print(
+                    f"[OK] Committed the pin todosWebappVersion={version} in {opts.backend_dir}; not pushed, not deployed."
+                )
+            else:
+                print(f"[OK] The backend already pins {version}.")
+        except ReleaseError as error:
+            left.append((f"The backend pin was not committed: {error}", pin))
+
+    if left:
+        print(f"\n[!] {tag} is pushed, but these steps are left for you:", file=sys.stderr)
+        for reason, command in left:
+            print(f"    - {reason}\n      Do: {command}", file=sys.stderr)
+        return 1
+    if opts.backend_dir:
+        print("     Next: deploy the todos server from that repository, then push its pin commit.")
+    print(f"[OK] Released {tag}. Follow the Pages run in the Actions tab, then reload the site once.")
+    return 0
 
 
 def release(root: Path, opts) -> int:
@@ -349,68 +492,56 @@ def release(root: Path, opts) -> int:
     tag = f"v{version}"
     next_version = next_patch(version)
 
+    tool("node")
     preflight(root, version)
     finalize_changelog(read_text(changelog_path), version, today)
+    check_rewritable(root)
     if opts.backend_dir:
         check_backend(Path(opts.backend_dir))
+    if not opts.skip_checks and not run_all(check_commands(), root):
+        raise ReleaseError("The checks failed; nothing was changed.")
     for line in describe_plan(root, version, next_version, opts):
         print(line)
     if opts.dry_run:
         print("\nDry run: nothing was changed.")
         return 0
-    if not opts.yes and input("\nProceed with the release? [y/N] ").strip().lower() not in {"y", "yes"}:
+    if not opts.yes and not confirm("\nProceed with the release? [y/N] "):
         print("Not confirmed: nothing was changed or pushed.")
         return 1
-
-    if not opts.skip_checks and not run_all(check_commands(), root):
-        raise ReleaseError("The checks failed; nothing was changed.")
-
-    # Commit 1: the released version, tagged.
-    write_text(changelog_path, finalize_changelog(read_text(changelog_path), version, today))
-    notes = extract_release_notes(read_text(changelog_path), version)
-    set_package_versions(root, version)
-    set_version_js(root, version, today)
-    bump_service_worker(root, today)
-    if not verify_release_files(root, opts.skip_checks):
-        restore(root, VERSION_FILES)
-        raise ReleaseError("Release verification failed; the version files were restored.")
-    git(root, "add", "--", *existing(root, VERSION_FILES))
-    git(root, "commit", "-m", f"Released {tag}.")
-    git(root, "tag", "-a", tag, "-m", f"Released {tag}.")
-
-    # Commit 2: the next development version.
-    pre = f"{next_version}-pre"
-    write_text(changelog_path, open_next_heading(read_text(changelog_path), next_version))
-    set_package_versions(root, pre)
-    set_version_js(root, pre, today)
-    bump_service_worker(root, today)
-    if not verify_service_worker(root):
-        restore(root, VERSION_FILES)
+    if git(root, "status", "--porcelain"):
         raise ReleaseError(
-            f"Verification failed; the release commit and tag {tag} exist locally and nothing was pushed."
+            "The working tree changed while the checks ran; commit or discard the changes and start again."
         )
-    git(root, "add", "--", *existing(root, VERSION_FILES))
-    git(root, "commit", "-m", f"Opened v{pre} development after releasing {tag}.")
+    start_sha = git(root, "rev-parse", "HEAD")
+    notes = ""
 
-    # Publish.
-    git(root, "push", "origin", "main", tag)
-    print(f"[OK] Pushed main and {tag}.")
-    if git(root, "branch", "--list", "plan"):
-        git(root, "push", "origin", "plan")
-        print("[OK] Pushed plan.")
-    if not opts.no_github_release:
-        if shutil.which("gh") is None:
-            print("[!] The gh CLI is missing: create the GitHub release by hand.")
-        elif run(["gh", "release", "create", tag, "--title", tag, "--notes", notes], root):
-            print(f"[OK] Created the GitHub release {tag}.")
-        else:
-            raise ReleaseError(f"{tag} is pushed, but creating the GitHub release failed.")
-    if opts.backend_dir:
-        update_backend_pin(Path(opts.backend_dir), version)
-        print(f"[OK] Committed the pin todosWebappVersion={version} in {opts.backend_dir}; not pushed, not deployed.")
-        print("     Next: deploy the todos server from that repository, then push its commit.")
-    print(f"[OK] Released {tag}. Follow the Pages run in the Actions tab, then reload the site once.")
-    return 0
+    def release_commit() -> None:
+        nonlocal notes
+        write_text(changelog_path, finalize_changelog(read_text(changelog_path), version, today))
+        notes = extract_release_notes(read_text(changelog_path), version)
+        set_package_versions(root, version)
+        set_version_js(root, version, today)
+        bump_service_worker(root, today)
+        if not verify_release_files(root, opts.skip_checks):
+            raise ReleaseError("the verification of the release files failed")
+        git(root, "add", "--", *existing(root, VERSION_FILES))
+        git(root, "commit", "-m", f"Released {tag}.")
+        git(root, "tag", "-a", tag, "-m", f"Released {tag}.")
+
+    def next_commit() -> None:
+        pre = f"{next_version}-pre"
+        write_text(changelog_path, open_next_heading(read_text(changelog_path), next_version))
+        set_package_versions(root, pre)
+        set_version_js(root, pre, today)
+        bump_service_worker(root, today)
+        if not verify_service_worker(root):
+            raise ReleaseError("the service worker check failed")
+        git(root, "add", "--", *existing(root, VERSION_FILES))
+        git(root, "commit", "-m", f"Opened v{pre} development after releasing {tag}.")
+
+    edit_phase(root, "The release commit", tag, start_sha, release_commit)
+    edit_phase(root, "The next development commit", tag, start_sha, next_commit)
+    return publish(root, opts, version, notes, start_sha)
 
 
 # --- Entry point -------------------------------------------------------------------------------
@@ -429,7 +560,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.allow_abbrev = False
     parser.add_argument("release_version", nargs="?", help="release: the version to release, such as 0.2.0")
     parser.add_argument("--verbose", action="store_true", help="help: describe every action")
-    parser.add_argument("--dry-run", action="store_true", help="release: print the plan and change nothing")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="release: run the checks, print the plan, change nothing"
+    )
     parser.add_argument("--skip-checks", action="store_true", help="release: skip the check run and the unit tests")
     parser.add_argument("--yes", action="store_true", help="release: do not ask for confirmation")
     parser.add_argument("--no-github-release", action="store_true", help="release: do not create a GitHub release")
@@ -443,6 +576,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(
             "a version and the options --dry-run, --skip-checks, --yes, --no-github-release, --backend-dir need 'release'"
         )
+    if args.release_version and not SEMVER.fullmatch(args.release_version):
+        parser.error(f"'{args.release_version}' is not a version like 1.2.3, without a v prefix or suffix")
     if args.version or args.action == "version":
         print_version(PROG, version)
         return 0
