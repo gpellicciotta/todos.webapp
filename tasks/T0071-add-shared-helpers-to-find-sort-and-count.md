@@ -5,18 +5,20 @@ session: claude-20261108-7fb151
 needs: []
 branch: task/T0071-add-shared-helpers-to-find-sort-and-count
 worktree: .plan/work/T0071-add-shared-helpers-to-find-sort-and-count
-status: active
+status: completed
 started_at: "2026-11-07T23:21:47Z"
-ended_at: —
+ended_at: "2026-11-07T23:31:39Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 828.0, input: 216, output: 64356, cache_read: 9961778, cache_write: 226626}
-  review: {turns: 2, duration_s: 158.2, input: 62774, output: 4768, cache_read: 679936, cache_write: 0}
-review_status: pending
+  review: {turns: 4, duration_s: 271.6, input: 134326, output: 7082, cache_read: 1124096, cache_write: 0}
+review_status: approved
 review_round: 2
-work_duration: 373.8
+work_duration: 592.4
+reviewed_by: "@codex"
+completion-commit: 5ab34d22103f7972ccc54064ae50a94e1f2a3c54
 ---
 # T0071: Add shared helpers to find, sort, and count lists, with unit tests
 
@@ -31,7 +33,7 @@ Make layout.js and lists.js use the shared count helper, without a visible chang
 - [x] **[Implement]** Add list-find.js, list-sort.js, and list-counts.js, and let layout.js and lists.js call the counts.
 - [x] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [x] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
@@ -76,4 +78,11 @@ Make layout.js and lists.js use the shared count helper, without a visible chang
 
 - [2026-11-08] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-08] **[Review]**
+  Round 2 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-2.md](T0071-add-shared-helpers-to-find-sort-and-count/review-findings-2.md).
+
+- [2026-11-08] **[Complete]**
+  Task completed successfully.
 
