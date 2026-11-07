@@ -6,11 +6,19 @@ needs: []
 branch: task/T0027-show-every-sync-state-in-the-sync-indicator
 worktree: .plan/work/T0027-show-every-sync-state-in-the-sync-indicator
 status: active
-started_at: "2026-11-07T20:38:48Z"
+started_at: "2026-11-07T21:34:39Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
+size_status: approved
+size_estimate: 37 files, 1694 lines
+usage:
+  worker: {turns: 2, duration_s: 1980.4, input: 296, output: 130504, cache_read: 21865814, cache_write: 393480}
+work_duration: 1002.7
+size_approved: 37 files, 1694 lines
+size_approved_by: "@gpellicciotta"
+size_approved_at: "2026-11-07T21:27:59Z"
 ---
 # T0027: Show every sync state in the sync indicator and build the Sync log screen
 
@@ -60,4 +68,10 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Doc]**
   Updated ui-design.md, the wireframes, and CHANGELOG.md.
+
+- [2026-11-07] **[Size]**
+  Size approval requested by the work loop: 37 files, 1694 lines exceeds 3x the approved 10 files, 600 lines.
+
+- [2026-11-07] **[Size]**
+  Size approved by @gpellicciotta for 37 files, 1694 lines.
 
