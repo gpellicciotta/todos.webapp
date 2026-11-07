@@ -13,8 +13,11 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 2091.0, input: 292, output: 100230, cache_read: 17369454, cache_write: 302428}
-review_status: pending
+  review: {turns: 2, duration_s: 437.2, input: 229814, output: 8200, cache_read: 2165616}
+review_status: rejected
 review_round: 1
+reviewed_by: "@gemini"
+work_duration: 1285.8
 ---
 # T0055: Make the add field also search, with Add anyway, a hidden-task toast, and Add-only creation
 
@@ -70,4 +73,13 @@ Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.j
 
 - [2026-11-07] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-07] **[Review]**
+  Round 1 rejected by @gemini: The implementation in `add-bar.js`, `all-tasks.js`, `list.js`, and `query.js` meets the functional goals for search-and-add (`VO-3`, `VO-14`, `TV-6`, `TSK-1`), and all.
+  - Findings: [review-findings-1.md](T0055-make-the-add-field-also-search-with-add/review-findings-1.md).
+
+- [2026-11-07] **[Verify]**
+  Reworked review round 1: recaptured no-match screenshots after the debounce and reran every command.
+  - validation-proof.md now holds verbatim output with omission markers.
+  - Production code unchanged.
 
