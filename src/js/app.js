@@ -25,6 +25,7 @@ import { mountLists } from './views/lists.js';
 import { mountRecycleBin } from './views/recycle-bin.js';
 import { mountSettings } from './views/settings.js';
 import { mountTaskEditor } from './views/task-editor.js';
+import { createViewModel, mountViewOptions } from './views/view-controls.js';
 
 /** Start-up strings, for the strings module of TEC-13 to absorb. */
 const MESSAGES = Object.freeze({
@@ -38,7 +39,7 @@ const MESSAGES = Object.freeze({
 const SCREENS = { tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, connect: mountConnect };
 
 /** Editors of the editor panel, by the editor name of their routes. */
-const EDITORS = { task: mountTaskEditor, list: mountListEditor };
+const EDITORS = { task: mountTaskEditor, list: mountListEditor, 'view-options': mountViewOptions };
 
 let shell = null;
 
@@ -88,8 +89,10 @@ async function start() {
   }
   let screen = null;
   let shownViewKey = null;
+  // The screens and the View options panel share these, so the rows, the info line, and the panel follow one state.
+  const viewModels = { tasks: createViewModel('tasks'), list: createViewModel('list') };
   const editorPanel = createEditorPanel({
-    slot: shell.editor, editors: EDITORS, context: { store, toaster, navigate: (hash) => router.navigate(hash) },
+    slot: shell.editor, editors: EDITORS, context: { store, toaster, viewModels, navigate: (hash) => router.navigate(hash) },
     close: () => router.navigate(formatRoute(router.current().view, router.current().params)),
     fallbackFocus: () => shell.main.querySelector('[data-shortcut="add"]') ?? shell.main,
   });
@@ -128,7 +131,7 @@ async function start() {
     if (screen?.element !== element) {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
-      const options = { store, toaster, session, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
+      const options = { store, toaster, session, viewModels, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
       screen = { element, controller: mount ? mount(element, options) : null };
     }
     screen.controller?.update(route);

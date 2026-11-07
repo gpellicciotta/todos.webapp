@@ -7,10 +7,12 @@ const TASK = '0192f1a2-0000-7000-8000-000000000002';
 const ROUTES = [
   ['#/tasks', 'tasks', {}, 'tasks', null],
   [`#/tasks/${TASK}`, 'task', { taskId: TASK }, 'tasks', 'task'],
+  ['#/tasks/view-options', 'view-options', {}, 'tasks', 'view-options'],
   ['#/lists', 'lists', {}, 'lists', null],
   [`#/lists/${LIST}`, 'list', { listId: LIST }, 'list', null],
   [`#/lists/${LIST}/tasks/${TASK}`, 'list-task', { listId: LIST, taskId: TASK }, 'list', 'task'],
   [`#/lists/${LIST}/edit`, 'list-edit', { listId: LIST }, 'list', 'list'],
+  [`#/lists/${LIST}/view-options`, 'list-view-options', { listId: LIST }, 'list', 'view-options'],
   ['#/lists/new', 'list-new', {}, 'lists', 'list'],
   ['#/bin', 'bin', {}, 'bin', null],
   ['#/settings', 'settings', {}, 'settings', null],
@@ -79,6 +81,8 @@ describe('parseRoute and formatRoute', () => {
   it('keys the view by its list, so editor routes share the view key', () => {
     expect(parseRoute(`#/lists/${LIST}/tasks/${TASK}`).viewKey).toBe(parseRoute(`#/lists/${LIST}`).viewKey);
     expect(parseRoute(`#/tasks/${TASK}`).viewKey).toBe('tasks');
+    expect(parseRoute('#/tasks/view-options').viewKey).toBe('tasks');
+    expect(parseRoute(`#/lists/${LIST}/view-options`).viewKey).toBe(parseRoute(`#/lists/${LIST}`).viewKey);
   });
 
   it('round-trips identifiers that need encoding', () => {

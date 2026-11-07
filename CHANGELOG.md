@@ -6,6 +6,10 @@ All notable changes to this project are documented here.
 
 ## v0.2.0-pre
 - FrontEnd: Made lists re-orderable on the device only, by drag handle, Alt+Up and Alt+Down, or Move up and Move down, in the sidebar and the Lists screen.
+- FrontEnd: Added Edit view options to the More menus of All tasks and every list, opening a panel with Reset, filters, and sort.
+- FrontEnd: Added an info line under the add bar that names the task count, the active filters, and any other sort, with a Reset link.
+- FrontEnd: Replaced the filter chips, the Sort menu, the list order buttons, and the status chip with the view options panel.
+- FrontEnd: Renamed Share to Share list in the list More menu, and made the list view filter by due and created dates too.
 - DevEx: Added `devops.py` with lint, test, e2e, check, and release actions that tag and publish versions.
 - Docs: Specified how sync handles server errors, tab leadership, the version 4 store, and controlled updates, adding SYN-11, SYN-12, and TEC-19.
 - FrontEnd: Required Create or Enter to save new lists; closing discards drafts while existing lists still save automatically.

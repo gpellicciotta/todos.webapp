@@ -12,11 +12,13 @@ export const DEFAULT_HASH = '#/tasks';
 /** Route patterns, in match order; `:name` segments are identifiers. */
 const ROUTES = [
   { name: 'tasks', path: 'tasks', view: 'tasks', editor: null },
+  { name: 'view-options', path: 'tasks/view-options', view: 'tasks', editor: 'view-options' },
   { name: 'task', path: 'tasks/:taskId', view: 'tasks', editor: 'task' },
   { name: 'lists', path: 'lists', view: 'lists', editor: null },
   { name: 'list-new', path: 'lists/new', view: 'lists', editor: 'list' },
   { name: 'list', path: 'lists/:listId', view: 'list', editor: null },
   { name: 'list-edit', path: 'lists/:listId/edit', view: 'list', editor: 'list' },
+  { name: 'list-view-options', path: 'lists/:listId/view-options', view: 'list', editor: 'view-options' },
   { name: 'list-task', path: 'lists/:listId/tasks/:taskId', view: 'list', editor: 'task' },
   { name: 'bin', path: 'bin', view: 'bin', editor: null },
   { name: 'settings', path: 'settings', view: 'settings', editor: null },

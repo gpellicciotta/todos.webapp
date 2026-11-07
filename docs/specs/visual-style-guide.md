@@ -150,7 +150,7 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Delete buttons that confirm or start a delete, such as Delete task and Delete list in the editors and the buttons in dialogs and in-place questions, use `.button--danger`, filled with `--color-on-danger` text.
   Delete buttons beside other actions in a row, such as the recycle bin's Delete permanently, use `.button--secondary.button--danger`, a danger outline with neutral text.
   Delete menu items use `.menu__item--danger`, with danger text and icon; its pressed ground is the hover ground to keep 4.5:1.
-  Use `--secondary` in gray for other actions and `--quiet` for low-emphasis ones, such as Clear all and Undo.
+  Use `--secondary` in gray for other actions and `--quiet` for low-emphasis ones, such as Reset and Undo.
   Never place two signal buttons side by side.
 - [Icon button](../../src/demo/visual-style-gallery.html#icon-button): a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
   Toggles set `aria-pressed`; the pressed state adds the signal outline and keeps hover and active grounds.
@@ -163,6 +163,7 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Chips are not buttons; a removable chip holds a separate remove icon button.
 - [Filter chip](../../src/demo/visual-style-gallery.html#filter-chip): a chip that opens a popover and shows its active value.
   It carries `aria-expanded`, never `aria-pressed`; `data-active="true"` adds the signal outline of a set filter.
+  The task views no longer use it: the view options rows replace the chips.
 - [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row, for status in the editor and the grouping choice in the view options.
   The checked option adds a signal outline and semibold text, so it never relies on color alone.
 - [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored panels at `--elevation-1` that close on Escape and outside clicks.
@@ -256,11 +257,15 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 ---
 
 ## Patterns
-- [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header, view controls, add bar, and rows.
-  The add bar sits above the rows in wide layouts and below them in compact ones.
+- [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header and its More button, the search field, an `.add-block`, and rows.
+  The add block holds the add bar and the info line; it sits above the rows in wide layouts and below them in compact ones.
 - Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
 - Search and add: one field with an Add button, and under it a 12 px muted info line of the task count and active options.
   Leave at least 32 px between this block and the rows; the options themselves live in the view options panel.
+  The `.info-line` wraps to two lines, then truncates; its quiet Reset button shows only while an option differs from its default.
+- View options: the editor panel with Reset at the top, a `.view-options__row` accordion of filters, and Sort by.
+  Each row shows its value at the end, and opening one row closes the other.
+  Sort by is a native select with a segmented Ascending and Descending toggle; the compact screen ends with a sticky Show N tasks button.
 - [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
   Compact layouts show the panel alone, as a full screen.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.

@@ -1,23 +1,23 @@
 /**
- * View controls of the task views: search, the filter chips with their popovers, Clear all, and the Sort menu.
+ * View options of the task views: the search field, the info line, and the View options panel.
  *
- * Search filters by text in descriptions and notes (`TV-6`); the Lists, Status, Due, and Created chips
- * open popovers with checkboxes or date ranges (`TV-2` to `TV-5`); the Sort menu picks a field and a
- * direction (`TV-9`). Compact layouts show one Filters button whose panel holds every filter instead.
- * Filters and the order persist per device through preferences.js (`TV-12`); the search text does not,
- * so a reload never hides tasks behind a forgotten search.
+ * All tasks and every list view share one set of options: filters and a sort (`VO-1`). The view model holds
+ * them, stores them per device through preferences.js (`TV-12`), and tells the screen and the panel about
+ * changes; the search text stays out of storage, so a reload never hides tasks behind forgotten text.
+ * The info line under the add bar names the count and every active option (`VO-7`) and offers Reset (`VO-8`).
+ * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, and Sort by.
  */
 
 import { readPreference, writePreference } from '../core/preferences.js';
 import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, NO_LIST, SORT_FIELDS } from '../core/query.js';
 import { STATUSES } from '../store/tasks.js';
-import { attachMenu } from '../ui/menu.js';
-import { attachPopover } from '../ui/popover.js';
+import { createLiveRegion } from '../ui/live-region.js';
 import { spriteIcon, STATUS_LABELS } from './task-list.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const OPEN = DEFAULT_FILTER.statuses;
 const SEARCH_DELAY_MS = 150;
+const MANUAL = 'manual';
 let instances = 0;
 
 /** Control strings, for the strings module of TEC-13 to absorb. */
@@ -25,24 +25,32 @@ const STRINGS = Object.freeze({
   search: 'Search tasks and notes',
   searchPlaceholder: 'Search',
   searchValue: 'Search',
-  filters: 'Filters',
-  clear: 'Clear',
-  clearAll: 'Clear all',
-  sort: 'Sort',
-  orderBy: 'Order by',
+  title: 'View options',
+  reset: 'Reset',
+  filter: 'Filter',
+  sortBy: 'Sort by',
   direction: 'Direction',
   asc: 'Ascending',
   desc: 'Descending',
+  ascending: 'ascending',
+  descending: 'descending',
   open: 'open',
+  all: 'All',
+  any: 'Any',
   noList: 'In no list',
   from: 'From',
   to: 'To',
   lists: (count) => `${count} lists`,
   statuses: (count) => `${count} statuses`,
   options: (count) => `${count} options`,
+  statusAll: 'Status: all',
+  sortedBy: (field) => `Sorted by ${field}`,
+  tasks: (count) => `${count} ${count === 1 ? 'task' : 'tasks'}`,
+  tasksOf: (shown, total) => `${shown} of ${total} ${total === 1 ? 'task' : 'tasks'}`,
+  show: (counts) => (counts ? `Show ${counts.shown} ${counts.shown === 1 ? 'task' : 'tasks'}` : 'Show tasks'),
 });
 
-/** The filters with a chip, in display order. */
+/** The filters with a row in the panel, in display order; the Lists filter is for All tasks only. */
 const FILTERS = Object.freeze([
   { key: 'lists', label: 'Lists' },
   { key: 'statuses', label: 'Status' },
@@ -50,20 +58,35 @@ const FILTERS = Object.freeze([
   { key: 'created', label: 'Created' },
 ]);
 
-/** Sort field names. */
+/** Sort field names, with Manual order for the list view (`LV-6`). */
 export const FIELD_LABELS = Object.freeze({
-  'due-time': 'Due time', 'creation-time': 'Created', 'last-activity-time': 'Last activity',
+  [MANUAL]: 'Manual order', 'due-time': 'Due time', 'creation-time': 'Created', 'last-activity-time': 'Last activity',
   status: 'Status', description: 'Description',
+});
+
+/** The direction a field starts with: Due, Status, and Description ascend; Created and Activity show the newest first. */
+export const NATURAL_DIRECTION = Object.freeze({
+  [MANUAL]: 'asc', 'due-time': 'asc', 'creation-time': 'desc', 'last-activity-time': 'desc', status: 'asc', description: 'asc',
 });
 
 const DUE_LABELS = Object.freeze({ overdue: 'Overdue', today: 'Today', 'this-week': 'This week', none: 'No due time' });
 
 /**
- * Return the default view state: open tasks, due time ascending (`LV-10`, `TV-10`).
+ * Name the kind of a view: All tasks, or a list view.
+ * @param {string} view the view key, `tasks` or `list`
+ * @returns {'tasks'|'list'} the kind
+ */
+function kindOf(view) {
+  return view === 'list' ? 'list' : 'tasks';
+}
+
+/**
+ * Return the default view state: open tasks, due time ascending, or manual order in a list view (`LV-10`, `TV-10`).
+ * @param {'tasks'|'list'} [kind] the kind of view
  * @returns {{filter: object, order: {field: string, direction: string}}} a new state
  */
-export function defaultViewState() {
-  return { filter: { statuses: [...OPEN] }, order: { ...DEFAULT_ORDER } };
+export function defaultViewState(kind = 'tasks') {
+  return { filter: { statuses: [...OPEN] }, order: kind === 'list' ? { field: MANUAL, direction: 'asc' } : { ...DEFAULT_ORDER } };
 }
 
 /**
@@ -82,15 +105,19 @@ function readRange(value) {
 
 /**
  * Keep the valid parts of a stored view state and fill the rest with the defaults.
+ * The List screen of v0.1.0 stored `{order, statuses}`; that shape still reads.
  * @param {unknown} raw the stored value
+ * @param {'tasks'|'list'} [kind] the kind of view
  * @returns {{filter: object, order: object}} the view state, without search text
  */
-export function sanitizeViewState(raw) {
-  const state = defaultViewState();
+export function sanitizeViewState(raw, kind = 'tasks') {
+  const state = defaultViewState(kind);
   if (!raw || typeof raw !== 'object') {
     return state;
   }
-  const stored = raw.filter;
+  const old = typeof raw.order === 'string' && !raw.filter;
+  const stored = old ? { statuses: raw.statuses } : raw.filter;
+  const order = old ? { field: raw.order, direction: NATURAL_DIRECTION[raw.order] } : raw.order;
   if (stored && typeof stored === 'object') {
     state.filter = {};
     if (Array.isArray(stored.statuses)) {
@@ -112,20 +139,21 @@ export function sanitizeViewState(raw) {
       state.filter.created = created;
     }
   }
-  if (raw.order && SORT_FIELDS.includes(raw.order.field) && ['asc', 'desc'].includes(raw.order.direction)) {
-    state.order = { field: raw.order.field, direction: raw.order.direction };
+  const fields = kind === 'list' ? [MANUAL, ...SORT_FIELDS] : SORT_FIELDS;
+  if (order && fields.includes(order.field) && ['asc', 'desc'].includes(order.direction)) {
+    state.order = { field: order.field, direction: order.field === MANUAL ? 'asc' : order.direction };
   }
   return state;
 }
 
 /**
  * Read the stored filters and order of a view (`TV-12`).
- * @param {string} view the view key, such as `tasks`
+ * @param {string} view the view key, `tasks` or `list`
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
  * @returns {{filter: object, order: object}} the view state
  */
 export function loadViewState(view, getStorage) {
-  return sanitizeViewState(readPreference(`view.${view}`, null, getStorage));
+  return sanitizeViewState(readPreference(`view.${view}`, null, getStorage), kindOf(view));
 }
 
 /**
@@ -142,6 +170,22 @@ export function saveViewState(view, state, getStorage) {
 }
 
 /**
+ * Tell whether every option and the search text have their default values (`VO-8`).
+ * @param {{filter: object, order: object}} state the view state
+ * @param {'tasks'|'list'} [kind] the kind of view
+ * @returns {boolean} true when Reset would change nothing
+ */
+export function isDefaultViewState(state, kind = 'tasks') {
+  const { filter, order } = state;
+  const fallback = defaultViewState(kind).order;
+  const statuses = filter.statuses ?? [];
+  return !(typeof filter.text === 'string' && filter.text.trim())
+    && statuses.length === OPEN.length && OPEN.every((status) => statuses.includes(status))
+    && !filter.lists?.length && !filter.due?.length && !filter.created
+    && order.field === fallback.field && (order.field === MANUAL || order.direction === fallback.direction);
+}
+
+/**
  * Describe a date range.
  * @param {{from: string|null, to: string|null}} range the range
  * @returns {string} the text, such as `from 2026-11-01`
@@ -154,7 +198,7 @@ function rangeText({ from, to }) {
 }
 
 /**
- * Return the value text of one filter chip, or null when the filter is off.
+ * Return the value text of one filter, or null when the filter is off.
  * @param {string} key the filter key
  * @param {object} filter the filter
  * @param {object[]} lists the live lists
@@ -171,7 +215,7 @@ function filterValue(key, filter, lists) {
   if (key === 'lists') {
     const names = values.map((id) => (id === NO_LIST ? STRINGS.noList.toLowerCase() : lists.find((list) => list.id === id)?.name))
       .filter(Boolean);
-    // A stored filter of deleted lists filters nothing, so its chip shows no value.
+    // A stored filter of deleted lists filters nothing, so it shows no value.
     if (names.length === 0) {
       return null;
     }
@@ -190,12 +234,14 @@ function filterValue(key, filter, lists) {
 }
 
 /**
- * Name the active filters, such as `Status: open`, for chips and empty results.
+ * Name the active filters, such as `Status: open`, for the info line and empty results.
  * @param {object} filter the filter, with optional search text
  * @param {object[]} lists the live lists
- * @returns {string[]} the descriptions: search first, then the chips in display order
+ * @param {object} [options] naming options
+ * @param {boolean} [options.allStatuses] also name an empty status filter, as `Status: all`
+ * @returns {string[]} the descriptions: search first, then the filters in display order
  */
-export function describeFilters(filter, lists) {
+export function describeFilters(filter, lists, { allStatuses = false } = {}) {
   const text = typeof filter.text === 'string' ? filter.text.trim() : '';
   const parts = text ? [`${STRINGS.searchValue}: ${text}`] : [];
   for (const { key, label } of FILTERS) {
@@ -203,6 +249,45 @@ export function describeFilters(filter, lists) {
     if (value) {
       parts.push(`${label}: ${value}`);
     }
+    else if (allStatuses && key === 'statuses') {
+      parts.push(STRINGS.statusAll);
+    }
+  }
+  return parts;
+}
+
+/**
+ * Describe a sort that differs from the default of its view, or return null.
+ * @param {{field: string, direction: string}} order the order
+ * @param {'tasks'|'list'} kind the kind of view
+ * @returns {string|null} the text, such as `Sorted by Description, descending`
+ */
+function describeSort(order, kind) {
+  const fallback = defaultViewState(kind).order;
+  if (order.field === fallback.field && (order.field === MANUAL || order.direction === fallback.direction)) {
+    return null;
+  }
+  const unusual = order.direction !== NATURAL_DIRECTION[order.field];
+  const direction = unusual ? `, ${order.direction === 'asc' ? STRINGS.ascending : STRINGS.descending}` : '';
+  return `${STRINGS.sortedBy(FIELD_LABELS[order.field])}${direction}`;
+}
+
+/**
+ * Describe a view for the info line: the count, each active filter, and a sort other than the default (`VO-7`).
+ * @param {object} view what the view shows
+ * @param {number} view.shown the tasks the options show
+ * @param {number} view.total the tasks of the view
+ * @param {{filter: object, order: object}} view.state the view state, with optional search text
+ * @param {object[]} view.lists the live lists
+ * @param {'tasks'|'list'} [view.kind] the kind of view
+ * @returns {string[]} the parts, such as `12 of 24 tasks` and `Status: open`
+ */
+export function describeInfoLine({ shown, total, state, lists, kind = 'tasks' }) {
+  const parts = [shown === total ? STRINGS.tasks(total) : STRINGS.tasksOf(shown, total)];
+  parts.push(...describeFilters(state.filter, lists, { allStatuses: true }));
+  const sort = describeSort(state.order, kind);
+  if (sort) {
+    parts.push(sort);
   }
   return parts;
 }
@@ -217,48 +302,232 @@ function copy(state) {
 }
 
 /**
- * Create the view controls.
- * @param {object} options control options
- * @param {Document} [options.document] the document
- * @param {{filter: object, order: object}} options.state the starting view state
- * @param {object[]} options.lists the live lists, in display order
- * @param {(state: {filter: object, order: object}) => void} options.onChange receives each new state
- * @returns {{element: HTMLElement, setState: Function, setLists: Function, destroy: Function}} the controls
+ * Create the view model of a view: its options, stored per device, and the counts of its screen.
+ * The screen and the panel share it, so the rows, the info line, and the panel follow one state.
+ * @param {string} view the view key, `tasks` or `list`; every list view shares the `list` model
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {{kind: string, get: Function, set: Function, reset: Function, subscribe: Function,
+ *   counts: Function, setCounts: Function, subscribeCounts: Function}} the model
  */
-export function createViewControls({ document: doc = globalThis.document, state: initial, lists: initialLists, onChange }) {
-  const id = `view-controls-${(instances += 1)}`;
-  let state = copy(initial);
-  let lists = initialLists;
-  let searchTimer = null;
-  const behaviors = [];
+export function createViewModel(view, getStorage) {
+  const kind = kindOf(view);
+  let state = loadViewState(view, getStorage);
+  let counts = null;
+  const listeners = new Set();
+  const countListeners = new Set();
 
   /**
-   * Create an element with a class and optional text.
-   * @param {string} tag the tag name
-   * @param {string} className the class
-   * @param {string} [text] the text
-   * @returns {HTMLElement} the element
+   * Keep a new state: on this device, and with every listener.
+   * @param {{filter: object, order: object}} next the view state
    */
-  function make(tag, className, text) {
-    const element = doc.createElement(tag);
-    element.className = className;
-    if (text !== undefined) {
-      element.textContent = text;
+  function set(next) {
+    state = copy(next);
+    saveViewState(view, state, getStorage);
+    [...listeners].forEach((listener) => listener(state));
+  }
+
+  return {
+    kind,
+
+    /**
+     * Read the state; treat it as read-only and call `set` to change it.
+     * @returns {{filter: object, order: object}} the view state
+     */
+    get: () => state,
+    set,
+
+    /** Restore every option and the search text to their defaults (`VO-8`). */
+    reset: () => set(defaultViewState(kind)),
+
+    /**
+     * Follow state changes.
+     * @param {(state: object) => void} listener called after each change
+     * @returns {() => void} stops following
+     */
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+
+    /**
+     * Read the counts of the last render.
+     * @returns {{shown: number, total: number}|null} the counts, or null before the screen rendered
+     */
+    counts: () => counts,
+
+    /**
+     * Report the counts of a render, which the panel shows and announces.
+     * @param {{shown: number, total: number}} next the counts
+     */
+    setCounts(next) {
+      counts = next;
+      [...countListeners].forEach((listener) => listener(counts));
+    },
+
+    /**
+     * Follow the counts.
+     * @param {(counts: object) => void} listener called after each render
+     * @returns {() => void} stops following
+     */
+    subscribeCounts(listener) {
+      countListeners.add(listener);
+      return () => countListeners.delete(listener);
+    },
+  };
+}
+
+/**
+ * Create an element with a class and optional text.
+ * @param {Document} doc the document
+ * @param {string} tag the tag name
+ * @param {string} className the class
+ * @param {string} [text] the text
+ * @returns {HTMLElement} the element
+ */
+function make(doc, tag, className, text) {
+  const element = doc.createElement(tag);
+  element.className = className;
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+/**
+ * Create a button.
+ * @param {Document} doc the document
+ * @param {string} className the class
+ * @param {string} [text] the text
+ * @returns {HTMLButtonElement} the button
+ */
+function button(doc, className, text) {
+  const element = make(doc, 'button', className, text);
+  element.type = 'button';
+  return element;
+}
+
+/**
+ * Create the search field. Search filters by text in descriptions and notes (`TV-6`).
+ * @param {object} options field options
+ * @param {Document} [options.document] the document
+ * @param {string} options.text the starting text
+ * @param {(text: string) => void} options.onChange receives the text once typing pauses, or on Enter
+ * @returns {{element: HTMLElement, input: HTMLInputElement, setText: Function, destroy: Function}} the field
+ */
+export function createSearchField({ document: doc = globalThis.document, text, onChange }) {
+  const element = make(doc, 'div', 'field search-field');
+  const label = make(doc, 'label', 'field__label visually-hidden', STRINGS.search);
+  const input = make(doc, 'input', 'field__control');
+  input.type = 'search';
+  input.id = `search-field-${(instances += 1)}`;
+  input.placeholder = STRINGS.searchPlaceholder;
+  input.dataset.shortcut = 'search';
+  input.value = text;
+  label.htmlFor = input.id;
+  element.append(label, input);
+  let timer = null;
+
+  /** Report the text. */
+  function emit() {
+    clearTimeout(timer);
+    timer = null;
+    onChange(input.value);
+  }
+
+  // Typing reports the text once it pauses or on Enter, so a word runs one query, not one per key (`TEC-16`).
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(emit, SEARCH_DELAY_MS);
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && timer !== null) {
+      emit();
     }
-    return element;
-  }
+  });
 
-  /**
-   * Create a button.
-   * @param {string} className the class
-   * @param {string} [text] the text
-   * @returns {HTMLButtonElement} the button
-   */
-  function button(className, text) {
-    const element = make('button', className, text);
-    element.type = 'button';
-    return element;
-  }
+  return {
+    element, input,
+
+    /**
+     * Show text set from outside, such as Reset, without reporting it.
+     * @param {string} next the text
+     */
+    setText(next) {
+      clearTimeout(timer);
+      timer = null;
+      if (input.value !== next) {
+        input.value = next;
+      }
+    },
+
+    /** Report text still waiting, so the session memory keeps it. */
+    destroy() {
+      if (timer !== null) {
+        emit();
+      }
+    },
+  };
+}
+
+/**
+ * Create the info line: a quiet line of the count and the active options, ending with Reset (`VO-7`, `VO-8`).
+ * @param {object} options line options
+ * @param {Document} [options.document] the document
+ * @param {() => void} options.onReset called when the user picks Reset
+ * @returns {{element: HTMLElement, update: Function}} the info line
+ */
+export function createInfoLine({ document: doc = globalThis.document, onReset }) {
+  const element = make(doc, 'div', 'info-line');
+  const text = make(doc, 'p', 'info-line__text');
+  const reset = button(doc, 'button button--quiet info-line__reset', STRINGS.reset);
+  reset.addEventListener('click', onReset);
+  element.append(text, reset);
+  return {
+    element,
+
+    /**
+     * Show the view as it is now.
+     * @param {object} view what the view shows, as for `describeInfoLine`
+     */
+    update(view) {
+      text.textContent = describeInfoLine(view).join(' · ');
+      reset.hidden = isDefaultViewState(view.state, view.kind);
+    },
+  };
+}
+
+/**
+ * Mount the View options into the editor panel (`VO-5`, `VO-6`).
+ * Changes apply at once. The panel holds Reset, the Filter rows with one open at a time, and Sort by;
+ * Group by arrives with the grouping task. A polite live region announces the count after each change (`VO-13`).
+ * @param {object} panel the editor panel
+ * @param {HTMLElement} panel.element the panel element
+ * @param {HTMLElement} panel.body the body to fill
+ * @param {Document} panel.document the document
+ * @param {(title: string) => void} panel.setTitle sets the panel title
+ * @param {() => void} panel.close leaves the view options route
+ * @param {{view: string}} route the route
+ * @param {object} context what the editors share
+ * @param {{listLists: Function, subscribe: Function}} context.store the store facade
+ * @param {{tasks: object, list: object}} context.viewModels the view models
+ * @returns {{destroy: () => void}} the controller
+ */
+export function mountViewOptions(panel, route, context) {
+  const doc = panel.document;
+  const kind = kindOf(route.view);
+  const model = context.viewModels[kind];
+  const id = `view-options-${(instances += 1)}`;
+  let lists = [];
+  let announceNext = false;
+  let destroyed = false;
+  panel.setTitle(STRINGS.title);
+
+  const root = make(doc, 'div', 'view-options');
+  const reset = button(doc, 'button button--secondary view-options__reset', STRINGS.reset);
+  // The content scrolls and the Show button stays below it, so the button never covers a control.
+  const content = make(doc, 'div', 'view-options__content');
+  content.append(make(doc, 'div', 'view-options__top'));
+  content.firstElementChild.append(reset);
 
   /**
    * Create a checkbox choice.
@@ -268,7 +537,7 @@ export function createViewControls({ document: doc = globalThis.document, state:
    * @returns {HTMLLabelElement} the choice
    */
   function choice(key, value, text) {
-    const label = make('label', 'choice');
+    const label = make(doc, 'label', 'choice');
     const input = doc.createElement('input');
     input.type = 'checkbox';
     input.dataset.filter = key;
@@ -279,18 +548,17 @@ export function createViewControls({ document: doc = globalThis.document, state:
 
   /**
    * Create a pair of date fields for a range.
-   * @param {string} prefix the identifier prefix
    * @param {string} key `due` or `created`
    * @returns {HTMLElement} the fields
    */
-  function rangeFields(prefix, key) {
-    const range = make('div', 'view-controls__range');
+  function rangeFields(key) {
+    const range = make(doc, 'div', 'view-options__range');
     for (const [end, text] of [['from', STRINGS.from], ['to', STRINGS.to]]) {
-      const field = make('div', 'field');
-      const label = make('label', 'field__label', text);
-      const input = make('input', 'field__control');
+      const field = make(doc, 'div', 'field');
+      const label = make(doc, 'label', 'field__label', text);
+      const input = make(doc, 'input', 'field__control');
       input.type = 'date';
-      input.id = `${prefix}-${key}-${end}`;
+      input.id = `${id}-${key}-${end}`;
       input.dataset.filter = `${key}-${end}`;
       label.htmlFor = input.id;
       field.append(label, input);
@@ -300,161 +568,89 @@ export function createViewControls({ document: doc = globalThis.document, state:
   }
 
   /**
-   * Create the choices of one filter as a fieldset.
+   * Create the choices of one filter row.
    * @param {string} key the filter key
-   * @param {string} label the filter name
-   * @param {string} prefix the identifier prefix
-   * @returns {HTMLFieldSetElement} the section
+   * @returns {HTMLElement[]} the choices, with date fields where the filter has a range
    */
-  function section(key, label, prefix) {
-    const fieldset = make('fieldset', 'choice-group view-controls__group');
-    fieldset.dataset.section = key;
-    fieldset.append(make('legend', 'popover__title', label));
+  function choicesOf(key) {
     if (key === 'statuses') {
-      fieldset.append(...STATUSES.map((status) => choice(key, status, STATUS_LABELS[status])));
+      return STATUSES.map((status) => choice(key, status, STATUS_LABELS[status]));
     }
-    else if (key === 'due') {
-      fieldset.append(...DUE_OPTIONS.map((option) => choice(key, option, DUE_LABELS[option])), rangeFields(prefix, key));
+    if (key === 'due') {
+      return [...DUE_OPTIONS.map((option) => choice(key, option, DUE_LABELS[option])), rangeFields(key)];
     }
-    else if (key === 'created') {
-      fieldset.append(rangeFields(prefix, key));
-    }
-    return fieldset;
+    return key === 'created' ? [rangeFields(key)] : [];
   }
 
-  /**
-   * Fill every Lists section with the current lists and In no list, keeping focus on a focused choice.
-   */
+  const rows = new Map();
+  const accordion = make(doc, 'div', 'view-options__rows');
+  for (const { key, label } of FILTERS.filter(({ key: filterKey }) => filterKey !== 'lists' || kind === 'tasks')) {
+    const row = button(doc, 'view-options__row');
+    row.dataset.row = key;
+    row.setAttribute('aria-expanded', 'false');
+    row.setAttribute('aria-controls', `${id}-${key}`);
+    const region = make(doc, 'div', 'choice-group view-options__region');
+    region.id = `${id}-${key}`;
+    region.dataset.region = key;
+    region.setAttribute('role', 'group');
+    region.setAttribute('aria-label', label);
+    region.hidden = true;
+    region.append(...choicesOf(key));
+    accordion.append(row, region);
+    rows.set(key, { row, region, label });
+  }
+
+  const sortHeading = make(doc, 'h3', 'view-options__heading', STRINGS.sortBy);
+  sortHeading.id = `${id}-sort`;
+  const select = make(doc, 'select', 'field__control view-options__sort');
+  select.setAttribute('aria-labelledby', sortHeading.id);
+  for (const field of kind === 'list' ? [MANUAL, ...SORT_FIELDS] : SORT_FIELDS) {
+    const option = doc.createElement('option');
+    option.value = field;
+    option.textContent = FIELD_LABELS[field];
+    select.append(option);
+  }
+  const directions = make(doc, 'fieldset', 'segmented view-options__direction');
+  const segments = make(doc, 'div', 'segmented__options');
+  for (const value of ['asc', 'desc']) {
+    const label = make(doc, 'label', 'segmented__option');
+    const input = doc.createElement('input');
+    input.type = 'radio';
+    input.name = `${id}-direction`;
+    input.value = value;
+    label.append(input, STRINGS[value]);
+    segments.append(label);
+  }
+  directions.append(make(doc, 'legend', 'visually-hidden', STRINGS.direction), segments);
+
+  const done = button(doc, 'button view-options__done');
+  content.append(make(doc, 'h3', 'view-options__heading', STRINGS.filter), accordion, sortHeading, select, directions);
+  root.append(content, done);
+  panel.body.replaceChildren(root);
+  const announcer = createLiveRegion({ document: doc, parent: panel.element });
+
+  /** Fill the Lists choices with the current lists and In no list, keeping focus on a focused choice. */
   function fillLists() {
+    const region = rows.get('lists')?.region;
+    if (!region) {
+      return;
+    }
     const focused = doc.activeElement;
-    for (const fieldset of root.querySelectorAll('[data-section="lists"]')) {
-      const value = fieldset.contains(focused) ? focused.value : null;
-      fieldset.replaceChildren(fieldset.querySelector('legend'),
-        ...lists.map((list) => choice('lists', list.id, list.name)), choice('lists', NO_LIST, STRINGS.noList));
-      if (value !== null) {
-        [...fieldset.querySelectorAll('input')].find((input) => input.value === value)?.focus();
-      }
+    const value = region.contains(focused) ? focused.value : null;
+    region.replaceChildren(...lists.map((list) => choice('lists', list.id, list.name)), choice('lists', NO_LIST, STRINGS.noList));
+    sync();
+    if (value !== null) {
+      [...region.querySelectorAll('input')].find((input) => input.value === value)?.focus();
     }
-  }
-
-  /**
-   * Create a popover panel.
-   * @param {string} panelId the identifier
-   * @param {string} className the extra class
-   * @param {string} label the accessible name
-   * @param {HTMLElement[]} children the content
-   * @returns {HTMLElement} the panel
-   */
-  function panel(panelId, className, label, children) {
-    const element = make('div', `popover ${className}`);
-    element.id = panelId;
-    element.setAttribute('role', 'group');
-    element.setAttribute('aria-label', label);
-    element.hidden = true;
-    element.append(...children);
-    return element;
-  }
-
-  const root = make('div', 'view-controls');
-  const search = make('div', 'field view-controls__search');
-  const searchLabel = make('label', 'field__label visually-hidden', STRINGS.search);
-  const searchInput = make('input', 'field__control');
-  searchInput.type = 'search';
-  searchInput.id = `${id}-search`;
-  searchInput.placeholder = STRINGS.searchPlaceholder;
-  searchInput.dataset.shortcut = 'search';
-  searchLabel.htmlFor = searchInput.id;
-  search.append(searchLabel, searchInput);
-  root.append(search);
-
-  const filtersButton = button('filter-chip view-controls__filters');
-  const clearAllInPanel = button('button button--quiet', STRINGS.clearAll);
-  clearAllInPanel.dataset.clear = 'all';
-  const actions = make('div', 'popover__actions');
-  actions.append(clearAllInPanel);
-  const filtersPanel = panel(`${id}-filters`, 'view-controls__panel', STRINGS.filters,
-    [...FILTERS.map(({ key, label }) => section(key, label, `${id}-all`)), actions]);
-  root.append(filtersButton, filtersPanel);
-  behaviors.push(attachPopover(filtersButton, filtersPanel));
-
-  const chips = new Map();
-  for (const { key, label } of FILTERS) {
-    const chipButton = button('filter-chip view-controls__chip');
-    chipButton.dataset.filter = key;
-    const clear = button('button button--quiet', STRINGS.clear);
-    clear.dataset.clear = key;
-    const chipActions = make('div', 'popover__actions');
-    chipActions.append(clear);
-    const chipPanel = panel(`${id}-${key}`, 'view-controls__chip-panel', label, [section(key, label, `${id}-${key}`), chipActions]);
-    root.append(chipButton, chipPanel);
-    behaviors.push(attachPopover(chipButton, chipPanel));
-    chips.set(key, { button: chipButton, label });
-  }
-  const clearAll = button('button button--quiet view-controls__chip view-controls__clear', STRINGS.clearAll);
-  clearAll.dataset.clear = 'all';
-  root.append(clearAll);
-
-  const sortButton = button('button button--secondary view-controls__sort');
-  const sortMenu = make('div', 'menu');
-  sortMenu.id = `${id}-sort`;
-  sortMenu.setAttribute('aria-label', STRINGS.sort);
-  sortMenu.hidden = true;
-  const fields = make('div', '');
-  fields.setAttribute('role', 'group');
-  fields.setAttribute('aria-label', STRINGS.orderBy);
-  const directions = make('div', '');
-  directions.setAttribute('role', 'group');
-  directions.setAttribute('aria-label', STRINGS.direction);
-  const separator = make('div', 'menu__separator');
-  separator.setAttribute('role', 'separator');
-  for (const [group, key, values] of [[fields, 'field', SORT_FIELDS], [directions, 'direction', ['asc', 'desc']]]) {
-    for (const value of values) {
-      const item = button('menu__item');
-      item.setAttribute('role', 'menuitemradio');
-      item.dataset[key] = value;
-      item.append(spriteIcon(doc, 'check', 'icon menu__check'), key === 'field' ? FIELD_LABELS[value] : STRINGS[value]);
-      group.append(item);
-    }
-  }
-  sortMenu.append(fields, separator, directions);
-  root.append(sortButton, sortMenu);
-  behaviors.push(attachMenu(sortButton, sortMenu, {
-    onSelect: (item) => {
-      state.order = item.dataset.field ? { ...state.order, field: item.dataset.field } : { ...state.order, direction: item.dataset.direction };
-      emit();
-    },
-  }));
-  fillLists();
-
-  /**
-   * Fill a filter chip or the Filters button: a name, an optional value, and the chevron.
-   * The chip opens a popover, so `data-active` marks a set filter instead of `aria-pressed`, beside `aria-expanded`.
-   * @param {HTMLElement} target the button
-   * @param {string} name the name
-   * @param {string|null} value the value text
-   * @param {string} separatorText the text between the name and the value
-   */
-  function fillChip(target, name, value, separatorText) {
-    target.replaceChildren(value ? `${name}${separatorText}` : name);
-    if (value) {
-      target.append(make('span', 'filter-chip__value', value));
-    }
-    target.append(spriteIcon(doc, 'chevron-down'));
-    target.dataset.active = String(Boolean(value));
   }
 
   /** Show the state in every control. */
   function sync() {
-    let active = 0;
-    for (const [key, chip] of chips) {
-      const value = filterValue(key, state.filter, lists);
-      active += value ? 1 : 0;
-      fillChip(chip.button, chip.label, value, ': ');
-    }
-    fillChip(filtersButton, STRINGS.filters, active ? String(active) : null, ' ');
-    clearAll.hidden = describeFilters(state.filter, lists).length === 0;
-    if (searchInput.value !== (state.filter.text ?? '')) {
-      searchInput.value = state.filter.text ?? '';
+    const state = model.get();
+    for (const [key, { row, label }] of rows) {
+      const value = filterValue(key, state.filter, lists) ?? (key === 'lists' || key === 'statuses' ? STRINGS.all : STRINGS.any);
+      row.replaceChildren(make(doc, 'span', 'view-options__label', label), make(doc, 'span', 'view-options__value', value),
+        spriteIcon(doc, 'chevron-down'));
     }
     const dueRange = state.filter.due?.find((option) => typeof option === 'object') ?? {};
     for (const input of root.querySelectorAll('input[data-filter]')) {
@@ -467,119 +663,124 @@ export function createViewControls({ document: doc = globalThis.document, state:
         input.value = (filterKey === 'due' ? dueRange[end] : state.filter.created?.[end]) ?? '';
       }
     }
-    const sortLabel = make('span', '', STRINGS.sort);
-    sortLabel.append(make('span', 'view-controls__sort-value', `: ${FIELD_LABELS[state.order.field]}`));
-    sortButton.replaceChildren(spriteIcon(doc, 'sort'), sortLabel);
-    for (const item of sortMenu.querySelectorAll('[role="menuitemradio"]')) {
-      const checked = item.dataset.field ? item.dataset.field === state.order.field : item.dataset.direction === state.order.direction;
-      item.setAttribute('aria-checked', String(checked));
+    select.value = state.order.field;
+    for (const input of directions.querySelectorAll('input')) {
+      input.checked = input.value === state.order.direction;
+      input.disabled = state.order.field === MANUAL;
     }
-  }
-
-  /** Show the new state and report it, with any search text still waiting. */
-  function emit() {
-    clearTimeout(searchTimer);
-    searchTimer = null;
-    sync();
-    onChange(copy(state));
+    done.textContent = STRINGS.show(model.counts());
   }
 
   /**
    * Set a filter, removing it when it has no value; an empty status filter stays, meaning every status.
+   * @param {object} filter the filter to change
    * @param {string} key the filter key
    * @param {unknown} value the value
    */
-  function setFilter(key, value) {
+  function setFilter(filter, key, value) {
     const empty = value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
     if (empty && key !== 'statuses') {
-      delete state.filter[key];
+      delete filter[key];
     }
     else {
-      state.filter[key] = empty ? [] : value;
+      filter[key] = empty ? [] : value;
     }
   }
 
+  /**
+   * Apply a change of the user, and announce the count that follows.
+   * @param {(state: {filter: object, order: object}) => void} change edits a copy of the state
+   */
+  function apply(change) {
+    const next = copy(model.get());
+    change(next);
+    announceNext = true;
+    model.set(next);
+    announceNext = false;
+  }
+
+  for (const { row } of rows.values()) {
+    row.addEventListener('click', () => {
+      const open = row.getAttribute('aria-expanded') !== 'true';
+      for (const other of rows.values()) {
+        other.row.setAttribute('aria-expanded', String(other.row === row && open));
+        other.region.hidden = !(other.row === row && open);
+      }
+    });
+  }
   root.addEventListener('change', (event) => {
     const input = event.target;
     const key = input.dataset?.filter;
-    if (!key) {
-      return;
-    }
-    if (input.type === 'checkbox') {
-      const values = (state.filter[key] ?? []).filter((value) => value !== input.value);
-      setFilter(key, input.checked ? [...values, input.value] : values);
-    }
-    else {
-      const [filterKey, end] = key.split('-');
-      const value = DATE.test(input.value) ? input.value : null;
-      if (filterKey === 'created') {
-        setFilter('created', readRange({ ...state.filter.created, [end]: value }));
-      }
-      else {
-        const options = state.filter.due ?? [];
+    if (key) {
+      apply(({ filter }) => {
+        if (input.type === 'checkbox') {
+          const values = (filter[key] ?? []).filter((value) => value !== input.value);
+          setFilter(filter, key, input.checked ? [...values, input.value] : values);
+          return;
+        }
+        const [filterKey, end] = key.split('-');
+        const value = DATE.test(input.value) ? input.value : null;
+        if (filterKey === 'created') {
+          setFilter(filter, 'created', readRange({ ...filter.created, [end]: value }));
+          return;
+        }
+        const options = filter.due ?? [];
         const range = readRange({ ...options.find((option) => typeof option === 'object'), [end]: value });
-        setFilter('due', [...options.filter((option) => typeof option === 'string'), ...(range ? [range] : [])]);
-      }
+        setFilter(filter, 'due', [...options.filter((option) => typeof option === 'string'), ...(range ? [range] : [])]);
+      });
     }
-    emit();
+    else if (input === select) {
+      apply((state) => {
+        state.order = { field: select.value, direction: NATURAL_DIRECTION[select.value] };
+      });
+    }
+    else if (input.name === `${id}-direction`) {
+      apply((state) => {
+        state.order = { field: state.order.field, direction: input.value };
+      });
+    }
   });
-  root.addEventListener('click', (event) => {
-    const clear = event.target.closest?.('[data-clear]');
-    if (!clear) {
+  reset.addEventListener('click', () => {
+    announceNext = true;
+    model.reset();
+    announceNext = false;
+  });
+  done.addEventListener('click', () => panel.close());
+
+  const stops = [
+    model.subscribe(sync),
+    model.subscribeCounts((counts) => {
+      done.textContent = STRINGS.show(counts);
+      if (announceNext) {
+        announceNext = false;
+        announcer.announce(STRINGS.tasks(counts.shown));
+      }
+    }),
+  ];
+
+  /** Read the live lists of the Lists filter, in the order the screens show them. */
+  async function loadLists() {
+    const all = await context.store.listLists();
+    if (destroyed) {
       return;
     }
-    if (clear.dataset.clear === 'all') {
-      state.filter = { statuses: [] };
-    }
-    else {
-      setFilter(clear.dataset.clear, null);
-    }
-    emit();
-  });
-  // Typing reports the search text once it pauses or on Enter, so a word runs one query, not one per key (`TEC-16`).
-  searchInput.addEventListener('input', () => {
-    setFilter('text', searchInput.value);
-    sync();
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(emit, SEARCH_DELAY_MS);
-  });
-  searchInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && searchTimer !== null) {
-      emit();
-    }
-  });
+    lists = all.filter((list) => !list['deletion-time'])
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    fillLists();
+  }
+
+  if (kind === 'tasks') {
+    stops.push(context.store.subscribe(() => loadLists().catch((error) => console.error('Reading the lists failed:', error))));
+    loadLists().catch((error) => console.error('Reading the lists failed:', error));
+  }
+  fillLists();
   sync();
 
   return {
-    element: root,
-
-    /**
-     * Show a state set from outside, such as Clear all in the empty result.
-     * @param {{filter: object, order: object}} next the view state
-     */
-    setState(next) {
-      clearTimeout(searchTimer);
-      searchTimer = null;
-      state = copy(next);
-      sync();
-    },
-
-    /**
-     * Show new lists in the Lists filter.
-     * @param {object[]} next the live lists, in display order
-     */
-    setLists(next) {
-      lists = next;
-      fillLists();
-      sync();
-    },
-
-    /** Close the popovers and the menu, and report search text still waiting, so the session memory keeps it. */
     destroy() {
-      if (searchTimer !== null) {
-        emit();
-      }
-      behaviors.forEach((behavior) => behavior.destroy());
+      destroyed = true;
+      stops.forEach((stop) => stop());
+      announcer.destroy();
     },
   };
 }

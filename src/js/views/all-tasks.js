@@ -1,18 +1,21 @@
 /**
  * All tasks screen: every task outside the recycle bin, in any list or none (`TV-1`).
  *
- * It fills the shell's `[data-view="tasks"]` element with the view controls, the add bar, and the task list,
- * and renders again after every store change, local or from another tab.
+ * It fills the shell's `[data-view="tasks"]` element with the More menu, the search field, the add bar with its
+ * info line, and the task list, and renders again after every store change, local or from another tab.
+ * The More menu holds Edit view options, which opens the View options panel (`VO-4`); the options live in a view
+ * model that the panel shares, and the info line names them and offers Reset (`VO-7`, `VO-8`).
  * A store without tasks shows the first-launch empty state with the add bar, and no sign-in (`LOC-1`).
  * The first added task replaces it, and the app then asks the browser for persistent storage (`TEC-5`).
- * An empty result names the active filters and offers Clear all.
+ * An empty result names the active filters and offers Reset.
  */
 
 import { filterTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
+import { attachMenu } from '../ui/menu.js';
 import { formatRoute } from '../ui/router.js';
 import { createAddBar } from './add-bar.js';
-import { createTaskList, spriteIcon } from './task-list.js';
-import { createViewControls, describeFilters, loadViewState, saveViewState } from './view-controls.js';
+import { createTaskList, make, spriteIcon } from './task-list.js';
+import { createInfoLine, createSearchField, createViewModel, describeFilters } from './view-controls.js';
 
 const VIEW = 'tasks';
 const REDRAW_MS = 60_000;
@@ -25,7 +28,9 @@ const STRINGS = Object.freeze({
   importBackup: 'Import a backup',
   connect: 'Connect to sync across devices',
   noMatch: 'No tasks match ',
-  clearAll: 'Clear all',
+  reset: 'Reset',
+  actions: 'View actions',
+  editViewOptions: 'Edit view options',
   addFailed: 'The task could not be added.',
 });
 
@@ -82,36 +87,55 @@ async function readData(store) {
  * @param {object} options.store the store facade
  * @param {{show: Function}} options.toaster the toaster
  * @param {object} [options.memory] the router's memory object of the view, which keeps the search text
+ * @param {{tasks: object}} [options.viewModels] the view models the panel shares, a new one by default
+ * @param {(hash: string) => void} [options.navigate] opens another route
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device view state
  * @param {() => Date} [options.now] the clock
  * @param {() => Promise<void>} [options.persist] asks for persistent storage
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountAllTasks(view, {
-  store, toaster, memory = {}, getStorage, now = () => new Date(), persist = requestPersistence,
+  store, toaster, memory = {}, viewModels, navigate = () => {}, getStorage, now = () => new Date(), persist = requestPersistence,
 }) {
   const doc = view.ownerDocument;
-  const state = loadViewState(VIEW, getStorage);
+  const model = viewModels?.tasks ?? createViewModel(VIEW, getStorage);
   if (memory.text) {
-    state.filter.text = memory.text;
+    model.set({ ...model.get(), filter: { ...model.get().filter, text: memory.text } });
   }
   let data = null;
   let asked = false;
   let pending = null;
-  let controls = null;
-  let listsKey = '';
   let destroyed = false;
 
   const root = doc.createElement('div');
   root.className = 'task-view';
+  const header = make(doc, 'div', 'view-header');
+  const more = make(doc, 'button', 'icon-button view-header__more');
+  more.type = 'button';
+  more.setAttribute('aria-label', STRINGS.actions);
+  more.append(spriteIcon(doc, 'more'));
+  const menu = make(doc, 'div', 'menu');
+  menu.id = 'all-tasks-actions';
+  menu.setAttribute('aria-label', STRINGS.actions);
+  menu.hidden = true;
+  const item = make(doc, 'button', 'menu__item', STRINGS.editViewOptions);
+  item.type = 'button';
+  item.setAttribute('role', 'menuitem');
+  menu.append(item);
+  header.append(more, menu);
+  const menuBehavior = attachMenu(more, menu, { onSelect: () => navigate(formatRoute('view-options')) });
+  const search = createSearchField({ document: doc, text: model.get().filter.text ?? '', onChange: setText });
+  const info = createInfoLine({ document: doc, onReset: () => model.reset() });
   const addBar = createAddBar({ document: doc, onAdd: add });
+  const addBlock = make(doc, 'div', 'add-block');
+  addBlock.append(addBar.element);
   const taskList = createTaskList({
     document: doc, store, toaster, label: STRINGS.label, hrefOf: (task) => formatRoute('task', { taskId: task.id }),
     fallbackFocus: () => addBar.input,
   });
   const empty = doc.createElement('div');
   empty.className = 'empty-state';
-  root.append(addBar.element, taskList.element, empty);
+  root.append(addBlock, taskList.element, empty);
   view.replaceChildren(root);
 
   /**
@@ -121,7 +145,7 @@ export function mountAllTasks(view, {
    */
   async function add(description) {
     const listIds = new Set(data?.lists.map((list) => list.id) ?? []);
-    const lists = (state.filter.lists ?? []).filter((id) => id !== NO_LIST && listIds.has(id));
+    const lists = (model.get().filter.lists ?? []).filter((id) => id !== NO_LIST && listIds.has(id));
     const first = data?.tasks.length === 0;
     try {
       await store.createTask({ description }, { lists });
@@ -138,14 +162,25 @@ export function mountAllTasks(view, {
   }
 
   /**
-   * Keep a new view state: on this device, in the session memory, and on screen.
-   * @param {{filter: object, order: object}} next the view state
+   * Filter by the search text, which the session memory keeps but the device does not (`TV-6`).
+   * @param {string} text the search text
    */
-  function setState(next) {
-    state.filter = next.filter;
-    state.order = next.order;
-    saveViewState(VIEW, state, getStorage);
-    memory.text = state.filter.text ?? '';
+  function setText(text) {
+    const next = structuredClone(model.get());
+    if (text) {
+      next.filter.text = text;
+    }
+    else {
+      delete next.filter.text;
+    }
+    model.set(next);
+  }
+
+  /** Show a state set by the search field, the panel, or Reset: the search text, the memory, and the rows. */
+  function follow() {
+    const text = model.get().filter.text ?? '';
+    memory.text = text;
+    search.setText(text);
     render();
   }
 
@@ -184,10 +219,9 @@ export function mountAllTasks(view, {
     const clear = doc.createElement('button');
     clear.className = 'button button--quiet';
     clear.type = 'button';
-    clear.textContent = STRINGS.clearAll;
+    clear.textContent = STRINGS.reset;
     clear.addEventListener('click', () => {
-      setState({ filter: { statuses: [] }, order: state.order });
-      controls?.setState(state);
+      model.reset();
       // The button hides with the empty result, so focus moves to search.
       root.querySelector('[data-shortcut="search"]')?.focus();
     });
@@ -204,23 +238,22 @@ export function mountAllTasks(view, {
     root.dataset.state = firstLaunch ? 'first-launch' : 'tasks';
     taskList.element.hidden = firstLaunch;
     if (firstLaunch) {
-      controls?.element.remove();
+      header.remove();
+      search.element.remove();
+      info.element.remove();
       taskList.render([], {});
+      model.setCounts({ shown: 0, total: 0 });
       showFirstLaunch();
       empty.hidden = false;
       return;
     }
-    const nextKey = JSON.stringify(data.lists.map((list) => [list.id, list.name]));
-    if (!controls) {
-      controls = createViewControls({ document: doc, state, lists: data.lists, onChange: setState });
+    if (!header.isConnected) {
+      root.prepend(header, search.element);
     }
-    else if (nextKey !== listsKey) {
-      controls.setLists(data.lists);
+    if (!info.element.isConnected) {
+      addBlock.append(info.element);
     }
-    listsKey = nextKey;
-    if (!controls.element.isConnected) {
-      root.prepend(controls.element);
-    }
+    const state = model.get();
     const listIds = new Set(data.lists.map((list) => list.id));
     const filter = { ...state.filter };
     if (filter.lists) {
@@ -233,6 +266,8 @@ export function mountAllTasks(view, {
     if (shown.length === 0) {
       showNoMatch(describeFilters(filter, data.lists));
     }
+    info.update({ shown: shown.length, total: data.tasks.length, state, lists: data.lists });
+    model.setCounts({ shown: shown.length, total: data.tasks.length });
   }
 
   /**
@@ -252,7 +287,7 @@ export function mountAllTasks(view, {
    * Follow the clock: a Due filter can change which tasks show, so it renders again; otherwise only due chips change.
    */
   function tick() {
-    if (state.filter.due?.length) {
+    if (model.get().filter.due?.length) {
       render();
     }
     else {
@@ -261,6 +296,7 @@ export function mountAllTasks(view, {
   }
 
   const unsubscribe = store.subscribe(refresh);
+  const unfollow = model.subscribe(follow);
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`).
   const timer = setInterval(tick, REDRAW_MS);
   const first = refresh();
@@ -283,7 +319,9 @@ export function mountAllTasks(view, {
     /** Stop following the store and the clock; search text still waiting reaches the session memory. */
     destroy() {
       destroyed = true;
-      controls?.destroy();
+      search.destroy();
+      unfollow();
+      menuBehavior.destroy();
       unsubscribe();
       clearInterval(timer);
       taskList.destroy();

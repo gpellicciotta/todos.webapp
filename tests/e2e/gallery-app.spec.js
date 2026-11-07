@@ -306,9 +306,9 @@ test('a read-only row keeps its disabled status button flat on hover, and a sele
   expect(pressed).not.toBe(hovered);
 });
 
-test('the task list pattern shows only open rows under its Status: open filter', async ({ page }) => {
+test('the task list pattern shows only open rows under the Status: open of its info line', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
-  await expect(page.locator('#task-list .filter-chip', { hasText: 'Status: open' })).toHaveCount(1);
+  await expect(page.locator('#task-list .info-line__text')).toContainText('Status: open');
   const statuses = await page.locator('#task-list .task-row').evaluateAll((rows) => rows.map((row) => row.dataset.status));
   expect(statuses.filter((status) => !['todo', 'in-progress'].includes(status))).toEqual([]);
 });

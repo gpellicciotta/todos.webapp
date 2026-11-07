@@ -261,8 +261,9 @@
 }
 
 /*
- * Task view: the view header, view controls, the add bar, and the task list of one screen.
- * Compact layouts move the add bar below the rows, above the bottom navigation.
+ * Task view: the view header, the search field, the add block, and the task list of one screen.
+ * The add block holds the add bar and the info line under it (`VO-7`).
+ * Compact layouts move the add block below the rows, above the bottom navigation.
  */
 .task-view {
   display: flex;
@@ -284,30 +285,49 @@
   font-size: var(--text-xl);
 }
 
-.view-controls {
+/* The More menu button ends the header row. */
+.view-header__more {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.search-field {
+  min-inline-size: 0;
+}
+
+.add-block {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* The info line is 12 px muted text that wraps to two lines, then truncates; Reset ends it. */
+.info-line {
+  display: flex;
+  align-items: baseline;
   gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
 }
 
-.view-controls__search {
-  flex: 1 1 var(--width-menu);
+.info-line__text {
+  display: -webkit-box;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
-/* Compact layouts show one Filters button in place of the filter chips. */
-.view-controls__filters {
-  display: none;
-}
-
-@media (width < 64rem) {
-  .view-controls__filters {
-    display: inline-flex;
-  }
-
-  .view-controls__chip {
-    display: none;
-  }
+/* The button keeps the 44 px touch target, and its negative margin keeps the line as tall as its text. */
+.info-line__reset {
+  flex: none;
+  align-self: center;
+  margin-block: calc(0px - var(--space-3));
+  padding-inline: var(--space-2);
+  font-size: inherit;
 }
 
 .add-bar {
@@ -322,7 +342,7 @@
 }
 
 @media (width < 64rem) {
-  .task-view > .add-bar {
+  .task-view > .add-block {
     order: 1;
   }
 }

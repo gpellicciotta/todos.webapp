@@ -26,41 +26,11 @@
   min-inline-size: 0;
 }
 
-/* The Sort button ends the controls row. */
-.view-controls__sort {
-  flex: none;
-  margin-inline-start: auto;
-}
-
-/* Wide layouts put search and Sort on the first row, and the filter chips with Clear all below. */
+/* Wide layouts set the add block apart from the rows by 32 px (`VO-7`). */
 @media (width >= 64rem) {
-  .view-controls::after {
-    flex-basis: 100%;
-    order: 1;
-    content: '';
+  .add-block {
+    margin-block-end: var(--space-7);
   }
-
-  .view-controls > .view-controls__chip {
-    order: 2;
-  }
-}
-
-.view-controls__group {
-  min-inline-size: 0;
-}
-
-.view-controls__range {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin-block-start: var(--space-2);
-}
-
-/* The Filters panel holds every filter, so it scrolls inside the viewport when it is taller. */
-.view-controls__panel {
-  gap: var(--space-4);
-  max-block-size: calc(100dvh - var(--space-8) - var(--space-8) - var(--space-8));
-  overflow-y: auto;
 }
 
 .add-bar__field {
@@ -87,17 +57,8 @@
 }
 
 @media (width < 64rem) {
-  .view-controls__search {
-    flex: 1 1 0;
-    min-inline-size: 0;
-  }
-
-  .view-controls__sort-value {
-    display: none;
-  }
-
-  /* The add bar sticks to the bottom of the main column, above the bottom navigation. */
-  .task-view > .add-bar {
+  /* The add block sticks to the bottom of the main column, above the bottom navigation. */
+  .task-view > .add-block {
     position: sticky;
     inset-block-end: 0;
     z-index: var(--layer-sticky);
@@ -107,7 +68,7 @@
   }
 
   /* Toasts rise above the pinned add bar. */
-  .app:has(.task-view > .add-bar) .toast-region {
+  .app:has(.task-view > .add-block) .toast-region {
     inset-block-end: calc(var(--target-min) + var(--space-3) + var(--space-4) + var(--target-min) + var(--space-4)
       + env(safe-area-inset-bottom));
   }
@@ -117,6 +78,97 @@
 @media (width >= 64rem) {
   .app__editor > .editor-panel {
     inline-size: var(--width-editor);
+  }
+}
+
+/*
+ * View options: Reset at the top, the Filter rows as an accordion, and Sort by (`VO-6`).
+ * Each row shows its value at the end; the compact screen ends with a Show button, hidden beside the rows.
+ */
+/* The body does not scroll itself: the options scroll above the compact Show button. */
+.editor-panel__body:has(> .view-options) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.view-options {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-block-size: 0;
+  padding-block: var(--space-4);
+}
+
+.view-options__content {
+  display: grid;
+  flex: 1 1 auto;
+  align-content: start;
+  gap: var(--space-3);
+  min-block-size: 0;
+  overflow-y: auto;
+}
+
+.view-options__top {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-options__heading {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+
+.view-options__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-1);
+  border: 0;
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.view-options__row:hover {
+  background-color: var(--color-hover-bg);
+}
+
+.view-options__value {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+}
+
+.view-options__row[aria-expanded='true'] > .icon {
+  rotate: 180deg;
+}
+
+.view-options__region {
+  padding-block: var(--space-2);
+}
+
+.view-options__range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+/* The compact Show button ends the screen, below the scrolling options. */
+.view-options__done {
+  flex: none;
+}
+
+@media (width >= 64rem) {
+  .view-options__done {
+    display: none;
   }
 }
 
@@ -328,10 +380,7 @@
   display: none;
 }
 
-/*
- * List view: the description and the list actions, then the order buttons and the status chip.
- * The order buttons take one row from 36rem of view width and two rows of three below.
- */
+/* List view: the description and the list actions. */
 .list-view__description {
   flex: 1 1 auto;
   min-inline-size: 0;
@@ -342,34 +391,6 @@
 .list-view__more {
   flex: none;
   margin-inline-start: auto;
-}
-
-.list-view__orders {
-  flex: 1 1 100%;
-}
-
-.list-view__orders .segmented__options {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (width >= 36rem) {
-  .list-view__orders {
-    flex-basis: 0;
-  }
-
-  .list-view__orders .segmented__options {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .list-view__orders .segmented__option {
-    padding-inline: var(--space-2);
-  }
-}
-
-.list-view__note {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
 }
 
 /* Compact rows keep the More button in the list view, since it holds Move up and Move down on touch screens. */

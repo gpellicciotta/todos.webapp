@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountAllTasks } from '../../src/js/views/all-tasks.js';
+import { createViewModel, defaultViewState } from '../../src/js/views/view-controls.js';
 
 /**
  * Create a store stand-in that holds one open task.
@@ -25,7 +26,7 @@ describe('mountAllTasks', () => {
     screen?.destroy();
   });
 
-  it('moves focus to search when Clear all in an empty result hides itself', async () => {
+  it('moves focus to search when Reset in an empty result hides itself', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const storage = { getItem: () => null, setItem: vi.fn() };
     screen = mountAllTasks(document.querySelector('[data-view]'), {
@@ -33,7 +34,7 @@ describe('mountAllTasks', () => {
     });
     await screen.idle();
     const clear = document.querySelector('.empty-state button');
-    expect(clear.textContent).toBe('Clear all');
+    expect(clear.textContent).toBe('Reset');
     clear.focus();
     clear.click();
     expect(document.querySelector('.empty-state').hidden).toBe(true);
@@ -78,5 +79,54 @@ describe('mountAllTasks', () => {
     finally {
       vi.useRealTimers();
     }
+  });
+
+  it('shows the info line under the add bar, and a More menu with only Edit view options (VO-2, VO-4, VO-7)', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const navigate = vi.fn();
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, navigate, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    const line = document.querySelector('.info-line');
+    expect(line.previousElementSibling).toBe(document.querySelector('.add-bar'));
+    expect(line.querySelector('.info-line__text').textContent).toBe('1 task · Status: open');
+    expect(line.querySelector('.info-line__reset').hidden).toBe(true);
+    const items = [...document.querySelectorAll('.view-header .menu__item')];
+    expect(items.map((item) => item.textContent)).toEqual(['Edit view options']);
+    document.querySelector('.view-header__more').click();
+    items[0].click();
+    expect(navigate).toHaveBeenCalledWith('#/tasks/view-options');
+    for (const gone of ['.filter-chip', '.view-controls__sort', '.view-controls__filters']) {
+      expect(document.querySelector(gone)).toBeNull();
+    }
+  });
+
+  it('narrows the count and offers Reset when the view options change, and Reset restores them (VO-8)', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, viewModels, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    viewModels.tasks.set({ filter: { statuses: ['completed'] }, order: defaultViewState().order });
+    expect(document.querySelector('.info-line__text').textContent).toBe('0 of 1 task · Status: completed');
+    expect(viewModels.tasks.counts()).toEqual({ shown: 0, total: 1 });
+    document.querySelector('.info-line__reset').click();
+    expect(viewModels.tasks.get()).toEqual(defaultViewState());
+    expect(document.querySelector('.info-line__text').textContent).toBe('1 task · Status: open');
+  });
+
+  it('clears the search field when Reset runs', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, memory: { text: 'paint' }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    const search = document.querySelector('[data-shortcut="search"]');
+    expect(search.value).toBe('paint');
+    expect(document.querySelector('.info-line__text').textContent).toBe('1 task · Search: paint · Status: open');
+    document.querySelector('.info-line__reset').click();
+    expect(search.value).toBe('');
   });
 });

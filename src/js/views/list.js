@@ -1,50 +1,35 @@
 /**
  * List screen: the tasks of one list, in its manual order by default (`LV-1` to `LV-10`).
  *
- * It fills the shell's `[data-view="list"]` element with the header, the order buttons, the status filter chip,
- * the add bar, and the shared task list, and renders again after every store change.
- * Manual order shows drag handles and Move up and Move down; another order button sorts the view only (`LV-7`).
- * The order and the status filter persist per device, for every list view together (`TV-12`).
+ * It fills the shell's `[data-view="list"]` element with the header, the add bar with its info line,
+ * and the shared task list, and renders again after every store change.
+ * The More menu holds Edit list, Edit view options, Share list, and Delete list (`VO-4`).
+ * Manual order shows drag handles and Move up and Move down; another sort affects the view only (`LV-7`, `LV-8`).
+ * The options live in a view model that the View options panel shares; they persist per device,
+ * for every list view together (`TV-12`).
  * A list that leaves the store, such as one deleted in another tab, opens All tasks with a toast.
  */
 
-import { readPreference, writePreference } from '../core/preferences.js';
-import { DEFAULT_FILTER, filterTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks } from '../core/query.js';
-import { STATUSES } from '../store/tasks.js';
+import { filterTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks } from '../core/query.js';
 import { createLiveRegion } from '../ui/live-region.js';
 import { attachMenu } from '../ui/menu.js';
-import { attachPopover } from '../ui/popover.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
 import { createAddBar } from './add-bar.js';
 import { confirmListDelete } from './list-editor.js';
 import { attachReorder } from './reorder.js';
-import { createTaskList, make, spriteIcon, STATUS_LABELS } from './task-list.js';
-import { describeFilters } from './view-controls.js';
+import { createTaskList, make, spriteIcon } from './task-list.js';
+import { createInfoLine, createViewModel, describeFilters } from './view-controls.js';
 
-const PREFERENCE = 'view.list';
+const VIEW = 'list';
 const REDRAW_MS = 60_000;
 let instances = 0;
 
-/** The order buttons: manual order, then the sort orders with their direction and note text (`LV-6`). */
-const ORDERS = Object.freeze([
-  { value: 'manual', label: 'Manual' },
-  { value: 'due-time', label: 'Due', direction: 'asc', note: 'due time' },
-  { value: 'creation-time', label: 'Created', direction: 'desc', note: 'creation time' },
-  { value: 'last-activity-time', label: 'Activity', direction: 'desc', note: 'last activity' },
-  { value: 'status', label: 'Status', direction: 'asc', note: 'status' },
-  { value: 'description', label: 'A–Z', direction: 'asc', note: 'description' },
-]);
-
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
-  order: 'Order',
-  sorted: (what) => `Sorted by ${what}. Manual order is kept.`,
-  status: 'Status',
-  all: 'all',
-  clear: 'Clear',
   actions: 'List actions',
   edit: 'Edit list',
-  share: 'Share',
+  editViewOptions: 'Edit view options',
+  share: 'Share list',
   delete: 'Delete list',
   notFound: 'That list was not found. Showing All tasks.',
   moved: (description, position, count) => `${description} moved to position ${position} of ${count}.`,
@@ -54,17 +39,13 @@ const STRINGS = Object.freeze({
   failed: 'That change could not be saved.',
 });
 
-/**
- * Read the stored order and status filter of the list views, dropping invalid values.
- * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
- * @returns {{order: string, statuses: string[]}} the state: manual order and open tasks by default
- */
-export function loadListState(getStorage) {
-  const raw = readPreference(PREFERENCE, null, getStorage);
-  const order = ORDERS.some((option) => option.value === raw?.order) ? raw.order : 'manual';
-  const statuses = Array.isArray(raw?.statuses) ? raw.statuses.filter((status) => STATUSES.includes(status)) : null;
-  return { order, statuses: statuses ?? [...DEFAULT_FILTER.statuses] };
-}
+/** The More menu entries and the routes that Edit list, Edit view options, and Share list open. */
+const ACTIONS = Object.freeze([
+  { action: 'edit', text: STRINGS.edit, route: 'list-edit' },
+  { action: 'view-options', text: STRINGS.editViewOptions, route: 'list-view-options' },
+  { action: 'share', text: STRINGS.share, route: 'list-edit' },
+  { action: 'delete', text: STRINGS.delete },
+]);
 
 /**
  * Read the store into the shape the screen renders.
@@ -97,15 +78,16 @@ async function readData(store, listId) {
  * @param {object} options.store the store facade
  * @param {{show: Function}} options.toaster the toaster
  * @param {(hash: string, settings?: {replace?: boolean}) => void} options.navigate opens another route
+ * @param {{list: object}} [options.viewModels] the view models the panel shares, a new one by default
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device view state
  * @param {() => Date} [options.now] the clock
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
-export function mountList(view, { store, toaster, navigate, getStorage, now = () => new Date() }) {
+export function mountList(view, { store, toaster, navigate, viewModels, getStorage, now = () => new Date() }) {
   const doc = view.ownerDocument;
   const listId = view.dataset.listId;
   const id = `list-view-${(instances += 1)}`;
-  const state = loadListState(getStorage);
+  const model = viewModels?.list ?? createViewModel(VIEW, getStorage);
   let data = null;
   let pending = null;
   let gone = false;
@@ -131,7 +113,7 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
   menu.id = `${id}-actions`;
   menu.setAttribute('aria-label', STRINGS.actions);
   menu.hidden = true;
-  for (const [action, text] of [['edit', STRINGS.edit], ['share', STRINGS.share], ['delete', STRINGS.delete]]) {
+  for (const { action, text } of ACTIONS) {
     const item = make(doc, 'button', action === 'delete' ? 'menu__item menu__item--danger' : 'menu__item', text);
     item.type = 'button';
     item.setAttribute('role', 'menuitem');
@@ -140,57 +122,21 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
   }
   header.append(description, more, menu);
 
-  const controls = make(doc, 'div', 'view-controls list-view__controls');
-  const orders = make(doc, 'fieldset', 'segmented list-view__orders');
-  const options = make(doc, 'div', 'segmented__options');
-  for (const option of ORDERS) {
-    const label = make(doc, 'label', 'segmented__option');
-    const input = doc.createElement('input');
-    input.type = 'radio';
-    input.name = `${id}-order`;
-    input.value = option.value;
-    input.checked = option.value === state.order;
-    label.append(input, option.label);
-    options.append(label);
-  }
-  orders.append(make(doc, 'legend', 'visually-hidden', STRINGS.order), options);
-  const chip = make(doc, 'button', 'filter-chip list-view__status');
-  chip.type = 'button';
-  const panel = make(doc, 'div', 'popover list-view__status-panel');
-  panel.id = `${id}-status`;
-  panel.setAttribute('role', 'group');
-  panel.setAttribute('aria-label', STRINGS.status);
-  panel.hidden = true;
-  const choices = make(doc, 'fieldset', 'choice-group');
-  choices.append(make(doc, 'legend', 'popover__title', STRINGS.status));
-  for (const status of STATUSES) {
-    const label = make(doc, 'label', 'choice');
-    const input = doc.createElement('input');
-    input.type = 'checkbox';
-    input.value = status;
-    label.append(input, ` ${STATUS_LABELS[status]}`);
-    choices.append(label);
-  }
-  const actions = make(doc, 'div', 'popover__actions');
-  const clear = make(doc, 'button', 'button button--quiet', STRINGS.clear);
-  clear.type = 'button';
-  actions.append(clear);
-  panel.append(choices, actions);
-  controls.append(orders, chip, panel);
-  const note = make(doc, 'p', 'list-view__note');
-
+  const info = createInfoLine({ document: doc, onReset: () => model.reset() });
   const addBar = createAddBar({ document: doc, onAdd: add });
-  const moves = { enabled: () => state.order === 'manual', step: (taskId, step) => reorder.step(taskId, step) };
+  const moves = { enabled: () => model.get().order.field === 'manual', step: (taskId, step) => reorder.step(taskId, step) };
   const taskList = createTaskList({
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
     hrefOf: (task) => formatRoute('list-task', { listId, taskId: task.id }),
   });
   const reorder = attachReorder(taskList.element, { enabled: moves.enabled, onMove: move, ids: taskList.ids });
   const empty = make(doc, 'p', 'empty-state empty-state__text');
-  root.append(header, controls, note, addBar.element, taskList.element, empty);
+  const addBlock = make(doc, 'div', 'add-block');
+  addBlock.append(addBar.element, info.element);
+  root.append(header, addBlock, taskList.element, empty);
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });
-  const behaviors = [attachPopover(chip, panel), attachMenu(more, menu, { onSelect: act })];
+  const behavior = attachMenu(more, menu, { onSelect: act });
 
   /**
    * Store a new task at the end of this list (`LV-5`).
@@ -221,25 +167,20 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
   }
 
   /**
-   * Run a list action of the header menu; Edit list and Share open the list editor.
+   * Run a list action of the header menu; Edit list and Share open the list editor, Edit view options the panel.
    * @param {HTMLElement} item the picked menu item
    */
   function act(item) {
-    if (item.dataset.action !== 'delete') {
-      navigate(formatRoute('list-edit', { listId }));
+    const { route } = ACTIONS.find(({ action }) => action === item.dataset.action);
+    if (route) {
+      navigate(formatRoute(route, { listId }));
     }
     else if (data?.list) {
       confirmListDelete({ parent: root, opener: more, list: data.list, store, toaster, navigate });
     }
   }
 
-  /** Keep the state on this device and render it. */
-  function save() {
-    writePreference(PREFERENCE, state, getStorage);
-    render();
-  }
-
-  /** Render the current data with the current order and status filter. */
+  /** Render the current data with the current view options. */
   function render() {
     if (!data?.list) {
       return;
@@ -247,21 +188,16 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
     taskList.element.querySelector('.task-list').setAttribute('aria-label', data.list.name);
     description.textContent = data.list.description ?? '';
     description.hidden = !data.list.description;
-    const value = describeFilters({ statuses: state.statuses }, [])[0]?.split(': ')[1] ?? STRINGS.all;
-    chip.replaceChildren(`${STRINGS.status}: `, make(doc, 'span', 'filter-chip__value', value), spriteIcon(doc, 'chevron-down'));
-    chip.dataset.active = String(state.statuses.length > 0);
-    for (const input of choices.querySelectorAll('input')) {
-      input.checked = state.statuses.includes(input.value);
-    }
-    const order = ORDERS.find((option) => option.value === state.order);
-    note.hidden = order.value === 'manual';
-    note.textContent = note.hidden ? '' : STRINGS.sorted(order.note);
+    const state = model.get();
     const ctx = { now: now(), lists: data.lists, listsByTask: data.listsByTask, notesByTask: data.notesByTask };
-    const filtered = filterTasks(data.tasks, { statuses: state.statuses }, ctx);
-    const shown = note.hidden ? filtered : sortTasks(filtered, { field: order.value, direction: order.direction });
+    const filtered = filterTasks(data.tasks, state.filter, ctx);
+    const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
     taskList.render(shown, ctx);
     empty.hidden = shown.length > 0;
-    empty.textContent = data.tasks.length === 0 ? STRINGS.empty : STRINGS.noMatch(`${STRINGS.status}: ${value}`);
+    empty.textContent = data.tasks.length === 0 ? STRINGS.empty : STRINGS.noMatch(describeFilters(state.filter, []).join(' and '));
+    const lists = [...data.lists.values()];
+    info.update({ shown: shown.length, total: data.tasks.length, state, lists, kind: VIEW });
+    model.setCounts({ shown: shown.length, total: data.tasks.length });
   }
 
   /**
@@ -286,19 +222,8 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
     return pending;
   }
 
-  orders.addEventListener('change', (event) => {
-    state.order = event.target.value;
-    save();
-  });
-  choices.addEventListener('change', (event) => {
-    state.statuses = STATUSES.filter((status) => (status === event.target.value ? event.target.checked : state.statuses.includes(status)));
-    save();
-  });
-  clear.addEventListener('click', () => {
-    state.statuses = [];
-    save();
-  });
   // A delete in this tab, here or in the list editor, opens All tasks itself; only other deletes toast here.
+  const unfollow = model.subscribe(render);
   const unsubscribe = store.subscribe((change) => {
     deletedHere ||= change?.operation === 'deleteList' && !change.remote;
     refresh();
@@ -325,10 +250,11 @@ export function mountList(view, { store, toaster, navigate, getStorage, now = ()
     /** Stop following the store and the clock, and close an open dialog as Keep. */
     destroy() {
       unsubscribe();
+      unfollow();
       clearInterval(timer);
       reorder.destroy();
       taskList.destroy();
-      behaviors.forEach((behavior) => behavior.destroy());
+      behavior.destroy();
       announcer.destroy();
       // An open Delete list dialog would stay in the top layer, unanswered, after Back leaves the view.
       root.querySelector('dialog[open]')?.close('cancel');

@@ -182,6 +182,7 @@ Home                                                              3
 ( ) Buy paint for the hallway   ...
 ```
 
+- Until the add field also searches, a separate search field sits above the add bar.
 - **[Decided]** The add field doubles as search (`VO-3`): its placeholder reads "Search or add a task".
   Typing filters the rows to tasks whose description or notes match, on top of the view options (`TV-6`, `TV-8`).
   A duplicate is hard to miss, since an existing task appears while the user types.
@@ -194,6 +195,7 @@ Home                                                              3
   - It adds "Grouped by ..." and "Sorted by ..." only when they differ from the defaults.
   - It is 12 px muted text on one line; it wraps to two lines, then truncates, and the view options show the rest.
   - **[Decided]** A quiet Reset link ends the line while any option differs from its default (`VO-8`).
+    Reset also clears the search text, since the line names it.
 - **[Decided]** The field and its info line form one block, set apart from the rows by at least 32 px of whitespace.
   On compact layouts the block is the pinned bar above the bottom navigation, so the rows scroll above it.
 - When a matching task has exactly the typed text, the Add button reads "Add anyway".

@@ -1135,7 +1135,7 @@
 
       <section class="gallery-section" id="editor-panel" aria-labelledby="editor-panel-title" data-gallery-group="app">
         <h2 id="editor-panel-title">Editor panel</h2>
-        <p>The task or list editor: a right panel in wide layouts, a full screen in compact ones.</p>
+        <p>The task editor, the list editor, or the view options: a right panel in wide layouts, a full screen in compact ones.</p>
         <p>The second close button shows the focus-visible state.</p>
         <div class="stage stage--panels">
           <aside class="editor-panel" aria-labelledby="panel-task-title">
@@ -1250,31 +1250,31 @@
 
       <section class="gallery-section" id="task-list" aria-labelledby="task-list-title" data-gallery-group="patterns">
         <h2 id="task-list-title">Task list</h2>
-        <p>The view header, view controls, add bar, and task rows of All tasks.</p>
-        <p>Compact layouts group the filter chips behind one Filters button and move the add bar below the rows.</p>
+        <p>The view header with its More button, the search field, the add bar with its info line, and the task rows of All tasks.</p>
+        <p>The info line names the count and every active option, and ends with Reset while any option differs from its default.</p>
+        <p>Compact layouts move the add bar and its info line below the rows.</p>
         <div class="pattern-frame">
           <div class="task-view">
             <div class="view-header">
               <h3 class="view-header__title">All tasks</h3>
-              <button class="button button--secondary" type="button" aria-haspopup="menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#sort"/></svg>Sort: Due time</button>
+              <button class="icon-button view-header__more" type="button" aria-haspopup="menu" aria-label="View actions"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
             </div>
-            <div class="view-controls">
-              <div class="field view-controls__search">
-                <label class="field__label visually-hidden" for="pattern-search">Search tasks and notes</label>
-                <input class="field__control" id="pattern-search" type="search" placeholder="Search">
-              </div>
-              <button class="filter-chip view-controls__filters" type="button" data-active="true">Filters <span class="filter-chip__value">1</span><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
-              <button class="filter-chip view-controls__chip" type="button" data-active="false">Lists<svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
-              <button class="filter-chip view-controls__chip" type="button" data-active="true">Status: <span class="filter-chip__value">open</span><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
-              <button class="filter-chip view-controls__chip" type="button" data-active="false">Due<svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#chevron-down"/></svg></button>
-              <button class="button button--quiet view-controls__chip" type="button">Clear all</button>
+            <div class="field search-field">
+              <label class="field__label visually-hidden" for="pattern-search">Search tasks and notes</label>
+              <input class="field__control" id="pattern-search" type="search" placeholder="Search">
             </div>
-            <div class="add-bar">
-              <div class="field add-bar__field">
-                <label class="field__label visually-hidden" for="pattern-add">Add a task</label>
-                <input class="field__control" id="pattern-add" type="text" placeholder="Add a task" maxlength="500">
+            <div class="add-block">
+              <div class="add-bar">
+                <div class="field add-bar__field">
+                  <label class="field__label visually-hidden" for="pattern-add">Add a task</label>
+                  <input class="field__control" id="pattern-add" type="text" placeholder="Add a task" maxlength="500">
+                </div>
+                <button class="button" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg>Add</button>
               </div>
-              <button class="button" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg>Add</button>
+              <div class="info-line">
+                <p class="info-line__text">12 of 24 tasks · Status: open · Sorted by Description</p>
+                <button class="button button--quiet info-line__reset" type="button">Reset</button>
+              </div>
             </div>
             <ul class="task-list" aria-label="All tasks">
               <li class="task-row" data-status="in-progress">

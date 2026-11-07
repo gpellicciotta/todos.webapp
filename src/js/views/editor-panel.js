@@ -1,5 +1,5 @@
 /**
- * Editor panel: the frame of the task and list editors in the shell's `[data-editor-slot]` element.
+ * Editor panel: the frame of the editors and the view options in the shell's `[data-editor-slot]` element.
  *
  * An editor route mounts its editor into a panel with a title, a close button, and a scrolling body.
  * Wide layouts show the panel at the right of the rows; compact layouts show it over the main column.
@@ -12,7 +12,9 @@ import { createLiveRegion } from '../ui/live-region.js';
 import { spriteIcon } from './task-list.js';
 
 /** Panel strings, for the strings module of TEC-13 to absorb. */
-const STRINGS = Object.freeze({ close: { task: 'Close the task editor', list: 'Close the list editor' } });
+const STRINGS = Object.freeze({
+  close: { task: 'Close the task editor', list: 'Close the list editor', 'view-options': 'Close the view options' },
+});
 
 let instances = 0;
 const announcers = new WeakMap();
