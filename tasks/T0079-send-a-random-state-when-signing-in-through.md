@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1258.4, input: 144, output: 35458, cache_read: 5175500, cache_write: 153784}
+review_status: pending
+review_round: 1
 ---
 # T0079: Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206)
 
@@ -52,4 +56,7 @@ Send a random state when signing in through Auth and reject a callback whose sta
   - Files touched: 9.
   - Lines touched: 144.
   - Reopenings: 0.
+
+- [2026-11-08] **[Review]**
+  Round 1 requested (mode: agent).
 
