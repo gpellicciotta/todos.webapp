@@ -1,11 +1,12 @@
 ---
 id: T0025
-owner: ~
-needs: ['T0058', 'T0062']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+session: claude-20261107-124fd3
+needs: []
+branch: task/T0025-build-sync-upload-the-change-queue-first-connect
+worktree: .plan/work/T0025-build-sync-upload-the-change-queue-first-connect
+status: active
+started_at: "2026-11-07T19:27:18Z"
 ended_at: —
 review: agent
 preview: none
@@ -21,14 +22,39 @@ Send only changed fields in updates, so per-field merge works (`SYN-5`), and syn
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the requirements' Sync section and the todos sync protocol spec from todos task T0136.
-- [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
-- [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Write the API client, the change queue, upload, and first-connect adoption.
-- [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Doc]**       Update CHANGELOG.md.
+- [x] **[Read]**      Read the requirements' Sync section and the todos sync protocol spec from todos task T0136.
+- [x] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
+- [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
+- [x] **[Implement]** Write the API client, the change queue, upload, and first-connect adoption.
+- [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
+- [x] **[Doc]**       Update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-04] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-07] **[Implement]**
+  Added queue, API client, push engine, adoption, and version 4 stores; wired push in app.js.
+  - Undeclared files: idb.js, bulk.js, app.js, index.html, service-worker.js.
+  - Also updated e2e specs for connected mode.
+
+- [2026-11-07] **[Decided]**
+  Queue entries join the queue after the write commits; a crash between the two loses that entry.
+  - Entries carry undo data for rollback.
+
+- [2026-11-07] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 22.
+  - Lines touched: about 1900.
+  - Reopenings: 0.
+
+- [2026-11-07] **[Decided]**
+  Size note: above the typical line; one ordering and retry contract spans queue, upload, and adoption.
+
+- [2026-11-07] **[Read]**
+  Read the todos REST API and business logic specs on sync, merging, and adoption.
+
+- [2026-11-07] **[Doc]**
+  Updated CHANGELOG.md and docs/specs/local-store.md.
+
