@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.1.3-pre
+- Docs: Specified how sync handles server errors, tab leadership, the version 4 store, and controlled updates, adding SYN-11, SYN-12, and TEC-19.
 - FrontEnd: Required Create or Enter to save new lists; closing discards drafts while existing lists still save automatically.
 - FrontEnd: Removed the sidebar New list action; list creation stays available through the Lists view floating plus.
 - FrontEnd: Opened Import backup in the main view between the bars on phones, like the task and list editors.

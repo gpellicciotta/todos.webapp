@@ -275,6 +275,8 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - Offline: a pending change count, such as "Offline · 3 pending".
   - Sign in needed: the session expired (`CON-13`).
   - Sync error: the popover names the error and offers Retry.
+  - Update required: the service refuses this app version, or its feed uses a newer protocol; syncing stops (`SYN-11`).
+    The popover names the minimum version and offers Check for update, which looks for a new worker.
 - A dot marks unseen sync log entries, such as overwritten values or rejected changes.
 - Its popover shows the state, the last sync time, a Sync now button, and a Sync log link.
 - The shell holds no sync indicator yet; its place is decided with the sync indicator task.
@@ -283,6 +285,10 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 - Toasts confirm actions, offer Undo for 8 seconds, and never hold the only copy of an error.
 - A newer app version in another tab shows a lasting banner with Reload, not a toast; the live region reads it.
 - Banners sit above the content for lasting states, such as view-only lists or an expired session.
+- A waiting service worker shows an Update toast, "A new version is ready", with an Update button (`TEC-19`).
+  It never times out; dismissing it hides it until the next start. The first install shows none.
+- A database upgrade that an old tab blocks shows "Close other tabs of ToDo's to finish the update".
+  A tab whose database another tab upgraded closes its connection and shows the reload banner.
 - Toasts and banners announce through a polite live region; blocking errors use an alert role.
 
 ### Dialogs
@@ -514,6 +520,9 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 2. Offline, the indicator shows Offline with the pending count, and work continues (`SYN-2`).
 3. Back online, the queue syncs without user action, and remote changes appear in place (`SYN-3`).
 4. A failing sync shows Sync error; its popover names the error and offers Retry.
+5. Open tabs sync as one: one tab holds the lock, uploads, and polls; the others show its state (`SYN-12`).
+6. A feed cursor the service no longer knows keeps the queue and fetches a fresh snapshot, without a message.
+7. A service that refuses the app version, or a feed protocol the app does not know, turns the indicator to Update required (`SYN-11`).
 
 ### Resolving Conflicts
 1. Two devices edit one task before syncing; different fields both survive (`SYN-5`).

@@ -172,6 +172,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - SYN-8: A sync log lists the values that conflict resolution overwrote, for the last 30 days.
 - SYN-9: A change the service rejects is reverted locally and reported to the user.
 - SYN-10: Repeating a sync after an interruption creates no duplicate lists, tasks, or notes.
+- SYN-11: When the service refuses the app's version or speaks a newer sync protocol, syncing stops and the app asks for an update.
+- SYN-12: Several open tabs sync as one: a single tab uploads changes and polls the service.
 
 ### Sharing
 - SHR-1: A list owner shares a list with an email address and a role: `viewer`, `task-editor`, or `editor`.
@@ -213,6 +215,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TEC-16: Views open within 200 ms with 5000 tasks on a mid-range phone.
 - TEC-17: The app sends no analytics or tracking data.
 - TEC-18: Signing out or disconnecting deletes the session token from the device.
+- TEC-19: A new app version installs only when the user chooses Update, so open tabs never mix old and new code.
 
 ---
 
