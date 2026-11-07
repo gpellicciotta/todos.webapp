@@ -12,7 +12,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 
 ## v0.3.0 Milestone
 - [~] T0069 [owner: @claude] Make the Lists screen reorder by grips only and add a More menu per list with the list view actions.
-- [~] T0068 [owner: @claude] Add Group by (Due date, Status) to the list view options so lists offer the All tasks options minus List.
+- [x] T0068 Add Group by (Due date, Status) to the list view options so lists offer the All tasks options minus List.
 - [x] T0067 Default All tasks to Created newest first, and open the task editor after Add.
 - [ ] T0063 [needs: T0026] Add an opt-in contract test that runs the sync client against a real todos server.
 - [ ] T0062 Activate a new service worker only after an Update toast click, and survive blocked database upgrades.
