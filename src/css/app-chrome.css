@@ -209,8 +209,8 @@
 
 /*
  * Sync indicator: a button with one icon and label per state, opening the sync popover.
- * States (data-state): local, synced, syncing, offline, sign-in, and error.
- * Sign-in uses the signal color and error uses the danger color; the syncing icon spins, except under reduced motion.
+ * States (data-state): local, synced, syncing, offline, sign-in, error, and update-required.
+ * Sign-in uses the signal color, error and update-required use the danger color; the syncing icon spins, except under reduced motion.
  * The dot marks unseen sync log entries; visually hidden text names it.
  * Its ring matches the ground under it: --sync-indicator-ground, the page ground by default,
  * then the hover or pressed ground of the indicator itself.
@@ -257,7 +257,8 @@
   color: var(--color-signal);
 }
 
-.sync-indicator[data-state='error'] {
+.sync-indicator[data-state='error'],
+.sync-indicator[data-state='update-required'] {
   color: var(--color-danger);
 }
 
@@ -282,6 +283,53 @@
   border-radius: var(--radius-round);
   background-color: var(--color-signal);
   box-shadow: 0 0 0 var(--focus-ring-width) var(--sync-indicator-ring);
+}
+
+/*
+ * Compact top bar: the icon carries the state; the label stays in the accessible name and the popover.
+ * The popover (.sync-panel) holds the state, the last sync time or the error, and the actions.
+ */
+@media (width < 40rem) {
+  .sync-indicator {
+    padding-inline: var(--space-2);
+  }
+
+  .sync-indicator__label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .sync-indicator__dot {
+    inset-inline-start: calc(var(--space-2) + var(--icon-size) - var(--space-1));
+  }
+}
+
+.sync-panel {
+  display: grid;
+  gap: var(--space-2);
+  inline-size: min(calc(100vw - var(--space-4)), var(--width-editor));
+  padding: var(--space-3);
+}
+
+.sync-panel__state {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+}
+
+.sync-panel__time {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.sync-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 @keyframes sync-spin {
@@ -340,7 +388,6 @@
  * an expired session (data-state="sign-in-needed") keeps the quiet look. Its title and aria-label name the user.
  * The panel is a `.popover` holding the user name, the connection state, and `.button--secondary` links with icons;
  * the link of the current route (aria-current="page") takes the signal border and icon on the selected ground.
- * A `.button` Sign in link appears beside the button while the session needs a new sign-in.
  */
 .user-menu {
   display: flex;

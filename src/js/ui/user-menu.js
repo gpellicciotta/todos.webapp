@@ -5,8 +5,7 @@
  * Local mode shows a person icon named Local User. A connected account shows its initials and its name.
  * Its hover text and accessible name are the user name; the panel shows the name, the connection state,
  * and buttons, each with its icon, that open Recycle bin and Settings. They carry `data-nav` so the shell marks the current route.
- * An expired session adds a Sign in button before the user button, which opens the connect screen (`CON-13`).
- * Without one, the page holds no Sign in text at all (`LOC-1`).
+ * An expired session says Sign in needed in the panel; the Sign in button sits in the session banner (see views/sync-indicator.js).
  * The panel re-reads the session when it changes and each time it opens.
  */
 
@@ -20,7 +19,6 @@ export const USER_STRINGS = Object.freeze({
   localOnly: 'Local only',
   connected: 'Connected',
   signInNeeded: 'Sign in needed',
-  signIn: 'Sign in',
   panel: 'Account',
   bin: 'Recycle bin',
   settings: 'Settings',
@@ -83,20 +81,19 @@ function icon(doc, id) {
 /**
  * Describe what the user menu shows for the session state.
  * @param {object} session the session
- * @returns {{name: string, status: string, initials: string|null, signInNeeded: boolean}} the view
+ * @returns {{name: string, status: string, initials: string|null}} the view
  */
 function describe(session) {
   const state = session.state();
   const account = session.account();
   if (state === 'local' || !account) {
-    return { name: USER_STRINGS.localUser, status: USER_STRINGS.localOnly, initials: null, signInNeeded: false };
+    return { name: USER_STRINGS.localUser, status: USER_STRINGS.localOnly, initials: null };
   }
   const name = account.name?.trim() || account.email;
   return {
     name,
     status: state === 'connected' ? USER_STRINGS.connected : USER_STRINGS.signInNeeded,
     initials: initialsOf(name),
-    signInNeeded: state === 'sign-in-needed',
   };
 }
 
@@ -110,9 +107,6 @@ function describe(session) {
 export function attachUserMenu(slot, { session }) {
   const doc = slot.ownerDocument;
   slot.classList.add('user-menu');
-
-  const signIn = make(doc, 'a', 'button button--secondary user-menu__sign-in', USER_STRINGS.signIn);
-  signIn.href = '#/connect';
 
   const button = make(doc, 'button', 'user-button');
   button.type = 'button';
@@ -147,14 +141,6 @@ export function attachUserMenu(slot, { session }) {
     button.dataset.state = session.state();
     name.textContent = view.name;
     status.textContent = view.status;
-    if (view.signInNeeded) {
-      if (signIn.parentNode !== slot) {
-        slot.prepend(signIn);
-      }
-    }
-    else {
-      signIn.remove();
-    }
     if (popover?.isOpen()) {
       anchorPanel(panel, button, undefined, 'end');
     }
@@ -180,7 +166,6 @@ export function attachUserMenu(slot, { session }) {
       stopListening();
       button.removeEventListener('click', refresh);
       popover.destroy();
-      signIn.remove();
       button.remove();
       panel.remove();
       slot.classList.remove('user-menu');

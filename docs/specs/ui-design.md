@@ -11,7 +11,6 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Same app in both modes: connected mode adds controls but never moves or renames existing ones.
 - Forgiving: deletions go to the recycle bin, and a toast offers Undo.
 - Honest sync: the sync indicator always tells whether data is only local, pending, or synced.
-  Until it lands, the user menu says Local only, Connected, or Sign in needed.
 - Quiet chrome: the account, Recycle bin, and Settings sit behind the user button, since they are needed only now and then.
 - Keyboard and touch parity: every drag, hover, or shortcut has a visible button alternative.
 
@@ -70,7 +69,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 [app-shell.css](../../src/css/app-shell.css) places its parts; one DOM holds both layouts.
 - The top bar holds the route title and the user button, preceded by the inbox bell while connected; it has no More menu.
 - The wide layout shows the title above the main column, with the user button at its right end.
-- The shell holds no sync indicator for now; the sync indicator task decides where it goes.
+- The sync indicator sits beside the user button, before the inbox bell; see Sync Indicator below.
+- A session banner above the view offers Sign in while the session expired.
 - The main column scrolls; the bars and the sidebar stay in place.
 - [user-menu.js](../../src/js/ui/user-menu.js) builds the user menu; see User Menu below.
 - [inbox.js](../../src/js/ui/inbox.js) builds the inbox bell and the broadcast banners; see Inbox below.
@@ -78,7 +78,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
   List views also carry `data-list-id`; the screen tasks fill these views.
   [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [lists.js](../../src/js/views/lists.js) `lists`,
   [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`, [settings.js](../../src/js/views/settings.js) `settings`,
-  and [connect.js](../../src/js/views/connect.js) `connect`; the others stay empty until their tasks land.
+  and [connect.js](../../src/js/views/connect.js) `connect`, and [sync-log.js](../../src/js/views/sync-log.js) `sync-log`.
 - A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
 - Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
@@ -106,7 +106,7 @@ Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
 - Escape, an outside click, or choosing a link closes the panel.
 - The panel shows the user name, the connection state, then Recycle bin and Settings as buttons with icons.
 - The state reads "Local only", "Connected", or "Sign in needed" (`CON-13`); the link of the current route is marked.
-- Expired session: a Sign in button appears before the user button and opens `#/connect`; the user button and panel stay.
+- Expired session: the panel says Sign in needed; the Sign in button sits in the session banner (see Sync Indicator).
 - Local mode has no Sign in text on the page (`LOC-1`); Connect stays reachable from Settings and the empty states.
 - The panel reads the session each time it opens and when the session changes.
 
@@ -289,18 +289,26 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   Quickest for experts, but hard to discover and to use on touch screens; it needs a parser.
 
 ### Sync Indicator
+[sync-indicator.js](../../src/js/views/sync-indicator.js) builds the indicator, its popover, and the session banner.
+- **[Decided]** The indicator is a button beside the user button, before the inbox bell, in both layouts.
+  A badge on the user button would hide the state behind the account and clash with the initials.
 - Shows one of these states, each with its own icon and label (`SYN-4`):
-  - Local only: not connected; it links to the connect flow.
+  - Local only: not connected; its popover links to the connect flow.
   - Synced: the last sync time appears in its popover.
   - Syncing: a progress icon, without motion under reduced motion.
   - Offline: a pending change count, such as "Offline · 3 pending".
-  - Sign in needed: the session expired (`CON-13`).
+  - Sign in needed: the session expired (`CON-13`); the popover and the banner offer Sign in.
   - Sync error: the popover names the error and offers Retry.
   - Update required: the service refuses this app version, or its feed uses a newer protocol; syncing stops (`SYN-11`).
-    The popover names the minimum version and offers Check for update, which looks for a new worker.
-- A dot marks unseen sync log entries, such as overwritten values or rejected changes.
-- Its popover shows the state, the last sync time, a Sync now button, and a Sync log link.
-- The shell holds no sync indicator yet; its place is decided with the sync indicator task.
+    The popover names the minimum version and offers Check for update, which looks for a new worker; its Update toast follows.
+    It uses the alert icon.
+- Below 40 rem the label hides visually and stays in the accessible name, so the top bar keeps room for the title.
+- A dot marks sync log entries newer than the last visit to the Sync log, such as overwritten values or rejected changes (`SYN-8`).
+  The last visit is kept per device in `todos.sync-log.seen`.
+- Its popover shows the state, the last sync time or the error, a Sync now button, and a Sync log link.
+  Sync now asks the engine for an immediate queue replay and poll; Retry does the same after an error.
+- The session banner sits above the views while the session needs a new sign-in, with Sign in, which opens `#/connect`.
+- A changed state is announced through the polite live region, except Syncing.
 
 ### Toasts and Banners
 - Toasts confirm actions, offer Undo for 8 seconds, and never hold the only copy of an error.
@@ -505,7 +513,7 @@ Settings is one page with these sections:
   [version.js](../../src/js/version.js) holds both; a unit test matches the version to package.json.
 - The theme applies at once; a theme the browser cannot store shows a toast saying it lasts until reload.
 - Connect opens the connect screen; connected, the section shows "Signed in as {{name}} ({{email}})" and the server.
-- Sync state and the Sync log link join the connected section with the sync indicator task.
+- Connected, the section also shows the sync state and a Sync log link.
 - An expired session adds "Your session expired." with Sign in again, which opens the connect screen.
 - Disconnect opens a dialog; without pending changes it offers Cancel and Disconnect, and a toast confirms.
 - The server URL defaults to `https://todos.pellicciotta.com`; an invalid address shows an error, and empty restores it.
@@ -519,7 +527,10 @@ Wireframe: [sync-log.svg](../img/ui/sync-log.svg).
 - Overwritten value entries show the item, the field, the lost value, and the kept value.
 - Rejected change entries show the item, the reason, and the change that was undone (`SYN-9`).
 - Each entry links to its item while that item still exists.
-- Opening the sync log clears the sync indicator dot.
+- Opening the sync log clears the sync indicator dot, and it stays clear while the screen is open.
+- An entry about an item shows the task description or the list name; a deleted or unknown item shows a plain label.
+- An empty log reads "Nothing to show." and the screen ends with "Entries stay for 30 days."
+- Entries render as text only, so a lost value can be copied back by hand.
 
 ---
 
@@ -581,7 +592,7 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 
 ### Session Expiry
 1. An expired session turns the indicator to Sign in needed and shows a banner (`CON-13`).
-   Until the sync indicator task, the Sign in button beside the user button, Settings, and the connect screen show it.
+   Settings and the connect screen show it too.
 2. The app keeps working and queues changes.
 3. Sign in on the banner restores the session and syncs the queue.
 

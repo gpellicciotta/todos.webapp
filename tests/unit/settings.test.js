@@ -41,6 +41,14 @@ describe('Disconnect in Settings', () => {
   });
 });
 
+describe('Connection in Settings while connected', () => {
+  it('shows the sync state and a Sync log link', () => {
+    const { view } = mountConnected({ pendingCount: async () => 0, state: () => ({ status: 'offline', pending: 2 }), subscribe: () => () => {} });
+    expect(view.querySelector('.settings__sync-state').textContent).toBe('Sync state: Offline');
+    expect(view.querySelector('a[href="#/settings/sync-log"]').textContent).toBe('Sync log');
+  });
+});
+
 describe('Connect in Settings', () => {
   it('opens the connect flow through the navigate option, not by setting the location hash', () => {
     const view = document.body.appendChild(document.createElement('div'));

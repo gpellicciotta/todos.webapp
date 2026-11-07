@@ -33,6 +33,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="0" y="0" width="390" height="60" rx="0" class="bar"/>
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="16" y="37" font-size="20" class="bold">Lists</text>
     <line x1="0" y1="124" x2="390" y2="124" class="rule"/>
     <rect x="325.68" y="80" width="56.32" height="24" rx="12" class="chip"/>
@@ -88,6 +89,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="44" y="414" font-size="14">+ New list</text>
     <circle cx="1082" cy="44" r="22" class="icon-fill"/>
     <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>
     <text x="304" y="60" font-size="28" class="bold">Lists</text>
     <line x1="304" y1="164" x2="1104" y2="164" class="rule"/>
     <rect x="1039.68" y="120" width="56.32" height="24" rx="12" class="chip"/>

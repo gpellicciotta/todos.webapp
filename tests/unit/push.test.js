@@ -179,6 +179,18 @@ describe('handling replies', () => {
     expect(service.calls).toHaveLength(calls);
   });
 
+  it('reports the time of the last sync and the detail of an error for the sync indicator', async () => {
+    const { store, service, push } = await setup();
+    await store.createList({ name: 'Home' });
+    service.fail = () => 503;
+    await push.drainOnce();
+    expect(push.state()).toMatchObject({ status: 'error', lastSync: null, error: 'The service is unavailable.' });
+    service.fail = () => null;
+    expect(await push.drainOnce()).toBe('synced');
+    expect(push.state()).toMatchObject({ status: 'synced', error: null });
+    expect(new Date(push.state().lastSync).getTime()).toBeGreaterThan(0);
+  });
+
   it('retries a failing entry first, keeping the order', async () => {
     const { store, service, push } = await setup();
     await store.createList({ name: 'Home' });

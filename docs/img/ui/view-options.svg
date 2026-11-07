@@ -36,6 +36,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="360" cy="30" r="22" class="icon"/>
     <circle cx="360" cy="25" r="5" class="icon"/>
     <path d="M 351 42 Q 360 26 369 42" class="icon-line"/>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">View options</text>
     <text x="16" y="98" font-size="12" class="muted">Filter</text>
     <rect x="305.6" y="76" width="68.4" height="32" rx="6" class="control"/>
@@ -106,8 +107,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="978" cy="44" r="22" class="icon"/>
     <circle cx="978" cy="39" r="5" class="icon"/>
     <path d="M 969 56 Q 978 40 987 56" class="icon-line"/>
-    <rect x="908.16" y="28" width="39.84" height="44" rx="6" class="control"/>
-    <text x="928.08" y="54.9" font-size="14" text-anchor="middle">⋯</text>
+    <path d="M 927 52 H 941 A 5 5 0 0 0 941 42 A 8 8 0 0 0 927 44 A 4 4 0 0 0 927 52 Z" class="icon-line-open"/>
+    <rect x="864.16" y="28" width="39.84" height="44" rx="6" class="control"/>
+    <text x="884.08" y="54.9" font-size="14" text-anchor="middle">⋯</text>
     <text x="304" y="60" font-size="28" class="bold">All tasks</text>
     <rect x="304" y="92" width="696" height="60" rx="8" class="bar"/>
     <rect x="936.48" y="100" width="55.52" height="44" rx="6" class="primary"/>

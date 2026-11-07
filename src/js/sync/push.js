@@ -81,6 +81,15 @@ function toRequest(entry, mapList) {
 }
 
 /**
+ * Describe a stop that is neither a sign-in nor an upgrade, for people.
+ * @param {Error} error the stop
+ * @returns {string} a short sentence
+ */
+function describeStop(error) {
+  return error.kind === 'retry' ? 'The service is unavailable.' : error.message;
+}
+
+/**
  * Tell whether an entry builds on a row, so it cannot upload once the row's creation was rejected.
  * @param {object} entry the queue entry
  * @param {string} id the row identifier
@@ -119,7 +128,7 @@ export function createPush({
 }) {
   const listeners = new Set();
   const queue = store.queue;
-  let current = { status: 'idle', pending: 0, minimum: null, progress: null };
+  let current = { status: 'idle', pending: 0, minimum: null, progress: null, lastSync: null, error: null };
   let leader = false;
   let running = false;
   let stopped = null;
@@ -224,7 +233,7 @@ export function createPush({
       }
       await afterDrain();
       lastError = null;
-      await publish({ status: 'synced', progress: null });
+      await publish({ status: 'synced', progress: null, lastSync: new Date().toISOString(), error: null });
       return 'synced';
     }
     catch (error) {
@@ -234,7 +243,7 @@ export function createPush({
           lastError = error.message;
           await queue.appendLog([{ kind: 'error', message: 'Syncing failed. It will try again.', detail: error.message }]).catch(() => {});
         }
-        await publish({ status: 'error' });
+        await publish({ status: 'error', error: error.message });
         return 'retry';
       }
       if (error.kind === 'auth') {
@@ -247,7 +256,7 @@ export function createPush({
         await publish({ status: 'update-required', minimum: error.minimum });
         return 'stopped';
       }
-      await publish({ status: error.offline ? 'offline' : 'error' });
+      await publish({ status: error.offline ? 'offline' : 'error', error: error.offline ? null : describeStop(error) });
       return 'retry';
     }
   }
@@ -332,7 +341,7 @@ export function createPush({
       }
     },
 
-    /** @returns {{status: string, pending: number, minimum: string|null, progress: object|null, leader: boolean}} the sync state */
+    /** @returns {{status: string, pending: number, minimum: string|null, progress: object|null, lastSync: string|null, error: string|null, leader: boolean}} the sync state */
     state: () => ({ ...current, leader }),
 
     /** @returns {boolean} true while this tab holds the lead */

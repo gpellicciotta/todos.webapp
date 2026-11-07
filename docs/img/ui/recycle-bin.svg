@@ -34,6 +34,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="360" cy="30" r="22" class="icon"/>
     <circle cx="360" cy="25" r="5" class="icon"/>
     <path d="M 351 42 Q 360 26 369 42" class="icon-line"/>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="16" y="37" font-size="20" class="bold">Recycle bin</text>
     <line x1="0" y1="124" x2="390" y2="124" class="rule"/>
     <rect x="8" y="78" width="28" height="28" rx="4" class="box"/>
@@ -100,6 +101,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="1082" cy="44" r="22" class="icon"/>
     <circle cx="1082" cy="39" r="5" class="icon"/>
     <path d="M 1073 56 Q 1082 40 1091 56" class="icon-line"/>
+    <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>
     <text x="304" y="60" font-size="28" class="bold">Recycle bin</text>
     <text x="304" y="88" font-size="14" class="muted">Deleted items stay here for 30 days.</text>
     <line x1="304" y1="180" x2="1104" y2="180" class="rule"/>

@@ -35,6 +35,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="30" y="35" font-size="16" text-anchor="middle">&lt;</text>
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">Connect</text>
     <text x="16" y="98" font-size="14">Connecting syncs your data across devices</text>
     <text x="16" y="120" font-size="14">and lets you share lists.</text>
@@ -79,6 +80,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="44" y="414" font-size="14">+ New list</text>
     <circle cx="1082" cy="44" r="22" class="icon-fill"/>
     <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>
     <text x="304" y="60" font-size="28" class="bold">Connect</text>
     <text x="304" y="114" font-size="14">Connecting syncs your data across devices</text>
     <text x="304" y="136" font-size="14">and lets you share lists.</text>

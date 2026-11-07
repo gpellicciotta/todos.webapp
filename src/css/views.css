@@ -634,3 +634,83 @@
 .list-editor__connect {
   color: var(--color-link);
 }
+
+/*
+ * Sync log: entries of the last 30 days as cards, newest first; the kind is a heading with the time beside it.
+ * Overwritten and rejected values show as plain text, so a lost value can be copied back by hand.
+ */
+.sync-log {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sync-log__intro,
+.sync-log__empty,
+.sync-log__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.sync-log__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sync-log__list:empty {
+  display: none;
+}
+
+.sync-log__empty[hidden] {
+  display: none;
+}
+
+.sync-log-entry {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-inline-start-width: var(--border-width-strong);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+
+.sync-log-entry[data-kind='rejected'],
+.sync-log-entry[data-kind='lost-access'],
+.sync-log-entry[data-kind='error'] {
+  border-inline-start-color: var(--color-danger);
+}
+
+.sync-log-entry__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.sync-log-entry__kind {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.sync-log-entry__time,
+.sync-log-entry__detail {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.sync-log-entry__item,
+.sync-log-entry__detail {
+  margin: 0;
+}
+
+.sync-log-entry__link {
+  justify-self: start;
+  color: var(--color-link);
+}

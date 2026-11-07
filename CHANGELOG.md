@@ -47,6 +47,12 @@ All notable changes to this project are documented here.
 - FrontEnd: Passed the sync engine to Settings, so Sync and disconnect works.
 - Docs: Described the connected import in the UI design and the backup format.
 - DevEx: Added unit and end-to-end tests for the connected import, its queue entries, and the sync progress.
+- FrontEnd: Added a sync indicator beside the user button with seven states: Local only, Synced, Syncing, Offline with the pending count, Sign in needed, Sync error, and Update required.
+- FrontEnd: Added a sync popover with the last sync time, Sync now, Retry after an error, Check for update, and a Sync log link.
+- FrontEnd: Showed a dot on the indicator for unseen sync log entries, and a banner with Sign in while the session is expired.
+- FrontEnd: Built the Sync log screen with the entries of the last 30 days, newest first, and links to items that still exist.
+- FrontEnd: Moved the Sign in button of an expired session from the top bar to the session banner, and added the sync state and Sync log link to Settings.
+- Docs: Redrew the wireframes with the sync indicator in the top bar.
 
 ## v0.2.0 [released: 2026-11-07]
 - FrontEnd: Made the add field also search All tasks and every list, with a 150 ms pause, a note under the rows, and no Add on Enter.

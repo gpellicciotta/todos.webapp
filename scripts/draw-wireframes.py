@@ -256,10 +256,23 @@ def scrim(f):
 # ------------------------------------------------------------------------------------------------
 
 
-def user_button(f, right, y, account="local"):
-    """Draw the circular user button, 44 px, with its right edge at `right`; return its left edge.
+def sync_indicator(f, right, y):
+    """Draw the 44 px sync indicator, a cloud glyph, with its right edge at `right`; return its left edge."""
+    left = right - 44
+    x, top = left + 11, y + 14
+    f.path(
+        f"M {x + 4:g} {top + 16:g} H {x + 18:g} A 5 5 0 0 0 {x + 18:g} {top + 6:g} "
+        f"A 8 8 0 0 0 {x + 4:g} {top + 8:g} A 4 4 0 0 0 {x + 4:g} {top + 16:g} Z",
+        "icon-line-open",
+    )
+    return left
 
-    A local user shows a person glyph, a connected one its initials, and an expired session adds a Sign in button.
+
+def user_button(f, right, y, account="local"):
+    """Draw the circular user button, 44 px, with its right edge at `right`, and the sync indicator before it.
+
+    A local user shows a person glyph and a connected one its initials. An expired session looks like a local one;
+    the sync indicator and the banner above the views offer Sign in. Return the left edge of the indicator.
     """
     cx, cy = right - 22, y + 22
     if account == "local":
@@ -269,10 +282,7 @@ def user_button(f, right, y, account="local"):
     else:
         f.circle(cx, cy, 22, "icon-fill" if account == "connected" else "icon")
         f.text(cx, cy + 5, "JD", 14, "on-primary bold" if account == "connected" else "bold", "middle")
-    left = right - 44
-    if account == "expired":
-        left = button_right(f, left - 8, y, "Sign in", "control")
-    return left
+    return sync_indicator(f, right - 44, y)
 
 
 def bin_glyph(f, x, y):

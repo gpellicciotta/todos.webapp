@@ -6,7 +6,9 @@
  * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
  * the account, Recycle bin, and Settings (see user-menu.js).
  * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
+ * The sync indicator opens the end of the top bar, before the bell of the inbox and the user button (see views/sync-indicator.js).
  * The bell of the inbox joins the user menu while connected, and broadcast banners show above every view (see inbox.js).
+ * A session banner above the views offers Sign in while the session expired.
  * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it (`LST-8`).
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
@@ -14,6 +16,7 @@
 import { applyListOrder, movedMessage, moveList, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
 import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
+import { attachSyncIndicator } from '../views/sync-indicator.js';
 import { attachInbox } from './inbox.js';
 import { createLiveRegion } from './live-region.js';
 import { attachUserMenu } from './user-menu.js';
@@ -132,7 +135,7 @@ export function openCounts(tasks, memberships) {
  * @param {object} options shell options
  * @param {object} [options.session] the session the user menu follows, a new one by default
  * @returns {{main: HTMLElement, editor: HTMLElement, toastRegion: HTMLElement, update: Function,
- *   setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function}} the shell controller
+ *   setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function, showSync: Function}} the shell controller
  */
 export function renderShell(root, { session = createSession() } = {}) {
   const doc = root.ownerDocument;
@@ -147,7 +150,7 @@ export function renderShell(root, { session = createSession() } = {}) {
       <ul class="nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <ul class="nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
     </nav>
-    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"><div data-notice></div><div class="app__broadcasts"></div></div></main>
+    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"><div data-session-banner></div><div data-notice></div><div class="app__broadcasts"></div></div></main>
     <div class="app__editor" data-editor-slot hidden></div>
     <nav class="bottom-nav app__bottom-nav" aria-label="${STRINGS.main}">
       <ul class="bottom-nav__list">${DESTINATIONS.map((destination) => `<li><a class="bottom-nav__item" href="${destination.hash}" `
@@ -160,6 +163,7 @@ export function renderShell(root, { session = createSession() } = {}) {
   const banners = root.querySelector('.app__banners');
   const notice = root.querySelector('[data-notice]');
   const broadcasts = root.querySelector('.app__broadcasts');
+  const sessionBanner = root.querySelector('[data-session-banner]');
   const editor = root.querySelector('[data-editor-slot]');
   const listNav = root.querySelector('[data-nav-lists]');
   const menuSlot = root.querySelector('[data-user-menu]');
@@ -337,6 +341,22 @@ export function renderShell(root, { session = createSession() } = {}) {
     showInbox({ inbox, toaster }) {
       announcer ??= createLiveRegion({ document: doc, parent: root });
       return attachInbox(menuSlot, { inbox, session, banners: broadcasts, toaster, announce: (message) => announcer.announce(message) });
+    },
+
+    /**
+     * Show the sync indicator before the other buttons of the top bar, and the session banner above every view.
+     * @param {object} options the dependencies
+     * @param {object} options.engine the sync engine
+     * @param {() => Promise<object[]>} options.readLog reads the sync log records
+     * @param {{get: () => string|null, subscribe: Function}} options.seen the marker of the last visit to the Sync log
+     * @param {() => void} options.checkForUpdate asks the browser for a new service worker
+     * @returns {{destroy: () => void}} the indicator
+     */
+    showSync({ engine, readLog, seen, checkForUpdate }) {
+      announcer ??= createLiveRegion({ document: doc, parent: root });
+      return attachSyncIndicator(menuSlot, {
+        engine, session, readLog, seen, checkForUpdate, banners: sessionBanner, announce: (message) => announcer.announce(message),
+      });
     },
   };
 }

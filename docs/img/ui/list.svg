@@ -35,6 +35,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="30" y="35" font-size="16" text-anchor="middle">&lt;</text>
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">Home</text>
     <text x="16" y="88" font-size="14" class="muted">Chores and repairs around the house</text>
     <text x="16" y="110" font-size="13" class="muted">Shared with 2 people · You own this list</text>
@@ -115,8 +116,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="44" y="414" font-size="14">+ New list</text>
     <circle cx="1082" cy="44" r="22" class="icon-fill"/>
     <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
-    <rect x="1012.16" y="28" width="39.84" height="44" rx="6" class="control"/>
-    <text x="1032.08" y="54.9" font-size="14" text-anchor="middle">⋯</text>
+    <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>
+    <rect x="968.16" y="28" width="39.84" height="44" rx="6" class="control"/>
+    <text x="988.08" y="54.9" font-size="14" text-anchor="middle">⋯</text>
     <text x="304" y="60" font-size="28" class="bold">Home</text>
     <text x="304" y="88" font-size="14" class="muted">Chores and repairs around the house · Shared with 2 people · You own this list</text>
     <rect x="304" y="112" width="800" height="60" rx="8" class="bar"/>

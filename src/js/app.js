@@ -8,6 +8,7 @@
  * Moving to another view moves focus to the main column, which the route title labels.
  * Shortcuts, outside text fields: `n` focuses the view's `[data-shortcut~="add"]` element and `/` its
  * `[data-shortcut~="search"]` element, each a no-op while the view has none; Escape closes an open editor.
+ * The sync indicator shows the sync state beside the user button (see views/sync-indicator.js).
  * While connected, the inbox shows a bell and the broadcast banners of the service (see sync/inbox.js).
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
  */
@@ -29,6 +30,7 @@ import { mountListEditor } from './views/list-editor.js';
 import { mountLists } from './views/lists.js';
 import { mountRecycleBin } from './views/recycle-bin.js';
 import { mountSettings } from './views/settings.js';
+import { createSeenMarker, mountSyncLog } from './views/sync-log.js';
 import { mountTaskEditor } from './views/task-editor.js';
 import { createViewModel, mountViewOptions } from './views/view-controls.js';
 
@@ -42,8 +44,10 @@ const MESSAGES = Object.freeze({
   startFailed: 'ToDo\'s could not start. Reload to try again.',
 });
 
-/** Screens that fill a view, by view name; the other views stay empty until their tasks land. */
-const SCREENS = { tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, connect: mountConnect };
+/** Screens that fill a view, by view name. */
+const SCREENS = {
+  tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, 'sync-log': mountSyncLog, connect: mountConnect,
+};
 
 /** Editors of the editor panel, by the editor name of their routes. */
 const EDITORS = { task: mountTaskEditor, list: mountListEditor, 'view-options': mountViewOptions };
@@ -55,6 +59,13 @@ let shell = null;
  */
 function showUpdatedNotice() {
   shell.showNotice(MESSAGES.updated, { actionLabel: MESSAGES.reload, onAction: () => location.reload() });
+}
+
+/** Ask the browser for a new service worker; the Update toast appears when one is waiting (`TEC-19`, `SYN-11`). */
+function checkForUpdate() {
+  navigator.serviceWorker?.getRegistration()
+    .then((registration) => registration?.update())
+    .catch((error) => console.error('Checking for an update failed:', error));
 }
 
 /**
@@ -111,6 +122,9 @@ async function start() {
     onLostAccess: ({ message }) => toaster.show(message),
   });
   engine.start();
+  // The indicator follows the engine and the session; its dot marks sync log entries newer than the last visit (`SYN-4`, `SYN-8`).
+  const seen = createSeenMarker();
+  shell.showSync({ engine, readLog: () => store.queue.log(), seen, checkForUpdate });
   let screen = null;
   let shownViewKey = null;
   // The screens and the View options panel share these, so the rows, the info line, and the panel follow one state.
@@ -155,7 +169,7 @@ async function start() {
     if (screen?.element !== element) {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
-      const options = { store, toaster, session, sync: engine, viewModels, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
+      const options = { store, toaster, session, sync: engine, seen, viewModels, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
       screen = { element, controller: mount ? mount(element, options) : null };
     }
     screen.controller?.update(route);

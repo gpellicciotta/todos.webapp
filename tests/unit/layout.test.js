@@ -25,11 +25,26 @@ describe('renderShell navigation', () => {
     expect(root.querySelector('.app__sidebar [href="#/lists/new"]')).toBeNull();
     expect(root.querySelector('.app__sidebar .icon-button')).toBeNull();
   });
-  it('ends the top bar with the user button and shows no sync indicator', () => {
+  it('ends the top bar with the user button and holds no sync indicator until the sync is shown', () => {
     const { root } = render();
     const bar = root.querySelector('.app__top-bar');
     expect(bar.lastElementChild.contains(bar.querySelector('.user-button'))).toBe(true);
     expect(root.querySelector('.sync-indicator')).toBeNull();
+  });
+
+  it('puts the sync indicator before the bell and the user button, and the session banner above the views', () => {
+    localStorage.setItem('todos.session', JSON.stringify({ token: 't', expiry: '2099-01-01T00:00:00Z', email: 'a@example.com', server: 'https://todos.example.com' }));
+    const root = document.body.appendChild(document.createElement('div'));
+    const shell = renderShell(root, { navigate: vi.fn() });
+    const inbox = { list: () => [], banners: () => [], unreadCount: () => 0, status: () => 'ready', subscribe: () => () => {} };
+    shell.showInbox({ inbox, toaster: { show: vi.fn() } });
+    const engine = { state: () => ({ status: 'synced', pending: 0 }), subscribe: () => () => {}, syncNow: vi.fn() };
+    shell.showSync({ engine, readLog: async () => [], seen: { get: () => null, subscribe: () => () => {} }, checkForUpdate: vi.fn() });
+    const slot = root.querySelector('.app__top-bar').lastElementChild;
+    const order = [...slot.children].map((child) => ['sync-indicator', 'inbox-button', 'user-button'].find((name) => child.classList.contains(name)));
+    expect(order.indexOf('sync-indicator')).toBeLessThan(order.indexOf('inbox-button'));
+    expect(order.indexOf('inbox-button')).toBeLessThan(order.indexOf('user-button'));
+    expect(root.querySelector('.app__banners [data-session-banner]')).not.toBeNull();
   });
 
   it('has no More button or menu in the top bar, since New list lives in the Lists view', () => {

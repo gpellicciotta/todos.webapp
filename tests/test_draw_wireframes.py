@@ -143,8 +143,9 @@ def test_top_bar_ends_with_the_user_button():
         assert (module.COMPACT_WIDTH - 30, 30, 22) in circles(root), account
         assert "⋮" not in [t.text for t in root.iter(f"{SVG}text")]
         labels = [t.text for t in root.iter(f"{SVG}text")]
-        assert ("Sign in" in labels) == (account == "expired")
+        assert "Sign in" not in labels
         assert "Local only" not in labels
+        assert sum(1 for p in root.iter(f"{SVG}path") if p.get("d", "").startswith(f"M {module.COMPACT_WIDTH - 8 - 44 - 44 + 11 + 4:g} ")) == 1, account
 
 
 @pytest.mark.parametrize("name", sorted(SCREENS))

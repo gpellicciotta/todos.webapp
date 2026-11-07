@@ -168,12 +168,9 @@ describe('attachUserMenu when connected', () => {
 describe('attachUserMenu when the session expired', () => {
   const EXPIRED = { ...ACCOUNT, expiry: '2000-01-01T00:00:00Z' };
 
-  it('shows a Sign in button to the connect screen beside the user button', () => {
+  it('holds no Sign in button, since the session banner of the sync indicator offers it', () => {
     const { slot } = mount(EXPIRED);
-    const signIn = slot.querySelector('.user-menu__sign-in');
-    expect(signIn.textContent.trim()).toBe('Sign in');
-    expect(signIn.getAttribute('href')).toBe('#/connect');
-    expect(signIn.compareDocumentPosition(slot.querySelector('.user-button')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(slot.querySelector('.user-menu__sign-in')).toBeNull();
   });
 
   it('keeps the account name, says Sign in needed, and keeps Recycle bin and Settings', () => {
@@ -188,7 +185,7 @@ describe('attachUserMenu session changes', () => {
   it('re-renders the button and the panel when the session expires', () => {
     const { slot, session } = mount(ACCOUNT);
     session.expire();
-    expect(slot.querySelector('.user-menu__sign-in')).not.toBeNull();
+    expect(slot.querySelector('.user-menu__sign-in')).toBeNull();
     expect(slot.querySelector('.user-panel__status').textContent).toBe('Sign in needed');
   });
 

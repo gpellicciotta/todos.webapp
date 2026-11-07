@@ -73,7 +73,7 @@ for (const [viewport, compact] of [[COMPACT, true], [{ width: 1023, height: 800 
     await page.goto('/');
     await ready(page);
     await expect(page.locator('.app__bottom-nav')).toBeVisible({ visible: compact });
-    await expect(page.locator('.sync-indicator')).toHaveCount(0);
+    await expect(page.locator('.app__top-bar .sync-indicator')).toBeVisible();
     await expect(page.locator('.app__top-bar .user-button')).toBeVisible();
     await expect(page.locator('.app__more')).toHaveCount(0);
     await expect(page.locator('.app__sidebar')).toBeVisible({ visible: !compact });
@@ -127,7 +127,7 @@ for (const [name, viewport] of [['compact', COMPACT], ['wide', WIDE]]) {
     await ready(page);
     const button = page.locator('.app__top-bar .user-button');
     await expect(button).toHaveAttribute('title', 'Local User');
-    await expect(page.locator('.user-menu__sign-in')).toBeHidden();
+    await expect(page.locator('[data-session-banner] .banner')).toHaveCount(0);
     const panel = page.locator('.user-panel');
     await expect(panel).toBeHidden();
     await button.click();
@@ -202,7 +202,7 @@ test('a connected account shows its initials and name, and Connected in the pane
   const button = page.getByRole('button', { name: 'Jane Doe' });
   await expect(button).toHaveText('JD');
   await expect(button).toHaveAttribute('title', 'Jane Doe');
-  await expect(page.locator('.user-menu__sign-in')).toBeHidden();
+  await expect(page.locator('[data-session-banner] .banner')).toHaveCount(0);
   await button.click();
   await expect(page.locator('.user-panel')).toContainText('Jane Doe');
   await expect(page.locator('.user-panel')).toContainText('Connected');
@@ -210,14 +210,14 @@ test('a connected account shows its initials and name, and Connected in the pane
   expect(problems).toEqual([]);
 });
 
-test('an expired session shows a Sign in button that opens the connect screen', async ({ page }) => {
+test('an expired session shows a banner with Sign in that opens the connect screen', async ({ page }) => {
   const problems = watch(page);
   await page.addInitScript(() => localStorage.setItem('todos.session', JSON.stringify({
     token: 'session-1', expiry: '2000-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server: 'http://127.0.0.1:1',
   })));
   await page.goto('/');
   await ready(page);
-  await page.locator('.user-menu__sign-in').click();
+  await page.locator('[data-session-banner]').getByRole('link', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/#\/connect$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connect');
   await page.getByRole('button', { name: 'Jane Doe' }).click();
@@ -254,18 +254,15 @@ test('every route renders its title and its view, and the sidebar follows the li
       location.hash = target;
     }, hash);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
-    // All tasks, Lists, the List screen, the Recycle bin, Settings, and Connect fill their views; the others fill theirs later.
+    // Every route fills its view.
     if (view === 'lists') {
       await expect(page.locator('main [data-view="lists"] .list-row')).toHaveCount(1);
     }
     else if (view === 'tasks' || view === 'list') {
       await expect(page.locator(`main [data-view="${view}"] .task-row`)).toHaveCount(1);
     }
-    else if (view === 'bin' || view === 'settings' || view === 'connect') {
-      await expect(page.locator(`main [data-view="${view}"] > .${view}`)).toHaveCount(1);
-    }
     else {
-      await expect(page.locator(`main [data-view="${view}"]`)).toBeEmpty();
+      await expect(page.locator(`main [data-view="${view}"] > .${view}`)).toHaveCount(1);
     }
     await expect(page).toHaveTitle(`${title} · ToDo's`);
     if (view === 'list') {

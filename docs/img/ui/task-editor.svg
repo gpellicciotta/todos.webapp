@@ -35,6 +35,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="30" y="35" font-size="16" text-anchor="middle">&lt;</text>
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">Task</text>
     <text x="16" y="90" font-size="13" class="muted">Description</text>
     <rect x="16" y="98" width="358" height="64" rx="6" class="control"/>
@@ -102,6 +103,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="44" y="414" font-size="14">+ New list</text>
     <circle cx="978" cy="44" r="22" class="icon-fill"/>
     <text x="978" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 927 52 H 941 A 5 5 0 0 0 941 42 A 8 8 0 0 0 927 44 A 4 4 0 0 0 927 52 Z" class="icon-line-open"/>
     <text x="304" y="60" font-size="28" class="bold">All tasks</text>
     <rect x="304" y="92" width="696" height="60" rx="8" class="bar"/>
     <rect x="936.48" y="100" width="55.52" height="44" rx="6" class="primary"/>

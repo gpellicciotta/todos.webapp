@@ -5,7 +5,7 @@
  * Export backup saves the backup file at once and names it in a toast (`BAK-1`, `BAK-4`); Import backup opens its dialog.
  * In local mode the Connection section explains connected mode, and Connect opens the connect screen.
  * The server URL is kept per device and checked on change (`CON-12`); an empty field restores the default.
- * Connected, the section names the account and its server, and the URL cannot change (`CON-11`).
+ * Connected, the section names the account, its server, the sync state, and a Sync log link; the URL cannot change (`CON-11`).
  * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
  */
 
@@ -16,6 +16,7 @@ import { confirmDialog } from '../ui/dialog.js';
 import { applyTheme } from '../ui/layout.js';
 import { BUILD_DATE, VERSION } from '../version.js';
 import { openImportDialog, plural } from './import-dialog.js';
+import { SYNC_STRINGS } from './sync-indicator.js';
 import { spriteIcon } from './task-list.js';
 
 const SOURCE_URL = 'https://github.com/gpellicciotta/todos.webapp';
@@ -37,6 +38,8 @@ const STRINGS = Object.freeze({
   connect: 'Connect',
   signedIn: (account) => (account.name ? `Signed in as ${account.name} (${account.email})` : `Signed in as ${account.email}`),
   server: (url) => `Server: ${url}`,
+  syncState: (label) => `Sync state: ${label}`,
+  syncLog: 'Sync log',
   expired: 'Your session expired. Your changes stay on this device until you sign in again.',
   signInAgain: 'Sign in again',
   disconnect: 'Disconnect',
@@ -330,7 +333,11 @@ function connectionSection(doc, { getStorage, session, sync, toaster, navigate }
         make(doc, 'p', 'settings__hint', STRINGS.localHint), actions, serverField(doc, getStorage));
       return;
     }
+    const status = sync?.state?.().status;
     const parts = [make(doc, 'p', 'settings__text', STRINGS.signedIn(account)), make(doc, 'p', 'settings__hint', STRINGS.server(account.server))];
+    if (status) {
+      parts.push(make(doc, 'p', 'settings__hint settings__sync-state', STRINGS.syncState(SYNC_STRINGS.labels[state === 'sign-in-needed' ? 'sign-in-needed' : status] ?? status)));
+    }
     if (state === 'sign-in-needed') {
       parts.push(make(doc, 'p', 'settings__text', STRINGS.expired));
       const again = make(doc, 'a', 'button', STRINGS.signInAgain);
@@ -338,12 +345,15 @@ function connectionSection(doc, { getStorage, session, sync, toaster, navigate }
       actions.append(again);
     }
     const leave = button(doc, 'button button--secondary', STRINGS.disconnect, () => disconnect(leave));
-    actions.append(leave);
+    const log = make(doc, 'a', 'button button--secondary', STRINGS.syncLog);
+    log.href = '#/settings/sync-log';
+    actions.append(log, leave);
     element.replaceChildren(heading, ...parts, actions);
   }
 
   render();
-  return { element, destroy: session.subscribe(render) };
+  const stops = [session.subscribe(render), sync?.subscribe?.(render)];
+  return { element, destroy: () => stops.forEach((stop) => stop?.()) };
 }
 
 /**

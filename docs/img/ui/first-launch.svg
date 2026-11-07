@@ -34,6 +34,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="360" cy="30" r="22" class="icon"/>
     <circle cx="360" cy="25" r="5" class="icon"/>
     <path d="M 351 42 Q 360 26 369 42" class="icon-line"/>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="16" y="37" font-size="20" class="bold">All tasks</text>
     <circle cx="195" cy="256" r="32" class="icon"/>
     <text x="195" y="328" font-size="20" class="bold" text-anchor="middle">No tasks yet.</text>
@@ -67,6 +68,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="1082" cy="44" r="22" class="icon"/>
     <circle cx="1082" cy="39" r="5" class="icon"/>
     <path d="M 1073 56 Q 1082 40 1091 56" class="icon-line"/>
+    <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>
     <text x="304" y="60" font-size="28" class="bold">All tasks</text>
     <rect x="304" y="100" width="800" height="60" rx="8" class="bar"/>
     <rect x="1040.48" y="108" width="55.52" height="44" rx="6" class="primary"/>
