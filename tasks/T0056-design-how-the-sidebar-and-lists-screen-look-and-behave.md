@@ -1,11 +1,12 @@
 ---
 id: T0056
-owner: ~
-needs: ['T0058']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+session: claude-20261107-506076
+needs: []
+branch: task/T0056-design-how-the-sidebar-and-lists-screen-look-and-behave
+worktree: .plan/work/T0056-design-how-the-sidebar-and-lists-screen-look-and-behave
+status: active
+started_at: "2026-11-07T20:55:47Z"
 ended_at: —
 review: human
 preview: none
@@ -23,12 +24,12 @@ See technical-spec.md for constraints and the questions to decide.
 Completion check: `python scripts/draw-wireframes.py docs/img/ui`, `python -m pytest tests`, and `ruff check scripts tests`.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read Navigation Rules, Lists Overview, the wide layout, the User Menu, and requirements LST-5 and TEC-16.
-- [ ] **[Decide]**    Decide how the sidebar behaves with 100 or more lists, using the questions in technical-spec.md.
-- [ ] **[Decide]**    Decide how the Lists screen finds, orders, and renders 100 or more lists.
-- [ ] **[Doc]**       Write the decisions into ui-design.md, and add the requirements to requirements.md.
-- [ ] **[Doc]**       Redraw the wireframes with draw-wireframes.py, then run pytest and ruff on the scripts.
-- [ ] **[Doc]**       Create the implementation tasks, including a 150-list render check, and update CHANGELOG.md.
+- [x] **[Read]**      Read Navigation Rules, Lists Overview, the wide layout, the User Menu, and requirements LST-5 and TEC-16.
+- [x] **[Decide]**    Decide how the sidebar behaves with 100 or more lists, using the questions in technical-spec.md.
+- [x] **[Decide]**    Decide how the Lists screen finds, orders, and renders 100 or more lists.
+- [x] **[Doc]**       Write the decisions into ui-design.md, and add the requirements to requirements.md.
+- [x] **[Doc]**       Redraw the wireframes with draw-wireframes.py, then run pytest and ruff on the scripts.
+- [x] **[Doc]**       Create the implementation tasks, including a 150-list render check, and update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -40,4 +41,27 @@ Completion check: `python scripts/draw-wireframes.py docs/img/ui`, `python -m py
 
 - [2026-11-07] **[Review]**
   Review raised from agent to human.
+
+- [2026-11-07] **[Read]**
+  Read Navigation Rules, Lists Overview, layout, user menu, LST-5, TEC-16, and the sidebar and lists code.
+  - Found the sidebar New list button was removed earlier; docs and wireframes were stale.
+
+- [2026-11-07] **[Decided]**
+  Sidebar: only lists scroll under a fixed header; find field from 12 lists; flat list without groups; manual order stays the pin; patch rows in place.
+
+- [2026-11-07] **[Decided]**
+  Lists screen: pinned find bar, sort menu, info line, Create list offer, content-visibility rows, Alt+Shift moves, one-pass counts, 200 ms budget at 150 lists.
+
+- [2026-11-07] **[Doc]**
+  Wrote ui-design.md sections, LST-10 to LST-16, TEC-16 at 150 lists, style guide notes, and the lists-many and lists-find wireframes.
+
+- [2026-11-07] **[Doc]**
+  Created T0071 to T0078 in Backlog with technical specs; T0065 release does not wait for them.
+  - T0078 waits for T0028.
+
+- [2026-11-07] **[Verify]**
+  Recorded task outcomes; wireframes, pytest, and ruff pass.
+  - Files touched: 6.
+  - Lines touched: 351.
+  - Reopenings: 0.
 
