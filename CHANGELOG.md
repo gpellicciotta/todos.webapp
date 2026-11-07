@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
+## v0.2.1-pre
+
 ## v0.2.0 [released: 2026-11-07]
 - FrontEnd: Made the add field also search All tasks and every list, with a 150 ms pause, a note under the rows, and no Add on Enter.
 - FrontEnd: Renamed Add to Add anyway on an exact match, and showed a toast with Show when the view options hide a new task.
