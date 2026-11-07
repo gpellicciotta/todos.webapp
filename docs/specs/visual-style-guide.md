@@ -125,7 +125,7 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - `--target-min`: 44 px, the minimum size of every control.
 - `--icon-size` and `--icon-stroke`: every icon is 20 px with one stroke width.
 - `--icon-size-lg` and `--icon-stroke-thin`: the larger, thinner icon of empty states.
-- `--row-height`: 48 px, the task row height.
+- `--row-height`: 48 px, the minimum task row height.
 - Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-editor` size the side panels.
 - Control minimums: `--width-menu` for menus and popovers, `--width-segment-min` for segmented options.
 - `--width-chip-max`: the widest list chip in a task row; longer list names truncate.

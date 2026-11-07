@@ -506,6 +506,139 @@ describe('createTaskList', () => {
     });
   });
 
+  describe('with a long list of rows taller than 48 px', () => {
+    const ROW = 48;
+    const TALL = 96;
+    const many = Array.from({ length: 5000 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    let other;
+    let scrolled;
+    let tallEvery;
+
+    /**
+     * Return the height of a task: every `tallEvery`-th task is 96 px high, the others 48 px.
+     * @param {number} index the task index
+     * @returns {number} the height in pixels
+     */
+    const heightOf = (index) => (tallEvery > 0 && index % tallEvery === 0 ? TALL : ROW);
+
+    /**
+     * Compute where the rendered rows sit, from the list's padding, the gap margins, and the row heights.
+     * @returns {{top: number, bottom: number, index: number}[]} each row's top and bottom edge from the list's top
+     */
+    function placed() {
+      const ul = other.element.querySelector('.task-list');
+      let edge = parseFloat(ul.style.paddingBlockStart);
+      return [...ul.children].map((row) => {
+        edge += parseFloat(row.style.marginBlockStart) || 0;
+        const index = Number(row.getAttribute('aria-posinset')) - 1;
+        const place = { top: edge, bottom: edge + heightOf(index), index };
+        edge = place.bottom;
+        return place;
+      });
+    }
+
+    /**
+     * Add up the padding, the gaps, and the rendered rows: the height the list takes.
+     * @returns {number} the height in pixels
+     */
+    function heightOfList() {
+      const ul = other.element.querySelector('.task-list');
+      const rows = placed();
+      return rows.at(-1).bottom + parseFloat(ul.style.paddingBlockEnd);
+    }
+
+    /**
+     * Scroll the list and fire the scroll event.
+     * @param {number} offset the offset from the list's top
+     */
+    function scrollTo(offset) {
+      scrolled = offset;
+      document.dispatchEvent(new Event('scroll'));
+    }
+
+    /**
+     * Tell whether the rendered rows cover the view, from the list's top edge down by ten rows.
+     * @returns {boolean} true when the first rendered row starts above the view and the last ends below it
+     */
+    function coversView() {
+      const rows = placed();
+      return rows[0].top <= scrolled && rows.at(-1).bottom >= scrolled + 10 * ROW;
+    }
+
+    beforeEach(async () => {
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(10 * ROW);
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function height() {
+        return this.classList.contains('task-row') ? heightOf(Number(this.getAttribute('aria-posinset')) - 1) : 0;
+      });
+      scrolled = 0;
+      tallEvery = 10;
+      other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#' });
+      document.body.append(other.element);
+      for (const element of [other.element, other.element.querySelector('.task-list')]) {
+        element.getBoundingClientRect = () => ({ top: -scrolled, bottom: 1e6 - scrolled, height: 1e6 });
+      }
+      other.render(many, ctx);
+      await vi.waitFor(() => expect(other.element.querySelectorAll('.task-row').length).toBeGreaterThan(20));
+    });
+
+    afterEach(() => {
+      other.destroy();
+      vi.restoreAllMocks();
+    });
+
+    it('adds up the measured heights of the rendered rows and estimates the others at the row height (TEC-16)', () => {
+      const rows = placed();
+      expect(rows.map((row) => row.index)).toEqual(rows.map((_, index) => index));
+      expect(rows[1].top).toBe(TALL);
+      expect(rows[11].top).toBe(2 * TALL + 9 * ROW);
+      expect(heightOfList()).toBe(rows.reduce((sum, row) => sum + row.bottom - row.top, 0) + (5000 - rows.length) * ROW);
+    });
+
+    it('renders the rows that cover the view after a jump into rows it has not measured', () => {
+      scrollTo(2000 * ROW);
+      expect(coversView()).toBe(true);
+      scrollTo(3000 * ROW + 5);
+      expect(coversView()).toBe(true);
+      const rows = placed();
+      expect(rows.length).toBeLessThan(80);
+    });
+
+    it('lays the rows out by the heights it measured when it returns to rows it saw before', () => {
+      scrollTo(2000 * ROW);
+      const before = placed().find((row) => row.index === 2000);
+      scrollTo(0);
+      scrollTo(before.top);
+      expect(coversView()).toBe(true);
+      expect(placed().find((row) => row.index === 2000).top).toBe(before.top);
+    });
+
+    it('keeps the rendered rows next to each other and the total height true to the heights it knows', () => {
+      scrollTo(2000 * ROW);
+      const rows = placed();
+      const first = rows[0].index;
+      const known = rows.reduce((sum, row) => sum + row.bottom - row.top, 0);
+      expect(rows.map((row) => row.index)).toEqual(rows.map((_, index) => first + index));
+      expect(heightOfList()).toBeGreaterThanOrEqual(known + (5000 - rows.length) * ROW);
+    });
+
+    it('measures the rows again after the window resized', () => {
+      const before = heightOfList();
+      tallEvery = 0;
+      window.dispatchEvent(new Event('resize'));
+      const rows = placed();
+      expect(rows.every((row) => row.bottom - row.top === ROW)).toBe(true);
+      expect(heightOfList()).toBe(5000 * ROW);
+      expect(before).toBeGreaterThan(5000 * ROW);
+    });
+
+    it('gives the positions of the rows from the top, for a drag to a row that is not rendered', () => {
+      const midpoints = other.midpoints();
+      expect(midpoints).toHaveLength(5000);
+      expect(midpoints[0]).toBe(TALL / 2);
+      expect(midpoints[1]).toBe(TALL + ROW / 2);
+    });
+  });
+
   it('moves focus to the fallback control when the last row leaves', () => {
     const fallback = document.createElement('input');
     document.body.append(fallback);

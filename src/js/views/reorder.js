@@ -70,13 +70,15 @@ export function slotAt(midpoints, y) {
  * @param {(taskId: string, move: {placement: object, index: number}) => void} options.onMove stores a move
  * @param {() => HTMLElement|null} [options.scroller] the element a drag scrolls, the main column by default
  * @param {() => string[]} [options.ids] the shown task identifiers in order, rendered or not; the rows by default
+ * @param {() => number[]} [options.midpoints] the middles of the shown rows from the list's top, in the order of `ids`,
+ *   for rows of different heights; rows of the height of the dragged row by default
  * @param {string} [options.row] the selector of a row, `.task-row` by default
  * @param {string} [options.handle] the selector of a drag handle inside a row, `.task-row__handle` by default
  * @param {string} [options.idKey] the `data-` key holding a row's identifier, `taskId` by default
  * @returns {{step: (taskId: string, step: -1|1) => void, destroy: () => void}} the controller
  */
 export function attachReorder(list, {
-  enabled, onMove, scroller = () => list.closest('.app__main'), ids = null,
+  enabled, onMove, scroller = () => list.closest('.app__main'), ids = null, midpoints = null,
   row: rowSelector = '.task-row', handle: handleSelector = '.task-row__handle', idKey = 'taskId',
 }) {
   let drag = null;
@@ -169,7 +171,7 @@ export function attachReorder(list, {
       startY: event.clientY - top, y: event.clientY, frame: null,
       midpoints: measured
         ? rowsOf().map((each) => each.getBoundingClientRect().top - top + each.getBoundingClientRect().height / 2)
-        : ids.map((_, index) => (index + 0.5) * height),
+        : midpoints?.() ?? ids.map((_, index) => (index + 0.5) * height),
     };
     handle.setPointerCapture?.(event.pointerId);
     row.dataset.dragging = 'true';

@@ -112,7 +112,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
     hrefOf: (task) => formatRoute('list-task', { listId, taskId: task.id }),
   });
-  const reorder = attachReorder(taskList.element, { enabled: moves.enabled, onMove: move, ids: taskList.ids });
+  const reorder = attachReorder(taskList.element, { enabled: moves.enabled, onMove: move, ids: taskList.ids, midpoints: taskList.midpoints });
   const empty = make(doc, 'p', 'empty-state empty-state__text');
   const addBlock = make(doc, 'div', 'add-block');
   addBlock.append(addBar.element, info.element);

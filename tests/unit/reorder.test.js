@@ -127,6 +127,22 @@ describe('attachReorder', () => {
     reorder.destroy();
   });
 
+  it('drops by the given row middles when the rows differ in height', () => {
+    const list = rows();
+    list.getBoundingClientRect = () => ({ top: 0, bottom: 400, height: 400 });
+    const onMove = vi.fn();
+    const reorder = attachReorder(list, { enabled: () => true, onMove, ids: () => IDS, midpoints: () => [48, 144, 192, 240] });
+    pointer(list.querySelector('.task-row__handle'), 'pointerdown', 10);
+    pointer(list, 'pointermove', 100);
+    pointer(list, 'pointerup', 100);
+    expect(onMove).not.toHaveBeenCalled();
+    pointer(list.querySelector('.task-row__handle'), 'pointerdown', 10);
+    pointer(list, 'pointermove', 200);
+    pointer(list, 'pointerup', 200);
+    expect(onMove).toHaveBeenCalledWith('a', { placement: { before: 'd' }, index: 2 });
+    reorder.destroy();
+  });
+
   it('scrolls while the pointer rests near an edge, and places the row by the scrolled positions', () => {
     const list = rows();
     const scroller = document.createElement('div');

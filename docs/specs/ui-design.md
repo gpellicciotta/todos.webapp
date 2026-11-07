@@ -328,7 +328,10 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - **[Decided]** Lists of up to 200 tasks render every row; longer lists render only the rows in view (`TEC-16`).
   Rows past the view, 20 on each side, follow once the first rows painted, and scrolling renders rows as they enter.
   Padding and row margins stand in for the rows left out, so the scroll height and scrollbar stay true.
-  Rows keep the 48 px row height in compact and wide layouts, which the row offsets rely on.
+  Rows are 48 px high at least; a taller row, such as one with a larger text size, is measured once it shows.
+  The offsets of the rows add up the measured heights and the base height of the rows not yet seen.
+  A resize of the window or of the list measures the rows again; rows that come in with another height than expected
+  move the scroller by the difference, so the rows in view stay where they are.
 - The focused row, the row of an open menu, the dragged row, and the selected row stay rendered when scrolled away.
   Their neighbors stay too, so Tab reaches the next row; menus stay open, and drags keep their row.
 - Rows carry `aria-setsize` and `aria-posinset`, so screen readers count every task, rendered or not.
@@ -339,8 +342,13 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
   [performance.spec.js](../../tests/e2e/performance.spec.js) asserts 200 ms, and the Pages workflow runs it.
 - Measured but not covered by `TEC-16`, under 4x throttling with 5000 tasks:
   - A cold app start takes about 900 ms until the first rows, mostly module loading and store reads.
+    Painting the first rows before the sidebar and the maintenance read the store halves the unthrottled start
+    (about 370 ms down to 190 ms on a busy machine, measured side by side) and shortens the throttled one.
   - A one-task update takes about 195 ms, since the view reads the whole store again.
   - Scrolling 400 px per frame runs at a median frame of 50 ms, down from 100 ms with every row rendered.
+    The cost is the eight rows that enter each frame; it is not smoother yet.
+- **[Decided]** The first rows paint before the sidebar counts, the recycle bin purge, and the overdue run read the store.
+  The shell is ready, `data-shell="ready"`, once they finished. The index page preloads every module (`<link rel="modulepreload">`).
 - Known limitations of lists over 200 tasks:
   - Find in page sees only the rendered rows; the search field finds every task.
   - Returning to the view restores the scroll position before the rows render, so it opens at the top.

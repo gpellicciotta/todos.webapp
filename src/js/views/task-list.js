@@ -41,6 +41,8 @@ const BUFFER_ROWS = 20;
 const ROW_PX = 48;
 /** The header height until a header was measured: 32 px, two thirds of the row height. */
 const HEADER_PX = 32;
+/** The most renders for one change: each measures the rows that showed for the first time, so few are needed. */
+const MAX_PASSES = 4;
 let instances = 0;
 
 /** Status names, in lifecycle order. */
@@ -445,6 +447,11 @@ export function createTaskList({
   let offsets = [0];
   let rowPx = ROW_PX;
   let headerPx = HEADER_PX;
+  // The heights of the rows and headers that differ from the base height, by item key, as measured once they showed.
+  let known = new Map();
+  let calibrated = false;
+  let watcher = null;
+  let watchedWidth = -1;
   let fillFrame = null;
   let fillTimer = null;
   let ctx = {};
@@ -606,11 +613,21 @@ export function createTaskList({
     return { row, key: view.key, dueKey: view.dueKey, taskId: item.task.id };
   }
 
+  /**
+   * Return the height of an item: the height measured once it showed, else the base height of a row or header.
+   * @param {number} index the item index
+   * @returns {number} the height in pixels
+   */
+  function sizeOf(index) {
+    const item = items[index];
+    return known.get(item.key) ?? (item.group ? headerPx : rowPx);
+  }
+
   /** Add up the heights of the items: item `i` starts `offsets[i]` pixels below the top of the list. */
   function layout() {
     offsets = new Float64Array(items.length + 1);
     for (let index = 0; index < items.length; index += 1) {
-      offsets[index + 1] = offsets[index] + (items[index].group ? headerPx : rowPx);
+      offsets[index + 1] = offsets[index] + sizeOf(index);
     }
   }
 
@@ -634,27 +651,13 @@ export function createTaskList({
     return low;
   }
 
-  /** Measure a row and a header once they show, and lay out the items again when a height differs. */
-  function measure() {
-    const row = list.querySelector('.task-row');
-    const header = list.querySelector('.group-header');
-    const rowHeight = row?.offsetHeight > 0 ? row.offsetHeight : rowPx;
-    const headerHeight = header?.offsetHeight > 0 ? header.offsetHeight : headerPx;
-    if (rowHeight !== rowPx || headerHeight !== headerPx) {
-      rowPx = rowHeight;
-      headerPx = headerHeight;
-      layout();
-    }
-  }
-
   /**
-   * Compute the rows in view plus a buffer, measuring the row height once a row shows.
+   * Compute the rows in view plus a buffer.
    * The view is the part of the scroller inside the window; item `i` starts `offsets[i]` pixels below the list's top.
    * @param {number} buffer the rows to add past each edge of the view
    * @returns {{first: number, last: number}} the indexes of the first and last row to render
    */
   function windowOf(buffer) {
-    measure();
     const box = list.getBoundingClientRect();
     const view = (scroller?.() ?? element.closest('.app__main'))?.getBoundingClientRect();
     const top = Math.max(view?.top ?? 0, 0) - box.top;
@@ -737,15 +740,108 @@ export function createTaskList({
   }
 
   /**
-   * Render the rows that show, reusing the rendered rows by task id; padding on the list holds the rest of the height.
-   * @param {boolean} fresh whether the tasks changed, so reused rows check their content
-   * @param {Array<string|undefined>} [extra] more row keys to keep rendered
-   * @param {number} [buffer] the rows to add past each edge of the view
+   * Set the place of the rendered rows, and the padding that stands in for the rows left out before and after them.
+   * @param {number[]} indexes the indexes of the rendered items, in increasing order
+   * @param {Map<string, object>} entries the row entries by item key, in the same order
    */
-  function draw(fresh, extra = [], buffer = BUFFER_ROWS) {
+  function place(indexes, entries) {
+    let previous = indexes[0] - 1;
+    let at = 0;
+    for (const entry of entries.values()) {
+      const index = indexes[at];
+      locate(entry, index, offsets[index] - offsets[previous + 1]);
+      previous = index;
+      at += 1;
+    }
+    list.style.paddingBlockStart = `${offsets[indexes[0] ?? 0]}px`;
+    list.style.paddingBlockEnd = `${offsets[items.length] - offsets[(indexes.at(-1) ?? -1) + 1]}px`;
+  }
+
+  /**
+   * Find the first rendered row that shows in the scroller, and where it is: the row that keeps its place on screen
+   * when rows come in with other heights than expected.
+   * @returns {{row: HTMLElement, top: number}|null} the row and its top edge, or null without any rendered row
+   */
+  function anchorRow() {
+    const view = (scroller?.() ?? element.closest('.app__main'))?.getBoundingClientRect();
+    for (const entry of rows.values()) {
+      const box = entry.row.getBoundingClientRect();
+      if (!view || box.bottom > view.top) {
+        return { row: entry.row, top: box.top };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Measure the rows that showed for the first time, and keep the heights that differ from the base height.
+   * The first rows set the base height, so a uniform change of the row height, such as a larger text size,
+   * needs no entry per row. Rows that came in taller or shorter than expected move everything after them,
+   * so the offsets follow, and the scroller moves with them to keep the rows in view where they were.
+   * @param {Map<string, object>} entries the row entries by item key
+   * @param {number[]} indexes the indexes of the rendered items
+   * @param {{row: HTMLElement, top: number}|null} anchor the row in view before the rows rendered, and its top edge
+   * @returns {boolean} whether a height changed, so the rows to render may differ
+   */
+  function settle(entries, indexes, anchor) {
+    const fresh = [...entries.values()].filter((entry) => !entry.measured);
+    if (fresh.length === 0) {
+      return false;
+    }
+    const heights = fresh.map((entry) => entry.row.offsetHeight);
+    for (const entry of fresh) {
+      entry.measured = true;
+    }
+    let changed = false;
+    if (!calibrated && heights.some((height) => height > 0)) {
+      const rowHeights = fresh.filter((entry) => entry.taskId).map((entry) => entry.row.offsetHeight).filter((height) => height > 0);
+      const headerHeights = fresh.filter((entry) => !entry.taskId).map((entry) => entry.row.offsetHeight).filter((height) => height > 0);
+      calibrated = true;
+      const baseRow = rowHeights.length > 0 ? Math.min(...rowHeights) : rowPx;
+      const baseHeader = headerHeights.length > 0 ? Math.min(...headerHeights) : headerPx;
+      changed = baseRow !== rowPx || baseHeader !== headerPx;
+      rowPx = baseRow;
+      headerPx = baseHeader;
+    }
+    fresh.forEach((entry, at) => {
+      const height = heights[at];
+      const base = entry.taskId ? rowPx : headerPx;
+      const key = items[entry.index].key;
+      if (height > 0 && height !== (known.get(key) ?? base)) {
+        if (height === base) {
+          known.delete(key);
+        }
+        else {
+          known.set(key, height);
+        }
+        changed = true;
+      }
+    });
+    if (changed) {
+      layout();
+      place(indexes, entries);
+    }
+    if (anchor?.row.isConnected) {
+      const shift = anchor.row.getBoundingClientRect().top - anchor.top;
+      const view = scroller?.() ?? element.closest('.app__main');
+      if (shift !== 0 && view) {
+        view.scrollTop += shift;
+      }
+    }
+    return changed;
+  }
+
+  /**
+   * Render the rows that show once, reusing the rendered rows by task id.
+   * @param {boolean} fresh whether the tasks changed, so reused rows check their content
+   * @param {Array<string|undefined>} extra more row keys to keep rendered
+   * @param {number} buffer the rows to add past each edge of the view
+   * @returns {boolean} whether the heights of the rows changed, so the rows to render may differ
+   */
+  function drawOnce(fresh, extra, buffer) {
+    const anchor = items.length > FULL_ROWS && rows.size > 0 ? anchorRow() : null;
     const indexes = wanted(extra, buffer);
     const entries = new Map();
-    let previous = indexes[0] - 1;
     for (const index of indexes) {
       const item = items[index];
       let entry = rows.get(item.key);
@@ -765,8 +861,6 @@ export function createTaskList({
           entry.dueKey = view.dueKey;
         }
       }
-      locate(entry, index, offsets[index] - offsets[previous + 1]);
-      previous = index;
       entries.set(item.key, entry);
     }
     for (const [key, entry] of rows) {
@@ -776,8 +870,21 @@ export function createTaskList({
     }
     rows = entries;
     placeRows(list, [...entries.values()].map((entry) => entry.row));
-    list.style.paddingBlockStart = `${offsets[indexes[0] ?? 0]}px`;
-    list.style.paddingBlockEnd = `${offsets[items.length] - offsets[(indexes.at(-1) ?? -1) + 1]}px`;
+    place(indexes, entries);
+    return items.length > FULL_ROWS && settle(entries, indexes, anchor);
+  }
+
+  /**
+   * Render the rows that show, reusing the rendered rows by task id; padding on the list holds the rest of the height.
+   * Rows that showed with another height than expected move the rows to render, which a second pass renders.
+   * @param {boolean} fresh whether the tasks changed, so reused rows check their content
+   * @param {Array<string|undefined>} [extra] more row keys to keep rendered
+   * @param {number} [buffer] the rows to add past each edge of the view
+   */
+  function draw(fresh, extra = [], buffer = BUFFER_ROWS) {
+    for (let pass = 0; pass < MAX_PASSES && drawOnce(fresh && pass === 0, extra, buffer); pass += 1) {
+      // The heights are known now, so the next pass finds the rows that fill the view.
+    }
   }
 
   /** Stop a waiting buffer fill. */
@@ -804,13 +911,46 @@ export function createTaskList({
   }
 
   /**
+   * Measure the rows again, since a new width of the list can change their heights.
+   * @param {boolean} [redraw] whether to render the rows again
+   */
+  function remeasure(redraw = true) {
+    known = new Map();
+    calibrated = false;
+    for (const entry of rows.values()) {
+      entry.measured = false;
+    }
+    if (redraw && items.length > FULL_ROWS && list.isConnected) {
+      draw(false);
+    }
+  }
+
+  /**
    * Render the rows that came into view after a scroll of the list's scroller or a resize of the window.
    * @param {Event} event the scroll or resize event
    */
   function onScroll(event) {
     const target = event.target;
-    if (items.length > FULL_ROWS && list.isConnected && (target === doc.defaultView || target.contains?.(list))) {
+    if (event.type === 'resize') {
+      remeasure();
+    }
+    else if (items.length > FULL_ROWS && list.isConnected && (target === doc.defaultView || target.contains?.(list))) {
       draw(false);
+    }
+  }
+
+  /**
+   * Measure the rows again when the list gets another width, such as when the editor panel opens beside it.
+   * @param {Array<{contentRect: {width: number}}>} changes the observed size changes
+   */
+  function onWidth([change]) {
+    const width = change.contentRect.width;
+    if (width !== watchedWidth) {
+      const first = watchedWidth < 0;
+      watchedWidth = width;
+      if (!first) {
+        remeasure();
+      }
     }
   }
 
@@ -922,6 +1062,10 @@ export function createTaskList({
   });
   doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
   doc.defaultView?.addEventListener('resize', onScroll);
+  if (typeof doc.defaultView?.ResizeObserver === 'function') {
+    watcher = new doc.defaultView.ResizeObserver(onWidth);
+    watcher.observe(list);
+  }
 
   return {
     element,
@@ -964,6 +1108,11 @@ export function createTaskList({
           byId.set(item.task.id, item.task);
         }
       });
+      for (const key of known.keys()) {
+        if (!places.has(key)) {
+          known.delete(key);
+        }
+      }
       layout();
       // The focused row stays rendered, or the row now at its place when it left, so focus can stay or pass on.
       draw(true, memo ? [memo.key, items[Math.min(memo.index, items.length - 1)]?.key] : [], lean ? 0 : BUFFER_ROWS);
@@ -1016,12 +1165,30 @@ export function createTaskList({
      */
     ids: () => items.filter((item) => item.task).map((item) => item.task.id),
 
+    /**
+     * Give the vertical middle of each shown task's row, from the top of the list, for drops across the whole list.
+     * Rendered rows are measured; the rows of a long list that are not rendered use their known or base heights.
+     * @returns {number[]} the middles in pixels, in the order of `ids`
+     */
+    midpoints() {
+      const top = list.getBoundingClientRect().top;
+      const middles = [];
+      items.forEach((item, index) => {
+        if (item.task) {
+          const rendered = items.length <= FULL_ROWS ? rows.get(item.key)?.row.getBoundingClientRect() : null;
+          middles.push(rendered?.height > 0 ? rendered.top - top + rendered.height / 2 : (offsets[index] + offsets[index + 1]) / 2);
+        }
+      });
+      return middles;
+    },
+
     /** Close any open menu, and stop adding rows and following scrolls. */
     destroy() {
       cancelFill();
       detach();
       doc.removeEventListener('scroll', onScroll, { capture: true });
       doc.defaultView?.removeEventListener('resize', onScroll);
+      watcher?.disconnect();
     },
   };
 }

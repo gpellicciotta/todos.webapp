@@ -10,6 +10,10 @@ All notable changes to this project are documented here.
 - FrontEnd: Added Group by Due date or Status to the view options of every list, hiding the drag handles while grouped.
 - FrontEnd: Made All tasks sort by creation time, newest first, by default, so a new task comes first.
 - FrontEnd: Opened the task editor on a new task after Add, in All tasks and in every list, with the focus in the editor.
+- FrontEnd: Painted the first rows before the sidebar and the start-up maintenance read the store, cutting the cold start under 4x CPU throttling.
+- FrontEnd: Preloaded every app module from the start page, so a first visit fetches the import tree in one round.
+- FrontEnd: Let rows of long lists be taller than 48 px: the list measures rows as they show, keeps the scroll height true, and holds the rows in view in place.
+- DevEx: Added end-to-end tests for rows taller than 48 px and for the first rows painting before the start-up maintenance.
 - DevEx: Made the Import backup focus end-to-end test wait for the main column to wake, so it passes on slow CI runners.
 
 ## v0.2.0 [released: 2026-11-07]

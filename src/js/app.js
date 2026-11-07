@@ -78,9 +78,6 @@ async function start() {
       broadcast: true,
       onVersionChange: () => shell.showNotice(MESSAGES.updated, { actionLabel: MESSAGES.reload, onAction: () => location.reload() }),
     });
-    await store.purgeExpired();
-    const stopOverdue = startOverdueTimer({ store });
-    await stopOverdue.idle();
   }
   catch (error) {
     console.error('Store failed:', error);
@@ -174,10 +171,21 @@ async function start() {
     }
   });
 
-  // The sidebar and the first view read the store side by side, so the view opens sooner (`TEC-16`).
-  const nav = refreshNav();
+  // The first view paints before the sidebar and the start-up maintenance read the store, so the view opens sooner (`TEC-16`).
   router.start();
-  await Promise.all([nav, router.idle()]);
+  await router.idle();
+  await screen?.controller?.idle?.();
+  await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+  try {
+    await refreshNav();
+    await store.purgeExpired();
+    await startOverdueTimer({ store }).idle();
+  }
+  catch (error) {
+    console.error('Store failed:', error);
+    shell.showBanner(MESSAGES.storeFailed);
+    return;
+  }
   document.documentElement.dataset.shell = 'ready';
 }
 
