@@ -1,11 +1,12 @@
 ---
 id: T0064
-owner: ~
-needs: ['T0025']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+session: claude-20261107-572aaa
+needs: []
+branch: task/T0064-queue-and-sync-the-changes-of-a-backup
+worktree: .plan/work/T0064-queue-and-sync-the-changes-of-a-backup
+status: active
+started_at: "2026-11-07T20:23:03Z"
 ended_at: —
 review: agent
 preview: none
@@ -21,13 +22,13 @@ Decide how overwrite mode behaves while connected before implementing.
 See technical-spec.md for decisions, files, size, and tests.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the todos sync spec's Import While Connected, import-dialog.js, backup.js, and the queue API of T0025.
-- [ ] **[Decide]**    Decide what overwrite mode does while connected, since an import never removes server data.
-- [ ] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
-- [ ] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
-- [ ] **[Implement]** Queue the import's changes per the decided rules, and show the sync progress.
-- [ ] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
-- [ ] **[Doc]**       Update ui-design.md's import flow and update CHANGELOG.md.
+- [x] **[Read]**      Read the todos sync spec's Import While Connected, import-dialog.js, backup.js, and the queue API of T0025.
+- [x] **[Decide]**    Decide what overwrite mode does while connected, since an import never removes server data.
+- [x] **[Implement]** Write the failing unit and integration tests listed in technical-spec.md.
+- [x] **[Verify]**    Run the new tests, confirm they fail as expected, and record the output in validation-proof.md.
+- [x] **[Implement]** Queue the import's changes per the decided rules, and show the sync progress.
+- [x] **[Verify]**    Run the completion check and record its verbatim output in validation-proof.md.
+- [x] **[Doc]**       Update ui-design.md's import flow and update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -36,3 +37,34 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Decided]**
   Placed in the Backlog: a gap found while reading the sync spec; promote it to v0.3.0 on the user's word.
+
+- [2026-11-07] **[Decided]**
+  Connected, Overwrite is disabled and refused by importBackup: an import never removes server data, and a local-only overwrite would diverge.
+  - Entries built from final records, so renamed lists send final names.
+  - applyChanges gets a queue option to enqueue atomically.
+
+- [2026-11-07] **[Implement]**
+  Queued connected merge imports in the import transaction; Overwrite is off while connected; the dialog shows Syncing then Synced.
+  - Undeclared files: bulk.js, db.js, app.js, settings.js, three docs.
+  - Size note: 13 files, 590 lines; one concern, not splittable.
+
+- [2026-11-07] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 13.
+  - Lines touched: 590.
+  - Reopenings: 0.
+
+- [2026-11-07] **[Verify]**
+  Red run: 9 unit tests and the connected end-to-end test failed before the implementation.
+  - See validation-proof.md.
+
+- [2026-11-07] **[Verify]**
+  Green run: 1033 unit tests, lint, and 172 end-to-end tests passed.
+  - See validation-proof.md.
+
+- [2026-11-07] **[Visual]**
+  Screenshots: [before](T0064-queue-and-sync-the-changes-of-a-backup/connected-before-import.png), [after](T0064-queue-and-sync-the-changes-of-a-backup/connected-after-syncing.png), [synced](T0064-queue-and-sync-the-changes-of-a-backup/connected-after-synced.png).
+
+- [2026-11-07] **[Doc]**
+  Updated ui-design.md, backup-format.md, and CHANGELOG.md for the connected import.
+
