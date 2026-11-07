@@ -20,7 +20,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0056 [needs: T0058] Design how the sidebar and Lists screen look and behave with many lists, 100 and more.
 - [ ] T0053 [needs: T0058, T0054] Remember view options per list instead of one shared setting, with a reset to the shared defaults.
 - [ ] T0065 [needs: T0027, T0028, T0043, T0053, T0056, T0062, T0063] Release (and publish) all changes as v0.3.0, via the devops.py script
+- [ ] T0064 [needs: T0025] Queue and sync the changes of a backup import while connected, comparing rows by last update.
 
 ## Backlog
-- [ ] T0064 [needs: T0025] Queue and sync the changes of a backup import while connected, comparing rows by last update.
 - [ ] T0004 Show service broadcasts and the notification inbox while connected.
