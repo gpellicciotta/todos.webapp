@@ -77,6 +77,36 @@ describe('renderShell', () => {
   });
 });
 
+describe('renderShell inbox', () => {
+  /**
+   * Render a shell for a connected account with a stand-in inbox.
+   * @param {object[]} banners the banner notifications
+   * @returns {{root: HTMLElement, shell: object}} the root and the shell
+   */
+  function connected(banners) {
+    localStorage.setItem('todos.session', JSON.stringify({ token: 't', expiry: '2099-01-01T00:00:00Z', email: 'a@example.com', server: 'https://todos.example.com' }));
+    const root = document.body.appendChild(document.createElement('div'));
+    const shell = renderShell(root, { navigate: vi.fn() });
+    const inbox = { list: () => banners, banners: () => banners, unreadCount: () => banners.length, status: () => 'ready', subscribe: () => () => {} };
+    shell.showInbox({ inbox, toaster: { show: vi.fn() } });
+    return { root, shell };
+  }
+
+  it('puts the bell before the user button, and keeps the top bar at a title and one menu slot', () => {
+    const { root } = connected([]);
+    const slot = root.querySelector('.app__top-bar').lastElementChild;
+    expect(slot.querySelector('.inbox-button').compareDocumentPosition(slot.querySelector('.user-button')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['H1', 'DIV']);
+  });
+
+  it('shows the broadcast banners beside a lasting notice, and the notice does not replace them', () => {
+    const { root, shell } = connected([{ id: 1, title: 'Maintenance', message: 'Sunday 02:00.', read: false, banner: true, actionUrl: null }]);
+    shell.showNotice('A newer version is ready.');
+    expect(root.querySelectorAll('.app__banners .banner')).toHaveLength(2);
+    expect(root.querySelector('.app__broadcasts').textContent).toContain('Maintenance');
+  });
+});
+
 describe('renderShell list order', () => {
   const LISTS = [{ id: 'g', name: 'Garden' }, { id: 'h', name: 'Home' }, { id: 'w', name: 'Work' }];
   const COUNTS = { all: 0, byList: new Map() };

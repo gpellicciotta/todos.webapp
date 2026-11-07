@@ -181,6 +181,15 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - SYN-11: When the service refuses the app's version or speaks a newer sync protocol, syncing stops and the app asks for an update.
 - SYN-12: Several open tabs sync as one: a single tab uploads changes and polls the service.
 
+### Notifications
+- NTF-1: While connected, a bell button opens an inbox of the account's notifications and service broadcasts, most recent first.
+- NTF-2: The bell shows the unread count, and appears only while connected.
+- NTF-3: A notification marked as a banner shows above every view until the user dismisses it; dismissing marks it read.
+- NTF-4: Users mark a notification read, discard it, or discard all; each change waits for the service.
+- NTF-5: The inbox loads at start, on sign-in, when the tab becomes visible, and every 2 minutes while visible.
+- NTF-6: Offline, the inbox keeps its last notifications and says so; local mode and an expired session send no inbox request.
+- NTF-7: A notification's action link opens only when it is an http or https address.
+
 ### Sharing
 - SHR-1: A list owner shares a list with an email address and a role: `viewer`, `task-editor`, or `editor`.
 - SHR-2: A list owner sees, changes, and revokes the sharing rules of the list.
@@ -228,7 +237,6 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ## Planned After v1.0.0
 Version 1.0.0 leaves these out; later versions add them:
 - Several accounts or servers on one device, each with its own data set and sync state.
-- Service broadcasts and the notification inbox.
 
 Designs for v1.0.0 must not block these additions, for example by assuming one global data set.
 

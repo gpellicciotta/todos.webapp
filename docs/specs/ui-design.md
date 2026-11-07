@@ -68,11 +68,12 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
 [app-shell.css](../../src/css/app-shell.css) places its parts; one DOM holds both layouts.
-- The top bar holds the route title and the user button; it has no More menu.
+- The top bar holds the route title and the user button, preceded by the inbox bell while connected; it has no More menu.
 - The wide layout shows the title above the main column, with the user button at its right end.
 - The shell holds no sync indicator for now; the sync indicator task decides where it goes.
 - The main column scrolls; the bars and the sidebar stay in place.
 - [user-menu.js](../../src/js/ui/user-menu.js) builds the user menu; see User Menu below.
+- [inbox.js](../../src/js/ui/inbox.js) builds the inbox bell and the broadcast banners; see Inbox below.
 - Each route renders an empty `[data-view]` element, such as `data-view="tasks"`, in the main column.
   List views also carry `data-list-id`; the screen tasks fill these views.
   [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [lists.js](../../src/js/views/lists.js) `lists`,
@@ -108,6 +109,19 @@ Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
 - Expired session: a Sign in button appears before the user button and opens `#/connect`; the user button and panel stay.
 - Local mode has no Sign in text on the page (`LOC-1`); Connect stays reachable from Settings and the empty states.
 - The panel reads the session each time it opens and when the session changes.
+
+### Inbox
+- Connected only: a bell icon button sits before the user button, at least 44 px wide, named "Inbox" (`NTF-1`, `NTF-2`).
+  Local mode and an expired session show no bell and send no request (`LOC-1`, `LOC-3`).
+- Unread notifications show their count in a badge on the bell, capped at "99+"; the accessible name reads "Inbox, 3 unread".
+- Click or Enter opens a panel under the bell, its end edge lined up with the bell's; Escape, an outside click, or Tab away closes it.
+- The panel header holds the title and Clear all. Rows follow, most recent first; each shows its title, message, and time in the device timezone.
+- Each row offers Open for a safe action link (`NTF-7`), Mark read while unread, and Discard; unread rows carry a signal edge.
+- An empty inbox reads "No notifications", with Clear all disabled; an unreachable service adds "Offline. Showing the last inbox." (`NTF-6`).
+- A change the service does not accept leaves the panel as it was and shows a toast, "The service could not be reached. Try again."
+- A notification marked as a banner and still unread also shows a banner above every view, below any lasting notice (`NTF-3`).
+  It holds the title, the message, Open for a safe link, and Dismiss, which marks the notification read.
+  A new banner is announced through the polite live region once.
 
 ### Routes
 - `#/tasks`: all tasks.

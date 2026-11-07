@@ -13,6 +13,11 @@ All notable changes to this project are documented here.
 - FrontEnd: Painted the first rows before the sidebar and the start-up maintenance read the store, cutting the cold start under 4x CPU throttling.
 - FrontEnd: Preloaded every app module from the start page, so a first visit fetches the import tree in one round.
 - FrontEnd: Let rows of long lists be taller than 48 px: the list measures rows as they show, keeps the scroll height true, and holds the rows in view in place.
+- FrontEnd: Added an Inbox bell before the user button, while connected, with an unread badge and a panel to mark read, discard, or clear all.
+- FrontEnd: Showed each unread service broadcast marked as a banner above every view, with Open and Dismiss.
+- FrontEnd: Loaded the inbox at start, on sign-in, when the tab turns visible, and every 2 minutes; local mode sends no request.
+- Docs: Added the NTF-1 to NTF-7 requirements and the Inbox design, and moved the inbox out of Planned After v1.0.0.
+- DevEx: Added unit and end-to-end tests for the inbox client, the bell, the panel, and the banners.
 - DevEx: Added end-to-end tests for rows taller than 48 px and for the first rows painting before the start-up maintenance.
 - DevEx: Made the Import backup focus end-to-end test wait for the main column to wake, so it passes on slow CI runners.
 

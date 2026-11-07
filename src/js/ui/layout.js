@@ -6,6 +6,7 @@
  * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
  * the account, Recycle bin, and Settings (see user-menu.js).
  * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
+ * The bell of the inbox joins the user menu while connected, and broadcast banners show above every view (see inbox.js).
  * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it (`LST-8`).
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
@@ -13,6 +14,7 @@
 import { applyListOrder, movedMessage, moveList, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
 import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
+import { attachInbox } from './inbox.js';
 import { createLiveRegion } from './live-region.js';
 import { attachUserMenu } from './user-menu.js';
 
@@ -130,7 +132,7 @@ export function openCounts(tasks, memberships) {
  * @param {object} options shell options
  * @param {object} [options.session] the session the user menu follows, a new one by default
  * @returns {{main: HTMLElement, editor: HTMLElement, toastRegion: HTMLElement, update: Function,
- *   setLists: Function, showBanner: Function, showNotice: Function}} the shell controller
+ *   setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function}} the shell controller
  */
 export function renderShell(root, { session = createSession() } = {}) {
   const doc = root.ownerDocument;
@@ -145,7 +147,7 @@ export function renderShell(root, { session = createSession() } = {}) {
       <ul class="nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <ul class="nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
     </nav>
-    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"></div></main>
+    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"><div data-notice></div><div class="app__broadcasts"></div></div></main>
     <div class="app__editor" data-editor-slot hidden></div>
     <nav class="bottom-nav app__bottom-nav" aria-label="${STRINGS.main}">
       <ul class="bottom-nav__list">${DESTINATIONS.map((destination) => `<li><a class="bottom-nav__item" href="${destination.hash}" `
@@ -156,9 +158,12 @@ export function renderShell(root, { session = createSession() } = {}) {
   const title = root.querySelector('#app-title');
   const main = root.querySelector('.app__main');
   const banners = root.querySelector('.app__banners');
+  const notice = root.querySelector('[data-notice]');
+  const broadcasts = root.querySelector('.app__broadcasts');
   const editor = root.querySelector('[data-editor-slot]');
   const listNav = root.querySelector('[data-nav-lists]');
-  attachUserMenu(root.querySelector('[data-user-menu]'), { session });
+  const menuSlot = root.querySelector('[data-user-menu]');
+  attachUserMenu(menuSlot, { session });
   let viewKey = null;
   let route = null;
   let view = null;
@@ -317,9 +322,21 @@ export function renderShell(root, { session = createSession() } = {}) {
         button.addEventListener('click', action.onAction);
         banner.append(button);
       }
-      banners.replaceChildren(banner);
+      notice.replaceChildren(banner);
       announcer ??= createLiveRegion({ document: doc, parent: root });
       announcer.announce(message);
+    },
+
+    /**
+     * Show the inbox: the bell before the user button and the broadcast banners above every view.
+     * @param {object} options the dependencies
+     * @param {object} options.inbox the inbox
+     * @param {{show: (message: string) => void}} options.toaster the toaster
+     * @returns {{destroy: () => void}} the inbox view
+     */
+    showInbox({ inbox, toaster }) {
+      announcer ??= createLiveRegion({ document: doc, parent: root });
+      return attachInbox(menuSlot, { inbox, session, banners: broadcasts, toaster, announce: (message) => announcer.announce(message) });
     },
   };
 }

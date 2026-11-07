@@ -7,11 +7,13 @@
  * Moving to another view moves focus to the main column, which the route title labels.
  * Shortcuts, outside text fields: `n` focuses the view's `[data-shortcut~="add"]` element and `/` its
  * `[data-shortcut~="search"]` element, each a no-op while the view has none; Escape closes an open editor.
+ * While connected, the inbox shows a bell and the broadcast banners of the service (see sync/inbox.js).
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
  */
 
 import { startOverdueTimer } from './core/overdue.js';
 import { openStore } from './store/db.js';
+import { createInbox } from './sync/inbox.js';
 import { createSession } from './sync/session.js';
 import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
@@ -72,6 +74,10 @@ async function start() {
   session.capture(window);
   shell = renderShell(document.getElementById('app'), { session });
   const toaster = createToaster({ region: shell.toastRegion, undoShortcut: true });
+  // The inbox loads only while connected; local mode sends no request (`LOC-3`).
+  const inbox = createInbox({ session });
+  shell.showInbox({ inbox, toaster });
+  inbox.start();
   let store;
   try {
     store = await openStore({

@@ -189,6 +189,7 @@ for (const [name, viewport] of [['narrow', { width: 320, height: 700 }], ['deskt
 
 test('a connected account shows its initials and name, and Connected in the panel', async ({ page }) => {
   const problems = watch(page);
+  await page.route('http://127.0.0.1:1/api/notifications', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   await page.addInitScript(() => localStorage.setItem('todos.session', JSON.stringify({
     token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server: 'http://127.0.0.1:1',
   })));

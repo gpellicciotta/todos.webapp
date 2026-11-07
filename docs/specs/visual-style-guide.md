@@ -11,7 +11,7 @@ The tokens, the font, the controls, the app components, and their gallery sectio
 - [fonts.css](../../src/css/fonts.css): the self-hosted Inter font face.
 - [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
 - [app-components.css](../../src/css/app-components.css): the task list, task row, status button, and status menu.
-- [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, floating button, editor panel, note thread, and empty state.
+- [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
 - [icons.svg](../../src/img/icons.svg): the icon sprite, one `<symbol>` per icon on a 24 px grid.
 - [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token, control, app component, and pattern.
 

@@ -24,6 +24,10 @@ async function mockServices(page, { callbackStatus = 302 } = {}) {
   await page.route(`${SERVER}/api/**`, (route) => {
     const request = route.request();
     const { pathname } = new URL(request.url());
+    // The inbox loads once connected; it is not part of the sign-in calls these tests list.
+    if (pathname === '/api/notifications') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    }
     calls.push({ url: request.url(), method: request.method(), authorization: request.headers().authorization ?? '' });
     const json = (body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
     if (pathname === '/api/auth-token/callback') {
