@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1278.2, input: 356, output: 109616, cache_read: 26702444, cache_write: 397128}
+review_status: pending
+review_round: 1
 ---
 # T0063: Add an opt-in contract test that runs the sync client against a real todos server
 
@@ -59,4 +63,7 @@ See technical-spec.md for decisions, files, size, and tests.
   - Files touched: 10.
   - Lines touched: 540.
   - Reopenings: 0.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
