@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.2.1-pre
+- FrontEnd: Added shared helpers to find lists, sort them by name, open tasks, or activity, and count them in one pass.
+- FrontEnd: Moved the open and total list counts of the sidebar and the Lists screen into one shared helper, without a visible change.
 - Docs: Designed the sidebar and the Lists screen for 100 and more lists: a find field, sort choices, move to top or bottom, and a fixed sidebar header.
 - Docs: Added requirements LST-10 to LST-16, set TEC-16 to 150 lists and 5000 tasks, and added the lists-many and lists-find wireframes.
 - Docs: Removed the New list button from the sidebar wireframes and the design text, as the app dropped it earlier.

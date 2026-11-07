@@ -8,9 +8,12 @@
  * and Delete list (`VO-4`).
  * Rows follow the order of this device (`LST-8`): drag a row by its handle, or press Alt+Up or Alt+Down on a row.
  * The order stays on the device and new lists come last.
+ * The counts come from core/list-counts.js, shared with the sidebar; core/list-find.js and core/list-sort.js hold the
+ * find and sort rules of the Many Lists design (`LST-10`, `LST-12`), which the screen adopts later.
  * Sharing state and the owner of others' lists join the rows once sharing lands (`SHR-3`).
  */
 
+import { countLists, countOf } from '../core/list-counts.js';
 import { applyListOrder, movedMessage, moveListTo, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
 import { createLiveRegion } from '../ui/live-region.js';
 import { attachMenu } from '../ui/menu.js';
@@ -18,8 +21,6 @@ import { formatRoute } from '../ui/router.js';
 import { createListMenu, runListAction } from './list-actions.js';
 import { attachReorder } from './reorder.js';
 import { make, spriteIcon } from './task-list.js';
-
-const OPEN = ['todo', 'in-progress'];
 
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
@@ -31,27 +32,6 @@ const STRINGS = Object.freeze({
   empty: 'No lists yet. A list groups tasks, such as Home or Work.',
   notSaved: 'The list order could not be saved on this device.',
 });
-
-/**
- * Count the open and the total tasks of each list.
- * @param {object[]} tasks the tasks outside the recycle bin
- * @param {object[]} memberships the membership records
- * @returns {Map<string, {open: number, total: number}>} the counts by list identifier
- */
-export function countTasks(tasks, memberships) {
-  const byId = new Map(tasks.map((task) => [task.id, task]));
-  const counts = new Map();
-  for (const membership of memberships) {
-    const task = byId.get(membership['task-id']);
-    if (task) {
-      const count = counts.get(membership['list-id']) ?? { open: 0, total: 0 };
-      count.total += 1;
-      count.open += OPEN.includes(task.status) ? 1 : 0;
-      counts.set(membership['list-id'], count);
-    }
-  }
-  return counts;
-}
 
 /**
  * Tell the sharing state of a list: who shares it with the user, or with how many people the user shares it (`LST-5`, `SHR-3`).
@@ -137,12 +117,12 @@ export function mountLists(view, { store, toaster = { show() {} }, navigate = ()
       if (destroyed) {
         return;
       }
-      const counts = countTasks(tasks, memberships);
+      const counts = countLists(tasks, memberships);
       shown = applyListOrder(lists, readListOrder());
       for (const behavior of menus) {
         behavior.destroy();
       }
-      const built = shown.map((list) => ({ list, ...row(doc, list, counts.get(list.id) ?? { open: 0, total: 0 }) }));
+      const built = shown.map((list) => ({ list, ...row(doc, list, countOf(counts, list.id)) }));
       menus = built.map(({ list, more, menu }) => attachMenu(more, menu, {
         onSelect: (picked) => runListAction(picked, { listId: list.id, list, parent: root, opener: more, store, toaster, navigate }),
       }));

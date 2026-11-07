@@ -512,6 +512,8 @@ The sidebar and this screen share the rules below.
 - **[Decided]** Counts: one shared pass builds the open and total count of every list from the tasks and memberships.
   It marks open task identifiers once, then walks the memberships once.
   The cost is tasks plus memberships, never lists times tasks.
+  [list-counts.js](../../src/js/core/list-counts.js) holds it, with the newest task activity per list for the sort.
+  [list-find.js](../../src/js/core/list-find.js) and [list-sort.js](../../src/js/core/list-sort.js) hold finding and sorting.
   A burst of store changes recounts once per animation frame, and both surfaces patch rows by list identifier.
 - **[Decided]** Keyboard: the sidebar rows are one tab stop; Up, Down, Home, End, PageUp, and PageDown move between them.
   On this screen the rows are one tab stop too: Up and Down move between rows, Right moves to the row's More button, Left back.

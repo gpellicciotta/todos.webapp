@@ -10,9 +10,11 @@
  * The bell of the inbox joins the user menu while connected, and broadcast banners show above every view (see inbox.js).
  * A session banner above the views offers Sign in while the session expired.
  * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it (`LST-8`).
+ * Each list shows its open task count from core/list-counts.js, the pass shared with the Lists screen.
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
+import { countOf } from '../core/list-counts.js';
 import { applyListOrder, movedMessage, moveList, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
 import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
@@ -22,7 +24,6 @@ import { createLiveRegion } from './live-region.js';
 import { attachUserMenu } from './user-menu.js';
 
 const ICONS = 'img/icons.svg';
-const OPEN = ['todo', 'in-progress'];
 
 /** Shell strings, for the strings module of TEC-13 to absorb. */
 export const STRINGS = Object.freeze({
@@ -113,23 +114,6 @@ function setCount(element, count) {
 }
 
 /**
- * Count open tasks, in all and per list.
- * @param {object[]} tasks the tasks outside the recycle bin
- * @param {object[]} memberships the membership records
- * @returns {{all: number, byList: Map<string, number>}} the open counts
- */
-export function openCounts(tasks, memberships) {
-  const open = new Set(tasks.filter((task) => OPEN.includes(task.status)).map((task) => task.id));
-  const byList = new Map();
-  for (const membership of memberships) {
-    if (open.has(membership['task-id'])) {
-      byList.set(membership['list-id'], (byList.get(membership['list-id']) ?? 0) + 1);
-    }
-  }
-  return { all: open.size, byList };
-}
-
-/**
  * Render the app shell into a root element.
  * @param {HTMLElement} root the element that holds the shell
  * @param {object} options shell options
@@ -205,7 +189,7 @@ export function renderShell(root, { session = createSession() } = {}) {
       label.textContent = list.name;
       const count = doc.createElement('span');
       count.className = 'nav-item__count';
-      setCount(count, shownCounts.byList.get(list.id) ?? 0);
+      setCount(count, countOf(shownCounts, list.id).open);
       link.append(label, count);
       item.append(link);
       return item;
@@ -282,7 +266,7 @@ export function renderShell(root, { session = createSession() } = {}) {
     /**
      * Show the lists in the sidebar in the order of this device, each with its open task count.
      * @param {object[]} lists the lists outside the recycle bin, in any order
-     * @param {{all: number, byList: Map<string, number>}} counts the open counts
+     * @param {{all: number, byList: Map<string, object>}} counts the result of `countLists`
      */
     setLists(lists, counts) {
       shownLists = lists;

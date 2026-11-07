@@ -13,13 +13,14 @@
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
  */
 
+import { countLists } from './core/list-counts.js';
 import { startOverdueTimer } from './core/overdue.js';
 import { openStore } from './store/db.js';
 import { createApi } from './sync/api.js';
 import { createEngine } from './sync/engine.js';
 import { createInbox } from './sync/inbox.js';
 import { createSession } from './sync/session.js';
-import { applyTheme, openCounts, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
+import { applyTheme, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { watchWorkerUpdates } from './ui/sw-update.js';
 import { createToaster } from './ui/toast.js';
@@ -143,7 +144,7 @@ async function start() {
    */
   async function refreshNav() {
     const [lists, tasks, memberships] = await Promise.all([store.listLists(), store.listTasks(), store.listMemberships()]);
-    shell.setLists(lists, openCounts(tasks, memberships));
+    shell.setLists(lists, countLists(tasks, memberships));
     const current = router.current();
     const list = current?.params.listId && lists.find((candidate) => candidate.id === current.params.listId);
     if (list) {
