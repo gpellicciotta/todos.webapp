@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 2091.0, input: 292, output: 100230, cache_read: 17369454, cache_write: 302428}
+review_status: pending
+review_round: 1
 ---
 # T0055: Make the add field also search, with Add anyway, a hidden-task toast, and Add-only creation
 
@@ -63,4 +67,7 @@ Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.j
 
 - [2026-11-07] **[Doc]**
   Updated ui-design.md and CHANGELOG.md.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
