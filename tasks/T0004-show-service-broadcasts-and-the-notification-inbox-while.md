@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1730.6, input: 236, output: 102032, cache_read: 13659658, cache_write: 306310}
+review_status: pending
+review_round: 1
 ---
 # T0004: Show service broadcasts and the notification inbox while connected
 
@@ -49,4 +53,7 @@ Show service broadcasts and the notification inbox while connected.
   - Files touched: 20.
   - Lines touched: 1500.
   - Reopenings: 0.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
