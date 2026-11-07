@@ -9,14 +9,20 @@
 - src/js/core/preferences.js
 - src/js/views/lists.js
 - src/js/ui/layout.js
-- src/css/app-components.css
+- src/css/views.css
+- src/js/views/reorder.js
+- src/service-worker.js
+- docs/specs/ui-design.md
+- tests/unit/lists.test.js
+- tests/unit/layout.test.js
+- tests/unit/reorder.test.js
 - tests/unit/list-order.test.js
 - tests/e2e/lists.spec.js
 - docs/requirements.md
 - CHANGELOG.md
 
 Size estimate: 9 files, 300 lines
-Size note: Sidebar and Lists screen must share one order, so both ship together; the helper stays small.
+Size note: Sidebar and Lists screen share one order, so both ship together with the drag reuse, worker precache, and docs; measured 14 files, 735 lines.
 
 ### Tests
 - Unit: `applyListOrder` places stored IDs first, drops unknown IDs, appends new lists, and survives an empty preference.
