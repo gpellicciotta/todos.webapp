@@ -1,11 +1,12 @@
 ---
 id: T0054
-owner: ~
+owner: "@claude"
+session: claude-20261107-9324dd
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0054-build-the-view-options-panel-the-more-menu
+worktree: .plan/work/T0054-build-the-view-options-panel-the-more-menu
+status: active
+started_at: "2026-11-07T11:54:10Z"
 ended_at: —
 review: agent
 preview: none
@@ -21,11 +22,11 @@ Requirements: VO-1, VO-2, VO-4 to VO-8, VO-13, LV-6 to LV-8, TV-12.
 Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.js tests/e2e/list.spec.js`
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read view-controls.js, editor-panel.js, list.js, all-tasks.js, router.js, and the View Options design.
-- [ ] **[Implement]** Author unit tests for info line text, defaults, and Reset, and end-to-end tests for the panel.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the expected reason.
-- [ ] **[Implement]** Add the view-options routes and the panel with filters, sort, and Reset in the editor panel.
-- [ ] **[Implement]** Add Edit view options to the More menus and the info line; remove the old controls.
+- [x] **[Read]**      Read view-controls.js, editor-panel.js, list.js, all-tasks.js, router.js, and the View Options design.
+- [x] **[Implement]** Author unit tests for info line text, defaults, and Reset, and end-to-end tests for the panel.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the expected reason.
+- [x] **[Implement]** Add the view-options routes and the panel with filters, sort, and Reset in the editor panel.
+- [x] **[Implement]** Add Edit view options to the More menus and the info line; remove the old controls.
 - [ ] **[Verify]**    Run unit, end-to-end, and 5000-task performance tests and confirm they pass.
 - [ ] **[Visual]**    Capture before and after screenshots on compact and wide layouts.
 - [ ] **[Doc]**       Update the visual style gallery, documentation, and CHANGELOG.md.
