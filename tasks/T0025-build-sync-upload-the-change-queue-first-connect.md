@@ -12,11 +12,10 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1569.4, input: 224, output: 167656, cache_read: 15734646, cache_write: 385852}
+  worker: {turns: 4, duration_s: 1730.4, input: 272, output: 179418, cache_read: 21026968, cache_write: 419998}
   review: {turns: 2, duration_s: 536.4, input: 317740, output: 34426, cache_read: 2467314}
-review_status: rejected
-review_round: 1
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
 work_duration: 1070.8
 ---
 # T0025: Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes
@@ -75,4 +74,7 @@ See technical-spec.md for decisions, files, size, and tests.
 - [2026-11-07] **[Implement]**
   Review round 1: sorted adoption memberships by list and position, added a test, fixed table alignment, trimmed sentences.
   - Bumped service worker VERSION for adopt.js.
+
+- [2026-11-07] **[Review]**
+  Round 2 requested (mode: agent).
 
