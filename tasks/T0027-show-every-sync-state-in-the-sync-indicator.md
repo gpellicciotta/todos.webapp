@@ -14,11 +14,13 @@ protocol: standard
 size_status: approved
 size_estimate: 37 files, 1694 lines
 usage:
-  worker: {turns: 2, duration_s: 1980.4, input: 296, output: 130504, cache_read: 21865814, cache_write: 393480}
+  worker: {turns: 4, duration_s: 2001.8, input: 308, output: 131640, cache_read: 23167626, cache_write: 406604}
 work_duration: 1002.7
 size_approved: 37 files, 1694 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T21:27:59Z"
+review_status: pending
+review_round: 1
 ---
 # T0027: Show every sync state in the sync indicator and build the Sync log screen
 
@@ -74,4 +76,7 @@ See technical-spec.md for decisions, files, size, and tests.
 
 - [2026-11-07] **[Size]**
   Size approved by @gpellicciotta for 37 files, 1694 lines.
+
+- [2026-11-07] **[Review]**
+  Round 1 requested (mode: agent).
 
