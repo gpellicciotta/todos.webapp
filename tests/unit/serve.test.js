@@ -1,6 +1,7 @@
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contentType, resolveRequest, startServer } from '../../scripts/serve.mjs';
 
@@ -98,5 +99,28 @@ describe('startServer', () => {
   it('answers 405 for methods other than GET and HEAD', async () => {
     const response = await fetch(`${base}/index.html`, { method: 'POST' });
     expect(response.status).toBe(405);
+  });
+});
+
+describe('the pid file and the stop file', () => {
+  it('writes the pid, exits cleanly when the stop file appears, and removes both files', async () => {
+    const { spawn } = await import('node:child_process');
+    const { existsSync } = await import('node:fs');
+    const { readFile } = await import('node:fs/promises');
+    const script = fileURLToPath(new URL('../../scripts/serve.mjs', import.meta.url));
+    const pidFile = join(root, 'server.pid');
+    const stopFile = join(root, 'server.stop');
+    const child = spawn(process.execPath, [script, '--root', root, '--port', '0', '--pid-file', pidFile, '--stop-file', stopFile], {
+      stdio: 'ignore',
+    });
+    const exited = new Promise((resolve) => child.once('exit', resolve));
+    for (let tries = 0; tries < 100 && !existsSync(pidFile); tries += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(Number((await readFile(pidFile, 'utf8')).trim())).toBe(child.pid);
+    await writeFile(stopFile, 'stop');
+    expect(await exited).toBe(0);
+    expect(existsSync(pidFile)).toBe(false);
+    expect(existsSync(stopFile)).toBe(false);
   });
 });

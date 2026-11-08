@@ -39,10 +39,18 @@ python scripts/devops.py lint      # ESLint, Ruff check, and Ruff format check
 python scripts/devops.py test      # Vitest, then pytest
 python scripts/devops.py e2e       # Playwright end-to-end tests
 python scripts/devops.py check     # everything the Pages test job runs, plus Ruff and pytest
+python scripts/devops.py server start [--background]  # serve src/ at http://127.0.0.1:8080/
+python scripts/devops.py server stop                  # stop the server that start began
 python scripts/devops.py release   # see Release Procedure
 ```
 
 - [serve.mjs](../scripts/serve.mjs) uses Node.js built-ins only and disables caching; pass `--port` or `--root` to change them.
+- `server start` runs serve.mjs in the foreground until Ctrl+C; with `--background` it detaches and prints the PID.
+  It writes `work/server.pid` and, in the background, `work/server.log`.
+  It refuses to start when something already answers on port 8080.
+- `server stop` creates `work/server.stop`, which serve.mjs polls, and waits up to 10 s for the port to close.
+  It never kills a process; when the server stays up, it names the PID so you can end it with `kill-processes.py`.
+- This `server` is the dev server of the web app; the todos backend has its own devops.py.
 - Playwright starts and stops its own server on port 8754; set `E2E_PORT` to use another port.
 - `test:e2e` leaves out [performance.spec.js](../tests/e2e/performance.spec.js), since parallel tests skew its timings.
 - `test:perf` runs it through [playwright.perf.config.js](../playwright.perf.config.js), in one worker.

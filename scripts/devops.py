@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runs the typical operations of this project: lint, test, e2e, check, and release.
+"""Runs the typical operations of this project: lint, test, e2e, check, server, and release.
 
 The app has no build step, so a release finalizes the version files and the changelog, tags, and publishes.
 Install the tools once, as docs/devops.md describes: Node.js with npm, Python with pytest, and Ruff.
@@ -9,27 +9,32 @@ Usage:
   python scripts/devops.py test
   python scripts/devops.py e2e
   python scripts/devops.py check
+  python scripts/devops.py server start [--background]
+  python scripts/devops.py server stop
   python scripts/devops.py release [{{version}}] [--dry-run] [--skip-checks] [--yes]
                                    [--no-github-release] [--backend-dir {{path}}]
   python scripts/devops.py --version
 
 `release` follows docs/devops.md, Release Procedure. It never pushes the todos server repository.
+`server` serves src/ with scripts/serve.mjs; it is the dev server of the web app, not the todos backend.
 """
 
 from __future__ import annotations
 
 import re
 import shutil
+import socket
 import subprocess
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
 from _cli_common import build_action_parser, get_project_version, print_help, print_version
 
 PROG = "devops"
-DESCRIPTION = "Runs the lint, test, e2e, check, and release operations of this project."
-ACTIONS = ["lint", "test", "e2e", "check", "release", "version", "help"]
+DESCRIPTION = "Runs the lint, test, e2e, check, server, and release operations of this project."
+ACTIONS = ["lint", "test", "e2e", "check", "server", "release", "version", "help"]
 EXIT_CODES = [
     (0, "Success"),
     (1, "An operation, check, precondition, or release step failed, or the release was not confirmed"),
@@ -40,6 +45,12 @@ ACTION_DOCS = {
     "test": "Run the Vitest unit tests, then the pytest tests.",
     "e2e": "Run the Playwright end-to-end tests.",
     "check": "Run what the Pages test job runs, plus the Python checks: service worker, unit, lint, e2e, Ruff, pytest.",
+    "server": (
+        "Serve the app from src/ at http://127.0.0.1:8080/ with scripts/serve.mjs.\n"
+        "      server start               run in the foreground until Ctrl+C or server stop\n"
+        "      server start --background  run detached; print the PID; log in work/server.log\n"
+        "      server stop                stop it through its stop file, never by killing it"
+    ),
     "release": (
         "Cut a release from main. With {{version}}, rename the single -pre changelog heading to it.\n"
         "      --dry-run              run the checks, check the preconditions, print the plan, and change nothing\n"
@@ -52,6 +63,12 @@ ACTION_DOCS = {
     "help": "Print this help; with --verbose, describe every action.",
 }
 REPO_ROOT = Path(__file__).resolve().parent.parent
+SERVE_SCRIPT = "scripts/serve.mjs"
+SERVER_HOST = "127.0.0.1"
+SERVER_PORT = 8080
+SERVER_STATE_DIR = "work"
+SERVER_WAIT_SECONDS = 10.0
+SERVER_OPERANDS = ["start", "stop"]
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
 HEADING = re.compile(r"^## v(\d+\.\d+\.\d+)(-pre)?(?=[ \t\r\n]|$)([^\r\n]*)", re.MULTILINE)
 VERSION_JS = "src/js/version.js"
@@ -159,6 +176,102 @@ def check_commands() -> list[list[str]]:
 def run_all(commands: list[list[str]], root: Path) -> bool:
     """Run the commands in order and stop at the first failure."""
     return all(run(command, root) for command in commands)
+
+
+# --- Dev server --------------------------------------------------------------------------------
+
+
+def server_files(state_dir: Path) -> tuple[Path, Path, Path]:
+    """Return the pid file, the stop file, and the log file of the dev server."""
+    return state_dir / "server.pid", state_dir / "server.stop", state_dir / "server.log"
+
+
+def server_listening(port: int = SERVER_PORT) -> bool:
+    """Return whether something accepts connections on the dev server port."""
+    try:
+        with socket.create_connection((SERVER_HOST, port), timeout=0.5):
+            return True
+    except OSError:
+        return False
+
+
+def server_pid(pid_file: Path) -> str:
+    """Return the process ID in the pid file, or an empty string when there is none."""
+    try:
+        return read_text(pid_file).strip()
+    except OSError:
+        return ""
+
+
+def wait_until(condition, seconds: float) -> bool:
+    """Poll a condition every 100 ms until it holds or the time is up."""
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if condition():
+            return True
+        time.sleep(0.1)
+    return condition()
+
+
+def server_start(
+    root: Path,
+    background: bool,
+    port: int = SERVER_PORT,
+    state_dir: Path | None = None,
+) -> int:
+    """Start the dev server in the foreground, or detached with --background. Return the exit code."""
+    pid_file, stop_file, log_file = server_files(state_dir or root / SERVER_STATE_DIR)
+    url = f"http://{SERVER_HOST}:{port}/"
+    if server_listening(port):
+        print(f"The server is already running at {url} (PID {server_pid(pid_file) or 'unknown'}).")
+        return 1
+    pid_file.parent.mkdir(parents=True, exist_ok=True)
+    stop_file.unlink(missing_ok=True)
+    command = [tool("node"), str(root / SERVE_SCRIPT), "--port", str(port), "--host", SERVER_HOST]
+    command += ["--pid-file", str(pid_file), "--stop-file", str(stop_file)]
+    if not background:
+        print(f"[*] {' '.join(command)}", flush=True)
+        try:
+            return subprocess.run(command, cwd=root, check=False).returncode
+        except KeyboardInterrupt:
+            return 0
+    print(f"[*] {' '.join(command)} > {log_file}", flush=True)
+    options = {"start_new_session": True}
+    if sys.platform == "win32":
+        options = {"creationflags": subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP}
+    with open(log_file, "wb") as log:
+        process = subprocess.Popen(
+            command, cwd=root, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, **options
+        )
+    if not wait_until(lambda: server_listening(port) and bool(server_pid(pid_file)), SERVER_WAIT_SECONDS):
+        raise ReleaseError(f"the server did not start within {SERVER_WAIT_SECONDS:.0f} s; see {log_file}")
+    print(f"Server started in the background at {url} (PID {server_pid(pid_file) or process.pid}); log: {log_file}")
+    print("Stop it with: python scripts/devops.py server stop")
+    return 0
+
+
+def server_stop(root: Path, port: int = SERVER_PORT, state_dir: Path | None = None) -> int:
+    """Ask the dev server to exit through its stop file and wait for it. Return the exit code.
+
+    The command never kills the process. When the server does not exit, it names the PID for manual handling.
+    """
+    pid_file, stop_file, _ = server_files(state_dir or root / SERVER_STATE_DIR)
+    pid = server_pid(pid_file) or "unknown"
+    if not server_listening(port):
+        pid_file.unlink(missing_ok=True)
+        stop_file.unlink(missing_ok=True)
+        print("The server is not running.")
+        return 0
+    stop_file.parent.mkdir(parents=True, exist_ok=True)
+    write_text(stop_file, "stop\n")
+    if not wait_until(lambda: not server_listening(port), SERVER_WAIT_SECONDS):
+        stop_file.unlink(missing_ok=True)
+        raise ReleaseError(
+            f"the server (PID {pid}) did not stop within {SERVER_WAIT_SECONDS:.0f} s; "
+            "end it with kill-processes.py from the dev guidelines"
+        )
+    print(f"Server stopped (PID {pid}).")
+    return 0
 
 
 # --- Versions and the changelog ----------------------------------------------------------------
@@ -571,7 +684,9 @@ def main(argv: list[str] | None = None) -> int:
     """Parse the command line and run the action. Return the exit code."""
     parser = build_action_parser(PROG, DESCRIPTION, ACTIONS, "help")
     parser.allow_abbrev = False
-    parser.add_argument("release_version", nargs="?", help="release: the version to release, such as 0.2.0")
+    parser.add_argument(
+        "operand", nargs="?", help="release: the version to release, such as 0.2.0; server: start or stop"
+    )
     parser.add_argument("--verbose", action="store_true", help="help: describe every action")
     parser.add_argument(
         "--dry-run", action="store_true", help="release: run the checks, print the plan, change nothing"
@@ -579,16 +694,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-checks", action="store_true", help="release: skip the check run and the unit tests")
     parser.add_argument("--yes", action="store_true", help="release: do not ask for confirmation")
     parser.add_argument("--no-github-release", action="store_true", help="release: do not create a GitHub release")
+    parser.add_argument("--background", action="store_true", help="server start: run detached and print the PID")
     parser.add_argument("--backend-dir", help="release: commit the todosWebappVersion pin in this todos checkout")
     args = parser.parse_args(argv)
     version = get_project_version()
+    args.release_version = args.operand if args.action == "release" else None
 
+    if args.operand and args.action not in ("release", "server"):
+        parser.error("an operand needs 'release' (a version) or 'server' (start or stop)")
+    if args.action == "server" and args.operand not in SERVER_OPERANDS:
+        parser.error("'server' needs start or stop")
+    if args.background and not (args.action == "server" and args.operand == "start"):
+        parser.error("--background needs 'server start'")
     release_only = args.release_version or args.dry_run or args.skip_checks or args.yes
     release_only = release_only or args.no_github_release or args.backend_dir
     if release_only and args.action != "release":
-        parser.error(
-            "a version and the options --dry-run, --skip-checks, --yes, --no-github-release, --backend-dir need 'release'"
-        )
+        parser.error("the options --dry-run, --skip-checks, --yes, --no-github-release, --backend-dir need 'release'")
     if args.release_version and not SEMVER.fullmatch(args.release_version):
         parser.error(f"'{args.release_version}' is not a version like 1.2.3, without a v prefix or suffix")
     if args.version or args.action == "version":
@@ -603,6 +724,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.action == "release":
             return release(REPO_ROOT, args)
+        if args.action == "server":
+            if args.operand == "start":
+                return server_start(REPO_ROOT, args.background)
+            return server_stop(REPO_ROOT)
         commands = {"lint": lint_commands, "test": test_commands, "e2e": e2e_commands, "check": check_commands}
         return 0 if run_all(commands[args.action](), REPO_ROOT) else 1
     except (ReleaseError, OSError) as error:

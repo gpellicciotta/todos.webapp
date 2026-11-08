@@ -6,12 +6,13 @@
  * It uses Node.js built-ins only, so it runs right after cloning without `npm install`.
  *
  * Usage: node scripts/serve.mjs [--port <port>] [--host <host>] [--root <folder>]
+ *                            [--pid-file <file>] [--stop-file <file>]
  */
 
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { extname, join, resolve, sep } from 'node:path';
+import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
@@ -36,10 +37,12 @@ const USAGE = `Usage: node scripts/serve.mjs [options]
 Serve the web app's static files on localhost, with caching disabled.
 
 Options:
-  --port <port>    port to listen on (default: 8080; 0 picks a free port)
-  --host <host>    host to bind (default: 127.0.0.1)
-  --root <folder>  folder to serve (default: src)
-  -h, --help       show this help message and exit`;
+  --port <port>       port to listen on (default: 8080; 0 picks a free port)
+  --host <host>       host to bind (default: 127.0.0.1)
+  --root <folder>     folder to serve (default: src)
+  --pid-file <file>   write the process ID here while serving, and remove it on exit
+  --stop-file <file>  exit cleanly once this file exists, and remove it (used by devops.py server stop)
+  -h, --help          show this help message and exit`;
 
 /**
  * Return the Content-Type header value for a file name.
@@ -119,6 +122,28 @@ export function startServer({ root = DEFAULT_ROOT, port = 8080, host = '127.0.0.
 }
 
 /**
+ * Poll for a stop file and resolve once it exists, after deleting it.
+ * @param {string} file the stop file path
+ * @param {number} [intervalMs] polling interval in milliseconds
+ * @returns {Promise<void>} settles when the file appeared
+ */
+export function waitForStopFile(file, intervalMs = 200) {
+  return new Promise((resolveWait) => {
+    const timer = setInterval(async () => {
+      try {
+        await stat(file);
+      }
+      catch {
+        return;
+      }
+      clearInterval(timer);
+      await rm(file, { force: true });
+      resolveWait();
+    }, intervalMs);
+  });
+}
+
+/**
  * Run the server from the command line.
  * @param {string[]} argv command-line arguments after the script name
  * @returns {Promise<number>} the exit code, or a never-settling wait while serving
@@ -132,6 +157,8 @@ async function main(argv) {
         port: { type: 'string', default: '8080' },
         host: { type: 'string', default: '127.0.0.1' },
         root: { type: 'string' },
+        'pid-file': { type: 'string' },
+        'stop-file': { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
     }));
@@ -153,7 +180,25 @@ async function main(argv) {
   const server = await startServer({ root, port, host: values.host });
   const { address, port: actual } = server.address();
   console.log(`Serving ${root} at http://${address}:${actual}/`);
-  return new Promise(() => {});
+  const pidFile = values['pid-file'] ? resolve(values['pid-file']) : null;
+  if (pidFile) {
+    await mkdir(dirname(pidFile), { recursive: true });
+    await writeFile(pidFile, `${process.pid}
+`);
+  }
+  const stopFile = values['stop-file'] ? resolve(values['stop-file']) : null;
+  const stopped = stopFile ? waitForStopFile(stopFile) : new Promise(() => {});
+  const interrupted = new Promise((resolveSignal) => {
+    process.once('SIGINT', resolveSignal);
+    process.once('SIGTERM', resolveSignal);
+  });
+  await Promise.race([stopped, interrupted]);
+  if (pidFile) {
+    await rm(pidFile, { force: true });
+  }
+  server.closeAllConnections();
+  await new Promise((resolveClose) => server.close(resolveClose));
+  return 0;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -5,8 +5,12 @@ import importlib.util
 import json
 import re
 import shutil
+import socket
 import subprocess
 import sys
+import threading
+import time
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -715,3 +719,93 @@ def test_an_interrupt_while_editing_restores_the_files_and_names_the_state(proje
         devops.release(project, options(release_version="0.2.0"))
     assert "restored" in str(caught.value)
     assert snapshot(project) == before
+
+
+# --- server start and server stop --------------------------------------------------------------
+
+
+def free_port():
+    """Return a TCP port that is free right now."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
+
+
+@pytest.fixture
+def server_state(tmp_path):
+    """Return a state folder and a free port for the dev server, and stop the server afterwards."""
+    state = tmp_path / "server-state"
+    port = free_port()
+    yield state, port
+    devops.server_stop(ROOT, port=port, state_dir=state)
+
+
+def fetch_status(port):
+    """Return the HTTP status of the start page of the dev server."""
+    with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5) as response:
+        return response.status
+
+
+@needs_node
+def test_server_start_in_the_background_serves_and_stop_ends_it(server_state):
+    state, port = server_state
+    assert devops.server_start(ROOT, background=True, port=port, state_dir=state) == 0
+    assert fetch_status(port) == 200
+    pid = int((state / "server.pid").read_text(encoding="utf-8"))
+    assert pid > 0
+    assert devops.server_stop(ROOT, port=port, state_dir=state) == 0
+    assert not devops.server_listening(port)
+    assert not (state / "server.pid").exists()
+    assert not (state / "server.stop").exists()
+
+
+@needs_node
+def test_server_start_refuses_a_second_server_on_the_same_port(server_state, capsys):
+    state, port = server_state
+    assert devops.server_start(ROOT, background=True, port=port, state_dir=state) == 0
+    capsys.readouterr()
+    assert devops.server_start(ROOT, background=True, port=port, state_dir=state) == 1
+    assert "already running" in capsys.readouterr().out
+
+
+@needs_node
+def test_server_start_in_the_foreground_runs_until_stop(server_state):
+    state, port = server_state
+    result = []
+    worker = threading.Thread(
+        target=lambda: result.append(devops.server_start(ROOT, background=False, port=port, state_dir=state))
+    )
+    worker.start()
+    for _ in range(100):
+        if devops.server_listening(port):
+            break
+        time.sleep(0.1)
+    assert fetch_status(port) == 200
+    assert devops.server_stop(ROOT, port=port, state_dir=state) == 0
+    worker.join(timeout=10)
+    assert result == [0]
+
+
+def test_server_stop_when_nothing_runs_succeeds_and_clears_a_stale_pid_file(server_state, capsys):
+    state, port = server_state
+    state.mkdir(parents=True)
+    (state / "server.pid").write_text("999999", encoding="utf-8")
+    assert devops.server_stop(ROOT, port=port, state_dir=state) == 0
+    assert "not running" in capsys.readouterr().out
+    assert not (state / "server.pid").exists()
+
+
+def test_cli_server_needs_start_or_stop():
+    assert run_cli("server").returncode == 2
+    assert run_cli("server", "restart").returncode == 2
+
+
+def test_cli_background_belongs_to_server_start():
+    assert run_cli("lint", "--background").returncode == 2
+    assert run_cli("server", "stop", "--background").returncode == 2
+
+
+def test_cli_help_lists_the_server_action():
+    result = run_cli("help", "--verbose")
+    assert "server" in result.stdout
+    assert "--background" in result.stdout
