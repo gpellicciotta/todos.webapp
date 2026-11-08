@@ -9,8 +9,8 @@ Usage:
   python scripts/devops.py test
   python scripts/devops.py e2e
   python scripts/devops.py check
-  python scripts/devops.py server start [--background]
-  python scripts/devops.py server stop
+  python scripts/devops.py server start [--background] [--port {{port}}]
+  python scripts/devops.py server stop [--port {{port}}]
   python scripts/devops.py release [{{version}}] [--dry-run] [--skip-checks] [--yes]
                                    [--no-github-release] [--backend-dir {{path}}]
   python scripts/devops.py --version
@@ -47,6 +47,7 @@ ACTION_DOCS = {
     "check": "Run what the Pages test job runs, plus the Python checks: service worker, unit, lint, e2e, Ruff, pytest.",
     "server": (
         "Serve the app from src/ at http://127.0.0.1:8080/ with scripts/serve.mjs.\n"
+        "      --port {{port}}              port for start and stop, 1 to 65535; default 8080\n"
         "      server start               run in the foreground until Ctrl+C or server stop\n"
         "      server start --background  run detached; print the PID; log in work/server.log\n"
         "      server stop                stop it through its stop file, never by killing it"
@@ -694,6 +695,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-checks", action="store_true", help="release: skip the check run and the unit tests")
     parser.add_argument("--yes", action="store_true", help="release: do not ask for confirmation")
     parser.add_argument("--no-github-release", action="store_true", help="release: do not create a GitHub release")
+    parser.add_argument("--port", type=int, help="server: the port to serve on or stop, default 8080")
     parser.add_argument("--background", action="store_true", help="server start: run detached and print the PID")
     parser.add_argument("--backend-dir", help="release: commit the todosWebappVersion pin in this todos checkout")
     args = parser.parse_args(argv)
@@ -704,6 +706,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("an operand needs 'release' (a version) or 'server' (start or stop)")
     if args.action == "server" and args.operand not in SERVER_OPERANDS:
         parser.error("'server' needs start or stop")
+    if args.port is not None and args.action != "server":
+        parser.error("--port needs 'server'")
+    if args.port is not None and not 1 <= args.port <= 65535:
+        parser.error("--port must be between 1 and 65535")
     if args.background and not (args.action == "server" and args.operand == "start"):
         parser.error("--background needs 'server start'")
     release_only = args.release_version or args.dry_run or args.skip_checks or args.yes
@@ -726,8 +732,8 @@ def main(argv: list[str] | None = None) -> int:
             return release(REPO_ROOT, args)
         if args.action == "server":
             if args.operand == "start":
-                return server_start(REPO_ROOT, args.background)
-            return server_stop(REPO_ROOT)
+                return server_start(REPO_ROOT, args.background, args.port or SERVER_PORT)
+            return server_stop(REPO_ROOT, args.port or SERVER_PORT)
         commands = {"lint": lint_commands, "test": test_commands, "e2e": e2e_commands, "check": check_commands}
         return 0 if run_all(commands[args.action](), REPO_ROOT) else 1
     except (ReleaseError, OSError) as error:

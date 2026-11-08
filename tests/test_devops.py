@@ -809,3 +809,24 @@ def test_cli_help_lists_the_server_action():
     result = run_cli("help", "--verbose")
     assert "server" in result.stdout
     assert "--background" in result.stdout
+
+
+def test_cli_port_reaches_server_start_and_server_stop(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        devops, "server_start", lambda root, background, port: calls.append(("start", background, port)) or 0
+    )
+    monkeypatch.setattr(devops, "server_stop", lambda root, port: calls.append(("stop", port)) or 0)
+    assert devops.main(["server", "start", "--background", "--port", "9123"]) == 0
+    assert devops.main(["server", "stop", "--port", "9123"]) == 0
+    assert devops.main(["server", "start"]) == 0
+    assert calls == [("start", True, 9123), ("stop", 9123), ("start", False, devops.SERVER_PORT)]
+
+
+@pytest.mark.parametrize("port", ["0", "65536", "abc", "-1"])
+def test_cli_rejects_an_invalid_port(port):
+    assert run_cli("server", "start", "--port", port).returncode == 2
+
+
+def test_cli_port_belongs_to_the_server_action():
+    assert run_cli("lint", "--port", "9123").returncode == 2

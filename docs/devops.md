@@ -39,15 +39,16 @@ python scripts/devops.py lint      # ESLint, Ruff check, and Ruff format check
 python scripts/devops.py test      # Vitest, then pytest
 python scripts/devops.py e2e       # Playwright end-to-end tests
 python scripts/devops.py check     # everything the Pages test job runs, plus Ruff and pytest
-python scripts/devops.py server start [--background]  # serve src/ at http://127.0.0.1:8080/
-python scripts/devops.py server stop                  # stop the server that start began
+python scripts/devops.py server start [--background] [--port 8080]  # serve src/
+python scripts/devops.py server stop [--port 8080]                  # stop the server that start began
 python scripts/devops.py release   # see Release Procedure
 ```
 
 - [serve.mjs](../scripts/serve.mjs) uses Node.js built-ins only and disables caching; pass `--port` or `--root` to change them.
 - `server start` runs serve.mjs in the foreground until Ctrl+C; with `--background` it detaches and prints the PID.
   It writes `work/server.pid` and, in the background, `work/server.log`.
-  It refuses to start when something already answers on port 8080.
+  It refuses to start when something already answers on the port; `--port` (1 to 65535, default 8080) picks another.
+- `server stop --port {{port}}` stops a server that `server start --port {{port}}` began.
 - `server stop` creates `work/server.stop`, which serve.mjs polls, and waits up to 10 s for the port to close.
   It never kills a process; when the server stays up, it names the PID so you can end it with `kill-processes.py`.
 - This `server` is the dev server of the web app; the todos backend has its own devops.py.
