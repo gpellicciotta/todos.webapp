@@ -2,6 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
+- [x] T0208 [owner: @claude-code] [protocol: adhoc] Add server start and server stop commands to devops.py, serving the app in the foreground or background.
 - [x] T0207 Match the app icon and favicon to the Todos tile of the apps portal.
 - [x] T0079 Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206).
 - [x] T0071 Add shared helpers to find, sort, and count lists, with unit tests.
