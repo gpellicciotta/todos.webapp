@@ -2,6 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
+- [x] T0207 Match the app icon and favicon to the Todos tile of the apps portal.
 - [x] T0079 Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206).
 - [x] T0071 Add shared helpers to find, sort, and count lists, with unit tests.
 - [x] T0043 Speed up the cold launch toward TEC-16, smooth throttled scrolling, and support rows taller than 48 px in long lists.
@@ -15,7 +16,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0056 Design how the sidebar and Lists screen look and behave with many lists, 100 and more.
 - [x] T0028 Add the Sharing section to the list editor, role-aware controls, and the Shared filter.
 - [x] T0053 Remember view options per list instead of one shared setting, with a reset to the shared defaults.
-- [ ] T0065 Release (and publish) all changes as v0.3.0, via the devops.py script
+- [!] T0065 [reason: needs review: release must run on main and push the commit, tag v0.3.0, and create a GitHub release. This loop forbids pushes and version bumps, and the guidelines require explicit user confirmation before publishing. Run 'python scripts/devops.py release 0.3.0' from main yourself.] [owner: @claude] Release (and publish) all changes as v0.3.0, via the devops.py script
 
 ## Backlog
 - [ ] T0080 Fix the flaky connect e2e test: the first sync pull adds a second GET /api/users/me to the recorded calls.
