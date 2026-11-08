@@ -203,9 +203,25 @@ describe('mountRecycleBin', () => {
       await vi.waitFor(() => expect(document.querySelector('.bin-row')).toBeNull());
       expect(store.emptyBin).toHaveBeenCalledTimes(1);
       expect(toaster.show).toHaveBeenCalledWith('Recycle bin emptied.');
+      expect(document.activeElement).toBe(document.querySelector('.empty-state__title'));
       expect(document.querySelector('.empty-state').hidden).toBe(false);
       expect(empty().hidden).toBe(true);
       expect(question()).toBeNull();
+    });
+
+    it('describes the question by its count text, and ignores a second click while emptying', async () => {
+      const { store } = await mount([entry(new Date())]);
+      let release;
+      store.emptyBin.mockImplementationOnce(() => new Promise((resolve) => {
+        release = resolve;
+      }));
+      empty().click();
+      expect(document.getElementById(question().getAttribute('aria-describedby')).textContent).toContain('Permanently delete 1 task');
+      const confirm = question().querySelector('[data-role="confirm-all"]');
+      confirm.click();
+      confirm.click();
+      release([]);
+      await vi.waitFor(() => expect(store.emptyBin).toHaveBeenCalledTimes(1));
     });
 
     it('keeps the screen and the question and shows a toast when emptying fails', async () => {

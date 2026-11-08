@@ -138,6 +138,7 @@ export function mountRecycleBin(view, {
   let entries = [];
   let asking = null;
   let askingAll = false;
+  let emptying = false;
   let pending = null;
   let shownDay = null;
 
@@ -216,6 +217,10 @@ export function mountRecycleBin(view, {
 
   /** Empty the bin after the question; the question stays open when it fails. */
   async function emptyAll() {
+    if (emptying) {
+      return;
+    }
+    emptying = true;
     try {
       await store.emptyBin();
       askingAll = false;
@@ -224,6 +229,9 @@ export function mountRecycleBin(view, {
     catch (error) {
       console.error('Recycle bin action failed:', error);
       toaster.show(STRINGS.emptyFailed);
+    }
+    finally {
+      emptying = false;
     }
   }
 
@@ -245,7 +253,7 @@ export function mountRecycleBin(view, {
     }
     finally {
       if (focusedRole) {
-        (toolbar.querySelector(`[data-role="${focusedRole}"]`) ?? toolbar.querySelector('button:not([hidden])'))?.focus();
+        (toolbar.querySelector(`[data-role="${focusedRole}"]:not([hidden])`) ?? toolbar.querySelector('button:not([hidden])') ?? emptyTitle).focus();
       }
     }
   }
@@ -280,7 +288,10 @@ export function mountRecycleBin(view, {
       }
     });
     actions.append(keep, confirm);
-    group.append(make(doc, 'p', 'inline-confirm__text', STRINGS.emptyQuestion(lists, entries.length - lists)), actions);
+    const text = make(doc, 'p', 'inline-confirm__text', STRINGS.emptyQuestion(lists, entries.length - lists));
+    text.id = 'bin-empty-question';
+    group.setAttribute('aria-describedby', text.id);
+    group.append(text, actions);
     toolbar.hidden = false;
     toolbar.replaceChildren(group);
   }

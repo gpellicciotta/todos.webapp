@@ -611,7 +611,7 @@ Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
   If the delete fails, a toast says so and the question stays open with focus in it.
 - Empty recycle bin sits above the rows and is hidden while the bin is empty (`BIN-7`).
   It asks in place first: "Permanently delete 1 list and 2 tasks? This cannot be undone." with Keep and Delete all.
-  Escape or Keep closes the question; a toast says "Recycle bin emptied." or that emptying failed, and the question stays open.
+  Escape or Keep closes the question; while connected it empties this device only, as Delete permanently does. A toast says "Recycle bin emptied." or that emptying failed, and the question stays open.
 - Days left count to the exact purge time, 30 times 24 hours after the deletion.
 - Restoring shows a toast linking to the restored item (`BIN-3`).
 - An empty bin says that deleted items stay here for 30 days; otherwise that note sits above the rows.

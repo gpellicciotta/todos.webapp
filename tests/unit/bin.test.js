@@ -290,12 +290,15 @@ describe('emptyBin', () => {
     expect(heard).toEqual(['emptyBin']);
   });
 
-  it('queues nothing for sync', async () => {
-    await store.deleteTask(task.id);
-    const queued = [];
-    const { isTracked } = await import('../../src/js/sync/queue.js');
-    queued.push(isTracked('emptyBin'));
-    expect(queued).toEqual([false]);
+  it('queues nothing for sync while tracking', async () => {
+    const tracked = await freshStore({ tracking: () => true });
+    const list = await tracked.store.createList({ name: 'A' });
+    await tracked.store.deleteList(list.id);
+    const before = (await tracked.store.queue.all()).length;
+    expect(before).toBeGreaterThan(0);
+    await tracked.store.emptyBin();
+    expect((await tracked.store.queue.all()).length).toBe(before);
+    tracked.store.close();
   });
 
   it('removes nothing when a removal fails part way', async () => {
@@ -321,6 +324,7 @@ describe('emptyBin', () => {
     await expect(other.store.emptyBin()).rejects.toThrow('disk full');
 
     expect((await other.store.listBin()).map((entry) => entry.id).sort()).toEqual([a.id, b.id, t1.id].sort());
+    expect(await other.store.listMemberships()).toEqual([expect.objectContaining({ 'list-id': a.id, 'task-id': t1.id })]);
     other.store.close();
   });
 });
