@@ -87,13 +87,15 @@ function describe(session) {
   const state = session.state();
   const account = session.account();
   if (state === 'local' || !account) {
-    return { name: USER_STRINGS.localUser, status: USER_STRINGS.localOnly, initials: null };
+    return { name: USER_STRINGS.localUser, status: USER_STRINGS.localOnly, initials: null, icon: 'sync-local' };
   }
   const name = account.name?.trim() || account.email;
+  const isConnected = state === 'connected';
   return {
     name,
-    status: state === 'connected' ? USER_STRINGS.connected : USER_STRINGS.signInNeeded,
+    status: isConnected ? USER_STRINGS.connected : USER_STRINGS.signInNeeded,
     initials: initialsOf(name),
+    icon: isConnected ? 'sync-synced' : 'sync-sign-in',
   };
 }
 
@@ -117,6 +119,10 @@ export function attachUserMenu(slot, { session }) {
   panel.setAttribute('aria-label', USER_STRINGS.panel);
   const name = make(doc, 'p', 'user-panel__name');
   const status = make(doc, 'p', 'user-panel__status');
+  const statusLink = make(doc, 'a', 'button button--secondary user-panel__link user-panel__status-link');
+  statusLink.href = '#/connect';
+  statusLink.dataset.nav = 'connect';
+  status.append(statusLink);
   const links = LINKS.map(({ hash, nav, icon: iconId, label }) => {
     const link = make(doc, 'a', 'button button--secondary user-panel__link');
     link.href = hash;
@@ -140,7 +146,7 @@ export function attachUserMenu(slot, { session }) {
     }
     button.dataset.state = session.state();
     name.textContent = view.name;
-    status.textContent = view.status;
+    statusLink.replaceChildren(icon(doc, view.icon), doc.createTextNode(view.status));
     if (popover?.isOpen()) {
       anchorPanel(panel, button, undefined, 'end');
     }

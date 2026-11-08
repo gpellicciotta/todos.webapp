@@ -306,6 +306,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
+  padding-inline-start: calc(var(--space-3) + var(--border-width));
   color: var(--color-text-muted);
   font-size: var(--text-xs);
 }
@@ -321,13 +322,43 @@
   line-clamp: 2;
 }
 
-/* The button keeps the 44 px touch target, and its negative margin keeps the line as tall as its text. */
+/* Quiet button styling in the info line. */
+.button.info-line__reset,
 .info-line__reset {
   flex: none;
   align-self: center;
-  margin-block: calc(0px - var(--space-3));
+  min-inline-size: auto;
+  min-block-size: auto;
+  margin: 0;
   padding-inline: var(--space-2);
-  font-size: inherit;
+  padding-block: var(--space-1);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--color-link);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button.info-line__reset:hover,
+.button.info-line__reset.is-hover,
+.info-line__reset:hover,
+.info-line__reset.is-hover {
+  background-color: var(--color-hover-bg);
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.button.info-line__reset:active,
+.button.info-line__reset.is-active,
+.info-line__reset:active,
+.info-line__reset.is-active {
+  background-color: var(--color-active-bg);
+  color: var(--color-link);
+  text-decoration: none;
 }
 
 .add-hint {

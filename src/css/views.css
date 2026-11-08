@@ -393,6 +393,7 @@
 .settings__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
 
@@ -401,6 +402,15 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.connect__status--error {
+  color: var(--color-danger);
+  font-weight: var(--weight-medium);
+}
+
+.connect__hint--error {
+  color: var(--color-danger);
 }
 
 .settings__link {
@@ -698,6 +708,7 @@
 
 .sharing__invite > .button {
   inline-size: auto;
+  justify-self: end;
 }
 
 /*

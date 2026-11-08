@@ -117,8 +117,6 @@
 
   .app__top-bar {
     inline-size: 100%;
-    max-inline-size: var(--width-main);
-    margin-inline: auto;
     padding-block-start: var(--space-4);
     border-block-end: 0;
     background-color: transparent;
@@ -136,6 +134,13 @@
     display: flex;
     grid-area: sidebar;
     overflow-y: auto;
+    padding-block-start: 0;
+  }
+
+  .app__sidebar .sidebar__brand {
+    min-block-size: calc(var(--target-min) + var(--space-3));
+    padding-block: var(--space-4) 0;
+    font-size: var(--text-xl);
   }
 
   .app__editor {

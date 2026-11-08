@@ -98,7 +98,9 @@ export function mountLists(view, { store, toaster = { show() {} }, navigate = ()
   add.append(spriteIcon(doc, 'plus'));
   const rows = make(doc, 'ul', 'lists-view__rows');
   rows.setAttribute('aria-label', STRINGS.lists);
-  const empty = make(doc, 'p', 'empty-state empty-state__text', STRINGS.empty);
+  const empty = make(doc, 'div', 'empty-state');
+  const emptyText = make(doc, 'p', 'empty-state__text', STRINGS.empty);
+  empty.append(emptyText);
   root.append(rows, empty, add);
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });

@@ -45,7 +45,7 @@ const DESTINATIONS = [
 ];
 
 /** Navigation destination of each view; the Recycle bin and Settings destinations sit in the user menu. */
-const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin', settings: 'settings', 'sync-log': 'settings', connect: 'settings' };
+const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin', settings: 'settings', 'sync-log': 'settings', connect: 'connect' };
 
 /**
  * Read the device's theme preference; storage that is missing or blocked means the system theme.
@@ -130,7 +130,7 @@ export function renderShell(root, { session = createSession() } = {}) {
       <div data-user-menu></div>
     </header>
     <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
-      <p class="sidebar__brand">${STRINGS.app}</p>
+      <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/app-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
       <ul class="nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <ul class="nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
     </nav>

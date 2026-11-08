@@ -565,6 +565,15 @@ textarea.field__control {
   cursor: pointer;
 }
 
+/* Stub placeholder for menu items without an icon so item labels align with icon-bearing items. */
+.menu:has(.icon) .menu__item:not(:has(.icon))::before,
+.menu__item--stub::before {
+  content: '';
+  flex: none;
+  inline-size: var(--icon-size);
+  block-size: var(--icon-size);
+}
+
 .menu__item:hover,
 .menu__item.is-hover {
   background-color: var(--color-hover-bg);

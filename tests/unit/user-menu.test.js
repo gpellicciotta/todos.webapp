@@ -93,8 +93,10 @@ describe('attachUserMenu in local mode', () => {
     expect(slot.querySelector('.user-button').getAttribute('aria-expanded')).toBe('true');
     expect(panel.querySelector('.user-panel__name').textContent).toBe('Local User');
     expect(panel.querySelector('.user-panel__status').textContent).toBe('Local only');
-    const links = [...panel.querySelectorAll('a')];
+    expect(panel.querySelector('.user-panel__status a').getAttribute('href')).toBe('#/connect');
+    const links = [...panel.querySelectorAll('.user-panel__link')];
     expect(links.map((link) => [link.textContent.trim(), link.getAttribute('href'), link.dataset.nav])).toEqual([
+      ['Local only', '#/connect', 'connect'],
       ['Recycle bin', '#/bin', 'bin'],
       ['Settings', '#/settings', 'settings'],
     ]);
@@ -102,14 +104,14 @@ describe('attachUserMenu in local mode', () => {
 
   it('shows Recycle bin and Settings as buttons with their icons', () => {
     const { slot } = mount();
-    const links = [...slot.querySelectorAll('.user-panel a')];
+    const links = [...slot.querySelectorAll('.user-panel__link')];
     for (const link of links) {
       expect(link.classList.contains('button')).toBe(true);
       expect(link.classList.contains('button--secondary')).toBe(true);
       expect(link.classList.contains('menu__item')).toBe(false);
       expect(link.querySelector('svg.icon use')).not.toBeNull();
     }
-    expect(links.map((link) => link.querySelector('use').getAttribute('href'))).toEqual(['img/icons.svg#bin', 'img/icons.svg#settings']);
+    expect(links.map((link) => link.querySelector('use').getAttribute('href'))).toEqual(['img/icons.svg#sync-local', 'img/icons.svg#bin', 'img/icons.svg#settings']);
   });
 
   it('closes on Escape, on an outside click, and when a link is chosen', () => {
@@ -154,7 +156,8 @@ describe('attachUserMenu when connected', () => {
     const { slot } = mount(ACCOUNT);
     expect(slot.querySelector('.user-panel__name').textContent).toBe('Ada Lovelace');
     expect(slot.querySelector('.user-panel__status').textContent).toBe('Connected');
-    expect(slot.querySelectorAll('.user-panel a')).toHaveLength(2);
+    expect(slot.querySelectorAll('.user-panel a')).toHaveLength(3);
+    expect(slot.querySelector('.user-panel__status a').getAttribute('href')).toBe('#/connect');
   });
 
   it('falls back to the email address when the account has no name', () => {
@@ -177,7 +180,7 @@ describe('attachUserMenu when the session expired', () => {
     const { slot } = mount(EXPIRED);
     expect(slot.querySelector('.user-button').title).toBe('Ada Lovelace');
     expect(slot.querySelector('.user-panel__status').textContent).toBe('Sign in needed');
-    expect([...slot.querySelectorAll('.user-panel a')].map((link) => link.getAttribute('href'))).toEqual(['#/bin', '#/settings']);
+    expect([...slot.querySelectorAll('.user-panel a')].map((link) => link.getAttribute('href'))).toEqual(['#/connect', '#/bin', '#/settings']);
   });
 });
 
@@ -191,11 +194,11 @@ describe('attachUserMenu session changes', () => {
 
   it('re-renders when the device disconnects, and keeps the same panel links', async () => {
     const { slot, session } = mount(ACCOUNT);
-    const links = [...slot.querySelectorAll('.user-panel a')];
+    const links = [...slot.querySelectorAll('.user-panel__link')];
     await session.disconnect();
     expect(slot.querySelector('.user-button').title).toBe('Local User');
     expect(slot.querySelector('.user-panel__status').textContent).toBe('Local only');
-    const after = [...slot.querySelectorAll('.user-panel a')];
+    const after = [...slot.querySelectorAll('.user-panel__link')];
     expect(after).toHaveLength(links.length);
     after.forEach((link, index) => expect(link).toBe(links[index]));
   });

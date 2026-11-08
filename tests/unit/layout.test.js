@@ -60,7 +60,7 @@ describe('renderShell navigation', () => {
     const bottom = [...root.querySelectorAll('.app__bottom-nav a')].map((link) => link.getAttribute('href'));
     expect(sidebar).toEqual(['#/tasks', '#/lists']);
     expect(bottom).toEqual(['#/tasks', '#/lists']);
-    expect([...root.querySelectorAll('.user-panel a')].map((link) => link.getAttribute('href'))).toEqual(['#/bin', '#/settings']);
+    expect([...root.querySelectorAll('.user-panel__link')].map((link) => link.getAttribute('href'))).toEqual(['#/connect', '#/bin', '#/settings']);
   });
 
   it('marks the panel link of the current route, also for the screens under Settings', () => {
@@ -69,7 +69,8 @@ describe('renderShell navigation', () => {
     expect(root.querySelector('.user-panel [data-nav="bin"]').getAttribute('aria-current')).toBe('page');
     expect(root.querySelector('.user-panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
     shell.update({ view: 'connect', viewKey: 'connect', params: {} }, 'Connect');
-    expect(root.querySelector('.user-panel [data-nav="settings"]').getAttribute('aria-current')).toBe('page');
+    expect(root.querySelector('.user-panel [data-nav="connect"]').getAttribute('aria-current')).toBe('page');
+    expect(root.querySelector('.user-panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
     expect(root.querySelector('.user-panel [data-nav="bin"]').hasAttribute('aria-current')).toBe(false);
   });
 });

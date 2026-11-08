@@ -128,11 +128,20 @@
 }
 
 .sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   padding: var(--space-2) var(--space-3) var(--space-3);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
+}
+
+.sidebar__brand-icon {
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
 }
 
 .sidebar__end {
@@ -329,6 +338,7 @@
 .sync-panel__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
 
@@ -390,10 +400,45 @@
  * the link of the current route (aria-current="page") takes the signal border and icon on the selected ground.
  */
 .user-menu {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* The sync indicator overlays the account button to save header space. */
+.user-menu .sync-indicator {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  min-inline-size: 1.125rem;
+  min-block-size: 1.125rem;
+  padding: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-round);
+  background-color: var(--color-surface);
+  box-shadow: 0 1px 3px var(--color-shadow);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.user-menu .sync-indicator .icon {
+  inline-size: 0.75rem;
+  block-size: 0.75rem;
+}
+
+.user-menu .sync-indicator .sync-indicator__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .user-button {
@@ -449,42 +494,78 @@
   padding: var(--space-2);
 }
 
-.user-panel__name,
-.user-panel__status {
+.user-panel__name {
   margin: 0;
-  padding-inline: var(--space-1);
+  padding-block-start: var(--space-1);
+  padding-inline: var(--space-3);
+  font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
 }
 
-.user-panel__name {
-  padding-block-start: var(--space-1);
-  font-weight: var(--weight-semibold);
-}
-
 .user-panel__status {
+  display: grid;
+  margin: 0;
+  padding: 0;
   padding-block-end: var(--space-2);
   border-block-end: var(--border-width) solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
 }
 
+/* Subtle menu link styling for panel items. */
+.button.button--secondary.user-panel__link,
 .user-panel__link {
+  display: flex;
+  inline-size: 100%;
+  box-sizing: border-box;
   justify-content: flex-start;
   gap: var(--space-3);
+  min-block-size: calc(var(--target-min) - var(--space-2));
+  padding-inline: var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--color-text);
+  font-weight: var(--weight-regular);
 }
 
+.button.button--secondary.user-panel__link:hover,
+.button.button--secondary.user-panel__link.is-hover,
+.user-panel__link:hover,
+.user-panel__link.is-hover {
+  border-color: transparent;
+  background-color: var(--color-hover-bg);
+  color: var(--color-text);
+}
+
+.button.button--secondary.user-panel__link:active,
+.button.button--secondary.user-panel__link.is-active,
+.user-panel__link:active,
+.user-panel__link.is-active {
+  border-color: transparent;
+  background-color: var(--color-active-bg);
+  color: var(--color-text);
+}
+
+.button.button--secondary.user-panel__link[aria-current='page'],
 .user-panel__link[aria-current='page'] {
-  border-color: var(--color-signal);
+  border-color: transparent;
   background-color: var(--color-selected-bg);
+  color: var(--color-signal);
+  font-weight: var(--weight-medium);
 }
 
+.button.button--secondary.user-panel__link[aria-current='page']:hover,
+.button.button--secondary.user-panel__link[aria-current='page'].is-hover,
 .user-panel__link[aria-current='page']:hover,
 .user-panel__link[aria-current='page'].is-hover {
+  border-color: transparent;
   background-color: var(--color-hover-bg);
 }
 
+.button.button--secondary.user-panel__link[aria-current='page']:active,
+.button.button--secondary.user-panel__link[aria-current='page'].is-active,
 .user-panel__link[aria-current='page']:active,
 .user-panel__link[aria-current='page'].is-active {
+  border-color: transparent;
   background-color: var(--color-active-bg);
 }
 
@@ -595,6 +676,7 @@
 .inbox-item__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
 
@@ -676,6 +758,10 @@
   flex: 1 1 calc(var(--width-menu) - var(--space-7));
 }
 
+.editor-panel__row > .button {
+  margin-inline-start: auto;
+}
+
 .editor-panel__details {
   margin: 0;
   color: var(--color-text-muted);
@@ -683,9 +769,17 @@
 }
 
 .editor-panel__danger {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
   margin-block-start: var(--space-7);
   padding-block: var(--space-5);
   border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.editor-panel__danger > .editor-panel__details {
+  inline-size: 100%;
 }
 
 /* Chip list: a wrapping row of chips, such as a task's lists with their remove buttons. */
@@ -715,7 +809,9 @@
 
 .note-thread__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .note-thread__list {
@@ -781,6 +877,7 @@
 
 .inline-confirm__actions {
   display: flex;
+  margin-inline-start: auto;
   gap: var(--space-2);
 }
 
@@ -803,7 +900,7 @@
 }
 
 .empty-state__text {
-  max-inline-size: var(--width-editor);
+  inline-size: 100%;
   margin: 0;
   color: var(--color-text-muted);
 }

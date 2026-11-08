@@ -104,10 +104,11 @@ export function mountConnect(view, { session, navigate, assign }) {
       actions.append(button(STRINGS.done, 'button', () => navigate?.('#/tasks')));
     }
     else if (phase === 'not-invited') {
-      const status = make(doc, 'p', 'settings__text', STRINGS.notInvited);
+      const status = make(doc, 'p', 'settings__text connect__status connect__status--error');
+      status.append(spriteIcon(doc, 'alert'), doc.createTextNode(STRINGS.notInvited));
       const back = make(doc, 'a', 'button button--secondary', STRINGS.back);
       back.href = '#/settings';
-      parts.push(status, make(doc, 'p', 'settings__hint', STRINGS.notInvitedHint));
+      parts.push(status, make(doc, 'p', 'settings__hint connect__hint--error', STRINGS.notInvitedHint));
       actions.append(back);
     }
     else if (phase === 'working') {
@@ -115,8 +116,9 @@ export function mountConnect(view, { session, navigate, assign }) {
     }
     else {
       if (phase === 'error') {
-        const status = make(doc, 'p', 'settings__text', STRINGS.failed);
-        parts.push(status, make(doc, 'p', 'settings__hint', STRINGS.reasons[reason] ?? STRINGS.reasons.rejected));
+        const status = make(doc, 'p', 'settings__text connect__status connect__status--error');
+        status.append(spriteIcon(doc, 'alert'), doc.createTextNode(STRINGS.failed));
+        parts.push(status, make(doc, 'p', 'settings__hint connect__hint--error', STRINGS.reasons[reason] ?? STRINGS.reasons.rejected));
       }
       else if (phase === 'expired') {
         parts.push(make(doc, 'p', 'settings__text', STRINGS.expired));
