@@ -36,12 +36,13 @@ const STRINGS = Object.freeze({
   deleteAll: 'Delete all data',
   deleteAllConnected: 'Disconnect first. Deleting here never removes data from your account.',
   deleteAllTitle: 'Delete all data?',
-  deleteAllText: (lists, tasks) => `This permanently erases ${plural(lists, 'list')}, ${plural(tasks, 'task')}, and their notes and recycle bin entries on this device. It cannot be undone.`,
+  deleteAllText: (lists, tasks) => `This permanently erases ${plural(lists, 'list')}, ${plural(tasks, 'task')}, including any in the recycle bin, and their notes on this device. It cannot be undone.`,
   deleteAllExportHint: 'Export a backup first if you may want this data again.',
   deleteAllLabel: 'Type DELETE to confirm',
   deleteAllWord: 'DELETE',
   deleteEverything: 'Delete everything',
   deletedAll: 'All data deleted.',
+  deleteAllOpenFailed: 'The data could not be counted, so nothing was deleted. Try again.',
   deleteAllFailed: 'The data could not be deleted, and nothing changed. Try again.',
   connection: 'Connection',
   localState: 'Not connected. Your data stays on this device.',
@@ -193,9 +194,11 @@ async function saveBackup(doc, store, toaster) {
  * @param {HTMLElement} opener the Delete all data button
  * @param {object} store the store facade
  * @param {{show: (message: string) => void}} [toaster] shows the confirmations
+ * @param {{state: () => string, subscribe: Function}} [session] the session; the dialog closes when it leaves local mode
  * @returns {Promise<void>}
  */
-async function askDeleteAll(doc, parent, opener, store, toaster) {
+async function askDeleteAll(doc, parent, opener, store, toaster, session) {
+  const isLocal = () => (session?.state() ?? 'local') === 'local';
   const { lists, tasks } = await store.snapshot();
   const dialog = make(doc, 'dialog', 'dialog');
   dialog.setAttribute('aria-labelledby', 'settings-delete-all-title');
@@ -230,31 +233,48 @@ async function askDeleteAll(doc, parent, opener, store, toaster) {
   cancel.dataset.dialogClose = 'cancel';
   const confirm = button(doc, 'button button--danger', STRINGS.deleteEverything);
   confirm.disabled = true;
+  let busy = false;
+  const typedWord = () => input.value === STRINGS.deleteAllWord;
   input.addEventListener('input', () => {
-    confirm.disabled = input.value !== STRINGS.deleteAllWord;
+    confirm.disabled = busy || !typedWord();
   });
   actions.append(cancel, confirm);
   dialog.append(header, body, actions);
   parent.append(dialog);
   const closed = confirmDialog(dialog, { opener, initialFocus: input });
+  // Connecting while the dialog is open ends the offer: an erase would never reach the account.
+  const stop = session?.subscribe?.(() => {
+    if (!isLocal() && !busy) {
+      dialog.close('cancel');
+    }
+  });
   confirm.addEventListener('click', async () => {
-    if (confirm.disabled) {
+    if (busy || !typedWord() || !isLocal()) {
       return;
     }
-    confirm.disabled = true;
+    busy = true;
+    for (const control of [confirm, input, cancel]) {
+      control.disabled = true;
+    }
     try {
       await store.deleteAllData();
     }
     catch (error) {
       console.error('Deleting all data failed:', error);
       toaster?.show(STRINGS.deleteAllFailed);
-      confirm.disabled = input.value !== STRINGS.deleteAllWord;
+      busy = false;
+      for (const control of [input, cancel]) {
+        control.disabled = false;
+      }
+      confirm.disabled = !typedWord();
+      (confirm.disabled ? input : confirm).focus();
       return;
     }
     toaster?.show(STRINGS.deletedAll);
     dialog.close('delete');
   });
   await closed;
+  stop?.();
   dialog.remove();
 }
 
@@ -288,8 +308,23 @@ function dataSection(doc, store, toaster, connection = {}) {
   const importButton = make(doc, 'button', 'button button--secondary', STRINGS.importBackup);
   importButton.type = 'button';
   importButton.addEventListener('click', () => openImportDialog(doc, { store, toaster, opener: importButton, ...connection }));
-  const deleteButton = button(doc, 'button button--secondary button--danger', STRINGS.deleteAll,
-    () => askDeleteAll(doc, element, deleteButton, store, toaster));
+  let opening = false;
+  const deleteButton = button(doc, 'button button--secondary button--danger', STRINGS.deleteAll, async () => {
+    if (opening) {
+      return;
+    }
+    opening = true;
+    try {
+      await askDeleteAll(doc, element, deleteButton, store, toaster, connection.session);
+    }
+    catch (error) {
+      console.error('Opening Delete all data failed:', error);
+      toaster?.show(STRINGS.deleteAllOpenFailed);
+    }
+    finally {
+      opening = false;
+    }
+  });
   const hint = make(doc, 'p', 'settings__hint', STRINGS.deleteAllConnected);
   hint.id = 'settings-delete-all-hint';
   actions.append(exportButton, importButton, deleteButton);

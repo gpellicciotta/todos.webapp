@@ -166,4 +166,79 @@ describe('Delete all data in Settings', () => {
     expect(toaster.show).toHaveBeenCalledWith('The data could not be deleted, and nothing changed. Try again.');
     expect(document.querySelector('dialog')).not.toBeNull();
   });
+
+  it('closes the open dialog when the session connects, and erases nothing', async () => {
+    const view = document.body.appendChild(document.createElement('div'));
+    let state = 'local';
+    const listeners = new Set();
+    const session = {
+      state: () => state,
+      account: () => ({ name: 'Jane', email: 'jane@example.com', server: 'https://todos.example.com' }),
+      subscribe: (listener) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+    const store = { snapshot: async () => ({ lists: [], tasks: [] }), deleteAllData: vi.fn(async () => ({ lists: 0, tasks: 0 })) };
+    mountSettings(view, { session, store, toaster: { show: vi.fn() }, getStorage: () => null });
+    find(view, 'Delete all data').click();
+    await settle();
+    typed(document.querySelector('dialog input'), 'DELETE');
+    state = 'connected';
+    listeners.forEach((listener) => listener());
+    await settle();
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(store.deleteAllData).not.toHaveBeenCalled();
+  });
+
+  it('toasts and opens no dialog when the counts cannot be read, and opens one dialog for two clicks', async () => {
+    const { view, store, toaster } = mountWithStore();
+    store.snapshot.mockRejectedValueOnce(new Error('closed'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    find(view, 'Delete all data').click();
+    await settle();
+    error.mockRestore();
+    expect(toaster.show).toHaveBeenCalledWith('The data could not be counted, so nothing was deleted. Try again.');
+    expect(document.querySelector('dialog')).toBeNull();
+    find(view, 'Delete all data').click();
+    find(view, 'Delete all data').click();
+    await settle();
+    expect(document.querySelectorAll('dialog')).toHaveLength(1);
+  });
+
+  it('erases once even when typing or clicking continues while it runs', async () => {
+    const { view, store } = mountWithStore();
+    let release;
+    store.deleteAllData.mockImplementationOnce(() => new Promise((resolve) => {
+      release = resolve;
+    }));
+    find(view, 'Delete all data').click();
+    await settle();
+    const dialog = document.querySelector('dialog');
+    typed(dialog.querySelector('input'), 'DELETE');
+    const confirm = find(dialog, 'Delete everything');
+    confirm.click();
+    expect(dialog.querySelector('input').disabled).toBe(true);
+    expect(find(dialog, 'Cancel').disabled).toBe(true);
+    typed(dialog.querySelector('input'), 'DELETE');
+    expect(confirm.disabled).toBe(true);
+    confirm.click();
+    release({ lists: 2, tasks: 3 });
+    await settle();
+    expect(store.deleteAllData).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives the focus back to Delete everything after a failed erase', async () => {
+    const { view, store } = mountWithStore();
+    store.deleteAllData.mockRejectedValueOnce(new Error('disk full'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    find(view, 'Delete all data').click();
+    await settle();
+    const dialog = document.querySelector('dialog');
+    typed(dialog.querySelector('input'), 'DELETE');
+    find(dialog, 'Delete everything').click();
+    await settle();
+    error.mockRestore();
+    expect(document.activeElement).toBe(find(dialog, 'Delete everything'));
+  });
 });
