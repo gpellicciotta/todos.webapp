@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.3.1-pre
+- FrontEnd: Added Delete all data to the Data section of Settings: it offers a backup, needs DELETE typed, and is off while connected.
 - FrontEnd: Added Empty recycle bin to the recycle bin screen, which asks with the count first and then permanently deletes every entry.
 - FrontEnd: Made the service worker refuse a precache answer that is not OK or is HTML for a non-HTML file, and ignore cached HTML for asset requests, so a bad server answer no longer poisons new installs; existing devices heal when they accept the Update toast.
 

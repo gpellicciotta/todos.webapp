@@ -6,6 +6,7 @@
  * In local mode the Connection section explains connected mode, and Connect opens the connect screen.
  * The server URL is kept per device and checked on change (`CON-12`); an empty field restores the default.
  * Connected, the section names the account, its server, the sync state, and a Sync log link; the URL cannot change (`CON-11`).
+ * Delete all data erases this device after an offer to export first and a typed DELETE; it is off while connected (`BAK-15`).
  * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
  */
 
@@ -32,6 +33,16 @@ const STRINGS = Object.freeze({
   importBackup: 'Import backup',
   exported: (name, lists, tasks) => `Saved ${name} with ${plural(lists, 'list')} and ${plural(tasks, 'task')}.`,
   exportFailed: 'The backup could not be saved. Try again.',
+  deleteAll: 'Delete all data',
+  deleteAllConnected: 'Disconnect first. Deleting here never removes data from your account.',
+  deleteAllTitle: 'Delete all data?',
+  deleteAllText: (lists, tasks) => `This permanently erases ${plural(lists, 'list')}, ${plural(tasks, 'task')}, and their notes and recycle bin entries on this device. It cannot be undone.`,
+  deleteAllExportHint: 'Export a backup first if you may want this data again.',
+  deleteAllLabel: 'Type DELETE to confirm',
+  deleteAllWord: 'DELETE',
+  deleteEverything: 'Delete everything',
+  deletedAll: 'All data deleted.',
+  deleteAllFailed: 'The data could not be deleted, and nothing changed. Try again.',
   connection: 'Connection',
   localState: 'Not connected. Your data stays on this device.',
   localHint: 'Connect to sync devices and share lists.',
@@ -175,12 +186,86 @@ async function saveBackup(doc, store, toaster) {
 }
 
 /**
- * Create the Data section: Export backup and Import backup.
+ * Ask before erasing all data: counts, an Export backup button, and a field that must hold DELETE.
+ * The dialog stays open when erasing fails, so the user can try again.
+ * @param {Document} doc the document
+ * @param {HTMLElement} parent the element that holds the dialog while open
+ * @param {HTMLElement} opener the Delete all data button
+ * @param {object} store the store facade
+ * @param {{show: (message: string) => void}} [toaster] shows the confirmations
+ * @returns {Promise<void>}
+ */
+async function askDeleteAll(doc, parent, opener, store, toaster) {
+  const { lists, tasks } = await store.snapshot();
+  const dialog = make(doc, 'dialog', 'dialog');
+  dialog.setAttribute('aria-labelledby', 'settings-delete-all-title');
+  const header = make(doc, 'div', 'dialog__header');
+  const title = make(doc, 'h2', 'dialog__title', STRINGS.deleteAllTitle);
+  title.id = 'settings-delete-all-title';
+  header.append(title);
+  const body = make(doc, 'div', 'dialog__body settings__delete-all');
+  const exportButton = button(doc, 'button button--secondary', STRINGS.exportBackup, async () => {
+    exportButton.disabled = true;
+    try {
+      await saveBackup(doc, store, toaster);
+    }
+    catch (error) {
+      console.error('Export failed:', error);
+      toaster?.show(STRINGS.exportFailed);
+    }
+    finally {
+      exportButton.disabled = false;
+    }
+  });
+  const field = make(doc, 'div', 'field');
+  const label = make(doc, 'label', 'field__label', STRINGS.deleteAllLabel);
+  label.htmlFor = 'settings-delete-all-word';
+  const input = make(doc, 'input', 'field__control');
+  Object.assign(input, { id: label.htmlFor, type: 'text', autocomplete: 'off', spellcheck: false });
+  field.append(label, input);
+  body.append(make(doc, 'p', '', STRINGS.deleteAllText(lists.length, tasks.length)),
+    make(doc, 'p', 'settings__hint', STRINGS.deleteAllExportHint), exportButton, field);
+  const actions = make(doc, 'div', 'dialog__actions');
+  const cancel = button(doc, 'button button--secondary', STRINGS.cancel);
+  cancel.dataset.dialogClose = 'cancel';
+  const confirm = button(doc, 'button button--danger', STRINGS.deleteEverything);
+  confirm.disabled = true;
+  input.addEventListener('input', () => {
+    confirm.disabled = input.value !== STRINGS.deleteAllWord;
+  });
+  actions.append(cancel, confirm);
+  dialog.append(header, body, actions);
+  parent.append(dialog);
+  const closed = confirmDialog(dialog, { opener, initialFocus: input });
+  confirm.addEventListener('click', async () => {
+    if (confirm.disabled) {
+      return;
+    }
+    confirm.disabled = true;
+    try {
+      await store.deleteAllData();
+    }
+    catch (error) {
+      console.error('Deleting all data failed:', error);
+      toaster?.show(STRINGS.deleteAllFailed);
+      confirm.disabled = input.value !== STRINGS.deleteAllWord;
+      return;
+    }
+    toaster?.show(STRINGS.deletedAll);
+    dialog.close('delete');
+  });
+  await closed;
+  dialog.remove();
+}
+
+/**
+ * Create the Data section: Export backup, Import backup, and Delete all data.
+ * Delete all data is off while connected, and follows the session.
  * @param {Document} doc the document
  * @param {object} store the store facade
  * @param {{show: (message: string) => void}} [toaster] shows the confirmations
  * @param {{session: object, sync?: object}} [connection] the session and the sync engine, for importing while connected
- * @returns {HTMLElement} the section
+ * @returns {{element: HTMLElement, destroy: () => void}} the section
  */
 function dataSection(doc, store, toaster, connection = {}) {
   const element = section(doc, 'data', STRINGS.data);
@@ -203,9 +288,29 @@ function dataSection(doc, store, toaster, connection = {}) {
   const importButton = make(doc, 'button', 'button button--secondary', STRINGS.importBackup);
   importButton.type = 'button';
   importButton.addEventListener('click', () => openImportDialog(doc, { store, toaster, opener: importButton, ...connection }));
-  actions.append(exportButton, importButton);
-  element.append(actions);
-  return element;
+  const deleteButton = button(doc, 'button button--secondary button--danger', STRINGS.deleteAll,
+    () => askDeleteAll(doc, element, deleteButton, store, toaster));
+  const hint = make(doc, 'p', 'settings__hint', STRINGS.deleteAllConnected);
+  hint.id = 'settings-delete-all-hint';
+  actions.append(exportButton, importButton, deleteButton);
+  element.append(actions, hint);
+
+  /** Turn Delete all data off, with its hint, while an account is connected. */
+  function follow() {
+    const connected = (connection.session?.state() ?? 'local') !== 'local';
+    deleteButton.disabled = connected;
+    hint.hidden = !connected;
+    if (connected) {
+      deleteButton.setAttribute('aria-describedby', hint.id);
+    }
+    else {
+      deleteButton.removeAttribute('aria-describedby');
+    }
+  }
+
+  follow();
+  const stop = connection.session?.subscribe?.(follow);
+  return { element, destroy: () => stop?.() };
 }
 
 /**
@@ -391,7 +496,8 @@ export function mountSettings(view, {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, navigate });
-  root.append(appearanceSection(doc, getStorage, toaster), dataSection(doc, store, toaster, { session, sync }), connection.element, aboutSection(doc));
+  const data = dataSection(doc, store, toaster, { session, sync });
+  root.append(appearanceSection(doc, getStorage, toaster), data.element, connection.element, aboutSection(doc));
   view.replaceChildren(root);
   return {
     /** Follow a route of this view; Settings has no sub-routes of its own. */
@@ -400,6 +506,7 @@ export function mountSettings(view, {
     /** Stop following the session; the controls go with the view. */
     destroy() {
       connection.destroy();
+      data.destroy();
     },
   };
 }

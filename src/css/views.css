@@ -399,6 +399,20 @@
   margin-block-start: calc(var(--space-2) - var(--space-3));
 }
 
+.settings__delete-all {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.settings__delete-all > p {
+  margin: 0;
+}
+
+.settings__delete-all .field {
+  justify-self: stretch;
+}
+
 .settings__actions {
   display: flex;
   flex-wrap: wrap;

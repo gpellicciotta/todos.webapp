@@ -1,5 +1,5 @@
 /**
- * The recycle bin: delete, restore, list, permanently delete, empty, and purge lists and tasks.
+ * The recycle bin: delete, restore, list, permanently delete, empty, and purge lists and tasks; erase all data.
  *
  * Deleting sets `deletion-time` and keeps every membership, so restoring brings them back (`BIN-3`).
  * Lists and tasks never delete each other: purging a list keeps its tasks (`LST-6`, `LST-7`).
@@ -206,6 +206,26 @@ export function emptyBin(ctx) {
       }
     }
     return purged;
+  });
+}
+
+/**
+ * Permanently erase every list, task, membership, note, and recycle bin entry in one transaction (`BAK-15`).
+ * The caller asks for confirmation first and offers a backup. It leaves the sync stores alone and queues nothing,
+ * so the app only offers it while not connected.
+ * @param {{db: IDBDatabase}} ctx store context
+ * @returns {Promise<{lists: number, tasks: number}>} how many lists and tasks it erased
+ */
+export function deleteAllData(ctx) {
+  return transact(ctx.db, ALL_STORES, 'readwrite', async (tx) => {
+    const counts = {
+      lists: await request(tx.objectStore(STORES.lists).count()),
+      tasks: await request(tx.objectStore(STORES.tasks).count()),
+    };
+    for (const name of ALL_STORES) {
+      await request(tx.objectStore(name).clear());
+    }
+    return counts;
   });
 }
 

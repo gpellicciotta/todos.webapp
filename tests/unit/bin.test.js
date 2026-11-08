@@ -324,3 +324,54 @@ describe('emptyBin', () => {
     other.store.close();
   });
 });
+
+describe('deleteAllData', () => {
+  it('erases lists, tasks, memberships, notes, and bin entries, and returns the counts', async () => {
+    await store.addNote(task.id, { text: 'Remember the key' });
+    await store.deleteTask(task.id);
+    await store.createTask({ description: 'Live' }, { lists: [work.id] });
+
+    expect(await store.deleteAllData()).toEqual({ lists: 2, tasks: 2 });
+
+    for (const name of ['lists', 'tasks', 'memberships', 'notes']) {
+      expect(await rawAll(name)).toEqual([]);
+    }
+    expect(await store.listBin()).toEqual([]);
+  });
+
+  it('leaves the sync stores alone', async () => {
+    await store.queue.setState('user-id', 7);
+    await store.deleteAllData();
+    expect(await store.queue.getState('user-id')).toBe(7);
+  });
+
+  it('returns zero counts on a fresh store and tells subscribers once', async () => {
+    const fresh = await freshStore();
+    const heard = [];
+    fresh.store.subscribe((change) => heard.push(change.operation));
+    expect(await fresh.store.deleteAllData()).toEqual({ lists: 0, tasks: 0 });
+    expect(heard).toEqual(['deleteAllData']);
+    fresh.store.close();
+  });
+
+  it('erases nothing when a clear fails part way', async () => {
+    let calls = 0;
+    const { IDBObjectStore: FakeObjectStore } = await import('fake-indexeddb');
+    const clear = FakeObjectStore.prototype.clear;
+    FakeObjectStore.prototype.clear = function failing(...args) {
+      calls += 1;
+      if (calls === 3) {
+        throw new Error('disk full');
+      }
+      return clear.apply(this, args);
+    };
+    try {
+      await expect(store.deleteAllData()).rejects.toThrow('disk full');
+    }
+    finally {
+      FakeObjectStore.prototype.clear = clear;
+    }
+    expect((await store.listLists()).map((list) => list.id)).toEqual([home.id, work.id]);
+    expect(await store.getTask(task.id)).toBeDefined();
+  });
+});

@@ -164,6 +164,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - BAK-12: The user confirms or cancels an import; cancelling changes nothing.
 - BAK-13: An invalid or unsupported file changes nothing and reports the reason.
 - BAK-14: An exported backup re-imported in overwrite mode reproduces the same data.
+- BAK-15: Users erase all data on this device after typing DELETE, with an offer to export a backup first; it is unavailable while connected.
 
 ### Connecting
 - CON-1: Users connect from the settings by signing in through the Auth service.

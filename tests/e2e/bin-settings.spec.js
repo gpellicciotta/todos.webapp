@@ -116,10 +116,40 @@ test('Empty recycle bin asks with the count, then empties the bin for good, also
   await confirm.getByRole('button', { name: 'Delete all' }).click();
   await expect(page.locator('.bin-row')).toHaveCount(0);
   await expect(page.locator('.empty-state')).toBeVisible();
-  await expect(page.getByText('Recycle bin emptied.')).toBeVisible();
+  await expect(page.locator('.toast')).toContainText('Recycle bin emptied.');
   await page.reload();
   await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
   await expect(page.locator('.empty-state')).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test('Delete all data needs DELETE typed, erases everything including the bin, and keeps the theme', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, '#/settings');
+  await seed(page, { deleteList: false });
+  await page.getByRole('group', { name: 'Theme' }).getByText('Dark').click();
+  await page.getByRole('button', { name: 'Delete all data' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete all data?' });
+  await expect(dialog).toContainText('1 list, 1 task');
+  const confirm = dialog.getByRole('button', { name: 'Delete everything' });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByLabel('Type DELETE to confirm').fill('delete');
+  await expect(confirm).toBeDisabled();
+  await page.screenshot({ path: test.info().outputPath('delete-all-dialog.png') });
+  await dialog.getByLabel('Type DELETE to confirm').fill('DELETE');
+  await expect(confirm).toBeEnabled();
+  await confirm.click();
+  await expect(page.locator('.toast')).toContainText('All data deleted.');
+  await expect(dialog).toHaveCount(0);
+  await page.goto('/#/lists');
+  await expect(page.locator('.empty-state')).toContainText('No lists yet.');
+  await page.goto('/#/bin');
+  await expect(page.locator('.bin-row')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await expect(page.locator('.bin-row')).toHaveCount(0);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(problems).toEqual([]);
 });
 

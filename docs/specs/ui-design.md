@@ -622,7 +622,10 @@ Wireframe: [settings.svg](../img/ui/settings.svg).
 
 Settings is one page with these sections:
 - Appearance: theme as System, Light, or Dark.
-- Data: Export backup and Import backup (`BAK-1`, `BAK-5`).
+- Data: Export backup, Import backup, and Delete all data (`BAK-1`, `BAK-5`, `BAK-15`).
+- Delete all data is a danger button, last in Data; connected, it is disabled with the hint "Disconnect first. Deleting here never removes data from your account."
+- Its dialog names the counts, offers Export backup, and enables Delete everything only after the user types DELETE, exact and case-sensitive.
+  Cancel and Escape change nothing; a toast says "All data deleted."; a failure keeps the dialog open with an error toast. The theme and server URL stay.
 - Connection, when local: a short explanation of connected mode and a Connect button.
 - Connection, when connected: account name and email, server, sync state, Sync log, and Disconnect.
 - Connection also holds the server URL, changeable only while disconnected (`CON-12`).
