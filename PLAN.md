@@ -2,26 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [x] T0212 [owner: @claude] [protocol: adhoc] Format the wireframe script and its test with ruff format.
-- [x] T0211 [owner: @claude] [protocol: adhoc] Fix the flaky connect e2e test that counts the sync engine's extra users/me call.
-- [x] T0210 Fix the 11 failing e2e tests: avatar button overlapping the sync indicator and controls under 44 px.
-- [x] T0209 [owner: @claude-code] [protocol: adhoc] Add a --port option to devops.py server start and server stop.
-- [x] T0208 [owner: @claude-code] [protocol: adhoc] Add server start and server stop commands to devops.py, serving the app in the foreground or background.
-- [x] T0207 Match the app icon and favicon to the Todos tile of the apps portal.
-- [x] T0079 Send a random state when signing in through Auth and reject a callback whose state does not match, to prevent login CSRF; needs Auth app-state support (auth T0206).
-- [x] T0071 Add shared helpers to find, sort, and count lists, with unit tests.
-- [x] T0043 Speed up the cold launch toward TEC-16, smooth throttled scrolling, and support rows taller than 48 px in long lists.
-- [x] T0004 Show service broadcasts and the notification inbox while connected.
-- [x] T0062 Activate a new service worker only after an Update toast click, and survive blocked database upgrades.
-- [x] T0025 Build sync upload: the change queue, first-connect adoption of local data, and rollback of rejected changes.
-- [x] T0026 Build sync download: the change feed client, per-field merge, lost access handling, and the sync log store.
-- [x] T0063 Add an opt-in contract test that runs the sync client against a real todos server.
-- [x] T0064 Queue and sync the changes of a backup import while connected, comparing rows by last update.
-- [x] T0027 Show every sync state in the sync indicator and build the Sync log screen.
-- [x] T0056 Design how the sidebar and Lists screen look and behave with many lists, 100 and more.
-- [x] T0028 Add the Sharing section to the list editor, role-aware controls, and the Shared filter.
-- [x] T0053 Remember view options per list instead of one shared setting, with a reset to the shared defaults.
-- [x] T0065 Release (and publish) all changes as v0.3.0, via the devops.py script
+*(Currently no tasks)*
 
 ## Backlog
 - [ ] T0080 Fix the flaky connect e2e test: the first sync pull adds a second GET /api/users/me to the recorded calls.

@@ -16,7 +16,7 @@ size_estimate: 37 files, 1694 lines
 usage:
   worker: {turns: 4, duration_s: 2001.8, input: 308, output: 131640, cache_read: 23167626, cache_write: 406604}
   review: {turns: 2, duration_s: 569.0, input: 317122, output: 15958, cache_read: 3421976}
-work_duration: 1274.7
+work_duration: 1285.4
 size_approved: 37 files, 1694 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-07T21:27:59Z"
