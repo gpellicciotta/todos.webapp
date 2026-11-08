@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.2.1-pre
+## v0.3.0 [released: 2026-11-08]
 - FrontEnd: Kept the sync indicator on the account button clickable, and the account menu links and the info-line Reset at 44 px.
 - FrontEnd: Added shared helpers to find lists, sort them by name, open tasks, or activity, and count them in one pass.
 - FrontEnd: Moved the open and total list counts of the sidebar and the Lists screen into one shared helper, without a visible change.
