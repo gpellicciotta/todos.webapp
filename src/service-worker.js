@@ -6,8 +6,8 @@
  * so open pages never mix old and new files (`TEC-19`). The first install has no page to protect and just claims it.
  * Install rejects a non-OK answer, and an HTML answer for any file but the start page: the server answers an unknown
  * path with the start page and status 200, and caching that as a stylesheet leaves the app unstyled until the next VERSION.
- * Same-origin GET requests are served cache first, except that cached HTML never answers a non-navigation request;
- * page navigations fall back to the cached start page.
+ * Same-origin GET requests are served cache first, except that cached HTML never answers a non-navigation request
+ * for any file but the start page; page navigations fall back to the cached start page.
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
  * a navigation to `/admin` reaches the server and never falls back to the app shell.
  * Bump VERSION with every change to a precached file, and keep PRECACHE complete:
@@ -140,8 +140,23 @@ async function precacheEntry(cache, path) {
   await cache.put(request, response);
 }
 
+/**
+ * Tell whether a URL is one of the HTML entries of the app shell.
+ * @param {URL} url the request URL
+ * @returns {boolean} true for the start URL and index.html
+ */
+function isShellPage(url) {
+  return HTML_ENTRIES.some((path) => new URL(path, self.location.href).href === url.href);
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => Promise.all(PRECACHE.map((path) => precacheEntry(cache, path)))));
+  // One bad entry fails the install and drops the partial cache, so the next visit starts clean.
+  event.waitUntil(caches.open(CACHE)
+    .then((cache) => Promise.all(PRECACHE.map((path) => precacheEntry(cache, path))))
+    .catch(async (error) => {
+      await caches.delete(CACHE);
+      throw error;
+    }));
 });
 
 self.addEventListener('message', (event) => {
@@ -164,7 +179,7 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(caches.open(CACHE).then(async (cache) => {
     const cached = await cache.match(request, { ignoreSearch: request.mode === 'navigate' });
-    if (cached && !(request.mode !== 'navigate' && isHtml(cached))) {
+    if (cached && !(request.mode !== 'navigate' && isHtml(cached) && !isShellPage(url))) {
       return cached;
     }
     try {

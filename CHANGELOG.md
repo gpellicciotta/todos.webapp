@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.3.1-pre
-- FrontEnd: Made the service worker refuse a precache answer that is not OK or is HTML for a non-HTML file, and ignore cached HTML for asset requests, so a bad server answer no longer leaves the app unstyled.
+- FrontEnd: Made the service worker refuse a precache answer that is not OK or is HTML for a non-HTML file, and ignore cached HTML for asset requests, so a bad server answer no longer poisons new installs; existing devices heal when they accept the Update toast.
 
 ## v0.3.0 [released: 2026-11-08]
 - FrontEnd: Kept the sync indicator on the account button clickable, and the account menu links and the info-line Reset at 44 px.

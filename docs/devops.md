@@ -148,8 +148,10 @@ npm run check:sw
 ### Service Worker Install Validation
 The server answers an unknown path with the start page and status 200, so a missing file looks like a good one.
 Install stores an entry only when the answer is OK, and, except for `./` and `index.html`, not `text/html`.
-One bad entry fails the whole install; the next visit retries.
-The fetch handler also never answers a non-navigation request from a cached HTML response.
+One bad entry fails the whole install, drops the partial cache, and the next visit retries.
+The fetch handler also never answers a non-navigation request from a cached HTML response, except for the start page.
+The bypass repairs nothing and has no offline fallback.
+A device that already cached HTML heals only when its new worker activates, after the user accepts the Update toast.
 
 ### Service Worker Updates
 A new worker precaches its files, then waits; it does not call `skipWaiting()` on install (`TEC-19`).
