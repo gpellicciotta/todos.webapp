@@ -4,6 +4,8 @@
  * Each row offers Restore and Delete permanently (`BIN-2`, `BIN-4`).
  * Delete permanently asks in the row first, with Keep and Delete; Escape or Keep closes the question.
  * Restoring brings back every membership (`BIN-3`) and shows a toast whose Open action goes to the item.
+ * Empty recycle bin sits above the rows while the bin has entries (`BIN-7`): it asks in place first, with the count,
+ * and Keep or Escape closes the question.
  * Days count calendar days in the device timezone (`TEC-14`); the screen renders again after every store change.
  */
 
@@ -14,6 +16,16 @@ import { spriteIcon } from './task-list.js';
 const DAY_MS = 86_400_000;
 const REDRAW_MS = 60_000;
 const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+/**
+ * Describe a count with its noun, or nothing for zero.
+ * @param {number} n the count
+ * @param {string} noun the singular noun
+ * @returns {string} such as "1 list" or "2 tasks", or an empty string
+ */
+function count(n, noun) {
+  return n === 0 ? '' : `${n} ${noun}${n === 1 ? '' : 's'}`;
+}
 
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
@@ -26,6 +38,11 @@ const STRINGS = Object.freeze({
   question: 'Delete forever?',
   keep: 'Keep',
   confirm: 'Delete',
+  emptyBin: 'Empty recycle bin',
+  emptyQuestion: (lists, tasks) => `Permanently delete ${[count(lists, 'list'), count(tasks, 'task')].filter(Boolean).join(' and ')}? This cannot be undone.`,
+  confirmAll: 'Delete all',
+  emptied: 'Recycle bin emptied.',
+  emptyFailed: 'The recycle bin could not be emptied.',
   open: 'Open',
   lastDay: 'last day',
   restored: (name) => `Restored "${name}".`,
@@ -120,6 +137,7 @@ export function mountRecycleBin(view, {
   const doc = view.ownerDocument;
   let entries = [];
   let asking = null;
+  let askingAll = false;
   let pending = null;
   let shownDay = null;
 
@@ -131,7 +149,8 @@ export function mountRecycleBin(view, {
   const emptyTitle = make(doc, 'p', 'empty-state__title', STRINGS.emptyTitle);
   emptyTitle.tabIndex = -1;
   empty.append(spriteIcon(doc, 'bin', 'icon empty-state__icon'), emptyTitle, make(doc, 'p', 'empty-state__text', STRINGS.note));
-  root.append(note, list, empty);
+  const toolbar = make(doc, 'div', 'bin__toolbar');
+  root.append(toolbar, note, list, empty);
   view.replaceChildren(root);
 
   /**
@@ -193,6 +212,77 @@ export function mountRecycleBin(view, {
    */
   async function purge(entry) {
     await attempt(entry, () => store.purgeForever(entry.type, entry.id), STRINGS.purgeFailed);
+  }
+
+  /** Empty the bin after the question; the question stays open when it fails. */
+  async function emptyAll() {
+    try {
+      await store.emptyBin();
+      askingAll = false;
+      toaster.show(STRINGS.emptied);
+    }
+    catch (error) {
+      console.error('Recycle bin action failed:', error);
+      toaster.show(STRINGS.emptyFailed);
+    }
+  }
+
+  /**
+   * Open or close the question of Empty recycle bin, and move focus to the control that now matters.
+   * @param {boolean} open true to ask, false to close
+   */
+  function askAll(open) {
+    askingAll = open;
+    renderToolbar();
+    toolbar.querySelector(open ? '[data-role="keep-all"]' : '[data-role="empty-bin"]')?.focus();
+  }
+
+  /** Render the toolbar: the Empty recycle bin button, or its question; nothing while the bin is empty. */
+  function renderToolbar() {
+    const focusedRole = toolbar.contains(doc.activeElement) ? doc.activeElement.dataset.role : null;
+    try {
+      drawToolbar();
+    }
+    finally {
+      if (focusedRole) {
+        (toolbar.querySelector(`[data-role="${focusedRole}"]`) ?? toolbar.querySelector('button:not([hidden])'))?.focus();
+      }
+    }
+  }
+
+  /** Draw the toolbar content for the current state. */
+  function drawToolbar() {
+    if (entries.length === 0) {
+      askingAll = false;
+    }
+    if (!askingAll) {
+      const emptyButton = button(doc, 'button button--secondary button--danger', STRINGS.emptyBin, 'empty-bin');
+      emptyButton.hidden = entries.length === 0;
+      emptyButton.addEventListener('click', () => askAll(true));
+      toolbar.replaceChildren(emptyButton);
+      toolbar.hidden = entries.length === 0;
+      return;
+    }
+    const lists = entries.filter((entry) => entry.type === 'list').length;
+    const group = make(doc, 'div', 'inline-confirm bin__confirm');
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', STRINGS.emptyBin);
+    const actions = make(doc, 'div', 'inline-confirm__actions');
+    const keep = button(doc, 'button button--secondary', STRINGS.keep, 'keep-all');
+    const confirm = button(doc, 'button button--danger', STRINGS.confirmAll, 'confirm-all');
+    keep.addEventListener('click', () => askAll(false));
+    confirm.addEventListener('click', emptyAll);
+    group.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        askAll(false);
+      }
+    });
+    actions.append(keep, confirm);
+    group.append(make(doc, 'p', 'inline-confirm__text', STRINGS.emptyQuestion(lists, entries.length - lists)), actions);
+    toolbar.hidden = false;
+    toolbar.replaceChildren(group);
   }
 
   /**
@@ -279,6 +369,7 @@ export function mountRecycleBin(view, {
     const time = now();
     shownDay = time.toDateString();
     list.replaceChildren(...entries.map((entry) => rowOf(entry, time)));
+    renderToolbar();
     list.hidden = entries.length === 0;
     note.hidden = entries.length === 0;
     empty.hidden = entries.length > 0;

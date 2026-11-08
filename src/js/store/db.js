@@ -51,7 +51,7 @@ function upgrade(db, oldVersion, tx) {
 const WRITES = [
   'createList', 'updateList', 'createTask', 'updateTask', 'addToList', 'removeFromList', 'moveInList',
   'addNote', 'editNote', 'deleteNote', 'deleteList', 'deleteTask', 'restoreList', 'restoreTask',
-  'purgeForever', 'purgeExpired', 'applyChanges',
+  'purgeForever', 'emptyBin', 'purgeExpired', 'applyChanges',
 ];
 
 /**
@@ -165,6 +165,7 @@ export async function openStore({
     restoreList: (id) => bin.restoreList(ctx, id),
     restoreTask: (id) => bin.restoreTask(ctx, id),
     purgeForever: (type, id) => bin.purgeForever(ctx, type, id),
+    emptyBin: () => bin.emptyBin(ctx),
     listBin: () => bin.listBin(ctx),
     purgeExpired: (now) => bin.purgeExpired(ctx, now),
     snapshot: () => bulk.snapshot(ctx),

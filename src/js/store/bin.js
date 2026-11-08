@@ -1,5 +1,5 @@
 /**
- * The recycle bin: delete, restore, list, permanently delete, and purge lists and tasks.
+ * The recycle bin: delete, restore, list, permanently delete, empty, and purge lists and tasks.
  *
  * Deleting sets `deletion-time` and keeps every membership, so restoring brings them back (`BIN-3`).
  * Lists and tasks never delete each other: purging a list keeps its tasks (`LST-6`, `LST-7`).
@@ -186,6 +186,26 @@ export async function purgeForever(ctx, type, id) {
   await transact(ctx.db, ALL_STORES, 'readwrite', async (tx) => {
     await mustGetDeleted(tx, type, id);
     await removeRecord(tx, ctx, type, id);
+  });
+}
+
+/**
+ * Permanently delete every recycle bin entry in one transaction (`BIN-7`); the caller asks for confirmation first.
+ * Like `purgeForever`, it queues nothing for sync.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context
+ * @returns {Promise<{type: string, id: string}[]>} the purged entries
+ */
+export function emptyBin(ctx) {
+  return transact(ctx.db, ALL_STORES, 'readwrite', async (tx) => {
+    const purged = [];
+    for (const type of Object.keys(TYPES)) {
+      const records = await request(tx.objectStore(storeOf(type)).getAll());
+      for (const record of records.filter((r) => r['deletion-time'])) {
+        await removeRecord(tx, ctx, type, record.id);
+        purged.push({ type, id: record.id });
+      }
+    }
+    return purged;
   });
 }
 

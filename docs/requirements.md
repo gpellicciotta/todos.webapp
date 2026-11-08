@@ -147,6 +147,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - BIN-4: Users delete a recycle bin entry permanently after confirming.
 - BIN-5: Entries deleted more than 30 days ago are purged permanently.
 - BIN-6: Deleted tasks accept no edits until restored.
+- BIN-7: Users empty the recycle bin after confirming, which permanently deletes every entry in it.
 
 ### Backup and Restore
 - BAK-1: Users export a backup of all stored data as one JSON file, in both modes.

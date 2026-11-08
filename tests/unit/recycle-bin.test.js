@@ -32,6 +32,12 @@ function fakeStore(entries) {
     restoreTask: vi.fn(async (id) => drop(id)),
     restoreList: vi.fn(async (id) => drop(id)),
     purgeForever: vi.fn(async (type, id) => drop(id)),
+    emptyBin: vi.fn(async () => {
+      const purged = bin.map(({ type, id }) => ({ type, id }));
+      bin = [];
+      listeners.forEach((listener) => listener({ operation: 'emptyBin', remote: false }));
+      return purged;
+    }),
     subscribe: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -160,5 +166,58 @@ describe('mountRecycleBin', () => {
     expect(settings.actionLabel).toBe('Open');
     settings.onAction();
     expect(navigate).toHaveBeenCalledWith('#/lists/l1');
+  });
+
+  describe('Empty recycle bin', () => {
+    const empty = () => document.querySelector('[data-role="empty-bin"]');
+    const question = () => document.querySelector('.bin__confirm');
+
+    it('hides the button while the bin is empty', async () => {
+      await mount([]);
+      expect(empty().hidden).toBe(true);
+    });
+
+    it('asks with the count before emptying, and Keep leaves the bin as it was', async () => {
+      const { store } = await mount([
+        entry(new Date(), { id: 't1' }), entry(new Date(), { id: 't2' }),
+        entry(new Date(), { type: 'list', id: 'l1', name: 'Garden', description: undefined }),
+      ]);
+      expect(empty().hidden).toBe(false);
+      empty().click();
+      expect(question().textContent).toContain('Permanently delete 1 list and 2 tasks? This cannot be undone.');
+      expect(question().getAttribute('role')).toBe('group');
+      expect(document.activeElement.textContent).toBe('Keep');
+      document.activeElement.click();
+      expect(question()).toBeNull();
+      expect(document.activeElement).toBe(empty());
+      empty().click();
+      question().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(question()).toBeNull();
+      expect(store.emptyBin).not.toHaveBeenCalled();
+    });
+
+    it('empties the bin after Delete all, shows the empty text, and toasts', async () => {
+      const { store, toaster } = await mount([entry(new Date())]);
+      empty().click();
+      [...question().querySelectorAll('button')].find((button) => button.textContent === 'Delete all').click();
+      await vi.waitFor(() => expect(document.querySelector('.bin-row')).toBeNull());
+      expect(store.emptyBin).toHaveBeenCalledTimes(1);
+      expect(toaster.show).toHaveBeenCalledWith('Recycle bin emptied.');
+      expect(document.querySelector('.empty-state').hidden).toBe(false);
+      expect(empty().hidden).toBe(true);
+      expect(question()).toBeNull();
+    });
+
+    it('keeps the screen and the question and shows a toast when emptying fails', async () => {
+      const { store, toaster } = await mount([entry(new Date())]);
+      store.emptyBin.mockRejectedValueOnce(new Error('disk full'));
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      empty().click();
+      [...question().querySelectorAll('button')].find((button) => button.textContent === 'Delete all').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledWith('The recycle bin could not be emptied.'));
+      error.mockRestore();
+      expect(document.querySelectorAll('.bin-row')).toHaveLength(1);
+      expect(question()).not.toBeNull();
+    });
   });
 });

@@ -101,6 +101,28 @@ test('Delete permanently asks in the row, Keep leaves the entry, and Delete remo
   expect(problems).toEqual([]);
 });
 
+test('Empty recycle bin asks with the count, then empties the bin for good, also after a reload', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, '#/bin');
+  await expect(page.getByRole('button', { name: 'Empty recycle bin' })).toBeHidden();
+  await seed(page, { deleteList: true });
+  await expect(page.locator('.bin-row')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Empty recycle bin' }).click();
+  const confirm = page.getByRole('group', { name: 'Empty recycle bin' });
+  await expect(confirm).toContainText('Permanently delete 1 list and 1 task? This cannot be undone.');
+  await expect(confirm.getByRole('button', { name: 'Keep' })).toBeFocused();
+  await page.screenshot({ path: test.info().outputPath('empty-bin-question.png') });
+  await confirm.getByRole('button', { name: 'Delete all' }).click();
+  await expect(page.locator('.bin-row')).toHaveCount(0);
+  await expect(page.locator('.empty-state')).toBeVisible();
+  await expect(page.getByText('Recycle bin emptied.')).toBeVisible();
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await expect(page.locator('.empty-state')).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
 test('choosing Dark sets data-theme at once and keeps it after a reload', async ({ page }) => {
   const problems = watch(page);
   await open(page, '#/settings');

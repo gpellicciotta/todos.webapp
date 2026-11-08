@@ -255,3 +255,72 @@ describe('purgeExpired', () => {
     expect(await store.purgeExpired()).toEqual([{ type: 'task', id: task.id }]);
   });
 });
+
+describe('emptyBin', () => {
+  it('removes every deleted list and task with memberships and notes, and keeps live records', async () => {
+    const live = await store.createTask({ description: 'Live' }, { lists: [work.id] });
+    await store.addNote(task.id, { text: 'Remember the key' });
+    await store.deleteList(home.id);
+    await store.deleteTask(task.id);
+
+    const purged = await store.emptyBin();
+
+    expect(purged).toEqual(expect.arrayContaining([{ type: 'list', id: home.id }, { type: 'task', id: task.id }]));
+    expect(purged).toHaveLength(2);
+    expect(await store.listBin()).toEqual([]);
+    expect(await store.getTask(task.id)).toBeUndefined();
+    expect(await rawAll('notes')).toEqual([]);
+    expect(await rawAll('memberships')).toEqual([expect.objectContaining({ 'list-id': work.id, 'task-id': live.id })]);
+    expect((await store.listLists()).map((list) => list.id)).toEqual([work.id]);
+  });
+
+  it('returns an empty array and changes nothing for an empty bin', async () => {
+    const heard = [];
+    store.subscribe((change) => heard.push(change.operation));
+    expect(await store.emptyBin()).toEqual([]);
+    expect((await store.listLists()).map((list) => list.id)).toEqual([home.id, work.id]);
+    expect(heard).toEqual(['emptyBin']);
+  });
+
+  it('tells subscribers once for a non-empty bin', async () => {
+    await store.deleteTask(task.id);
+    const heard = [];
+    store.subscribe((change) => heard.push(change.operation));
+    await store.emptyBin();
+    expect(heard).toEqual(['emptyBin']);
+  });
+
+  it('queues nothing for sync', async () => {
+    await store.deleteTask(task.id);
+    const queued = [];
+    const { isTracked } = await import('../../src/js/sync/queue.js');
+    queued.push(isTracked('emptyBin'));
+    expect(queued).toEqual([false]);
+  });
+
+  it('removes nothing when a removal fails part way', async () => {
+    const { IDBKeyRange } = await import('fake-indexeddb');
+    let calls = 0;
+    const keyRange = {
+      bound: (...args) => {
+        calls += 1;
+        if (calls === 3) {
+          throw new Error('disk full');
+        }
+        return IDBKeyRange.bound(...args);
+      },
+    };
+    const other = await freshStore({ keyRange });
+    const a = await other.store.createList({ name: 'A' });
+    const b = await other.store.createList({ name: 'B' });
+    const t1 = await other.store.createTask({ description: 'T' }, { lists: [a.id] });
+    await other.store.deleteList(a.id);
+    await other.store.deleteList(b.id);
+    await other.store.deleteTask(t1.id);
+
+    await expect(other.store.emptyBin()).rejects.toThrow('disk full');
+
+    expect((await other.store.listBin()).map((entry) => entry.id).sort()).toEqual([a.id, b.id, t1.id].sort());
+    other.store.close();
+  });
+});

@@ -95,6 +95,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `purgeForever(type, id)` removes a bin entry and its memberships, and a task's notes (`BIN-4`).
 - Restoring keeps each membership's `position`, so the task returns to its place in every list.
 - `purgeExpired(now)` removes every entry deleted more than 30 days ago in one transaction (`BIN-5`).
+- `emptyBin()` permanently removes every bin entry, with memberships and notes, in one transaction and returns the purged `{type, id}` entries (`BIN-7`).
 - Restoring or purging an entry outside the bin throws code `not-deleted`.
 
 ---
@@ -194,7 +195,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `openStore({tracking})` queues every committed write while `tracking()` is true, that is, while an account is connected or expired (`SYN-1`, `SYN-2`).
   - Local mode queues nothing.
   - The entry joins the queue right after the write commits, in a second transaction.
-  - `purgeForever`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
+  - `purgeForever`, `emptyBin`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
 - An entry holds `seq`, `target`, `operation`, `fields`, `edit-times`, `created`, and `undo`.
   - `fields` holds only what changed (`SYN-5`). `edit-times` holds the client time of each field. Creates carry all fields.
   - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type.

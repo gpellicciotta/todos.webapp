@@ -260,6 +260,15 @@
   display: none;
 }
 
+.bin__toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bin__toolbar .bin__confirm {
+  flex: 1 1 auto;
+}
+
 .bin__note {
   margin: 0;
   color: var(--color-text-muted);
