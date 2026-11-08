@@ -48,7 +48,7 @@ describe('service worker precache', () => {
 
   it('installs from the network, bypassing the HTTP cache, so a new version never stores stale files', async () => {
     const handlers = {};
-    let added = null;
+    const added = [];
     const context = {
       Request,
       URL,
@@ -62,12 +62,12 @@ describe('service worker precache', () => {
         clients: { claim: async () => {} },
       },
       caches: {
-        open: async () => ({
-          addAll: async (requests) => {
-            added = requests;
-          },
-        }),
+        open: async () => ({ put: async () => {} }),
         keys: async () => [],
+      },
+      fetch: async (request) => {
+        added.push(request);
+        return new Response('ok', { headers: { 'content-type': 'text/plain' } });
       },
     };
     runInNewContext(SOURCE, context);

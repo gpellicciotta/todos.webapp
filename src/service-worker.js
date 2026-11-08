@@ -4,16 +4,20 @@
  * Install caches every file of PRECACHE in a cache named after VERSION; activate deletes older caches.
  * A new worker waits after it installs; the page's Update toast sends `{type: 'skip-waiting'}` to activate it,
  * so open pages never mix old and new files (`TEC-19`). The first install has no page to protect and just claims it.
- * Same-origin GET requests are served cache first; page navigations fall back to the cached start page.
+ * Install rejects a non-OK answer, and an HTML answer for any file but the start page: the server answers an unknown
+ * path with the start page and status 200, and caching that as a stylesheet leaves the app unstyled until the next VERSION.
+ * Same-origin GET requests are served cache first, except that cached HTML never answers a non-navigation request;
+ * page navigations fall back to the cached start page.
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
  * a navigation to `/admin` reaches the server and never falls back to the app shell.
  * Bump VERSION with every change to a precached file, and keep PRECACHE complete:
  * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
  */
 
-const VERSION = '2026-11-08.11';
+const VERSION = '2026-11-08.12';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
+const HTML_ENTRIES = ['./', 'index.html'];
 
 const PRECACHE = [
   './',
@@ -108,10 +112,36 @@ function isServerPath(url) {
   return first === 'admin' || first === 'api';
 }
 
-self.addEventListener('install', (event) => {
+/**
+ * Tell whether a response is an HTML page.
+ * @param {Response} response the response to inspect
+ * @returns {boolean} true when its content type is text/html
+ */
+function isHtml(response) {
+  return (response.headers?.get('content-type') ?? '').startsWith('text/html');
+}
+
+/**
+ * Fetch one precache entry and store it, or throw when the server answered wrongly.
+ * @param {Cache} cache the cache to fill
+ * @param {string} path the entry, relative to the worker
+ * @returns {Promise<void>} resolves once the entry is stored
+ */
+async function precacheEntry(cache, path) {
   // `cache: 'reload'` skips the HTTP cache, so a new VERSION never stores files cached before the deploy.
-  const requests = PRECACHE.map((url) => new Request(new URL(url, self.location.href), { cache: 'reload' }));
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(requests)));
+  const request = new Request(new URL(path, self.location.href), { cache: 'reload' });
+  const response = await fetch(request);
+  if (!response.ok) {
+    throw new Error(`Precache failed: ${path} answered ${response.status}`);
+  }
+  if (!HTML_ENTRIES.includes(path) && isHtml(response)) {
+    throw new Error(`Precache failed: ${path} answered HTML`);
+  }
+  await cache.put(request, response);
+}
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => Promise.all(PRECACHE.map((path) => precacheEntry(cache, path)))));
 });
 
 self.addEventListener('message', (event) => {
@@ -134,7 +164,7 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(caches.open(CACHE).then(async (cache) => {
     const cached = await cache.match(request, { ignoreSearch: request.mode === 'navigate' });
-    if (cached) {
+    if (cached && !(request.mode !== 'navigate' && isHtml(cached))) {
       return cached;
     }
     try {

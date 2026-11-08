@@ -97,9 +97,10 @@ function loadWorker() {
       clients: { claim },
     },
     caches: {
-      open: async () => ({ addAll: async (requests) => added.push(...requests.map((request) => request.url)) }),
+      open: async () => ({ put: async (request) => added.push(request.url) }),
       keys: async () => [],
     },
+    fetch: async () => new Response('ok', { headers: { 'content-type': 'text/plain' } }),
   };
   runInNewContext(SOURCE, context);
   return { handlers, skipWaiting, claim, added };
@@ -137,5 +138,108 @@ describe('service worker update protocol', () => {
     } });
     await work;
     expect(claim).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Run the install handler against a server that answers each URL with the given response.
+ * @param {(url: string) => Response} answer the server
+ * @returns {Promise<{error: Error|null, stored: string[]}>} the install outcome and the URLs stored
+ */
+async function install(answer) {
+  const handlers = {};
+  const stored = [];
+  const context = {
+    URL,
+    Promise,
+    Request,
+    self: {
+      location: new URL('https://todos.example/service-worker.js'),
+      addEventListener: (type, handler) => {
+        handlers[type] = handler;
+      },
+    },
+    caches: { open: async () => ({ put: async (request) => stored.push(request.url) }) },
+    fetch: async (request) => answer(request.url),
+  };
+  runInNewContext(SOURCE, context);
+  let work = null;
+  handlers.install({ waitUntil: (promise) => {
+    work = promise;
+  } });
+  const error = await work.then(() => null, (reason) => reason);
+  return { error, stored };
+}
+
+const asset = (url) => new Response('body', { headers: { 'content-type': url.endsWith('.css') ? 'text/css' : 'text/plain' } });
+const html = () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
+
+describe('service worker install validation', () => {
+  it('stores every file when the server answers correctly, HTML for the start page included', async () => {
+    const { error, stored } = await install((url) => (url.endsWith('/') || url.endsWith('index.html') ? html() : asset(url)));
+    expect(error).toBeNull();
+    expect(stored.length).toBeGreaterThan(10);
+  });
+
+  it('fails when a stylesheet comes back as HTML with status 200', async () => {
+    const { error } = await install((url) => (url.endsWith('css/views.css') ? html() : asset(url)));
+    expect(error?.message).toContain('css/views.css');
+  });
+
+  it('fails when a script comes back as HTML with status 200', async () => {
+    const { error } = await install((url) => (url.endsWith('js/app.js') ? html() : asset(url)));
+    expect(error?.message).toContain('js/app.js');
+  });
+
+  it('fails when a file answers 404', async () => {
+    const { error } = await install((url) => (url.endsWith('img/icons.svg') ? new Response('', { status: 404 }) : asset(url)));
+    expect(error?.message).toContain('img/icons.svg');
+  });
+});
+
+describe('service worker cached HTML', () => {
+  const cachedHtml = () => ({ headers: new Headers({ 'content-type': 'text/html' }) });
+
+  /**
+   * Send a request for which the cache holds an HTML response, and a good network copy.
+   * @param {string} mode the request mode
+   * @param {object} cachedResponse the cached response
+   * @returns {Promise<unknown>} what the worker answered
+   */
+  async function answerFrom(mode, cachedResponse) {
+    const handlers = {};
+    const context = {
+      URL,
+      Promise,
+      Request,
+      self: {
+        location: new URL('https://todos.example/service-worker.js'),
+        addEventListener: (type, handler) => {
+          handlers[type] = handler;
+        },
+      },
+      caches: { open: async () => ({ match: async () => cachedResponse }) },
+      fetch: async () => 'network',
+    };
+    runInNewContext(SOURCE, context);
+    let answer = null;
+    handlers.fetch({ request: { url: 'https://todos.example/css/style.css', method: 'GET', mode }, respondWith: (promise) => {
+      answer = promise;
+    } });
+    return answer;
+  }
+
+  it.each(['no-cors', 'cors', 'same-origin'])('ignores cached HTML for a %s request and uses the network', async (mode) => {
+    expect(await answerFrom(mode, cachedHtml())).toBe('network');
+  });
+
+  it('serves cached HTML for a navigation', async () => {
+    const cached = cachedHtml();
+    expect(await answerFrom('navigate', cached)).toBe(cached);
+  });
+
+  it('serves a cached stylesheet for a stylesheet request', async () => {
+    const cached = { headers: new Headers({ 'content-type': 'text/css' }) };
+    expect(await answerFrom('no-cors', cached)).toBe(cached);
   });
 });
