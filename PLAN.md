@@ -21,7 +21,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0056 Design how the sidebar and Lists screen look and behave with many lists, 100 and more.
 - [x] T0028 Add the Sharing section to the list editor, role-aware controls, and the Shared filter.
 - [x] T0053 Remember view options per list instead of one shared setting, with a reset to the shared defaults.
-- [!] T0065 [reason: 11 e2e tests fail on main after the visual-improvements commit] [owner: @claude] Release (and publish) all changes as v0.3.0, via the devops.py script
+- [x] T0065 Release (and publish) all changes as v0.3.0, via the devops.py script
 
 ## Backlog
 - [ ] T0080 Fix the flaky connect e2e test: the first sync pull adds a second GET /api/users/me to the recorded calls.
