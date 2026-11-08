@@ -28,6 +28,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Showed each unread service broadcast marked as a banner above every view, with Open and Dismiss.
 - FrontEnd: Loaded the inbox at start, on sign-in, when the tab turns visible, and every 2 minutes; local mode sends no request.
 - DevEx: Added `devops.py server start [--background] [--port {{port}}]` and `server stop [--port {{port}}]` to run and stop the dev server, which now takes a pid file and a stop file.
+- FrontEnd: Redrew the app icon and favicon to match the Todos tile of the apps portal: a gray checklist box with a green check in the hexagon.
 - FrontEnd: Made a new service worker wait until the user clicks Update on a lasting "A new version is ready" toast, then reload once.
 - FrontEnd: Showed the reload banner in tabs that did not click Update, and the Close other tabs message when an old tab blocks a database upgrade.
 - FrontEnd: Queued every change made while connected and uploaded it in order, without duplicates on retry.

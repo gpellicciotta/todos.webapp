@@ -161,7 +161,7 @@ The page shows a lasting Update toast, "A new version is ready", through [sw-upd
 - Test it by hand: serve version A, load it, serve version B, reload, and confirm the toast appears while the page stays on A.
 
 ### App Icons
-The app icon and the favicon are one file: the slightly rounded hexagon with a fat navy 600 border, a white inside, and a navy check.
+The app icon and the favicon are one file: the slightly rounded hexagon of the apps portal, with a fat navy 600 border and a white inside, holding its Todos glyph, a gray checklist box with a green check.
 [app-icon.svg](../src/img/app-icon.svg) is the source; the PNG icons of the manifest are rendered from it.
 Render them again after changing the SVG:
 

@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-08.4",
+  "version": "2026-11-08.6",
   "files": {
     "index.html": "fd91c2de184498d0fc8273cd23fd0c6b96bf25d25c719cbf737313e8beaa46a1",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -13,9 +13,9 @@
     "css/views.css": "5d2982b47d5c6be2d96159fc2a00481aeb97034b21ba3304f288be381be13cfb",
     "fonts/InterVariable.woff2": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
     "img/icons.svg": "828386648bd413c60eb3f9993b09c31cf8588d531e478cf2f9bb2aba193bbc45",
-    "img/app-icon.svg": "ff5a2a158422fe755ee0107a5ea5468d45c5c2b2c2f455314fdc01d2fb5cc76a",
-    "img/app-icon-192.png": "be625fa17951490ba56d30a7b0dc81714c68748d3d4ca7bb5dfc58ffc09fdbb1",
-    "img/app-icon-512.png": "67fe9d7a2e1ac2b72327bc020673305f3f769cebf63851e885f24a2980273cbc",
+    "img/app-icon.svg": "218d7161ec62d7c6d566b541e2f22c275e0b0f8123582f63d2e315a060c9a3d2",
+    "img/app-icon-192.png": "98c47d21427e52846ef3258282c3f2572265614587c2b1e78892a45bd801d12d",
+    "img/app-icon-512.png": "65fd75b444e512249cabde4f7335bbd7a0c58e69dc3c25c2548007e77f0de50e",
     "js/app.js": "486ecd00a7a238977d1216d3a3eb53f9c3d4f54e8b44377f151b346c15e8a5ec",
     "js/core/backup.js": "bd2f5a9c9abaed9acdee42caae0c68969242d68bc65e2251d972487be3e1b1ab",
     "js/core/list-counts.js": "eb2c5f45da527d030ffb6988c8ee2f8b554f87e7020c5c7f2e5166f9d8ca8b7e",
