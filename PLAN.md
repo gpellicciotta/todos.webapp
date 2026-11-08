@@ -2,8 +2,8 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [ ] T0213 Add a Delete all data action with typed confirmation to the Data section of Settings.
-- [ ] T0212 Add an Empty recycle bin action with confirmation to the recycle bin screen.
+- [x] T0213 Add a Delete all data action with typed confirmation to the Data section of Settings.
+- [~] T0212 [owner: @claude-code] Add an Empty recycle bin action with confirmation to the recycle bin screen.
 - [x] T0211 Make the service worker reject HTML served for asset files, at install and at fetch.
 
 ## Backlog
