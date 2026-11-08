@@ -206,7 +206,7 @@ test('a connected account shows its initials and name, and Connected in the pane
   await button.click();
   await expect(page.locator('.user-panel')).toContainText('Jane Doe');
   await expect(page.locator('.user-panel')).toContainText('Connected');
-  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Recycle bin', 'Settings']);
+  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Connected', 'Recycle bin', 'Settings']);
   expect(problems).toEqual([]);
 });
 
@@ -222,7 +222,7 @@ test('an expired session shows a banner with Sign in that opens the connect scre
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connect');
   await page.getByRole('button', { name: 'Jane Doe' }).click();
   await expect(page.locator('.user-panel')).toContainText('Sign in needed');
-  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Recycle bin', 'Settings']);
+  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Sign in needed', 'Recycle bin', 'Settings']);
   expect(problems).toEqual([]);
 });
 

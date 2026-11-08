@@ -327,9 +327,9 @@
 .info-line__reset {
   flex: none;
   align-self: center;
-  min-inline-size: auto;
-  min-block-size: auto;
-  margin: 0;
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  margin: calc(0px - var(--space-3)) 0;
   padding-inline: var(--space-2);
   padding-block: var(--space-1);
   border: var(--border-width) solid transparent;
