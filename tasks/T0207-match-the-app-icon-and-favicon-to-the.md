@@ -5,14 +5,14 @@ needs: []
 branch: —
 worktree: —
 status: completed
-started_at: "2026-11-08T07:16:51Z"
-ended_at: "2026-11-08T07:19:24Z"
-review: agent
+started_at: "2026-11-08T07:19:51Z"
+ended_at: "2026-11-08T07:23:40Z"
+review: human
 preview: none
 protocol: standard
 review_status: approved
-review_round: 1
-reviewed_by: "@claude-code-reviewer"
+review_round: 2
+reviewed_by: "@giova"
 completion-commit: 5ab34d22103f7972ccc54064ae50a94e1f2a3c54
 ---
 # T0207: Match the app icon and favicon to the Todos tile of the apps portal
@@ -45,6 +45,24 @@ Size estimate: 4 files, 40 lines
 
 - [2026-11-08] **[Review]**
   Round 1 approved by @claude-code-reviewer.
+
+- [2026-11-08] **[Complete]**
+  Task completed successfully.
+
+- [2026-11-08] **[Review]**
+  Round 1 approval cleared by reopening; rework needs a new review round.
+
+- [2026-11-08] **[Review]**
+  Review raised from agent to human.
+
+- [2026-11-08] **[Implement]**
+  Reopened: box border now app gray; review switched to human at user request.
+
+- [2026-11-08] **[Review]**
+  Round 2 requested (mode: human).
+
+- [2026-11-08] **[Review]**
+  Round 2 approved by @giova.
 
 - [2026-11-08] **[Complete]**
   Task completed successfully.
