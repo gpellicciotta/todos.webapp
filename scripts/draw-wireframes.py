@@ -931,14 +931,27 @@ def lists_find():
     bar_top = compact.height - 64 - 88
     typed = "Garden shed"
     compact.text(compact.width / 2, 200, f'No list matches "{typed}".', 16, "bold", "middle")
-    button(compact, (compact.width - (text_width(f'Create list "{typed}"', 14) + 32)) / 2, 224, f'Create list "{typed}"', "primary")
+    button(
+        compact,
+        (compact.width - (text_width(f'Create list "{typed}"', 14) + 32)) / 2,
+        224,
+        f'Create list "{typed}"',
+        "primary",
+    )
     find_bar(compact, 0, bar_top, compact.width, value=typed, sort="Name", info=f"0 of {MANY_TOTAL} lists")
     bottom_nav(compact, "Lists")
     fab(compact, compact.width - 16, bar_top - 16)
     in_manual_order = [row for row in MANY_ROWS if row[0] in FIND_RESULTS]
     results = sorted(in_manual_order, key=lambda row: row[0])
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    sidebar_many(wide, "Garden", [(name, open_count) for name, _, open_count, _, _ in in_manual_order], MANY_TOTAL, "ga", len(results))
+    sidebar_many(
+        wide,
+        "Garden",
+        [(name, open_count) for name, _, open_count, _, _ in in_manual_order],
+        MANY_TOTAL,
+        "ga",
+        len(results),
+    )
     page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Lists", account="connected")
     info = f"{len(results)} of {MANY_TOTAL} lists · Sorted by Name"
     y = find_bar(wide, MAIN_LEFT, 100, MAIN_RIGHT - MAIN_LEFT, "ga", "Name", info, reset=True) + 32
