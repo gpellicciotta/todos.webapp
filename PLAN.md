@@ -2,6 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
+- [x] T0211 [owner: @claude] [protocol: adhoc] Fix the flaky connect e2e test that counts the sync engine's extra users/me call.
 - [x] T0210 Fix the 11 failing e2e tests: avatar button overlapping the sync indicator and controls under 44 px.
 - [x] T0209 [owner: @claude-code] [protocol: adhoc] Add a --port option to devops.py server start and server stop.
 - [x] T0208 [owner: @claude-code] [protocol: adhoc] Add server start and server stop commands to devops.py, serving the app in the foreground or background.
