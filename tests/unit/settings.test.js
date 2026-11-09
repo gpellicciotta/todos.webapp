@@ -242,3 +242,49 @@ describe('Delete all data in Settings', () => {
     expect(document.activeElement).toBe(find(dialog, 'Delete everything'));
   });
 });
+
+describe('Keyboard shortcuts in About', () => {
+  const EXPECTED = [
+    [['n', '/'], 'Focus the search and add field.'],
+    [['Shift+Enter', 'Alt+Enter'], 'Add the typed task, in the search and add field.'],
+    [['Escape'], 'Clear the search and add field, or close the editor or a dialog.'],
+    [['Alt+Up', 'Alt+Down'], "Move the focused list, or the focused task in a list's manual order."],
+    [['Ctrl+Z', 'Cmd+Z'], 'Undo the newest change shown in a toast.'],
+  ];
+
+  /** @returns {HTMLElement} the About section of a freshly mounted Settings screen */
+  function mountAbout() {
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
+    return view.querySelector('section[aria-labelledby="settings-about"]');
+  }
+
+  it('lists the five shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd', () => {
+    const about = mountAbout();
+    const heading = about.querySelector('h3');
+    expect(heading.textContent).toBe('Keyboard shortcuts');
+    const list = about.querySelector('dl.settings__shortcuts');
+    const rows = [...list.querySelectorAll(':scope > div')].map((row) => [
+      [...row.querySelectorAll('dt kbd')].map((key) => key.textContent),
+      row.querySelector('dd').textContent,
+    ]);
+    expect(rows).toEqual(EXPECTED);
+  });
+
+  it('joins alternative keys with "or", so a screen reader reads each term as text', () => {
+    const terms = [...mountAbout().querySelectorAll('.settings__shortcuts dt')].map((term) => term.textContent);
+    expect(terms).toEqual(['n or /', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'Ctrl+Z or Cmd+Z']);
+  });
+
+  it('sits after the version line and before the source link', () => {
+    const about = mountAbout();
+    const order = [...about.children].map((child) => child.className);
+    const version = order.indexOf('settings__hint');
+    const heading = order.indexOf('settings__subtitle');
+    const list = order.indexOf('settings__shortcuts');
+    const link = order.indexOf('settings__link');
+    expect(version).toBeGreaterThan(-1);
+    expect([version < heading, heading < list, list < link]).toEqual([true, true, true]);
+  });
+});

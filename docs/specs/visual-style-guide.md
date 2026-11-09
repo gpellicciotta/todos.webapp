@@ -112,6 +112,9 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - Weight tokens: `--weight-regular`, `--weight-medium`, and `--weight-semibold`.
 - Line heights: `--leading-tight` for headings and single lines, `--leading-normal` for body text.
 - `--font-mono`: the system monospace stack, for code and identifiers in the gallery.
+- `kbd`: one key or key combination per element, such as `Shift+Enter`, in mono `--text-sm` on `--color-surface-sunken` with a `--radius-sm` border.
+  Use it for keys the user presses, such as the About shortcut list; never for code or values.
+  See [Families and figures](../../src/demo/visual-style-gallery.html#typography).
 - Open tasks use medium weight; done tasks use regular weight and the muted color.
 - Cancelled tasks also get a strike-through, so they differ from completed ones beyond the icon.
 

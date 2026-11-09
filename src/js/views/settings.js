@@ -8,6 +8,7 @@
  * Connected, the section names the account, its server, the sync state, and a Sync log link; the URL cannot change (`CON-11`).
  * Delete all data erases this device after an offer to export first and a typed DELETE; it is off while connected (`BAK-15`).
  * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
+ * About lists the keyboard shortcuts that work today, from `SHORTCUTS`.
  */
 
 import { backupFileName, exportBackup } from '../core/backup.js';
@@ -69,7 +70,21 @@ const STRINGS = Object.freeze({
   about: 'About',
   version: (version, built) => `Version ${version} · Built ${built}`,
   source: 'Requirements and source code',
+  shortcuts: 'Keyboard shortcuts',
+  or: ' or ',
 });
+
+/**
+ * The keyboard shortcuts About lists: alternative keys, and what they do.
+ * A task that adds a shortcut adds its row here.
+ */
+const SHORTCUTS = Object.freeze([
+  Object.freeze({ keys: ['n', '/'], action: 'Focus the search and add field.' }),
+  Object.freeze({ keys: ['Shift+Enter', 'Alt+Enter'], action: 'Add the typed task, in the search and add field.' }),
+  Object.freeze({ keys: ['Escape'], action: 'Clear the search and add field, or close the editor or a dialog.' }),
+  Object.freeze({ keys: ['Alt+Up', 'Alt+Down'], action: "Move the focused list, or the focused task in a list's manual order." }),
+  Object.freeze({ keys: ['Ctrl+Z', 'Cmd+Z'], action: 'Undo the newest change shown in a toast.' }),
+]);
 
 /**
  * Create an element with a class and optional text.
@@ -497,17 +512,43 @@ function connectionSection(doc, { getStorage, session, sync, toaster, navigate }
 }
 
 /**
- * Create the About section: the app version, the build date, and the source link.
+ * Create the keyboard shortcut list: one term per shortcut, its keys in `kbd` elements joined by "or".
+ * @param {Document} doc the document
+ * @returns {HTMLElement[]} the heading and the list
+ */
+function shortcutList(doc) {
+  const heading = make(doc, 'h3', 'settings__subtitle', STRINGS.shortcuts);
+  const list = make(doc, 'dl', 'settings__shortcuts');
+  for (const { keys, action } of SHORTCUTS) {
+    const term = doc.createElement('dt');
+    keys.forEach((key, index) => {
+      if (index > 0) {
+        term.append(STRINGS.or);
+      }
+      const kbd = doc.createElement('kbd');
+      kbd.textContent = key;
+      term.append(kbd);
+    });
+    const row = doc.createElement('div');
+    row.append(term, make(doc, 'dd', 'settings__shortcut-action', action));
+    list.append(row);
+  }
+  return [heading, list];
+}
+
+/**
+ * Create the About section: the app version, the build date, the keyboard shortcuts, and the source link.
  * @param {Document} doc the document
  * @returns {HTMLElement} the section
  */
 function aboutSection(doc) {
   const element = section(doc, 'about', STRINGS.about);
+  element.classList.add('settings__about');
   const link = make(doc, 'a', 'settings__link', STRINGS.source);
   link.href = SOURCE_URL;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  element.append(make(doc, 'p', 'settings__hint', STRINGS.version(VERSION, formatBuildDate(BUILD_DATE))), link);
+  element.append(make(doc, 'p', 'settings__hint', STRINGS.version(VERSION, formatBuildDate(BUILD_DATE))), ...shortcutList(doc), link);
   return element;
 }
 

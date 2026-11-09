@@ -183,6 +183,37 @@ test('a theme that cannot be saved still applies, and a toast says so', async ({
   expect(problems).toEqual([]);
 });
 
+for (const [size, viewport] of [['wide', { width: 1440, height: 900 }], ['compact', { width: 390, height: 844 }]]) {
+  test(`About lists the keyboard shortcuts at ${size} width without a horizontal scroll`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(viewport);
+    await open(page, '#/settings');
+    const about = page.getByRole('region', { name: 'About' });
+    await expect(about.getByRole('heading', { name: 'Keyboard shortcuts' })).toBeVisible();
+    const terms = about.locator('.settings__shortcuts dt');
+    await expect(terms).toHaveText(['n or /', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'Ctrl+Z or Cmd+Z']);
+    await expect(about.locator('.settings__shortcuts kbd')).toHaveCount(9);
+    const actions = about.locator('.settings__shortcuts dd');
+    await expect(actions).toHaveCount(5);
+    const boxes = await about.locator('.settings__shortcuts > div').evaluateAll((rows) => rows.map((row) => {
+      const [term, action] = [row.querySelector('dt'), row.querySelector('dd')].map((cell) => cell.getBoundingClientRect());
+      return { termLeft: term.left, termRight: term.right, termBottom: term.bottom, actionLeft: action.left, actionTop: action.top };
+    }));
+    if (size === 'wide') {
+      // Two columns: every key cell starts at one x, and every action starts at one x to its right.
+      expect(new Set(boxes.map((box) => box.termLeft)).size).toBe(1);
+      expect(new Set(boxes.map((box) => box.actionLeft)).size).toBe(1);
+      expect(boxes.every((box) => box.actionLeft >= box.termRight)).toBe(true);
+    }
+    else {
+      // Stacked: each action sits under its keys.
+      expect(boxes.every((box) => box.actionTop >= box.termBottom)).toBe(true);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    expect(problems).toEqual([]);
+  });
+}
+
 test('Settings shows the local connection card, the server URL, the enabled backup actions, and the version', async ({ page }) => {
   const problems = watch(page);
   await open(page, '#/settings');
