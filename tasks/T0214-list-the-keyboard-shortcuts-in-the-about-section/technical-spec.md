@@ -11,18 +11,22 @@
   - T0073 adds `l`, T0074 adds `/` on the Lists screen, and T0076 adds Alt+Shift+Up and Alt+Shift+Down.
 - **[Decided]** Rows, in this order, with the key text exactly as shown:
   - `n` or `/`: Focus the search and add field.
-  - `Shift+Enter` or `Alt+Enter`: Add the typed task (in the search and add field).
+  - `Shift+Enter` or `Alt+Enter`: Add the typed task, in the search and add field.
   - `Escape`: Clear the search and add field, or close the editor or a dialog.
-  - `Alt+Up` or `Alt+Down`: Move the focused list, or the focused task in a list.
+  - `Alt+Up` or `Alt+Down`: Move the focused list, or the focused task in a list's manual order.
   - `Ctrl+Z` or `Cmd+Z`: Undo the newest change shown in a toast.
 - **[Decided]** Markup: a `<dl>` with each key in a `<kbd>` element; the terms read as text to screen readers.
 - **[Decided]** The rows live in one frozen array in `settings.js` next to `STRINGS`, so tests and rendering share it.
-- **[Decided]** Style `kbd` with existing design tokens only (border, radius, monospace or small text); no new tokens.
+- **[Decided]** Style `kbd` as a base element in `style.css`, beside `code`, with existing semantic tokens only.
+  - The ui-guidelines skill requires the gallery and the visual style guide to show it, so both change too.
 - The list is static text: no buttons, no remapping, and no platform detection.
 
 ### Declared Files
 - src/js/views/settings.js
+- src/css/style.css
 - src/css/views.css
+- src/demo/visual-style-gallery.html
+- docs/specs/visual-style-guide.md
 - tests/unit/settings.test.js
 - tests/e2e/bin-settings.spec.js
 - docs/specs/ui-design.md
@@ -30,7 +34,8 @@
 - src/service-worker.js (one-line VERSION bump)
 
 Mechanical command: `node scripts/check-sw-version.mjs --update` (rewrites `scripts/sw-precache-hashes.json`).
-Size estimate: 7 files, 140 lines
+Size estimate: 10 files, 180 lines
+Size note: The shared kbd style needs its gallery and guide entries; without a consumer it has no reason to merge alone.
 
 ### Tests
 - Unit: `mountSettings` renders a "Keyboard shortcuts" heading in About with five rows in the order above.
