@@ -86,14 +86,15 @@ test.describe('List screen', () => {
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(field).toHaveValue('');
     await expect(page).toHaveURL(new RegExp('#/lists/[0-9a-f-]+/tasks/[0-9a-f-]+$'));
-    await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
+    await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the door');
+    await expect(field).toBeFocused();
     await expect(page.locator('.list-view .task-row')).toHaveCount(4);
     expect((await rows(page)).at(-1)).toBe('Paint the door');
     expect(problems).toEqual([]);
   });
 
   for (const shortcut of ['Shift+Enter', 'Alt+Enter']) {
-    test(`${shortcut} in the add field puts the new task at the end of the list (TSK-1, LV-5)`, async ({ page }) => {
+    test(`${shortcut} in the add field adds tasks in a row at the end of the list, keeping the focus (TSK-1, LV-5)`, async ({ page }) => {
       const problems = watch(page);
       await openList(page);
       const field = page.getByLabel('Search or add a task');
@@ -101,9 +102,14 @@ test.describe('List screen', () => {
       await field.press(shortcut);
       await expect(field).toHaveValue('');
       await expect(page).toHaveURL(new RegExp('#/lists/[0-9a-f-]+/tasks/[0-9a-f-]+$'));
-      await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
-      await expect(page.locator('.list-view .task-row')).toHaveCount(4);
-      expect((await rows(page)).at(-1)).toBe('Paint the door');
+      await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the door');
+      await expect(field).toBeFocused();
+      await page.keyboard.type('Paint the gate');
+      await page.keyboard.press(shortcut);
+      await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the gate');
+      await expect(field).toBeFocused();
+      await expect(page.locator('.list-view .task-row')).toHaveCount(5);
+      expect((await rows(page)).slice(-2)).toEqual(['Paint the door', 'Paint the gate']);
       expect(problems).toEqual([]);
     });
   }

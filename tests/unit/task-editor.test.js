@@ -315,6 +315,60 @@ describe('mountTaskEditor', () => {
   });
 });
 
+describe('mountTaskEditor first focus after an add', () => {
+  let editor;
+  let panel;
+  let field;
+  let link;
+
+  /**
+   * Open the task editor of t1 with the focus on an element, in a compact or wide layout.
+   * @param {HTMLElement} focused the element that has focus when the editor opens
+   * @param {boolean} compact whether the layout is below 64rem
+   */
+  async function open(focused, compact) {
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: query === '(width < 64rem)' && compact, media: query }));
+    focused.focus();
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store: fakeStore(), toaster: { show: vi.fn() } });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+  }
+
+  beforeEach(() => {
+    document.body.innerHTML = `<main><a href="#/tasks/t1">Buy paint</a>
+      <input data-shortcut="add search" aria-label="Search or add a task"></main><div data-editor-slot hidden></div>`;
+    field = document.querySelector('input');
+    link = document.querySelector('a');
+  });
+
+  afterEach(() => {
+    panel.destroy();
+    vi.restoreAllMocks();
+  });
+
+  it('leaves the focus in the add field in the wide layout, so the next task can be typed', async () => {
+    await open(field, false);
+    expect(document.querySelector('textarea[name="description"]').value).toBe('Buy paint');
+    expect(document.activeElement).toBe(field);
+  });
+
+  it('takes the focus from the add field in the compact layout, where the editor covers it', async () => {
+    await open(field, true);
+    expect(document.activeElement).toBe(document.querySelector('textarea[name="description"]'));
+  });
+
+  it('takes the focus in the wide layout when opened from anything but the add field, such as a row', async () => {
+    await open(link, false);
+    expect(document.activeElement).toBe(document.querySelector('textarea[name="description"]'));
+  });
+});
+
 describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
   let editor;
   let panel;

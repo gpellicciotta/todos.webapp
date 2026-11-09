@@ -149,7 +149,7 @@ export function mountAllTasks(view, {
   /**
    * Store a new task in the lists of the active list filter, or in no list, and open its editor.
    * @param {string} description the trimmed description
-   * @returns {Promise<boolean>} false, since the editor takes the focus; rejects when the task could not be stored
+   * @returns {Promise<void>} resolves once stored; rejects when the task could not be stored
    */
   async function add(description) {
     const listIds = new Set(data?.lists.map((list) => list.id) ?? []);
@@ -173,7 +173,6 @@ export function mountAllTasks(view, {
       persist();
     }
     navigate(formatRoute('task', { taskId: task.id }));
-    return false;
   }
 
   /**

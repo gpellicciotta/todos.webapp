@@ -33,17 +33,17 @@ describe('createAddBar', () => {
     expect(document.activeElement).toBe(input);
   });
 
-  it('leaves focus alone when onAdd resolves false, because focus moved elsewhere', async () => {
+  it('takes the focus back after an add, from the Add button or wherever onAdd moved it', async () => {
     const other = document.body.appendChild(document.createElement('button'));
     onAdd.mockImplementationOnce(async () => {
       other.focus();
-      return false;
     });
+    bar.element.querySelector('button[type="submit"]').focus();
     input.value = 'Buy paint';
     bar.element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await vi.waitFor(() => expect(input.value).toBe(''));
     await Promise.resolve();
-    expect(document.activeElement).toBe(other);
+    expect(document.activeElement).toBe(input);
     other.remove();
   });
 

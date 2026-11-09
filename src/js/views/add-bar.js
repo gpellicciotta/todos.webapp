@@ -3,7 +3,7 @@
  *
  * Typing reports the text to `onSearch` once it pauses for 150 ms; Enter reports it at once and never adds.
  * The Add button, Shift+Enter, or Alt+Enter creates the task, then clears the field and the filter,
- * and keeps the field focused unless `onAdd` resolves `false`: it opened the task editor, which takes the focus.
+ * and focuses the field again, so the next task can follow; the task editor of a wide screen leaves it there.
  * The button reads "Add anyway" while the typed text equals a known description, ignoring case and spaces.
  * A viewer, who cannot add tasks, sees "Search tasks" and no Add button (`VO-14`).
  * The field holds at most 500 characters; a counter appears from 450.
@@ -36,9 +36,8 @@ const STRINGS = Object.freeze({
  * Create an add bar.
  * @param {object} options add bar options
  * @param {Document} [options.document] the document
- * @param {(description: string) => Promise<void|boolean>} options.onAdd stores a task with the trimmed description
- *   and reports its own failures; the field clears once it resolves and keeps its text when it rejects;
- *   resolving `false` leaves the focus where `onAdd` moved it
+ * @param {(description: string) => Promise<void>} options.onAdd stores a task with the trimmed description
+ *   and reports its own failures; the field clears once it resolves and keeps its text when it rejects
  * @param {(text: string) => void} [options.onSearch] receives the search text once typing pauses, on Enter, and when
  *   the field clears
  * @param {string} [options.text] the starting text
@@ -110,9 +109,8 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
       return;
     }
     busy = true;
-    let focus = true;
     try {
-      focus = (await onAdd(description)) !== false;
+      await onAdd(description);
       clear();
     }
     catch {
@@ -120,9 +118,7 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
     }
     finally {
       busy = false;
-      if (focus) {
-        input.focus();
-      }
+      input.focus();
     }
   }
 

@@ -176,18 +176,17 @@ describe('mountList', () => {
     expect(view.querySelector('.task-row__handle')).not.toBeNull();
   });
 
-  it('opens the task editor of a new task in this list and leaves focus to the editor', async () => {
+  it('opens the task editor of a new task in this list and gives the focus back to the add field', async () => {
     const view = await mount();
     const field = view.querySelector('[data-shortcut~="add"]');
-    field.focus();
-    const refocus = vi.spyOn(field, 'focus');
+    view.querySelector('.add-bar button[type="submit"]').focus();
     field.value = 'Paint the door';
     view.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
     const [task] = (await store.snapshot()).tasks;
     expect(navigate).toHaveBeenCalledWith(`#/lists/${view.dataset.listId}/tasks/${task.id}`);
     await vi.waitFor(() => expect(field.value).toBe(''));
-    expect(refocus).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(document.activeElement).toBe(field));
   });
 
   it('opens no editor when adding fails', async () => {

@@ -185,7 +185,7 @@ describe('mountAllTasks', () => {
     expect(viewModels.tasks.get().filter.statuses).toEqual(['todo', 'in-progress']);
   });
 
-  it('opens the task editor of a new task and leaves focus to the editor', async () => {
+  it('opens the task editor of a new task and gives the focus back to the add field', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
     const navigate = vi.fn();
@@ -194,13 +194,12 @@ describe('mountAllTasks', () => {
     });
     await screen.idle();
     const field = document.querySelector('[data-shortcut~="add"]');
-    field.focus();
-    const refocus = vi.spyOn(field, 'focus');
+    document.querySelector('.add-bar button[type="submit"]').focus();
     field.value = 'Paint the door';
     document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('#/tasks/t2'));
     await vi.waitFor(() => expect(field.value).toBe(''));
-    expect(refocus).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(document.activeElement).toBe(field));
   });
 
   it('opens no editor when adding fails', async () => {

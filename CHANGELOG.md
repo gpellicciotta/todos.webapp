@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.3.1-pre
+- FrontEnd: Kept the focus in the add field after an add on wide screens, so tasks can be added in a row while the new task opens beside it.
 - FrontEnd: Added Shift+Enter and Alt+Enter to the add field, which add the typed task like the Add button, in All tasks and every list.
 - FrontEnd: Added Delete all data to the Data section of Settings: it offers a backup, needs DELETE typed, and is off while connected.
 - FrontEnd: Added Empty recycle bin to the recycle bin screen, which asks with the count first and then permanently deletes every entry.

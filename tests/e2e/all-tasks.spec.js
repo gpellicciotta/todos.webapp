@@ -121,7 +121,7 @@ for (const viewport of [COMPACT, WIDE]) {
   });
 }
 
-test('Enter adds a task, keeps focus in the add bar, and asks for persistent storage once (TSK-1, TEC-5)', async ({ page }) => {
+test('Add adds a task, opens it, keeps focus in the add bar, and asks for persistent storage once (TSK-1, TSK-13, TEC-5)', async ({ page }) => {
   const problems = watch(page);
   await page.addInitScript(() => {
     window.persistCalls = 0;
@@ -143,12 +143,14 @@ test('Enter adds a task, keeps focus in the add bar, and asks for persistent sto
   await expect(page.locator('.task-row__description')).toHaveText('Buy paint');
   await expect(page.locator('.empty-state')).toBeHidden();
   await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
-  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Buy paint');
+  await expect(add).toBeFocused();
   await expect(add).toHaveValue('');
   await add.fill('Call the plumber');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.locator('.task-row')).toHaveCount(2);
-  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Call the plumber');
+  await expect(add).toBeFocused();
   expect(await page.evaluate(() => window.persistCalls)).toBe(1);
   await page.reload();
   await expect(page.locator('.task-row')).toHaveCount(2);
@@ -445,28 +447,49 @@ test('typing in the add field searches, Enter never adds, and Add creates the ta
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(field).toHaveValue('');
   await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
-  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('paint');
+  await expect(field).toBeFocused();
   await expect(page.locator('.task-row')).toHaveCount(5);
   await expect(page.locator(INFO)).toHaveText('5 of 7 tasks · Status: open');
   expect(problems).toEqual([]);
 });
 
 for (const shortcut of ['Shift+Enter', 'Alt+Enter']) {
-  test(`${shortcut} in the add field adds the task like the Add button (TSK-1)`, async ({ page }) => {
+  test(`${shortcut} in the add field adds tasks in a row, each opening in the editor (TSK-1, TSK-13)`, async ({ page }) => {
     const problems = watch(page);
+    await page.setViewportSize(WIDE);
     await openApp(page);
     await seed(page);
     const field = page.getByLabel('Search or add a task');
+    const description = page.getByRole('textbox', { name: 'Description' });
     await field.fill('Paint the fence');
     await field.press(shortcut);
     await expect(field).toHaveValue('');
     await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
-    await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the fence');
-    await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
-    await expect(page.locator('.task-row', { hasText: 'Paint the fence' })).toHaveCount(1);
+    await expect(description).toHaveValue('Paint the fence');
+    await expect(field).toBeFocused();
+    await page.keyboard.type('Paint the gate');
+    await page.keyboard.press(shortcut);
+    await expect(description).toHaveValue('Paint the gate');
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue('');
+    await expect(page.locator('.task-row', { hasText: /Paint the (fence|gate)/ })).toHaveCount(2);
     expect(problems).toEqual([]);
   });
 }
+
+test('on a compact screen, the task editor takes the focus after an add, as it covers the add field (TSK-13)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(COMPACT);
+  await openApp(page);
+  const field = page.getByLabel('Search or add a task');
+  await field.fill('Paint the fence');
+  await field.press('Shift+Enter');
+  await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
+  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the fence');
+  expect(problems).toEqual([]);
+});
 
 test('adding a task that the view options hide shows a toast whose Show resets those options (VO-3)', async ({ page }) => {
   const problems = watch(page);

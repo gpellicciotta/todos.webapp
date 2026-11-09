@@ -10,6 +10,8 @@
  * Store changes, also from other tabs, fill the fields again, except a focused or invalid one;
  * a focused field left unchanged then shows the newest value. The due date and time save once focus leaves them,
  * since a date field changes on each typed digit, such as year 0202 on the way to 2026.
+ * Once loaded, the editor focuses the description, except while the add field holds the focus on a wide screen:
+ * there the panel sits beside the rows, so the user keeps typing the next task (`TSK-13`).
  */
 
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
@@ -33,6 +35,18 @@ const STRINGS = Object.freeze({
 });
 
 let instances = 0;
+
+/** Below 64rem the editor panel covers the main column, add field included. */
+const COMPACT = '(width < 64rem)';
+
+/**
+ * Tell whether the add field keeps the focus: it has it, and the editor opens beside it rather than over it.
+ * @param {Document} doc the document
+ * @returns {boolean} true to leave the focus in the add field
+ */
+function addFieldKeepsFocus(doc) {
+  return Boolean(doc.activeElement?.matches('[data-shortcut~="add"]')) && !doc.defaultView?.matchMedia?.(COMPACT).matches;
+}
 
 /**
  * Create a segmented control of radio buttons.
@@ -444,7 +458,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       lists = [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
       members = ids;
       fill(notes);
-      if (first) {
+      if (first && !addFieldKeepsFocus(doc)) {
         (task['deletion-time'] ? restore : description.control).focus();
       }
     }).catch((error) => console.error('Task editor failed to render:', error));

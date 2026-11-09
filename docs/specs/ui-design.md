@@ -213,9 +213,11 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 ### Add Bar
 - One text field and an Add button; only the Add button or Shift+Enter or Alt+Enter creates the task (`TSK-1`, `VO-3`).
   Enter applies the typed search at once but never adds.
-- **[Decided]** After an add, the new task opens in the task editor, which takes the focus (`TSK-13`).
+- **[Decided]** After an add, the new task opens in the task editor (`TSK-13`).
   The route is `#/tasks/{{task-id}}` in All tasks and `#/lists/{{list-id}}/tasks/{{task-id}}` in a list view.
   A failed add opens nothing and keeps the text in the field.
+- **[Decided]** Wide layouts keep the focus in the add field, beside the editor, so tasks can be added in a row.
+  Compact layouts give the focus to the editor's Description, since the editor covers the add field.
 - The field also searches the view; [Search and Add](#search-and-add) describes this.
 - In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
 - In All tasks, the new task joins the lists of the active list filter, or no list.
