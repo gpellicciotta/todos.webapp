@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [~] T0216 [owner: @claude-code] Add a Finished today only choice to the Status filter of the view options.
+- [x] T0216 Add a Finished today only choice to the Status filter of the view options.
 - [x] T0215 Keep focus in the add field after adding a task on wide screens, while the task editor still opens.
 - [x] T0214 List the keyboard shortcuts in the About section of Settings.
 - [x] T0213 Add a Delete all data action with typed confirmation to the Data section of Settings.
