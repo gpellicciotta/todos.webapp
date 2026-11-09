@@ -211,7 +211,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   A row that leaves the view after a change passes focus to the row now at its place.
 
 ### Add Bar
-- One text field and an Add button; only the Add button creates the task (`TSK-1`, `VO-3`).
+- One text field and an Add button; only the Add button or Shift+Enter or Alt+Enter creates the task (`TSK-1`, `VO-3`).
   Enter applies the typed search at once but never adds.
 - **[Decided]** After an add, the new task opens in the task editor, which takes the focus (`TSK-13`).
   The route is `#/tasks/{{task-id}}` in All tasks and `#/lists/{{list-id}}/tasks/{{task-id}}` in a list view.
@@ -237,9 +237,11 @@ Home                                                              3
 - **[Decided]** The add field doubles as search (`VO-3`): its placeholder reads "Search or add a task".
   Typing filters the rows to tasks whose description or notes match, on top of the view options (`TV-6`, `TV-8`).
   A duplicate is hard to miss, since an existing task appears while the user types.
-- **[Decided]** Only the Add button adds.
+- **[Decided]** Only the Add button and its shortcuts add.
   Enter never adds, so a user who only searches cannot create a task by accident.
-  Keyboard users Tab to Add and press Enter or Space.
+  **[Decided]** Shift+Enter or Alt+Enter in the field adds at once, in All tasks and in every list view.
+  The field names both in `aria-keyshortcuts`, and the Add button's tooltip names them.
+  Keyboard users can also Tab to Add and press Enter or Space.
 - **[Decided]** The info line sits right under the field (`VO-7`):
   - It starts with the count, such as "24 tasks", or "12 of 24 tasks" while filters or text narrow the view.
   - It names each active filter, including the default "Status: open", so hidden tasks never surprise.
@@ -750,6 +752,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` and `/` focus the add and search field, and Escape closes the editor or a dialog.
+- Shift+Enter or Alt+Enter in the add and search field adds the typed task, like the Add button.
 - On the Lists screen `/` focuses the find field; `l` focuses the sidebar's find field, or opens Lists where there is none.
 - Alt+Up, Alt+Down, Alt+Shift+Up, and Alt+Shift+Down move a focused list by one place or to an end.
 - `n` and `/` both focus the view's `[data-shortcut~="add"]` element, the add and search field, and do nothing without it.

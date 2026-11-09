@@ -92,6 +92,22 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
+  for (const shortcut of ['Shift+Enter', 'Alt+Enter']) {
+    test(`${shortcut} in the add field puts the new task at the end of the list (TSK-1, LV-5)`, async ({ page }) => {
+      const problems = watch(page);
+      await openList(page);
+      const field = page.getByLabel('Search or add a task');
+      await field.fill('Paint the door');
+      await field.press(shortcut);
+      await expect(field).toHaveValue('');
+      await expect(page).toHaveURL(new RegExp('#/lists/[0-9a-f-]+/tasks/[0-9a-f-]+$'));
+      await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
+      await expect(page.locator('.list-view .task-row')).toHaveCount(4);
+      expect((await rows(page)).at(-1)).toBe('Paint the door');
+      expect(problems).toEqual([]);
+    });
+  }
+
   test('Group by offers Due date and Status but not List, keeps the manual order inside groups, and hides the grips (LV-8, LV-11)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);

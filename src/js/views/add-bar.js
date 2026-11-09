@@ -2,8 +2,8 @@
  * Add bar: one text field that searches the view, and an Add button that creates a task (`TSK-1`, `VO-3`).
  *
  * Typing reports the text to `onSearch` once it pauses for 150 ms; Enter reports it at once and never adds.
- * Only the Add button creates the task, then clears the field and the filter, and keeps the field focused
- * unless `onAdd` resolves `false`, because it opened the task editor, which takes the focus.
+ * The Add button, Shift+Enter, or Alt+Enter creates the task, then clears the field and the filter,
+ * and keeps the field focused unless `onAdd` resolves `false`: it opened the task editor, which takes the focus.
  * The button reads "Add anyway" while the typed text equals a known description, ignoring case and spaces.
  * A viewer, who cannot add tasks, sees "Search tasks" and no Add button (`VO-14`).
  * The field holds at most 500 characters; a counter appears from 450.
@@ -25,6 +25,7 @@ const STRINGS = Object.freeze({
   viewerLabel: 'Search tasks',
   add: 'Add',
   addAnyway: 'Add anyway',
+  addHint: 'Add (Shift+Enter or Alt+Enter)',
   show: 'Show',
   noMatch: 'No task matches. Add creates it.',
   creates: (text) => `Add creates a new task “${text}”.`,
@@ -53,7 +54,8 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
   element.innerHTML = `<div class="field add-bar__field">
       <label class="field__label visually-hidden" for="${id}"></label>
       <input class="field__control" id="${id}" type="text" maxlength="${DESCRIPTION_MAX}"
-        autocomplete="off" enterkeyhint="done" data-shortcut="add search" aria-describedby="${id}-counter">
+        autocomplete="off" enterkeyhint="done" data-shortcut="add search" aria-describedby="${id}-counter"
+        aria-keyshortcuts="Shift+Enter Alt+Enter">
       <p class="field__counter add-bar__counter" id="${id}-counter" hidden></p>
     </div>
     <button class="button" type="submit"></button>`;
@@ -63,6 +65,7 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
   const button = element.querySelector('button');
   const buttonText = doc.createTextNode(STRINGS.add);
   button.append(spriteIcon(doc, 'plus'), buttonText);
+  button.title = STRINGS.addHint;
   input.value = text;
   let busy = false;
   let timer = null;
@@ -100,8 +103,8 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
     emit();
   }
 
-  element.addEventListener('submit', async (event) => {
-    event.preventDefault();
+  /** Create the task from the trimmed text, once at a time; the Add button and its shortcuts share this path. */
+  async function add() {
     const description = input.value.trim();
     if (!description || busy || readOnly) {
       return;
@@ -121,6 +124,11 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
         input.focus();
       }
     }
+  }
+
+  element.addEventListener('submit', (event) => {
+    event.preventDefault();
+    add();
   });
   // Typing reports the text once it pauses, so a word runs one query, not one per key (`TEC-16`).
   input.addEventListener('input', () => {
@@ -133,8 +141,13 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
     if (event.isComposing) {
       return;
     }
+    // Shift+Enter and Alt+Enter add, like the Add button.
+    if (event.key === 'Enter' && (event.shiftKey || event.altKey)) {
+      event.preventDefault();
+      add();
+    }
     // Enter applies the search; without this, the form would submit and add the task.
-    if (event.key === 'Enter') {
+    else if (event.key === 'Enter') {
       event.preventDefault();
       if (timer !== null) {
         emit();

@@ -451,6 +451,23 @@ test('typing in the add field searches, Enter never adds, and Add creates the ta
   expect(problems).toEqual([]);
 });
 
+for (const shortcut of ['Shift+Enter', 'Alt+Enter']) {
+  test(`${shortcut} in the add field adds the task like the Add button (TSK-1)`, async ({ page }) => {
+    const problems = watch(page);
+    await openApp(page);
+    await seed(page);
+    const field = page.getByLabel('Search or add a task');
+    await field.fill('Paint the fence');
+    await field.press(shortcut);
+    await expect(field).toHaveValue('');
+    await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
+    await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the fence');
+    await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
+    await expect(page.locator('.task-row', { hasText: 'Paint the fence' })).toHaveCount(1);
+    expect(problems).toEqual([]);
+  });
+}
+
 test('adding a task that the view options hide shows a toast whose Show resets those options (VO-3)', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);

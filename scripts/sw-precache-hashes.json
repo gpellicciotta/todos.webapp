@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-09.2",
+  "version": "2026-11-09.3",
   "files": {
     "index.html": "fd91c2de184498d0fc8273cd23fd0c6b96bf25d25c719cbf737313e8beaa46a1",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -56,7 +56,7 @@
     "js/ui/sw-update.js": "3edb1341674ca36ee3d09c7f9d33386febbba086a0bdb43f9d678689859e8885",
     "js/ui/toast.js": "5dbbb893b00958f68719668a52b16aa4f978ae8a74bd4b3314bdc3bea0c8d280",
     "js/ui/user-menu.js": "e711818e4cfaf2c026f82a8df1f8e4922a11fc3678e2ef88749b634e2dc9b603",
-    "js/views/add-bar.js": "2409998c2c430139bddd27db200a940c6de8da3482a01c9f97ac3a54360f3895",
+    "js/views/add-bar.js": "51d0b8d25508a0c3c71d0f54f602226c7033f8fbcc90a7baa8a2a04ff917ba19",
     "js/views/all-tasks.js": "6d24cbd0c646eaa9196e6ac1a65bcbac4ff717c44be0dc998f5268faef6f2416",
     "js/views/connect.js": "c90a0c8d51f704e33a0020482354ecfbdf0a58aa92c9565dc785c2ea86db342f",
     "js/views/editor-panel.js": "42c39698e458b56ccad42496fb65b74bf3e1b85724375744bc9d94b3e85f5f9c",

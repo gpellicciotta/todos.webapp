@@ -126,7 +126,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ### View Options
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.
 - VO-2: At rest the view shows only the search and add field and a subtle line of active filters and task count.
-- VO-3: Typing in the field filters the view to matching tasks; only the Add button creates a task from the text.
+- VO-3: Typing in the field filters the view to matching tasks; only the Add button or its shortcut creates a task.
 - VO-4: The More menu of the task view and of each list view offers "Edit view options".
 - VO-5: View options open in the side panel on wide layouts and as a full screen on compact layouts.
 - VO-6: View options hold every filter, the grouping choice, the sort choice, and a Reset button.

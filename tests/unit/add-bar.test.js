@@ -82,10 +82,11 @@ describe('createAddBar', () => {
   /**
    * Press a key in the field.
    * @param {string} key the key
+   * @param {KeyboardEventInit} [modifiers] modifier flags, such as `shiftKey`
    * @returns {KeyboardEvent} the event, to read `defaultPrevented`
    */
-  function press(key) {
-    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+  function press(key, modifiers = {}) {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...modifiers });
     input.dispatchEvent(event);
     return event;
   }
@@ -169,6 +170,58 @@ describe('createAddBar', () => {
       await Promise.resolve();
       expect(input.value).toBe('Call the plumber');
       expect(onSearch).not.toHaveBeenCalledWith('');
+    });
+  });
+
+  describe('add shortcut', () => {
+    it('names Shift+Enter and Alt+Enter on the field and in the Add button tooltip', () => {
+      expect(input.getAttribute('aria-keyshortcuts')).toBe('Shift+Enter Alt+Enter');
+      expect(bar.element.querySelector('button[type="submit"]').title).toBe('Add (Shift+Enter or Alt+Enter)');
+    });
+
+    it.each([['Shift+Enter', { shiftKey: true }], ['Alt+Enter', { altKey: true }]])(
+      'adds the trimmed description on %s, clears the field, and keeps focus', async (_name, modifiers) => {
+        input.focus();
+        type('  Buy paint  ');
+        const event = press('Enter', modifiers);
+        expect(event.defaultPrevented).toBe(true);
+        await vi.waitFor(() => expect(input.value).toBe(''));
+        expect(onAdd).toHaveBeenCalledTimes(1);
+        expect(onAdd).toHaveBeenCalledWith('Buy paint');
+        expect(onSearch).toHaveBeenLastCalledWith('');
+        expect(document.activeElement).toBe(input);
+      });
+
+    it('adds once when Shift+Enter repeats before the first add settles', async () => {
+      let finish;
+      onAdd.mockImplementationOnce(() => new Promise((resolve) => {
+        finish = resolve;
+      }));
+      type('Buy paint');
+      press('Enter', { shiftKey: true });
+      press('Enter', { shiftKey: true });
+      finish();
+      await vi.waitFor(() => expect(input.value).toBe(''));
+      expect(onAdd).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores Shift+Enter in an empty field, while composing, and for a viewer', () => {
+      expect(press('Enter', { shiftKey: true }).defaultPrevented).toBe(true);
+      type('Buy paint');
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, isComposing: true, bubbles: true, cancelable: true }));
+      bar.setViewer(true);
+      press('Enter', { shiftKey: true });
+      expect(onAdd).not.toHaveBeenCalled();
+      expect(input.value).toBe('Buy paint');
+    });
+
+    it('keeps the text when adding with Shift+Enter fails', async () => {
+      onAdd.mockRejectedValueOnce(new Error('quota'));
+      type('Call the plumber');
+      press('Enter', { shiftKey: true });
+      await vi.waitFor(() => expect(onAdd).toHaveBeenCalledTimes(1));
+      await Promise.resolve();
+      expect(input.value).toBe('Call the plumber');
     });
   });
 
