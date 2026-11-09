@@ -1,7 +1,7 @@
 ---
 id: T0074
 owner: ~
-needs: [T0071]
+needs: ['T0214']
 branch: —
 worktree: —
 status: ready
@@ -24,8 +24,13 @@ Hide reordering while a sort or find text is active, and announce why.
 - [ ] **[Implement]** Add the find bar, `todos.view.lists` sort, info line, no-match state, and the pinned compact bar.
 - [ ] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [ ] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
+- [ ] **[Implement]** Add the Lists screen `/` row to the About shortcut list in settings.js, with its unit test.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-09] **[Decided]**
+  Added a step to list the new shortcut in Settings About, which T0214 creates.
+

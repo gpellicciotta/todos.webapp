@@ -1,7 +1,7 @@
 ---
 id: T0073
 owner: ~
-needs: [T0071, T0072]
+needs: ['T0072', 'T0214']
 branch: —
 worktree: —
 status: ready
@@ -24,8 +24,13 @@ Announce the match count through the polite live region after typing pauses for 
 - [ ] **[Implement]** Add the sidebar find field, the filter, roving tabindex, the `l` shortcut, and the live announcement.
 - [ ] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [ ] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
+- [ ] **[Implement]** Add the `l` row to the About shortcut list in settings.js, with its unit test.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-09] **[Decided]**
+  Added a step to list the new shortcut in Settings About, which T0214 creates.
+

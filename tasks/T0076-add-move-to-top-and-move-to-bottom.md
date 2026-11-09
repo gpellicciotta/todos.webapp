@@ -1,7 +1,7 @@
 ---
 id: T0076
 owner: ~
-needs: [T0072, T0074]
+needs: ['T0072', 'T0074', 'T0214']
 branch: —
 worktree: —
 status: ready
@@ -24,8 +24,13 @@ Announce each move and keep focus on the row, scrolled into view.
 - [ ] **[Implement]** Add the two menu entries and the Alt+Shift keys, using `moveListTo` with the first and last index.
 - [ ] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [ ] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
+- [ ] **[Implement]** Add the Alt+Shift+Up and Alt+Shift+Down row to the About shortcut list in settings.js, with its unit test.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-09] **[Decided]**
+  Added a step to list the new shortcut in Settings About, which T0214 creates.
+
