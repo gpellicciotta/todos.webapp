@@ -399,10 +399,13 @@
   margin-block-start: calc(var(--space-2) - var(--space-3));
 }
 
+/* The end padding keeps the field's focus ring clear of the scrolling body's clip edge. */
 .settings__delete-all {
   display: grid;
   justify-items: start;
+  align-content: start;
   gap: var(--space-3);
+  padding-block-end: var(--space-2);
 }
 
 .settings__delete-all > p {

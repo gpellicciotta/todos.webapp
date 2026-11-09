@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-08.16",
+  "version": "2026-11-09.2",
   "files": {
     "index.html": "fd91c2de184498d0fc8273cd23fd0c6b96bf25d25c719cbf737313e8beaa46a1",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -10,7 +10,7 @@
     "css/app-components.css": "20a7e44ae5693922565d856483425a43c18e7895fd9aed7b570c9fe6179cc721",
     "css/app-chrome.css": "6d17c1075778bdc40681935c0798218c7d42f9dd370e60e707f91900476c59e7",
     "css/app-shell.css": "be26b93cec74bfedcf471dad44cfa87515962c305cc8f05b6be4763e2bf4c08b",
-    "css/views.css": "0da59aaf3d2130d08480de3f2ed12db8d359e443ba0b83dc770286404845f764",
+    "css/views.css": "a78082ba28ccff67ca04dd5f71ab02a1cc31e40fca6d3398e4ff7a1408d6ea4f",
     "fonts/InterVariable.woff2": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
     "img/icons.svg": "828386648bd413c60eb3f9993b09c31cf8588d531e478cf2f9bb2aba193bbc45",
     "img/app-icon.svg": "218d7161ec62d7c6d566b541e2f22c275e0b0f8123582f63d2e315a060c9a3d2",
