@@ -311,11 +311,12 @@ export function mountAllTasks(view, {
   }
 
   /**
-   * Follow the clock: a Due filter or the due date groups can change which tasks show where, so it renders again;
-   * otherwise only due chips change.
+   * Follow the clock: a Due filter, Finished today only, or the due date groups can change which tasks show where,
+   * so it renders again; otherwise only due chips change.
    */
   function tick() {
-    if (model.get().filter.due?.length || model.get().group === 'due') {
+    const { filter, group } = model.get();
+    if (filter.due?.length || filter.finishedToday === true || group === 'due') {
       render();
     }
     else {

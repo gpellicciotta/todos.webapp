@@ -158,13 +158,14 @@ describe('mountList', () => {
   });
 
   it('renders again on the minute tick while Finished today only is on, so a task finished yesterday leaves (TV-14)', async () => {
-    ({ store } = await freshStore());
+    let clock;
+    ({ store, clock } = await freshStore());
     const home = await store.createList({ name: 'Home' });
     await store.createTask({ description: 'Still open' }, { lists: [home.id] });
     await store.createTask({ description: 'Done today', status: 'completed' }, { lists: [home.id] });
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     try {
-      let time = new Date();
+      let time = new Date(clock.now);
       const view = document.body.appendChild(document.createElement('div'));
       view.dataset.listId = home.id;
       models = { list: createViewModel('list', () => null) };

@@ -37,6 +37,9 @@ const STATUS_GROUPS = Object.freeze({
 });
 const NO_LIST_LABEL = 'No list';
 
+/** The statuses that the Finished today only choice narrows to tasks finished today (`TV-14`). */
+const FINISHED = new Set(['completed', 'cancelled']);
+
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 
@@ -165,12 +168,13 @@ function isSet(value) {
  * @param {object} [filter] the filter
  * @param {string[]} [filter.lists] list identifiers, or `NO_LIST` for tasks in no list
  * @param {string[]} [filter.statuses] statuses
+ * @param {boolean} [filter.finishedToday] true to keep completed and cancelled tasks only when last updated today
  * @param {Array<string|{from?: any, to?: any}>} [filter.due] `overdue`, `today`, `this-week`, `none`, or inclusive ranges
  * @param {{from?: any, to?: any}} [filter.created] an inclusive creation time range
  * @param {string} [filter.text] text to find in the description or the notes, ignoring case
  * @param {boolean} [filter.shared] true for tasks in a shared list, false for the others
  * @param {object} [ctx] the query context
- * @param {Date|number} [ctx.now] the current time, for the Due filter
+ * @param {Date|number} [ctx.now] the current time, for the Due filter and Finished today only
  * @param {Map<string, string[]>} [ctx.listsByTask] list identifiers by task identifier
  * @param {Map<string, string|string[]>} [ctx.notesByTask] note texts by task identifier
  * @param {Set<string>} [ctx.sharedListIds] identifiers of shared lists
@@ -191,6 +195,17 @@ export function filterTasks(tasks, filter = {}, ctx = {}) {
   if (isSet(filter.statuses)) {
     const wanted = new Set(filter.statuses);
     tests.push((task) => wanted.has(task.status));
+  }
+  if (filter.finishedToday === true) {
+    // A finished task's last update time stands for the time it finished (`TV-14`).
+    const { today } = dueWindows(new Date(ctx.now ?? Date.now()), ctx.weekStart ?? 1);
+    tests.push((task) => {
+      if (!FINISHED.has(task.status)) {
+        return true;
+      }
+      const finished = timeOf(task['last-update-time']);
+      return finished !== null && finished >= today.from && finished < today.to;
+    });
   }
   if (isSet(filter.due)) {
     const now = new Date(ctx.now ?? Date.now());
@@ -254,6 +269,7 @@ export function hidingFilters(task, filter, ctx = {}) {
 
 /**
  * Copy a filter with some filters back at their defaults: open statuses, and no other filter.
+ * Clearing the statuses also clears Finished today only, which belongs to the Status filter.
  * @param {object} filter the filter
  * @param {string[]} keys the filter keys to reset
  * @returns {object} the new filter
@@ -263,6 +279,7 @@ export function clearFilters(filter, keys) {
   for (const key of keys) {
     if (key === 'statuses') {
       next.statuses = [...DEFAULT_FILTER.statuses];
+      delete next.finishedToday;
     }
     else {
       delete next[key];

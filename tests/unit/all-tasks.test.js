@@ -102,7 +102,7 @@ describe('mountAllTasks', () => {
       await screen.idle();
       viewModels.tasks.set({ filter: { statuses: [], finishedToday: true }, order: defaultViewState().order });
       const descriptions = () => [...document.querySelectorAll('.task-row__description')].map((node) => node.textContent);
-      expect(descriptions()).toEqual(['Buy paint', 'Fix door']);
+      expect(descriptions()).toEqual(['Fix door', 'Buy paint']);
       time = new Date(2026, 10, 5, 0, 0, 30);
       vi.advanceTimersByTime(60_000);
       expect(descriptions()).toEqual(['Buy paint']);

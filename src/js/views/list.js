@@ -256,7 +256,15 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     refresh();
   });
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`); the rows stay.
-  const timer = setInterval(() => taskList.tick(now()), REDRAW_MS);
+  // Finished today only changes which rows show at midnight, so it renders again (`TV-14`).
+  const timer = setInterval(() => {
+    if (model.get().filter.finishedToday === true) {
+      render();
+    }
+    else {
+      taskList.tick(now());
+    }
+  }, REDRAW_MS);
   const first = refresh();
 
   return {

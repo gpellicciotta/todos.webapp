@@ -122,6 +122,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-11: Users create, edit, change status of, and delete tasks directly in the task view.
 - TV-12: The app remembers the last used filters, grouping, and order per device, for All tasks and for each list on its own.
 - TV-13: The task view orders by creation time, newest first, until the user picks another order.
+- TV-14: Users limit the completed and cancelled tasks they see to those finished today.
 
 ### View Options
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.

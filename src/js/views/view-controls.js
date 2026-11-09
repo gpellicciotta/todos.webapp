@@ -46,6 +46,8 @@ const STRINGS = Object.freeze({
   statuses: (count) => `${count} statuses`,
   options: (count) => `${count} options`,
   statusAll: 'Status: all',
+  finishedToday: 'Finished today only',
+  finishedTodayValue: (value) => `${value}, finished today`,
   sortedBy: (field) => `Sorted by ${field}`,
   tasks: (count) => `${count} ${count === 1 ? 'task' : 'tasks'}`,
   tasksOf: (shown, total) => `${shown} of ${total} ${total === 1 ? 'task' : 'tasks'}`,
@@ -134,6 +136,9 @@ export function sanitizeViewState(raw, kind = 'tasks') {
     if (Array.isArray(stored.statuses)) {
       state.filter.statuses = stored.statuses.filter((status) => STATUSES.includes(status));
     }
+    if (stored.finishedToday === true) {
+      state.filter.finishedToday = true;
+    }
     const lists = Array.isArray(stored.lists) ? stored.lists.filter((id) => typeof id === 'string') : [];
     if (lists.length > 0) {
       state.filter.lists = lists;
@@ -207,7 +212,7 @@ export function isDefaultViewState(state, kind = 'tasks') {
   const fallback = defaultViewState(kind).order;
   const statuses = filter.statuses ?? [];
   return !(typeof filter.text === 'string' && filter.text.trim())
-    && statuses.length === OPEN.length && OPEN.every((status) => statuses.includes(status))
+    && statuses.length === OPEN.length && OPEN.every((status) => statuses.includes(status)) && filter.finishedToday !== true
     && !filter.lists?.length && !filter.due?.length && !filter.created && typeof filter.shared !== 'boolean'
     && (state.group ?? NONE) === NONE
     && order.field === fallback.field && (order.field === MANUAL || order.direction === fallback.direction);
@@ -226,6 +231,27 @@ function rangeText({ from, to }) {
 }
 
 /**
+ * Return the value text of the Status filter, or null when it shows every status.
+ * Finished today only adds `, finished today`, also to an empty filter, which then reads `all` (`TV-14`).
+ * @param {object} filter the filter
+ * @returns {string|null} the value text, such as `open` or `3 statuses, finished today`
+ */
+function statusValue(filter) {
+  const values = Array.isArray(filter.statuses) ? filter.statuses : [];
+  let value = null;
+  if (values.length === OPEN.length && OPEN.every((status) => values.includes(status))) {
+    value = STRINGS.open;
+  }
+  else if (values.length > 0) {
+    value = values.length === 1 ? STATUS_LABELS[values[0]].toLowerCase() : STRINGS.statuses(values.length);
+  }
+  if (filter.finishedToday === true) {
+    return STRINGS.finishedTodayValue(value ?? STRINGS.all.toLowerCase());
+  }
+  return value;
+}
+
+/**
  * Return the value text of one filter, or null when the filter is off.
  * @param {string} key the filter key
  * @param {object} filter the filter
@@ -233,6 +259,9 @@ function rangeText({ from, to }) {
  * @returns {string|null} the value text
  */
 function filterValue(key, filter, lists) {
+  if (key === 'statuses') {
+    return statusValue(filter);
+  }
   const values = filter[key];
   if (key === 'shared') {
     return typeof values === 'boolean' ? (values ? 'yes' : 'no') : null;
@@ -251,12 +280,6 @@ function filterValue(key, filter, lists) {
       return null;
     }
     return names.length === 1 ? names[0] : STRINGS.lists(names.length);
-  }
-  if (key === 'statuses') {
-    if (values.length === OPEN.length && OPEN.every((status) => values.includes(status))) {
-      return STRINGS.open;
-    }
-    return values.length === 1 ? STATUS_LABELS[values[0]].toLowerCase() : STRINGS.statuses(values.length);
   }
   if (values.length > 1) {
     return STRINGS.options(values.length);
@@ -582,7 +605,12 @@ export function mountViewOptions(panel, route, context) {
    */
   function choicesOf(key) {
     if (key === 'statuses') {
-      return STATUSES.map((status) => choice(key, status, STATUS_LABELS[status]));
+      // Finished today only narrows Completed and Cancelled, so it is a toggle of its own, not a status value (`TV-14`).
+      const finishedToday = choice(key, 'true', STRINGS.finishedToday);
+      const input = finishedToday.firstElementChild;
+      delete input.dataset.filter;
+      input.dataset.toggle = 'finishedToday';
+      return [...STATUSES.map((status) => choice(key, status, STATUS_LABELS[status])), finishedToday];
     }
     if (key === 'due') {
       return [...DUE_OPTIONS.map((option) => choice(key, option, DUE_LABELS[option])), rangeFields(key)];
@@ -695,6 +723,9 @@ export function mountViewOptions(panel, route, context) {
         spriteIcon(doc, 'chevron-down'));
     }
     const dueRange = state.filter.due?.find((option) => typeof option === 'object') ?? {};
+    for (const input of root.querySelectorAll('input[data-toggle="finishedToday"]')) {
+      input.checked = state.filter.finishedToday === true;
+    }
     for (const input of root.querySelectorAll('input[data-filter]')) {
       const key = input.dataset.filter;
       if (input.type === 'checkbox') {
@@ -779,6 +810,16 @@ export function mountViewOptions(panel, route, context) {
         const options = filter.due ?? [];
         const range = readRange({ ...options.find((option) => typeof option === 'object'), [end]: value });
         setFilter(filter, 'due', [...options.filter((option) => typeof option === 'string'), ...(range ? [range] : [])]);
+      });
+    }
+    else if (input.dataset?.toggle === 'finishedToday') {
+      apply(({ filter }) => {
+        if (input.checked) {
+          filter.finishedToday = true;
+        }
+        else {
+          delete filter.finishedToday;
+        }
       });
     }
     else if (input === select) {

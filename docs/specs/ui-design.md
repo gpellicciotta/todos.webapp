@@ -282,6 +282,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
     Shared is a row of All tasks only, with the radios Any, Shared, and Not shared; local mode ignores a stored value.
     Each row shows its value at the right; opening one row closes the other.
     Due keeps its quick options and a From and To range; Created has From and To.
+    Status ends with a "Finished today only" checkbox (`TV-14`); see [Finished today only](#finished-today-only).
   - Group by: a segmented control with None, List, Due date, and Status (`VO-9`).
   - Sort by: a field menu and an Ascending or Descending toggle (`TV-9`).
   - Reset at the top: restores every option to its default (`VO-8`).
@@ -302,6 +303,20 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 | Sort by     | five fields                  | adds Manual order, the default (`LV-6`)        |
 | Defaults    | open, created newest first   | open, manual order                             |
 | Persistence | one entry for All tasks      | one entry per list (`TV-12`)                   |
+
+#### Finished today only
+- A checkbox after the four statuses in the Status row, in All tasks and every list view (`TV-14`).
+- It narrows Completed and Cancelled to tasks finished today; To do and In progress are unaffected.
+  - All four statuses with the choice show the open tasks and the work finished today.
+  - An empty status filter with the choice does the same.
+  - With only open statuses checked, it changes nothing.
+- **[Decided]** A finished task counts as finished today when its `last-update-time` falls on the current local day.
+  Tasks store no completion time; so editing an old finished task today also shows it.
+- The info line and the row value add ", finished today", such as "Status: 4 statuses, finished today".
+  An empty status filter reads "Status: all, finished today".
+- It persists with the other options and counts as a change, so Reset shows and clears it (`TV-12`, `VO-8`).
+- Show in the hidden-task toast resets the Status filter, the choice included.
+- Both views render again on the minute tick while it is on, so yesterday's tasks leave at midnight.
 
 #### Grouping
 - A group header is a 32 px row: the name at the left, the count at the right (`VO-10`).
