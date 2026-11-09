@@ -83,6 +83,36 @@ describe('mountAllTasks', () => {
     }
   });
 
+  it('renders again on the minute tick while Finished today only is on, so a task finished yesterday leaves (TV-14)', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      let time = new Date(2026, 10, 4, 23, 59, 30);
+      const done = {
+        id: 't2', description: 'Fix door', status: 'completed', 'due-time': null, 'creation-time': '2026-11-01T09:00:00.000Z',
+        'last-update-time': new Date(2026, 10, 4, 18).toISOString(), 'last-activity-time': new Date(2026, 10, 4, 18).toISOString(),
+      };
+      const open = { ...done, id: 't1', description: 'Buy paint', status: 'todo' };
+      const store = { snapshot: async () => ({ lists: [], tasks: [open, done], memberships: [], notes: [] }), subscribe: () => () => {} };
+      const storage = { getItem: () => null, setItem: vi.fn() };
+      const viewModels = { tasks: createViewModel('tasks', () => storage) };
+      document.body.innerHTML = '<div data-view="tasks"></div>';
+      screen = mountAllTasks(document.querySelector('[data-view]'), {
+        store, toaster: { show: vi.fn() }, viewModels, getStorage: () => storage, now: () => time,
+      });
+      await screen.idle();
+      viewModels.tasks.set({ filter: { statuses: [], finishedToday: true }, order: defaultViewState().order });
+      const descriptions = () => [...document.querySelectorAll('.task-row__description')].map((node) => node.textContent);
+      expect(descriptions()).toEqual(['Buy paint', 'Fix door']);
+      time = new Date(2026, 10, 5, 0, 0, 30);
+      vi.advanceTimersByTime(60_000);
+      expect(descriptions()).toEqual(['Buy paint']);
+      expect(document.querySelector('.info-line__text').textContent).toBe('1 of 2 tasks · Status: all, finished today');
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('shows the info line under the add bar, and a More menu with only Edit view options (VO-2, VO-4, VO-7)', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const navigate = vi.fn();

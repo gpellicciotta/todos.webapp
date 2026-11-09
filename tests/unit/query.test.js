@@ -199,6 +199,53 @@ describe('filterTasks', () => {
   });
 });
 
+describe('the Finished today only choice (TV-14)', () => {
+  // The finish time of a completed or cancelled task is its last update time.
+  const finished = [
+    task('f1', { status: 'todo', 'last-update-time': local(2026, 9, 1, 9) }),
+    task('f2', { status: 'in-progress', 'last-update-time': local(2026, 9, 1, 9) }),
+    task('f3', { status: 'completed', 'last-update-time': local(2026, 10, 4, 8) }),
+    task('f4', { status: 'completed', 'last-update-time': local(2026, 10, 3, 20) }),
+    task('f5', { status: 'cancelled', 'last-update-time': local(2026, 10, 4, 11, 30) }),
+    task('f6', { status: 'cancelled', 'last-update-time': local(2026, 9, 28, 10) }),
+  ];
+
+  it('keeps open tasks and the tasks finished today, and drops the tasks finished earlier', () => {
+    const statuses = ['todo', 'in-progress', 'completed', 'cancelled'];
+    expect(ids(filterTasks(finished, { statuses, finishedToday: true }, ctx))).toEqual(['f1', 'f2', 'f3', 'f5']);
+    expect(ids(filterTasks(finished, { statuses }, ctx))).toHaveLength(6);
+  });
+
+  it('narrows the checked finished statuses, and applies to an empty status filter too', () => {
+    expect(ids(filterTasks(finished, { statuses: ['completed'], finishedToday: true }, ctx))).toEqual(['f3']);
+    expect(ids(filterTasks(finished, { statuses: [], finishedToday: true }, ctx))).toEqual(['f1', 'f2', 'f3', 'f5']);
+    expect(ids(filterTasks(finished, { finishedToday: true }, ctx))).toEqual(['f1', 'f2', 'f3', 'f5']);
+  });
+
+  it('changes nothing when only open statuses are checked, or when the choice is off', () => {
+    expect(ids(filterTasks(finished, { statuses: ['todo', 'in-progress'], finishedToday: true }, ctx))).toEqual(['f1', 'f2']);
+    expect(ids(filterTasks(finished, { finishedToday: false }, ctx))).toHaveLength(6);
+  });
+
+  it('bounds today by local midnight on both sides', () => {
+    const edge = [
+      task('m1', { status: 'completed', 'last-update-time': new Date(new Date(2026, 10, 4).getTime() - 1).toISOString() }),
+      task('m2', { status: 'completed', 'last-update-time': local(2026, 10, 4, 0, 0) }),
+      task('m3', { status: 'cancelled', 'last-update-time': new Date(new Date(2026, 10, 5).getTime() - 1).toISOString() }),
+      task('m4', { status: 'cancelled', 'last-update-time': local(2026, 10, 5, 0, 0) }),
+    ];
+    expect(ids(filterTasks(edge, { finishedToday: true }, ctx))).toEqual(['m2', 'm3']);
+  });
+
+  it('never hides a new task, and Show clears it with the statuses', () => {
+    const fresh = task('n', { 'creation-time': '2026-11-04T12:00:00.000Z' });
+    expect(hidingFilters(fresh, { statuses: [], finishedToday: true }, { now: NOW })).toEqual([]);
+    const filter = { statuses: ['completed'], finishedToday: true, due: ['today'] };
+    expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['todo', 'in-progress'], due: ['today'] });
+    expect(clearFilters(filter, ['due'])).toEqual({ statuses: ['completed'], finishedToday: true });
+  });
+});
+
 describe('sortTasks', () => {
   it('defaults to creation time descending, so a new task comes first', () => {
     expect(DEFAULT_ORDER).toEqual({ field: 'creation-time', direction: 'desc' });

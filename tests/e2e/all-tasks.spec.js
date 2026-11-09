@@ -594,3 +594,41 @@ test('search and sort apply inside each group, and a task of two lists shows in 
   await expect.poll(() => listEntries(page)).toEqual(['# Home 1', 'Buy paint', '# Work 1', 'Buy paint']);
   await expect(page.locator('.info-line__text')).toContainText('1 of 6 tasks');
 });
+
+test('Finished today only shows open tasks and the tasks finished today, survives a reload, and Reset clears it (TV-14)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await openApp(page);
+  await seed(page);
+  // The seed finished two tasks just now; these two finished on earlier days, so their last update is in the past.
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const earlier = await openStore({ broadcast: true, now: () => new Date(Date.now() - 2 * 86_400_000) });
+    await earlier.createTask({ description: 'Mow the lawn', status: 'completed' });
+    await earlier.createTask({ description: 'Return the drill', status: 'cancelled' });
+    earlier.close();
+  });
+  await expect(page.locator(INFO)).toHaveText('4 of 8 tasks · Status: open');
+  const options = await openOptions(page);
+  const status = await openRow(options, 'Status');
+  await status.getByLabel('Completed').check();
+  await status.getByLabel('Cancelled').check();
+  await expect(page.locator('.task-row')).toHaveCount(8);
+  await status.getByLabel('Finished today only').check();
+  await expect(page.locator(INFO)).toHaveText('6 of 8 tasks · Status: 4 statuses, finished today');
+  await expect(options.getByRole('button', { name: /^Status/ })).toContainText('4 statuses, finished today');
+  expect((await rows(page)).sort()).toEqual([
+    'Book flights', 'Buy paint', 'Call the plumber', 'Renew the gym membership', 'Water the plants', 'Write the report',
+  ]);
+
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await expect(page.locator(INFO)).toHaveText('6 of 8 tasks · Status: 4 statuses, finished today');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('todos.view.tasks')).filter.finishedToday)).toBe(true);
+
+  await page.locator('.info-line__reset').click();
+  await expect(page.locator(INFO)).toHaveText('4 of 8 tasks · Status: open');
+  const reopened = await openRow(page.locator('.view-options'), 'Status');
+  await expect(reopened.getByLabel('Finished today only')).not.toBeChecked();
+  expect(problems).toEqual([]);
+});

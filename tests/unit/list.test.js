@@ -157,6 +157,32 @@ describe('mountList', () => {
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
   });
 
+  it('renders again on the minute tick while Finished today only is on, so a task finished yesterday leaves (TV-14)', async () => {
+    ({ store } = await freshStore());
+    const home = await store.createList({ name: 'Home' });
+    await store.createTask({ description: 'Still open' }, { lists: [home.id] });
+    await store.createTask({ description: 'Done today', status: 'completed' }, { lists: [home.id] });
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      let time = new Date();
+      const view = document.body.appendChild(document.createElement('div'));
+      view.dataset.listId = home.id;
+      models = { list: createViewModel('list', () => null) };
+      screen = mountList(view, { store, toaster: { show: vi.fn() }, navigate: vi.fn(), viewModels: models, getStorage: () => null, now: () => time });
+      await screen.idle();
+      models.list.set({ ...models.list.get(), filter: { statuses: [], finishedToday: true } });
+      const descriptions = () => [...view.querySelectorAll('.task-row__description')].map((node) => node.textContent);
+      expect(descriptions()).toEqual(['Still open', 'Done today']);
+      time = new Date(time.getFullYear(), time.getMonth(), time.getDate() + 1, 0, 0, 30);
+      vi.advanceTimersByTime(60_000);
+      expect(descriptions()).toEqual(['Still open']);
+      expect(view.querySelector('.info-line__text').textContent).toBe('1 of 2 tasks · Status: all, finished today');
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('groups the rows by status, keeping the manual order inside each group, and hides the moves (LV-8, LV-11)', async () => {
     const view = await mount();
     const home = (await store.listLists())[0];

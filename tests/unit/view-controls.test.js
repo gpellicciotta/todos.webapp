@@ -194,6 +194,36 @@ describe('the Shared filter (TV-7)', () => {
   });
 });
 
+describe('the Finished today only choice (TV-14)', () => {
+  const all = ['todo', 'in-progress', 'completed', 'cancelled'];
+
+  it('names the choice after the status value, in the info line and in empty results', () => {
+    const line = (filter) => describeInfoLine({ shown: 3, total: 9, state: { filter, order: defaultViewState().order }, lists: LISTS });
+    expect(line({ statuses: all, finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: 4 statuses, finished today']);
+    expect(line({ statuses: ['completed'], finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: completed, finished today']);
+    expect(line({ statuses: [], finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: all, finished today']);
+    expect(describeFilters({ statuses: [], finishedToday: true }, LISTS)).toEqual(['Status: all, finished today']);
+    expect(describeFilters({ statuses: ['todo', 'in-progress'], finishedToday: true }, LISTS)).toEqual(['Status: open, finished today']);
+  });
+
+  it('keeps the choice in the device storage only when it is true', () => {
+    const storage = memoryStorage();
+    saveViewState('tasks', { ...defaultViewState(), filter: { statuses: all, finishedToday: true } }, () => storage);
+    expect(loadViewState('tasks', () => storage).filter).toEqual({ statuses: all, finishedToday: true });
+    for (const value of [false, 'yes', 1, null]) {
+      storage.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: all, finishedToday: value } }));
+      expect(loadViewState('tasks', () => storage).filter.finishedToday).toBeUndefined();
+    }
+    expect(defaultViewState().filter.finishedToday).toBeUndefined();
+  });
+
+  it('counts as a change from the defaults, so Reset shows (VO-8)', () => {
+    const state = defaultViewState();
+    expect(isDefaultViewState({ ...state, filter: { ...state.filter, finishedToday: true } })).toBe(false);
+    expect(isDefaultViewState(defaultViewState('list'), 'list')).toBe(true);
+  });
+});
+
 describe('isDefaultViewState (VO-8)', () => {
   it('tells the defaults from any other option or search text', () => {
     expect(isDefaultViewState(defaultViewState())).toBe(true);
@@ -530,6 +560,35 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     }
     expect(models.tasks.get().filter.statuses).toEqual([]);
     expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('All');
+  });
+
+  it('offers Finished today only after the four statuses, and sets and clears it (TV-14)', async () => {
+    await mount('tasks');
+    const region = panel.body.querySelector('[data-region="statuses"]');
+    const labels = [...region.querySelectorAll('label')].map((label) => label.textContent.trim());
+    expect(labels).toEqual(['To do', 'In progress', 'Completed', 'Cancelled', 'Finished today only']);
+    const choice = region.querySelector('input[data-toggle="finishedToday"]');
+    expect(choice.type).toBe('checkbox');
+    expect(choice.checked).toBe(false);
+    toggle(region.querySelector('input[value="completed"]'), true);
+    toggle(choice, true);
+    expect(models.tasks.get().filter).toEqual({ statuses: ['todo', 'in-progress', 'completed'], finishedToday: true });
+    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses, finished today');
+    toggle(choice, false);
+    expect(models.tasks.get().filter).toEqual({ statuses: ['todo', 'in-progress', 'completed'] });
+    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses');
+  });
+
+  it('shows a stored Finished today only choice, offers it in a list view, and Reset clears it (TV-14, VO-8)', async () => {
+    models.list.select('l-home');
+    models.list.set({ ...models.list.get(), filter: { statuses: [], finishedToday: true } });
+    await mount('list');
+    const choice = panel.body.querySelector('[data-region="statuses"] input[data-toggle="finishedToday"]');
+    expect(choice.checked).toBe(true);
+    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('all, finished today');
+    panel.body.querySelector('.view-options__reset').click();
+    expect(choice.checked).toBe(false);
+    expect(models.list.get().filter.finishedToday).toBeUndefined();
   });
 
   it('sets the due quick options and ranges, and the created range', async () => {
