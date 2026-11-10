@@ -246,7 +246,7 @@ describe('Delete all data in Settings', () => {
 describe('Keyboard shortcuts in About', () => {
   const EXPECTED = [
     [['n', '/'], 'Focus the search and add field.'],
-    [['Shift+Enter', 'Alt+Enter'], 'Add the typed task, in the search and add field.'],
+    [['Shift+Enter', 'Alt+Enter'], 'Add the task or list, in the search and add field.'],
     [['Escape'], 'Clear the search and add field, or close the editor or a dialog.'],
     [['Alt+Up', 'Alt+Down'], "Move the focused list, or the focused task in a list's manual order."],
     [['Ctrl+Z', 'Cmd+Z'], 'Undo the newest change shown in a toast.'],
