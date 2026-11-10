@@ -20,3 +20,4 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0077 [needs: T0073, T0075] Add a 150-list render check to the performance spec, and record 500 lists.
 - [ ] T0078 [needs: T0074] Add the Shared only filter to the Lists screen sort menu while connected.
 - [ ] T0217 Show the Finished today only choice in the view options wireframe and the visual style gallery sample.
+- [ ] T0220 Make the gallery keyboard-stop focus ring tests fast enough to pass under parallel load.
