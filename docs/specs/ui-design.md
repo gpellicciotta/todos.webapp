@@ -784,6 +784,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.
 - Focus moves to the editor's description when it opens, and back to the row when it closes.
+  After an add from the add field on a wide layout, focus stays in the add field (`TSK-13`).
 - Live regions announce toasts, sync state changes, and moved rows.
 
 ---
