@@ -87,7 +87,7 @@ for (const viewport of [COMPACT, WIDE]) {
 test('every field saves on change without a Save button, and the changes survive a reload (TSK-1 to TSK-7)', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
-  await seed(page);
+  const id = await seed(page);
   const panel = await openEditor(page);
   await expect(panel.getByRole('button', { name: /save/i })).toHaveCount(0);
   const description = panel.getByLabel('Description');
@@ -107,6 +107,14 @@ test('every field saves on change without a Save button, and the changes survive
   await expect(panel.getByRole('group', { name: 'Overdue behavior' })).toBeVisible();
   await panel.getByText('Cancel when overdue').click();
   await expect(page.locator('.task-row', { hasText: 'Buy blue paint' })).toHaveAttribute('data-status', 'in-progress');
+  // The save is asynchronous, so wait until it is stored; reloading earlier can drop it.
+  await expect.poll(() => page.evaluate(async (taskId) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const task = await store.getTask(taskId);
+    store.close();
+    return task['overdue-handling'];
+  }, id)).toBe('cancel');
   await page.reload();
   await expect(panel.getByLabel('Description')).toHaveValue('Buy blue paint');
   await expect(panel.getByLabel('In progress')).toBeChecked();
