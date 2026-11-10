@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.3.1-pre
+- FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.
 - FrontEnd: Added Finished today only to the Status filter of the view options, which hides tasks completed or cancelled before today.
 - FrontEnd: Kept the focus in the add field after an add on wide screens, so tasks can be added in a row while the new task opens beside it.
 - FrontEnd: Listed the keyboard shortcuts in the About section of Settings, with each key styled as a `kbd`.

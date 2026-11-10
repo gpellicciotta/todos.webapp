@@ -147,17 +147,16 @@ export function mountAllTasks(view, {
   view.replaceChildren(root);
 
   /**
-   * Store a new task in the lists of the active list filter, or in no list, and open its editor.
+   * Store a new task in no list, whatever the Lists filter selects, and open its editor.
+   * When the Lists filter hides the task, the toast offers Show.
    * @param {string} description the trimmed description
    * @returns {Promise<void>} resolves once stored; rejects when the task could not be stored
    */
   async function add(description) {
-    const listIds = new Set(data?.lists.map((list) => list.id) ?? []);
-    const lists = (model.get().filter.lists ?? []).filter((id) => id !== NO_LIST && listIds.has(id));
     const first = data?.tasks.length === 0;
     let task;
     try {
-      task = await store.createTask({ description }, { lists });
+      task = await store.createTask({ description }, { lists: [] });
     }
     catch (error) {
       console.error('Adding the task failed:', error);
@@ -165,7 +164,7 @@ export function mountAllTasks(view, {
       throw error;
     }
     notifyIfHidden({
-      task, listIds: lists, filter: model.get().filter, lists: data?.lists ?? [], now: now(), toaster,
+      task, listIds: [], filter: model.get().filter, lists: data?.lists ?? [], now: now(), toaster,
       onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
     });
     if (first && !asked) {

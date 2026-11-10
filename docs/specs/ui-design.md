@@ -220,7 +220,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   Compact layouts give the focus to the editor's Description, since the editor covers the add field.
 - The field also searches the view; [Search and Add](#search-and-add) describes this.
 - In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
-- In All tasks, the new task joins the lists of the active list filter, or no list.
+- **[Decided]** In All tasks, the new task joins no list, even while the Lists filter selects lists.
+  A Lists filter that hides it brings the "Task added" toast with Show.
 - Compact layouts pin the add bar above the bottom navigation; wide layouts place it above the rows.
 - A counter appears from 450 characters, inside the field's end; the field stops at 500.
 - A failed add keeps the text and shows a toast.
@@ -400,7 +401,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - A More menu with Edit view options sits in the page header; the shell's top bar has no More menu.
 - An empty result names the active filters and offers Reset.
 - Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
-- A new task joins the lists of the active Lists filter, leaving out "In no list".
+- A new task joins no list; a Lists filter that hides it brings the "Task added" toast with Show.
 - Overdue chips refresh every minute, also for tasks that keep their status.
   The minute tick redraws only due chips; a Due filter also updates which tasks show.
 - **[Decided]** Lists of up to 200 tasks render every row; longer lists render only the rows in view (`TEC-16`).
