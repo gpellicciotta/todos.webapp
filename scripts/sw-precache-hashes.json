@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-10.7",
+  "version": "2026-11-10.8",
   "files": {
     "index.html": "fd91c2de184498d0fc8273cd23fd0c6b96bf25d25c719cbf737313e8beaa46a1",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -75,6 +75,6 @@
     "js/views/task-editor.js": "2bae3cbab9e4910714fa6d1ff5b9fce3cce722437cd2a86087760903200d4090",
     "js/views/task-list.js": "a975f766049fe6199b33a167f26aabc28044fc6dc8833f416891e0657870e941",
     "js/views/view-controls.js": "8b2269f1464fda3d3b1578c37bcc2c7558f4d7cb3c897088b71cbc152215a3bc",
-    "js/version.js": "f75a7a7153484f08e0cac1e71be15fc12ac5a896f7c7ea92d8f87ccf0d1156d2"
+    "js/version.js": "3b84fd9c31316d43de74b0739574894700b0040e53d6cd046d8c4252446eff7a"
   }
 }
