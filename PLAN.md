@@ -2,19 +2,14 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [x] T0219 Make a task added in All tasks join no list, even while the Lists filter selects lists.
-- [x] T0216 Add a Finished today only choice to the Status filter of the view options.
-- [x] T0215 Keep focus in the add field after adding a task on wide screens, while the task editor still opens.
-- [x] T0214 List the keyboard shortcuts in the About section of Settings.
-- [x] T0213 Add a Delete all data action with typed confirmation to the Data section of Settings.
-- [x] T0212 Add an Empty recycle bin action with confirmation to the recycle bin screen.
-- [x] T0211 Make the service worker reject HTML served for asset files, at install and at fetch.
+*(Currently no tasks)*
 
 ## Backlog
+- [ ] T0223 Improve task group headers with more padding, an 'n of m' count, and collapsible groups.
 - [ ] T0222 Name the Shared filter in the hidden-task toast and let Show clear it.
 - [ ] T0221 Prune Lists filter ids of deleted lists before the All tasks hidden-task toast, which now reads 'Task added. hides it.'
 - [ ] T0218 Evaluate adopting DevopsCli from the released support-python v2.0.0, keeping project-specific actions through add_action.
-- [ ] T0080 Fix the flaky connect e2e test: the first sync pull adds a second GET /api/users/me to the recorded calls.
+- [x] T0080 Fix the flaky connect e2e test: the first sync pull adds a second GET /api/users/me to the recorded calls.
 - [ ] T0070 Make throttled scrolling smoother by cutting the work per entering row in long lists.
 - [ ] T0072 Make the sidebar scroll only its lists, keep the current list in view, and patch rows in place.
 - [ ] T0073 [needs: T0072] Add the find field, roving focus, and the l shortcut to the sidebar lists.
