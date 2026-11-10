@@ -215,6 +215,31 @@ describe('mountAllTasks', () => {
     expect(viewModels.tasks.get().filter.statuses).toEqual(['todo', 'in-progress']);
   });
 
+  it('adds the task to no list while the Lists filter selects lists, and toasts that the filter hides it', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const lists = [{ id: 'home', name: 'Home' }, { id: 'work', name: 'Work' }];
+    const store = {
+      snapshot: async () => ({ lists, tasks: [], memberships: [], notes: [] }),
+      subscribe: () => () => {},
+      createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })),
+    };
+    const show = vi.fn();
+    const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show }, viewModels, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    viewModels.tasks.set({ ...viewModels.tasks.get(), filter: { ...viewModels.tasks.get().filter, lists: ['home', 'work'] } });
+    const field = document.querySelector('[data-shortcut~="add"]');
+    field.value = 'Paint the door';
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(show).toHaveBeenCalledTimes(1));
+    expect(store.createTask).toHaveBeenCalledWith({ description: 'Paint the door' }, { lists: [] });
+    expect(show.mock.calls[0][0]).toBe('Task added. Lists: 2 lists hides it.');
+    show.mock.calls[0][1].onAction();
+    expect(viewModels.tasks.get().filter.lists).toBeUndefined();
+  });
+
   it('opens the task editor of a new task and gives the focus back to the add field', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };

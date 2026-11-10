@@ -512,6 +512,33 @@ test('adding a task that the view options hide shows a toast whose Show resets t
   expect(problems).toEqual([]);
 });
 
+test('a task added while the Lists filter selects lists joins no list, and Show reveals it', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await openApp(page);
+  await seed(page);
+  const options = await openOptions(page);
+  const region = await openRow(options, 'Lists');
+  await region.getByLabel('Home').check();
+  await region.getByLabel('Work').check();
+  await expect(page.locator(INFO)).toContainText('Lists: 2 lists');
+  await page.getByLabel('Search or add a task').fill('Paint the door');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  const toast = page.locator('.toast', { hasText: 'Task added.' });
+  await expect(toast).toContainText('Lists: 2 lists hides it.');
+  await toast.getByRole('button', { name: 'Show' }).click();
+  await expect(page.locator('.task-row', { hasText: 'Paint the door' })).toBeVisible();
+  const memberships = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const data = await store.snapshot();
+    const task = data.tasks.find((item) => item.description === 'Paint the door');
+    return data.memberships.filter((membership) => membership['task-id'] === task.id).length;
+  });
+  expect(memberships).toBe(0);
+  expect(problems).toEqual([]);
+});
+
 /**
  * Read the list as text: each group header as `# name count`, each row as its description.
  * @param {import('@playwright/test').Page} page the page
