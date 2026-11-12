@@ -5,6 +5,12 @@ An overview of all tasks and their planning, possibly split by milestone.
 *(Currently no tasks)*
 
 ## Backlog
+- [ ] T0229 Parse due dates, times, and list tags typed in the add field into the new task.
+- [ ] T0228 Add a rapid entry mode where adding keeps focus in the field and skips the task editor.
+- [ ] T0227 [needs: T0226] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
+- [ ] T0226 Notify the user when a task comes due while the app is open, with opt-in and a lead time.
+- [ ] T0225 Complete a task with one click on its status button, keeping the full status menu one step away.
+- [ ] T0224 Adopt task entries, status entries, recurring tasks, and pauses from todos.server tasks T0215 to T0231.
 - [ ] T0223 Improve task group headers with more padding, an 'n of m' count, and collapsible groups.
 - [ ] T0222 Name the Shared filter in the hidden-task toast and let Show clear it.
 - [ ] T0221 Prune Lists filter ids of deleted lists before the All tasks hidden-task toast, which now reads 'Task added. hides it.'
