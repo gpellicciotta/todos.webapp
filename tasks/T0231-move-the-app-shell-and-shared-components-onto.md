@@ -5,17 +5,20 @@ session: claude-20261113-f78518
 needs: []
 branch: task/T0231-move-the-app-shell-and-shared-components-onto
 worktree: .plan/work/T0231-move-the-app-shell-and-shared-components-onto
-status: active
+status: completed
 started_at: "2026-11-13T11:54:40Z"
-ended_at: —
+ended_at: "2026-11-13T12:45:33Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 4740.6, input: 88, output: 18802, cache_read: 11650232, cache_write: 37624}
-work_duration: 1828.9
-review_status: pending
+  review: {turns: 2, duration_s: 1217.2, input: 473590, output: 48578, cache_read: 8884156}
+work_duration: 3052.0
+review_status: approved
 review_round: 1
+reviewed_by: "@gemini"
+completion-commit: ceb160b07f897d53be764aad10a9936f3081a1fe
 ---
 # T0231: Move the app layout onto the vendored shell.css, with the action bar, side panel, and overlay layer.
 
@@ -35,7 +38,7 @@ Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007
 - [x] **[Verify]**    Run the tests, the vendored check, and the completion check until they pass.
 - [x] **[Visual]**    Record the lossless switch proof: screenshots at 390 and 1440 px, light and dark.
 - [x] **[Doc]**       List every visual difference as a fix or deliberate change, and update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-13] **[Doc]**
@@ -79,4 +82,11 @@ Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007
 
 - [2026-11-13] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-13] **[Review]**
+  Round 1 approved by @gemini: Approved commit `32f511e` against `56e799b` on branch `task/T0231-move-the-app-shell-and-shared-components-onto`.
+  - Findings: [review-findings-1.md](T0231-move-the-app-shell-and-shared-components-onto/review-findings-1.md).
+
+- [2026-11-13] **[Complete]**
+  Task completed successfully.
 

@@ -3,7 +3,7 @@ task: T0231
 round: 1
 verdict: approved
 reviewer: "@gemini"
-reviewed_at: 2026-11-13T12:35:09Z
+reviewed_at: 2026-11-13T12:45:29Z
 reviewed_commit: "32f511e"
 base_commit: "56e799b"
 branch: task/T0231-move-the-app-shell-and-shared-components-onto
