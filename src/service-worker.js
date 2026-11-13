@@ -15,7 +15,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css loads.
  */
 
-const VERSION = '2026-11-13.1';
+const VERSION = '2026-11-13.3';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -29,7 +29,6 @@ const PRECACHE = [
   'css/controls.css',
   'css/app-components.css',
   'css/app-chrome.css',
-  'css/app-shell.css',
   'css/views.css',
   'img/icons.svg',
   'img/app-icon.svg',
@@ -98,6 +97,7 @@ const PRECACHE = [
   'vendor/design/looks/neutral/primitives.css',
   'vendor/design/looks/neutral/fonts.css',
   'vendor/design/looks/neutral/look.css',
+  'vendor/design/css/shell.css',
   'vendor/design/looks/neutral/fonts/InterVariable.woff2',
   'js/version.js',
 ];

@@ -88,11 +88,11 @@ for (const [name, viewport, compact] of [['compact', { width: 390, height: 844 }
     await seed(page);
     await page.setViewportSize(viewport);
     await page.goto('/#/lists');
-    const button = page.locator('.lists-view .fab');
+    const button = page.locator('.app__overlays .fab');
     await expect(button).toBeVisible();
     expect(await button.evaluate((element) => getComputedStyle(element).position)).toBe('fixed');
     const box = await button.boundingBox();
-    await expect(page.locator('.lists-view').getByRole('link', { name: 'New list' })).toHaveCount(1);
+    await expect(page.locator('.app__overlays').getByRole('link', { name: 'New list' })).toHaveCount(1);
     await expect(button).toHaveText('');
     expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(0.5);
     expect(box.width).toBeGreaterThanOrEqual(44);
@@ -127,7 +127,7 @@ test('the floating New list button stays over the rows, and the last row scrolls
     store.close();
   });
   await page.goto('/#/lists');
-  const button = page.locator('.lists-view .fab');
+  const button = page.locator('.app__overlays .fab');
   await expect(page.locator('.lists-view .list-row')).toHaveCount(42);
   const before = await button.boundingBox();
   await page.locator('#main').evaluate((main) => {
@@ -148,11 +148,11 @@ test('the floating New list button stays over the rows, and the last row scrolls
 test('the floating New list button hides while the New list editor is open', async ({ page }) => {
   await seed(page);
   await page.goto('/#/lists');
-  await page.locator('.lists-view .fab').click();
+  await page.locator('.app__overlays .fab').click();
   await expect(page).toHaveURL(/#\/lists\/new$/);
-  await expect(page.locator('.lists-view .fab')).toBeHidden();
+  await expect(page.locator('.app__overlays .fab')).toBeHidden();
   await page.keyboard.press('Escape');
-  await expect(page.locator('.lists-view .fab')).toBeVisible();
+  await expect(page.locator('.app__overlays .fab')).toBeVisible();
 });
 
 test('New list creates only through Create and discards drafts on close (LST-1, LST-3)', async ({ page }) => {
@@ -161,7 +161,7 @@ test('New list creates only through Create and discards drafts on close (LST-1, 
   await page.goto('/#/lists');
   const rows = page.locator('.lists-view .list-row__name');
   await expect(rows).toHaveText(['Home', 'Work']);
-  await page.locator('.lists-view').getByRole('link', { name: 'New list' }).click();
+  await page.locator('.app__overlays').getByRole('link', { name: 'New list' }).click();
   await expect(page).toHaveURL(/#\/lists\/new$/);
   const panel = page.locator('[data-editor-slot] .editor-panel');
   await expect(panel.locator('.editor-panel__title')).toHaveText('New list');
@@ -178,14 +178,14 @@ test('New list creates only through Create and discards drafts on close (LST-1, 
   await expect(page).toHaveURL(/#\/lists$/);
   await expect(rows).toHaveText(['Home', 'Work']);
 
-  await page.locator('.lists-view').getByRole('link', { name: 'New list' }).click();
+  await page.locator('.app__overlays').getByRole('link', { name: 'New list' }).click();
   await name.fill('Discarded with close');
   await panel.getByRole('textbox', { name: 'Description' }).fill('Never saved');
   await panel.getByRole('button', { name: 'Close the list editor' }).click();
   await expect(panel).toHaveCount(0);
   await expect(rows).toHaveText(['Home', 'Work']);
 
-  await page.locator('.lists-view').getByRole('link', { name: 'New list' }).click();
+  await page.locator('.app__overlays').getByRole('link', { name: 'New list' }).click();
   await expect(name).toBeFocused();
   await name.fill('home');
   await name.press('Tab');

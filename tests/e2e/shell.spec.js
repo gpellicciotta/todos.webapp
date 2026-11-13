@@ -10,7 +10,7 @@ test('list creation stays in the main Lists view', async ({ page }) => {
   await ready(page);
   await expect(page.locator('.app__sidebar').getByRole('link', { name: 'New list' })).toHaveCount(0);
   await expect(page.locator('.app__sidebar .nav-item__label')).toHaveText(['All tasks', 'Lists']);
-  const link = page.locator('.lists-view').getByRole('link', { name: 'New list', exact: true });
+  const link = page.locator('.app__overlays').getByRole('link', { name: 'New list', exact: true });
   await expect(link).toBeVisible();
   await link.focus();
   await page.keyboard.press('Enter');
@@ -370,3 +370,45 @@ test('a start-up failure shows an error banner instead of a broken page', async 
   await expect(page.getByRole('alert')).toContainText("ToDo's could not start. Reload to try again.");
   expect(errors).toEqual([]);
 });
+
+for (const [viewport, compact] of [[COMPACT, true], [WIDE, false]]) {
+  test(`the ${compact ? 'compact' : 'wide'} layout places the add bar, editor, and floating button in shell areas`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await ready(page);
+    const listId = await createList(page, 'Home');
+    await page.goto(`/#/lists/${listId}`);
+    const actionBar = page.locator('.app > .app__action-bar');
+    await expect(actionBar.locator('.add-block').getByRole('textbox', { name: 'Search or add a task' })).toBeVisible();
+    // The action bar ends the main column, under the rows and above the bottom bar when compact.
+    const bar = await actionBar.boundingBox();
+    const main = await page.locator('.app__main').boundingBox();
+    expect(Math.abs(main.y + main.height - bar.y)).toBeLessThanOrEqual(1);
+    if (compact) {
+      const nav = await page.locator('.app__bottom-nav').boundingBox();
+      expect(Math.abs(bar.y + bar.height - nav.y)).toBeLessThanOrEqual(1);
+    }
+    else {
+      expect(Math.abs(bar.y + bar.height - viewport.height)).toBeLessThanOrEqual(1);
+    }
+    await page.getByRole('link', { name: 'Buy paint' }).click();
+    const panel = page.locator('.app > aside.app__side-panel');
+    await expect(panel.locator('.editor-panel')).toBeVisible();
+    const box = await panel.boundingBox();
+    if (compact) {
+      expect(box).toEqual({ x: 0, y: 0, width: viewport.width, height: viewport.height });
+    }
+    else {
+      expect(box.x + box.width).toBeCloseTo(viewport.width, 0);
+      expect(box.width).toBeCloseTo(400, 0);
+    }
+    await page.goto('/#/lists');
+    await expect(page.locator('.app > .app__action-bar')).toHaveCount(0);
+    await expect(page.locator('.app > .app__overlays > .fab')).toBeVisible();
+    await expect(page.locator('.app > .app__overlays > .toast-region')).toHaveCount(1);
+    await page.goto('/#/tasks');
+    await expect(page.locator('.app > .app__overlays > .fab')).toHaveCount(0);
+    expect(problems).toEqual([]);
+  });
+}

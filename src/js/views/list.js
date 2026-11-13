@@ -1,8 +1,8 @@
 /**
  * List screen: the tasks of one list, in its manual order by default (`LV-1` to `LV-10`).
  *
- * It fills the shell's `[data-view="list"]` element with the header, the add bar, which also searches, with its
- * info line, and the shared task list, and renders again after every store change.
+ * It fills the shell's `[data-view="list"]` element with the header and the shared task list, and the shell's action bar
+ * with the add bar, which also searches, and its info line; it renders again after every store change.
  * The More menu holds Edit list, Edit view options, Share list, and Delete list (`VO-4`).
  * Manual order shows drag handles and Move up and Move down; another sort affects the view only (`LV-7`, `LV-8`).
  * A grouping by due date or status splits the rows into groups, each in the chosen order, and hides the moves (`LV-8`, `LV-11`).
@@ -75,9 +75,10 @@ async function readData(store, listId) {
  * @param {{list: object}} [options.viewModels] the view models the panel shares, a new one by default
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device view state
  * @param {() => Date} [options.now] the clock
+ * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
-export function mountList(view, { store, toaster, navigate, viewModels, getStorage, now = () => new Date() }) {
+export function mountList(view, { store, toaster, navigate, viewModels, getStorage, now = () => new Date(), actionBar = null }) {
   const doc = view.ownerDocument;
   const listId = view.dataset.listId;
   const id = `list-view-${(instances += 1)}`;
@@ -122,7 +123,8 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const empty = make(doc, 'p', 'empty-state empty-state__text');
   const addBlock = make(doc, 'div', 'add-block');
   addBlock.append(addBar.element, info.element);
-  root.append(header, addBlock, taskList.element, addHint.element, empty);
+  root.append(header, ...(actionBar ? [] : [addBlock]), taskList.element, addHint.element, empty);
+  actionBar?.append(addBlock);
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });
   const behavior = attachMenu(more, menu, { onSelect: act });
@@ -287,6 +289,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
       unsubscribe();
       unfollow();
       addBar.destroy();
+      addBlock.remove();
       clearInterval(timer);
       reorder.destroy();
       taskList.destroy();

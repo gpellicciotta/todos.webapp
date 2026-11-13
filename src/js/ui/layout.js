@@ -1,8 +1,12 @@
 /**
- * App shell layout: the top bar, the sidebar, the main column, the editor panel slot, and the bottom bar.
+ * App shell layout: the areas of the vendored shell.css (ADR-0004 of support.webapp) in the main scroll mode.
  *
- * Both layouts live in one DOM; app-shell.css shows the compact one below 64rem and the wide one from 64rem.
+ * A skip link, the top bar, the sidebar, the banners, the main column, the side panel of the editors, the action bar,
+ * the bottom bar, and the overlay layer with the toast region and the floating button.
+ * Both layouts live in one DOM; shell.css shows the compact one below 64rem and the wide one from 64rem.
  * Each route gets an empty `[data-view]` element in the main column for its screen to fill.
+ * A screen puts its add block in the action bar, which joins the shell only while it holds content.
+ * Banner slots hide while empty, so the banner area takes no room without a banner.
  * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
  * the account, Recycle bin, and Settings (see user-menu.js).
  * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
@@ -29,6 +33,7 @@ const ICONS = 'img/icons.svg';
 export const STRINGS = Object.freeze({
   app: "ToDo's",
   main: 'Main',
+  skip: 'Skip to content',
   newList: 'New list',
   openTasks: ' open tasks',
   lists: 'Lists',
@@ -96,7 +101,7 @@ function icon(id) {
  */
 function sidebarItem(destination) {
   const count = destination.count ? '<span class="nav-item__count" data-count="all"></span>' : '';
-  return `<li><a class="nav-item" href="${destination.hash}" data-nav="${destination.key}">${icon(destination.icon)}`
+  return `<li><a class="app__nav-item nav-item" href="${destination.hash}" data-nav="${destination.key}">${icon(destination.icon)}`
     + `<span class="nav-item__label">${destination.label}</span>${count}</a></li>`;
 }
 
@@ -118,37 +123,43 @@ function setCount(element, count) {
  * @param {HTMLElement} root the element that holds the shell
  * @param {object} options shell options
  * @param {object} [options.session] the session the user menu follows, a new one by default
- * @returns {{main: HTMLElement, editor: HTMLElement, toastRegion: HTMLElement, update: Function,
- *   setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function, showSync: Function}} the shell controller
+ * @returns {{main: HTMLElement, editor: HTMLElement, actionBar: HTMLElement, overlays: HTMLElement, toastRegion: HTMLElement,
+ *   update: Function, setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function, showSync: Function}}
+ *   the shell controller
  */
 export function renderShell(root, { session = createSession() } = {}) {
   const doc = root.ownerDocument;
-  root.classList.add('app');
+  root.classList.add('app', 'app--scroll-main');
   root.innerHTML = `
+    <a class="skip-link" href="#main">${STRINGS.skip}</a>
     <header class="app__top-bar">
       <h1 class="app__title" id="app-title"></h1>
-      <div data-user-menu></div>
+      <div class="app__top-actions" data-user-menu></div>
     </header>
     <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
       <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/app-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
-      <ul class="nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
-      <ul class="nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
+      <ul class="nav-list app__nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
+      <ul class="nav-list app__nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
     </nav>
-    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"><div class="app__banners"><div data-session-banner></div><div data-notice></div><div class="app__broadcasts"></div></div></main>
-    <div class="app__editor" data-editor-slot hidden></div>
+    <div class="app__banners"><div data-session-banner hidden></div><div data-notice hidden></div><div class="app__broadcasts" hidden></div></div>
+    <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"></main>
+    <aside class="app__side-panel" data-editor-slot hidden></aside>
     <nav class="bottom-nav app__bottom-nav" aria-label="${STRINGS.main}">
-      <ul class="bottom-nav__list">${DESTINATIONS.map((destination) => `<li><a class="bottom-nav__item" href="${destination.hash}" `
-        + `data-nav="${destination.key}">${icon(destination.icon)}${destination.short}</a></li>`).join('')}</ul>
+      <ul class="bottom-nav__list app__nav-list">${DESTINATIONS.map((destination) => '<li><a class="app__nav-item bottom-nav__item" '
+        + `href="${destination.hash}" data-nav="${destination.key}">${icon(destination.icon)}${destination.short}</a></li>`).join('')}</ul>
     </nav>
-    <div class="toast-region" role="region" aria-label="Notifications"></div>`;
+    <div class="app__overlays"><div class="toast-region" role="region" aria-label="Notifications"></div></div>`;
 
   const title = root.querySelector('#app-title');
   const main = root.querySelector('.app__main');
   const banners = root.querySelector('.app__banners');
+  const editor = root.querySelector('[data-editor-slot]');
+  const overlays = root.querySelector('.app__overlays');
+  const actionBar = doc.createElement('div');
+  actionBar.className = 'app__action-bar';
   const notice = root.querySelector('[data-notice]');
   const broadcasts = root.querySelector('.app__broadcasts');
   const sessionBanner = root.querySelector('[data-session-banner]');
-  const editor = root.querySelector('[data-editor-slot]');
   const listNav = root.querySelector('[data-nav-lists]');
   const menuSlot = root.querySelector('[data-user-menu]');
   attachUserMenu(menuSlot, { session });
@@ -181,7 +192,7 @@ export function renderShell(root, { session = createSession() } = {}) {
     listNav.replaceChildren(...applyListOrder(shownLists, readListOrder()).map((list) => {
       const item = doc.createElement('li');
       const link = doc.createElement('a');
-      link.className = 'nav-item nav-item--list';
+      link.className = 'app__nav-item nav-item nav-item--list';
       link.href = `#/lists/${encodeURIComponent(list.id)}`;
       link.dataset.nav = `list:${list.id}`;
       const label = doc.createElement('span');
@@ -221,6 +232,28 @@ export function renderShell(root, { session = createSession() } = {}) {
     }
   }
 
+  /** Show each banner slot only while it holds a banner, and the action bar only while it holds content. */
+  function fitAreas() {
+    for (const slot of banners.children) {
+      slot.hidden = slot.childElementCount === 0;
+    }
+    if (actionBar.childElementCount === 0) {
+      actionBar.remove();
+    }
+    else if (!actionBar.isConnected) {
+      editor.after(actionBar);
+    }
+  }
+
+  const observer = new doc.defaultView.MutationObserver(fitAreas);
+  for (const target of [...banners.children, actionBar]) {
+    observer.observe(target, { childList: true });
+  }
+  // The skip link focuses the main column itself, since a `#main` hash would leave the route.
+  root.querySelector('.skip-link').addEventListener('click', (event) => {
+    event.preventDefault();
+    main.focus();
+  });
   listNav.addEventListener('keydown', onListKeydown);
   const unsubscribeOrder = onListOrderChange(() => {
     if (root.isConnected) {
@@ -234,11 +267,13 @@ export function renderShell(root, { session = createSession() } = {}) {
   return {
     main,
     editor,
+    actionBar,
+    overlays,
     toastRegion: root.querySelector('.toast-region'),
 
     /**
      * Show a route: its title, its navigation mark, an empty view, and the editor slot state.
-     * The view element stays while only the editor changes, so a screen keeps its state.
+     * The view element and the action bar stay while only the editor changes, so a screen keeps its state.
      * @param {object} next the route, from the router
      * @param {string} text the title
      * @returns {HTMLElement} the view element
@@ -255,7 +290,8 @@ export function renderShell(root, { session = createSession() } = {}) {
         if (next.params.listId) {
           view.dataset.listId = next.params.listId;
         }
-        main.replaceChildren(banners, view);
+        main.replaceChildren(view);
+        actionBar.replaceChildren();
       }
       editor.dataset.editor = next.editor ?? '';
       editor.dataset.taskId = next.params.taskId ?? '';
@@ -288,7 +324,8 @@ export function renderShell(root, { session = createSession() } = {}) {
       view.className = 'app__view';
       view.append(banner);
       viewKey = null;
-      main.replaceChildren(banners, view);
+      main.replaceChildren(view);
+      actionBar.replaceChildren();
     },
 
     /**

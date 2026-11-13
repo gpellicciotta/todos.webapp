@@ -61,7 +61,7 @@ async function openOptions(page) {
 }
 
 /** The text of the info line under the add bar. */
-const INFO = '.list-view .info-line__text';
+const INFO = '.app__action-bar .info-line__text';
 
 /**
  * Read the descriptions of the shown rows, top to bottom.
@@ -131,7 +131,7 @@ test.describe('List screen', () => {
     await expect(page.locator('.list-view .task-row__handle')).toHaveCount(0);
     await page.reload();
     await expect(page.locator('.list-view .group-header')).toHaveCount(2);
-    await page.locator('.list-view .info-line__reset').click();
+    await page.locator('.app__action-bar .info-line__reset').click();
     await expect(page.locator('.list-view .group-header')).toHaveCount(0);
     await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
     expect(problems).toEqual([]);

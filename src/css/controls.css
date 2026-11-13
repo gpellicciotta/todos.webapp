@@ -796,13 +796,9 @@ textarea.field__control {
 
 /*
  * Toast: a short message with an optional Undo, announced through a polite live region.
- * The toast region pins toasts above the bottom edge, at --layer-toast.
+ * The shell's overlay layer pins the toast region above the bottom bars, at --layer-toast.
  */
 .toast-region {
-  position: fixed;
-  inset-inline: var(--space-4);
-  inset-block-end: var(--space-4);
-  z-index: var(--layer-toast);
   display: grid;
   justify-items: center;
   gap: var(--space-2);

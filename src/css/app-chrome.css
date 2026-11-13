@@ -7,7 +7,8 @@
  * Gallery-only state classes force a state on a static specimen:
  * `.is-hover`, `.is-active`, and `.is-focus`. App markup never uses them.
  * App states use attributes the app sets: `data-state` and `aria-current`.
- * The app shell positions the sidebar, the bottom bar, and the editor panel; these blocks style them only.
+ * The vendored shell.css positions the sidebar, the bottom bar, the editor's side panel, and the floating button;
+ * these blocks style them only.
  */
 
 /* Icon buttons beside shrinking titles and note lines keep their full target size. */
@@ -692,15 +693,6 @@
   overflow: hidden;
   background-color: var(--color-surface);
   color: var(--color-text);
-}
-
-@media (width >= 64rem) {
-  .editor-panel {
-    max-inline-size: var(--width-side-panel);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--elevation-2);
-  }
 }
 
 .editor-panel__header {

@@ -358,10 +358,10 @@ describe('stylesheets outside tokens.css', () => {
     );
   });
 
-  it('are imported by style.css after the vendored tokens: tokens, controls, app components, app chrome, app shell, then views', () => {
+  it('are imported by style.css after the vendored tokens: tokens, controls, app components, app chrome, then views', () => {
     const style = stripComments(readFileSync(join(CSS_DIR, 'style.css'), 'utf8'));
     const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports.filter((name) => !name.startsWith('../vendor/'))).toEqual(['tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'app-shell.css', 'views.css']);
+    expect(imports.filter((name) => !name.startsWith('../vendor/'))).toEqual(['tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'views.css']);
   });
 
   for (const name of ['app-components.css', 'app-chrome.css', 'views.css']) {

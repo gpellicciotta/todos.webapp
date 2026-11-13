@@ -2,10 +2,11 @@
  * The stylesheet entry point: the only stylesheet a page links.
  *
  * It imports the design tokens of the vendored support.webapp design system: the shared base, then the
- * neutral look's palette, font faces, and semantic roles. These four files are private to the package;
- * the public looks/neutral/index.css would also load the package components, which replace the app's own
- * in a later step. Then come the app-local tokens, the controls, the app components, the app chrome,
- * the app shell, and the screen layouts, and finally page-wide base styles.
+ * neutral look's palette, font faces, and semantic roles, and then the package's app shell, which places
+ * every area of the page. These five files are private to the package; the public looks/neutral/index.css
+ * would also load the package components, which replace the app's own in a later step. Then come the
+ * app-local tokens, the controls, the app components, the app chrome, and the screen layouts, and finally
+ * page-wide base styles. The app stylesheets follow the shell, so the app components win equal selectors.
  * Rules here use semantic tokens only; raw values belong in the vendored look or in tokens.css.
  */
 
@@ -13,11 +14,11 @@
 @import url('../vendor/design/looks/neutral/primitives.css');
 @import url('../vendor/design/looks/neutral/fonts.css');
 @import url('../vendor/design/looks/neutral/look.css');
+@import url('../vendor/design/css/shell.css');
 @import url('tokens.css');
 @import url('controls.css');
 @import url('app-components.css');
 @import url('app-chrome.css');
-@import url('app-shell.css');
 @import url('views.css');
 
 /* Base: box model, page ground, and body text. */

@@ -100,10 +100,12 @@ async function readData(store) {
  * @param {() => Date} [options.now] the clock
  * @param {() => Promise<void>} [options.persist] asks for persistent storage
  * @param {{state: () => string}} [options.session] the session; the Shared filter applies while it is connected (`TV-7`)
+ * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountAllTasks(view, {
   store, toaster, memory = {}, viewModels, navigate = () => {}, getStorage, now = () => new Date(), persist = requestPersistence, session,
+  actionBar = null,
 }) {
   const doc = view.ownerDocument;
   const model = viewModels?.tasks ?? createViewModel(VIEW, getStorage);
@@ -143,7 +145,8 @@ export function mountAllTasks(view, {
   });
   const empty = doc.createElement('div');
   empty.className = 'empty-state';
-  root.append(addBlock, taskList.element, addHint.element, empty);
+  root.append(...(actionBar ? [] : [addBlock]), taskList.element, addHint.element, empty);
+  actionBar?.append(addBlock);
   view.replaceChildren(root);
 
   /**
@@ -349,6 +352,7 @@ export function mountAllTasks(view, {
     destroy() {
       destroyed = true;
       addBar.destroy();
+      addBlock.remove();
       unfollow();
       unfollowOrder();
       menuBehavior.destroy();

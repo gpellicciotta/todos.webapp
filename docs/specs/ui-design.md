@@ -45,13 +45,14 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 ```text
 +--------------+-------------------------------+---------------------+
 | ToDo's       | All tasks            [...] (o)| Task, list, or view |
-|              |                               | Description         |
-| All tasks 24 | [Search or add a task...] [+] | Status              |
-| Lists        | 24 tasks · Status: open       | Due time            |
-|  Home     8  | ( ) Buy paint      Tomorrow   | Lists               |
-|  Work    12  | (/) Call plumber   Overdue !  | Notes               |
-|              | ( ) Book flights              |                     |
-|              |                               |                     |
+|              +-------------------------------+ Description         |
+| All tasks 24 | ( ) Buy paint      Tomorrow   | Status              |
+| Lists        | (/) Call plumber   Overdue !  | Due time            |
+|  Home     8  | ( ) Book flights              | Lists               |
+|  Work    12  |                               | Notes               |
+|              +-------------------------------+                     |
+|              | [Search or add a task...] [+] |                     |
+|              | 24 tasks · Status: open       |                     |
 +--------------+-------------------------------+---------------------+
 ```
 
@@ -99,7 +100,12 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
 
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
-[app-shell.css](../../src/css/app-shell.css) places its parts; one DOM holds both layouts.
+The vendored [shell.css](../../src/vendor/design/css/shell.css) places its areas, as ADR-0004 of support.webapp defines.
+One DOM holds both layouts; [views.css](../../src/css/views.css) centers the views and the add block at `--width-main`.
+- **[Decided]** The shell runs in the main scroll mode, `app--scroll-main`, with every area of the todos setup.
+  A skip link opens the page; it focuses the main column without changing the route.
+- The action bar holds the add block of the task views; it joins the page only while a view puts content in it.
+- The overlay layer holds the toast region and the floating New list button.
 - The top bar holds the route title and the user button, preceded by the inbox bell while connected; it has no More menu.
 - The wide layout shows the title above the main column, with the user button at its right end.
 - The sync indicator sits beside the user button, before the inbox bell; see Sync Indicator below.
@@ -113,11 +119,13 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
   [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`, [settings.js](../../src/js/views/settings.js) `settings`,
   and [connect.js](../../src/js/views/connect.js) `connect`, and [sync-log.js](../../src/js/views/sync-log.js) `sync-log`.
 - A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
+  Its slots hide while empty, so the area takes no room without a banner.
 - Moving to another view moves focus to the main column, which the route title labels.
 - Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
 - The `[data-editor-slot]` element names the open editor in `data-editor`: `task`, `list`, or empty.
   [editor-panel.js](../../src/js/views/editor-panel.js) mounts the editor of the route and unhides the slot.
-  It covers the main column in compact layouts; an editor not built yet leaves the slot hidden.
+  The slot is the shell's side panel: a full-window sheet in compact layouts, the right column in wide ones.
+  An editor not built yet leaves the slot hidden.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
 - Scroll positions and a memory object are kept per view, for the session; it keeps the search text.
 - Filters, grouping, and sort persist per device in `localStorage`, such as `todos.view.tasks`, or `todos.view.list.{{list-id}}` for a list (`TV-12`).
@@ -222,7 +230,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
 - **[Decided]** In All tasks, the new task joins no list, even while the Lists filter selects lists.
   A Lists filter that hides it brings the "Task added" toast with Show.
-- Compact layouts pin the add bar above the bottom navigation; wide layouts place it above the rows.
+- **[Decided]** The add bar sits in the shell's action bar under the rows: above the bottom navigation when compact,
+  at the bottom of the main column when wide. Before T0231, wide layouts placed it above the rows.
 - A counter appears from 450 characters, inside the field's end; the field stops at 500.
 - A failed add keeps the text and shows a toast.
 
@@ -252,8 +261,7 @@ Home                                                              3
   - It is 12 px muted text on one line; it wraps to two lines, then truncates, and the view options show the rest.
   - **[Decided]** A quiet Reset link ends the line while any option differs from its default (`VO-8`).
     Reset also clears the search text, since the line names it.
-- **[Decided]** The field and its info line form one block, set apart from the rows by at least 32 px of whitespace.
-  On compact layouts the block is the pinned bar above the bottom navigation, so the rows scroll above it.
+- **[Decided]** The field and its info line form one block, the content of the action bar, so the rows scroll above it.
 - When a matching task has exactly the typed text, the Add button reads "Add anyway".
   The check ignores case and surrounding spaces, and covers every non-deleted task the view options show.
 - With no match, the rows give way to the line "No task matches. Add creates it."
@@ -492,7 +500,7 @@ Wireframes: [lists.svg](../img/ui/lists.svg) with a few lists, [lists-many.svg](
 Design for 100 and more lists, up to 500 (`LST-10` to `LST-16`).
 The sidebar and this screen share the rules below.
 - **[Decided]** Find: from 12 lists, a find field sits above the rows, with the sort button and info line.
-  The block follows the add bar: pinned above the bottom navigation when compact, above the rows when wide.
+  The block follows the add bar into the action bar, under the rows in both layouts.
   Reason: a thumb reaches the bottom, and one pattern serves tasks and lists.
 - **[Decided]** Matching ignores case and accents and finds the text anywhere in the name.
   This screen also searches descriptions.

@@ -1,12 +1,49 @@
 /*
- * Screen layouts of ToDo's: how the task views fill the shell's main column.
+ * Screen layouts of ToDo's: how the views fill the areas of the vendored shell.css.
  *
  * The task view pattern and its parts live in app-components.css; these rules place them in the app.
- * Compact layouts pin the add bar above the bottom navigation; wide layouts keep it above the rows.
+ * The main column centers each view at --width-main; the add block takes the same column in the action bar.
  * Rules here use semantic tokens only.
  */
 
-/* Task views fill the main column, so the compact add bar can sit at its end. */
+.app__view {
+  max-inline-size: var(--width-main);
+  margin-inline: auto;
+}
+
+.app__broadcasts {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* The app's sidebar block sets its own display, so the compact layout hides it again, as shell.css does. */
+@media (width < 64rem) {
+  .app > .app__sidebar {
+    display: none;
+  }
+}
+
+/* The add block fills the action bar at the width of the view above it. */
+.app__action-bar > .add-block {
+  inline-size: 100%;
+  max-inline-size: var(--width-main);
+  margin-inline: auto;
+}
+
+/* Closed parts of the add block set `hidden`, which their display rules would otherwise override. */
+.add-block [hidden] {
+  display: none;
+}
+
+/* The compact import dialog covers the main column in place, between the top bar and the bottom bar. */
+.app > .dialog--in-view {
+  position: static;
+  grid-area: main;
+  z-index: var(--layer-sticky);
+  min-block-size: 0;
+}
+
+/* Task views fill the main column, so a first launch can center its empty state. */
 .app__view:has(> .task-view) {
   display: flex;
   flex-direction: column;
@@ -58,13 +95,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Wide layouts set the add block apart from the rows by 32 px (`VO-7`). */
-@media (width >= 64rem) {
-  .add-block {
-    margin-block-end: var(--space-7);
-  }
-}
-
 .add-bar__field {
   position: relative;
 }
@@ -86,31 +116,6 @@
 .task-view[data-state='first-launch'] > .empty-state {
   flex: 1 0 auto;
   align-content: center;
-}
-
-@media (width < 64rem) {
-  /* The add block sticks to the bottom of the main column, above the bottom navigation. */
-  .task-view > .add-block {
-    position: sticky;
-    inset-block-end: 0;
-    z-index: var(--layer-sticky);
-    margin-block-start: auto;
-    padding-block: var(--space-2);
-    background-color: var(--color-bg);
-  }
-
-  /* Toasts rise above the pinned add bar. */
-  .app:has(.task-view > .add-block) .toast-region {
-    inset-block-end: calc(var(--target-min) + var(--space-3) + var(--space-4) + var(--target-min) + var(--space-4)
-      + env(safe-area-inset-bottom));
-  }
-}
-
-/* The editor panel keeps its full width beside the rows; compact layouts fill the slot, as a full screen. */
-@media (width >= 64rem) {
-  .app__editor > .editor-panel {
-    inline-size: var(--width-side-panel);
-  }
 }
 
 /*
@@ -575,12 +580,11 @@
 /*
  * Lists overview: one row per list with its name, description start, and task counts.
  * The counts end the first line; the description takes one line below the name.
- * The floating New list button (`.fab`) floats over the screen, so the rows end with room to scroll clear of it.
+ * The shell pads the main column while the floating New list button shows, so the rows scroll clear of it.
  */
 .lists-view {
   display: grid;
   gap: var(--space-3);
-  padding-block-end: calc(var(--target-min) + var(--space-3) + var(--space-7));
 }
 
 .lists-view [hidden] {

@@ -42,6 +42,21 @@ describe('mountLists', () => {
     expect(view.querySelectorAll('.fab')).toHaveLength(1);
   });
 
+  it('puts the floating button in the given overlay layer and removes it when the screen closes', async () => {
+    ({ store } = await freshStore());
+    const view = document.body.appendChild(document.createElement('div'));
+    const overlays = document.body.appendChild(document.createElement('div'));
+    screen = mountLists(view, { store, overlays });
+    await screen.idle();
+    expect(overlays.querySelectorAll('.fab')).toHaveLength(1);
+    expect(view.querySelector('.fab')).toBeNull();
+    screen.update({ name: 'list-new', view: 'lists', editor: 'list', params: {} });
+    expect(overlays.querySelector('.fab').hidden).toBe(true);
+    screen.destroy();
+    screen = null;
+    expect(overlays.querySelector('.fab')).toBeNull();
+  });
+
   it('has no New list button in the view header any more', async () => {
     const view = await mount();
     expect(view.querySelector('.lists-view__new')).toBeNull();

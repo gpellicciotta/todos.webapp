@@ -7,6 +7,10 @@ All notable changes to this project are documented here.
 ## v0.4.1-pre
 - FrontEnd: Vendored support.webapp 0.1.0 with its neutral look, and took every design token from it under its contract names, with no visible change.
 - DevOps: Ran the vendored design check in CI and in `devops.py check`, so an edited copy or a private token in the app styles fails the build.
+- FrontEnd: Moved the app layout onto the vendored shell, with a skip link, a banner area, an action bar, a side panel, and an overlay layer.
+- FrontEnd: Moved the add bar into the action bar under the rows, also on wide screens, where it sat above the rows before.
+- FrontEnd: Opened the compact task, list, and view options editors as a full-window sheet over the top and bottom bars.
+- FrontEnd: Framed the wide editor panel by the side panel's start border instead of a floating card, and gave the wide top bar the surface ground.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

@@ -13,6 +13,8 @@ The tokens, the font, the controls, the app components, and their gallery sectio
 - [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
 - [app-components.css](../../src/css/app-components.css): the task list, task row, status button, and status menu.
 - [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
+- [shell.css](../../src/vendor/design/css/shell.css): the vendored app shell, which places every area of the page.
+- [views.css](../../src/css/views.css): how the views fill the shell areas, at the `--width-main` column.
 - [icons.svg](../../src/img/icons.svg): the icon sprite, one `<symbol>` per icon on a 24 px grid.
 - [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token, control, app component, and pattern.
 
@@ -65,8 +67,10 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
 - **[Decided]** New list is a floating plus button in the Lists view, not a top-bar menu entry.
   Rejected: a pill with a label, which read as an oval and was neither a normal button nor a circle.
   Rejected: a More menu in the top bar that held only New list, which hid the one action of the screen.
-- **[Decided]** The app shell positions the sidebar, the bottom bar, the floating button, and the editor panel.
-  The component styles hold no fixed or sticky positions, so the gallery shows them in place.
+- **[Decided]** The vendored shell.css positions the sidebar, the bottom bar, the floating button, and the editor panel.
+  App styles hold no fixed or sticky positions, which the vendored check enforces, so the gallery shows them in place.
+- **[Decided]** Navigation links carry the shell's `app__nav-item` beside the app's `.nav-item` or `.bottom-nav__item`.
+  The app stylesheets follow shell.css, so the app items win equal selectors; the shell's more specific bar rules still apply.
 - **[Decided]** Component styles never scale a token by a bare number, such as `* 2` or `/ 2`.
   They use a named token, or add tokens together; [tokens.test.js](../../tests/unit/tokens.test.js) checks app-chrome.css.
 - **[Decided]** Marks on an inline edge use logical properties, so they follow right-to-left text.
@@ -143,7 +147,7 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - Text minimums: `--width-text-min` before a banner's action wraps, `--height-textarea-min` for textareas.
 
 ### Elevation, Layers, and Motion
-- `--elevation-1` for popovers and menus, `--elevation-2` for dialogs and the wide editor panel.
+- `--elevation-1` for popovers and menus, `--elevation-2` for dialogs and the floating button.
 - `--layer-*` for stacking: sticky bars, popovers, dialogs, and toasts; never raw `z-index` values.
 - `--duration-fast` and `--duration-base` with `--ease-standard`; durations drop to zero under reduced motion.
 - `--duration-spin`: one turn of the syncing icon; reduced motion stops the spin entirely.
@@ -253,7 +257,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Its aria-label and title name the action, such as New list.
   Use it for the one main action of a screen that lists things, such as New list; never for secondary actions.
   It sits on the `--layer-float` layer, above rows and bars, below popovers, dialogs, and toasts.
-  The component styles hold no position; the app shell fixes it at the bottom end of the screen, above the bottom bar when compact.
+  The component styles hold no position; the shell's overlay layer fixes it at the bottom end, above the bottom bar when compact.
   Screens give their content room to scroll clear of it, and hide it while an editor covers the same corner.
 - [Sync indicator](../../src/demo/visual-style-gallery.html#sync-indicator): a `.sync-indicator` button with one icon and label per `data-state`.
   States: `local`, `synced`, `syncing`, `offline` with its pending count, `sign-in`, and `error`.
@@ -262,7 +266,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Its ring takes the ground under it: `--sync-indicator-ground`, the page ground by default.
   The sidebar and the top bar set it to the surface; hover and active use the indicator's own ground.
 - [Editor panel](../../src/demo/visual-style-gallery.html#editor-panel): an `<aside class="editor-panel">` with a title and a close button.
-  From 64rem it is a bordered right panel at `--elevation-2`; below, it fills the screen.
+  It fills the shell's side panel: the right column from 64rem, framed by the panel's start border; below, a full-window sheet.
   Its body scrolls; sections stack with dividers, and the danger zone sits apart at the end.
 - [Note thread](../../src/demo/visual-style-gallery.html#note-thread): the add note field above an `<ol>` of notes, newest first.
   Each `.note` shows its author, its time, an "edited" mark, its text, and a More button for own notes.
@@ -273,7 +277,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 
 ## Patterns
 - [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header and its More button, the search field, an `.add-block`, and rows.
-  The add block holds the add bar and the info line; it sits above the rows in wide layouts and below them in compact ones.
+  The add block holds the add bar and the info line; the app puts it in the shell's action bar, under the rows.
 - Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
 - Find and sort: the Lists screen reuses this block with a find field and a Sort button.
   Its info line counts lists, such as "4 of 124 lists".

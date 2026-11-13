@@ -167,3 +167,77 @@ describe('renderShell list order', () => {
     expect(labels(root)).toEqual(['Work', 'Garden', 'Home']);
   });
 });
+
+describe('renderShell areas (ADR-0004)', () => {
+  const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('renders the shell areas in skeleton order on a root in the main scroll mode', () => {
+    const { root } = render();
+    expect([...root.classList]).toEqual(expect.arrayContaining(['app', 'app--scroll-main']));
+    expect([...root.children].map((child) => child.className.split(' ').find((name) => name.startsWith('app__') || name === 'skip-link'))).toEqual([
+      'skip-link', 'app__top-bar', 'app__sidebar', 'app__banners', 'app__main', 'app__side-panel', 'app__bottom-nav', 'app__overlays',
+    ]);
+    expect(root.querySelector('.app__top-bar > .app__top-actions[data-user-menu]')).not.toBeNull();
+    expect(root.querySelector('aside.app__side-panel[data-editor-slot]').hidden).toBe(true);
+    expect(root.querySelector('.app__main > .app__banners')).toBeNull();
+  });
+
+  it('marks every navigation link as a shell nav item inside a shell nav list, keeping the app item classes', async () => {
+    const { root, shell } = render();
+    shell.setLists([{ id: 'h', name: 'Home' }], { all: 0, byList: new Map() });
+    for (const nav of root.querySelectorAll('.app__sidebar, .app__bottom-nav')) {
+      expect(nav.getAttribute('aria-label')).toBe('Main');
+      for (const link of nav.querySelectorAll('a')) {
+        expect(link.classList.contains('app__nav-item')).toBe(true);
+        expect(link.parentElement.parentElement.classList.contains('app__nav-list')).toBe(true);
+      }
+    }
+    expect(root.querySelectorAll('.app__sidebar a.nav-item')).toHaveLength(3);
+    expect(root.querySelectorAll('.app__bottom-nav a.bottom-nav__item')).toHaveLength(2);
+  });
+
+  it('puts the toast region in the overlay layer and returns both', () => {
+    const { root, shell } = render();
+    expect(shell.overlays).toBe(root.querySelector('.app__overlays'));
+    expect(shell.toastRegion.parentElement).toBe(shell.overlays);
+    expect(shell.toastRegion.getAttribute('role')).toBe('region');
+  });
+
+  it('adds the action bar after the side panel only while it holds content, and empties it on a new view', async () => {
+    const { root, shell } = render();
+    expect(root.querySelector('.app__action-bar')).toBeNull();
+    shell.update({ view: 'tasks', viewKey: 'tasks', params: {} }, 'All tasks');
+    shell.actionBar.append(document.createElement('div'));
+    await tick();
+    expect(root.querySelector('.app__side-panel').nextElementSibling).toBe(shell.actionBar);
+    expect(shell.actionBar.classList.contains('app__action-bar')).toBe(true);
+    shell.update({ view: 'tasks', viewKey: 'tasks', editor: 'task', params: { taskId: 't1' } }, 'All tasks');
+    await tick();
+    expect(shell.actionBar.isConnected).toBe(true);
+    shell.update({ view: 'lists', viewKey: 'lists', params: {} }, 'Lists');
+    await tick();
+    expect(shell.actionBar.childElementCount).toBe(0);
+    expect(root.querySelector('.app__action-bar')).toBeNull();
+  });
+
+  it('hides each banner slot while it is empty, so the banner area leaves the grid', async () => {
+    const { root, shell } = render();
+    const slots = [...root.querySelector('.app__banners').children];
+    expect(slots.every((slot) => slot.hidden)).toBe(true);
+    shell.showNotice('A newer version is ready.');
+    await tick();
+    expect(root.querySelector('[data-notice]').hidden).toBe(false);
+    expect(root.querySelector('.app__broadcasts').hidden).toBe(true);
+  });
+
+  it('opens with a skip link that focuses the main area without changing the route', () => {
+    const { root } = render();
+    location.hash = '#/lists';
+    const link = root.querySelector('.skip-link');
+    expect(link.getAttribute('href')).toBe('#main');
+    expect(link.textContent).toBe('Skip to content');
+    link.click();
+    expect(document.activeElement).toBe(root.querySelector('#main'));
+    expect(location.hash).toBe('#/lists');
+  });
+});

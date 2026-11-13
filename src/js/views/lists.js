@@ -3,6 +3,7 @@
  *
  * It fills the shell's `[data-view="lists"]` element, and renders again after every store change.
  * Each row opens its list; the floating plus button, named New list, opens the list editor on `#/lists/new`.
+ * The button sits in the shell's overlay layer while the screen is open.
  * The button hides while an editor is open, so it never covers the editor panel.
  * Each row also has a More button with the actions of the List screen: Edit list, Edit view options, Share list,
  * and Delete list (`VO-4`).
@@ -84,9 +85,10 @@ function row(doc, list, count) {
  * @param {object} options.store the store facade
  * @param {{show: Function}} [options.toaster] the toaster, for the Delete list result
  * @param {(hash: string) => void} [options.navigate] opens another route
+ * @param {HTMLElement} [options.overlays] the shell's overlay layer, which takes the floating button; the view by default
  * @returns {{update: () => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
-export function mountLists(view, { store, toaster = { show() {} }, navigate = () => {} }) {
+export function mountLists(view, { store, toaster = { show() {} }, navigate = () => {}, overlays = null }) {
   const doc = view.ownerDocument;
   let pending = null;
   let destroyed = false;
@@ -101,7 +103,8 @@ export function mountLists(view, { store, toaster = { show() {} }, navigate = ()
   const empty = make(doc, 'div', 'empty-state');
   const emptyText = make(doc, 'p', 'empty-state__text', STRINGS.empty);
   empty.append(emptyText);
-  root.append(rows, empty, add);
+  root.append(rows, empty, ...(overlays ? [] : [add]));
+  overlays?.append(add);
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });
   let shown = [];
@@ -183,6 +186,7 @@ export function mountLists(view, { store, toaster = { show() {} }, navigate = ()
     /** Stop following the store. */
     destroy() {
       destroyed = true;
+      add.remove();
       unsubscribe();
       unsubscribeOrder();
       for (const behavior of menus) {

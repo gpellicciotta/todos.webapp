@@ -43,6 +43,21 @@ describe('mountAllTasks', () => {
     expect(document.activeElement).toBe(document.querySelector('[data-shortcut~="add"]'));
   });
 
+  it('mounts the add block into the given action bar, keeping the view for the rows', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div><div class="app__action-bar"></div>';
+    const actionBar = document.querySelector('.app__action-bar');
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, actionBar, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    expect(actionBar.querySelector('.add-block [data-shortcut~="add"]')).not.toBeNull();
+    expect(document.querySelector('[data-view] .add-block')).toBeNull();
+    expect(document.querySelector('[data-view] .task-row')).not.toBeNull();
+    screen.destroy();
+    screen = null;
+    expect(actionBar.childElementCount).toBe(0);
+  });
+
   it('keeps search text still waiting for the debounce in the session memory when the screen closes', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const memory = {};

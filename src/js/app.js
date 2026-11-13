@@ -6,7 +6,7 @@
  * A new service worker waits for the Update toast (`TEC-19`); a newer version in another tab shows a lasting banner with Reload.
  * A start-up failure shows an error banner.
  * Moving to another view moves focus to the main column, which the route title labels.
- * Shortcuts, outside text fields: `n` focuses the view's `[data-shortcut~="add"]` element and `/` its
+ * Shortcuts, outside text fields: `n` focuses the shell's `[data-shortcut~="add"]` element and `/` its
  * `[data-shortcut~="search"]` element, each a no-op while the view has none; Escape closes an open editor.
  * The sync indicator shows the sync state beside the user button (see views/sync-indicator.js).
  * While connected, the inbox shows a bell and the broadcast banners of the service (see sync/inbox.js).
@@ -135,7 +135,7 @@ async function start() {
     slot: shell.editor, editors: EDITORS,
     context: { store, toaster, session, api: createApi({ session }), sync: engine, viewModels, navigate: (hash) => router.navigate(hash) },
     close: () => router.navigate(formatRoute(router.current().view, router.current().params)),
-    fallbackFocus: () => shell.main.querySelector('[data-shortcut~="add"]') ?? shell.main,
+    fallbackFocus: () => document.getElementById('app').querySelector('[data-shortcut~="add"]') ?? shell.main,
   });
 
   /**
@@ -172,7 +172,10 @@ async function start() {
     if (screen?.element !== element) {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
-      const options = { store, toaster, session, sync: engine, seen, viewModels, memory: router.memory(), navigate: (hash, settings) => router.navigate(hash, settings) };
+      const options = {
+        store, toaster, session, sync: engine, seen, viewModels, memory: router.memory(), actionBar: shell.actionBar, overlays: shell.overlays,
+        navigate: (hash, settings) => router.navigate(hash, settings),
+      };
       screen = { element, controller: mount ? mount(element, options) : null };
     }
     screen.controller?.update(route);
@@ -203,7 +206,7 @@ async function start() {
     }
     const route = router.current();
     if (event.key === 'n' || event.key === '/') {
-      const target = shell.main.querySelector(`[data-shortcut~="${event.key === 'n' ? 'add' : 'search'}"]`);
+      const target = document.getElementById('app').querySelector(`[data-shortcut~="${event.key === 'n' ? 'add' : 'search'}"]`);
       if (target) {
         event.preventDefault();
         target.focus();

@@ -70,8 +70,14 @@ describe('the vendored design system', () => {
     const result = check(ROOT);
     expect(result.integrity.errors).toEqual([]);
     expect(result.conformance.errors).toEqual([]);
-    // T0231 moves the fixed toast region, sticky add bar, and floating button into shell.css areas.
-    expect(result.conformance.warnings.filter((warning) => !warning.endsWith('fixed or sticky position outside shell'))).toEqual([]);
+    expect(result.conformance.warnings).toEqual([]);
+  });
+
+  it('lays out the app with the vendored shell.css, imported after the look and before the app stylesheets', () => {
+    const style = readFileSync(join(SRC, 'css', 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
+    expect(imports[4]).toBe('../vendor/design/css/shell.css');
+    expect(existsSync(join(SRC, 'css', 'app-shell.css'))).toBe(false);
   });
 
   it('keeps the vendored bytes exact across platform checkouts', () => {
