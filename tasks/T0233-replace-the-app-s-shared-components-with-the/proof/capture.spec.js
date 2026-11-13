@@ -96,6 +96,10 @@ const PAGES = [
     await page.locator('.app__top-bar [aria-haspopup], .app__top-bar .user-button, .app__top-bar .account-menu__button').first().click();
     await page.waitForTimeout(100);
   } },
+  { name: 'account-menu', hash: () => '#/settings', open: async (page) => {
+    await page.locator('.app__top-bar .user-button, .app__top-bar .account-menu__button').first().click();
+    await page.waitForTimeout(100);
+  } },
   // T0233 adds the shared components it replaces: a row menu, a confirm dialog, a field error, and an Undo toast.
   { name: 'row-menu', hash: ({ listId }) => `#/lists/${listId}`, open: async (page) => {
     await page.getByRole('button', { name: 'More actions for Fix the kitchen tap' }).click();

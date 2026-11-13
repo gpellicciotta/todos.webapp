@@ -52,3 +52,61 @@ exit code: 1
   7) [chromium] › tests\e2e\shell.spec.js:177:3 › the desktop panel stays aligned with the button for a long name 
   7 failed
 ```
+
+### Green Phase
+The completion check after the switch, at `ae9b296`; one earlier run timed out in `serve.test.js`, which this task does not touch.
+
+```text
+$ python scripts/devops.py check
+exit code: 0
+[... per-test lines omitted; command lines and summaries kept ...]
+[*] C:\Program Files\nodejs\node.EXE scripts/check-sw-version.mjs
+OK: 123 precached files match VERSION 2026-11-13.5.
+[*] C:\Program Files\nodejs\node.EXE src/vendor/design/bin/check.mjs
+integrity: PASS
+conformance: PASS
+[*] C:\Program Files\nodejs\npm.CMD test
+ Test Files  55 passed (55)
+      Tests  1180 passed (1180)
+[*] C:\Program Files\nodejs\npm.CMD run lint
+[*] C:\Program Files\nodejs\npm.CMD run test:e2e
+  198 passed (3.5m)
+[*] C:\Program Files\Python312\Scripts\ruff.EXE check scripts tests
+All checks passed!
+[*] C:\Program Files\Python312\Scripts\ruff.EXE format --check scripts tests
+[*] C:\Program Files\Python312\python.exe -m pytest -q tests
+156 passed in 136.91s (0:02:16)
+```
+
+```text
+$ node src/vendor/design/bin/check.mjs
+exit code: 0
+integrity: PASS
+conformance: PASS
+```
+
+### Lossless Switch Proof
+Captured with T0230's harness, extended in `proof/` with row menu, dialog, field error, toast, and account menu scenes.
+Before: `ceb160b`, served from an exported copy; after: the task branch. 13 screens at 390 and 1440 px, light and dark.
+Every `problems.json` holds `[]`: no console error, page error, failed request, or HTTP error.
+Screenshots: [before](screenshots/before/), [after](screenshots/after/); every difference is listed in technical-spec.md.
+
+```text
+$ node proof/compare.mjs screenshots/before screenshots/after --limit 0
+exit code: 1
+[... 39 capture lines omitted ...]
+light-390/account-menu.json: 78 differences
+light-390/all-tasks.json: 209 differences
+light-390/bin.json: 60 differences
+light-390/dialog.json: 200 differences
+light-390/field-error.json: 375 differences
+light-390/list-editor.json: 199 differences
+light-390/list.json: 169 differences
+light-390/lists.json: 129 differences
+light-390/row-menu.json: 171 differences
+light-390/settings.json: 78 differences
+light-390/task-editor.json: 371 differences
+light-390/toast.json: 143 differences
+light-390/user-menu.json: 199 differences
+total differences: 9704
+```
