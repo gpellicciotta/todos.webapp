@@ -1,11 +1,11 @@
 ---
 id: T0231
-owner: ~
-needs: [T0230]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0231-move-the-app-shell-and-shared-components-onto
+worktree: .plan/work/T0231-move-the-app-shell-and-shared-components-onto
+status: active
+started_at: "2026-11-13T11:54:40Z"
 ended_at: —
 review: agent
 preview: none

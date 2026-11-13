@@ -3,7 +3,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
 - [x] T0230 Vendor the support.webapp design system with the neutral look and apply its token renames, losslessly.
-- [ ] T0231 Move the app layout onto the vendored shell.css, with the action bar, side panel, and overlay layer.
+- [~] T0231 [owner: @claude] Move the app layout onto the vendored shell.css, with the action bar, side panel, and overlay layer.
 - [ ] T0233 [needs: T0231] Replace the app's shared components with the vendored ones and import the public neutral look entry point.
 
 ## Backlog
