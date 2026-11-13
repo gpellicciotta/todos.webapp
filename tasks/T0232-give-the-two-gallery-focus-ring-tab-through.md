@@ -11,6 +11,10 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 967.8, input: 76, output: 13304, cache_read: 2318400, cache_write: 96514}
+review_status: pending
+review_round: 1
 ---
 # T0232: Give the two gallery focus ring tab-through tests a longer timeout, since full parallel runs can exceed 30 seconds
 
@@ -51,4 +55,7 @@ Size estimate: 2 files, 4 lines
   - Files touched: 2.
   - Lines touched: 2.
   - Reopenings: 0.
+
+- [2026-11-13] **[Review]**
+  Round 1 requested (mode: agent).
 
