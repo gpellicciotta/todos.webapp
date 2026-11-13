@@ -26,3 +26,5 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0078 [needs: T0074] Add the Shared only filter to the Lists screen sort menu while connected.
 - [ ] T0217 Show the Finished today only choice in the view options wireframe and the visual style gallery sample.
 - [ ] T0220 Make the gallery keyboard-stop focus ring tests fast enough to pass under parallel load.
+- [ ] T0230 Vendor the support.webapp design system with the neutral look and apply its token renames, losslessly.
+- [ ] T0231 [needs: T0230] Move the app shell and shared components onto the vendored design system, keeping task rows app-local.
