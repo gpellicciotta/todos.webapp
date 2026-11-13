@@ -1,6 +1,7 @@
 ---
 id: T0231
 owner: "@claude"
+session: claude-20261113-f78518
 needs: []
 branch: task/T0231-move-the-app-shell-and-shared-components-onto
 worktree: .plan/work/T0231-move-the-app-shell-and-shared-components-onto
@@ -21,10 +22,10 @@ Keep the app's own components; [T0233](T0233-replace-the-app-s-shared-components
 Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007-documentation-and-verification.md) requires, with T0230's proof harness.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the named ADRs and the app at a recorded commit.
-- [ ] **[Decide]**    Write declared files, size estimate, tests, and the completion check into the technical specification.
-- [ ] **[Implement]** Write the failing tests named in the technical specification.
-- [ ] **[Verify]**    Run the new tests and record their failure output in validation-proof.md.
+- [x] **[Read]**      Read the named ADRs and the app at a recorded commit.
+- [x] **[Decide]**    Write declared files, size estimate, tests, and the completion check into the technical specification.
+- [x] **[Implement]** Write the failing tests named in the technical specification.
+- [x] **[Verify]**    Run the new tests and record their failure output in validation-proof.md.
 - [ ] **[Implement]** Move the layout markup and styles onto shell.css, and remove the app's own shell styles.
 - [ ] **[Verify]**    Run the tests, the vendored check, and the completion check until they pass.
 - [ ] **[Visual]**    Record the lossless switch proof: screenshots at 390 and 1440 px, light and dark.
@@ -37,3 +38,8 @@ Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007
 
 - [2026-11-13] **[Doc]**
   Split from the original scope at the user's request; the shared components moved to T0233.
+
+- [2026-11-13] **[Decide]**
+  Read ADR-0004, ADR-0007, components.md, and the app at 56e799b; wrote decisions, declared files, and tests into the technical specification.
+  - Size estimate: 18 files, 700 lines.
+

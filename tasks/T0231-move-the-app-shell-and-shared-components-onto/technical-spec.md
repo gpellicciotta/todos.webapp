@@ -18,23 +18,59 @@ Read on 2026-11-13 at `56e799b`:
 - The add bar (`views/add-bar.js`, `views.css`) becomes the action bar; the editor slot (`views/editor-panel.js`) the side panel.
 - The floating button (`views/lists.js`) and the toast region (`ui/toast.js`) move into `app__overlays`.
 - `app-shell.css` goes; `app-chrome.css` and `views.css` lose their layout rules.
-- Class renames reach about 9 end-to-end specs and 6 unit tests; one sed command should make them, as a mechanical change.
+- The tests select `[data-editor-slot]`, `.app__broadcasts`, `.nav-item--list`, and `.bottom-nav__item`; all stay, so no rename sweep is needed.
+
+## Decisions
+- **[Decided]** The `#app` element stays the shell root, as `app app--scroll-main`; shell selectors are class based.
+- **[Decided]** The add block moves into the action bar in both layouts, as ADR-0004 and the support.webapp todos demo place it.
+  Wide layouts therefore show the add bar under the rows, not above them; `ui-design.md` changes with it.
+  The add block keeps the `--width-main` column, centered in the bar.
+- **[Decided]** The shell adds the action bar only while it holds content, and the banner slots hide while empty.
+  Shell rules test `:has(> .app__action-bar)` and `:has(> :not([hidden]))`, so an empty area must leave the grid.
+- **[Decided]** Views receive `actionBar` and `overlays` elements; without them they keep the old in-view placement.
+- **[Decided]** Navigation keeps the app's own item components beside the shell classes, as the sidebar already does.
+  Sidebar links are `app__nav-item nav-item`; bottom bar links are `app__nav-item bottom-nav__item`.
+- **[Decided]** Shell parts take the shell look: the wide top bar keeps its surface and border, and the title its shell size.
+- **[Decided]** The editor panel loses its wide card frame, since the side panel now frames it with a start border.
+- **[Decided]** The `--width-main` view column stays as an app layout width; the main area's gutter replaces the view padding.
+- **[Decided]** A skip link to the main area opens the shell; its click focuses `#main` without changing the route hash.
+- **[Decided]** `style.css` imports `shell.css` after the look and before the app stylesheets, so the app components win ties.
 
 ## Size
-**[Estimation]** About 17 counted files and 750 hand-written lines, plus a mechanical class rename across the tests.
-The estimate counts the hand-edited modules, stylesheets, and tests above; a deleted `app-shell.css` is excluded.
-It sits just under the large line of 18 files; the Decide step recounts it and requests size approval if it crosses.
-
-Size estimate: 17 files, 750 lines
+Size estimate: 18 files, 700 lines
 
 Size note: Above the typical line because the shell markup, its styles, and the tests that select it must move together to stay lossless.
+Splitting leaves an unmergeable state: shell.css without the new markup misplaces every area.
 
 ## Declared Files
-To be listed in the Decide step, at a recorded commit.
+Counted files, changed by hand:
+- src/css/style.css
+- src/css/controls.css
+- src/css/app-chrome.css
+- src/css/views.css
+- src/js/ui/layout.js
+- src/js/app.js
+- src/js/views/all-tasks.js
+- src/js/views/list.js
+- src/js/views/lists.js
+- src/service-worker.js
+- tests/unit/layout.test.js
+- tests/unit/design-system.test.js
+- tests/unit/tokens.test.js
+- tests/unit/all-tasks.test.js
+- tests/unit/lists.test.js
+- tests/e2e/shell.spec.js
+- docs/specs/ui-design.md
+- docs/specs/visual-style-guide.md
+
+Uncounted: deleted `src/css/app-shell.css`; generated `scripts/sw-precache-hashes.json`.
 
 ### Tests
-- Unit: `tests/unit/layout.test.js` and `tests/unit/add-bar.test.js` assert the ADR-0004 areas and the action bar markup.
+- Unit: `tests/unit/layout.test.js` asserts the ADR-0004 areas, the skip link, the nav item classes, and the overlay layer.
+- Unit: the same file asserts the action bar joins the shell only while it has content, and empty banner slots hide.
+- Unit: `tests/unit/all-tasks.test.js` and `tests/unit/lists.test.js` assert the add block and the floating button mount into the given areas.
 - Unit: `tests/unit/design-system.test.js` accepts no vendored check warnings.
+- Integration: `tests/e2e/shell.spec.js` checks the action bar, side panel, and overlays at 390 and 1440 px.
 - Integration: T0230's proof harness at 390 and 1440 px, light and dark, before and after, with every difference listed.
 
 Completion check: `python scripts/devops.py check` and `node src/vendor/design/bin/check.mjs`, both exit code 0
