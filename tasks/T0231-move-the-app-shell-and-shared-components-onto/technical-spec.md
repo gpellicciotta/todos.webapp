@@ -63,7 +63,12 @@ Counted files, changed by hand:
 - docs/specs/ui-design.md
 - docs/specs/visual-style-guide.md
 
-Uncounted: deleted `src/css/app-shell.css`; generated `scripts/sw-precache-hashes.json`.
+Uncounted: deleted `src/css/app-shell.css`; generated `scripts/sw-precache-hashes.json` from `node scripts/check-sw-version.mjs --update`.
+Uncounted: the selector sweep in `tests/e2e/lists.spec.js`, `tests/e2e/list.spec.js`, and one line of `tests/e2e/shell.spec.js`.
+
+Mechanical command: `sed -i -E "s/'\.lists-view \.fab'/'.app__overlays .fab'/g; s/page\.locator\('\.lists-view'\)\.getByRole\('link', \{ name: 'New list'/page.locator('.app__overlays').getByRole('link', { name: 'New list'/g; s/'\.list-view \.info-line__(text|reset)'/'.app__action-bar .info-line__\1'/g" tests/e2e/lists.spec.js tests/e2e/shell.spec.js tests/e2e/list.spec.js`
+
+Measured: 18 counted files, all declared, plus 2 sweep-only test files and the generated hash manifest.
 
 ### Tests
 - Unit: `tests/unit/layout.test.js` asserts the ADR-0004 areas, the skip link, the nav item classes, and the overlay layer.
@@ -74,3 +79,20 @@ Uncounted: deleted `src/css/app-shell.css`; generated `scripts/sw-precache-hashe
 - Integration: T0230's proof harness at 390 and 1440 px, light and dark, before and after, with every difference listed.
 
 Completion check: `python scripts/devops.py check` and `node src/vendor/design/bin/check.mjs`, both exit code 0
+
+## Visual Differences
+Found by `proof/compare-shell.mjs` over 32 captures; each is a deliberate change of the shell move, or a fix.
+- Deliberate: the add block sits in the action bar under the rows in both layouts, on the bar's surface with its top border.
+  Wide layouts lose the 32 px gap above the rows; compact layouts lose the sticky page-ground strip.
+- Deliberate: the add block and the view take the full `--width-main` (720 px) column; the view padding moved to the main gutter.
+  At 1440 px the rows grow from 688 to 720 px; at 390 px the content keeps its 358 px.
+- Deliberate: the compact editors open as a full-window sheet over the top and bottom bars, per ADR-0004.
+- Deliberate: the wide editor panel fills the 400 px side panel column, framed by its start border; the card border, radius, and shadow go.
+- Deliberate: the wide top bar takes the shell look: surface ground, bottom border, no 16 px top padding, and an 18 px title instead of 22 px.
+- Deliberate: the wide sidebar brand loses its top bar alignment rule, so it is 18 px instead of 22 px and starts 12 px lower.
+- Deliberate: the top bar gap grows from 4 to 8 px, the shell value.
+- Deliberate: bottom bar items lose the 4 px gap between icon and label; the current item has no hover ground, the shell's current-item rule.
+- Deliberate: the banner area sits above the main column, not inside it, padded by the gutter; it takes no room while empty.
+- Deliberate: the toast region rises 4 px less on compact task views, as the shell offsets it by the action bar height token.
+- Fix: the main column pads its end while the floating button shows, which the Lists view used to do itself; the button keeps its place.
+- Added: a skip link, off screen until focused, and the empty overlay layer and action bar elements.
