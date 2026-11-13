@@ -12,8 +12,10 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 3603.2, input: 4, output: 16}
+  worker: {turns: 4, duration_s: 4740.6, input: 88, output: 18802, cache_read: 11650232, cache_write: 37624}
 work_duration: 1828.9
+review_status: pending
+review_round: 1
 ---
 # T0231: Move the app layout onto the vendored shell.css, with the action bar, side panel, and overlay layer.
 
@@ -74,4 +76,7 @@ Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007
 - [2026-11-13] **[Verify]**
   Recorded the red phase: 11 unit tests and 2 e2e tests failed as expected before any production change.
   - Evidence: validation-proof.md, Red Phase.
+
+- [2026-11-13] **[Review]**
+  Round 1 requested (mode: agent).
 
