@@ -1,11 +1,11 @@
 ---
 id: T0233
-owner: ~
-needs: [T0231]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0233-replace-the-app-s-shared-components-with-the
+worktree: .plan/work/T0233-replace-the-app-s-shared-components-with-the
+status: active
+started_at: "2026-11-13T12:45:52Z"
 ended_at: —
 review: agent
 preview: none
