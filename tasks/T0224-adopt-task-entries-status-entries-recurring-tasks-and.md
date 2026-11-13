@@ -11,30 +11,27 @@ review: agent
 preview: none
 protocol: standard
 ---
-# T0224: Adopt lifecycle rules, occurrences, events, and recurring tasks from the todos.server redesign of tasks T0215 to T0241
+# T0224: Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync
 
 ## Goals
-Adopt the todos.server task redesign: embedded `lifecycle-rules` and `current-occurrence`, posted events, target counts, and recurrence.
-Replace status edits with `complete`, `uncomplete`, `start`, `unstart`, `cancel`, and `reopen` events, queued offline.
-Show `done/target` counts, edit target, deadline, and recurrence, and offer grace completions and an online history view.
-Run the same rules locally, including period math and roll-over, because local mode has no server (`LOC-2`).
-Move backups, sorting, and notes to the new fields and the single `last-update-time`.
-Start only after todos.server T0241 and T0221 are released; follow its [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurring-tasks-status-entries-and-the-task/technical-spec.md).
-The scope exceeds the large line; split it as the companion spec proposes before starting.
+Move the store and sync to the todos.server task shape with embedded `lifecycle-rules` and `current-occurrence`.
+Add local occurrences and events, folded by the server rules, so local mode keeps every feature (`LOC-2`).
+Queue and push `complete`, `uncomplete`, `start`, `unstart`, `cancel`, and `reopen` events; map status edits onto them.
+Keep views and backups working on the new shape, rename note fields, and use the single `last-update-time`.
+Start after todos.server T0241 is released; follow its [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurring-tasks-status-entries-and-the-task/technical-spec.md).
+T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on this task.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the todos.server T0215 spec, docs/specs, and the store, sync, and task view code.
-- [ ] **[Decide]**    Confirm the split into four tasks and the status button behavior with the user.
-- [ ] **[Implement]** Author unit tests for periods, occurrence folding, roll-over, event queueing, merge, and backup v2.
-- [ ] **[Implement]** Author e2e tests for ticking, counts, rule editing, recurrence, grace completion, and history.
-- [ ] **[Verify]**    Run the unit and e2e suites and capture the expected red-phase failures.
-- [ ] **[Implement]** Add local periods, occurrences, and events to the store with a version 5 migration.
-- [ ] **[Implement]** Queue and push events, apply them to cached occurrences, and merge the new task shape.
-- [ ] **[Implement]** Replace status edits with event actions, counts, and rule editing in the task views.
-- [ ] **[Implement]** Add recurrence editing, the display rule, grace completions, history, and backup format 2.
+- [ ] **[Read]**      Read the todos.server T0215 spec, local-store.md, and the store, sync, and status reader code.
+- [x] **[Decided]**   The user approved splitting the redesign into T0224, T0234, T0235, and T0236 on 2026-11-13.
+- [ ] **[Implement]** Author unit tests for the version 5 migration, occurrence folding, event queueing, push, and merge.
+- [ ] **[Implement]** Extend the contract suite to tick a target-3 task through events against a local server.
+- [ ] **[Verify]**    Run the unit and contract suites and capture the expected red-phase failures.
+- [ ] **[Implement]** Add occurrences and events stores with a version 5 migration and the event fold.
+- [ ] **[Implement]** Queue and push events, merge the new task shape, and rename note fields.
+- [ ] **[Implement]** Point status, due time, and activity readers in core, views, and backup at the new shape.
 - [ ] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
-- [ ] **[Visual]**    Capture before and after screenshots of the task row, editor, and history view.
-- [ ] **[Doc]**       Update requirements, local-store, backup-format, and ui-design specs, and CHANGELOG.md.
+- [ ] **[Doc]**       Update local-store.md, the affected requirements, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -43,3 +40,6 @@ The scope exceeds the large line; split it as the companion spec proposes before
 
 - [2026-11-13] **[Doc]**
   Rescoped to the 2026-11-13 todos.server T0215 design of lifecycle rules, occurrences, and events.
+
+- [2026-11-13] **[Doc]**
+  Narrowed to the store and sync part after the user approved the split into T0224, T0234, T0235, and T0236.
