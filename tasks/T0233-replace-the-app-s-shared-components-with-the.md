@@ -1,0 +1,51 @@
+---
+id: T0233
+owner: ~
+needs: [T0231]
+branch: —
+worktree: —
+status: ready
+started_at: —
+ended_at: —
+review: agent
+preview: none
+protocol: standard
+size_status: approved
+size_estimate: 20 files, 1100 lines
+size_approved: 20 files, 1100 lines
+size_approved_by: "@gpellicciotta"
+size_approved_at: "2026-11-13T10:27:52Z"
+---
+# T0233: Replace the app's shared components with the vendored ones and import the public neutral look entry point.
+
+## Goals
+Replace the app's own copies of the shared components with the vendored ones, per [components.md](../../../support.webapp/docs/specs/components.md).
+They cover dialog, menu, popover, toast, live region, service worker update, user menu as account menu, and `createField`.
+Switch `style.css` to the public `looks/neutral/index.css`, ending T0230's direct import of private files ([ADR-0005](../../../support.webapp/docs/adrs/ADR-0005-distribution-and-versioning.md)).
+Keep app-local components, such as task rows, in the app.
+Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007-documentation-and-verification.md) requires, with T0230's proof harness.
+
+## Task Execution Steps
+- [ ] **[Read]**      Read the named ADRs and the app at a recorded commit.
+- [ ] **[Decide]**    Write declared files, size estimate, tests, and the completion check into the technical specification.
+- [ ] **[Implement]** Write the failing tests named in the technical specification.
+- [ ] **[Verify]**    Run the new tests and record their failure output in validation-proof.md.
+- [ ] **[Implement]** Switch imports and markup to the vendored modules, remove app copies, and import index.css.
+- [ ] **[Verify]**    Run the tests, the vendored check, and the completion check until they pass.
+- [ ] **[Visual]**    Record the lossless switch proof: screenshots at 390 and 1440 px, light and dark.
+- [ ] **[Doc]**       List every visual difference as a fix or deliberate change, and update CHANGELOG.md.
+- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+
+## Execution Log
+- [2026-11-13] **[Doc]**
+  Split from T0231 at the user's request: T0231 keeps the shell, this task takes the shared components.
+
+- [2026-11-13] **[Size]**
+  Size approval requested for 20 files, 1100 lines.
+
+- [2026-11-13] **[Size]**
+  Size approved by @gpellicciotta for 20 files, 1100 lines: Approved by Claude Code under the user's standing delegation of 2026-11-13 to approve task sizes.
+
+- [2026-11-13] **[Decided]**
+  Size approval for 20 files and 1100 lines was recorded by Claude Code under the user's delegation; no further split, see Size note.
+
