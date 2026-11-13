@@ -18,9 +18,11 @@ size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-13T10:27:52Z"
 usage:
   worker: {turns: 4, duration_s: 6441.0, input: 292, output: 66166, cache_read: 49580436, cache_write: 165894}
-work_duration: 1832.4
-review_status: pending
+  review: {turns: 2, duration_s: 1659.6, input: 795430, output: 75094, cache_read: 8565960}
+work_duration: 4124.9
+review_status: rejected
 review_round: 1
+reviewed_by: "@gemini"
 ---
 # T0233: Replace the app's shared components with the vendored ones and import the public neutral look entry point.
 
@@ -100,4 +102,34 @@ Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007
 
 - [2026-11-13] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-13] **[Review]**
+  Round 1 rejected by @gemini: The core migration is clean and well structured.
+  - Findings: [review-findings-1.md](T0233-replace-the-app-s-shared-components-with-the/review-findings-1.md).
+
+- [2026-11-13] **[Implement]**
+  Wrote failing tests for review round 1: segmented legends, chip remove buttons, and the field hint and counter row; committed as 06b0d7e.
+  - Red phase: 2 unit and 3 e2e tests failed.
+
+- [2026-11-13] **[Implement]**
+  Moved segmented legends, chip remove buttons, and the gallery field onto package skeletons; removed two dead tokens; shortened long sentences.
+  - Undeclared: tokens.css, gallery CSS, gallery-controls spec.
+
+- [2026-11-13] **[Verify]**
+  Review round 1 rework passed devops.py check at 8714efd: 1182 unit, 201 e2e, and 156 pytest tests, plus the vendored check.
+  - Evidence: validation-proof.md, Review Round 1 Green Phase.
+
+- [2026-11-13] **[Visual]**
+  Retook the after proof at 8714efd: legends now match the before state, and chip remove buttons keep chip corners.
+  - After: [all](T0233-replace-the-app-s-shared-components-with-the/screenshots/after/).
+
+- [2026-11-13] **[Doc]**
+  Fixed the stale style.css decision, removed the dead tokens from docs and gallery, and kept every added sentence and commit under 21 words.
+  - Commit a7bbcca keeps 21 words; squash integration replaces it.
+
+- [2026-11-13] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 45.
+  - Lines touched: 1464.
+  - Reopenings: 0.
 

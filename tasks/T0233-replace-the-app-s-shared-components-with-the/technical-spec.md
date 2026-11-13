@@ -39,12 +39,14 @@ Measured on 2026-11-13 at `ceb160b` with the copied harness, which adds row menu
 - `index.css` without `controls.css`: 6644 changed values, 172 distinct kinds; most are font values inherited by icons.
 - The visible kinds: menu and popover radius 12 to 8 px, segmented option radius 4 to 8 px, a transparent 1 px chip border,
   the danger color on the overdue chip, a 400 legend weight, the field grid, and a 440 px dialog.
+  Review round 1 traced the legend weight to markup without `.segmented__legend`, not to a package style.
 
 ## Decisions
 - **[Decided]** `style.css` imports only `../vendor/design/looks/neutral/index.css`, then `tokens.css` and the app stylesheets.
   Its base rules that `reset.css` already holds go: box model, text size, body margin, `.visually-hidden`, and the focus ring.
 - **[Decided]** `controls.css` goes. Its app-only rules move to `app-components.css`:
-  `.choice` and `.choice-group`, `.filter-chip`, `.dialog--in-view`, `.banner--error`, and `.field__meta` if used.
+  `.choice` and `.choice-group`, `.filter-chip`, `.dialog--in-view`, and `.banner--error`.
+  The gallery's `.field__meta` wrapper goes instead, so the hint and counter follow the package field grid.
 - **[Decided]** The app keeps its documented overdue chip color, the signal color (`OVD-2`), as an app-local rule.
 - **[Decided]** Other component values take the package look, each listed under Visual Differences.
 - **[Decided]** App modules import the public vendored modules by relative path, such as `../../vendor/design/js/menu.js`.
@@ -76,6 +78,8 @@ Measured on 2026-11-13 at `ceb160b` with the copied harness, which adds row menu
   Unit tests that reset the body keep that pair through `tests/unit/dom-reset.js`.
 - **[Decided]** at Implement time: the task editor's in-flow combo-box list keeps `--layer-popover`, which the app's `.menu` rule gave it.
 - **[Decided]** at Implement time: the account menu keeps a `--space-4` gutter to the window edges, as the user panel had.
+- **[Decided]** in review round 1: visible segmented legends, list chip remove buttons, and the gallery field use package skeletons.
+- **[Decided]** in review round 1: `--width-segment-min` and `--height-textarea-min` go, since the package now sets both sizes.
 
 ## Declared Files
 Counted files, changed by hand:
@@ -104,6 +108,7 @@ Counted files, changed by hand:
 Undeclared, logged at Implement time: `src/css/views.css`, `src/js/views/task-list.js`, `tests/unit/precache.test.js`,
 `tests/unit/modulepreload.test.js`, `tests/unit/tokens.test.js`, `tests/unit/task-list.test.js`, `tests/e2e/gallery-chrome.spec.js`,
 `tests/e2e/service-worker.spec.js`, `tests/e2e/gallery-app.spec.js`, and `docs/devops.md`.
+Undeclared, logged in review round 1: `src/css/tokens.css`, `src/demo/visual-style-gallery.css`, and `tests/e2e/gallery-controls.spec.js`.
 
 Uncounted: deleted `src/css/controls.css`, the six app modules, and their five unit tests;
 added `tests/unit/popover-shim.js`, `tests/unit/setup.js`, and `tests/unit/dom-reset.js`.
@@ -127,13 +132,16 @@ The overrun comes from the undeclared test and precache files that the vendored 
 - Unit: `tests/unit/layout.test.js` asserts the account menu in the top bar and the current route mark on its items.
 - Unit: `tests/unit/task-editor.test.js` asserts the editor fields come from the vendored `field.js` skeleton.
 - Unit: the existing tests of every app module whose imports move, run against the vendored code.
+- Unit, review round 1: `tests/unit/task-editor.test.js` asserts `.segmented__legend` legends and `.chip__remove` buttons.
 - Integration: `tests/e2e/shell.spec.js` opens the account menu at 390 and 1440 px and follows its items.
+- Integration, review round 1: `tests/e2e/gallery-controls.spec.js` checks segmented legends, chip remove buttons, and the field row.
 - Integration: T0230's proof harness at 390 and 1440 px, light and dark, before and after, with every difference listed.
 
 Completion check: `python scripts/devops.py check` and `node src/vendor/design/bin/check.mjs`, both exit code 0
 
 ## Visual Differences
-Found by `proof/compare.mjs` over 52 captures: 13 screens at 390 and 1440 px, light and dark, 9704 changed values, 215 distinct kinds.
+Found by `proof/compare.mjs` over 52 captures: 13 screens at 390 and 1440 px, light and dark, 9312 changed values.
+The after capture was retaken after review round 1.
 The harness adds four component scenes to T0230's: row menu, dialog, field error, and toast; and the account menu opened on Settings.
 No capture logged a console error, page error, failed request, or HTTP error.
 - Invisible: icons and icon buttons inherit the body font, as the package reset sets `font: inherit`; icons draw no text.
@@ -142,9 +150,11 @@ No capture logged a console error, page error, failed request, or HTTP error.
 - Deliberate: menus and popovers open as native popovers in the top layer, so position, inset, margin, and z-index read differently.
   Their anchored place on screen stays the same in every capture.
 - Deliberate: menus, popovers, and the inbox and sync panels take the package's 8 px card radius instead of 12 px.
-- Deliberate: segmented options and some icon buttons take 8 px corners instead of 4 px.
+- Deliberate: segmented options take 8 px corners instead of 4 px.
 - Deliberate: chips gain a transparent 1 px border, for forced colors mode, so each chip is 2 px wider and the removable chip 2 px taller.
-- Deliberate: segmented legends lose their medium weight and 4 px bottom margin, so the status and overdue sections are 4 px shorter.
+- Fix, review round 1: visible segmented legends carry `.segmented__legend`, so they keep their medium weight and spacing.
+- Fix, review round 1: list chip remove buttons are `.chip__remove`, keeping 4 px chip corners and a visible light hover.
+  A disabled remove button stays quiet, through an app-local rule, since the package defines no disabled state.
 - Deliberate: the add bar counter and field labels lose up to 12 px of width to the field grid's column gap; controls keep their width.
 - Deliberate: the dialog is 440 px wide instead of 448 px, the package width.
 - Deliberate: the user menu is the package account menu: an avatar face without the strong border, and a `.menu` panel.

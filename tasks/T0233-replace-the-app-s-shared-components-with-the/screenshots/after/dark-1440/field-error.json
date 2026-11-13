@@ -9301,7 +9301,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1": {
-  "box": "1057,56,367,1212",
+  "box": "1057,56,367,1220",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -9311,7 +9311,7 @@
   "z-index": "auto",
   "box-sizing": "border-box",
   "width": "367px",
-  "height": "1212px",
+  "height": "1220px",
   "min-height": "0px",
   "max-width": "none",
   "margin-top": "0px",
@@ -9869,7 +9869,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2": {
-  "box": "1057,230,367,157",
+  "box": "1057,230,367,161",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -9879,7 +9879,7 @@
   "z-index": "auto",
   "box-sizing": "border-box",
   "width": "367px",
-  "height": "157px",
+  "height": "161px",
   "min-height": "0px",
   "max-width": "none",
   "margin-top": "0px",
@@ -9931,7 +9931,7 @@
   "flex-shrink": "1",
   "flex-basis": "auto",
   "grid-template-columns": "367px",
-  "grid-template-rows": "124px",
+  "grid-template-rows": "128px",
   "grid-area": "auto",
   "visibility": "visible",
   "fill": "rgb(0, 0, 0)",
@@ -9940,7 +9940,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1": {
-  "box": "1057,246,367,124",
+  "box": "1057,246,367,128",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -9950,7 +9950,7 @@
   "z-index": "auto",
   "box-sizing": "border-box",
   "width": "367px",
-  "height": "124px",
+  "height": "128px",
   "min-height": "auto",
   "max-width": "none",
   "margin-top": "0px",
@@ -10010,8 +10010,8 @@
   "stroke-width": "1px",
   "cursor": "auto"
  },
- "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>legend:1": {
-  "box": "1057,246,51.4,24",
+ "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>legend.segmented__legend:1": {
+  "box": "1057,246,48.3,24",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -10020,18 +10020,18 @@
   "inset-inline-end": "auto",
   "z-index": "auto",
   "box-sizing": "border-box",
-  "width": "51.375px",
+  "width": "48.3438px",
   "height": "24px",
   "min-height": "0px",
   "max-width": "none",
   "margin-top": "0px",
   "margin-right": "0px",
-  "margin-bottom": "0px",
+  "margin-bottom": "4px",
   "margin-left": "0px",
   "padding-top": "0px",
-  "padding-right": "2px",
+  "padding-right": "0px",
   "padding-bottom": "0px",
-  "padding-left": "2px",
+  "padding-left": "0px",
   "border-top-width": "0px",
   "border-right-width": "0px",
   "border-bottom-width": "0px",
@@ -10054,7 +10054,7 @@
   "outline-offset": "0px",
   "font-family": "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
   "font-size": "16px",
-  "font-weight": "400",
+  "font-weight": "500",
   "line-height": "24px",
   "letter-spacing": "normal",
   "text-decoration-line": "none",
@@ -10082,7 +10082,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1": {
-  "box": "1057,270,367,100",
+  "box": "1057,274,367,100",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -10153,7 +10153,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:1": {
-  "box": "1061,274,177.5,44",
+  "box": "1061,278,177.5,44",
   "display": "flex",
   "position": "relative",
   "inset-block-start": "0px",
@@ -10224,7 +10224,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:1>input:1": {
-  "box": "1061,274,177.5,44",
+  "box": "1061,278,177.5,44",
   "display": "block",
   "position": "absolute",
   "inset-block-start": "0px",
@@ -10295,7 +10295,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:2": {
-  "box": "1242.5,274,177.5,44",
+  "box": "1242.5,278,177.5,44",
   "display": "flex",
   "position": "relative",
   "inset-block-start": "0px",
@@ -10366,7 +10366,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:2>input:1": {
-  "box": "1242.5,274,177.5,44",
+  "box": "1242.5,278,177.5,44",
   "display": "block",
   "position": "absolute",
   "inset-block-start": "0px",
@@ -10437,7 +10437,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:3": {
-  "box": "1061,322,177.5,44",
+  "box": "1061,326,177.5,44",
   "display": "flex",
   "position": "relative",
   "inset-block-start": "0px",
@@ -10508,7 +10508,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:3>input:1": {
-  "box": "1061,322,177.5,44",
+  "box": "1061,326,177.5,44",
   "display": "block",
   "position": "absolute",
   "inset-block-start": "0px",
@@ -10579,7 +10579,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:4": {
-  "box": "1242.5,322,177.5,44",
+  "box": "1242.5,326,177.5,44",
   "display": "flex",
   "position": "relative",
   "inset-block-start": "0px",
@@ -10650,7 +10650,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:2>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:4>input:1": {
-  "box": "1242.5,322,177.5,44",
+  "box": "1242.5,326,177.5,44",
   "display": "block",
   "position": "absolute",
   "inset-block-start": "0px",
@@ -10721,7 +10721,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3": {
-  "box": "1057,387,367,157",
+  "box": "1057,391,367,157",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -10792,7 +10792,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1": {
-  "box": "1057,403,367,124",
+  "box": "1057,407,367,124",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -10863,7 +10863,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1>div.field:1": {
-  "box": "1057,403,177.5,72",
+  "box": "1057,407,177.5,72",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -10934,7 +10934,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1>div.field:1>label.field__label:1": {
-  "box": "1057,403,165.5,24",
+  "box": "1057,407,165.5,24",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -11005,7 +11005,7 @@
   "cursor": "default"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1>div.field:1>input.field__control:1": {
-  "box": "1057,431,177.5,44",
+  "box": "1057,435,177.5,44",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -11218,7 +11218,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1>div.field:2": {
-  "box": "1246.5,403,177.5,72",
+  "box": "1246.5,407,177.5,72",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -11289,7 +11289,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1>div.field:2>label.field__label:1": {
-  "box": "1246.5,403,165.5,24",
+  "box": "1246.5,407,165.5,24",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -11360,7 +11360,7 @@
   "cursor": "default"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1>div.field:2>input.field__control:1": {
-  "box": "1246.5,431,177.5,44",
+  "box": "1246.5,435,177.5,44",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -11573,7 +11573,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:3>div.editor-panel__row:1>button.button.button--quiet:1": {
-  "box": "1357.7,483,66.3,44",
+  "box": "1357.7,487,66.3,44",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -11644,7 +11644,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4": {
-  "box": "1057,544,367,113",
+  "box": "1057,548,367,117",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -11654,7 +11654,7 @@
   "z-index": "auto",
   "box-sizing": "border-box",
   "width": "367px",
-  "height": "113px",
+  "height": "117px",
   "min-height": "0px",
   "max-width": "none",
   "margin-top": "0px",
@@ -11706,7 +11706,7 @@
   "flex-shrink": "1",
   "flex-basis": "auto",
   "grid-template-columns": "367px",
-  "grid-template-rows": "80px",
+  "grid-template-rows": "84px",
   "grid-area": "auto",
   "visibility": "visible",
   "fill": "rgb(0, 0, 0)",
@@ -11715,7 +11715,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1": {
-  "box": "1057,560,367,80",
+  "box": "1057,564,367,84",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -11725,7 +11725,7 @@
   "z-index": "auto",
   "box-sizing": "border-box",
   "width": "367px",
-  "height": "80px",
+  "height": "84px",
   "min-height": "auto",
   "max-width": "none",
   "margin-top": "0px",
@@ -11785,8 +11785,8 @@
   "stroke-width": "1px",
   "cursor": "auto"
  },
- "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1>legend:1": {
-  "box": "1057,560,137.6,24",
+ "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1>legend.segmented__legend:1": {
+  "box": "1057,564,135.3,24",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -11795,18 +11795,18 @@
   "inset-inline-end": "auto",
   "z-index": "auto",
   "box-sizing": "border-box",
-  "width": "137.641px",
+  "width": "135.297px",
   "height": "24px",
   "min-height": "0px",
   "max-width": "none",
   "margin-top": "0px",
   "margin-right": "0px",
-  "margin-bottom": "0px",
+  "margin-bottom": "4px",
   "margin-left": "0px",
   "padding-top": "0px",
-  "padding-right": "2px",
+  "padding-right": "0px",
   "padding-bottom": "0px",
-  "padding-left": "2px",
+  "padding-left": "0px",
   "border-top-width": "0px",
   "border-right-width": "0px",
   "border-bottom-width": "0px",
@@ -11829,7 +11829,7 @@
   "outline-offset": "0px",
   "font-family": "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
   "font-size": "16px",
-  "font-weight": "400",
+  "font-weight": "500",
   "line-height": "24px",
   "letter-spacing": "normal",
   "text-decoration-line": "none",
@@ -11857,7 +11857,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1>div.segmented__options:1": {
-  "box": "1057,584,367,56",
+  "box": "1057,592,367,56",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -11928,7 +11928,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:1": {
-  "box": "1061,588,177.5,48",
+  "box": "1061,596,177.5,48",
   "display": "flex",
   "position": "relative",
   "inset-block-start": "0px",
@@ -11999,7 +11999,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:1>input:1": {
-  "box": "1061,588,177.5,48",
+  "box": "1061,596,177.5,48",
   "display": "block",
   "position": "absolute",
   "inset-block-start": "0px",
@@ -12070,7 +12070,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:2": {
-  "box": "1242.5,588,177.5,48",
+  "box": "1242.5,596,177.5,48",
   "display": "flex",
   "position": "relative",
   "inset-block-start": "0px",
@@ -12141,7 +12141,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:4>fieldset.segmented:1>div.segmented__options:1>label.segmented__option:2>input:1": {
-  "box": "1242.5,588,177.5,48",
+  "box": "1242.5,596,177.5,48",
   "display": "block",
   "position": "absolute",
   "inset-block-start": "0px",
@@ -12212,7 +12212,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5": {
-  "box": "1057,657,367,167",
+  "box": "1057,665,367,167",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -12283,7 +12283,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>h3.editor-panel__section-title:1": {
-  "box": "1057,673,367,20",
+  "box": "1057,681,367,20",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -12354,7 +12354,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>ul.chip-list:1": {
-  "box": "1057,705,367,46",
+  "box": "1057,713,367,46",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -12425,7 +12425,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>ul.chip-list:1>li:1": {
-  "box": "1057,705,97.2,46",
+  "box": "1057,713,97.2,46",
   "display": "list-item",
   "position": "static",
   "inset-block-start": "auto",
@@ -12496,7 +12496,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>ul.chip-list:1>li:1>span.chip.chip--removable:1": {
-  "box": "1057,705,97.2,46",
+  "box": "1057,713,97.2,46",
   "display": "inline-flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -12566,8 +12566,8 @@
   "stroke-width": "1px",
   "cursor": "auto"
  },
- "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>ul.chip-list:1>li:1>span.chip.chip--removable:1>button.icon-button:1": {
-  "box": "1109.2,706,44,44",
+ "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>ul.chip-list:1>li:1>span.chip.chip--removable:1>button.chip__remove:1": {
+  "box": "1109.2,714,44,44",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -12588,18 +12588,18 @@
   "padding-right": "0px",
   "padding-bottom": "0px",
   "padding-left": "0px",
-  "border-top-width": "1px",
-  "border-right-width": "1px",
-  "border-bottom-width": "1px",
-  "border-left-width": "1px",
-  "border-top-style": "solid",
-  "border-bottom-style": "solid",
-  "border-top-color": "rgba(0, 0, 0, 0)",
-  "border-bottom-color": "rgba(0, 0, 0, 0)",
-  "border-left-color": "rgba(0, 0, 0, 0)",
-  "border-right-color": "rgba(0, 0, 0, 0)",
-  "border-top-left-radius": "8px",
-  "border-bottom-right-radius": "8px",
+  "border-top-width": "0px",
+  "border-right-width": "0px",
+  "border-bottom-width": "0px",
+  "border-left-width": "0px",
+  "border-top-style": "none",
+  "border-bottom-style": "none",
+  "border-top-color": "rgb(163, 163, 176)",
+  "border-bottom-color": "rgb(163, 163, 176)",
+  "border-left-color": "rgb(163, 163, 176)",
+  "border-right-color": "rgb(163, 163, 176)",
+  "border-top-left-radius": "4px",
+  "border-bottom-right-radius": "4px",
   "background-color": "rgba(0, 0, 0, 0)",
   "color": "rgb(163, 163, 176)",
   "opacity": "1",
@@ -12608,10 +12608,10 @@
   "outline-width": "3px",
   "outline-color": "rgb(163, 163, 176)",
   "outline-offset": "0px",
-  "font-family": "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
-  "font-size": "14px",
+  "font-family": "Arial",
+  "font-size": "13.3333px",
   "font-weight": "400",
-  "line-height": "17.5px",
+  "line-height": "normal",
   "letter-spacing": "normal",
   "text-decoration-line": "none",
   "text-transform": "none",
@@ -12628,8 +12628,8 @@
   "flex-grow": "0",
   "flex-shrink": "0",
   "flex-basis": "auto",
-  "grid-template-columns": "42px",
-  "grid-template-rows": "42px",
+  "grid-template-columns": "44px",
+  "grid-template-rows": "44px",
   "grid-area": "auto",
   "visibility": "visible",
   "fill": "rgb(0, 0, 0)",
@@ -12637,8 +12637,8 @@
   "stroke-width": "1px",
   "cursor": "pointer"
  },
- "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>ul.chip-list:1>li:1>span.chip.chip--removable:1>button.icon-button:1>svg.icon:1": {
-  "box": "1121.2,718,20,20",
+ "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>ul.chip-list:1>li:1>span.chip.chip--removable:1>button.chip__remove:1>svg.icon:1": {
+  "box": "1121.2,726,20,20",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -12679,10 +12679,10 @@
   "outline-width": "3px",
   "outline-color": "rgb(163, 163, 176)",
   "outline-offset": "0px",
-  "font-family": "Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
-  "font-size": "14px",
+  "font-family": "Arial",
+  "font-size": "13.3333px",
   "font-weight": "400",
-  "line-height": "17.5px",
+  "line-height": "normal",
   "letter-spacing": "normal",
   "text-decoration-line": "none",
   "text-transform": "none",
@@ -12709,7 +12709,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>div.combo-box:1": {
-  "box": "1057,763,367,44",
+  "box": "1057,771,367,44",
   "display": "block",
   "position": "relative",
   "inset-block-start": "0px",
@@ -12780,7 +12780,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>div.combo-box:1>div.field:1": {
-  "box": "1057,763,367,44",
+  "box": "1057,771,367,44",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -12851,7 +12851,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>div.combo-box:1>div.field:1>label.field__label.field__label--hidden:1": {
-  "box": "1057,784.5,1,1",
+  "box": "1057,792.5,1,1",
   "display": "block",
   "position": "absolute",
   "inset-block-start": "21.5px",
@@ -12922,7 +12922,7 @@
   "cursor": "default"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:5>div.combo-box:1>div.field:1>input.field__control:1": {
-  "box": "1057,763,367,44",
+  "box": "1057,771,367,44",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -13348,7 +13348,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6": {
-  "box": "1057,824,367,338",
+  "box": "1057,832,367,338",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -13419,7 +13419,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>h3.editor-panel__section-title:1": {
-  "box": "1057,840,367,20",
+  "box": "1057,848,367,20",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -13490,7 +13490,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1": {
-  "box": "1057,872,367,273",
+  "box": "1057,880,367,273",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -13561,7 +13561,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>div.note-thread__add:1": {
-  "box": "1057,872,367,168",
+  "box": "1057,880,367,168",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -13632,7 +13632,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>div.note-thread__add:1>div.field:1": {
-  "box": "1057,872,367,116",
+  "box": "1057,880,367,116",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -13703,7 +13703,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>div.note-thread__add:1>div.field:1>label.field__label:1": {
-  "box": "1057,872,355,24",
+  "box": "1057,880,355,24",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -13774,7 +13774,7 @@
   "cursor": "default"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>div.note-thread__add:1>div.field:1>textarea.field__control:1": {
-  "box": "1057,900,367,88",
+  "box": "1057,908,367,88",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -13987,7 +13987,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>div.note-thread__add:1>div.note-thread__actions:2": {
-  "box": "1057,996,367,44",
+  "box": "1057,1004,367,44",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -14058,7 +14058,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>div.note-thread__add:1>div.note-thread__actions:2>button.button.button--secondary:1": {
-  "box": "1321.3,996,102.7,44",
+  "box": "1321.3,1004,102.7,44",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -14129,7 +14129,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1": {
-  "box": "1057,1052,367,93",
+  "box": "1057,1060,367,93",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -14200,7 +14200,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1": {
-  "box": "1057,1052,367,93",
+  "box": "1057,1060,367,93",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -14271,7 +14271,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1>div.note__header:1": {
-  "box": "1057,1061,367,44",
+  "box": "1057,1069,367,44",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -14342,7 +14342,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1>div.note__header:1>p.note__meta:1": {
-  "box": "1057,1072.5,315,21",
+  "box": "1057,1080.5,315,21",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -14413,7 +14413,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1>div.note__header:1>p.note__meta:1>span.note__author:1": {
-  "box": "1057,1074.5,25.4,17",
+  "box": "1057,1082.5,25.4,17",
   "display": "inline",
   "position": "static",
   "inset-block-start": "auto",
@@ -14484,7 +14484,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1>div.note__header:1>p.note__meta:1>time:1": {
-  "box": "1094,1074.5,122.1,17",
+  "box": "1094,1082.5,122.1,17",
   "display": "inline",
   "position": "static",
   "inset-block-start": "auto",
@@ -14555,7 +14555,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1>div.note__header:1>button.icon-button:1": {
-  "box": "1380,1061,44,44",
+  "box": "1380,1069,44,44",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -14626,7 +14626,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1>div.note__header:1>button.icon-button:1>svg.icon:1": {
-  "box": "1392,1073,20,20",
+  "box": "1392,1081,20,20",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -15052,7 +15052,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:6>div.note-thread:1>ol.note-thread__list:1>li.note:1>p.note__text:1": {
-  "box": "1057,1109,367,24",
+  "box": "1057,1117,367,24",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -15123,7 +15123,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:7": {
-  "box": "1057,1162,367,106",
+  "box": "1057,1170,367,106",
   "display": "grid",
   "position": "static",
   "inset-block-start": "auto",
@@ -15194,7 +15194,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:7>h3.editor-panel__section-title:1": {
-  "box": "1057,1178,367,20",
+  "box": "1057,1186,367,20",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -15265,7 +15265,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>fieldset.task-editor__fields:1>div.editor-panel__section:7>p.editor-panel__details:1": {
-  "box": "1057,1210,367,42",
+  "box": "1057,1218,367,42",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",
@@ -15336,7 +15336,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>div.editor-panel__danger:3": {
-  "box": "1057,1300,367,85",
+  "box": "1057,1308,367,85",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -15407,7 +15407,7 @@
   "cursor": "auto"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>div.editor-panel__danger:3>button.button.button--danger:1": {
-  "box": "1277.1,1321,146.9,44",
+  "box": "1277.1,1329,146.9,44",
   "display": "flex",
   "position": "static",
   "inset-block-start": "auto",
@@ -15478,7 +15478,7 @@
   "cursor": "pointer"
  },
  "html:1>body:1>div.app.app--scroll-main:1>aside.app__side-panel:1>aside.editor-panel:1>div.editor-panel__body:2>div.editor-panel__danger:3>button.button.button--danger:1>svg.icon:1": {
-  "box": "1294.1,1333,20,20",
+  "box": "1294.1,1341,20,20",
   "display": "block",
   "position": "static",
   "inset-block-start": "auto",

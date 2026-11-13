@@ -110,3 +110,61 @@ light-390/toast.json: 143 differences
 light-390/user-menu.json: 199 differences
 total differences: 9704
 ```
+
+### Review Round 1 Red Phase
+New tests for the review findings, run before the rework at `ae9b296`.
+
+```text
+$ npx vitest run tests/unit/task-editor.test.js
+exit code: 1
+[... passing tests and stack traces omitted ...]
+FAIL  tests/unit/task-editor.test.js > mountTaskEditor > marks every visible segmented legend with the package .segmented__legend class
+FAIL  tests/unit/task-editor.test.js > mountTaskEditor by role (SHR-4, SHR-5) > builds each list chip from the package skeleton, with a .chip__remove button
+     Tests  2 failed | 28 passed (30)
+```
+
+```text
+$ npx playwright test tests/e2e/gallery-controls.spec.js -g "segmented legends|chip__remove|hint and counter" --reporter=line
+exit code: 1
+[... grep -E "^\s+[0-9]+\) \[|Error:|failed" applied ...]
+  1) [chromium] › tests\e2e\gallery-controls.spec.js:203:1 › visible segmented legends use the package .segmented__legend class and its medium weight 
+    Error: Status
+  2) [chromium] › tests\e2e\gallery-controls.spec.js:218:1 › removable chips use .chip__remove: chip corners, a raised hover ground in light mode, and a quiet disabled state 
+    Error: expect(received).toBe(expected) // Object.is equality
+  3) [chromium] › tests\e2e\gallery-controls.spec.js:238:1 › the field hint and counter are direct children on one row, the counter at the end 
+    Error: expect(locator).toHaveCount(expected) failed
+  3 failed
+```
+
+### Review Round 1 Green Phase
+The completion check after the rework, at `8714efd`.
+
+```text
+$ python scripts/devops.py check
+exit code: 0
+[... per-test lines omitted; command lines and summaries kept ...]
+[*] C:\Program Files\nodejs\node.EXE scripts/check-sw-version.mjs
+OK: 123 precached files match VERSION 2026-11-13.6.
+[*] C:\Program Files\nodejs\node.EXE src/vendor/design/bin/check.mjs
+integrity: PASS
+conformance: PASS
+[*] C:\Program Files\nodejs\npm.CMD test
+ Test Files  55 passed (55)
+      Tests  1182 passed (1182)
+[*] C:\Program Files\nodejs\npm.CMD run lint
+[*] C:\Program Files\nodejs\npm.CMD run test:e2e
+  201 passed (2.6m)
+[*] C:\Program Files\Python312\Scripts\ruff.EXE check scripts tests
+All checks passed!
+[*] C:\Program Files\Python312\Scripts\ruff.EXE format --check scripts tests
+[*] C:\Program Files\Python312\python.exe -m pytest -q tests
+156 passed in 226.76s (0:03:46)
+```
+
+```text
+$ node proof/compare.mjs screenshots/before screenshots/after --limit 0
+exit code: 1
+[... 51 capture lines omitted; after capture retaken at 8714efd, every problems.json holds [] ...]
+light-390/user-menu.json: 199 differences
+total differences: 9312
+```
