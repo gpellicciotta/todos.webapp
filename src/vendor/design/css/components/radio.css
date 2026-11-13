@@ -1,0 +1,33 @@
+/*
+ * Radio: a native input inside its label, in the primary accent color; radios always sit in a field group.
+ * The label row is the 44 px touch target, and arrow keys move the choice within the group.
+ * States: checked and disabled. Focus draws the global ring on the input itself.
+ */
+.radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.radio:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.radio__control {
+  flex: none;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: inherit;
+}
+
+.radio:has(> .radio__control:disabled) {
+  background-color: transparent;
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}

@@ -1,0 +1,108 @@
+/* Switch: native checkbox; thumb position conveys off/on without relying on color.
+ * States: hover, active, focus-visible, disabled (including fieldsets), and invalid.
+ * The label is the 44 px target. No animation is needed for the state change. */
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.switch:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.switch:is(:active, .is-active) {
+  background-color: var(--color-surface-active);
+}
+
+.switch__control {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  flex: none;
+  inline-size: var(--space-8);
+  block-size: var(--space-6);
+  margin: 0;
+  padding: var(--border-width);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-round);
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: inherit;
+}
+
+.switch__control::before {
+  content: '';
+  inline-size: calc(var(--space-6) - 4 * var(--border-width));
+  block-size: calc(var(--space-6) - 4 * var(--border-width));
+  border-radius: var(--radius-round);
+  background-color: currentColor;
+}
+
+.switch__control:checked {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.switch__control:checked::before {
+  margin-inline-start: auto;
+}
+
+.switch__control[aria-invalid='true'] {
+  border-color: var(--color-danger);
+  outline: var(--focus-ring-width) solid var(--color-danger);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.switch__control:is(:focus-visible, .is-focus) {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.switch:has(> :disabled) {
+  background-color: transparent;
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.switch__control:disabled {
+  border-color: var(--color-text-disabled);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-disabled);
+}
+
+@media (forced-colors: active) {
+  .switch__control {
+    forced-color-adjust: none;
+    border-color: ButtonText;
+    background-color: Canvas;
+    color: ButtonText;
+  }
+
+  .switch__control:checked {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  .switch__control:disabled {
+    border-color: GrayText;
+    background-color: Canvas;
+    color: GrayText;
+  }
+
+  .switch__control[aria-invalid='true'] {
+    outline-color: CanvasText;
+    outline-style: dashed;
+  }
+
+  .switch__control:is(:focus-visible, .is-focus) {
+    outline-color: Highlight;
+    outline-style: solid;
+  }
+}

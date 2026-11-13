@@ -1,0 +1,59 @@
+/* Card: static content or one link; media and body follow the catalog skeleton. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  padding: var(--space-6);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+  color: var(--color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: box-shadow var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-standard);
+}
+
+a.card:hover, .card.is-hover {
+  box-shadow: var(--elevation-2);
+  color: var(--color-text);
+  transform: translateY(var(--offset-lift));
+}
+
+a.card:active, .card.is-active {
+  box-shadow: var(--elevation-1);
+  transform: translateY(var(--offset-press));
+}
+
+.card__media {
+  display: block;
+  min-inline-size: 0;
+}
+
+.card__media > img {
+  display: block;
+  max-inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--radius-card);
+}
+
+.card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.card__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.card__text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}

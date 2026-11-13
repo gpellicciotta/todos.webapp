@@ -1,0 +1,65 @@
+/* Native checkbox rows and an in-flow bulk bar; checked, mixed, focus, hover, disabled, and invalid use native states. */
+.selection {
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.selection__list {
+  padding: 0;
+  list-style: none;
+}
+
+.selection__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--target-min);
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.selection__row:hover {
+  background: var(--color-surface-hover);
+}
+
+.selection__row:has(:checked) {
+  background: var(--color-surface-hover);
+}
+
+.selection__row:has(:disabled) {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.selection__control {
+  flex: none;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: inherit;
+}
+
+.selection__control[aria-invalid='true'] {
+  outline: var(--focus-ring-width) solid var(--color-danger);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.selection__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.selection__bar[hidden] {
+  display: none;
+}

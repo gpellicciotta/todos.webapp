@@ -76,6 +76,7 @@ VERSION_JS = "src/js/version.js"
 SERVICE_WORKER = "src/service-worker.js"
 SW_MANIFEST = "scripts/sw-precache-hashes.json"
 SW_CHECK = "scripts/check-sw-version.mjs"
+DESIGN_CHECK = "src/vendor/design/bin/check.mjs"
 VERSION_FILES = ["CHANGELOG.md", "package.json", "package-lock.json", VERSION_JS, SERVICE_WORKER, SW_MANIFEST]
 # The text each release rewrite replaces; check_rewritable proves they match before anything is written.
 PACKAGE_PATTERN = r'^(  "version":\s*")[^"]+(")'
@@ -165,6 +166,7 @@ def check_commands() -> list[list[str]]:
     npm = tool("npm")
     return [
         [tool("node"), SW_CHECK],
+        [tool("node"), DESIGN_CHECK],
         [npm, "test"],
         [npm, "run", "lint"],
         [npm, "run", "test:e2e"],

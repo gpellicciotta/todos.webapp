@@ -82,9 +82,9 @@
           <li class="swatch"><span class="swatch__chip swatch--color-bg"></span><code>--color-bg</code><span class="swatch__value"></span><span class="swatch__role">Page ground</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-surface"></span><code>--color-surface</code><span class="swatch__value"></span><span class="swatch__role">Panels and dialogs</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-surface-sunken"></span><code>--color-surface-sunken</code><span class="swatch__value"></span><span class="swatch__role">Wells and chips</span></li>
-          <li class="swatch"><span class="swatch__chip swatch--color-hover-bg"></span><code>--color-hover-bg</code><span class="swatch__value"></span><span class="swatch__role">Hovered rows and buttons</span></li>
-          <li class="swatch"><span class="swatch__chip swatch--color-active-bg"></span><code>--color-active-bg</code><span class="swatch__value"></span><span class="swatch__role">Pressed gray controls</span></li>
-          <li class="swatch"><span class="swatch__chip swatch--color-selected-bg"></span><code>--color-selected-bg</code><span class="swatch__value"></span><span class="swatch__role">Current row and route</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-surface-hover"></span><code>--color-surface-hover</code><span class="swatch__value"></span><span class="swatch__role">Hovered rows and buttons</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-surface-active"></span><code>--color-surface-active</code><span class="swatch__value"></span><span class="swatch__role">Pressed gray controls</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-surface-selected"></span><code>--color-surface-selected</code><span class="swatch__value"></span><span class="swatch__role">Current row and route</span></li>
         </ul>
 
         <h3>Text and borders</h3>
@@ -98,10 +98,10 @@
 
         <h3>Signal</h3>
         <ul class="swatches">
-          <li class="swatch"><span class="swatch__chip swatch--color-signal"></span><code>--color-signal</code><span class="swatch__value"></span><span class="swatch__role">Main action, overdue</span></li>
-          <li class="swatch"><span class="swatch__chip swatch--color-signal-hover"></span><code>--color-signal-hover</code><span class="swatch__value"></span><span class="swatch__role">Main action on hover</span></li>
-          <li class="swatch"><span class="swatch__chip swatch--color-signal-active"></span><code>--color-signal-active</code><span class="swatch__value"></span><span class="swatch__role">Main action while pressed</span></li>
-          <li class="swatch"><span class="swatch__chip swatch--color-on-signal"></span><code>--color-on-signal</code><span class="swatch__value"></span><span class="swatch__role">Text on signal</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-primary"></span><code>--color-primary</code><span class="swatch__value"></span><span class="swatch__role">Main action, overdue</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-primary-hover"></span><code>--color-primary-hover</code><span class="swatch__value"></span><span class="swatch__role">Main action on hover</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-primary-active"></span><code>--color-primary-active</code><span class="swatch__value"></span><span class="swatch__role">Main action while pressed</span></li>
+          <li class="swatch"><span class="swatch__chip swatch--color-on-primary"></span><code>--color-on-primary</code><span class="swatch__value"></span><span class="swatch__role">Text on signal</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-link"></span><code>--color-link</code><span class="swatch__value"></span><span class="swatch__role">Links</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-danger"></span><code>--color-danger</code><span class="swatch__value"></span><span class="swatch__role">Error borders, text, alert icons, and Delete controls</span></li>
           <li class="swatch"><span class="swatch__chip swatch--color-danger-hover"></span><code>--color-danger-hover</code><span class="swatch__value"></span><span class="swatch__role">Filled Delete button on hover</span></li>
@@ -139,73 +139,41 @@
             <span class="pair__signal">Overdue</span>
             <a href="#color">Open list</a>
           </li>
-          <li class="pair swatch--color-hover-bg">
-            <code class="pair__name">--color-hover-bg</code>
+          <li class="pair swatch--color-surface-hover">
+            <code class="pair__name">--color-surface-hover</code>
             <span class="pair__text">Water the plants</span>
             <span class="pair__muted">Done yesterday</span>
             <span class="pair__signal">Overdue</span>
             <a href="#color">Open list</a>
           </li>
-          <li class="pair swatch--color-selected-bg">
-            <code class="pair__name">--color-selected-bg</code>
+          <li class="pair swatch--color-surface-selected">
+            <code class="pair__name">--color-surface-selected</code>
             <span class="pair__text">Water the plants</span>
             <span class="pair__muted">Done yesterday</span>
             <span class="pair__signal">Overdue</span>
             <a href="#color">Open list</a>
           </li>
-          <li class="pair swatch--color-signal">
-            <code class="pair__name pair__on-signal">--color-signal</code>
+          <li class="pair swatch--color-primary">
+            <code class="pair__name pair__on-signal">--color-primary</code>
             <span class="pair__on-signal">Add task</span>
           </li>
-          <li class="pair swatch--color-signal-hover">
-            <code class="pair__name pair__on-signal">--color-signal-hover</code>
+          <li class="pair swatch--color-primary-hover">
+            <code class="pair__name pair__on-signal">--color-primary-hover</code>
             <span class="pair__on-signal">Add task</span>
           </li>
-          <li class="pair swatch--color-signal-active">
-            <code class="pair__name pair__on-signal">--color-signal-active</code>
+          <li class="pair swatch--color-primary-active">
+            <code class="pair__name pair__on-signal">--color-primary-active</code>
             <span class="pair__on-signal">Add task</span>
           </li>
-          <li class="pair swatch--color-active-bg">
-            <code class="pair__name">--color-active-bg</code>
+          <li class="pair swatch--color-surface-active">
+            <code class="pair__name">--color-surface-active</code>
             <span class="pair__text">Export backup</span>
             <a href="#color">Clear all</a>
           </li>
         </ul>
 
-        <h3>Gray ramp</h3>
-        <ul class="swatches swatches--ramp">
-          <li class="swatch"><span class="swatch__chip swatch--gray-0"></span><code>--gray-0</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-50"></span><code>--gray-50</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-100"></span><code>--gray-100</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-200"></span><code>--gray-200</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-300"></span><code>--gray-300</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-400"></span><code>--gray-400</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-500"></span><code>--gray-500</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-600"></span><code>--gray-600</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-700"></span><code>--gray-700</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-800"></span><code>--gray-800</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-850"></span><code>--gray-850</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-900"></span><code>--gray-900</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--gray-950"></span><code>--gray-950</code><span class="swatch__value"></span></li>
-        </ul>
-
-        <h3>Navy ramp</h3>
-        <ul class="swatches swatches--ramp">
-          <li class="swatch"><span class="swatch__chip swatch--navy-50"></span><code>--navy-50</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--navy-200"></span><code>--navy-200</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--navy-300"></span><code>--navy-300</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--navy-400"></span><code>--navy-400</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--navy-600"></span><code>--navy-600</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--navy-700"></span><code>--navy-700</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--navy-800"></span><code>--navy-800</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--navy-950"></span><code>--navy-950</code><span class="swatch__value"></span></li>
-        </ul>
-
-        <h3>Deep orange</h3>
-        <ul class="swatches swatches--ramp">
-          <li class="swatch"><span class="swatch__chip swatch--orange-700"></span><code>--orange-700</code><span class="swatch__value"></span></li>
-          <li class="swatch"><span class="swatch__chip swatch--orange-400"></span><code>--orange-400</code><span class="swatch__value"></span></li>
-        </ul>
+        <h3>Palette</h3>
+        <p>The gray, navy, and deep orange ramps behind these roles are private primitives of the neutral look in the vendored support.webapp design system. App styles use the semantic roles above only.</p>
       </section>
 
       <section class="gallery-section" id="typography" aria-labelledby="typography-title">
@@ -254,17 +222,19 @@
           <div class="specimen specimen--row"><dt><code>--space-5</code> <span data-token="--space-5"></span></dt><dd><span class="space-bar space--5"></span></dd></div>
           <div class="specimen specimen--row"><dt><code>--space-6</code> <span data-token="--space-6"></span></dt><dd><span class="space-bar space--6"></span></dd></div>
           <div class="specimen specimen--row"><dt><code>--space-7</code> <span data-token="--space-7"></span></dt><dd><span class="space-bar space--7"></span></dd></div>
-          <div class="specimen specimen--row"><dt><code>--space-8</code> <span data-token="--space-8"></span></dt><dd><span class="space-bar space--8"></span></dd></div>
+          <div class="specimen specimen--row"><dt><code>--space-9</code> <span data-token="--space-9"></span></dt><dd><span class="space-bar space--9"></span></dd></div>
         </dl>
       </section>
 
       <section class="gallery-section" id="radii" aria-labelledby="radii-title">
         <h2 id="radii-title">Radii</h2>
-        <p>Small for chips, medium for controls and rows, large for dialogs and panels.</p>
+        <p>Radius roles of the neutral look: small for chips, medium for controls, buttons, and cards, large for dialogs and panels.</p>
         <ul class="tiles">
-          <li class="tile radius--sm"><code>--radius-sm</code> <span data-token="--radius-sm"></span></li>
-          <li class="tile radius--md"><code>--radius-md</code> <span data-token="--radius-md"></span></li>
-          <li class="tile radius--lg"><code>--radius-lg</code> <span data-token="--radius-lg"></span></li>
+          <li class="tile radius--chip"><code>--radius-chip</code> <span data-token="--radius-chip"></span></li>
+          <li class="tile radius--control"><code>--radius-control</code> <span data-token="--radius-control"></span></li>
+          <li class="tile radius--button"><code>--radius-button</code> <span data-token="--radius-button"></span></li>
+          <li class="tile radius--card"><code>--radius-card</code> <span data-token="--radius-card"></span></li>
+          <li class="tile radius--dialog"><code>--radius-dialog</code> <span data-token="--radius-dialog"></span></li>
         </ul>
       </section>
 
@@ -273,11 +243,11 @@
         <p>Touch targets, icons, rows, layout widths, and line widths.</p>
         <dl class="specimens">
           <div class="specimen"><dt><code>--target-min</code> <span data-token="--target-min"></span></dt><dd><span class="size-box size--target"></span></dd></div>
-          <div class="specimen"><dt><code>--icon-size</code> <span data-token="--icon-size"></span>, stroke <span data-token="--icon-stroke"></span></dt><dd><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></dd></div>
-          <div class="specimen"><dt><code>--icon-size-lg</code> <span data-token="--icon-size-lg"></span>, stroke <span data-token="--icon-stroke-thin"></span>, for empty states</dt><dd><svg class="icon empty-state__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></dd></div>
+          <div class="specimen"><dt><code>--icon-md</code> <span data-token="--icon-md"></span>, stroke <span data-token="--icon-stroke"></span></dt><dd><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></dd></div>
+          <div class="specimen"><dt><code>--icon-lg</code> <span data-token="--icon-lg"></span>, stroke <span data-token="--icon-stroke-thin"></span>, for empty states</dt><dd><svg class="icon empty-state__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></dd></div>
           <div class="specimen"><dt><code>--row-height</code> <span data-token="--row-height"></span></dt><dd><span class="size-row">Water the plants</span></dd></div>
           <div class="specimen"><dt><code>--width-sidebar</code> <span data-token="--width-sidebar"></span></dt><dd><span class="width-bar width--sidebar"></span></dd></div>
-          <div class="specimen"><dt><code>--width-editor</code> <span data-token="--width-editor"></span></dt><dd><span class="width-bar width--editor"></span></dd></div>
+          <div class="specimen"><dt><code>--width-side-panel</code> <span data-token="--width-side-panel"></span></dt><dd><span class="width-bar width--editor"></span></dd></div>
           <div class="specimen"><dt><code>--width-main</code> <span data-token="--width-main"></span></dt><dd><span class="width-bar width--main"></span></dd></div>
           <div class="specimen"><dt><code>--width-menu</code> <span data-token="--width-menu"></span>, the narrowest menu or popover</dt><dd><span class="width-bar width--menu"></span></dd></div>
           <div class="specimen"><dt><code>--width-text-min</code> <span data-token="--width-text-min"></span>, the narrowest banner text before its action wraps</dt><dd><span class="width-bar width--text-min"></span></dd></div>

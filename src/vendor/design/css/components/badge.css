@@ -1,0 +1,41 @@
+/* Badge: non-interactive text labels; neutral, count, success, warning, and danger variants. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  max-inline-size: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.badge[hidden] {
+  display: none;
+}
+
+.badge--count {
+  font-variant-numeric: tabular-nums;
+}
+
+.badge--success {
+  border-color: var(--color-success);
+  background-color: var(--color-success);
+  color: var(--color-on-success);
+}
+
+.badge--warning {
+  border-color: var(--color-warning);
+  background-color: var(--color-warning);
+  color: var(--color-on-warning);
+}
+
+.badge--danger {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger);
+  color: var(--color-on-danger);
+}

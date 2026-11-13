@@ -43,12 +43,12 @@
 
 .task-row:hover,
 .task-row.is-hover {
-  background-color: var(--color-hover-bg);
+  background-color: var(--color-surface-hover);
 }
 
 .task-row:has(.task-row__open:active),
 .task-row.is-active {
-  background-color: var(--color-active-bg);
+  background-color: var(--color-surface-active);
 }
 
 /* The open link fills the row, so the row draws its focus ring, inside its own edge. */
@@ -59,7 +59,7 @@
 }
 
 .task-row:has(.task-row__open[aria-current='page']) {
-  background-color: var(--color-selected-bg);
+  background-color: var(--color-surface-selected);
 }
 
 .task-row:has(.task-row__open[aria-current='page'])::after {
@@ -67,17 +67,17 @@
   inset-block: 0;
   inset-inline-start: 0;
   inline-size: var(--border-width-strong);
-  background-color: var(--color-signal);
+  background-color: var(--color-primary);
   content: '';
   pointer-events: none;
 }
 
 .task-row:has(.task-row__open[aria-current='page']):hover {
-  background-color: var(--color-hover-bg);
+  background-color: var(--color-surface-hover);
 }
 
 .task-row:has(.task-row__open[aria-current='page']):has(.task-row__open:active) {
-  background-color: var(--color-active-bg);
+  background-color: var(--color-surface-active);
 }
 
 /*
@@ -86,13 +86,13 @@
  */
 .task-row:is(:hover, .is-hover) .icon-button:not(:disabled):is(:hover, .is-hover),
 .task-row:has(.task-row__open[aria-current='page']) .icon-button:not(:disabled):is(:hover, .is-hover) {
-  background-color: var(--color-active-bg);
+  background-color: var(--color-surface-active);
 }
 
 .task-row[data-dragging='true'] {
   z-index: var(--layer-sticky);
   border-block-end-color: transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background-color: var(--color-surface);
   box-shadow: var(--elevation-2);
   cursor: grabbing;
@@ -104,8 +104,8 @@
   inset-inline: 0;
   z-index: var(--layer-sticky);
   block-size: var(--border-width-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-signal);
+  border-radius: var(--radius-chip);
+  background-color: var(--color-primary);
   content: '';
   pointer-events: none;
 }
@@ -333,7 +333,7 @@
   padding-inline: var(--space-2);
   padding-block: var(--space-1);
   border: var(--border-width) solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-button);
   background-color: transparent;
   color: var(--color-link);
   font: inherit;
@@ -347,7 +347,7 @@
 .button.info-line__reset.is-hover,
 .info-line__reset:hover,
 .info-line__reset.is-hover {
-  background-color: var(--color-hover-bg);
+  background-color: var(--color-surface-hover);
   color: var(--color-link);
   text-decoration: none;
 }
@@ -356,7 +356,7 @@
 .button.info-line__reset.is-active,
 .info-line__reset:active,
 .info-line__reset.is-active {
-  background-color: var(--color-active-bg);
+  background-color: var(--color-surface-active);
   color: var(--color-link);
   text-decoration: none;
 }

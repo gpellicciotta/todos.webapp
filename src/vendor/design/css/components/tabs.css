@@ -1,0 +1,49 @@
+/* Horizontal tabs: selected underline, hover, active, focus-visible, and disabled states. */
+.tabs {
+  min-inline-size: 0;
+}
+
+.tabs__list {
+  display: flex;
+  overflow-x: auto;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.tabs__tab {
+  flex: none;
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-block-end: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tabs__tab[aria-selected='true'] {
+  border-block-end-color: currentColor;
+  font-weight: var(--weight-bold);
+}
+
+.tabs__tab:enabled:is(:hover, .is-hover) {
+  background: var(--color-surface-hover);
+}
+
+.tabs__tab:enabled:is(:active, .is-active) {
+  background: var(--color-surface-active);
+}
+
+.tabs__tab:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.tabs__panel {
+  padding: var(--space-3);
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,97 @@
+/*
+ * Menu: an anchored list of actions at --elevation-1, opening in the top layer through the `popover` attribute.
+ * Items: `role="menuitem"`, or `role="menuitemradio"` with aria-checked for a choice such as status.
+ * Disabled items set aria-disabled="true"; separators use role="separator".
+ */
+.menu {
+  display: grid;
+  min-inline-size: var(--width-menu);
+  max-inline-size: min(100%, var(--width-side-panel));
+  padding: var(--space-1);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--elevation-1);
+}
+
+/* The display rule would otherwise show closed menus, and menus that still set `hidden`. */
+.menu:is([hidden], [popover]:not(:popover-open)) {
+  display: none;
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+/* Stub placeholder for menu items without an icon so item labels align with icon-bearing items. */
+.menu:has(.icon) .menu__item:not(:has(.icon))::before,
+.menu__item--stub::before {
+  content: '';
+  flex: none;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+}
+
+.menu__item:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.menu__item:is(:active, .is-active) {
+  background-color: var(--color-surface-active);
+}
+
+/* Menu items draw the ring flush with the item, inside the menu's padding. */
+.menu__item:is(:focus-visible, .is-focus) {
+  outline-offset: 0;
+}
+
+/* Danger item: a delete action takes the danger color on text, icon, and ring; pressed uses the hover ground to keep 4.5:1. */
+.menu__item--danger {
+  color: var(--color-danger);
+}
+
+.menu__item--danger:is(:focus-visible, .is-focus) {
+  outline-color: var(--color-danger);
+}
+
+.menu__item--danger:is(:active, .is-active) {
+  background-color: var(--color-surface-hover);
+}
+
+.menu__check {
+  visibility: hidden;
+  color: var(--color-primary);
+}
+
+.menu__item[aria-checked='true'] {
+  font-weight: var(--weight-semibold);
+}
+
+.menu__item[aria-checked='true'] .menu__check {
+  visibility: visible;
+}
+
+.menu__item[aria-disabled='true'] {
+  background-color: transparent;
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.menu__separator {
+  block-size: var(--border-width);
+  margin-block: var(--space-1);
+  background-color: var(--color-border);
+}

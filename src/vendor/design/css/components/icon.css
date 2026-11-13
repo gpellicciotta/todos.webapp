@@ -1,0 +1,32 @@
+/*
+ * Icon: an inline stroke glyph from the look sprite that follows the text color.
+ * Sizes: the plain class draws md; `--sm`, `--md`, and `--lg` pick a size token, and lg thins the stroke when the look allows.
+ * Decorative icons set aria-hidden; an icon that carries meaning alone sets role="img" and aria-label.
+ */
+.icon {
+  flex: none;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+}
+
+.icon--sm {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+.icon--md {
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+}
+
+.icon--lg {
+  inline-size: var(--icon-lg);
+  block-size: var(--icon-lg);
+  stroke-width: var(--icon-stroke-thin, var(--icon-stroke));
+}

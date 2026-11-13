@@ -1,0 +1,91 @@
+/*
+ * Segmented control: a fieldset of 2 to 5 native radios in one row, such as a view or status choice.
+ * Narrow screens wrap the options into equal columns.
+ * The checked option takes the surface ground, a primary outline, and semibold text; arrow keys move the choice.
+ * Disable one option with `disabled` on its radio, or the whole control with `disabled` on the fieldset.
+ */
+.segmented {
+  --_segmented-option-min: calc(var(--space-12) + var(--space-9));
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.segmented__legend {
+  margin-block-end: var(--space-1);
+  padding: 0;
+  font-weight: var(--weight-medium);
+}
+
+.segmented__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--_segmented-option-min)), 1fr));
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-sunken);
+}
+
+.segmented__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-control);
+  text-align: center;
+  cursor: pointer;
+  transition-property: background-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+/* The radio covers its option, so the whole option is the click target; the label draws its state. */
+.segmented__option > input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+/* The track is sunken, and some looks give hover the sunken color, so hover takes the active ground. */
+.segmented__option:is(:hover, .is-hover) {
+  background-color: var(--color-surface-active);
+}
+
+.segmented__option:has(:checked) {
+  background-color: var(--color-surface);
+  box-shadow: inset 0 0 0 var(--focus-ring-width) var(--color-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.segmented__option:is(:has(:focus-visible), .is-focus) {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* A disabled radio dims its own option; a disabled fieldset disables every radio, so it dims them all. */
+.segmented__option:has(:disabled) {
+  background-color: transparent;
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.segmented__option:has(:checked:disabled) {
+  background-color: var(--color-surface);
+  box-shadow: inset 0 0 0 var(--focus-ring-width) var(--color-border-strong);
+}
+
+/* Forced colors drop the inset shadow, so the checked option shows a border instead. */
+@media (forced-colors: active) {
+  .segmented__option:has(:checked) {
+    border: var(--focus-ring-width) solid;
+  }
+}

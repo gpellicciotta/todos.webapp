@@ -1,0 +1,51 @@
+/*
+ * Error summary: shown after a failed submit, with a heading and one link per invalid field.
+ * `attachForm` fills it, sets role="alert", and moves focus to it; each link moves focus to its field.
+ * It shows the focus ring on any focus, because focus arrives by script after a pointer or keyboard submit.
+ */
+.error-summary {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-danger);
+  border-inline-start-width: var(--border-width-strong);
+  border-radius: var(--radius-card);
+  background-color: var(--color-danger-bg);
+  color: var(--color-text);
+}
+
+.error-summary[hidden] {
+  display: none;
+}
+
+.error-summary:is(:focus, .is-focus) {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.error-summary__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.error-summary__list {
+  display: grid;
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.error-summary__link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target-min);
+  color: var(--color-danger);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.error-summary__link:is(:hover, .is-hover) {
+  text-decoration-thickness: var(--border-width-strong);
+}

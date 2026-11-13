@@ -6,9 +6,10 @@ The [ui-design.md](ui-design.md) spec defines screens and behavior; this guide d
 
 ## Status of the System
 The tokens, the font, the controls, the app components, and their gallery sections exist.
+- [design.json](../../design.json): pins the vendored [support.webapp](../../../support.webapp/README.md) design system, version 0.1.0, neutral look.
+- [src/vendor/design/](../../src/vendor/design/): the vendored copy; its base and neutral look define every contract token, both themes, and the Inter font face.
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
-- [tokens.css](../../src/css/tokens.css): primitive and semantic tokens and both themes.
-- [fonts.css](../../src/css/fonts.css): the self-hosted Inter font face.
+- [tokens.css](../../src/css/tokens.css): the app-local size tokens only.
 - [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
 - [app-components.css](../../src/css/app-components.css): the task list, task row, status button, and status menu.
 - [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
@@ -17,6 +18,7 @@ The tokens, the font, the controls, the app components, and their gallery sectio
 
 Serve the gallery with `npm run serve`, then open `/demo/visual-style-gallery.html`.
 Change the stylesheets first, then the gallery and this guide in the same commit.
+Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on any change; see [devops.md](../devops.md#vendored-design-system).
 
 ---
 
@@ -68,42 +70,47 @@ Change the stylesheets first, then the gallery and this guide in the same commit
 - **[Decided]** Component styles never scale a token by a bare number, such as `* 2` or `/ 2`.
   They use a named token, or add tokens together; [tokens.test.js](../../tests/unit/tokens.test.js) checks app-chrome.css.
 - **[Decided]** Marks on an inline edge use logical properties, so they follow right-to-left text.
+- **[Decided]** The tokens come from the vendored support.webapp design system, under its contract names.
+  Each rename kept its value: the signal became `--color-primary`, and the state grounds became `--color-surface-{{state}}`.
+  `--space-8` became `--space-9`, `--width-editor` became `--width-side-panel`, and `--icon-size` became `--icon-md`.
+  Radius steps became roles: `--radius-chip`, `--radius-control`, `--radius-button`, `--radius-card`, and `--radius-dialog`.
+- **[Decided]** Until the app moves onto the vendored components, `style.css` imports the vendored base and look files directly.
+  They are private package files; the public `looks/neutral/index.css` would also load every package component.
 
 ---
 
 ## Tokens
 Token names follow the two-tier rule: primitives hold raw values, and components use semantic tokens only.
+The primitives are private to the vendored neutral look; app styles never use them.
 
 ### Color
-Definitions live in [tokens.css](../../src/css/tokens.css); the gallery's Color section shows them live.
-- Gray ramp: `--gray-0` to `--gray-950`, thirteen slightly cool steps from white to near-black.
-- Navy ramp: `--navy-50` to `--navy-950`, eight steps, the one signal hue.
-- Deep orange: `--orange-700` and `--orange-400`, the danger hue for light and dark grounds.
+Definitions live in the vendored [look.css](../../src/vendor/design/looks/neutral/look.css); the gallery's Color section shows them live.
+- Palette: a slightly cool gray ramp, a navy ramp as the one signal hue, and deep orange for danger, all private to the look.
 - Grounds: `--color-bg` for the page, `--color-surface` for panels and dialogs, `--color-surface-sunken` for wells and chips.
-- Hover and selection: `--color-hover-bg` for hovered rows, `--color-selected-bg` for the current row, route, and pressed toggles.
-- Pressed: `--color-active-bg` for gray controls while pressed; only text and link colors sit on it.
+- Hover and selection: `--color-surface-hover` for hovered rows, `--color-surface-selected` for the current row, route, and pressed toggles.
+- Pressed: `--color-surface-active` for gray controls while pressed; only text and link colors sit on it.
 - Text: `--color-text`, `--color-text-muted` for secondary lines and done tasks, `--color-text-disabled` for disabled controls only.
 - Borders: `--color-border` for dividers, `--color-border-strong` for controls that need 3:1 contrast.
-- Signal: `--color-signal` for the main action and overdue chips, `--color-on-signal` for text on it.
+- Signal: `--color-primary` for the main action and overdue chips, `--color-on-primary` for text on it.
 - Danger: `--color-danger` for error borders, error text, alert icons, Delete outlines and menu items, filled Delete buttons, and the focus ring of those controls.
 - Danger states: `--color-danger-hover` and `--color-danger-active` for the filled Delete button, `--color-on-danger` for its text.
 - Status: `--color-status-in-progress` (sky blue), `--color-status-completed` (green), and `--color-status-cancelled` (the danger color) for status icons; each reaches 3:1 on every ground.
-- Signal states: `--color-signal-hover` and `--color-signal-active` for the hovered and pressed main action.
+- Signal states: `--color-primary-hover` and `--color-primary-active` for the hovered and pressed main action.
 - Links: `--color-link` for links and quiet buttons.
 - Focus: `--focus-ring` on every interactive element, drawn in `--color-focus` with a gap to the element.
 - Shadow and scrim: `--color-shadow` tints both elevation levels, `--color-backdrop` dims the page behind modal dialogs.
 
 Signal values and their lowest contrast ratios, checked by [tokens.test.js](../../tests/unit/tokens.test.js):
 
-| Token                   | Light               | Dark                | Lowest ratio, light / dark   |
-| :---------------------- | :------------------ | :------------------ | :--------------------------- |
-| `--color-signal`        | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds       |
-| `--color-signal-hover`  | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 10.36 / 10.82 with on-signal |
-| `--color-signal-active` | navy 800, #172e6e   | navy 200, #c7d4f0   | 12.71 / 13.33 with on-signal |
-| `--color-on-signal`     | gray 0, #ffffff     | gray 950, #111216   | 8.72 / 8.05 on signal        |
-| `--color-link`          | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 8.95 / 7.78 on grounds       |
-| `--color-focus`         | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds       |
-| `--color-danger`        | orange 700, #b23b0b | orange 400, #fb923c | 5.15 / 5.95 on grounds       |
+| Token                    | Light               | Dark                | Lowest ratio, light / dark    |
+| :----------------------- | :------------------ | :------------------ | :---------------------------- |
+| `--color-primary`        | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds        |
+| `--color-primary-hover`  | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 10.36 / 10.82 with on-primary |
+| `--color-primary-active` | navy 800, #172e6e   | navy 200, #c7d4f0   | 12.71 / 13.33 with on-primary |
+| `--color-on-primary`     | gray 0, #ffffff     | gray 950, #111216   | 8.72 / 8.05 on primary        |
+| `--color-link`           | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 8.95 / 7.78 on grounds        |
+| `--color-focus`          | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds        |
+| `--color-danger`         | orange 700, #b23b0b | orange 400, #fb923c | 5.15 / 5.95 on grounds        |
 
 ### Typography
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
@@ -112,24 +119,25 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - Weight tokens: `--weight-regular`, `--weight-medium`, and `--weight-semibold`.
 - Line heights: `--leading-tight` for headings and single lines, `--leading-normal` for body text.
 - `--font-mono`: the system monospace stack, for code and identifiers in the gallery.
-- `kbd`: one key or key combination per element, such as `Shift+Enter`, in mono `--text-sm` on `--color-surface-sunken` with a `--radius-sm` border.
+- `kbd`: one key or key combination per element, such as `Shift+Enter`, in mono `--text-sm` on `--color-surface-sunken` with a `--radius-chip` border.
   Use it for keys the user presses, such as the About shortcut list; never for code or values.
   See [Families and figures](../../src/demo/visual-style-gallery.html#typography).
 - Open tasks use medium weight; done tasks use regular weight and the muted color.
 - Cancelled tasks also get a strike-through, so they differ from completed ones beyond the icon.
 
 ### Space, Shape, and Size
-- `--space-1` to `--space-8`: a 4 px based scale; rows use `--space-2` inside and no gap between.
-- `--radius-sm` for chips, `--radius-md` for controls and rows, `--radius-lg` for dialogs and panels.
+- `--space-1` to `--space-12`: the vendored base scale; the app uses steps 1 to 7 and 9, and rows use `--space-2` inside.
+- Radius roles: `--radius-chip` for chips and keys, `--radius-control` for fields and menu items, `--radius-button` for buttons.
+  `--radius-card` for banners, toasts, and lifted rows, and `--radius-dialog` for dialogs and panels.
 - `--radius-round`: circles, such as the unseen entries dot of the sync indicator.
 - `--border-width` for every border; `--focus-ring-width` and `--focus-ring-offset` size the focus ring.
 - `--focus-ring-offset-inset`: draws the ring inside items that fill a bar, such as bottom bar items.
 - `--border-width-strong`: the leading edge of error banners.
 - `--target-min`: 44 px, the minimum size of every control.
-- `--icon-size` and `--icon-stroke`: every icon is 20 px with one stroke width.
-- `--icon-size-lg` and `--icon-stroke-thin`: the larger, thinner icon of empty states.
+- `--icon-md` and `--icon-stroke`: every icon is 20 px with one stroke width.
+- `--icon-lg` and `--icon-stroke-thin`: the larger, thinner icon of empty states.
 - `--row-height`: 48 px, the minimum task row height.
-- Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-editor` size the side panels.
+- Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-side-panel` size the side panels.
 - Control minimums: `--width-menu` for menus and popovers, `--width-segment-min` for segmented options.
 - `--width-chip-max`: the widest list chip in a task row; longer list names truncate.
 - Text minimums: `--width-text-min` before a banner's action wraps, `--height-textarea-min` for textareas.

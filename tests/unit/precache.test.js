@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, posix, relative, sep } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -7,8 +7,9 @@ import { describe, expect, it } from 'vitest';
 const ROOT = fileURLToPath(new URL('../../src/', import.meta.url));
 const SOURCE = readFileSync(join(ROOT, 'service-worker.js'), 'utf8');
 
-// Files under src/ that the app never loads: the gallery, the worker itself, and the font license.
-const NOT_PRECACHED = [/^demo\//, /^service-worker\.js$/, /^fonts\/OFL\.txt$/];
+// Files under src/ that the app never loads: the gallery and the worker itself.
+// The vendored design system counts only where style.css loads it, through loadedVendorFiles().
+const NOT_PRECACHED = [/^demo\//, /^service-worker\.js$/, /^vendor\//];
 
 /**
  * List every file under a folder, as web paths relative to src/.
@@ -31,9 +32,40 @@ function precacheList() {
   return [...body.matchAll(/'([^']+)'/g)].map((match) => match[1]);
 }
 
+/**
+ * Follow `@import` and `url()` references from css/style.css to the vendored files the app loads.
+ * @returns {string[]} web paths relative to src/, under vendor/
+ */
+function loadedVendorFiles() {
+  const seen = new Set();
+  const visit = (path) => {
+    if (seen.has(path)) {
+      return;
+    }
+    seen.add(path);
+    if (!path.endsWith('.css')) {
+      return;
+    }
+    const css = readFileSync(join(ROOT, path), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const match of css.matchAll(/url\(\s*['"]?([^'")]+)['"]?\s*\)/g)) {
+      visit(posix.normalize(posix.join(posix.dirname(path), match[1])));
+    }
+  };
+  visit('css/style.css');
+  return [...seen].filter((path) => path.startsWith('vendor/')).sort();
+}
+
 describe('service worker precache', () => {
+  it('finds the vendored base, neutral look, and font that style.css loads', () => {
+    expect(loadedVendorFiles()).toEqual(expect.arrayContaining([
+      'vendor/design/css/base.css',
+      'vendor/design/looks/neutral/look.css',
+      'vendor/design/looks/neutral/fonts/InterVariable.woff2',
+    ]));
+  });
+
   it('lists every file the app needs under src/, except the gallery', () => {
-    const needed = walk(ROOT).filter((path) => !NOT_PRECACHED.some((rule) => rule.test(path))).sort();
+    const needed = [...walk(ROOT).filter((path) => !NOT_PRECACHED.some((rule) => rule.test(path))), ...loadedVendorFiles()].sort();
     const listed = precacheList().filter((entry) => entry !== './');
     expect(needed.filter((path) => !listed.includes(path))).toEqual([]);
     expect(listed.filter((path) => !needed.includes(path))).toEqual([]);

@@ -1,0 +1,61 @@
+/* Avatar: image, authored initials, or icon fallback; source sizes and four decorative tones. */
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--space-12);
+  block-size: var(--space-12);
+  border-radius: var(--radius-round);
+  background: var(--color-tone-4, var(--color-surface-sunken));
+  color: var(--color-on-tone-4, var(--color-text));
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+/* Stack defaults have the same specificity as explicit sizes, which win below. */
+:where(.avatar-stack) > .avatar {
+  inline-size: clamp(var(--space-12), 20vw, calc(var(--space-12) + var(--space-7)));
+  block-size: clamp(var(--space-12), 20vw, calc(var(--space-12) + var(--space-7)));
+}
+
+.avatar--sm { inline-size: var(--space-9); block-size: var(--space-9); }
+.avatar--md { inline-size: var(--space-12); block-size: var(--space-12); }
+.avatar--lg {
+  inline-size: calc(var(--space-12) + var(--space-7));
+  block-size: calc(var(--space-12) + var(--space-7));
+}
+.avatar--initials {
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.avatar--tone-1 {
+  background: var(--color-tone-1, var(--color-surface-sunken));
+  color: var(--color-on-tone-1, var(--color-text));
+}
+.avatar--tone-2 {
+  background: var(--color-tone-2, var(--color-surface-sunken));
+  color: var(--color-on-tone-2, var(--color-text));
+}
+.avatar--tone-3 {
+  background: var(--color-tone-3, var(--color-surface-sunken));
+  color: var(--color-on-tone-3, var(--color-text));
+}
+.avatar--tone-4 {
+  background: var(--color-tone-4, var(--color-surface-sunken));
+  color: var(--color-on-tone-4, var(--color-text));
+}
+
+/* Catalog companion block: overlapping portraits ringed by the page ground. */
+.avatar-stack {
+  display: flex;
+  justify-content: center;
+  padding-inline: var(--space-2);
+}
+.avatar-stack > .avatar {
+  margin-inline: calc(var(--space-2) * -1);
+  box-shadow: 0 0 0 var(--space-1) var(--color-bg);
+}

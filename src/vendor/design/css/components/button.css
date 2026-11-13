@@ -1,0 +1,121 @@
+/*
+ * Button: one action, with a text label and an optional leading icon.
+ * Variants: default (the one main action of a view), `--secondary`, `--danger` (filled, confirms a delete),
+ * `--secondary.button--danger` (danger outline, starts a delete), `--quiet` (text only),
+ * `--inverse` (on dark or tinted grounds), and `--small` (smaller text, same 44 px target).
+ * Disabled: the native `disabled` attribute, or `aria-disabled="true"` for a button that stays focusable.
+ */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-4);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-button);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  text-decoration: none;
+  cursor: pointer;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.button:is(:hover, .is-hover) {
+  background-color: var(--color-primary-hover);
+}
+
+.button:is(:active, .is-active) {
+  background-color: var(--color-primary-active);
+}
+
+.button--secondary {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.button--secondary:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.button--secondary:is(:active, .is-active) {
+  background-color: var(--color-surface-active);
+}
+
+/* Danger: a filled button confirms a delete; add it to a secondary button for the danger outline that starts one. */
+.button--danger:where(:not(.button--secondary)) {
+  background-color: var(--color-danger);
+  color: var(--color-on-danger);
+}
+
+.button--danger:where(:not(.button--secondary)):is(:hover, .is-hover) {
+  background-color: var(--color-danger-hover);
+}
+
+.button--danger:where(:not(.button--secondary)):is(:active, .is-active) {
+  background-color: var(--color-danger-active);
+}
+
+.button--secondary.button--danger {
+  border-color: var(--color-danger);
+}
+
+/* Danger focus: danger buttons draw the focus ring in the danger color. */
+.button--danger:is(:focus-visible, .is-focus) {
+  outline-color: var(--color-danger);
+}
+
+.button--quiet {
+  padding-inline: var(--space-3);
+  background-color: transparent;
+  color: var(--color-link);
+}
+
+.button--quiet:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.button--quiet:is(:active, .is-active) {
+  background-color: var(--color-surface-active);
+}
+
+/* Inverse: falls back to the text color as its ground when the look leaves --color-inverse undefined. */
+.button--inverse {
+  background-color: var(--color-inverse, var(--color-text));
+  color: var(--color-surface);
+}
+
+.button--inverse:is(:hover, .is-hover) {
+  background-color: var(--color-primary-hover);
+  color: var(--color-on-primary);
+}
+
+.button--inverse:is(:active, .is-active) {
+  background-color: var(--color-primary-active);
+  color: var(--color-on-primary);
+}
+
+.button--small {
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* Disabled comes last, so no variant or state overrides it. */
+.button:is(:disabled, [aria-disabled='true']) {
+  border-color: var(--color-border);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.button--quiet:is(:disabled, [aria-disabled='true']) {
+  border-color: transparent;
+  background-color: transparent;
+}

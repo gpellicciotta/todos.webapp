@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const GALLERY = '/demo/visual-style-gallery.html';
-const FONT_FILE = '/fonts/InterVariable.woff2';
+const FONT_FILE = '/vendor/design/looks/neutral/fonts/InterVariable.woff2';
 
 const VIEWPORTS = [
   { name: 'compact', width: 390, height: 844 },

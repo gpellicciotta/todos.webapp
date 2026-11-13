@@ -1,0 +1,64 @@
+/*
+ * Banner: a full-width notice above the content with an icon, one or two sentences, and an optional action.
+ * Variants: default (information), `--success`, `--warning`, and `--danger`; each adds its color to the edge and the icon.
+ * Danger banners use role="alert"; every other banner uses role="status".
+ */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+/* The flex display would override the hidden attribute, which hides a banner until its state applies. */
+.banner[hidden] {
+  display: none;
+}
+
+.banner > .icon {
+  color: var(--color-text-muted);
+}
+
+.banner__text {
+  flex: 1 1 var(--width-menu);
+  margin: 0;
+  padding-block: var(--space-2);
+}
+
+.banner--success,
+.banner--warning,
+.banner--danger {
+  border-inline-start-width: var(--border-width-strong);
+}
+
+.banner--success {
+  border-color: var(--color-success);
+  background-color: var(--color-success-bg);
+}
+
+.banner--success > .icon {
+  color: var(--color-success);
+}
+
+.banner--warning {
+  border-color: var(--color-warning);
+  background-color: var(--color-warning-bg);
+}
+
+.banner--warning > .icon {
+  color: var(--color-warning);
+}
+
+.banner--danger {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-bg);
+}
+
+.banner--danger > .icon {
+  color: var(--color-danger);
+}

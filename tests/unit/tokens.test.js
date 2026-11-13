@@ -6,6 +6,14 @@ import { describe, expect, it } from 'vitest';
 const CSS_DIR = fileURLToPath(new URL('../../src/css/', import.meta.url));
 const DEMO_DIR = fileURLToPath(new URL('../../src/demo/', import.meta.url));
 const TOKENS_FILE = join(CSS_DIR, 'tokens.css');
+const VENDOR_DIR = fileURLToPath(new URL('../../src/vendor/design/', import.meta.url));
+// Token sources in cascade order: the vendored base and neutral look, then the app-local tokens.
+const TOKEN_FILES = [
+  join(VENDOR_DIR, 'css', 'base.css'),
+  join(VENDOR_DIR, 'looks', 'neutral', 'primitives.css'),
+  join(VENDOR_DIR, 'looks', 'neutral', 'look.css'),
+  TOKENS_FILE,
+];
 const THEMES = ['light', 'dark'];
 
 // Grounds that text, controls, and focus rings may sit on.
@@ -13,12 +21,12 @@ const GROUNDS = [
   '--color-bg',
   '--color-surface',
   '--color-surface-sunken',
-  '--color-hover-bg',
-  '--color-selected-bg',
+  '--color-surface-hover',
+  '--color-surface-selected',
 ];
 
 // Text tokens that must reach 4.5:1 on every ground.
-const TEXT_ON_GROUNDS = ['--color-text', '--color-text-muted', '--color-signal', '--color-link', '--color-danger'];
+const TEXT_ON_GROUNDS = ['--color-text', '--color-text-muted', '--color-primary', '--color-link', '--color-danger'];
 
 // Non-text tokens that must reach 3:1 on every ground.
 const NON_TEXT_ON_GROUNDS = ['--color-border-strong', '--color-focus'];
@@ -26,7 +34,7 @@ const NON_TEXT_ON_GROUNDS = ['--color-border-strong', '--color-focus'];
 
 // Icon colors that must reach 3:1 on every ground a control can show, including pressed grounds.
 const ICONS = [
-  '--color-signal',
+  '--color-primary',
   '--color-danger',
   '--color-text',
   '--color-text-muted',
@@ -35,17 +43,17 @@ const ICONS = [
   '--color-status-cancelled',
 ];
 const STATUS_ICONS = ['--color-status-in-progress', '--color-status-completed', '--color-status-cancelled'];
-// Smallest RGB distance between the in-progress blue and the navy signal color.
+// Smallest RGB distance between the in-progress blue and the navy primary color.
 const MIN_BLUE_DISTANCE = 60;
-const ICON_GROUNDS = [...GROUNDS, '--color-active-bg'];
+const ICON_GROUNDS = [...GROUNDS, '--color-surface-active'];
 
-// Text on filled signal controls and on pressed secondary controls, in every state.
+// Text on filled primary controls and on pressed secondary controls, in every state.
 const TEXT_PAIRS = [
-  ['--color-on-signal', '--color-signal'],
-  ['--color-on-signal', '--color-signal-hover'],
-  ['--color-on-signal', '--color-signal-active'],
-  ['--color-text', '--color-active-bg'],
-  ['--color-link', '--color-active-bg'],
+  ['--color-on-primary', '--color-primary'],
+  ['--color-on-primary', '--color-primary-hover'],
+  ['--color-on-primary', '--color-primary-active'],
+  ['--color-text', '--color-surface-active'],
+  ['--color-link', '--color-surface-active'],
   ['--color-on-danger', '--color-danger'],
   ['--color-on-danger', '--color-danger-hover'],
   ['--color-on-danger', '--color-danger-active'],
@@ -107,11 +115,11 @@ function declarations(body) {
 }
 
 /**
- * Load the plain `:root` tokens and the `light-dark()` fallback block of tokens.css.
+ * Load the plain `:root` tokens and the `light-dark()` fallback blocks of every token source.
  * @returns {{tokens: Map<string, string>, fallback: Map<string, string>}} both declaration maps
  */
 function loadTokens() {
-  const blocks = parseBlocks(stripComments(readFileSync(TOKENS_FILE, 'utf8')));
+  const blocks = TOKEN_FILES.flatMap((path) => parseBlocks(stripComments(readFileSync(path, 'utf8'))));
   const tokens = new Map();
   let fallback = new Map();
   for (const block of blocks) {
@@ -255,9 +263,11 @@ describe('contrast helpers', () => {
   });
 });
 
-describe('tokens.css', () => {
-  it('exists in src/css', () => {
-    expect(existsSync(TOKENS_FILE)).toBe(true);
+describe('tokens of the vendored neutral look and tokens.css', () => {
+  it('exist in src/vendor/design and src/css', () => {
+    for (const path of TOKEN_FILES) {
+      expect(existsSync(path), path).toBe(true);
+    }
   });
 
   for (const theme of THEMES) {
@@ -290,10 +300,10 @@ describe('tokens.css', () => {
         }
       }
 
-      it('keeps the in-progress blue clearly apart from the signal navy', () => {
+      it('keeps the in-progress blue clearly apart from the primary navy', () => {
         const { tokens } = loadTokens();
         const blue = resolve(tokens, '--color-status-in-progress', theme);
-        expect(distance(blue, resolve(tokens, '--color-signal', theme))).toBeGreaterThanOrEqual(MIN_BLUE_DISTANCE);
+        expect(distance(blue, resolve(tokens, '--color-primary', theme))).toBeGreaterThanOrEqual(MIN_BLUE_DISTANCE);
       });
 
       it('gives the three status colors three different colors', () => {
@@ -335,12 +345,11 @@ describe('stylesheets outside tokens.css', () => {
       .map((name) => join(DEMO_DIR, name)),
   ];
 
-  it('include style.css, fonts.css, controls.css, the app stylesheets, and the gallery stylesheet', () => {
+  it('include style.css, controls.css, the app stylesheets, and the gallery stylesheet', () => {
     const names = sheets().map((path) => basename(path));
     expect(names).toEqual(
       expect.arrayContaining([
         'style.css',
-        'fonts.css',
         'controls.css',
         'app-components.css',
         'app-chrome.css',
@@ -349,10 +358,10 @@ describe('stylesheets outside tokens.css', () => {
     );
   });
 
-  it('are imported by style.css in order: fonts, tokens, controls, app components, app chrome, app shell, then views', () => {
+  it('are imported by style.css after the vendored tokens: tokens, controls, app components, app chrome, app shell, then views', () => {
     const style = stripComments(readFileSync(join(CSS_DIR, 'style.css'), 'utf8'));
     const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports).toEqual(['fonts.css', 'tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'app-shell.css', 'views.css']);
+    expect(imports.filter((name) => !name.startsWith('../vendor/'))).toEqual(['tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'app-shell.css', 'views.css']);
   });
 
   for (const name of ['app-components.css', 'app-chrome.css', 'views.css']) {

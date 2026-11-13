@@ -1,0 +1,33 @@
+/* Spinner: decorative sm and default md rings, paired with a status line. */
+.spinner {
+  display: inline-block;
+  inline-size: var(--space-5);
+  block-size: var(--space-5);
+  flex-shrink: 0;
+  vertical-align: middle;
+  border: var(--border-width-strong) solid var(--color-text-muted);
+  border-block-start-color: var(--color-primary);
+  border-radius: var(--radius-round);
+  animation: spinner-turn var(--duration-spin) linear infinite;
+}
+
+.spinner--sm {
+  inline-size: var(--space-4);
+  block-size: var(--space-4);
+}
+
+@keyframes spinner-turn {
+  to { transform: rotate(1turn); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
+@media (forced-colors: active) {
+  .spinner {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    border-block-start-color: Highlight;
+  }
+}

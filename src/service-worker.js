@@ -11,10 +11,11 @@
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
  * a navigation to `/admin` reaches the server and never falls back to the app shell.
  * Bump VERSION with every change to a precached file, and keep PRECACHE complete:
- * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing.
+ * tests/unit/precache.test.js fails when a file under src/, outside src/demo/, is missing;
+ * of the vendored design system, it requires exactly the files that css/style.css loads.
  */
 
-const VERSION = '2026-11-10.8';
+const VERSION = '2026-11-13.1';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -24,14 +25,12 @@ const PRECACHE = [
   'index.html',
   'manifest.webmanifest',
   'css/style.css',
-  'css/fonts.css',
   'css/tokens.css',
   'css/controls.css',
   'css/app-components.css',
   'css/app-chrome.css',
   'css/app-shell.css',
   'css/views.css',
-  'fonts/InterVariable.woff2',
   'img/icons.svg',
   'img/app-icon.svg',
   'img/app-icon-192.png',
@@ -95,6 +94,11 @@ const PRECACHE = [
   'js/views/task-editor.js',
   'js/views/task-list.js',
   'js/views/view-controls.js',
+  'vendor/design/css/base.css',
+  'vendor/design/looks/neutral/primitives.css',
+  'vendor/design/looks/neutral/fonts.css',
+  'vendor/design/looks/neutral/look.css',
+  'vendor/design/looks/neutral/fonts/InterVariable.woff2',
   'js/version.js',
 ];
 

@@ -1,0 +1,412 @@
+/*
+ * App shell (ADR-0004): the page grid of the top bar, navigation, banners, main area, action bar, side panel, and overlay layer.
+ * Every area is optional except the main area; the grid drops the tracks of absent areas through :has().
+ * Narrow layout below 64rem: one column; the sidebar hides, the bottom bar shows, and the side panel opens as a full-window sheet.
+ * Wide layout from 64rem: sidebar, main column, and side panel side by side; the bottom bar hides.
+ * Custom properties do not work in media queries, so 64rem is a documented constant.
+ * Scroll modes: `app--scroll-main`, the default without a modifier, scrolls the main area between fixed bars;
+ *   `app--scroll-page` scrolls the document with sticky bars.
+ * Width options: `app--width-reading`, `app--width-narrow`, and `app--width-content` center the main column at that width token.
+ * This is the only package stylesheet that sets fixed or sticky positions; bars pad themselves with the safe-area insets.
+ */
+
+.app {
+  --_app-bar-size: calc(var(--target-min) + var(--space-3));
+  --_app-sidebar-track: 0px;
+  --_app-panel-track: 0px;
+  --_app-action-offset: 0px;
+  --_app-nav-offset: 0px;
+  --_app-width: 100%;
+  display: grid;
+  grid-template-areas:
+    'top'
+    'banners'
+    'main'
+    'action'
+    'bottom';
+  grid-template-columns: minmax(0, 1fr);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* The main scroll mode applies with `app--scroll-main` or with no scroll modifier at all. */
+.app:not(.app--scroll-page) {
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  block-size: 100dvh;
+  overflow: hidden;
+}
+
+.app--scroll-page {
+  grid-template-rows: auto auto 1fr auto auto;
+  min-block-size: 100dvh;
+}
+
+.app--width-reading { --_app-width: var(--width-reading); }
+.app--width-narrow { --_app-width: var(--width-narrow); }
+.app--width-content { --_app-width: var(--width-content); }
+
+.app:has(> .app__sidebar) { --_app-sidebar-track: var(--width-sidebar); }
+.app:has(> .app__side-panel:not([hidden])) { --_app-panel-track: var(--width-side-panel); }
+.app:has(> .app__action-bar) { --_app-action-offset: var(--_app-bar-size); }
+.app:has(> .app__bottom-nav) { --_app-nav-offset: calc(var(--_app-bar-size) + env(safe-area-inset-bottom)); }
+
+/* Skip link: off screen above the top edge until focused, keeping its full target size. */
+.skip-link {
+  position: absolute;
+  inset-block-start: calc(var(--space-2) + env(safe-area-inset-top));
+  inset-inline-start: var(--space-2);
+  z-index: var(--layer-toast);
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-4);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface);
+  color: var(--color-link);
+  font-weight: var(--weight-medium);
+  translate: 0 calc(-100% - var(--space-4) - env(safe-area-inset-top));
+}
+
+.skip-link:focus {
+  translate: none;
+}
+
+/* Top bar: title or brand, a menu button or breadcrumb, and account actions. */
+.app__top-bar {
+  display: flex;
+  grid-area: top;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: calc(var(--_app-bar-size) + env(safe-area-inset-top));
+  padding-block-start: env(safe-area-inset-top);
+  padding-inline: max(var(--space-4), env(safe-area-inset-left)) max(var(--space-2), env(safe-area-inset-right));
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.app__title {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app__brand {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-block-size: var(--target-min);
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.app__menu-button {
+  flex: none;
+}
+
+.app__breadcrumb {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+}
+
+.app__breadcrumb ol {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.app__breadcrumb li {
+  display: flex;
+  align-items: center;
+}
+
+.app__breadcrumb li + li::before {
+  padding-inline: var(--space-1);
+  color: var(--color-text-muted);
+  content: '/';
+}
+
+.app__breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--target-min);
+  min-inline-size: var(--target-min);
+  padding-inline: var(--space-1);
+  color: var(--color-link);
+}
+
+.app__breadcrumb a[aria-current='page'] {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.app__top-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+}
+
+/* Navigation: a sidebar on wide screens and a bottom bar on narrow screens, with the same list and item parts. */
+.app__nav-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app__nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-3);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.app__nav-item .icon {
+  color: var(--color-text-muted);
+}
+
+.app__nav-item:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.app__nav-item[aria-current='page'] {
+  background-color: var(--color-surface-selected);
+  font-weight: var(--weight-semibold);
+}
+
+.app__nav-item[aria-current='page'] .icon {
+  color: var(--color-primary);
+}
+
+.app__sidebar {
+  display: none;
+}
+
+.app__bottom-nav {
+  grid-area: bottom;
+  padding-block-end: env(safe-area-inset-bottom);
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.app__bottom-nav .app__nav-list {
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+
+.app__bottom-nav .app__nav-item {
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  min-block-size: var(--_app-bar-size);
+  padding-inline: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-tight);
+}
+
+.app__bottom-nav .app__nav-item[aria-current='page'] {
+  background-color: transparent;
+  box-shadow: inset 0 var(--border-width-strong) 0 var(--color-primary);
+}
+
+/* Banners: system and status banners above the content; the area takes no room while every banner is hidden. */
+.app__banners {
+  display: grid;
+  grid-area: banners;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  padding-inline: max(var(--gutter), (100% - var(--_app-width)) / 2);
+}
+
+.app__banners:not(:has(> :not([hidden]))) {
+  display: none;
+}
+
+/* Main: the content, centered at the width option's token. */
+.app__main {
+  grid-area: main;
+  min-inline-size: 0;
+  padding-block: var(--space-4);
+  padding-inline: max(var(--gutter), (100% - var(--_app-width)) / 2);
+}
+
+.app__main:focus {
+  outline: none;
+}
+
+.app:not(.app--scroll-page) > .app__main {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Action bar: the main actions of the current screen, or a footer, at the bottom in both scroll modes. */
+.app__action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  grid-area: action;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--_app-bar-size);
+  padding-block: var(--space-1) calc(var(--space-1) + env(safe-area-inset-bottom));
+  padding-inline: max(var(--gutter), (100% - var(--_app-width)) / 2, env(safe-area-inset-left)) max(var(--gutter), (100% - var(--_app-width)) / 2, env(safe-area-inset-right));
+  border-block-start: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.app:has(> .app__bottom-nav) > .app__action-bar {
+  padding-block-end: var(--space-1);
+}
+
+/* Side panel: a full-window sheet in the narrow layout. */
+.app__side-panel:not([hidden]) {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-float);
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: var(--color-surface);
+}
+
+/* Overlay layer: no box of its own; its parts position themselves above the bars. */
+.app__overlays {
+  display: contents;
+}
+
+/* The one floating action stays above the shell's bottom bars and phone safe areas. */
+.app__overlays > .fab {
+  position: fixed;
+  z-index: var(--layer-float);
+  inset-inline-end: max(var(--space-4), env(safe-area-inset-right));
+  inset-block-end: calc(var(--space-4) + var(--_app-action-offset) + var(--_app-nav-offset) + env(safe-area-inset-bottom));
+}
+
+/* Content can scroll clear of the control in either scroll mode. */
+.app:has(> .app__overlays > .fab:not([hidden])) > .app__main {
+  padding-block-end: calc(var(--target-min) + var(--space-3) + var(--space-7));
+}
+
+.toast-region {
+  position: fixed;
+  inset-inline: var(--space-4);
+  inset-block-end: var(--space-4);
+  z-index: var(--layer-toast);
+}
+
+.app .toast-region {
+  inset-block-end: calc(var(--space-4) + var(--_app-action-offset) + var(--_app-nav-offset) + env(safe-area-inset-bottom));
+}
+
+/* Sticky bars of the page scroll mode. */
+.app--scroll-page > .app__top-bar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--layer-sticky);
+}
+
+.app--scroll-page > .app__action-bar {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: var(--layer-sticky);
+}
+
+.app--scroll-page:has(> .app__bottom-nav) > .app__action-bar {
+  inset-block-end: var(--_app-nav-offset);
+}
+
+.app--scroll-page > .app__bottom-nav {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: var(--layer-sticky);
+}
+
+@media (width >= 64rem) {
+  .app:has(> .app__bottom-nav) {
+    --_app-nav-offset: 0px;
+  }
+
+  .app {
+    grid-template-areas:
+      'sidebar top     panel'
+      'sidebar banners panel'
+      'sidebar main    panel'
+      'sidebar action  panel';
+    grid-template-columns: var(--_app-sidebar-track) minmax(0, 1fr) var(--_app-panel-track);
+  }
+
+  .app:not(.app--scroll-page) {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .app--scroll-page {
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .app:has(> .app__bottom-nav) > .app__action-bar {
+    padding-block-end: calc(var(--space-1) + env(safe-area-inset-bottom));
+  }
+
+  .app__bottom-nav {
+    display: none;
+  }
+
+  .app__sidebar {
+    display: flex;
+    flex-direction: column;
+    grid-area: sidebar;
+    gap: var(--space-2);
+    padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+    padding-inline: max(var(--space-2), env(safe-area-inset-left)) var(--space-2);
+    overflow-y: auto;
+    border-inline-end: var(--border-width) solid var(--color-border);
+    background-color: var(--color-surface);
+  }
+
+  .app__sidebar .app__nav-list {
+    gap: var(--space-1);
+  }
+
+  .app__sidebar .app__nav-item {
+    border-radius: var(--radius-control);
+  }
+
+  .app__side-panel:not([hidden]) {
+    position: static;
+    grid-area: panel;
+    z-index: auto;
+    padding-inline-start: 0;
+    border-inline-start: var(--border-width) solid var(--color-border);
+  }
+
+  /* In the page scroll mode, the side columns stay in view at the full viewport height while the document scrolls. */
+  .app--scroll-page > :is(.app__sidebar, .app__side-panel:not([hidden])) {
+    position: sticky;
+    inset-block-start: 0;
+    align-self: start;
+    block-size: 100dvh;
+  }
+}

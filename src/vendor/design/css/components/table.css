@@ -1,0 +1,47 @@
+/* Native data tables: captions, scoped headers, numeric cells, and contained scrolling. */
+.table__scroll {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.table__caption {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-align: start;
+}
+
+.table :is(th, td) {
+  block-size: var(--control-height);
+  padding: var(--space-3) var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table th {
+  font-weight: var(--weight-semibold);
+}
+
+/* Dense data rows reduce padding; nested controls keep their own touch targets. */
+.table--dense :is(th, td) {
+  block-size: auto;
+  padding: var(--space-1) var(--space-2);
+}
+
+.table thead {
+  background-color: var(--color-surface-sunken);
+}
+
+.table .table__numeric {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

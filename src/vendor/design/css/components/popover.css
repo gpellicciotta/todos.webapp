@@ -1,0 +1,33 @@
+/*
+ * Popover: an anchored panel at --elevation-1 with a title, content such as filter checkboxes, and actions.
+ * The working panel carries the `popover` attribute, so it opens in the top layer above every z-index.
+ */
+.popover {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: var(--width-menu);
+  max-inline-size: min(100%, var(--width-side-panel));
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--elevation-1);
+}
+
+/* The display rule would otherwise show closed popovers, and panels that still set `hidden`. */
+.popover:is([hidden], [popover]:not(:popover-open)) {
+  display: none;
+}
+
+.popover__title {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.popover__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

@@ -1,0 +1,18 @@
+/* Tooltip: supplementary text; interactive content belongs in a popover or dialog. */
+.tooltip {
+  max-inline-size: min(var(--width-menu), calc(100vw - var(--space-4)));
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+  box-shadow: var(--elevation-1);
+  z-index: var(--layer-popover);
+}
+
+.tooltip:is([hidden], [popover]:not(:popover-open)) {
+  display: none;
+}

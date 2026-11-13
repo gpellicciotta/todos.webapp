@@ -1,0 +1,54 @@
+/* Native collections and term/value pairs; action rows compose the row base. */
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text);
+}
+
+.list__item {
+  min-block-size: var(--control-height);
+  padding: var(--space-1);
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+
+/* Ordered collections retain visible sequence markers. */
+ol.list {
+  padding-inline-start: var(--space-6);
+  list-style: decimal;
+}
+
+.list--definitions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--space-1);
+  background-color: var(--color-surface);
+}
+
+.list__term {
+  padding-block-start: var(--space-2);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.list__value {
+  margin: 0;
+  padding-block-end: var(--space-2);
+  border-block-end: var(--border-width) solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 36rem) {
+  .list--definitions {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    column-gap: var(--space-4);
+  }
+
+  .list__term,
+  .list__value {
+    padding-block: var(--space-2);
+    border-block-end: var(--border-width) solid var(--color-border);
+  }
+}

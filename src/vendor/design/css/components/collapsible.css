@@ -1,0 +1,56 @@
+/*
+ * Collapsible: a full-width toggle row with `aria-expanded` and `aria-controls`, and the panel it shows.
+ * The chevron turns while expanded; the panel carries `hidden`, or `hidden="until-found"` to stay findable.
+ */
+.collapsible {
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.collapsible__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-control);
+  background-color: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  text-align: start;
+  cursor: pointer;
+}
+
+.collapsible__toggle:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.collapsible__toggle:is(:active, .is-active) {
+  background-color: var(--color-surface-active);
+}
+
+/* The ring hugs the row, which spans its container. */
+.collapsible__toggle:is(:focus-visible, .is-focus) {
+  outline-offset: 0;
+}
+
+.collapsible__icon {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  transition: rotate var(--duration-fast) var(--ease-standard);
+}
+
+.collapsible__toggle[aria-expanded='true'] .collapsible__icon {
+  rotate: 180deg;
+}
+
+.collapsible__panel {
+  padding: var(--space-2) var(--space-2) var(--space-3);
+}
+
+/* A panel hidden until found keeps its box for find in page, so it drops the padding until it opens. */
+.collapsible__panel[hidden] {
+  padding: 0;
+}

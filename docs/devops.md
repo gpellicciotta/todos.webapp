@@ -145,6 +145,30 @@ npm run check:sw
 
 `--update` refuses to write while `VERSION` is unchanged, so the bump cannot be skipped.
 
+### Vendored Design System
+The styles build on [support.webapp](../../support.webapp/README.md), copied into [src/vendor/design/](../src/vendor/design/) by its `vendor` command.
+[design.json](../design.json) pins the version and the `neutral` look, and lists `src/css` for the conformance check.
+[.gitattributes](../.gitattributes) keeps the vendored bytes exact, so the manifest hashes match on every platform.
+Never edit the copy by hand; the check fails on any changed, missing, or extra file:
+
+```bash
+node src/vendor/design/bin/check.mjs
+```
+
+It also scans `src/css` for raw colors outside token files and for private package tokens.
+It warns on deprecated tokens, and on fixed or sticky positions outside the shell.
+
+To move to another release, run `vendor` from the app root, then update the service worker precache:
+
+```bash
+npx @gpellicciotta/support.webapp@{{version}} vendor --look neutral --to src/vendor/design
+```
+
+The registry route needs a GitHub Packages token in `.npmrc`.
+A checkout of support.webapp at the release tag runs the same command as `node {{checkout}}/bin/cli.mjs vendor` without one.
+Export it with LF line endings, such as `git -c core.autocrlf=false archive v{{version}}`.
+A CRLF checkout vendors different bytes than the release, and the check cannot tell, since `vendor` hashes what it copies.
+
 ### Service Worker Install Validation
 The server answers an unknown path with the start page and status 200, so a missing file looks like a good one.
 Install stores an entry only when the answer is OK, and, except for `./` and `index.html`, not `text/html`.
@@ -182,7 +206,7 @@ node scripts/render-app-icons.mjs
 ## Deployment
 [pages.yml](../.github/workflows/pages.yml) tests the app, then publishes [src](../src/) to GitHub Pages.
 It runs on every push to `main`, and by hand from the Actions tab.
-- The test job runs `npm ci`, `npm run check:sw`, `npm test`, `npm run lint`, and `npm run test:e2e`.
+- The test job runs `npm ci`, `npm run check:sw`, the vendored design check, `npm test`, `npm run lint`, and `npm run test:e2e`.
 - The deploy job runs only after the test job passes, in the `github-pages` environment.
 - It uploads `src/` unchanged, since the app has no build step.
 - Only one deployment runs at a time; a newer run waits for the current one.
@@ -210,7 +234,7 @@ python scripts/devops.py release 0.2.0 --backend-dir ../todos             # the 
 1. Preconditions: on `main`, a clean tree, not behind `origin/main` or `origin/plan`, and the tag `v0.2.0` free locally and on `origin`.
    The changelog must start with one `-pre` heading, the version must exceed the last release,
    and every file the release rewrites must hold the text to replace.
-2. Checks: the service worker check, `npm test`, `npm run lint`, `npm run test:e2e`, Ruff, and pytest.
+2. Checks: the service worker check, the vendored design check, `npm test`, `npm run lint`, `npm run test:e2e`, Ruff, and pytest.
    A dry run runs them too; `--skip-checks` skips them.
 3. The plan: the files, the local commits and tag, commits that the push publishes with them, and the exact publish commands.
    A dry run stops here.

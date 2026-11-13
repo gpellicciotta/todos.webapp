@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.4.1-pre
+- FrontEnd: Vendored support.webapp 0.1.0 with its neutral look, and took every design token from it under its contract names, with no visible change.
+- DevOps: Ran the vendored design check in CI and in `devops.py check`, so an edited copy or a private token in the app styles fails the build.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

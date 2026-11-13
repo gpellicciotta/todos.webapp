@@ -1,0 +1,903 @@
+{
+  "themes": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "tokens": [
+    {
+      "name": "--space-1",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-2",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-3",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-4",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-5",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-6",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-7",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-8",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-9",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-10",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-11",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--space-12",
+      "category": "Space",
+      "group": "space",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--target-min",
+      "category": "Sizes",
+      "group": "target",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--width-main",
+      "category": "Widths",
+      "group": "width",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--width-sidebar",
+      "category": "Widths",
+      "group": "width",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--width-side-panel",
+      "category": "Widths",
+      "group": "width",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--width-menu",
+      "category": "Widths",
+      "group": "width",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--layer-base",
+      "category": "Layers",
+      "group": "layer",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--layer-sticky",
+      "category": "Layers",
+      "group": "layer",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--layer-float",
+      "category": "Layers",
+      "group": "layer",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--layer-popover",
+      "category": "Layers",
+      "group": "layer",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--layer-dialog",
+      "category": "Layers",
+      "group": "layer",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--layer-toast",
+      "category": "Layers",
+      "group": "layer",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--duration-fast",
+      "category": "Motion",
+      "group": "duration",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--duration-base",
+      "category": "Motion",
+      "group": "duration",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--duration-spin",
+      "category": "Motion",
+      "group": "duration",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--ease-standard",
+      "category": "Motion",
+      "group": "ease",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--width-content",
+      "category": "Widths",
+      "group": "width",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--width-narrow",
+      "category": "Widths",
+      "group": "width",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--width-reading",
+      "category": "Widths",
+      "group": "width",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--gutter",
+      "category": "Widths",
+      "group": "gutter",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--offset-press",
+      "category": "Motion",
+      "group": "offset",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--offset-lift",
+      "category": "Motion",
+      "group": "offset",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--color-bg",
+      "category": "Grounds",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-surface",
+      "category": "Grounds",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-surface-sunken",
+      "category": "Grounds",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-surface-hover",
+      "category": "Grounds",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-surface-selected",
+      "category": "Grounds",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-surface-active",
+      "category": "Grounds",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-text",
+      "category": "Text",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-text-muted",
+      "category": "Text",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-text-disabled",
+      "category": "Text",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-border",
+      "category": "Lines and focus",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-border-strong",
+      "category": "Lines and focus",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-primary",
+      "category": "Main action",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-primary-hover",
+      "category": "Main action",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-primary-active",
+      "category": "Main action",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-on-primary",
+      "category": "Main action",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-link",
+      "category": "Text",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-focus",
+      "category": "Lines and focus",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-danger",
+      "category": "Danger",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-danger-hover",
+      "category": "Danger",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-danger-active",
+      "category": "Danger",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-on-danger",
+      "category": "Danger",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-shadow",
+      "category": "Overlay",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-shadow-soft",
+      "category": "Overlay",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-shadow-strong",
+      "category": "Overlay",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-backdrop",
+      "category": "Overlay",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--font-body",
+      "category": "Fonts",
+      "group": "font",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--font-mono",
+      "category": "Fonts",
+      "group": "font",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-xs",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-sm",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-base",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-lg",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-xl",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--leading-tight",
+      "category": "Type",
+      "group": "leading",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--leading-normal",
+      "category": "Type",
+      "group": "leading",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--weight-regular",
+      "category": "Fonts",
+      "group": "weight",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--weight-medium",
+      "category": "Fonts",
+      "group": "weight",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--weight-semibold",
+      "category": "Fonts",
+      "group": "weight",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--radius-round",
+      "category": "Radius roles",
+      "group": "radius",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--border-width",
+      "category": "Lines",
+      "group": "border",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--border-width-strong",
+      "category": "Lines",
+      "group": "border",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--focus-ring-width",
+      "category": "Lines",
+      "group": "focus-ring",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--focus-ring-offset",
+      "category": "Lines",
+      "group": "focus-ring",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--focus-ring-offset-inset",
+      "category": "Lines",
+      "group": "focus-ring",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--icon-md",
+      "category": "Sizes",
+      "group": "icon",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--icon-stroke",
+      "category": "Sizes",
+      "group": "icon",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--icon-lg",
+      "category": "Sizes",
+      "group": "icon",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--elevation-1",
+      "category": "Elevation",
+      "group": "elevation",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--elevation-2",
+      "category": "Elevation",
+      "group": "elevation",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--font-heading",
+      "category": "Fonts",
+      "group": "font",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-link-hover",
+      "category": "Text",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-danger-bg",
+      "category": "Danger",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-success",
+      "category": "Success and warning",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-success-bg",
+      "category": "Success and warning",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-on-success",
+      "category": "Success and warning",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-warning",
+      "category": "Success and warning",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-warning-bg",
+      "category": "Success and warning",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-on-warning",
+      "category": "Success and warning",
+      "group": "color",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-md",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-2xl",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--text-3xl",
+      "category": "Type",
+      "group": "text",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--leading-relaxed",
+      "category": "Type",
+      "group": "leading",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--tracking-normal",
+      "category": "Type",
+      "group": "tracking",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--tracking-tight",
+      "category": "Type",
+      "group": "tracking",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--weight-bold",
+      "category": "Fonts",
+      "group": "weight",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--radius-control",
+      "category": "Radius roles",
+      "group": "radius",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--radius-button",
+      "category": "Radius roles",
+      "group": "radius",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--radius-chip",
+      "category": "Radius roles",
+      "group": "radius",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--radius-card",
+      "category": "Radius roles",
+      "group": "radius",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--radius-dialog",
+      "category": "Radius roles",
+      "group": "radius",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--control-height",
+      "category": "Sizes",
+      "group": "control",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--icon-sm",
+      "category": "Sizes",
+      "group": "icon",
+      "owner": "look",
+      "required": true
+    },
+    {
+      "name": "--color-accent",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-accent-bg",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-inverse",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-tone-1",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-on-tone-1",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-tone-2",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-on-tone-2",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-tone-3",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-on-tone-3",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-tone-4",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-on-tone-4",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--focus-ring",
+      "category": "Lines",
+      "group": "focus-ring",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--icon-stroke-thin",
+      "category": "Sizes",
+      "group": "icon",
+      "owner": "look",
+      "required": false
+    },
+    {
+      "name": "--color-status-in-progress",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false,
+      "status": true,
+      "distinctFrom": {
+        "name": "--color-primary",
+        "minimumDistance": 60
+      }
+    },
+    {
+      "name": "--color-status-completed",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false,
+      "status": true
+    },
+    {
+      "name": "--color-status-cancelled",
+      "category": "Optional per look",
+      "group": "color",
+      "owner": "look",
+      "required": false,
+      "status": true
+    }
+  ],
+  "icons": [
+    "icon-close",
+    "icon-more",
+    "icon-check",
+    "icon-alert",
+    "icon-help",
+    "icon-chevron-down"
+  ],
+  "components": [
+    "button",
+    "icon-button",
+    "link-button",
+    "fab",
+    "field",
+    "checkbox",
+    "radio",
+    "switch",
+    "chip",
+    "segmented",
+    "badge",
+    "form",
+    "error-summary",
+    "field-group",
+    "selection",
+    "card",
+    "icon-tile",
+    "row",
+    "empty-state",
+    "collapsible",
+    "list",
+    "table",
+    "tabs",
+    "toast",
+    "banner",
+    "loading",
+    "progress",
+    "spinner",
+    "dialog",
+    "inline-confirm",
+    "menu",
+    "popover",
+    "tooltip",
+    "avatar",
+    "account-menu",
+    "icon",
+    "theme-switch"
+  ]
+}

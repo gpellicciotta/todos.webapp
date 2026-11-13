@@ -1,13 +1,18 @@
 /*
  * The stylesheet entry point: the only stylesheet a page links.
  *
- * It imports the font faces, the design tokens, the controls, the app components, the app chrome,
- * the app shell, and the screen layouts,
- * then sets page-wide base styles.
- * Rules here use semantic tokens only; raw values belong in tokens.css.
+ * It imports the design tokens of the vendored support.webapp design system: the shared base, then the
+ * neutral look's palette, font faces, and semantic roles. These four files are private to the package;
+ * the public looks/neutral/index.css would also load the package components, which replace the app's own
+ * in a later step. Then come the app-local tokens, the controls, the app components, the app chrome,
+ * the app shell, and the screen layouts, and finally page-wide base styles.
+ * Rules here use semantic tokens only; raw values belong in the vendored look or in tokens.css.
  */
 
-@import url('fonts.css');
+@import url('../vendor/design/css/base.css');
+@import url('../vendor/design/looks/neutral/primitives.css');
+@import url('../vendor/design/looks/neutral/fonts.css');
+@import url('../vendor/design/looks/neutral/look.css');
 @import url('tokens.css');
 @import url('controls.css');
 @import url('app-components.css');
@@ -78,7 +83,7 @@ kbd {
   display: inline-block;
   padding-inline: var(--space-1);
   border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-chip);
   background-color: var(--color-surface-sunken);
   color: var(--color-text);
   font-family: var(--font-mono);

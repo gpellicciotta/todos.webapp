@@ -1,0 +1,39 @@
+/*
+ * Checkbox: a native input inside its label, in the primary accent color.
+ * The label row is the 44 px touch target; groups use a field group, a fieldset with a legend.
+ * States: checked, indeterminate (the input's property), disabled, and invalid (aria-invalid="true").
+ * Focus draws the global ring on the input itself.
+ */
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.checkbox:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.checkbox__control {
+  flex: none;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: inherit;
+}
+
+.checkbox__control[aria-invalid='true'] {
+  outline: var(--focus-ring-width) solid var(--color-danger);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.checkbox:has(> .checkbox__control:disabled) {
+  background-color: transparent;
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}

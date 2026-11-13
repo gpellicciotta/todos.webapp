@@ -1,0 +1,194 @@
+/*
+ * Field: a label, one control, and optional hint, help toggle, help text, counter, status, and error parts.
+ * Controls: text, search, date, and time inputs, textarea, and select.
+ * The label and the help toggle share the first row; the hint and the counter share the row below the control.
+ * Invalid: the control sets aria-invalid="true", and the error line pairs the alert icon with its text.
+ * Pending: the field sets aria-busy="true", and the status line shows the check in progress.
+ * Valid: the status line shows the check icon and a success message.
+ */
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  min-inline-size: 0;
+}
+
+.field > * {
+  grid-column: 1 / -1;
+}
+
+.field > .field__label {
+  grid-column: 1;
+  font-weight: var(--weight-medium);
+}
+
+/* Visually hidden: the label still names the control for assistive technology. */
+.field__label--hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.field > .field__help-toggle {
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-button);
+  background-color: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.field__help-toggle:is(:hover, .is-hover),
+.field__help-toggle[aria-expanded='true'] {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.field__help {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.field__control {
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  line-height: var(--leading-normal);
+  transition-property: border-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.field__control::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.field__control:is(:hover, .is-hover) {
+  border-color: var(--color-text-muted);
+}
+
+/* Field controls show the ring on any focus, including the picker buttons inside date and time inputs. */
+.field__control:is(:focus-within, .is-focus) {
+  border-color: var(--color-focus);
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+textarea.field__control {
+  min-block-size: calc(var(--target-min) * 2);
+  resize: vertical;
+}
+
+.field__control:disabled {
+  border-color: var(--color-border);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.field__control:read-only:not(:disabled, select) {
+  background-color: var(--color-surface-sunken);
+}
+
+.field__control[aria-invalid='true'] {
+  border-color: var(--color-danger);
+  box-shadow: inset 0 0 0 var(--border-width) var(--color-danger);
+}
+
+/* Danger focus: an invalid control draws the focus ring in the danger color too. */
+.field__control[aria-invalid='true']:is(:focus-within, .is-focus) {
+  outline-color: var(--color-danger);
+}
+
+.field:not([aria-busy='true']):has(> .field__status:not([hidden])) > .field__control:not([aria-invalid='true']) {
+  border-color: var(--color-success);
+}
+
+.field__hint,
+.field__counter,
+.field__status,
+.field__error {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.field__hint,
+.field__counter {
+  color: var(--color-text-muted);
+}
+
+.field > .field__hint {
+  grid-column: 1;
+}
+
+.field > .field__counter {
+  grid-column: 2;
+  justify-self: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.field__status,
+.field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-weight: var(--weight-medium);
+}
+
+.field__status {
+  color: var(--color-success);
+}
+
+.field[aria-busy='true'] > .field__status {
+  color: var(--color-text-muted);
+}
+
+.field__error {
+  color: var(--color-danger);
+}
+
+.field :is(.field__help, .field__status, .field__error)[hidden] {
+  display: none;
+}
+
+.field:has(> .field__control:disabled) > .field__label {
+  color: var(--color-text-disabled);
+}
+
+/* The shared live region that reads field messages aloud; it stays out of view. */
+.field__live {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Forced colors drop the inset shadow, so an invalid control thickens its border instead. */
+@media (forced-colors: active) {
+  .field__control[aria-invalid='true'] {
+    border-width: var(--border-width-strong);
+  }
+}

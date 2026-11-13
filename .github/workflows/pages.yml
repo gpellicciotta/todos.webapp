@@ -44,6 +44,10 @@ jobs:
       - name: Check the service worker VERSION bump
         run: npm run check:sw
 
+      # The vendored support.webapp copy must match its manifest, and the app styles must conform to it.
+      - name: Check the vendored design system
+        run: node src/vendor/design/bin/check.mjs
+
       - name: Run the unit tests
         run: npm test
 

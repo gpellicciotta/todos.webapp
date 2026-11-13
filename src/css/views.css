@@ -79,7 +79,7 @@
 }
 
 .add-bar__field:has(.add-bar__counter:not([hidden])) .field__control {
-  padding-inline-end: calc(var(--space-8) + var(--space-8));
+  padding-inline-end: calc(var(--space-9) + var(--space-9));
 }
 
 /* A first launch centers its empty state in the view. */
@@ -109,7 +109,7 @@
 /* The editor panel keeps its full width beside the rows; compact layouts fill the slot, as a full screen. */
 @media (width >= 64rem) {
   .app__editor > .editor-panel {
-    inline-size: var(--width-editor);
+    inline-size: var(--width-side-panel);
   }
 }
 
@@ -170,7 +170,7 @@
 }
 
 .view-options__row:hover {
-  background-color: var(--color-hover-bg);
+  background-color: var(--color-surface-hover);
 }
 
 .view-options__value {
@@ -244,7 +244,7 @@
 }
 
 .combo-box__list > [aria-selected='true'] {
-  background-color: var(--color-hover-bg);
+  background-color: var(--color-surface-hover);
 }
 
 /*
@@ -369,7 +369,7 @@
   gap: var(--space-3);
   padding: var(--space-4);
   border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-dialog);
   background-color: var(--color-surface);
 }
 
@@ -530,7 +530,7 @@
 .import-dialog__summary {
   padding: var(--space-3) var(--space-4);
   border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background-color: var(--color-surface-sunken);
 }
 
@@ -555,7 +555,7 @@
   margin-inline-end: var(--space-3);
   padding: var(--space-1) var(--space-3);
   border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-chip);
   background-color: var(--color-surface);
   color: var(--color-text);
   font: inherit;
@@ -565,7 +565,7 @@
 /* The hint sits under its option's label text, close to the label row. */
 .import-dialog__mode-hint {
   margin-block-start: calc(0px - var(--space-2));
-  padding-inline-start: calc(var(--space-1) + var(--icon-size) + var(--space-3));
+  padding-inline-start: calc(var(--space-1) + var(--icon-md) + var(--space-3));
 }
 
 .import-dialog [hidden] {
@@ -604,13 +604,13 @@
 }
 
 .list-item:hover {
-  background-color: var(--color-hover-bg);
+  background-color: var(--color-surface-hover);
 }
 
 .list-item[data-dragging='true'] {
   z-index: var(--layer-sticky);
   border-block-end-color: transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   box-shadow: var(--elevation-2);
   cursor: grabbing;
 }
@@ -620,8 +620,8 @@
   inset-inline: 0;
   z-index: var(--layer-sticky);
   block-size: var(--border-width-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-signal);
+  border-radius: var(--radius-chip);
+  background-color: var(--color-primary);
   content: '';
   pointer-events: none;
 }
@@ -816,7 +816,7 @@
   padding: var(--space-3) var(--space-4);
   border: var(--border-width) solid var(--color-border);
   border-inline-start-width: var(--border-width-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-dialog);
   background-color: var(--color-surface);
   overflow-wrap: anywhere;
 }

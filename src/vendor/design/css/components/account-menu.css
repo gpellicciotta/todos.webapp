@@ -1,0 +1,61 @@
+/*
+ * Account menu: the round account button at the end of the top bar, holding an `.avatar--sm` face.
+ * Its panel is a `.menu` with a name line, links, and actions; the item of the current route
+ * carries aria-current="page" and takes the selected ground and a heavier weight.
+ */
+.account-menu {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.account-menu__button {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--target-min);
+  block-size: var(--target-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-round);
+  background-color: transparent;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.account-menu__button:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.account-menu__button:is(:active, .is-active, [aria-expanded='true']) {
+  background-color: var(--color-surface-active);
+}
+
+.account-menu__name {
+  margin: 0 0 var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+/* Route links share the item look of menu buttons. */
+.account-menu__panel a[role='menuitem'] {
+  text-decoration: none;
+}
+
+.account-menu__panel [aria-current='page'] {
+  background-color: var(--color-surface-selected);
+  font-weight: var(--weight-semibold);
+}
+
+.account-menu__panel [aria-current='page']:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+/* Forced colors drop the ground, so a leading rule marks the current route. */
+@media (forced-colors: active) {
+  .account-menu__panel [aria-current='page'] {
+    border-inline-start: var(--border-width-strong) solid;
+  }
+}

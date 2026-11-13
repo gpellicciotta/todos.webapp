@@ -1,0 +1,8 @@
+{
+  "version": "0.1.0",
+  "look": "neutral",
+  "target": "src/vendor/design",
+  "styles": [
+    "src/css"
+  ]
+}

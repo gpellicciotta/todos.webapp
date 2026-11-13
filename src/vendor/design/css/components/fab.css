@@ -1,0 +1,40 @@
+/* Floating action button: one primary action per screen; shell.css owns its overlay placement.
+ * States: default, hover, active, focus-visible, disabled, and hidden. */
+.fab {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: calc(var(--target-min) + var(--space-3));
+  block-size: calc(var(--target-min) + var(--space-3));
+  padding: 0;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-round);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--elevation-2);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition-property: background-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.fab:is(:hover, .is-hover) {
+  background-color: var(--color-primary-hover);
+}
+
+.fab:is(:active, .is-active) {
+  background-color: var(--color-primary-active);
+}
+
+.fab:disabled {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-disabled);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.fab[hidden] {
+  display: none;
+}

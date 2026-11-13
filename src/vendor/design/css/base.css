@@ -1,0 +1,48 @@
+/* Shared space, motion, layers, layout, and theme selection. */
+:root {
+  color-scheme: light dark;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 2.5rem;
+  --space-9: 3rem;
+  --space-10: 3.5rem;
+  --space-11: 4rem;
+  --space-12: 4.5rem;
+  --target-min: 2.75rem;
+  --width-main: 45rem;
+  --width-sidebar: 16rem;
+  --width-side-panel: 25rem;
+  --width-menu: 12rem;
+  --layer-base: 0;
+  --layer-sticky: 10;
+  --layer-float: 20;
+  --layer-popover: 100;
+  --layer-dialog: 200;
+  --layer-toast: 300;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-spin: 1200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --width-content: 75rem;
+  --width-narrow: 55rem;
+  --width-reading: 47.5rem;
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --offset-press: 1px;
+  --offset-lift: -2px;
+}
+
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-spin: 0ms;
+  }
+}
