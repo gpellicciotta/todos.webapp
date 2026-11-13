@@ -17,12 +17,11 @@ size_approved: 20 files, 1100 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-13T10:27:52Z"
 usage:
-  worker: {turns: 4, duration_s: 6441.0, input: 292, output: 66166, cache_read: 49580436, cache_write: 165894}
+  worker: {turns: 6, duration_s: 8472.8, input: 448, output: 111910, cache_read: 80670232, cache_write: 252250}
   review: {turns: 2, duration_s: 1659.6, input: 795430, output: 75094, cache_read: 8565960}
 work_duration: 4124.9
-review_status: rejected
-review_round: 1
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
 ---
 # T0233: Replace the app's shared components with the vendored ones and import the public neutral look entry point.
 
@@ -132,4 +131,7 @@ Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007
   - Files touched: 45.
   - Lines touched: 1464.
   - Reopenings: 0.
+
+- [2026-11-13] **[Review]**
+  Round 2 requested (mode: agent).
 
