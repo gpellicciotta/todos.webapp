@@ -1,11 +1,11 @@
 ---
 id: T0232
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0232-give-the-two-gallery-focus-ring-tab-through
+worktree: .plan/work/T0232-give-the-two-gallery-focus-ring-tab-through
+status: active
+started_at: "2026-11-13T14:22:10Z"
 ended_at: —
 review: agent
 preview: none

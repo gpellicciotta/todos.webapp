@@ -10,7 +10,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0236 [needs: T0224] Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable.
 - [ ] T0235 [needs: T0224] Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history.
 - [ ] T0234 [needs: T0224] Show event actions, done and target counts, and lifecycle rule editing in the web app task views.
-- [ ] T0232 Give the two gallery focus ring tab-through tests a longer timeout, since full parallel runs can exceed 30 seconds.
+- [~] T0232 [owner: @claude] Give the two gallery focus ring tab-through tests a longer timeout, since full parallel runs can exceed 30 seconds.
 - [ ] T0229 Parse due dates, times, and list tags typed in the add field into the new task.
 - [ ] T0228 Add a rapid entry mode where adding keeps focus in the field and skips the task editor.
 - [ ] T0227 [needs: T0226] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
