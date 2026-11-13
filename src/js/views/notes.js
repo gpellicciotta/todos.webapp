@@ -9,8 +9,8 @@
  */
 
 import { TEXT_MAX } from '../store/notes.js';
-import { attachMenu } from '../ui/menu.js';
-import { createField } from './editor-panel.js';
+import { attachMenu } from '../../vendor/design/js/menu.js';
+import { createEditorField } from './editor-panel.js';
 import { spriteIcon } from './task-list.js';
 
 /** Thread strings, for the strings module of TEC-13 to absorb. */
@@ -71,7 +71,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
   element.className = 'note-thread';
   const add = doc.createElement('div');
   add.className = 'note-thread__add';
-  const field = createField(doc, { label: STRINGS.add, name: 'new-note', tag: 'textarea' });
+  const field = createEditorField(doc, { label: STRINGS.add, name: 'new-note', tag: 'textarea' });
   field.control.placeholder = STRINGS.placeholder;
   field.control.value = drafts.get(taskId) ?? '';
   field.control.addEventListener('input', () => drafts.set(taskId, field.control.value));
@@ -141,7 +141,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
    * @param {object} note the note
    */
   function renderEdit(item, note) {
-    const edit = createField(doc, { label: STRINGS.editLabel, name: 'edit-note', tag: 'textarea', hideLabel: true });
+    const edit = createEditorField(doc, { label: STRINGS.editLabel, name: 'edit-note', tag: 'textarea', hideLabel: true });
     edit.control.value = editing.draft;
     edit.control.dataset.role = 'edit';
     edit.control.addEventListener('input', () => {

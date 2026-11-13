@@ -179,14 +179,14 @@ A device that already cached HTML heals only when its new worker activates, afte
 
 ### Service Worker Updates
 A new worker precaches its files, then waits; it does not call `skipWaiting()` on install (`TEC-19`).
-The page shows a lasting Update toast, "A new version is ready", through [sw-update.js](../src/js/ui/sw-update.js).
+The page shows a lasting Update toast, "A new version is ready", through the vendored [sw-update.js](../src/vendor/design/js/sw-update.js).
 - Update posts `{type: 'skip-waiting'}` to the waiting worker, which calls `skipWaiting()`.
   The page reloads once, when `controllerchange` fires after that click.
 - The worker's `activate` handler deletes the previous cache, then claims every open page.
 - An ignored toast leaves the app fully usable on the old version; the old worker and its cache keep serving.
 - Dismissing the toast hides it until the next start; the waiting worker stays.
 - The first install has no waiting worker and no toast: the page already runs the new files.
-- Another tab that sees `controllerchange` without an Update click shows the reload banner.
+- Another tab that sees `controllerchange` without an Update click shows a lasting Reload toast.
 - Benefit: no open page mixes old modules with new files, so a store migration can rely on one version per tab.
 - Database upgrades: a tab closes its connection on `versionchange` and shows the reload banner.
   An upgrade that an old tab blocks fails with "Close other tabs of ToDo's to finish the update."

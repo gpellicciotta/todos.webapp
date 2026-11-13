@@ -222,7 +222,7 @@
   color: var(--color-text-muted);
 }
 
-.task-editor__fields:disabled :is(.combo-box, .editor-panel__row > .button, .chip--removable .icon-button) {
+.task-editor__fields:disabled :is(.combo-box, .editor-panel__row > .button, .chip--removable .chip__remove) {
   display: none;
 }
 
@@ -241,6 +241,8 @@
 
 .combo-box__list {
   position: absolute;
+  /* The package menu opens in the top layer; this in-flow list keeps the popover layer the app gave every menu. */
+  z-index: var(--layer-popover);
   inset-block-start: 100%;
   inset-inline: 0;
   margin: 0;

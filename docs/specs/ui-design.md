@@ -106,7 +106,8 @@ One DOM holds both layouts; [views.css](../../src/css/views.css) centers the vie
   A skip link opens the page; it focuses the main column without changing the route.
 - The action bar holds the add block of the task views; it joins the page only while a view puts content in it.
 - The overlay layer holds the toast region and the floating New list button.
-- The top bar holds the route title and the user button, preceded by the inbox bell while connected; it has no More menu.
+- The top bar holds the route title and the account button, with no More menu.
+  The inbox bell precedes the account button while connected.
 - The wide layout shows the title above the main column, with the user button at its right end.
 - The sync indicator sits beside the user button, before the inbox bell; see Sync Indicator below.
 - A session banner above the view offers Sign in while the session expired.
@@ -140,16 +141,20 @@ One DOM holds both layouts; [views.css](../../src/css/views.css) centers the vie
 ### User Menu
 Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
 
-- A circular user button ends the top bar in both layouts; it is at least 44 px wide.
+- **[Decided]** The user menu is the vendored account menu of support.webapp, a menu button with a `.menu` panel.
+- A circular account button ends the top bar in both layouts; it is at least 44 px wide.
 - Local mode: the button shows a person icon, hovering shows "Local User", and so does its accessible name.
-- Connected: the button shows the account's initials, such as JD, and hovering shows the account name, or the email without one.
-- Click or Enter opens a panel under the button, its end edge lined up with the button's.
-- Escape, an outside click, or choosing a link closes the panel.
-- The panel shows the user name, the connection state, then Recycle bin and Settings as buttons with icons.
-- The state reads "Local only", "Connected", or "Sign in needed" (`CON-13`); the link of the current route is marked.
-- Expired session: the panel says Sign in needed; the Sign in button sits in the session banner (see Sync Indicator).
+- Connected: the button shows the account's initials in an avatar, such as JD.
+  Hovering shows the account name, or the email without one.
+- Click, Enter, Space, or ArrowDown open the menu at its first item.
+  The menu hangs under the button, its end edge lined up with the button's.
+- ArrowUp and ArrowDown move between the items; Escape, an outside click, Tab, or choosing an item closes the menu.
+- The menu shows the user name, then three items with icons: the connection state, Recycle bin, and Settings.
+- The state item reads "Local only", "Connected", or "Sign in needed" (`CON-13`) and opens Connect.
+  The item of the current route is marked.
+- Expired session: the menu says Sign in needed; the Sign in button sits in the session banner (see Sync Indicator).
 - Local mode has no Sign in text on the page (`LOC-1`); Connect stays reachable from Settings and the empty states.
-- The panel reads the session each time it opens and when the session changes.
+- The menu reads the session each time it opens and when the session changes.
 
 ### Inbox
 - Connected only: a bell icon button sits before the user button, at least 44 px wide, named "Inbox" (`NTF-1`, `NTF-2`).

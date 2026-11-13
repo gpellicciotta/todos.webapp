@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, posix, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -20,12 +20,34 @@ function scripts(folder) {
   });
 }
 
+/**
+ * Follow the module imports of the app scripts into the vendored design system.
+ * @param {string[]} entries app scripts, as web paths relative to src/
+ * @returns {string[]} the vendored modules they load, directly or through each other
+ */
+function vendoredModules(entries) {
+  const seen = new Set();
+  const visit = (path) => {
+    if (seen.has(path)) {
+      return;
+    }
+    seen.add(path);
+    const source = readFileSync(join(ROOT, path), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const match of source.matchAll(/^\s*(?:import|export)\b[^'"]*from\s+'([^']+)'/gm)) {
+      visit(posix.normalize(posix.join(posix.dirname(path), match[1])));
+    }
+  };
+  entries.forEach(visit);
+  return [...seen].filter((path) => path.startsWith('vendor/'));
+}
+
 describe('start page module preload (TEC-16)', () => {
   const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
   const preloaded = [...html.matchAll(/<link rel="modulepreload" href="([^"]+)">/g)].map((match) => match[1]);
 
-  it('preloads every module of the app, so the browser fetches the import tree in one round', () => {
-    const modules = scripts(join(ROOT, 'js')).sort();
+  it('preloads every module of the app and the vendored modules it loads, so the browser fetches the import tree in one round', () => {
+    const own = scripts(join(ROOT, 'js'));
+    const modules = [...own, ...vendoredModules(own)].sort();
     expect(modules.filter((path) => !preloaded.includes(path))).toEqual([]);
     expect(preloaded.filter((path) => !modules.includes(path))).toEqual([]);
     expect(new Set(preloaded).size).toBe(preloaded.length);

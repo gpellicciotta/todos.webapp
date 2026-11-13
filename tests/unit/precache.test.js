@@ -8,7 +8,7 @@ const ROOT = fileURLToPath(new URL('../../src/', import.meta.url));
 const SOURCE = readFileSync(join(ROOT, 'service-worker.js'), 'utf8');
 
 // Files under src/ that the app never loads: the gallery and the worker itself.
-// The vendored design system counts only where style.css loads it, through loadedVendorFiles().
+// The vendored design system counts only where the app loads it: style.css and the app modules, through loadedVendorFiles().
 const NOT_PRECACHED = [/^demo\//, /^service-worker\.js$/, /^vendor\//];
 
 /**
@@ -33,7 +33,8 @@ function precacheList() {
 }
 
 /**
- * Follow `@import` and `url()` references from css/style.css to the vendored files the app loads.
+ * Follow the references from css/style.css and the app modules to the vendored files the app loads:
+ * CSS `@import` and `url()`, module imports, and page-relative `vendor/` paths in app code, such as the look sprite.
  * @returns {string[]} web paths relative to src/, under vendor/
  */
 function loadedVendorFiles() {
@@ -43,15 +44,19 @@ function loadedVendorFiles() {
       return;
     }
     seen.add(path);
-    if (!path.endsWith('.css')) {
-      return;
-    }
-    const css = readFileSync(join(ROOT, path), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const match of css.matchAll(/url\(\s*['"]?([^'")]+)['"]?\s*\)/g)) {
+    const text = /\.(css|js)$/.test(path) ? readFileSync(join(ROOT, path), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '') : '';
+    const pattern = path.endsWith('.css') ? /url\(\s*['"]?([^'")]+)['"]?\s*\)/g : /^\s*(?:import|export)\b[^'"]*from\s+'([^']+)'/gm;
+    for (const match of text.matchAll(pattern)) {
       visit(posix.normalize(posix.join(posix.dirname(path), match[1])));
+    }
+    if (path.endsWith('.js') && !path.startsWith('vendor/')) {
+      for (const match of text.matchAll(/'(vendor\/design\/[^']+)'/g)) {
+        visit(match[1]);
+      }
     }
   };
   visit('css/style.css');
+  walk(join(ROOT, 'js')).forEach(visit);
   return [...seen].filter((path) => path.startsWith('vendor/')).sort();
 }
 

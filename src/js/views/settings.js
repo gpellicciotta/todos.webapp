@@ -14,7 +14,7 @@
 import { backupFileName, exportBackup } from '../core/backup.js';
 import { DEFAULT_SERVER_URL, parseServerUrl, readServerUrl, readTheme, writeServerUrl, writeTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
-import { confirmDialog } from '../ui/dialog.js';
+import { confirmDialog } from '../../vendor/design/js/dialog.js';
 import { applyTheme } from '../ui/layout.js';
 import { BUILD_DATE, VERSION } from '../version.js';
 import { openImportDialog, plural } from './import-dialog.js';

@@ -251,8 +251,6 @@
           <div class="specimen"><dt><code>--width-main</code> <span data-token="--width-main"></span></dt><dd><span class="width-bar width--main"></span></dd></div>
           <div class="specimen"><dt><code>--width-menu</code> <span data-token="--width-menu"></span>, the narrowest menu or popover</dt><dd><span class="width-bar width--menu"></span></dd></div>
           <div class="specimen"><dt><code>--width-text-min</code> <span data-token="--width-text-min"></span>, the narrowest banner text before its action wraps</dt><dd><span class="width-bar width--text-min"></span></dd></div>
-          <div class="specimen"><dt><code>--width-segment-min</code> <span data-token="--width-segment-min"></span>, the narrowest segmented option</dt><dd><span class="width-bar width--segment-min"></span></dd></div>
-          <div class="specimen"><dt><code>--height-textarea-min</code> <span data-token="--height-textarea-min"></span>, the lowest textarea</dt><dd><span class="size-box size--textarea"></span></dd></div>
           <div class="specimen"><dt><code>--border-width</code> <span data-token="--border-width"></span></dt><dd><span class="size-box size--border"></span></dd></div>
           <div class="specimen"><dt><code>--border-width-strong</code> <span data-token="--border-width-strong"></span>, the leading edge of error banners</dt><dd><span class="size-box size--border-strong"></span></dd></div>
           <div class="specimen"><dt><code>--focus-ring</code> <span data-token="--focus-ring-width"></span> wide, <span data-token="--focus-ring-offset"></span> gap, <span data-token="--focus-ring-offset-inset"></span> inside bars</dt><dd><span class="size-box size--focus"></span></dd></div>
@@ -411,10 +409,8 @@
           <div class="field">
             <label class="field__label" for="field-textarea">Note</label>
             <textarea class="field__control" id="field-textarea" aria-describedby="field-textarea-counter">Ask the neighbors to water the plants while we are away.</textarea>
-            <div class="field__meta">
-              <p class="field__hint">Notes keep their line breaks.</p>
-              <p class="field__counter" id="field-textarea-counter">56 / 500</p>
-            </div>
+            <p class="field__hint">Notes keep their line breaks.</p>
+            <p class="field__counter" id="field-textarea-counter">56 / 500</p>
           </div>
           <div class="field">
             <label class="field__label" for="field-search">Search</label>
@@ -477,12 +473,16 @@
           <li class="state"><span class="chip">+1</span><span class="state__label">More lists</span></li>
           <li class="state"><span class="chip"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h14v11l-5 5H5z"/></svg>3 notes</span><span class="state__label">Notes</span></li>
           <li class="state">
-            <span class="chip chip--removable">Groceries<button class="icon-button" type="button" aria-label="Remove from Groceries"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+            <span class="chip chip--removable">Groceries<button class="chip__remove" type="button" aria-label="Remove from Groceries"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
             <span class="state__label">Removable</span>
           </li>
           <li class="state">
-            <span class="chip chip--removable">Errands<button class="icon-button is-focus" type="button" aria-label="Remove from Errands"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+            <span class="chip chip--removable">Errands<button class="chip__remove is-focus" type="button" aria-label="Remove from Errands"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
             <span class="state__label">Removable, focus-visible</span>
+          </li>
+          <li class="state">
+            <span class="chip chip--removable">Shared<button class="chip__remove" type="button" aria-label="Remove from Shared" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+            <span class="state__label">Removable, disabled for a viewer</span>
           </li>
         </ul>
       </section>
@@ -509,7 +509,7 @@
         <p>In the first group, In progress shows hover and Cancelled shows focus-visible.</p>
         <div class="field-grid field-grid--wide">
           <fieldset class="segmented">
-            <legend>Status</legend>
+            <legend class="segmented__legend">Status</legend>
             <div class="segmented__options">
               <label class="segmented__option"><input type="radio" name="status" value="todo"> To do</label>
               <label class="segmented__option is-hover"><input type="radio" name="status" value="in-progress"> In progress</label>
@@ -518,7 +518,7 @@
             </div>
           </fieldset>
           <fieldset class="segmented">
-            <legend>Status, read-only</legend>
+            <legend class="segmented__legend">Status, read-only</legend>
             <div class="segmented__options">
               <label class="segmented__option"><input type="radio" name="status-disabled" value="todo" disabled> To do</label>
               <label class="segmented__option"><input type="radio" name="status-disabled" value="in-progress" checked disabled> In progress</label>
@@ -1049,44 +1049,33 @@
 
       <section class="gallery-section" id="user-menu" aria-labelledby="user-menu-title" data-gallery-group="app">
         <h2 id="user-menu-title">User menu</h2>
-        <p>The circular user button ends the top bar. Its title and accessible name are the user name; its popover holds the account, Recycle bin, and Settings.</p>
+        <p>The vendored account menu ends the top bar. Its round button's title and accessible name are the user name; its menu holds the account, Recycle bin, and Settings.</p>
 
         <h3>States</h3>
-        <p>Local mode shows a person icon; a connected account shows its initials in the signal color. An expired session keeps the quiet look.</p>
+        <p>Local mode shows the person icon in an avatar; a signed-in account shows its initials.</p>
         <ul class="states">
-          <li class="state"><button class="user-button" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Local mode, <code>local</code></span></li>
-          <li class="state"><button class="user-button" type="button" data-state="connected" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button><span class="state__label">Connected, <code>connected</code></span></li>
-          <li class="state"><button class="user-button" type="button" data-state="sign-in-needed" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button><span class="state__label">Session expired, <code>sign-in-needed</code></span></li>
-          <li class="state"><button class="user-button is-hover" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Hover</span></li>
-          <li class="state"><button class="user-button is-hover" type="button" data-state="connected" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button><span class="state__label">Connected, hover</span></li>
-          <li class="state"><button class="user-button is-active" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Active</span></li>
-          <li class="state"><button class="user-button is-focus" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Focus-visible</span></li>
-          <li class="state"><button class="user-button" type="button" data-state="local" title="Local User" aria-label="Local User" aria-expanded="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#user"/></svg></button><span class="state__label">Panel open</span></li>
+          <li class="state"><div class="account-menu"><button class="account-menu__button" type="button" title="Local User" aria-label="Local User" aria-expanded="false"><span class="avatar avatar--sm" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-user"/></svg></span></button></div><span class="state__label">Local mode, person icon</span></li>
+          <li class="state"><div class="account-menu"><button class="account-menu__button" type="button" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false"><span class="avatar avatar--sm avatar--initials" aria-hidden="true">JD</span></button></div><span class="state__label">Signed in, initials</span></li>
+          <li class="state"><div class="account-menu"><button class="account-menu__button is-hover" type="button" title="Local User" aria-label="Local User" aria-expanded="false"><span class="avatar avatar--sm" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-user"/></svg></span></button></div><span class="state__label">Hover</span></li>
+          <li class="state"><div class="account-menu"><button class="account-menu__button is-active" type="button" title="Local User" aria-label="Local User" aria-expanded="false"><span class="avatar avatar--sm" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-user"/></svg></span></button></div><span class="state__label">Active</span></li>
+          <li class="state"><div class="account-menu"><button class="account-menu__button is-focus" type="button" title="Local User" aria-label="Local User" aria-expanded="false"><span class="avatar avatar--sm" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-user"/></svg></span></button></div><span class="state__label">Focus</span></li>
+          <li class="state"><div class="account-menu"><button class="account-menu__button" type="button" title="Local User" aria-label="Local User" aria-expanded="true"><span class="avatar avatar--sm" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-user"/></svg></span></button></div><span class="state__label">Open, <code>aria-expanded="true"</code></span></li>
         </ul>
 
-        <h3>Sign in needed</h3>
-        <p>An expired session adds a Sign in button before the user button; it opens the connect screen.</p>
-        <div class="stage stage--compact">
-          <div class="user-menu">
-            <a class="button button--secondary user-menu__sign-in" href="#user-menu">Sign in</a>
-            <button class="user-button" type="button" data-state="sign-in-needed" title="Jane Doe" aria-label="Jane Doe" aria-expanded="false">JD</button>
-          </div>
-        </div>
-
-        <h3>Panel</h3>
-        <p>The name, the connection state, and the two destinations. The current destination takes <code>aria-current</code>; Settings shows hover.</p>
+        <h3>Menu</h3>
+        <p>The name line, then the connection state, Recycle bin, and Settings. The current destination takes <code>aria-current</code>.</p>
         <div class="stage">
-          <div class="popover user-panel" role="group" aria-label="Account, local mode">
-            <p class="user-panel__name">Local User</p>
-            <p class="user-panel__status">Local only</p>
-            <a class="button button--secondary user-panel__link" href="#user-menu" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Recycle bin</a>
-            <a class="button button--secondary user-panel__link is-hover" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#settings"/></svg>Settings</a>
+          <div class="menu account-menu__panel" role="menu" aria-label="Account, local mode">
+            <p class="account-menu__name" aria-hidden="true">Local User</p>
+            <a class="menu__item" role="menuitem" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-sync-local"/></svg>Local only</a>
+            <a class="menu__item" role="menuitem" href="#user-menu" aria-current="page"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-bin"/></svg>Recycle bin</a>
+            <a class="menu__item" role="menuitem" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-settings"/></svg>Settings</a>
           </div>
-          <div class="popover user-panel" role="group" aria-label="Account, connected">
-            <p class="user-panel__name">Jane Doe</p>
-            <p class="user-panel__status">Connected</p>
-            <a class="button button--secondary user-panel__link" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Recycle bin</a>
-            <a class="button button--secondary user-panel__link" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#settings"/></svg>Settings</a>
+          <div class="menu account-menu__panel" role="menu" aria-label="Account, connected">
+            <p class="account-menu__name" aria-hidden="true">Jane Doe</p>
+            <a class="menu__item" role="menuitem" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-sync-synced"/></svg>Connected</a>
+            <a class="menu__item" role="menuitem" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-bin"/></svg>Recycle bin</a>
+            <a class="menu__item" role="menuitem" href="#user-menu"><svg class="icon" aria-hidden="true" focusable="false"><use href="../vendor/design/looks/neutral/icons.svg#icon-settings"/></svg>Settings</a>
           </div>
         </div>
       </section>
@@ -1429,7 +1418,7 @@
               </div>
               <div class="editor-panel__section">
                 <fieldset class="segmented">
-                  <legend>Status</legend>
+                  <legend class="segmented__legend">Status</legend>
                   <div class="segmented__options">
                     <label class="segmented__option"><input type="radio" name="pattern-status" value="todo" checked><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg>To do</label>
                     <label class="segmented__option"><input type="radio" name="pattern-status" value="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>In progress</label>
@@ -1460,8 +1449,8 @@
               <div class="editor-panel__section">
                 <h4 class="editor-panel__section-title">Lists</h4>
                 <ul class="chip-list">
-                  <li><span class="chip chip--removable">Home<button class="icon-button" type="button" aria-label="Remove from Home"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button></span></li>
-                  <li><span class="chip chip--removable">Errands<button class="icon-button" type="button" aria-label="Remove from Errands"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button></span></li>
+                  <li><span class="chip chip--removable">Home<button class="chip__remove" type="button" aria-label="Remove from Home"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button></span></li>
+                  <li><span class="chip chip--removable">Errands<button class="chip__remove" type="button" aria-label="Remove from Errands"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button></span></li>
                   <li><button class="button button--quiet" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg>Add to list</button></li>
                 </ul>
               </div>

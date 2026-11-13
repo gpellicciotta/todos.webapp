@@ -15,7 +15,7 @@
 import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-order.js';
 import { isSharedList } from '../core/permissions.js';
 import { clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
-import { attachMenu } from '../ui/menu.js';
+import { attachMenu } from '../../vendor/design/js/menu.js';
 import { formatRoute } from '../ui/router.js';
 import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
 import { createTaskList, make, spriteIcon } from './task-list.js';

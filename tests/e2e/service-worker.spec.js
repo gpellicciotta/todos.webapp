@@ -92,7 +92,7 @@ test('a new version waits for Update, keeps the page on version A, then runs ver
   }
 });
 
-test('a second tab open during the update shows the reload banner', async ({ page, context }) => {
+test('a second tab open during the update shows a lasting Reload toast', async ({ page, context }) => {
   const versions = await serveVersions();
   try {
     await openControlled(page, versions.url);
@@ -104,8 +104,9 @@ test('a second tab open during the update shows the reload banner', async ({ pag
     await page.getByRole('button', { name: 'Update' }).click();
     await expect.poll(() => build(page)).toBe('build-b');
 
-    await expect(other.locator('.banner__text', { hasText: "ToDo's was updated in another tab. Reload to continue." })).toBeVisible();
-    await expect(other.getByRole('button', { name: 'Reload' })).toBeVisible();
+    // The vendored update module offers the reload in its own lasting toast.
+    await expect(other.locator('.toast', { hasText: 'A new version is ready' })).toBeVisible();
+    await expect(other.locator('.toast').getByRole('button', { name: 'Reload' })).toBeVisible();
   }
   finally {
     await versions.close();

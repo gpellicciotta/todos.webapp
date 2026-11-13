@@ -24,7 +24,7 @@ import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { attachSyncIndicator } from '../views/sync-indicator.js';
 import { attachInbox } from './inbox.js';
-import { createLiveRegion } from './live-region.js';
+import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachUserMenu } from './user-menu.js';
 
 const ICONS = 'img/icons.svg';
@@ -227,7 +227,7 @@ export function renderShell(root, { session = createSession() } = {}) {
     }
     if (writeListOrder(next)) {
       [...listNav.querySelectorAll('[data-nav]')].find((candidate) => candidate.dataset.nav === `list:${id}`)?.focus();
-      announcer ??= createLiveRegion({ document: doc, parent: root });
+      announcer ??= createLiveRegion({ document: doc });
       announcer.announce(movedMessage(ordered.find((list) => list.id === id).name, next.indexOf(id) + 1, next.length));
     }
   }
@@ -348,7 +348,7 @@ export function renderShell(root, { session = createSession() } = {}) {
         banner.append(button);
       }
       notice.replaceChildren(banner);
-      announcer ??= createLiveRegion({ document: doc, parent: root });
+      announcer ??= createLiveRegion({ document: doc });
       announcer.announce(message);
     },
 
@@ -360,7 +360,7 @@ export function renderShell(root, { session = createSession() } = {}) {
      * @returns {{destroy: () => void}} the inbox view
      */
     showInbox({ inbox, toaster }) {
-      announcer ??= createLiveRegion({ document: doc, parent: root });
+      announcer ??= createLiveRegion({ document: doc });
       return attachInbox(menuSlot, { inbox, session, banners: broadcasts, toaster, announce: (message) => announcer.announce(message) });
     },
 
@@ -374,7 +374,7 @@ export function renderShell(root, { session = createSession() } = {}) {
      * @returns {{destroy: () => void}} the indicator
      */
     showSync({ engine, readLog, seen, checkForUpdate }) {
-      announcer ??= createLiveRegion({ document: doc, parent: root });
+      announcer ??= createLiveRegion({ document: doc });
       return attachSyncIndicator(menuSlot, {
         engine, session, readLog, seen, checkForUpdate, banners: sessionBanner, announce: (message) => announcer.announce(message),
       });

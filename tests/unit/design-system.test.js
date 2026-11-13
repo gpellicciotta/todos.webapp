@@ -59,6 +59,39 @@ function uses(names) {
   return found;
 }
 
+const CONTRACT = JSON.parse(readFileSync(join(VENDOR, 'contract.json'), 'utf8'));
+// Public entry points of ADR-0005: the stylesheets, the look sprite, a module per component key, and the utility modules.
+// The package style guide also tells apps to import sw-update.js, the service worker update pattern.
+const PUBLIC = new Set([
+  'css/style.css',
+  'looks/neutral/index.css',
+  'looks/neutral/icons.svg',
+  ...CONTRACT.components.map((key) => `js/${key}.js`),
+  ...['focus', 'anchor', 'live-region', 'i18n', 'sw-update'].map((name) => `js/${name}.js`),
+]);
+
+/**
+ * Read the imports of style.css, without its comments.
+ * @returns {string[]} the imported URLs in order
+ */
+function styleImports() {
+  const style = readFileSync(join(SRC, 'css', 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  return [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
+}
+
+/**
+ * Find every reference from an app file into the vendored package, outside comments.
+ * The service worker precaches every file that style.css loads, private ones too, so precache.test.js covers it.
+ * @returns {{file: string, target: string}[]} the referring file and the package path it names
+ */
+function vendorReferences() {
+  return appFiles().filter((path) => path !== join(SRC, 'service-worker.js')).flatMap((path) => {
+    const text = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    return [...text.matchAll(/vendor\/design\/([\w./-]+?\.(?:js|css|svg))/g)]
+      .map((match) => ({ file: relative(ROOT, path).split(sep).join('/'), target: match[1] }));
+  });
+}
+
 describe('the vendored design system', () => {
   it('is pinned by design.json to release 0.1.0 with the neutral look', () => {
     const pin = JSON.parse(readFileSync(join(ROOT, 'design.json'), 'utf8'));
@@ -73,27 +106,29 @@ describe('the vendored design system', () => {
     expect(result.conformance.warnings).toEqual([]);
   });
 
-  it('lays out the app with the vendored shell.css, imported after the look and before the app stylesheets', () => {
-    const style = readFileSync(join(SRC, 'css', 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports[4]).toBe('../vendor/design/css/shell.css');
+  it('loads the package through the public neutral look entry point, before the app stylesheets', () => {
+    expect(styleImports()).toEqual(['../vendor/design/looks/neutral/index.css', 'tokens.css', 'app-components.css', 'app-chrome.css', 'views.css']);
     expect(existsSync(join(SRC, 'css', 'app-shell.css'))).toBe(false);
+    expect(existsSync(join(SRC, 'css', 'controls.css'))).toBe(false);
+  });
+
+  it('keeps no app copy of a vendored module', () => {
+    const copies = ['dialog', 'menu', 'popover', 'toast', 'live-region', 'sw-update'].filter((name) => existsSync(join(SRC, 'js', 'ui', `${name}.js`)));
+    expect(copies).toEqual([]);
+    expect(readFileSync(join(SRC, 'js', 'views', 'editor-panel.js'), 'utf8')).not.toMatch(/export function createField/);
+  });
+
+  it('references only the public entry points of the vendored package from app files', () => {
+    expect(vendorReferences().filter((reference) => !PUBLIC.has(reference.target))).toEqual([]);
+  });
+
+  it('points the vendored icons at the look sprite once, at startup', () => {
+    expect(readFileSync(join(SRC, 'js', 'app.js'), 'utf8')).toMatch(/setSpriteUrl\('vendor\/design\/looks\/neutral\/icons\.svg'\)/);
   });
 
   it('keeps the vendored bytes exact across platform checkouts', () => {
     const attributes = existsSync(join(ROOT, '.gitattributes')) ? readFileSync(join(ROOT, '.gitattributes'), 'utf8') : '';
     expect(attributes).toMatch(/^src\/vendor\/\*\* -text$/m);
-  });
-
-  it('provides the tokens: style.css loads the vendored base and neutral look before the app stylesheets', () => {
-    const style = readFileSync(join(SRC, 'css', 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports.slice(0, 4)).toEqual([
-      '../vendor/design/css/base.css',
-      '../vendor/design/looks/neutral/primitives.css',
-      '../vendor/design/looks/neutral/fonts.css',
-      '../vendor/design/looks/neutral/look.css',
-    ]);
   });
 });
 

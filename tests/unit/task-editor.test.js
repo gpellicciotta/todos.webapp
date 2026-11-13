@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEditorPanel } from '../../src/js/views/editor-panel.js';
+import { resetBody } from './dom-reset.js';
 import { mountTaskEditor } from '../../src/js/views/task-editor.js';
 
 const TASK = {
@@ -71,7 +72,7 @@ describe('createEditorPanel', () => {
   const route = (editor) => ({ name: editor ? 'task' : 'tasks', view: 'tasks', editor, params: editor ? { taskId: 't1' } : {} });
 
   beforeEach(() => {
-    document.body.innerHTML = '<main tabindex="-1"><a href="#/tasks/t1">Buy paint</a></main><div data-editor-slot hidden></div>';
+    resetBody('<main tabindex="-1"><a href="#/tasks/t1">Buy paint</a></main><div data-editor-slot hidden></div>');
     opener = document.querySelector('a');
   });
 
@@ -121,7 +122,7 @@ describe('mountTaskEditor', () => {
   let toaster;
 
   beforeEach(async () => {
-    document.body.innerHTML = '<div data-editor-slot hidden></div>';
+    resetBody('<div data-editor-slot hidden></div>');
     store = fakeStore();
     close = vi.fn();
     toaster = { show: vi.fn() };
@@ -145,6 +146,26 @@ describe('mountTaskEditor', () => {
     expect(description.value).toBe('Buy paint');
     expect(document.activeElement).toBe(description);
     expect([...document.querySelectorAll('button')].some((button) => /save/i.test(button.textContent))).toBe(false);
+  });
+
+  it('builds its fields from the vendored field.js skeleton, with the error icon from the look sprite', () => {
+    const fields = [...document.querySelectorAll('.task-editor__fields .field')];
+    expect(fields.length).toBeGreaterThan(0);
+    for (const field of fields.filter((element) => element.querySelector(':scope > .field__control'))) {
+      expect(field.hasAttribute('data-field')).toBe(true);
+      expect(field.querySelector(':scope > .field__status')).not.toBeNull();
+    }
+    const combo = document.querySelector('input[name="add-to-list"]');
+    expect(document.querySelector(`label[for="${combo.id}"]`).classList.contains('field__label--hidden')).toBe(true);
+    const description = document.querySelector('textarea[name="description"]');
+    change(description, '');
+    expect(description.closest('.field').querySelector('.field__error use').getAttribute('href')).toBe('vendor/design/looks/neutral/icons.svg#icon-alert');
+  });
+
+  it('marks every visible segmented legend with the package .segmented__legend class', () => {
+    const legends = [...document.querySelectorAll('.task-editor__fields .segmented > legend')];
+    expect(legends.length).toBeGreaterThan(0);
+    expect(legends.filter((legend) => !legend.classList.contains('segmented__legend')).map((legend) => legend.textContent)).toEqual([]);
   });
 
   it('shows a field error for an empty or too long description and saves nothing (TSK-1)', () => {
@@ -341,8 +362,8 @@ describe('mountTaskEditor first focus after an add', () => {
   }
 
   beforeEach(() => {
-    document.body.innerHTML = `<main><a href="#/tasks/t1">Buy paint</a>
-      <input data-shortcut="add search" aria-label="Search or add a task"></main><div data-editor-slot hidden></div>`;
+    resetBody(`<main><a href="#/tasks/t1">Buy paint</a>
+      <input data-shortcut="add search" aria-label="Search or add a task"></main><div data-editor-slot hidden></div>`);
     field = document.querySelector('input');
     link = document.querySelector('a');
   });
@@ -380,7 +401,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
    * @returns {Promise<void>}
    */
   async function open(role, extra = {}) {
-    document.body.innerHTML = '<div data-editor-slot hidden></div>';
+    resetBody('<div data-editor-slot hidden></div>');
     const store = fakeStore();
     store.getTask = vi.fn(async () => ({ ...TASK, 'owner-id': 9, ...extra }));
     store.listLists = vi.fn(async () => [
@@ -405,6 +426,14 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
 
   afterEach(() => {
     panel.destroy();
+  });
+
+  it('builds each list chip from the package skeleton, with a .chip__remove button', async () => {
+    await open('editor');
+    const button = document.querySelector('.chip--removable > button');
+    expect(button.classList.contains('chip__remove')).toBe(true);
+    expect(button.classList.contains('icon-button')).toBe(false);
+    expect(button.getAttribute('aria-label')).toBe('Remove from Home');
   });
 
   it('shows a viewer every field read-only under a banner naming the list owner', async () => {

@@ -13,7 +13,7 @@
  */
 
 import { importBackup, parseBackup, previewImport } from '../core/backup.js';
-import { openDialog } from '../ui/dialog.js';
+import { openDialog } from '../../vendor/design/js/dialog.js';
 import { make, spriteIcon } from './task-list.js';
 
 /** Dialog strings, for the strings module of TEC-13 to absorb. */

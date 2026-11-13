@@ -1,13 +1,191 @@
 /*
- * App components of the ToDo's design system: the task list, task row, status button, and status menu.
+ * App components of the ToDo's design system: the task list, task row, status button, and status menu,
+ * after the few controls that the vendored support.webapp package does not provide.
  *
- * Every block uses semantic tokens from tokens.css only, on top of the controls in controls.css.
- * Icons come from the sprite in src/img/icons.svg, drawn with the `.icon` class from controls.css.
+ * Every block uses semantic tokens only, on top of the package components that looks/neutral/index.css loads.
+ * Icons come from the sprite in src/img/icons.svg, drawn with the package `.icon` class.
  * Gallery-only state classes force a state on a static specimen:
  * `.is-hover`, `.is-active`, and `.is-focus`. App markup never uses them.
  * App states use attributes the app sets: `data-status`, `data-dragging`, `data-drop`,
  * `data-readonly`, and `aria-current`.
  */
+
+/*
+ * Overdue chip: the signal color, as ui-design.md defines it (`OVD-2`), not the package's danger tone.
+ */
+.chip--overdue {
+  color: var(--color-primary);
+}
+
+/*
+ * Disabled chip remove button, such as for a viewer of a shared list: the package defines no disabled state.
+ * It stays quiet, without the hover and active grounds or the pointer cursor.
+ */
+.chip__remove:disabled {
+  background-color: transparent;
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+/*
+ * Checkbox and radio choices: a native input inside its label, in the signal accent color.
+ * The label row is the touch target; groups use a fieldset with a legend.
+ */
+.choice-group {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group legend {
+  margin-block-end: var(--space-1);
+  padding: 0;
+  font-weight: var(--weight-medium);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.choice:hover,
+.choice.is-hover {
+  background-color: var(--color-surface-hover);
+}
+
+.choice input {
+  flex: none;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: inherit;
+}
+
+.choice:has(:disabled) {
+  background-color: transparent;
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+/*
+ * Filter chip: a button that opens a filter popover, so it carries aria-expanded and never aria-pressed.
+ * Active chips set data-active="true" and show their value, such as "Status: open".
+ */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: var(--target-min);
+  padding-inline: var(--space-3) var(--space-2);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-chip);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition-property: background-color, border-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.filter-chip:hover,
+.filter-chip.is-hover {
+  background-color: var(--color-surface-hover);
+}
+
+.filter-chip:active,
+.filter-chip.is-active {
+  background-color: var(--color-surface-active);
+}
+
+.filter-chip[data-active='true'] {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 var(--border-width) var(--color-primary);
+  background-color: var(--color-surface-selected);
+}
+
+.filter-chip[data-active='true']:hover,
+.filter-chip[data-active='true'].is-hover {
+  background-color: var(--color-surface-hover);
+}
+
+.filter-chip[data-active='true']:active,
+.filter-chip[data-active='true'].is-active {
+  background-color: var(--color-surface-active);
+}
+
+.filter-chip__value {
+  font-weight: var(--weight-semibold);
+}
+
+.filter-chip:disabled {
+  border-color: var(--color-border);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+/*
+ * In-view dialog: a dialog that fills its container instead of floating over the page.
+ * The compact import uses it, so it sits between the bars like an editor: no scrim, radius, or shadow,
+ * and a header with a rule below, as the editor panel has. The app shell places it in the main column.
+ */
+.dialog--in-view {
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: auto;
+  max-block-size: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.dialog--in-view .dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-block-size: calc(var(--target-min) + var(--space-3));
+  padding-block: 0;
+  padding-inline: var(--space-4) var(--space-2);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.dialog--in-view .dialog__body {
+  padding: var(--space-4);
+}
+
+.dialog--in-view .dialog__actions {
+  padding: var(--space-3) var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/*
+ * Error banner: the app's danger banner, with a strong start edge and the alert icon in the danger color.
+ * The `.banner__icon` class keeps the icon muted on other banners.
+ */
+.banner__icon {
+  color: var(--color-text-muted);
+}
+
+.banner--error {
+  border-color: var(--color-danger);
+  border-inline-start-width: var(--border-width-strong);
+}
+
+.banner--error .banner__icon {
+  color: var(--color-danger);
+}
 
 /*
  * Task list: a <ul> of task rows, and the size container the rows respond to.
@@ -236,7 +414,7 @@
   cursor: default;
 }
 
-/* Status menu: the menu from controls.css, with each status icon between the check and the label. */
+/* Status menu: the package menu, with each status icon between the check and the label. */
 .status-menu .menu__item > .icon:not(.menu__check) {
   color: var(--color-text-muted);
 }

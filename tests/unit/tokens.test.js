@@ -345,12 +345,11 @@ describe('stylesheets outside tokens.css', () => {
       .map((name) => join(DEMO_DIR, name)),
   ];
 
-  it('include style.css, controls.css, the app stylesheets, and the gallery stylesheet', () => {
+  it('include style.css, the app stylesheets, and the gallery stylesheet', () => {
     const names = sheets().map((path) => basename(path));
     expect(names).toEqual(
       expect.arrayContaining([
         'style.css',
-        'controls.css',
         'app-components.css',
         'app-chrome.css',
         'visual-style-gallery.css',
@@ -358,10 +357,10 @@ describe('stylesheets outside tokens.css', () => {
     );
   });
 
-  it('are imported by style.css after the vendored tokens: tokens, controls, app components, app chrome, then views', () => {
+  it('are imported by style.css after the vendored entry point: tokens, app components, app chrome, then views', () => {
     const style = stripComments(readFileSync(join(CSS_DIR, 'style.css'), 'utf8'));
     const imports = [...style.matchAll(/@import\s+url\('([^']+)'\)/g)].map((match) => match[1]);
-    expect(imports.filter((name) => !name.startsWith('../vendor/'))).toEqual(['tokens.css', 'controls.css', 'app-components.css', 'app-chrome.css', 'views.css']);
+    expect(imports.filter((name) => !name.startsWith('../vendor/'))).toEqual(['tokens.css', 'app-components.css', 'app-chrome.css', 'views.css']);
   });
 
   for (const name of ['app-components.css', 'app-chrome.css', 'views.css']) {

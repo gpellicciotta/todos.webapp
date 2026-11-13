@@ -3,7 +3,9 @@
  *
  * On start the app purges expired recycle bin entries, then starts the overdue timer,
  * whose first run cancels overdue `cancel` tasks (`OVD-4`, `OVD-5`, `BIN-5`).
- * A new service worker waits for the Update toast (`TEC-19`); a newer version in another tab shows a lasting banner with Reload.
+ * A new service worker waits for the Update toast (`TEC-19`); a worker activated in another tab shows a lasting Reload toast,
+ * and a newer store version in another tab shows a lasting banner with Reload.
+ * The vendored components draw their icons from the look sprite, which the app names once at start.
  * A start-up failure shows an error banner.
  * Moving to another view moves focus to the main column, which the route title labels.
  * Shortcuts, outside text fields: `n` focuses the shell's `[data-shortcut~="add"]` element and `/` its
@@ -13,6 +15,9 @@
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
  */
 
+import { setSpriteUrl } from '../vendor/design/js/icon.js';
+import { watchWorkerUpdates } from '../vendor/design/js/sw-update.js';
+import { createToast } from '../vendor/design/js/toast.js';
 import { countLists } from './core/list-counts.js';
 import { startOverdueTimer } from './core/overdue.js';
 import { openStore } from './store/db.js';
@@ -22,8 +27,6 @@ import { createInbox } from './sync/inbox.js';
 import { createSession } from './sync/session.js';
 import { applyTheme, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
-import { watchWorkerUpdates } from './ui/sw-update.js';
-import { createToaster } from './ui/toast.js';
 import { mountAllTasks } from './views/all-tasks.js';
 import { mountConnect } from './views/connect.js';
 import { createEditorPanel } from './views/editor-panel.js';
@@ -85,11 +88,12 @@ function inTextField(event) {
  */
 async function start() {
   let router;
+  setSpriteUrl('vendor/design/looks/neutral/icons.svg');
   // An Auth return carries its code in the hash; take it out before the router reads the route.
   const session = createSession();
   session.capture(window);
   shell = renderShell(document.getElementById('app'), { session });
-  const toaster = createToaster({ region: shell.toastRegion, undoShortcut: true });
+  const toaster = createToast({ region: shell.toastRegion, undoShortcut: true });
   // The inbox loads only while connected; local mode sends no request (`LOC-3`).
   const inbox = createInbox({ session });
   shell.showInbox({ inbox, toaster });
@@ -97,9 +101,8 @@ async function start() {
   watchWorkerUpdates({
     script: 'service-worker.js',
     toaster,
-    messages: { ready: MESSAGES.updateReady, action: MESSAGES.update },
-    onUpdatedElsewhere: showUpdatedNotice,
-  });
+    messages: { ready: MESSAGES.updateReady, action: MESSAGES.update, reload: MESSAGES.reload },
+  }).catch((error) => console.error('Service worker failed:', error));
   inbox.start();
   let store;
   try {

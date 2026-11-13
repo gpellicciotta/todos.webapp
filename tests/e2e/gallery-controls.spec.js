@@ -199,3 +199,54 @@ test('pressed toggles keep distinct hover and active feedback', async ({ page })
     expect(new Set(backgrounds).size, `${control}: ${backgrounds.join(' / ')}`).toBe(3);
   }
 });
+
+test('visible segmented legends use the package .segmented__legend class and its medium weight', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const legends = page.locator('#segmented-control .segmented > legend, #task-editor .segmented > legend');
+  expect(await legends.count()).toBeGreaterThanOrEqual(3);
+  const styles = await legends.evaluateAll((elements) => elements.map((element) => ({
+    text: element.textContent,
+    marked: element.classList.contains('segmented__legend'),
+    weight: getComputedStyle(element).fontWeight,
+    padding: getComputedStyle(element).paddingLeft,
+  })));
+  for (const style of styles) {
+    expect(style, style.text).toEqual({ text: style.text, marked: true, weight: '500', padding: '0px' });
+  }
+});
+
+test('removable chips use .chip__remove: chip corners, a raised hover ground in light mode, and a quiet disabled state', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const buttons = page.locator('#chip .chip--removable > button, #task-editor .chip--removable > button');
+  expect(await buttons.count()).toBeGreaterThanOrEqual(4);
+  expect(await buttons.evaluateAll((elements) => elements.filter((element) => !element.classList.contains('chip__remove')).length)).toBe(0);
+  const chipRadius = await page.locator('#chip .chip--removable').first().evaluate((element) => getComputedStyle(element).borderTopLeftRadius);
+  const enabled = page.locator('#chip .chip--removable > .chip__remove:not(:disabled):not(.is-focus)').first();
+  expect(await enabled.evaluate((element) => getComputedStyle(element).borderTopLeftRadius)).toBe(chipRadius);
+  const ground = (locator) => locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+  const chipGround = await page.locator('#chip .chip--removable').first().evaluate((element) => getComputedStyle(element).backgroundColor);
+  await enabled.hover();
+  await expect.poll(() => ground(enabled)).not.toBe(chipGround);
+  await expect.poll(() => ground(enabled)).not.toBe('rgba(0, 0, 0, 0)');
+  const disabled = page.locator('#chip .chip--removable > .chip__remove:disabled');
+  await expect(disabled).toHaveCount(1);
+  await disabled.hover({ force: true });
+  expect(await ground(disabled)).toBe('rgba(0, 0, 0, 0)');
+  expect(await disabled.evaluate((element) => getComputedStyle(element).cursor)).toBe('not-allowed');
+});
+
+test('the field hint and counter are direct children on one row, the counter at the end', async ({ page }) => {
+  await openGallery(page, VIEWPORTS[1], THEMES[0]);
+  const field = page.locator('#field .field').filter({ has: page.locator('.field__counter') }).first();
+  await expect(field.locator('.field__meta')).toHaveCount(0);
+  await expect(field.locator(':scope > .field__hint')).toHaveCount(1);
+  await expect(field.locator(':scope > .field__counter')).toHaveCount(1);
+  const hint = await field.locator(':scope > .field__hint').boundingBox();
+  const counter = await field.locator(':scope > .field__counter').boundingBox();
+  const box = await field.boundingBox();
+  // One grid row: the counter sits within the hint's line box, centered when the hint wraps.
+  expect(counter.y).toBeGreaterThanOrEqual(hint.y - 1);
+  expect(counter.y + counter.height).toBeLessThanOrEqual(hint.y + hint.height + 1);
+  expect(hint.x).toBeLessThan(counter.x);
+  expect(Math.abs(box.x + box.width - (counter.x + counter.width))).toBeLessThanOrEqual(1);
+});

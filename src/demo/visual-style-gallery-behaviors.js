@@ -2,10 +2,10 @@
  * Gallery behavior specimens: working menus, popovers, dialogs, and toasts driven by the modules in src/js/ui/.
  */
 
-import { openDialog } from '../js/ui/dialog.js';
-import { attachMenu } from '../js/ui/menu.js';
-import { attachPopover } from '../js/ui/popover.js';
-import { createToaster } from '../js/ui/toast.js';
+import { openDialog } from '../vendor/design/js/dialog.js';
+import { attachMenu } from '../vendor/design/js/menu.js';
+import { attachPopover } from '../vendor/design/js/popover.js';
+import { createToast } from '../vendor/design/js/toast.js';
 
 /**
  * Wire the working menu, which reports the last selected action.
@@ -69,7 +69,7 @@ function wireDialogs() {
  */
 function wireToast() {
   const result = document.getElementById('toast-demo-result');
-  const toaster = createToaster({ region: document.getElementById('toast-demo-region') });
+  const toaster = createToast({ region: document.getElementById('toast-demo-region') });
   document.getElementById('toast-demo-trigger').addEventListener('click', () => {
     toaster.show('Task moved to the recycle bin.', {
       onAction() {

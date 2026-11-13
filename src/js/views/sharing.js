@@ -11,7 +11,7 @@
 
 import { can, listRole, ROLE_HINTS, ROLE_LABELS, ROLES } from '../core/permissions.js';
 import { judge, SyncStop } from '../sync/api.js';
-import { createField } from './editor-panel.js';
+import { createEditorField } from './editor-panel.js';
 import { make as el, spriteIcon } from './task-list.js';
 
 /** Section strings, for the strings module of TEC-13 to absorb. */
@@ -286,7 +286,7 @@ export function mountSharing(parent, { list: initial, api, session, sync }) {
     }
     const rows = el(doc, 'ul', 'sharing__people');
     const form = el(doc, 'div', 'sharing__invite');
-    const email = createField(doc, { label: STRINGS.email, name: 'email', type: 'email' });
+    const email = createEditorField(doc, { label: STRINGS.email, name: 'email', type: 'email', messages: { typeMismatch: STRINGS.invalidEmail } });
     email.control.autocomplete = 'off';
     const roleField = el(doc, 'div', 'field');
     const roleLabel = el(doc, 'label', 'field__label', STRINGS.role);

@@ -5,10 +5,10 @@
  * Wide layouts show the panel at the right of the rows; compact layouts show it over the main column.
  * Escape closes the panel, also from a text field, after that field's change saves (`TSK-1`).
  * Closing returns focus to the control that opened the panel, or to the editor's own return target.
- * Field errors also go to a polite live region, so screen readers hear them when they appear.
+ * Editor fields come from the vendored field.js, whose errors also reach a polite live region.
  */
 
-import { createLiveRegion } from '../ui/live-region.js';
+import { createField } from '../../vendor/design/js/field.js';
 import { spriteIcon } from './task-list.js';
 
 /** Panel strings, for the strings module of TEC-13 to absorb. */
@@ -17,80 +17,24 @@ const STRINGS = Object.freeze({
 });
 
 let instances = 0;
-const announcers = new WeakMap();
 
 /**
- * Announce a message through the document's live region, adding one when it has none.
+ * Create an editor field with the vendored `createField`, keeping the errors that the editor sets.
+ * The editors validate on change and on save, so a blur or an edit re-shows the editor's error instead of clearing it;
+ * native constraints, such as an email type, still apply first.
  * @param {Document} doc the document
- * @param {string} message the message
+ * @param {object} options the `createField` options, such as `label`, `name`, `tag`, `type`, and `hideLabel`
+ * @returns {ReturnType<typeof createField>} the field controller, whose `setError` the editor calls
  */
-function announce(doc, message) {
-  if (!announcers.get(doc)?.region.isConnected) {
-    announcers.set(doc, { announcer: createLiveRegion({ document: doc }), region: null });
-    announcers.get(doc).region = doc.body.lastElementChild;
-  }
-  announcers.get(doc).announcer.announce(message);
-}
-
-/**
- * Create a field: a label, one control, and an error line that `setError` fills.
- * An error marks the control with `aria-invalid` and adds the error line to `aria-describedby`, keeping other ids.
- * @param {Document} doc the document
- * @param {object} options field options
- * @param {string} options.label the label text
- * @param {string} options.name the control name
- * @param {'input'|'textarea'} [options.tag] the control element
- * @param {string} [options.type] the input type
- * @param {boolean} [options.hideLabel] keep the label for assistive technology only
- * @returns {{element: HTMLElement, control: HTMLInputElement|HTMLTextAreaElement, setError: Function}} the field
- */
-export function createField(doc, { label, name, tag = 'input', type = 'text', hideLabel = false }) {
-  const id = `editor-field-${(instances += 1)}`;
-  const element = doc.createElement('div');
-  element.className = 'field';
-  const caption = doc.createElement('label');
-  caption.className = hideLabel ? 'field__label visually-hidden' : 'field__label';
-  caption.htmlFor = id;
-  caption.textContent = label;
-  const control = doc.createElement(tag);
-  control.className = 'field__control';
-  control.id = id;
-  control.name = name;
-  if (tag === 'input') {
-    control.type = type;
-  }
-  const error = doc.createElement('p');
-  error.className = 'field__error';
-  error.id = `${id}-error`;
-  error.hidden = true;
-  element.append(caption, control, error);
-  return {
-    element, control,
-
-    /**
-     * Show or clear the field error.
-     * @param {string|null} message the error, or null when the value is valid
-     */
-    setError(message) {
-      error.hidden = !message;
-      error.replaceChildren(...(message ? [spriteIcon(doc, 'alert'), message] : []));
-      const others = (control.getAttribute('aria-describedby') ?? '').split(' ').filter((token) => token && token !== error.id);
-      const ids = message ? [...others, error.id] : others;
-      if (message) {
-        announce(doc, message);
-        control.setAttribute('aria-invalid', 'true');
-      }
-      else {
-        control.removeAttribute('aria-invalid');
-      }
-      if (ids.length > 0) {
-        control.setAttribute('aria-describedby', ids.join(' '));
-      }
-      else {
-        control.removeAttribute('aria-describedby');
-      }
-    },
+export function createEditorField(doc, options) {
+  let error = null;
+  const field = createField(doc, { ...options, validate: () => error });
+  const setError = field.setError;
+  field.setError = (message) => {
+    error = message || null;
+    setError(message);
   };
+  return field;
 }
 
 /**

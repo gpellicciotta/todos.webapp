@@ -25,7 +25,7 @@
 import { isOverdue } from '../core/overdue.js';
 import { STATUSES } from '../store/tasks.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
-import { attachMenu } from '../ui/menu.js';
+import { attachMenu } from '../../vendor/design/js/menu.js';
 
 const ICONS = 'img/icons.svg';
 const SVG = 'http://www.w3.org/2000/svg';
@@ -1076,6 +1076,8 @@ export function createTaskList({
   list.addEventListener('click', (event) => {
     const trigger = menuButton(event);
     if (trigger) {
+      // The menu makes the button its popover invoker during this click, whose default toggle would close it again.
+      event.preventDefault();
       openFor(trigger, 'first');
     }
   });

@@ -1,10 +1,13 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSession } from '../../src/js/sync/session.js';
 import { attachUserMenu, initialsOf } from '../../src/js/ui/user-menu.js';
+import { setSpriteUrl } from '../../src/vendor/design/js/icon.js';
+import { isShowing, lightDismiss, nextTask } from './popover-shim.js';
 
 const NOW = Date.UTC(2026, 10, 6, 9, 0, 0);
 const ACCOUNT = { token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Ada Lovelace', email: 'ada@example.com', server: 'https://todos.example.com' };
+const SPRITE = 'vendor/design/looks/neutral/icons.svg';
 
 /**
  * Create an in-memory storage stand-in.
@@ -36,12 +39,26 @@ function mount(record = null) {
 }
 
 /**
+ * Find the parts of the account menu in a slot.
+ * @param {HTMLElement} slot the slot
+ * @returns {{button: HTMLElement, panel: HTMLElement, items: HTMLElement[]}} the parts
+ */
+function parts(slot) {
+  const panel = slot.querySelector('.account-menu > .account-menu__panel');
+  return { button: slot.querySelector('.account-menu > .account-menu__button'), panel, items: [...panel.querySelectorAll('[role="menuitem"]')] };
+}
+
+/**
  * Click an element.
  * @param {Element} target the element
  */
 function click(target) {
   target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 }
+
+beforeAll(() => {
+  setSpriteUrl(SPRITE);
+});
 
 beforeEach(() => {
   document.body.replaceChildren();
@@ -68,103 +85,114 @@ describe('initialsOf', () => {
 });
 
 describe('attachUserMenu in local mode', () => {
+  it('builds the vendored account menu skeleton in the slot', () => {
+    const { slot } = mount();
+    const { button, panel } = parts(slot);
+    expect(slot.classList.contains('user-menu')).toBe(true);
+    expect(slot.querySelector('.account-menu').hasAttribute('data-account-menu')).toBe(true);
+    expect(button.tagName).toBe('BUTTON');
+    expect(panel.classList.contains('menu')).toBe(true);
+    expect(panel.getAttribute('role')).toBe('menu');
+    expect(panel.hasAttribute('popover')).toBe(true);
+    expect(panel.getAttribute('aria-labelledby')).toBe(panel.querySelector('.account-menu__name').id);
+  });
+
   it('shows a person icon named Local User, with Local User as the hover text', () => {
     const { slot } = mount();
-    const button = slot.querySelector('.user-button');
-    expect(button.tagName).toBe('BUTTON');
+    const { button } = parts(slot);
     expect(button.title).toBe('Local User');
     expect(button.getAttribute('aria-label')).toBe('Local User');
-    expect(button.querySelector('svg use').getAttribute('href')).toContain('#user');
+    expect(button.querySelector('.avatar.avatar--sm svg use').getAttribute('href')).toBe(`${SPRITE}#icon-user`);
     expect(button.textContent.trim()).toBe('');
     expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('keeps the panel closed and holds no Sign in button', () => {
+  it('keeps the menu closed and holds no Sign in button', () => {
     const { slot } = mount();
-    expect(slot.querySelector('.user-panel').hidden).toBe(true);
+    expect(isShowing(parts(slot).panel)).toBe(false);
     expect(slot.querySelector('.user-menu__sign-in')).toBeNull();
   });
 
-  it('opens a panel with the name, Local only, Recycle bin, and Settings', () => {
+  it('opens a menu with the name, Local only, Recycle bin, and Settings', () => {
     const { slot } = mount();
-    click(slot.querySelector('.user-button'));
-    const panel = slot.querySelector('.user-panel');
-    expect(panel.hidden).toBe(false);
-    expect(slot.querySelector('.user-button').getAttribute('aria-expanded')).toBe('true');
-    expect(panel.querySelector('.user-panel__name').textContent).toBe('Local User');
-    expect(panel.querySelector('.user-panel__status').textContent).toBe('Local only');
-    expect(panel.querySelector('.user-panel__status a').getAttribute('href')).toBe('#/connect');
-    const links = [...panel.querySelectorAll('.user-panel__link')];
-    expect(links.map((link) => [link.textContent.trim(), link.getAttribute('href'), link.dataset.nav])).toEqual([
+    const { button, panel, items } = parts(slot);
+    click(button);
+    expect(isShowing(panel)).toBe(true);
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.querySelector('.account-menu__name').textContent).toBe('Local User');
+    expect(items.map((item) => [item.textContent.trim(), item.getAttribute('href'), item.dataset.nav])).toEqual([
       ['Local only', '#/connect', 'connect'],
       ['Recycle bin', '#/bin', 'bin'],
       ['Settings', '#/settings', 'settings'],
     ]);
+    expect(document.activeElement).toBe(items[0]);
   });
 
-  it('shows Recycle bin and Settings as buttons with their icons', () => {
+  it('shows each item as a menu item with its icon from the look sprite', () => {
     const { slot } = mount();
-    const links = [...slot.querySelectorAll('.user-panel__link')];
-    for (const link of links) {
-      expect(link.classList.contains('button')).toBe(true);
-      expect(link.classList.contains('button--secondary')).toBe(true);
-      expect(link.classList.contains('menu__item')).toBe(false);
-      expect(link.querySelector('svg.icon use')).not.toBeNull();
+    const { items } = parts(slot);
+    for (const item of items) {
+      expect(item.classList.contains('menu__item')).toBe(true);
+      expect(item.classList.contains('button')).toBe(false);
     }
-    expect(links.map((link) => link.querySelector('use').getAttribute('href'))).toEqual(['img/icons.svg#sync-local', 'img/icons.svg#bin', 'img/icons.svg#settings']);
+    expect(items.map((item) => item.querySelector('svg.icon use').getAttribute('href'))).toEqual([
+      `${SPRITE}#icon-sync-local`, `${SPRITE}#icon-bin`, `${SPRITE}#icon-settings`,
+    ]);
   });
 
-  it('closes on Escape, on an outside click, and when a link is chosen', () => {
+  it('closes on Escape, on a light dismiss, and when an item is chosen', async () => {
     const { slot } = mount();
-    const button = slot.querySelector('.user-button');
-    const panel = slot.querySelector('.user-panel');
+    const { button, panel, items } = parts(slot);
     click(button);
-    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-    expect(panel.hidden).toBe(true);
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(isShowing(panel)).toBe(false);
+    await nextTask();
     click(button);
-    click(document.body);
-    expect(panel.hidden).toBe(true);
+    lightDismiss(panel);
+    await nextTask();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
     click(button);
-    panel.querySelector('a').addEventListener('click', (event) => event.preventDefault());
-    click(panel.querySelector('a'));
-    expect(panel.hidden).toBe(true);
+    items[1].addEventListener('click', (event) => event.preventDefault());
+    click(items[1]);
+    expect(isShowing(panel)).toBe(false);
   });
 });
 
 describe('attachUserMenu face', () => {
-  it('keeps the same icon element across opens, so it does not reload', () => {
+  it('keeps the same face across opens, so the icon does not reload', () => {
     const { slot } = mount();
-    const button = slot.querySelector('.user-button');
-    const icon = button.querySelector('svg');
+    const { button } = parts(slot);
+    const face = button.firstElementChild;
     click(button);
     click(button);
-    expect(button.querySelector('svg')).toBe(icon);
+    expect(button.firstElementChild).toBe(face);
   });
 });
 
 describe('attachUserMenu when connected', () => {
   it('shows the initials, and the account name as the hover text', () => {
     const { slot } = mount(ACCOUNT);
-    const button = slot.querySelector('.user-button');
-    expect(button.textContent.trim()).toBe('AL');
+    const { button } = parts(slot);
+    expect(button.querySelector('.avatar--initials').textContent).toBe('AL');
     expect(button.title).toBe('Ada Lovelace');
     expect(button.getAttribute('aria-label')).toBe('Ada Lovelace');
     expect(slot.querySelector('.user-menu__sign-in')).toBeNull();
   });
 
-  it('names the account and says Connected in the panel', () => {
+  it('names the account and says Connected in the menu', () => {
     const { slot } = mount(ACCOUNT);
-    expect(slot.querySelector('.user-panel__name').textContent).toBe('Ada Lovelace');
-    expect(slot.querySelector('.user-panel__status').textContent).toBe('Connected');
-    expect(slot.querySelectorAll('.user-panel a')).toHaveLength(3);
-    expect(slot.querySelector('.user-panel__status a').getAttribute('href')).toBe('#/connect');
+    const { panel, items } = parts(slot);
+    expect(panel.querySelector('.account-menu__name').textContent).toBe('Ada Lovelace');
+    expect(items.map((item) => item.textContent.trim())).toEqual(['Connected', 'Recycle bin', 'Settings']);
+    expect(items[0].querySelector('use').getAttribute('href')).toBe(`${SPRITE}#icon-sync-synced`);
   });
 
   it('falls back to the email address when the account has no name', () => {
     const { slot } = mount({ ...ACCOUNT, name: null });
-    expect(slot.querySelector('.user-button').textContent.trim()).toBe('A');
-    expect(slot.querySelector('.user-button').title).toBe('ada@example.com');
-    expect(slot.querySelector('.user-panel__name').textContent).toBe('ada@example.com');
+    const { button, panel } = parts(slot);
+    expect(button.textContent.trim()).toBe('A');
+    expect(button.title).toBe('ada@example.com');
+    expect(panel.querySelector('.account-menu__name').textContent).toBe('ada@example.com');
   });
 });
 
@@ -178,32 +206,35 @@ describe('attachUserMenu when the session expired', () => {
 
   it('keeps the account name, says Sign in needed, and keeps Recycle bin and Settings', () => {
     const { slot } = mount(EXPIRED);
-    expect(slot.querySelector('.user-button').title).toBe('Ada Lovelace');
-    expect(slot.querySelector('.user-panel__status').textContent).toBe('Sign in needed');
-    expect([...slot.querySelectorAll('.user-panel a')].map((link) => link.getAttribute('href'))).toEqual(['#/connect', '#/bin', '#/settings']);
+    const { button, items } = parts(slot);
+    expect(button.title).toBe('Ada Lovelace');
+    expect(items.map((item) => [item.textContent.trim(), item.getAttribute('href')])).toEqual([
+      ['Sign in needed', '#/connect'], ['Recycle bin', '#/bin'], ['Settings', '#/settings'],
+    ]);
+    expect(items[0].querySelector('use').getAttribute('href')).toBe(`${SPRITE}#icon-sync-sign-in`);
   });
 });
 
 describe('attachUserMenu session changes', () => {
-  it('re-renders the button and the panel when the session expires', () => {
+  it('re-renders the status item when the session expires', () => {
     const { slot, session } = mount(ACCOUNT);
     session.expire();
     expect(slot.querySelector('.user-menu__sign-in')).toBeNull();
-    expect(slot.querySelector('.user-panel__status').textContent).toBe('Sign in needed');
+    expect(parts(slot).items[0].textContent.trim()).toBe('Sign in needed');
   });
 
-  it('re-renders when the device disconnects, and keeps the same panel links', async () => {
+  it('re-renders when the device disconnects, and keeps the same items', async () => {
     const { slot, session } = mount(ACCOUNT);
-    const links = [...slot.querySelectorAll('.user-panel__link')];
+    const before = parts(slot).items;
     await session.disconnect();
-    expect(slot.querySelector('.user-button').title).toBe('Local User');
-    expect(slot.querySelector('.user-panel__status').textContent).toBe('Local only');
-    const after = [...slot.querySelectorAll('.user-panel__link')];
-    expect(after).toHaveLength(links.length);
-    after.forEach((link, index) => expect(link).toBe(links[index]));
+    const { button, items } = parts(slot);
+    expect(button.title).toBe('Local User');
+    expect(items[0].textContent.trim()).toBe('Local only');
+    expect(items).toHaveLength(before.length);
+    items.forEach((item, index) => expect(item).toBe(before[index]));
   });
 
-  it('stops following the session after destroy', () => {
+  it('stops following the session and removes the menu after destroy', () => {
     const { slot, session, menu } = mount(ACCOUNT);
     const unsubscribe = vi.fn();
     const subscribe = session.subscribe;
@@ -217,12 +248,14 @@ describe('attachUserMenu session changes', () => {
     menu.destroy();
     next.destroy();
     expect(unsubscribe).toHaveBeenCalledTimes(1);
-    expect(slot.querySelector('.user-button')).toBeNull();
+    expect(slot.querySelector('.account-menu')).toBeNull();
+    expect(slot.classList.contains('user-menu')).toBe(false);
   });
 
   it('shows a name made only of spaces as the email address', () => {
     const { slot } = mount({ ...ACCOUNT, name: '   ' });
-    expect(slot.querySelector('.user-button').textContent.trim()).toBe('A');
-    expect(slot.querySelector('.user-button').title).toBe('ada@example.com');
+    const { button } = parts(slot);
+    expect(button.textContent.trim()).toBe('A');
+    expect(button.title).toBe('ada@example.com');
   });
 });

@@ -16,7 +16,7 @@
 
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 import { DESCRIPTION_MAX, STATUSES } from '../store/tasks.js';
-import { createField } from './editor-panel.js';
+import { createEditorField } from './editor-panel.js';
 import { createNoteThread } from './notes.js';
 import { make as el, spriteIcon, STATUS_LABELS } from './task-list.js';
 
@@ -68,7 +68,7 @@ function segmented(doc, legend, name, options) {
     option.append(radio, ` ${label}`);
     row.append(option);
   }
-  set.append(el(doc, 'legend', '', legend), row);
+  set.append(el(doc, 'legend', 'segmented__legend', legend), row);
   return set;
 }
 
@@ -180,7 +180,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     return element;
   };
 
-  const description = createField(doc, { label: STRINGS.description, name: 'description', tag: 'textarea' });
+  const description = createEditorField(doc, { label: STRINGS.description, name: 'description', tag: 'textarea' });
   section('description').append(description.element);
   /** Save the description; an empty or too long one is a field error. */
   function saveDescription() {
@@ -203,8 +203,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   section('status').append(status);
   status.addEventListener('change', (event) => save({ status: event.target.value }));
 
-  const date = createField(doc, { label: STRINGS.dueDate, name: 'due-date', type: 'date' });
-  const time = createField(doc, { label: STRINGS.dueTime, name: 'due-clock', type: 'time' });
+  const date = createEditorField(doc, { label: STRINGS.dueDate, name: 'due-date', type: 'date' });
+  const time = createEditorField(doc, { label: STRINGS.dueTime, name: 'due-clock', type: 'time' });
   const clear = el(doc, 'button', 'button button--quiet', STRINGS.clear);
   clear.type = 'button';
   clear.setAttribute('aria-label', STRINGS.clearLabel);
@@ -257,7 +257,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   overdue.addEventListener('change', (event) => save({ 'overdue-handling': event.target.value }));
 
   const chips = el(doc, 'ul', 'chip-list');
-  const combo = createField(doc, { label: STRINGS.addToList, name: 'add-to-list', hideLabel: true });
+  const combo = createEditorField(doc, { label: STRINGS.addToList, name: 'add-to-list', hideLabel: true });
   const input = combo.control;
   input.placeholder = STRINGS.addToList;
   input.autocomplete = 'off';
@@ -412,7 +412,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     chips.replaceChildren(...joined.map((list) => {
       const item = doc.createElement('li');
       const chip = el(doc, 'span', 'chip chip--removable', list.name);
-      const button = el(doc, 'button', 'icon-button');
+      const button = el(doc, 'button', 'chip__remove');
       button.type = 'button';
       button.setAttribute('aria-label', `${STRINGS.removeFrom}${list.name}`);
       button.disabled = !can(listRole(list), 'remove-from-list');

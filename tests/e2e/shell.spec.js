@@ -74,13 +74,13 @@ for (const [viewport, compact] of [[COMPACT, true], [{ width: 1023, height: 800 
     await ready(page);
     await expect(page.locator('.app__bottom-nav')).toBeVisible({ visible: compact });
     await expect(page.locator('.app__top-bar .sync-indicator')).toBeVisible();
-    await expect(page.locator('.app__top-bar .user-button')).toBeVisible();
+    await expect(page.locator('.app__top-bar .account-menu__button')).toBeVisible();
     await expect(page.locator('.app__more')).toHaveCount(0);
     await expect(page.locator('.app__sidebar')).toBeVisible({ visible: !compact });
     await expect(page.locator('.app__sidebar, .app__bottom-nav').getByRole('link', { name: /Recycle bin|Bin|Settings/ })).toHaveCount(0);
     // The user button ends the top bar, at the right edge of the main column.
     const bar = await page.locator('.app__top-bar').boundingBox();
-    const button = await page.locator('.app__top-bar .user-button').boundingBox();
+    const button = await page.locator('.app__top-bar .account-menu__button').boundingBox();
     expect(bar.x + bar.width - (button.x + button.width)).toBeLessThanOrEqual(16);
     expect(button.y).toBeLessThan(bar.y + bar.height);
     await expect(page.locator('[data-editor-slot]')).toBeHidden();
@@ -99,15 +99,15 @@ test('navigation marks the current route, and back and forward move between rout
   await expect(bottom.getByRole('link', { name: 'Tasks' })).toHaveAttribute('aria-current', 'page');
   await expect(bottom.getByRole('link')).toHaveCount(2);
   await page.getByRole('button', { name: 'Local User' }).click();
-  const panel = page.locator('.user-panel');
-  await panel.getByRole('link', { name: 'Recycle bin' }).click();
+  const panel = page.locator('.account-menu__panel');
+  await panel.getByRole('menuitem', { name: 'Recycle bin' }).click();
   await expect(page).toHaveURL(/#\/bin$/);
   await expect(panel).toBeHidden();
   await expect(page.locator('#main')).toBeFocused();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Recycle bin');
   await expect(bottom.locator('[aria-current]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Local User' }).click();
-  await expect(panel.getByRole('link', { name: 'Recycle bin' })).toHaveAttribute('aria-current', 'page');
+  await expect(panel.getByRole('menuitem', { name: 'Recycle bin' })).toHaveAttribute('aria-current', 'page');
   await expect(panel.locator('[aria-current]')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await page.goBack();
@@ -125,10 +125,10 @@ for (const [name, viewport] of [['compact', COMPACT], ['wide', WIDE]]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
     await ready(page);
-    const button = page.locator('.app__top-bar .user-button');
+    const button = page.locator('.app__top-bar .account-menu__button');
     await expect(button).toHaveAttribute('title', 'Local User');
     await expect(page.locator('[data-session-banner] .banner')).toHaveCount(0);
-    const panel = page.locator('.user-panel');
+    const panel = page.locator('.account-menu__panel');
     await expect(panel).toBeHidden();
     await button.click();
     await expect(panel).toBeVisible();
@@ -141,11 +141,17 @@ for (const [name, viewport] of [['compact', COMPACT], ['wide', WIDE]]) {
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
     expect(Math.abs(box.x + box.width - (trigger.x + trigger.width))).toBeLessThanOrEqual(1);
     expect(Math.abs(box.y - (trigger.y + trigger.height))).toBeLessThanOrEqual(8);
-    await panel.getByRole('link', { name: 'Settings' }).click();
+    await panel.getByRole('menuitem', { name: 'Settings' }).click();
     await expect(page).toHaveURL(/#\/settings$/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Settings');
     await expect(panel).toBeHidden();
-    await button.click();
+    // The account menu is a menu: Enter opens it at the first item, and the arrow keys move between items.
+    await button.focus();
+    await page.keyboard.press('Enter');
+    await expect(panel.getByRole('menuitem', { name: 'Local only' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(panel.getByRole('menuitem', { name: 'Recycle bin' })).toBeFocused();
+    await expect(panel.getByRole('menuitem', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
     await expect(button).toBeFocused();
@@ -176,9 +182,9 @@ for (const [name, viewport] of [['narrow', { width: 320, height: 700 }], ['deskt
     })));
     await page.goto('/');
     await ready(page);
-    const button = page.locator('.app__top-bar .user-button');
+    const button = page.locator('.app__top-bar .account-menu__button');
     await button.click();
-    const box = await page.locator('.user-panel').boundingBox();
+    const box = await page.locator('.account-menu__panel').boundingBox();
     const trigger = await button.boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 3);
@@ -204,9 +210,9 @@ test('a connected account shows its initials and name, and Connected in the pane
   await expect(button).toHaveAttribute('title', 'Jane Doe');
   await expect(page.locator('[data-session-banner] .banner')).toHaveCount(0);
   await button.click();
-  await expect(page.locator('.user-panel')).toContainText('Jane Doe');
-  await expect(page.locator('.user-panel')).toContainText('Connected');
-  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Connected', 'Recycle bin', 'Settings']);
+  await expect(page.locator('.account-menu__panel')).toContainText('Jane Doe');
+  await expect(page.locator('.account-menu__panel')).toContainText('Connected');
+  await expect(page.locator('.account-menu__panel').getByRole('menuitem')).toHaveText(['Connected', 'Recycle bin', 'Settings']);
   expect(problems).toEqual([]);
 });
 
@@ -221,8 +227,8 @@ test('an expired session shows a banner with Sign in that opens the connect scre
   await expect(page).toHaveURL(/#\/connect$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connect');
   await page.getByRole('button', { name: 'Jane Doe' }).click();
-  await expect(page.locator('.user-panel')).toContainText('Sign in needed');
-  await expect(page.locator('.user-panel').getByRole('link')).toHaveText(['Sign in needed', 'Recycle bin', 'Settings']);
+  await expect(page.locator('.account-menu__panel')).toContainText('Sign in needed');
+  await expect(page.locator('.account-menu__panel').getByRole('menuitem')).toHaveText(['Sign in needed', 'Recycle bin', 'Settings']);
   expect(problems).toEqual([]);
 });
 
@@ -367,7 +373,7 @@ test('a start-up failure shows an error banner instead of a broken page', async 
     });
   });
   await page.goto('/');
-  await expect(page.getByRole('alert')).toContainText("ToDo's could not start. Reload to try again.");
+  await expect(page.locator('.banner[role="alert"]')).toContainText("ToDo's could not start. Reload to try again.");
   expect(errors).toEqual([]);
 });
 

@@ -10,9 +10,9 @@
 
 import { can, listRole } from '../core/permissions.js';
 import { DESCRIPTION_MAX } from '../store/lists.js';
-import { confirmDialog } from '../ui/dialog.js';
+import { confirmDialog } from '../../vendor/design/js/dialog.js';
 import { DEFAULT_HASH } from '../ui/router.js';
-import { createField } from './editor-panel.js';
+import { createEditorField } from './editor-panel.js';
 import { mountSharing } from './sharing.js';
 import { make as el, spriteIcon } from './task-list.js';
 
@@ -137,8 +137,8 @@ export function mountListEditor(panel, route, { store, toaster, navigate, locale
     root.append(element);
     return element;
   };
-  const name = createField(doc, { label: STRINGS.name, name: 'name' });
-  const description = createField(doc, { label: STRINGS.description, name: 'description', tag: 'textarea' });
+  const name = createEditorField(doc, { label: STRINGS.name, name: 'name' });
+  const description = createEditorField(doc, { label: STRINGS.description, name: 'description', tag: 'textarea' });
   const counter = el(doc, 'p', 'field__counter');
   counter.id = `${description.control.id}-counter`;
   description.control.setAttribute('aria-describedby', counter.id);

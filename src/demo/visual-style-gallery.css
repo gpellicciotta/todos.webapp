@@ -354,11 +354,6 @@
   border: var(--border-width-strong) solid var(--color-text);
 }
 
-.size--textarea {
-  block-size: var(--height-textarea-min);
-  border: var(--border-width) solid var(--color-border-strong);
-}
-
 .size--focus {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
@@ -389,7 +384,6 @@
 .width--main { inline-size: var(--width-main); }
 .width--menu { inline-size: var(--width-menu); }
 .width--text-min { inline-size: var(--width-text-min); }
-.width--segment-min { inline-size: var(--width-segment-min); }
 
 /* Layers: a cascade of overlapping tiles; the list is its own stacking context. */
 .layers {

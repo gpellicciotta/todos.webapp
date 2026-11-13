@@ -96,10 +96,10 @@ test('every sync state has its own icon and label, plus the unseen entries dot',
   await expect(page.locator('#sync-indicator .sync-indicator__dot').first()).toBeVisible();
 });
 
-test('the user button is a circle in every state, and the connected one takes the signal color', async ({ page }) => {
+test('the account menu button is a circle in every state, holding an avatar face', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
-  const buttons = page.locator('#user-menu .user-button');
-  expect(await buttons.count()).toBeGreaterThanOrEqual(8);
+  const buttons = page.locator('#user-menu .account-menu__button');
+  expect(await buttons.count()).toBeGreaterThanOrEqual(6);
   const shapes = await buttons.evaluateAll((elements) => elements.map((element) => {
     const box = element.getBoundingClientRect();
     return { width: box.width, height: box.height, radius: getComputedStyle(element).borderTopLeftRadius };
@@ -109,12 +109,9 @@ test('the user button is a circle in every state, and the connected one takes th
     expect(shape.width).toBeGreaterThanOrEqual(MIN_TARGET);
     expect(parseFloat(shape.radius)).toBeGreaterThanOrEqual(shape.width / 2);
   }
-  const ground = (state) => page.locator(`#user-menu .state .user-button[data-state="${state}"]`).first()
-    .evaluate((element) => getComputedStyle(element).backgroundColor);
-  expect(await ground('connected')).not.toBe(await ground('local'));
-  expect(await ground('sign-in-needed')).toBe(await ground('local'));
-  await expect(page.locator('#user-menu .user-panel')).toHaveCount(2);
-  await expect(page.locator('#user-menu .user-panel [aria-current="page"]')).toHaveCount(1);
+  await expect(page.locator('#user-menu .account-menu__button > .avatar')).toHaveCount(await buttons.count());
+  await expect(page.locator('#user-menu .account-menu__panel')).toHaveCount(2);
+  await expect(page.locator('#user-menu .account-menu__panel [aria-current="page"]')).toHaveCount(1);
 });
 
 test('the floating button is a signal circle with a plus, a shadow, and a target of at least 44 px', async ({ page }) => {

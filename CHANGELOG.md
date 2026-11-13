@@ -11,6 +11,12 @@ All notable changes to this project are documented here.
 - FrontEnd: Moved the add bar into the action bar under the rows, also on wide screens, where it sat above the rows before.
 - FrontEnd: Opened the compact task, list, and view options editors as a full-window sheet over the top and bottom bars.
 - FrontEnd: Framed the wide editor panel by the side panel's start border instead of a floating card, and gave the wide top bar the surface ground.
+- FrontEnd: Replaced the app's dialog, menu, popover, toast, live region, update, and field modules with the vendored support.webapp ones.
+- FrontEnd: Loaded the design system through its public neutral look entry point and dropped the app's own control styles.
+- FrontEnd: Turned the user menu into the vendored account menu, with an avatar face and arrow-key navigation.
+- FrontEnd: Opened menus and popovers as native popovers in the top layer, with the package's 8 px corners.
+- FrontEnd: Showed an update activated in another tab as a lasting Reload toast instead of a banner.
+- FrontEnd: Gave list chip remove buttons the package skeleton, with chip corners and a visible hover in light mode.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

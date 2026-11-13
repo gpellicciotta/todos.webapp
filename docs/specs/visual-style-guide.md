@@ -9,9 +9,10 @@ The tokens, the font, the controls, the app components, and their gallery sectio
 - [design.json](../../design.json): pins the vendored [support.webapp](../../../support.webapp/README.md) design system, version 0.1.0, neutral look.
 - [src/vendor/design/](../../src/vendor/design/): the vendored copy; its base and neutral look define every contract token, both themes, and the Inter font face.
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
+  It imports only the public [looks/neutral/index.css](../../src/vendor/design/looks/neutral/index.css) of the package, which loads every package component.
 - [tokens.css](../../src/css/tokens.css): the app-local size tokens only.
-- [controls.css](../../src/css/controls.css): buttons, fields, chips, menus, popovers, dialogs, banners, and toasts.
-- [app-components.css](../../src/css/app-components.css): the task list, task row, status button, and status menu.
+- [app-components.css](../../src/css/app-components.css): the app-local controls the package lacks, then the task list, task row, status button, and status menu.
+  The app-local controls: the overdue chip color, choices, the filter chip, the in-view dialog, and the error banner.
 - [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
 - [shell.css](../../src/vendor/design/css/shell.css): the vendored app shell, which places every area of the page.
 - [views.css](../../src/css/views.css): how the views fill the shell areas, at the `--width-main` column.
@@ -78,8 +79,8 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
   Each rename kept its value: the signal became `--color-primary`, and the state grounds became `--color-surface-{{state}}`.
   `--space-8` became `--space-9`, `--width-editor` became `--width-side-panel`, and `--icon-size` became `--icon-md`.
   Radius steps became roles: `--radius-chip`, `--radius-control`, `--radius-button`, `--radius-card`, and `--radius-dialog`.
-- **[Decided]** Until the app moves onto the vendored components, `style.css` imports the vendored base and look files directly.
-  They are private package files; the public `looks/neutral/index.css` would also load every package component.
+- **[Decided]** `style.css` imports only the public `looks/neutral/index.css`, which loads every package component.
+  App files never import private package files, such as a look's `primitives.css`.
 
 ---
 
@@ -142,9 +143,9 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - `--icon-lg` and `--icon-stroke-thin`: the larger, thinner icon of empty states.
 - `--row-height`: 48 px, the minimum task row height.
 - Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-side-panel` size the side panels.
-- Control minimums: `--width-menu` for menus and popovers, `--width-segment-min` for segmented options.
+- Control minimums: `--width-menu` for menus and popovers; the package sets the narrowest segmented option.
 - `--width-chip-max`: the widest list chip in a task row; longer list names truncate.
-- Text minimums: `--width-text-min` before a banner's action wraps, `--height-textarea-min` for textareas.
+- Text minimums: `--width-text-min` before a banner's action wraps; the package sets the lowest textarea.
 
 ### Elevation, Layers, and Motion
 - `--elevation-1` for popovers and menus, `--elevation-2` for dialogs and the floating button.
@@ -159,7 +160,9 @@ Each component gets a gallery section with every state: default, hover, focus-vi
 Gallery specimens force hover, active, and focus with `.is-hover`, `.is-active`, and `.is-focus`; app markup never uses them.
 
 ### Controls
-Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/js/ui](../../src/js/ui/) add keyboard and focus handling.
+Defined by the vendored package components, which [looks/neutral/index.css](../../src/vendor/design/looks/neutral/index.css) loads.
+The vendored modules in [src/vendor/design/js](../../src/vendor/design/js/) add keyboard and focus handling; app code imports only their public entry points.
+The app keeps its own rules only where the package has no counterpart, in [app-components.css](../../src/css/app-components.css).
 
 - [Button](../../src/demo/visual-style-gallery.html#button): `.button` in the signal color for the one main action of a view.
   Delete buttons that confirm or start a delete, such as Delete task and Delete list in the editors and the buttons in dialogs and in-place questions, use `.button--danger`, filled with `--color-on-danger` text.
@@ -170,6 +173,7 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
 - [Icon button](../../src/demo/visual-style-gallery.html#icon-button): a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
   Toggles set `aria-pressed`; the pressed state adds the signal outline and keeps hover and active grounds.
 - [Field](../../src/demo/visual-style-gallery.html#field): label, control, optional hint, character counter, and error message.
+  Editors build it with `createEditorField`, a wrapper of `createField` in [field.js](../../src/vendor/design/js/field.js) that keeps the editor's errors.
   Use it for text, search, date, and time inputs, textareas, and selects.
   Invalid controls set `aria-invalid="true"` and `aria-describedby`; the error line adds an alert icon and text.
 - [Checkbox and radio](../../src/demo/visual-style-gallery.html#checkbox-radio): native inputs in the signal accent, inside a label row of `--target-min`.
@@ -181,15 +185,16 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   The task views no longer use it: the view options rows replace the chips.
 - [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row, for status in the editor and the grouping choice in the view options.
   The checked option adds a signal outline and semibold text, so it never relies on color alone.
-- [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored panels at `--elevation-1` that close on Escape and outside clicks.
+- [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored native `popover` panels at `--elevation-1`, in the top layer.
+  They close on Escape, a light dismiss, and when focus leaves.
   Choice menus use `menuitemradio` items with a check icon on the current one.
-  `attachMenu(trigger, menu, { onSelect })` in [menu.js](../../src/js/ui/menu.js) makes a menu button.
+  `attachMenu(trigger, menu, { onSelect })` in [menu.js](../../src/vendor/design/js/menu.js) makes a menu button.
   Enter, Space, or ArrowDown open it at the first item; arrows wrap and skip `aria-disabled` items.
-  `attachPopover(trigger, panel)` in [popover.js](../../src/js/ui/popover.js) anchors a non-modal panel.
+  `attachPopover(trigger, panel)` in [popover.js](../../src/vendor/design/js/popover.js) anchors a non-modal panel.
   Both return a controller with `open`, `close`, and `destroy`, and return focus to the trigger on close.
 - [Dialog](../../src/demo/visual-style-gallery.html#dialog): a native `<dialog>` with a title, a body, and actions at the end.
   Below 64rem it is a full-width sheet, and full height when opened as a modal.
-  `openDialog(dialog, { onClose })` in [dialog.js](../../src/js/ui/dialog.js) opens it as a modal.
+  `openDialog(dialog, { onClose })` in [dialog.js](../../src/vendor/design/js/dialog.js) opens it as a modal.
   `.dialog--in-view` makes it fill its container, for the compact import: no scrim, radius, or shadow, and a ruled header.
   The shell places it in the main column; `openDialog(dialog, { modal: false })` opens it in place, without the Tab trap.
   Tab stays inside, Escape closes with `cancel`, and focus returns to the opener.
@@ -198,13 +203,13 @@ Defined in [controls.css](../../src/css/controls.css); behavior modules in [src/
   Errors use `--error`, `role="alert"`, the danger outline, and an alert icon.
 - [Toast](../../src/demo/visual-style-gallery.html#toast): a short message at the bottom with an optional Undo, announced through a live region.
   Never use a toast as the only place an error appears.
-  `createToaster().show(message, { onAction })` in [toast.js](../../src/js/ui/toast.js) adds an Undo button.
+  `createToast().show(message, { onAction })` in [toast.js](../../src/vendor/design/js/toast.js) adds an Undo button.
   Toasts expire after 8 seconds, pause while hovered or focused, and stack at most three.
   `persistent: true` keeps a toast until Escape, its action, or its dismiss function; the Update toast uses it.
   While a modal dialog is open the page is inert, so toasts wait until it closes.
   With `undoShortcut: true`, Ctrl+Z or Cmd+Z outside text fields runs the newest Undo; `undoLatest()` does the same.
-  [live-region.js](../../src/js/ui/live-region.js) announces them; `announce(message, { politeness: 'assertive' })` suits blocking errors.
-  Its regions use the `.visually-hidden` class of style.css.
+  [live-region.js](../../src/vendor/design/js/live-region.js) announces them; `announce(message, { politeness: 'assertive' })` suits blocking errors.
+  The page shares one pair of regions, which use the `.visually-hidden` class of the package reset.
 
 ### App Components
 Defined in [app-components.css](../../src/css/app-components.css) and [app-chrome.css](../../src/css/app-chrome.css), on top of the controls.
@@ -245,12 +250,14 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Recycle bin, Settings, and the account sit in the user menu, so the app leaves `.sidebar__end` and `.sidebar__footer` empty;
   the gallery still shows both, as the optional end group and footer of the component.
   The app's bottom bar holds Tasks and Lists, each an icon above a label; the gallery shows four items to cover the states.
-- [User menu](../../src/demo/visual-style-gallery.html#user-menu): the `.user-button` that ends the top bar, and its `.user-panel`.
-  The button is a 44 px circle: a person icon in local mode, the initials in the signal color once `data-state="connected"`,
-  and the quiet look again for `sign-in-needed`. Its title and aria-label name the user.
-  The panel is a `.popover` with the name, the state, and two `.button--secondary` links with icons.
-  The current route's link takes the signal border and icon on the selected ground.
-  A `.button.button--secondary.user-menu__sign-in` joins the button only while the session needs a new sign-in.
+- [User menu](../../src/demo/visual-style-gallery.html#user-menu): the package account menu that ends the top bar.
+  Its `.account-menu__button` is a 44 px circle with an `.avatar--sm` face.
+  The face shows a person icon in local mode, and the initials once signed in.
+  Its title and aria-label name the user.
+  The `.account-menu__panel` is a `.menu` with the name line, then three `menu__item` links with icons.
+  The links are the connection state, Recycle bin, and Settings.
+  The current route's link takes the selected ground.
+  [user-menu.js](../../src/js/ui/user-menu.js) builds the skeleton and keeps it current with the session.
   Use it for the account and the destinations needed now and then; keep daily destinations in the navigation bars.
   The shell anchors the panel to the button, end edges aligned, so the component styles hold no fixed position.
 - [Floating button](../../src/demo/visual-style-gallery.html#floating-button): a `.fab` signal circle with one icon and no label, at `--elevation-2`.

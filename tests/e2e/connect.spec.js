@@ -78,7 +78,7 @@ test('local mode makes no network request outside the app origin', async ({ page
   });
   await open(page, '#/tasks');
   await page.getByRole('button', { name: 'Local User' }).click();
-  await page.locator('.user-panel').getByRole('link', { name: 'Settings' }).click();
+  await page.locator('.account-menu__panel').getByRole('menuitem', { name: 'Settings' }).click();
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   await expect(page).toHaveURL(/#\/connect$/);
   await expect(page.locator('[data-view="connect"]')).toContainText('no longer anonymous');

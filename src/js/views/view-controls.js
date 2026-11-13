@@ -11,7 +11,7 @@
 import { readPreference, removePreference, writePreference } from '../core/preferences.js';
 import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, GROUPINGS, NO_LIST, SORT_FIELDS } from '../core/query.js';
 import { STATUSES } from '../store/tasks.js';
-import { createLiveRegion } from '../ui/live-region.js';
+import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { spriteIcon, STATUS_LABELS } from './task-list.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

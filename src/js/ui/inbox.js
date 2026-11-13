@@ -10,7 +10,8 @@
  */
 
 import { actionLink } from '../sync/inbox.js';
-import { anchorPanel, attachPopover } from './popover.js';
+import { anchorPanel } from '../../vendor/design/js/anchor.js';
+import { attachPopover } from '../../vendor/design/js/popover.js';
 
 const ICONS = 'img/icons.svg';
 const MAX_BADGE = 99;

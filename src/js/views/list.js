@@ -14,8 +14,8 @@
 import {
   clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks,
 } from '../core/query.js';
-import { createLiveRegion } from '../ui/live-region.js';
-import { attachMenu } from '../ui/menu.js';
+import { createLiveRegion } from '../../vendor/design/js/live-region.js';
+import { attachMenu } from '../../vendor/design/js/menu.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
 import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
 import { can, listRole, ROLE_LABELS } from '../core/permissions.js';

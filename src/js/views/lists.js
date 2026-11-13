@@ -16,8 +16,8 @@
 
 import { countLists, countOf } from '../core/list-counts.js';
 import { applyListOrder, movedMessage, moveListTo, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
-import { createLiveRegion } from '../ui/live-region.js';
-import { attachMenu } from '../ui/menu.js';
+import { createLiveRegion } from '../../vendor/design/js/live-region.js';
+import { attachMenu } from '../../vendor/design/js/menu.js';
 import { formatRoute } from '../ui/router.js';
 import { createListMenu, runListAction } from './list-actions.js';
 import { attachReorder } from './reorder.js';

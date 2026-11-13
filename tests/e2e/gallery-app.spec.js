@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const GALLERY = '/demo/visual-style-gallery.html';
 const SPRITE = '/img/icons.svg';
+const LOOK_SPRITE = '/vendor/design/looks/neutral/icons.svg';
 // Sections of the task row components and the task list pattern; the app chrome has its own spec.
 const SECTIONS = '#status-button, #task-row, #task-list';
 const MIN_TARGET = 44;
@@ -163,14 +164,19 @@ for (const theme of THEMES) {
 test('every status has its own icon from the sprite', async ({ page, request }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
 
-  const sprite = await request.get(SPRITE);
-  expect(sprite.status()).toBe(200);
-  const symbols = new Set([...(await sprite.text()).matchAll(/<symbol[^>]*\bid="([^"]+)"/g)].map((match) => match[1]));
+  const symbolsOf = async (url) => {
+    const sprite = await request.get(url);
+    expect(sprite.status()).toBe(200);
+    return new Set([...(await sprite.text()).matchAll(/<symbol[^>]*\bid="([^"]+)"/g)].map((match) => match[1]));
+  };
+  // The vendored account menu draws its icons from the look sprite, which the app names at start.
+  const sprites = [['img/icons.svg', await symbolsOf(SPRITE)], ['vendor/design/looks/neutral/icons.svg', await symbolsOf(LOOK_SPRITE)]];
 
   const references = await page.locator('use').evaluateAll((uses) => uses.map((use) => use.getAttribute('href')));
   const missing = references.filter((href) => {
     const [path, id] = href.split('#');
-    return !path.endsWith('img/icons.svg') || !symbols.has(id);
+    const symbols = sprites.find(([name]) => path.endsWith(name))?.[1];
+    return !symbols?.has(id);
   });
   expect(references.length).toBeGreaterThanOrEqual(30);
   expect(missing).toEqual([]);

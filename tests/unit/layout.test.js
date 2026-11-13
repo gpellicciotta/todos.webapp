@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderShell } from '../../src/js/ui/layout.js';
+import { resetBody } from './dom-reset.js';
 
 afterEach(() => {
   vi.useRealTimers();
-  document.body.replaceChildren();
+  resetBody();
   localStorage.clear();
 });
 
@@ -28,7 +29,7 @@ describe('renderShell navigation', () => {
   it('ends the top bar with the user button and holds no sync indicator until the sync is shown', () => {
     const { root } = render();
     const bar = root.querySelector('.app__top-bar');
-    expect(bar.lastElementChild.contains(bar.querySelector('.user-button'))).toBe(true);
+    expect(bar.lastElementChild.contains(bar.querySelector('.account-menu__button'))).toBe(true);
     expect(root.querySelector('.sync-indicator')).toBeNull();
   });
 
@@ -41,16 +42,16 @@ describe('renderShell navigation', () => {
     const engine = { state: () => ({ status: 'synced', pending: 0 }), subscribe: () => () => {}, syncNow: vi.fn() };
     shell.showSync({ engine, readLog: async () => [], seen: { get: () => null, subscribe: () => () => {} }, checkForUpdate: vi.fn() });
     const slot = root.querySelector('.app__top-bar').lastElementChild;
-    const order = [...slot.children].map((child) => ['sync-indicator', 'inbox-button', 'user-button'].find((name) => child.classList.contains(name)));
+    const order = [...slot.children].map((child) => ['sync-indicator', 'inbox-button', 'account-menu'].find((name) => child.classList.contains(name)));
     expect(order.indexOf('sync-indicator')).toBeLessThan(order.indexOf('inbox-button'));
-    expect(order.indexOf('inbox-button')).toBeLessThan(order.indexOf('user-button'));
+    expect(order.indexOf('inbox-button')).toBeLessThan(order.indexOf('account-menu'));
     expect(root.querySelector('.app__banners [data-session-banner]')).not.toBeNull();
   });
 
   it('has no More button or menu in the top bar, since New list lives in the Lists view', () => {
     const { root } = render();
     expect(root.querySelector('.app__more')).toBeNull();
-    expect(root.querySelector('.app__top-bar .menu')).toBeNull();
+    expect(root.querySelector('.app__top-bar .menu:not(.account-menu__panel)')).toBeNull();
     expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['H1', 'DIV']);
   });
 
@@ -60,24 +61,24 @@ describe('renderShell navigation', () => {
     const bottom = [...root.querySelectorAll('.app__bottom-nav a')].map((link) => link.getAttribute('href'));
     expect(sidebar).toEqual(['#/tasks', '#/lists']);
     expect(bottom).toEqual(['#/tasks', '#/lists']);
-    expect([...root.querySelectorAll('.user-panel__link')].map((link) => link.getAttribute('href'))).toEqual(['#/connect', '#/bin', '#/settings']);
+    expect([...root.querySelectorAll('.account-menu__panel .menu__item')].map((link) => link.getAttribute('href'))).toEqual(['#/connect', '#/bin', '#/settings']);
   });
 
   it('marks the panel link of the current route, also for the screens under Settings', () => {
     const { root, shell } = render();
     shell.update({ view: 'bin', viewKey: 'bin', params: {} }, 'Recycle bin');
-    expect(root.querySelector('.user-panel [data-nav="bin"]').getAttribute('aria-current')).toBe('page');
-    expect(root.querySelector('.user-panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
+    expect(root.querySelector('.account-menu__panel [data-nav="bin"]').getAttribute('aria-current')).toBe('page');
+    expect(root.querySelector('.account-menu__panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
     shell.update({ view: 'connect', viewKey: 'connect', params: {} }, 'Connect');
-    expect(root.querySelector('.user-panel [data-nav="connect"]').getAttribute('aria-current')).toBe('page');
-    expect(root.querySelector('.user-panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
-    expect(root.querySelector('.user-panel [data-nav="bin"]').hasAttribute('aria-current')).toBe(false);
+    expect(root.querySelector('.account-menu__panel [data-nav="connect"]').getAttribute('aria-current')).toBe('page');
+    expect(root.querySelector('.account-menu__panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
+    expect(root.querySelector('.account-menu__panel [data-nav="bin"]').hasAttribute('aria-current')).toBe(false);
   });
 });
 
 describe('renderShell', () => {
-  it('announces a lasting notice through the polite live region, not a status role made with its text', () => {
-    vi.useFakeTimers();
+  it('announces a lasting notice through the polite live region, not a status role made with its text', async () => {
+    // The vendored live region is shared per document and keeps the timers of its first owner, so the test waits.
     const root = document.body.appendChild(document.createElement('div'));
     const shell = renderShell(root, { navigate: vi.fn() });
     const reload = vi.fn();
@@ -85,9 +86,8 @@ describe('renderShell', () => {
     const banner = root.querySelector('.app__banners .banner');
     expect(banner.textContent).toContain('updated in another tab');
     expect(banner.hasAttribute('role')).toBe(false);
-    vi.runAllTimers();
-    const region = document.querySelector('[aria-live="polite"]');
-    expect(region.textContent).toBe('ToDo\'s was updated in another tab. Reload to continue.');
+    const region = document.querySelector('[data-live-region="polite"]');
+    await vi.waitFor(() => expect(region.textContent).toBe('ToDo\'s was updated in another tab. Reload to continue.'));
     banner.querySelector('button').click();
     expect(reload).toHaveBeenCalledTimes(1);
   });
@@ -111,7 +111,7 @@ describe('renderShell inbox', () => {
   it('puts the bell before the user button, and keeps the top bar at a title and one menu slot', () => {
     const { root } = connected([]);
     const slot = root.querySelector('.app__top-bar').lastElementChild;
-    expect(slot.querySelector('.inbox-button').compareDocumentPosition(slot.querySelector('.user-button')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(slot.querySelector('.inbox-button').compareDocumentPosition(slot.querySelector('.account-menu__button')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['H1', 'DIV']);
   });
 

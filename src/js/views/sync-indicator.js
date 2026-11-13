@@ -10,7 +10,8 @@
  * A changed state is announced through the polite live region, except Syncing, which comes and goes with every run.
  */
 
-import { anchorPanel, attachPopover } from '../ui/popover.js';
+import { anchorPanel } from '../../vendor/design/js/anchor.js';
+import { attachPopover } from '../../vendor/design/js/popover.js';
 
 const ICONS = 'img/icons.svg';
 const LOG_HASH = '#/settings/sync-log';

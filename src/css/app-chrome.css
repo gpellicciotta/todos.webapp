@@ -2,8 +2,8 @@
  * App chrome of the ToDo's design system: navigation, sync indicator, user menu, editor panel,
  * note thread, in-place confirmation, and empty state.
  *
- * Every block uses semantic tokens from tokens.css only, on top of controls.css and app-components.css.
- * Icons come from the sprite in src/img/icons.svg, drawn with the `.icon` class from controls.css.
+ * Every block uses semantic tokens only, on top of the package components and app-components.css.
+ * Icons come from the sprite in src/img/icons.svg, drawn with the package `.icon` class.
  * Gallery-only state classes force a state on a static specimen:
  * `.is-hover`, `.is-active`, and `.is-focus`. App markup never uses them.
  * App states use attributes the app sets: `data-state` and `aria-current`.
@@ -394,11 +394,9 @@
 }
 
 /*
- * User menu: the end of the top bar, with the circular user button and its popover panel.
- * The button shows a person icon in local mode and the account initials once connected (data-state="connected");
- * an expired session (data-state="sign-in-needed") keeps the quiet look. Its title and aria-label name the user.
- * The panel is a `.popover` holding the user name, the connection state, and `.button--secondary` links with icons;
- * the link of the current route (aria-current="page") takes the signal border and icon on the selected ground.
+ * User menu: the end of the top bar, holding the sync indicator, the inbox bell, and the package account menu.
+ * The account menu takes the package look: an avatar face on a round button, and a `.menu` panel whose
+ * name line heads the connection state, Recycle bin, and Settings items; the current route's item is marked.
  */
 .user-menu {
   position: relative;
@@ -406,6 +404,11 @@
   flex: none;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* The menu keeps a gutter to the window edges, also for a long name on a narrow screen. */
+.user-menu .account-menu__panel {
+  max-inline-size: min(calc(100% - var(--space-4)), var(--width-side-panel));
 }
 
 /* The sync indicator overlays the account button to save header space. */
@@ -439,138 +442,6 @@
   block-size: 1px;
   overflow: hidden;
   clip-path: inset(50%);
-}
-
-.user-button {
-  display: inline-grid;
-  place-items: center;
-  inline-size: var(--target-min);
-  block-size: var(--target-min);
-  padding: 0;
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-round);
-  background-color: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  line-height: 1;
-  cursor: pointer;
-  transition-property: background-color, border-color, color;
-  transition-duration: var(--duration-fast);
-  transition-timing-function: var(--ease-standard);
-}
-
-.user-button:hover,
-.user-button.is-hover {
-  background-color: var(--color-surface-hover);
-  color: var(--color-text);
-}
-
-.user-button:active,
-.user-button.is-active,
-.user-button[aria-expanded='true'] {
-  background-color: var(--color-surface-active);
-  color: var(--color-text);
-}
-
-.user-button[data-state='connected'] {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.user-button[data-state='connected']:hover,
-.user-button[data-state='connected'].is-hover {
-  border-color: var(--color-primary-hover);
-  background-color: var(--color-primary-hover);
-  color: var(--color-on-primary);
-}
-
-.user-panel {
-  display: grid;
-  gap: var(--space-2);
-  max-inline-size: min(calc(100% - var(--space-4)), var(--width-side-panel));
-  padding: var(--space-2);
-}
-
-.user-panel__name {
-  margin: 0;
-  padding-block-start: var(--space-1);
-  padding-inline: var(--space-3);
-  font-weight: var(--weight-semibold);
-  overflow-wrap: anywhere;
-}
-
-.user-panel__status {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  padding-block-end: var(--space-2);
-  border-block-end: var(--border-width) solid var(--color-border);
-}
-
-/* Subtle menu link styling for panel items. */
-.button.button--secondary.user-panel__link,
-.user-panel__link {
-  display: flex;
-  inline-size: 100%;
-  box-sizing: border-box;
-  justify-content: flex-start;
-  gap: var(--space-3);
-  min-block-size: var(--target-min);
-  padding-inline: var(--space-3);
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius-control);
-  background-color: transparent;
-  color: var(--color-text);
-  font-weight: var(--weight-regular);
-}
-
-.button.button--secondary.user-panel__link:hover,
-.button.button--secondary.user-panel__link.is-hover,
-.user-panel__link:hover,
-.user-panel__link.is-hover {
-  border-color: transparent;
-  background-color: var(--color-surface-hover);
-  color: var(--color-text);
-}
-
-.button.button--secondary.user-panel__link:active,
-.button.button--secondary.user-panel__link.is-active,
-.user-panel__link:active,
-.user-panel__link.is-active {
-  border-color: transparent;
-  background-color: var(--color-surface-active);
-  color: var(--color-text);
-}
-
-.button.button--secondary.user-panel__link[aria-current='page'],
-.user-panel__link[aria-current='page'] {
-  border-color: transparent;
-  background-color: var(--color-surface-selected);
-  color: var(--color-primary);
-  font-weight: var(--weight-medium);
-}
-
-.button.button--secondary.user-panel__link[aria-current='page']:hover,
-.button.button--secondary.user-panel__link[aria-current='page'].is-hover,
-.user-panel__link[aria-current='page']:hover,
-.user-panel__link[aria-current='page'].is-hover {
-  border-color: transparent;
-  background-color: var(--color-surface-hover);
-}
-
-.button.button--secondary.user-panel__link[aria-current='page']:active,
-.button.button--secondary.user-panel__link[aria-current='page'].is-active,
-.user-panel__link[aria-current='page']:active,
-.user-panel__link[aria-current='page'].is-active {
-  border-color: transparent;
-  background-color: var(--color-surface-active);
-}
-
-.user-panel__link[aria-current='page'] .icon {
-  color: var(--color-primary);
 }
 
 /*

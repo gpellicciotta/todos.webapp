@@ -8,11 +8,9 @@
  */
 
 :root {
-  /* Size: task rows, group headers, and the minimum widths of chips, text fields, segments, and textareas. */
+  /* Size: task rows, group headers, the widest list chip, and the minimum width of text before a wrap. */
   --row-height: 3rem;
   --group-header-height: 2rem;
   --width-chip-max: 8rem;
   --width-text-min: 12rem;
-  --width-segment-min: 7.5rem;
-  --height-textarea-min: 5.5rem;
 }
