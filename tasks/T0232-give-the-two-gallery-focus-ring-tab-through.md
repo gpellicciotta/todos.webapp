@@ -1,6 +1,7 @@
 ---
 id: T0232
 owner: "@claude"
+session: claude-20261113-f82647
 needs: []
 branch: task/T0232-give-the-two-gallery-focus-ring-tab-through
 worktree: .plan/work/T0232-give-the-two-gallery-focus-ring-tab-through
@@ -24,11 +25,30 @@ Completion check: `npm run test:e2e` passes twice in a row.
 Size estimate: 2 files, 4 lines
 
 ## Task Execution Steps
-- [ ] **[Implement]** Call test.setTimeout(90_000) in both tab-through tests.
-- [ ] **[Verify]**    Run the full end-to-end suite twice and record both results.
-- [ ] **[Doc]**       Update CHANGELOG.md.
+- [x] **[Implement]** Call test.setTimeout(90_000) in both tab-through tests.
+- [x] **[Verify]**    Run the full end-to-end suite twice and record both results.
+- [x] **[Doc]**       Update CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-13] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-13] **[Implement]**
+  Added test.setTimeout(90_000) to both tab-through tests; a failing-test-first step does not apply to a timeout change.
+
+- [2026-11-13] **[Verify]**
+  Ran npm run test:e2e twice in a row; both passed with 4 workers.
+  - Run 1: 201 passed in 2.8m.
+  - Run 2: 201 passed in 2.7m.
+  - gallery-controls.spec.js tab-through test reached 21.3s, outside scope.
+
+- [2026-11-13] **[Doc]**
+  Added a DevOps bullet under v0.4.1-pre in CHANGELOG.md.
+
+- [2026-11-13] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 2.
+  - Lines touched: 2.
+  - Reopenings: 0.
+
