@@ -17,8 +17,10 @@ size_approved: 20 files, 1100 lines
 size_approved_by: "@gpellicciotta"
 size_approved_at: "2026-11-13T10:27:52Z"
 usage:
-  worker: {turns: 2, duration_s: 3602.2, input: 4, output: 16}
+  worker: {turns: 4, duration_s: 6441.0, input: 292, output: 66166, cache_read: 49580436, cache_write: 165894}
 work_duration: 1832.4
+review_status: pending
+review_round: 1
 ---
 # T0233: Replace the app's shared components with the vendored ones and import the public neutral look entry point.
 
@@ -95,4 +97,7 @@ Prove a lossless switch as [ADR-0007](../../../support.webapp/docs/adrs/ADR-0007
   - Files touched: 41.
   - Lines touched: 1320.
   - Reopenings: 0.
+
+- [2026-11-13] **[Review]**
+  Round 1 requested (mode: agent).
 
