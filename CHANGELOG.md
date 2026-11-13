@@ -17,6 +17,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Opened menus and popovers as native popovers in the top layer, with the package's 8 px corners.
 - FrontEnd: Showed an update activated in another tab as a lasting Reload toast instead of a banner.
 - FrontEnd: Gave list chip remove buttons the package skeleton, with chip corners and a visible hover in light mode.
+- DevOps: Gave the task row and chrome gallery focus ring tests 90 seconds, since full parallel runs pushed them near 30.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

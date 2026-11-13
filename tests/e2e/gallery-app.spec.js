@@ -216,6 +216,7 @@ for (const viewport of VIEWPORTS) {
   });
 
   test(`every keyboard stop in the task row, status, and task list sections shows a focus ring at ${viewport.width} px`, async ({ page }) => {
+    test.setTimeout(90_000);
     await openGallery(page, viewport, THEMES[0]);
     await page.locator('#toast .button').last().focus();
 
