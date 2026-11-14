@@ -5,14 +5,20 @@ session: claude-20261115-e8f1bb
 needs: []
 branch: task/T0224-adopt-task-entries-status-entries-recurring-tasks-and
 worktree: .plan/work/T0224-adopt-task-entries-status-entries-recurring-tasks-and
-status: suspended
-started_at: "2026-11-14T23:28:00Z"
+status: active
+started_at: "2026-11-14T23:31:33Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
-size_status: requested
+size_status: approved
 size_estimate: 30 files, 1600 lines
+usage:
+  worker: {turns: 2, duration_s: 115.6, input: 36, output: 4652, cache_read: 734980, cache_write: 86730}
+work_duration: 87.4
+size_approved: 30 files, 1600 lines
+size_approved_by: "@giova"
+size_approved_at: "2026-11-14T23:30:40Z"
 ---
 # T0224: Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync
 
@@ -55,4 +61,7 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
   - Requested approval: 30 files, 1600 lines.
   - todos.server T0241 completed but unreleased; v3.4.0-pre has no release.
   - Open question: may work start before the v3.4.0 server release?.
+
+- [2026-11-15] **[Size]**
+  Size approved by @giova for 30 files, 1600 lines.
 
