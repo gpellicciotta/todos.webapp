@@ -1,11 +1,11 @@
 ---
 id: T0237
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0237-show-task-notes-on-their-occurrence-and-let
+worktree: .plan/work/T0237-show-task-notes-on-their-occurrence-and-let
+status: active
+started_at: "2026-11-14T23:29:46Z"
 ended_at: —
 review: agent
 preview: none
