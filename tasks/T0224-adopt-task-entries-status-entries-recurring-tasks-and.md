@@ -1,11 +1,11 @@
 ---
 id: T0224
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0224-adopt-task-entries-status-entries-recurring-tasks-and
+worktree: .plan/work/T0224-adopt-task-entries-status-entries-recurring-tasks-and
+status: active
+started_at: "2026-11-14T23:28:00Z"
 ended_at: —
 review: agent
 preview: none
