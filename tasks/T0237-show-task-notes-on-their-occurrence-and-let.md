@@ -1,10 +1,11 @@
 ---
 id: T0237
 owner: "@claude"
-needs: []
+session: claude-20261115-f0814b
+needs: ['T0224', 'T0235']
 branch: task/T0237-show-task-notes-on-their-occurrence-and-let
 worktree: .plan/work/T0237-show-task-notes-on-their-occurrence-and-let
-status: active
+status: suspended
 started_at: "2026-11-14T23:29:46Z"
 ended_at: —
 review: agent
@@ -31,3 +32,10 @@ Start after todos.server T0249 adds the link to the REST note routes.
 ## Execution Log
 - [2026-11-14] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-15] **[Read]**
+  Blocked before coding: the web app stores no occurrences or rules and has no task history view.
+  - T0224 adds occurrences, current-occurrence, and note field renames.
+  - T0235 adds the task history view notes must show on.
+  - todos.server T0249 is complete, so the REST side is ready.
+
