@@ -1,0 +1,14 @@
+{
+  "plan-version": "3.1.19-pre",
+  "work-max-usage": "100%",
+  "work-agents": [
+    "claude",
+    "agy",
+    "codex"
+  ],
+  "work-agent-max-usage": {
+    "claude-code": "week=50%",
+    "antigravity": "week=95%",
+    "codex": "week=50%"
+  }
+}
