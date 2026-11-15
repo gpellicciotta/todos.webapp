@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 4, duration_s: 3174.8, input: 548, output: 135978, cache_read: 36460376, cache_write: 468950}
+  worker: {turns: 6, duration_s: 3784.2, input: 624, output: 148742, cache_read: 44566734, cache_write: 504924}
 work_duration: 26088.5
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T09:21:35Z"
 ---
 # T0228: Let Enter add by default, keep focus in the add field, and open the editor unfocused only on wide screens.
 
@@ -90,4 +93,7 @@ Size note: Enter's new default touched existing specs, Settings, docs, the galle
   Rebased onto main after T0224, resolved CHANGELOG, requirements, and service worker conflicts, and moved the new test and gallery row to the ready status.
   - npm test: 1299 passed.
   - playwright: 206 passed.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
