@@ -5,20 +5,22 @@ session: claude-20261115-921768
 needs: []
 branch: task/T0234-show-event-actions-done-and-target-counts-and
 worktree: .plan/work/T0234-show-event-actions-done-and-target-counts-and
-status: active
+status: completed
 started_at: "2026-11-15T09:49:17Z"
-ended_at: —
+ended_at: "2026-11-15T10:42:03Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 4081.0, input: 628, output: 196048, cache_read: 66370416, cache_write: 603030}
-  review: {turns: 2, duration_s: 1395.4, input: 540260, output: 62674, cache_read: 10926168}
-review_status: pending
+  review: {turns: 4, duration_s: 2164.6, input: 923174, output: 93008, cache_read: 16942284}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-15T10:35:32Z"
-review_session: antigravity-20261115-62b39c
-work_duration: 2122.7
+review_session: antigravity-20261115-26fdbb
+work_duration: 3165.8
+reviewed_by: "@gemini"
+completion-commit: ef8a453d9810461b17291be4579a2f9f1fd5e72b
 ---
 # T0234: Show event actions, done and target counts, and lifecycle rule editing in the web app task views
 
@@ -42,7 +44,7 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 - [x] **[Visual]**    Capture before and after screenshots of the task row, status menu, and editor.
 - [x] **[Doc]**       Update requirements, ui-design.md, and CHANGELOG.md.
 - [x] **[Implement]** Address review round 1 findings: tick icon, x shortcut, stale docs, gallery, changelog, and screenshots.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-13] **[Doc]**
@@ -113,4 +115,11 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 
 - [2026-11-15] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 2 approved by @gemini: Approved after verifying all round 1 rework items, automated test suites, visual gallery captures, and task validation checks.
+  - Findings: [review-findings-2.md](T0234-show-event-actions-done-and-target-counts-and/review-findings-2.md).
+
+- [2026-11-15] **[Complete]**
+  Task completed successfully.
 
