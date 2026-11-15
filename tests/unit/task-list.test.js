@@ -1096,4 +1096,52 @@ describe('createTaskList', () => {
     expect(document.activeElement).toBe(fallback);
     other.destroy();
   });
+
+  describe('recurring tasks', () => {
+    // A weekly task, ticked twice of three in the week from Monday 26 October to Monday 2 November, 00:00 in Brussels.
+    const recurring = (fields = {}) => {
+      const task = shapeTask({ id: 'r1', description: 'Water the plants', status: 'in-progress', 'target-count': 3, 'completion-count': 2, ...fields });
+      task['lifecycle-rules'] = { ...task['lifecycle-rules'], 'due-time': null, 'overdue-handling': null, 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' };
+      task['current-occurrence'] = { ...task['current-occurrence'], 'start-time': '2026-10-25T23:00:00.000Z', 'due-time': '2026-11-01T23:00:00.000Z' };
+      return task;
+    };
+    const rowOf = () => document.querySelector('.task-row[data-task-id="r1"]');
+
+    it('shows a connected recurring task past its period end as ready 0/3, with a repeat chip instead of a due chip', () => {
+      list.render([recurring()], { ...ctx, now: new Date('2026-11-01T22:00:00Z') });
+      expect(rowOf().dataset.status).toBe('in-progress');
+      expect(rowOf().querySelector('.task-row__count').textContent).toBe('2/3 done');
+      expect(rowOf().querySelector('.task-row__repeat').textContent).toBe('Weekly');
+      expect(rowOf().querySelector('.chip--overdue')).toBeNull();
+      list.render([recurring()], { ...ctx, now: new Date('2026-11-02T08:00:00Z') });
+      expect(rowOf().dataset.status).toBe('ready');
+      expect(rowOf().querySelector('.task-row__count').textContent).toBe('0/3 done');
+      expect(rowOf().querySelector('.chip--overdue')).toBeNull();
+    });
+
+    it('turns a row ready 0/3 on the minute tick once its period ends', () => {
+      list.render([recurring()], { ...ctx, now: new Date('2026-11-01T22:59:00Z') });
+      list.tick(new Date('2026-11-01T23:00:00Z'));
+      expect(rowOf().dataset.status).toBe('ready');
+      expect(rowOf().querySelector('.task-row__count').textContent).toBe('0/3 done');
+    });
+
+    it('offers grace completion of the previous period in the status menu for 24 hours, naming the cached occurrence', () => {
+      list.render([recurring()], { ...ctx, now: new Date('2026-11-02T08:00:00Z') });
+      openStatusMenu(rowOf().querySelector('.status-button'));
+      const items = () => [...document.querySelectorAll('.status-menu [role="menuitem"]')];
+      expect(items().map((item) => item.textContent.trim())).toEqual(['Start', 'Cancel task', 'Complete for previous period']);
+      items().at(-1).click();
+      expect(store.postEvent).toHaveBeenCalledWith('r1', 'complete', { occurrence: 1 });
+      list.render([recurring()], { ...ctx, now: new Date('2026-11-03T00:00:00Z') });
+      openStatusMenu(rowOf().querySelector('.status-button'));
+      expect(items().map((item) => item.textContent.trim())).toEqual(['Start', 'Cancel task']);
+    });
+
+    it('ticks a row shown ready for the new period without naming an occurrence', () => {
+      list.render([recurring()], { ...ctx, now: new Date('2026-11-02T08:00:00Z') });
+      rowOf().querySelector('.status-button').click();
+      expect(store.postEvent).toHaveBeenCalledWith('r1', 'complete');
+    });
+  });
 });

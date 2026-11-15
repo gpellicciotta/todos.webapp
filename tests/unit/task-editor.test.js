@@ -338,6 +338,90 @@ describe('mountTaskEditor', () => {
       expect(document.querySelector('[data-section="overdue"]').hidden).toBe(true);
       expect(document.querySelector('[data-section="target"]').hidden).toBe(false);
     });
+
+    describe('recurrence', () => {
+      const control = (name) => document.querySelector(`[name="${name}"]`);
+      const details = () => document.querySelector('[data-section="repeat"] .task-editor__recurrence');
+
+      /**
+       * Fill the editor with a weekly task, every two weeks, ending after 10 occurrences.
+       * @returns {Promise<void>} resolves once filled
+       */
+      async function refillWeekly() {
+        const recurring = shapeTask({ ...TASK, id: 't1', description: 'Buy paint' });
+        recurring['lifecycle-rules'] = { ...recurring['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 2,
+          'recurrence-end-count': 10, timezone: 'Europe/Brussels', 'due-time': null, 'overdue-handling': null };
+        store.getTask.mockImplementation(async () => recurring);
+        const reads = store.listsOfTask.mock.calls.length;
+        store.listeners.forEach((listener) => listener({ operation: 'updateRules' }));
+        await vi.waitFor(() => expect(store.listsOfTask.mock.calls.length).toBeGreaterThan(reads));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      it('makes a one-off task weekly in the browser timezone, and hides the recurrence details until then', async () => {
+        expect([...control('recurrence-unit').options].map((option) => [option.value, option.textContent])).toEqual([
+          ['', 'Never'], ['day', 'Daily'], ['week', 'Weekly'], ['month', 'Monthly'],
+        ]);
+        expect(control('recurrence-unit').value).toBe('');
+        expect(details().hidden).toBe(true);
+        change(control('recurrence-unit'), 'week');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', {
+          'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }));
+      });
+
+      it('fills and saves the interval, end date, end count, and timezone of a recurring task', async () => {
+        await refillWeekly();
+        expect(details().hidden).toBe(false);
+        expect([control('recurrence-unit').value, control('recurrence-interval').value, control('recurrence-end-date').value,
+          control('recurrence-end-count').value, control('timezone').value]).toEqual(['week', '2', '', '10', 'Europe/Brussels']);
+        typeAndLeave(control('recurrence-interval'), '3');
+        typeAndLeave(control('recurrence-end-date'), '2026-12-31');
+        typeAndLeave(control('recurrence-end-count'), '');
+        typeAndLeave(control('timezone'), 'Asia/Tokyo');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledTimes(4));
+        expect(store.updateRules.mock.calls.map(([, edit]) => edit)).toEqual([
+          { 'recurrence-interval': 3 }, { 'recurrence-end-date': '2026-12-31' }, { 'recurrence-end-count': null }, { timezone: 'Asia/Tokyo' },
+        ]);
+      });
+
+      it('shows field errors for an interval outside 1 to 99, an end count below 1, and an unknown timezone', async () => {
+        await refillWeekly();
+        typeAndLeave(control('recurrence-interval'), '100');
+        typeAndLeave(control('recurrence-end-count'), '0');
+        typeAndLeave(control('timezone'), 'Mars/Olympus');
+        expect(errorOf(control('recurrence-interval'))).toBe('Enter a whole number from 1 to 99.');
+        expect(errorOf(control('recurrence-end-count'))).toBe('Enter a whole number of at least 1, or leave it empty.');
+        expect(errorOf(control('timezone'))).toBe('Enter a timezone such as Europe/Brussels.');
+        expect(store.updateRules).not.toHaveBeenCalled();
+      });
+
+      it('stops the recurrence with Never', async () => {
+        await refillWeekly();
+        change(control('recurrence-unit'), '');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'recurrence-unit': null }));
+      });
+    });
+
+    describe('history', () => {
+      const EVENTS = [
+        { id: 'e2', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T10:00:00.000Z', 'owner-id': null, type: 'complete', details: null },
+        { id: 'e1', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T09:00:00.000Z', 'owner-id': null, type: 'create', details: null },
+      ];
+      const OCCURRENCES = [{ 'task-id': 't1', ...TASK['current-occurrence'], 'completion-count': 1, status: 'completed' }];
+      const entries = (kind) => [...document.querySelectorAll(`[data-section="history"] [data-history="${kind}"] li`)].map((item) => item.textContent);
+
+      it('lists the events and occurrences of the local stores in local mode, newest first', async () => {
+        store.eventsOfTask = vi.fn(async () => [...EVENTS].reverse());
+        store.occurrencesOfTask = vi.fn(async () => OCCURRENCES);
+        document.querySelector('[data-section="history"] button[data-action="history"]').click();
+        await vi.waitFor(() => expect(entries('events')).toHaveLength(2));
+        expect(entries('events')[0]).toContain('Ticked');
+        expect(entries('events')[1]).toContain('Created');
+        expect(entries('occurrences')[0]).toContain('#1');
+        expect(entries('occurrences')[0]).toContain('Completed');
+      });
+    });
   });
 
   it('shows a field error for a year with fewer than four digits and saves nothing', async () => {
@@ -460,6 +544,49 @@ describe('mountTaskEditor', () => {
     document.querySelector('.note-thread__actions button').click();
     expect(errorOf(note)).toBe('Enter a note.');
     expect(store.addNote).not.toHaveBeenCalled();
+  });
+});
+
+describe('mountTaskEditor history while connected', () => {
+  let panel;
+  let editor;
+
+  afterEach(() => {
+    panel.destroy();
+  });
+
+  it('reads the events and occurrences from the server routes', async () => {
+    resetBody('<div data-editor-slot hidden></div>');
+    const store = fakeStore();
+    store.eventsOfTask = vi.fn(async () => []);
+    store.occurrencesOfTask = vi.fn(async () => []);
+    const api = {
+      send: vi.fn(async (method, path) => ({
+        status: 200, ok: true, headers: { get: () => null },
+        body: path.endsWith('/events')
+          ? [{ id: 'e1', 'task-id': 't1', occurrence: 2, 'creation-time': '2026-11-09T00:00:00.000Z', 'owner-id': null, type: 'roll-over', details: null }]
+          : [{ 'task-id': 't1', occurrence: 2, 'start-time': '2026-11-08T23:00:00.000Z', 'due-time': '2026-11-15T23:00:00.000Z', 'target-count': 3,
+            'completion-count': 0, status: 'ready', 'close-time': null }],
+      })),
+    };
+    const session = { state: () => 'connected' };
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, api, session });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+    document.querySelector('[data-section="history"] button[data-action="history"]').click();
+    const entries = (kind) => [...document.querySelectorAll(`[data-history="${kind}"] li`)].map((item) => item.textContent);
+    await vi.waitFor(() => expect(entries('events')).toHaveLength(1));
+    expect(api.send.mock.calls.map(([method, path]) => [method, path])).toEqual([['GET', '/api/tasks/t1/events'], ['GET', '/api/tasks/t1/occurrences']]);
+    expect(entries('events')[0]).toContain('Period ended');
+    expect(entries('occurrences')[0]).toContain('#2');
+    expect(entries('occurrences')[0]).toContain('0 of 3 done');
+    expect(store.eventsOfTask).not.toHaveBeenCalled();
   });
 });
 

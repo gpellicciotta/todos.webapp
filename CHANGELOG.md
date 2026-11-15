@@ -23,6 +23,15 @@ All notable changes to this project are documented here.
 - FrontEnd: Opened a status menu of Start, Undo start, Cancel task, and Reopen by right-click, long press, or keys.
 - FrontEnd: Showed an Undo toast when a status change hides the row under the view's filters.
 - FrontEnd: Read due dates, times, and `#list` tags typed in the add field into the new task, with a preview line.
+- FrontEnd: Computed day, week, and month recurrence periods in IANA timezones, passing the shared todos.server vectors.
+- FrontEnd: Rolled recurring tasks over in local mode, with missed periods and the recurrence end date and count.
+- FrontEnd: Showed a connected recurring task past its period end as to do until the server rolls it over.
+- FrontEnd: Added Repeat, Every, Ends on, Ends after, and Timezone fields to the task editor.
+- FrontEnd: Offered Complete for previous period in the status menu for 24 hours after a period ends.
+- FrontEnd: Showed a repeat chip on recurring rows instead of a due chip.
+- FrontEnd: Added a task history of occurrences and events, read from the server or the local stores.
+- FrontEnd: Filtered, sorted, grouped, and counted recurring tasks past their period end as to do.
+- FrontEnd: Offered only Reopen on a recurring series that ended, completed or cancelled, as the server allows.
 - FrontEnd: Gave group headers 12 px of inline padding and a chevron, so the name and count sit clear of the edges.
 - FrontEnd: Showed a group's count as "6 of 10" while search or filters hide some of its tasks.
 - FrontEnd: Made each group header a button that collapses or expands its group, by click, Enter, or Space.

@@ -9,12 +9,16 @@
  * A task embeds its `lifecycle-rules` and `current-occurrence`, like the service's `Task` schema.
  * Statuses change only through events, which the `events` store keeps; `occurrences` keeps each occurrence.
  * Every change of a task or its parts sets its `last-update-time` (`TSK-12`, `NOT-5`).
+ * In local mode the store rolls recurring tasks over before each event and rule edit, as the server does (`LOC-2`).
+ * While connected it never rolls over: an event past the period end joins the period covering now,
+ * and the service places it by its time. System events and rule edit events stay local; they never join the queue.
  */
 
 import {
-  applyEvent, applyRuleEdit, eventsTowardsStatus, firstOccurrence, makeEvent, normalizeRules, RULE_FIELDS, shouldExpire,
-  STATUSES, USER_EVENT_TYPES,
+  applyEvent, applyRuleEdit, eventsTowardsStatus, firstOccurrence, freshOccurrence, GRACE_MS, graceOccurrence, isRecurring,
+  isPeriodEnd, isStale, makeEvent, normalizeRules, planRollOver, refoldOccurrence, RULE_FIELDS, shouldExpire, STATUSES, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
+import { isValidTimezone } from '../core/periods.js';
 import { keyBetween, keysBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
 import { uuid7 } from '../lib/uuid7.js';
 import { request, StoreError, STORES, transact, ValidationError } from './idb.js';
@@ -143,8 +147,8 @@ function checkRule(field, value) {
       }
       return value ?? null;
     case 'timezone':
-      if (!optional && (typeof value !== 'string' || !value)) {
-        fail('it is an IANA zone name');
+      if (!optional && !isValidTimezone(value)) {
+        fail('it is an IANA zone name, such as Europe/Brussels');
       }
       return value ?? null;
     default:
@@ -159,6 +163,32 @@ function checkRule(field, value) {
  */
 function checkRuleEdit(edit) {
   return Object.fromEntries(RULE_FIELDS.filter((field) => field in edit).map((field) => [field, checkRule(field, edit[field])]));
+}
+
+/**
+ * Check that recurring rules name their interval and timezone, which periods need.
+ * @param {object} rules the full rules
+ * @returns {object} the rules
+ * @throws {ValidationError} for a recurring rule without interval or timezone
+ */
+function checkRecurrence(rules) {
+  if (isRecurring(rules)) {
+    for (const field of ['recurrence-interval', 'timezone']) {
+      if (!rules[field]) {
+        throw new ValidationError(field, 'required', `A recurring task needs a ${field}.`);
+      }
+    }
+  }
+  return rules;
+}
+
+/**
+ * Tell whether the store works in local mode, where it rolls recurring tasks over itself.
+ * @param {{local?: () => boolean}} ctx store context
+ * @returns {boolean} true without a connection
+ */
+function isLocal(ctx) {
+  return ctx.local?.() ?? true;
 }
 
 /**
@@ -183,6 +213,17 @@ export async function putTask(tx, task) {
 }
 
 /**
+ * Store an occurrence of a task that is not its current one, such as a closed one, inside a transaction.
+ * @param {IDBTransaction} tx the transaction
+ * @param {string} taskId the task identifier
+ * @param {object} occurrence the occurrence
+ * @returns {Promise<void>}
+ */
+async function putOccurrence(tx, taskId, occurrence) {
+  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': taskId, ...occurrence }, [taskId, occurrence.occurrence]));
+}
+
+/**
  * Store events inside a transaction covering the events store.
  * @param {IDBTransaction} tx the transaction
  * @param {object[]} events the events
@@ -203,11 +244,12 @@ export async function putEvents(tx, events) {
  * @returns {{task: object, events: object[]}} the task after the events, and the events
  * @throws {StoreError} with code `conflict` when an event's precondition fails
  */
-function applyUserEvents(ctx, task, types, time) {
+function applyUserEvents(ctx, task, types, time, { placed = true } = {}) {
   let occurrence = task['current-occurrence'];
   const events = [];
   for (const type of types) {
-    const event = makeEvent({ id: newEventId(ctx), 'task-id': task.id, type, 'creation-time': time, occurrence: occurrence.occurrence });
+    // An unplaced event names no occurrence, so the service assigns the period containing its time.
+    const event = makeEvent({ id: newEventId(ctx), 'task-id': task.id, type, 'creation-time': time, occurrence: placed ? occurrence.occurrence : null });
     const next = applyEvent(occurrence, event, task['lifecycle-rules']);
     if (!next) {
       throw new StoreError('conflict', `A ${type} event does not apply to a ${occurrence.status} task.`);
@@ -432,7 +474,7 @@ export async function createTask(ctx, input, { lists = [] } = {}) {
       edit[field] = input[field];
     }
   }
-  const rules = normalizeRules(checkRuleEdit(edit));
+  const rules = checkRecurrence(normalizeRules(checkRuleEdit(edit)));
   const status = input.status === undefined ? 'ready' : checkField('status', input.status);
   const created = {
     id: input.id ?? uuid7(() => ctx.now().getTime()),
@@ -497,24 +539,160 @@ export function updateTask(ctx, id, changes = {}, { when } = {}) {
 }
 
 /**
+ * Roll a recurring task over up to a moment inside a transaction, storing the closed occurrences and their
+ * `roll-over` or `end-recurrence` events, as the server does. The caller stores the returned task.
+ * @param {{now: () => Date}} ctx store context
+ * @param {IDBTransaction} tx a read-write transaction covering `TASK_STORES`
+ * @param {object} task the task
+ * @param {Date} now the moment to roll over to
+ * @returns {Promise<{task: object, rolled: boolean}>} the task after the roll-over, and whether anything rolled over
+ */
+async function rollOverInside(ctx, tx, task, now) {
+  const plan = planRollOver(task['lifecycle-rules'], task['current-occurrence'], now);
+  if (plan.events.length === 0) {
+    return { task, rolled: false };
+  }
+  for (const occurrence of plan.occurrences) {
+    await putOccurrence(tx, task.id, occurrence);
+  }
+  await putEvents(tx, plan.events.map((event) => makeEvent({ id: newEventId(ctx), 'task-id': task.id, ...event })));
+  return { task: { ...task, 'current-occurrence': plan.current }, rolled: true };
+}
+
+/**
+ * Roll a recurring task over in local mode, as the minute timer does; while connected, the service rolls over.
+ * @param {{db: IDBDatabase, now: () => Date, local?: () => boolean}} ctx store context
+ * @param {string} id the task identifier
+ * @param {{now?: Date}} [options] the moment to roll over to, the store clock by default
+ * @returns {Promise<object|null>} the rolled-over task, or null when nothing rolled over
+ */
+export function rollOverTask(ctx, id, { now = ctx.now() } = {}) {
+  if (!isLocal(ctx)) {
+    return Promise.resolve(null);
+  }
+  return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
+    const stored = await mustGetLiveTask(tx, id);
+    const { task, rolled } = await rollOverInside(ctx, tx, stored, now);
+    if (!rolled) {
+      return null;
+    }
+    const updated = { ...task, 'last-update-time': now.toISOString() };
+    await putTask(tx, updated);
+    return updated;
+  });
+}
+
+/**
+ * Post an event for the previous occurrence of a recurring task, during the grace period after its period ended.
+ * In local mode the event joins the stored occurrence, with a time inside its period, which then folds again;
+ * while connected only the queue carries it, and the service checks and places it.
+ * @param {{now: () => Date, local?: () => boolean}} ctx store context
+ * @param {IDBTransaction} tx the transaction
+ * @param {object} task the task after any roll-over
+ * @param {string} type the event type
+ * @param {number} number the occurrence the event names
+ * @param {Date} now the current time
+ * @returns {Promise<{event: object, task: object}>} the event and the task
+ */
+async function postForPrevious(ctx, tx, task, type, number, now) {
+  const current = task['current-occurrence'];
+  const refuse = (reason) => new StoreError('conflict', `A ${type} event cannot name occurrence ${number}: ${reason}.`);
+  if (!isRecurring(task['lifecycle-rules']) || number !== current.occurrence - 1 || type === 'cancel' || type === 'reopen') {
+    throw refuse('only the current occurrence, or the previous one of a recurring task, takes events');
+  }
+  if (!isLocal(ctx)) {
+    if (graceOccurrence(task, now) !== number) {
+      throw refuse('its grace period has ended');
+    }
+    const event = makeEvent({ id: newEventId(ctx), 'task-id': task.id, type, 'creation-time': now.toISOString(), occurrence: number });
+    await putTask(tx, task);
+    await putEvents(tx, [event]);
+    return { event, task: remember(task, [event]) };
+  }
+  const previous = await request(tx.objectStore(STORES.occurrences).get([task.id, number]));
+  const due = Date.parse(previous?.['due-time'] ?? '');
+  if (!previous || !(now.getTime() <= due + GRACE_MS)) {
+    throw refuse('its grace period has ended');
+  }
+  // So the event folds before the roll-over that closed the occurrence.
+  const time = new Date(Math.min(now.getTime(), due - 1)).toISOString();
+  const event = makeEvent({ id: newEventId(ctx), 'task-id': task.id, type, 'creation-time': time, occurrence: number });
+  const occurrence = { ...previous };
+  delete occurrence['task-id'];
+  const events = (await request(tx.objectStore(STORES.events).getAll(ctx.keyRange.bound([task.id], [task.id, []]))))
+    .filter((other) => other.occurrence === number);
+  // As the server does, the precondition holds against the occurrence before its period ended.
+  const open = refoldOccurrence(occurrence, events.filter((other) => !isPeriodEnd(other.type)), task['lifecycle-rules']);
+  if (!applyEvent(open, event, task['lifecycle-rules'])) {
+    throw new StoreError('conflict', `A ${type} event does not apply to a ${open.status} occurrence.`);
+  }
+  await putOccurrence(tx, task.id, refoldOccurrence(occurrence, [...events, event], task['lifecycle-rules']));
+  await putTask(tx, task);
+  await putEvents(tx, [event]);
+  return { event, task: remember(task, [event]) };
+}
+
+/**
  * Post a user event on a task, as the tick button and event actions do.
- * @param {{db: IDBDatabase, now: () => Date}} ctx store context
+ * In local mode a recurring task rolls over first. While connected, an event on a task past its period end joins
+ * the period covering now, unplaced, so the service assigns it once it rolled over (the display rule).
+ * Naming the cached occurrence past its period end, or the previous one, records a grace completion.
+ * A reopen of a closed recurring task, completed or cancelled, opens a fresh period containing now, unless the end rules
+ * allow none; other events on it fail, since its period is over.
+ * @param {{db: IDBDatabase, now: () => Date, local?: () => boolean}} ctx store context
  * @param {string} id the task identifier
  * @param {string} type `complete`, `uncomplete`, `start`, `unstart`, `cancel`, or `reopen`
+ * @param {{occurrence?: number}} [options] the occurrence the event names, the current one by default
  * @returns {Promise<{event: object, task: object}>} the stored event and the updated task
  * @throws {StoreError} with code `conflict` when the precondition fails, and `invalid` for other types
  */
-export function postEvent(ctx, id, type) {
+export function postEvent(ctx, id, type, { occurrence: named } = {}) {
   if (!USER_EVENT_TYPES.includes(type)) {
     throw new StoreError('invalid', `Clients cannot post a ${type} event.`);
   }
   return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
     const stored = await mustGetLiveTask(tx, id);
-    const time = ctx.now().toISOString();
-    const { task, events } = applyUserEvents(ctx, { ...stored, 'last-update-time': time }, [type], time);
-    await putTask(tx, task);
-    await putEvents(tx, events);
-    return { event: events[0], task: remember(task, events) };
+    const now = ctx.now();
+    const time = now.toISOString();
+    let task = { ...stored, 'last-update-time': time };
+    if (isLocal(ctx)) {
+      ({ task } = await rollOverInside(ctx, tx, task, now));
+    }
+    const rules = task['lifecycle-rules'];
+    const current = task['current-occurrence'];
+    if (named !== undefined && named !== null && named !== current.occurrence) {
+      return postForPrevious(ctx, tx, task, type, named, now);
+    }
+    let result;
+    if (isStale(task, now) && named === current.occurrence) {
+      // Grace completion before the service rolled over: the event joins the cached occurrence, inside its period.
+      const due = Date.parse(current['due-time']);
+      if (now.getTime() > due + GRACE_MS || type === 'cancel' || type === 'reopen') {
+        throw new StoreError('conflict', `The grace period of occurrence ${current.occurrence} has ended.`);
+      }
+      result = applyUserEvents(ctx, task, [type], new Date(due - 1).toISOString());
+    }
+    else if (isStale(task, now)) {
+      const { current: shown } = planRollOver(rules, current, now);
+      if (shown['close-time'] !== null) {
+        throw new StoreError('conflict', 'The recurrence of this task has ended.');
+      }
+      result = applyUserEvents(ctx, { ...task, 'current-occurrence': shown }, [type], time, { placed: false });
+    }
+    else if (type === 'reopen' && isRecurring(rules) && current['close-time'] !== null) {
+      const fresh = freshOccurrence(rules, current, now);
+      if (!fresh) {
+        throw new StoreError('conflict', 'The recurrence of this task has ended; extend its end rules first.');
+      }
+      const event = makeEvent({ id: newEventId(ctx), 'task-id': id, type, 'creation-time': time, occurrence: fresh.occurrence });
+      result = { task: { ...task, 'current-occurrence': fresh }, events: [event] };
+    }
+    else {
+      result = applyUserEvents(ctx, task, [type], time);
+    }
+    await putTask(tx, result.task);
+    await putEvents(tx, result.events);
+    return { event: result.events[0], task: remember(result.task, result.events) };
   });
 }
 
@@ -528,10 +706,23 @@ export function postEvent(ctx, id, type) {
 export function updateRules(ctx, id, edit = {}) {
   const checked = checkRuleEdit(edit);
   return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
-    const stored = await mustGetLiveTask(tx, id);
-    const time = ctx.now().toISOString();
+    let stored = await mustGetLiveTask(tx, id);
+    const now = ctx.now();
+    const time = now.toISOString();
+    if (isLocal(ctx)) {
+      ({ task: stored } = await rollOverInside(ctx, tx, stored, now));
+    }
     const updated = { ...stored, ...applyRuleEdit(stored, checked, time), 'last-update-time': time };
+    checkRecurrence(updated['lifecycle-rules']);
     await putTask(tx, updated);
+    const [old, rules] = [stored['lifecycle-rules'], updated['lifecycle-rules']];
+    const details = Object.fromEntries(RULE_FIELDS.filter((field) => (old[field] ?? null) !== (rules[field] ?? null))
+      .map((field) => [field, { old: old[field] ?? null, new: rules[field] ?? null }]));
+    if (Object.keys(details).length > 0) {
+      // The local history keeps the edit as the service does; the service writes its own event, so this one stays local.
+      const event = makeEvent({ id: newEventId(ctx), 'task-id': id, type: 'edit-lifecycle-rules', 'creation-time': time, occurrence: updated['current-occurrence'].occurrence });
+      await putEvents(tx, [{ ...event, details }]);
+    }
     return updated;
   });
 }

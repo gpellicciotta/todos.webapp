@@ -170,7 +170,8 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   const stored = await read();
   expect(stored.rules['target-count']).toBe(3);
   expect(stored.occurrence).toMatchObject({ 'target-count': 3, 'completion-count': 3, status: 'completed', 'due-time': due });
-  expect(stored.events).toEqual(['create', 'complete', 'complete', 'complete']);
+  // The local history keeps each rule edit as the service does: the target, then the deadline.
+  expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'complete', 'complete', 'complete', 'edit-lifecycle-rules']);
   await page.reload();
   await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
   await expect(panel.getByLabel('Target count')).toHaveValue('3');
@@ -283,4 +284,38 @@ test('Delete task moves it to the recycle bin with an Undo toast, and a deleted 
   await expect(page.locator('.toast', { hasText: 'That task was not found.' })).toBeVisible();
   await expect(page).toHaveURL(/#\/tasks$/);
   expect(problems).toEqual([]);
+});
+
+test.describe('recurring tasks in local mode', () => {
+  test.use({ timezoneId: 'Europe/Brussels' });
+
+  test('a weekly task ticked this week comes back as ready next week, and its history shows the roll-over', async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(WIDE);
+    // Wednesday 4 November 2026; the week ends on Monday 9 November, 00:00 in Brussels.
+    await page.clock.install({ time: new Date('2026-11-04T10:00:00Z') });
+    await seed(page);
+    const panel = await openEditor(page);
+    await panel.getByLabel('Repeat').selectOption('week');
+    await expect(panel.getByLabel('Timezone')).toHaveValue('Europe/Brussels');
+    await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Weekly');
+    await panel.locator('[data-section="status"] button[data-event="complete"]').click();
+    await expect(panel.locator('.task-editor__status')).toHaveText('Completed');
+    // Completed this week, the task leaves the default open filter until its next period.
+    const row = page.locator('.task-row', { hasText: 'Buy paint' });
+    await expect(row).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(panel).toHaveCount(0);
+    // Into Monday 9 November, 09:00 in Brussels: the minute timer rolls the task over.
+    await page.clock.fastForward(119 * 3_600_000);
+    await expect(row).toHaveAttribute('data-status', 'ready');
+    await page.reload();
+    await expect(row).toHaveAttribute('data-status', 'ready');
+    const reopened = await openEditor(page);
+    await reopened.getByRole('button', { name: 'Show history' }).click();
+    await expect(reopened.locator('[data-history="events"] li').first()).toContainText('Period ended');
+    await expect(reopened.locator('[data-history="occurrences"] li')).toHaveCount(2);
+    await expect(reopened.locator('[data-history="occurrences"] li').nth(1)).toContainText('Completed');
+    expect(problems).toEqual([]);
+  });
 });

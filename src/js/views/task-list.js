@@ -7,6 +7,9 @@
  * once cancelled; `x` does the same on the focused row (`TSK-4`).
  * A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key on it opens the status menu,
  * which offers `start`, `unstart`, `cancel`, and `reopen` while their preconditions hold.
+ * A recurring row shows a repeat chip, such as Weekly, instead of a due chip, and is never overdue.
+ * Past its period end it shows as `ready` with count 0 until the roll-over (the display rule), also on the minute tick.
+ * For 24 hours after a period ends, the status menu adds Complete for previous period, which names that occurrence.
  * An event that hides the row under the view's filters shows an Undo toast, which Ctrl+Z also runs.
  * The More button offers Add to list and Delete, which moves the task to the recycle bin
  * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu; the status button sets it.
@@ -31,7 +34,7 @@
  * `markAdded` highlights a new task's row for two seconds and scrolls it into view, rendering it first when needed.
  */
 
-import { applyEvent, dueTimeOf, statusOf } from '../core/occurrences.js';
+import { applyEvent, displayTask, dueTimeOf, graceOccurrence, isRecurring, isStale, recurrenceLabel, statusOf } from '../core/occurrences.js';
 import { isOverdue } from '../core/overdue.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
@@ -122,6 +125,7 @@ const STRINGS = Object.freeze({
   removeFromList: 'Remove from this list',
   moveUp: 'Move up',
   moveDown: 'Move down',
+  previousPeriod: 'Complete for previous period',
   delete: 'Delete',
   deleted: 'Task moved to the recycle bin.',
   failed: 'That change could not be saved.',
@@ -137,11 +141,13 @@ const STRINGS = Object.freeze({
 /**
  * Return the event one click on the status button posts, its tick: `complete` below target, `uncomplete` once completed,
  * and `reopen` for a cancelled occurrence, whose count changes only after it reopens.
+ * A closed recurring occurrence, such as a series ended as completed, takes only `reopen`.
  * @param {object} occurrence the current occurrence
+ * @param {object} [rules] the lifecycle rules
  * @returns {'complete'|'uncomplete'|'reopen'} the event type
  */
-export function tickEvent(occurrence) {
-  if (occurrence.status === 'cancelled') {
+export function tickEvent(occurrence, rules = undefined) {
+  if (occurrence.status === 'cancelled' || (isRecurring(rules) && occurrence['close-time'] !== null)) {
     return 'reopen';
   }
   return occurrence.status === 'completed' ? 'uncomplete' : 'complete';
@@ -150,10 +156,11 @@ export function tickEvent(occurrence) {
 /**
  * Return the status menu actions whose preconditions hold for an occurrence, as the todos.server status rules say.
  * @param {object} occurrence the current occurrence
+ * @param {object} [rules] the lifecycle rules; a closed recurring occurrence offers only Reopen
  * @returns {object[]} the entries of `STATUS_ACTIONS` that apply
  */
-export function statusActions(occurrence) {
-  return STATUS_ACTIONS.filter(({ event }) => applyEvent(occurrence, { type: event, 'creation-time': occurrence['start-time'] }) !== null);
+export function statusActions(occurrence, rules = undefined) {
+  return STATUS_ACTIONS.filter(({ event }) => applyEvent(occurrence, { type: event, 'creation-time': occurrence['start-time'] }, rules) !== null);
 }
 
 
@@ -230,13 +237,14 @@ function dateFormat(locale, settings) {
 /**
  * Format a task's due time for its chip: Overdue, Today or Tomorrow, a weekday within the week, or a date.
  * A due time of 23:59 is a date-only due time (`TSK-6`), so it shows no time of day.
+ * A recurring task shows its repeat chip instead, since its due times only end periods.
  * @param {object} task the task
  * @param {Date|number} [now] the current time
  * @param {string} [locale] the locale of the date and time formats, the user's by default
  * @returns {{text: string, overdue: boolean}|null} the chip, or null without a due time
  */
 export function formatDue(task, now = new Date(), locale = undefined) {
-  if (!dueTimeOf(task)) {
+  if (!dueTimeOf(task) || recurrenceLabel(task['lifecycle-rules'])) {
     return null;
   }
   if (isOverdue(task, now)) {
@@ -286,8 +294,8 @@ function chip(doc, className, text, { icon, hidden } = {}) {
  * @param {object} task the task
  * @param {object} ctx the render context of `render`
  * @param {object} options the list options
- * @returns {{key: string, dueKey: string, due: object|null, count: string|null, href: string, handle: boolean,
- *   names: string[], notes: number, locked: boolean, menu: boolean}} the row content
+ * @returns {{key: string, dueKey: string, due: object|null, count: string|null, repeat: string|null, href: string,
+ *   handle: boolean, names: string[], notes: number, locked: boolean, menu: boolean}} the row content
  */
 function viewOf(task, ctx, options) {
   const ids = ctx.listsByTask?.get(task.id) ?? [];
@@ -300,9 +308,10 @@ function viewOf(task, ctx, options) {
   const due = formatDue(task, ctx.now);
   const occurrence = task['current-occurrence'];
   const count = showsCount(occurrence) ? `${occurrence['completion-count']}/${occurrence['target-count']}` : null;
+  const repeat = recurrenceLabel(task['lifecycle-rules']);
   return {
-    key: JSON.stringify([statusOf(task), count, task.description, href, handle, names, notes, access.locked, access.menu]),
-    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, href, handle, names, notes, locked: access.locked, menu: access.menu,
+    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, notes, access.locked, access.menu]),
+    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, repeat, href, handle, names, notes, locked: access.locked, menu: access.menu,
   };
 }
 
@@ -326,15 +335,18 @@ function accessOf(task, ctx, listId) {
 }
 
 /**
- * Create the chips of a row: the done and target counts, the due chip, up to two list chips, and the note count.
+ * Create the chips of a row: the done and target counts, the repeat or due chip, up to two list chips, and the note count.
  * @param {Document} doc the document
- * @param {{count: string|null, due: object|null, names: string[], notes: number}} view the row content of `viewOf`
+ * @param {{count: string|null, repeat: string|null, due: object|null, names: string[], notes: number}} view the row content of `viewOf`
  * @returns {HTMLElement|null} the chips, or null without any
  */
-function metaOf(doc, { count, due, names, notes }) {
+function metaOf(doc, { count, repeat, due, names, notes }) {
   const meta = make(doc, 'span', 'task-row__meta');
   if (count) {
     meta.append(chip(doc, 'chip task-row__count', count, { hidden: STRINGS.done }));
+  }
+  if (repeat) {
+    meta.append(chip(doc, 'chip task-row__repeat', repeat, { icon: 'clock' }));
   }
   if (due) {
     meta.append(chip(doc, due.overdue ? 'chip chip--overdue' : 'chip', due.text, { icon: due.overdue ? 'alert' : 'clock' }));
@@ -447,7 +459,7 @@ function renderRow(doc, task, view, template, selected) {
   const open = more.previousElementSibling;
   const status = open.previousElementSibling;
   const occurrence = task['current-occurrence'];
-  status.setAttribute('aria-label', STRINGS.tick(tickEvent(occurrence), task.description, occurrence));
+  status.setAttribute('aria-label', STRINGS.tick(tickEvent(occurrence, task['lifecycle-rules']), task.description, occurrence));
   status.title = STRINGS.statusHint(occurrence);
   status.dataset.status = statusOf(task);
   status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${statusOf(task)}`);
@@ -683,7 +695,7 @@ export function createTaskList({
    */
   function tick(task) {
     if (task && !accessOf(task, ctx, listId).locked) {
-      post(task, tickEvent(task['current-occurrence']));
+      post(task, tickEvent(task['current-occurrence'], task['lifecycle-rules']));
     }
   }
 
@@ -726,9 +738,22 @@ export function createTaskList({
       return;
     }
     statusMenu.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}`);
-    statusMenu.replaceChildren(...statusActions(task['current-occurrence']).map(({ event, label, status }) =>
-      menuItem(doc, 'menuitem', label, { event, status }, { icon: `status-${status}` })));
-    openMenu(trigger, statusMenu, (item) => post(task, item.dataset.event), 'first', 'status');
+    const items = statusActions(task['current-occurrence'], task['lifecycle-rules']).map(({ event, label, status }) =>
+      menuItem(doc, 'menuitem', label, { event, status }, { icon: `status-${status}` }));
+    // During the grace period, the previous period can still take a forgotten completion; the event names its occurrence.
+    const previous = graceOccurrence(task, ctx.now ?? new Date());
+    if (previous !== null) {
+      items.push(menuItem(doc, 'menuitem', STRINGS.previousPeriod, { action: 'previous-period' }, { icon: 'status-completed' }));
+    }
+    statusMenu.replaceChildren(...items);
+    openMenu(trigger, statusMenu, (item) => {
+      if (item.dataset.action === 'previous-period') {
+        store.postEvent(task.id, 'complete', { occurrence: previous }).catch(fail);
+      }
+      else {
+        post(task, item.dataset.event);
+      }
+    }, 'first', 'status');
   }
 
   /**
@@ -1415,10 +1440,15 @@ export function createTaskList({
      *   of a status change that hides its row
      */
     render(tasks, context, grouping = {}) {
-      const { groups = null, shows: filter = null } = grouping;
+      const { groups: given = null, shows: filter = null } = grouping;
       last = [tasks, context, grouping];
       ctx = context;
       shows = filter;
+      // The display rule: a recurring task past its period end shows as ready with count 0 until it rolls over.
+      const now = context.now ?? new Date();
+      const shown = (task) => displayTask(task, now);
+      const groups = given?.map((group) => ({ ...group, tasks: group.tasks.map(shown) })) ?? null;
+      tasks = groups ? tasks : tasks.map(shown);
       const memo = remember();
       detach();
       cancelFill();
@@ -1464,6 +1494,11 @@ export function createTaskList({
      * @param {Date} now the current time
      */
     tick(now) {
+      // A recurring task whose period just ended changes its row, so the rows render again.
+      if (last && [...byId.values()].some((task) => isStale(task, now) && !isStale(task, ctx.now ?? now))) {
+        api.render(last[0], { ...last[1], now }, last[2]);
+        return;
+      }
       ctx = { ...ctx, now };
       for (const entry of rows.values()) {
         if (!entry.taskId) {

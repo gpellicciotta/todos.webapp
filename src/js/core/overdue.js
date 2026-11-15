@@ -4,9 +4,11 @@
  * The app runs the check once on start, for tasks that became overdue while it was closed (`OVD-5`),
  * and then every minute, so a `cancel` task expires within one minute of its due time (`OVD-4`).
  * Expiring writes a system `expire` event, as the service's hourly run does; the event never joins the change queue.
+ * In local mode each run also rolls recurring tasks over, as the service's hourly run does while connected (`LOC-2`).
+ * A recurring task is never overdue: its due times end periods, which roll over instead.
  */
 
-import { dueTimeOf, OPEN_STATUSES, shouldExpire, statusOf } from './occurrences.js';
+import { dueTimeOf, isRecurring, isStale, OPEN_STATUSES, shouldExpire, statusOf } from './occurrences.js';
 
 export const INTERVAL_MS = 60_000;
 
@@ -18,7 +20,7 @@ export const INTERVAL_MS = 60_000;
  */
 export function isOverdue(task, now) {
   const due = dueTimeOf(task);
-  if (!due || !OPEN_STATUSES.includes(statusOf(task))) {
+  if (!due || isRecurring(task['lifecycle-rules']) || !OPEN_STATUSES.includes(statusOf(task))) {
     return false;
   }
   return Date.parse(due) < new Date(now).getTime();
@@ -57,6 +59,33 @@ export async function applyOverdueHandling(store, now = new Date()) {
 }
 
 /**
+ * Roll over every recurring task past its period end, each in its own transaction; while connected the store declines.
+ * @param {object} store the store facade
+ * @param {Date|number} [now] the current time
+ * @returns {Promise<object[]>} the rolled-over tasks
+ */
+export async function applyRollOver(store, now = new Date()) {
+  const rolled = [];
+  for (const task of await store.listTasks()) {
+    if (!isStale(task, now)) {
+      continue;
+    }
+    try {
+      const result = await store.rollOverTask(task.id, { now: new Date(now) });
+      if (result) {
+        rolled.push(result);
+      }
+    }
+    catch (error) {
+      if (error?.code !== 'deleted' && error?.code !== 'not-found') {
+        throw error;
+      }
+    }
+  }
+  return rolled;
+}
+
+/**
  * Run overdue handling now and then at every interval; a run never overlaps the previous one.
  * @param {object} options timer options
  * @param {object} options.store the store facade
@@ -65,6 +94,7 @@ export async function applyOverdueHandling(store, now = new Date()) {
  * @param {typeof globalThis.setInterval} [options.setInterval] the interval scheduler
  * @param {typeof globalThis.clearInterval} [options.clearInterval] the interval canceler
  * @param {(error: unknown) => void} [options.onError] receives the error of a failed run
+ * @param {() => boolean} [options.rollOver] tells whether runs also roll recurring tasks over: in local mode
  * @returns {(() => void) & {idle: () => Promise<void>}} a function that stops the timer;
  *   its `idle()` resolves once no run is in progress
  */
@@ -75,6 +105,7 @@ export function startOverdueTimer({
   setInterval = globalThis.setInterval,
   clearInterval = globalThis.clearInterval,
   onError = (error) => console.error('Overdue handling failed:', error),
+  rollOver = () => false,
 }) {
   let running = null;
 
@@ -83,7 +114,9 @@ export function startOverdueTimer({
     if (running) {
       return;
     }
-    running = applyOverdueHandling(store, now())
+    const time = now();
+    running = (rollOver() ? applyRollOver(store, time) : Promise.resolve())
+      .then(() => applyOverdueHandling(store, time))
       .then(() => {}, onError)
       .finally(() => {
         running = null;

@@ -42,12 +42,14 @@ Keyed by `id`.
 ### `occurrences`
 Keyed out of line by `[task-id, occurrence]`; added in version 5.
 - The service's `Occurrence` fields: `task-id`, `occurrence`, `start-time`, `due-time`, `target-count`, `completion-count`, `status`, `close-time`.
-- Every write of a task also writes its current occurrence here; past occurrences of recurring tasks follow with T0235.
+- Every write of a task also writes its current occurrence here.
+- A local roll-over, and a grace event in local mode, also write past occurrences of recurring tasks here.
 
 ### `events`
 Keyed out of line by `[task-id, id]`; added in version 5.
 - The service's `TaskEvent` fields: `id`, `task-id`, `occurrence`, `creation-time`, `owner-id`, `type`, `details`.
-- Local events: `create`, the user events, and `expire`. Synced tasks hold only the events made on this device.
+- Local events: `create`, the user events, `expire`, `edit-lifecycle-rules`, `roll-over`, and `end-recurrence`.
+- Synced tasks hold only the events made on this device; system and rule edit events never join the change queue.
 
 ### `memberships`
 Keyed out of line by `[list-id, task-id]`, since IndexedDB key paths cannot hold dashed names.
@@ -135,7 +137,54 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   - Going back posts `uncomplete`, `unstart`, or `reopen`, as the todos.server T0218 mapping does.
   - `due-time` and `overdue-handling` edit the rules.
 - `eventsOfTask(id)` and `occurrencesOfTask(id)` read a task's events and occurrences.
-- Periods, roll-over, and recurring reopen follow with T0235.
+- `updateRules` also stores an `edit-lifecycle-rules` event with the old and new values of each changed field.
+
+### Recurrence
+[periods.js](../../src/js/core/periods.js) computes periods as the todos.server business logic spec says, section Periods.
+- A period spans `recurrence-interval` units of `day`, `week`, or `month` in the rule's IANA `timezone`.
+- Days start at local midnight, weeks on Monday, and months on the 1st; periods are half-open.
+- A skipped local midnight starts at the first valid instant of its day; units add in local dates.
+- The period after a period starts at its end, so a unit or timezone edit applies from the next period.
+- [periods.test.js](../../tests/unit/periods.test.js) runs every case of [recurrence-test-vectors.json](../../tests/fixtures/recurrence-test-vectors.json).
+  The file copies todos.server `docs/specs/recurrence-test-vectors.json`; refresh it by hand when the server's copy changes.
+- A recurring occurrence covers one period: its `start-time` and `due-time` bound it, and it stays open at target.
+- Occurrence 1 covers the period containing the creation time.
+  Making an open one-off task recurring turns its occurrence into the period containing the edit.
+  Making a closed one recurring opens a fresh occurrence; stopping recurrence drops the occurrence's due time.
+- `createTask` and `updateRules` refuse a recurring rule without `recurrence-interval` or a known `timezone`.
+
+#### Roll-Over
+- **[Decided]** In local mode the store rolls a task over before each event and rule edit, as the server does.
+  The minute timer of [overdue.js](../../src/js/core/overdue.js) also rolls every recurring task over (`LOC-2`).
+- `rollOverTask(id)` closes each occurrence whose period ended with a `roll-over` event at its due time.
+  Missed periods become occurrences with count 0 and status `ready`, until the current period covers now.
+- When the end count or end date is reached, `end-recurrence` closes the last occurrence instead.
+  It closes as `completed` at or above target, else `cancelled`.
+  The end date is a local date: the recurrence ends when the next period would start after it.
+- A closed recurring current occurrence, completed or cancelled, takes only `reopen`; other user events fail.
+  The `reopen` opens a fresh period containing now, unless the end rules allow none, as after `end-recurrence`.
+- Folding a recurring occurrence applies its `roll-over` or `end-recurrence` event last, as the server's fold does.
+- **[Decided]** While connected, the store never rolls over; `rollOverTask` returns null and the service rolls over.
+
+#### Display Rule
+- A recurring task past its period end, not rolled over yet, shows as `ready` with count 0 (`displayTask`).
+- All tasks and the list view apply it before they filter, sort, and group, so such a task shows under the open filter.
+  Their minute tick renders again when a task passes its period end (`becameStale`).
+- Rows, the status menu, and the editor's status apply it; the editor takes an injectable clock.
+- `countLists(tasks, memberships, now)` counts such a task as open; the sidebar counts refresh every minute.
+- **[Decided]** A connected event on such a task joins the period covering now, computed locally.
+  It goes to the service without `occurrence`, so the service assigns the period containing its time.
+
+#### Grace Completion
+- For 24 hours after a period ends, `postEvent(id, 'complete', {occurrence})` may name that period's occurrence.
+- `graceOccurrence(task, now)` names it: the cached occurrence past its period end, or the previous one after a roll-over.
+- In local mode the event joins the stored occurrence with a time just before its due time, and the occurrence folds again.
+  It stays closed and keeps its close time; the current occurrence does not change.
+- While connected the queue posts the event with the named `occurrence`, and the service checks the grace period.
+- `cancel` and `reopen` never name a past occurrence; a closed grace period throws a `conflict` StoreError.
+- The precondition holds against the past occurrence before its period ended, as the server checks it.
+- Undoing a queued event restores the task by its mode: a grace event leaves the current occurrence alone.
+  An event that opened another occurrence, such as a recurring reopen, gives back the whole occurrence before it.
 
 ---
 
@@ -146,6 +195,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - The `expire` event never joins the change queue, since the service writes its own on its hourly run.
 - It never changes deleted, `completed`, or `cancelled` tasks (`OVD-6`).
 - `startOverdueTimer` runs it once on start, then every minute; the returned function stops it (`OVD-5`).
+- With `rollOver()` true, each run first rolls recurring tasks over through `applyRollOver`; the app passes local mode.
+- A recurring task is never overdue: its due times end periods.
 
 ---
 

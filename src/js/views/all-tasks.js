@@ -15,6 +15,7 @@
 
 import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-order.js';
 import { isSharedList } from '../core/permissions.js';
+import { becameStale, displayTasks } from '../core/occurrences.js';
 import { clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
@@ -115,6 +116,8 @@ export function mountAllTasks(view, {
     model.set({ ...model.get(), filter: { ...model.get().filter, text: memory.text } });
   }
   let data = null;
+  // The time of the last render, so the minute tick sees a recurring task pass its period end.
+  let renderedAt = null;
   let asked = false;
   let pending = null;
   let destroyed = false;
@@ -303,10 +306,13 @@ export function mountAllTasks(view, {
       filter.lists = filter.lists.filter((id) => id === NO_LIST || listIds.has(id));
     }
     const ctx = { ...data, now: now(), lists: new Map(data.lists.map((list) => [list.id, list])) };
-    const byOptions = filterTasks(data.tasks, { ...filter, text: undefined }, ctx);
+    renderedAt = ctx.now;
+    // The display rule comes first, so a recurring task past its period end filters, sorts, and groups as to do.
+    const tasks = displayTasks(data.tasks, ctx.now);
+    const byOptions = filterTasks(tasks, { ...filter, text: undefined }, ctx);
     const shown = sortTasks(filterTasks(byOptions, filter, ctx), state.order);
     const groups = state.group && state.group !== 'none'
-      ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) }, data.tasks)
+      ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) }, tasks)
       : null;
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], filter, ctx).length > 0 });
     showAdded();
@@ -334,16 +340,17 @@ export function mountAllTasks(view, {
   }
 
   /**
-   * Follow the clock: a Due filter, Finished today only, or the due date groups can change which tasks show where,
-   * so it renders again; otherwise only due chips change.
+   * Follow the clock: a Due filter, Finished today only, the due date groups, or a recurring task passing its period end
+   * can change which tasks show where, so it renders again; otherwise only due chips change.
    */
   function tick() {
     const { filter, group } = model.get();
-    if (filter.due?.length || filter.finishedToday === true || group === 'due') {
+    const time = now();
+    if (filter.due?.length || filter.finishedToday === true || group === 'due' || (data && renderedAt && becameStale(data.tasks, renderedAt, time))) {
       render();
     }
     else {
-      taskList.tick(now());
+      taskList.tick(time);
     }
   }
 

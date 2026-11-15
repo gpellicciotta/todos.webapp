@@ -90,6 +90,12 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
   A preview line under the field names what the add will set; the parser works offline, in US English.
 - TSK-15: Users set a task's target count, the completions it takes to be completed, from 1 to 999.
   Rows and the editor show the done and target counts, such as `2/3`, when the target is above 1.
+- TSK-16: Users make a task repeat daily, weekly, or monthly, every 1 to 99 units, in an IANA timezone.
+  A recurrence may end on a date or after a number of periods; a recurring task comes back as to do each period.
+  Rows show a repeat chip, such as "Weekly"; past its period end a task shows as to do until it rolls over.
+  For 24 hours after a period ends, users can still complete that period from the row's status menu.
+- TSK-17: Users see a task's history: its occurrences and events, newest first.
+  It reads the server while connected, and the local stores in local mode.
 
 ### Notes
 - NOT-1: Users add notes to a task; each note holds 1 to 2000 characters of plain text.

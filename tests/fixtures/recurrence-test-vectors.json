@@ -1,0 +1,222 @@
+{
+  "description": "Shared recurrence period cases; see business-logic-spec.md, section Periods. Each vector gives the period containing 'instant' and the period after it, as half-open ISO 8601 instants.",
+  "vectors": [
+    {
+      "name": "day, interval 1, midday",
+      "unit": "day", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2026-06-14T22:00:00Z", "end": "2026-06-15T22:00:00Z" },
+      "next": { "start": "2026-06-15T22:00:00Z", "end": "2026-06-16T22:00:00Z" }
+    },
+    {
+      "name": "day, interval 1, exactly on local midnight",
+      "unit": "day", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-14T22:00:00Z",
+      "containing": { "start": "2026-06-14T22:00:00Z", "end": "2026-06-15T22:00:00Z" },
+      "next": { "start": "2026-06-15T22:00:00Z", "end": "2026-06-16T22:00:00Z" }
+    },
+    {
+      "name": "day, interval 1, just before local midnight",
+      "unit": "day", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-14T21:59:59.999Z",
+      "containing": { "start": "2026-06-13T22:00:00Z", "end": "2026-06-14T22:00:00Z" },
+      "next": { "start": "2026-06-14T22:00:00Z", "end": "2026-06-15T22:00:00Z" }
+    },
+    {
+      "name": "day, interval 2",
+      "unit": "day", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2026-06-14T22:00:00Z", "end": "2026-06-16T22:00:00Z" },
+      "next": { "start": "2026-06-16T22:00:00Z", "end": "2026-06-18T22:00:00Z" }
+    },
+    {
+      "name": "day, interval 2, just before the end",
+      "unit": "day", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-06-16T21:59:59Z",
+      "containing": { "start": "2026-06-15T22:00:00Z", "end": "2026-06-17T22:00:00Z" },
+      "next": { "start": "2026-06-17T22:00:00Z", "end": "2026-06-19T22:00:00Z" }
+    },
+    {
+      "name": "day, local date ahead of the UTC date",
+      "unit": "day", "interval": 1, "zone": "Asia/Tokyo",
+      "instant": "2026-06-15T20:00:00Z",
+      "containing": { "start": "2026-06-15T15:00:00Z", "end": "2026-06-16T15:00:00Z" },
+      "next": { "start": "2026-06-16T15:00:00Z", "end": "2026-06-17T15:00:00Z" }
+    },
+    {
+      "name": "day, UTC zone",
+      "unit": "day", "interval": 1, "zone": "UTC",
+      "instant": "2026-06-15T23:59:59Z",
+      "containing": { "start": "2026-06-15T00:00:00Z", "end": "2026-06-16T00:00:00Z" },
+      "next": { "start": "2026-06-16T00:00:00Z", "end": "2026-06-17T00:00:00Z" }
+    },
+    {
+      "name": "day, spring change spans 23 hours",
+      "unit": "day", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-03-29T10:00:00Z",
+      "containing": { "start": "2026-03-28T23:00:00Z", "end": "2026-03-29T22:00:00Z" },
+      "next": { "start": "2026-03-29T22:00:00Z", "end": "2026-03-30T22:00:00Z" }
+    },
+    {
+      "name": "day, autumn change spans 25 hours",
+      "unit": "day", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-10-25T10:00:00Z",
+      "containing": { "start": "2026-10-24T22:00:00Z", "end": "2026-10-25T23:00:00Z" },
+      "next": { "start": "2026-10-25T23:00:00Z", "end": "2026-10-26T23:00:00Z" }
+    },
+    {
+      "name": "day, skipped local midnight starts at 01:00",
+      "unit": "day", "interval": 1, "zone": "America/Santiago",
+      "instant": "2026-09-06T12:00:00Z",
+      "containing": { "start": "2026-09-06T04:00:00Z", "end": "2026-09-07T03:00:00Z" },
+      "next": { "start": "2026-09-07T03:00:00Z", "end": "2026-09-08T03:00:00Z" }
+    },
+    {
+      "name": "day, next period starts on a skipped local midnight",
+      "unit": "day", "interval": 1, "zone": "America/Santiago",
+      "instant": "2026-09-05T12:00:00Z",
+      "containing": { "start": "2026-09-05T04:00:00Z", "end": "2026-09-06T04:00:00Z" },
+      "next": { "start": "2026-09-06T04:00:00Z", "end": "2026-09-07T03:00:00Z" }
+    },
+    {
+      "name": "week, interval 1, Wednesday",
+      "unit": "week", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-17T10:00:00Z",
+      "containing": { "start": "2026-06-14T22:00:00Z", "end": "2026-06-21T22:00:00Z" },
+      "next": { "start": "2026-06-21T22:00:00Z", "end": "2026-06-28T22:00:00Z" }
+    },
+    {
+      "name": "week, interval 1, exactly on Monday midnight",
+      "unit": "week", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-21T22:00:00Z",
+      "containing": { "start": "2026-06-21T22:00:00Z", "end": "2026-06-28T22:00:00Z" },
+      "next": { "start": "2026-06-28T22:00:00Z", "end": "2026-07-05T22:00:00Z" }
+    },
+    {
+      "name": "week, interval 1, just before Monday midnight",
+      "unit": "week", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-21T21:59:59.999Z",
+      "containing": { "start": "2026-06-14T22:00:00Z", "end": "2026-06-21T22:00:00Z" },
+      "next": { "start": "2026-06-21T22:00:00Z", "end": "2026-06-28T22:00:00Z" }
+    },
+    {
+      "name": "week, interval 2",
+      "unit": "week", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-06-17T10:00:00Z",
+      "containing": { "start": "2026-06-14T22:00:00Z", "end": "2026-06-28T22:00:00Z" },
+      "next": { "start": "2026-06-28T22:00:00Z", "end": "2026-07-12T22:00:00Z" }
+    },
+    {
+      "name": "week, interval 2, exactly on Monday midnight",
+      "unit": "week", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-06-21T22:00:00Z",
+      "containing": { "start": "2026-06-21T22:00:00Z", "end": "2026-07-05T22:00:00Z" },
+      "next": { "start": "2026-07-05T22:00:00Z", "end": "2026-07-19T22:00:00Z" }
+    },
+    {
+      "name": "week, spring change",
+      "unit": "week", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-03-25T12:00:00Z",
+      "containing": { "start": "2026-03-22T23:00:00Z", "end": "2026-03-29T22:00:00Z" },
+      "next": { "start": "2026-03-29T22:00:00Z", "end": "2026-04-05T22:00:00Z" }
+    },
+    {
+      "name": "week, autumn change",
+      "unit": "week", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-10-21T12:00:00Z",
+      "containing": { "start": "2026-10-18T22:00:00Z", "end": "2026-10-25T23:00:00Z" },
+      "next": { "start": "2026-10-25T23:00:00Z", "end": "2026-11-01T23:00:00Z" }
+    },
+    {
+      "name": "week, December into January",
+      "unit": "week", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-12-31T12:00:00Z",
+      "containing": { "start": "2026-12-27T23:00:00Z", "end": "2027-01-03T23:00:00Z" },
+      "next": { "start": "2027-01-03T23:00:00Z", "end": "2027-01-10T23:00:00Z" }
+    },
+    {
+      "name": "month, interval 1",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2026-05-31T22:00:00Z", "end": "2026-06-30T22:00:00Z" },
+      "next": { "start": "2026-06-30T22:00:00Z", "end": "2026-07-31T22:00:00Z" }
+    },
+    {
+      "name": "month, interval 1, exactly on the 1st",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-05-31T22:00:00Z",
+      "containing": { "start": "2026-05-31T22:00:00Z", "end": "2026-06-30T22:00:00Z" },
+      "next": { "start": "2026-06-30T22:00:00Z", "end": "2026-07-31T22:00:00Z" }
+    },
+    {
+      "name": "month, interval 1, just before the 1st",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-05-31T21:59:59.999Z",
+      "containing": { "start": "2026-04-30T22:00:00Z", "end": "2026-05-31T22:00:00Z" },
+      "next": { "start": "2026-05-31T22:00:00Z", "end": "2026-06-30T22:00:00Z" }
+    },
+    {
+      "name": "month, interval 2",
+      "unit": "month", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2026-05-31T22:00:00Z", "end": "2026-07-31T22:00:00Z" },
+      "next": { "start": "2026-07-31T22:00:00Z", "end": "2026-09-30T22:00:00Z" }
+    },
+    {
+      "name": "month, interval 2, across the year end",
+      "unit": "month", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-11-15T12:00:00Z",
+      "containing": { "start": "2026-10-31T23:00:00Z", "end": "2026-12-31T23:00:00Z" },
+      "next": { "start": "2026-12-31T23:00:00Z", "end": "2027-02-28T23:00:00Z" }
+    },
+    {
+      "name": "month, December into January",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-12-15T12:00:00Z",
+      "containing": { "start": "2026-11-30T23:00:00Z", "end": "2026-12-31T23:00:00Z" },
+      "next": { "start": "2026-12-31T23:00:00Z", "end": "2027-01-31T23:00:00Z" }
+    },
+    {
+      "name": "month, January 31st into February of a common year",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2027-01-31T12:00:00Z",
+      "containing": { "start": "2026-12-31T23:00:00Z", "end": "2027-01-31T23:00:00Z" },
+      "next": { "start": "2027-01-31T23:00:00Z", "end": "2027-02-28T23:00:00Z" }
+    },
+    {
+      "name": "month, February of a common year",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2027-02-15T12:00:00Z",
+      "containing": { "start": "2027-01-31T23:00:00Z", "end": "2027-02-28T23:00:00Z" },
+      "next": { "start": "2027-02-28T23:00:00Z", "end": "2027-03-31T22:00:00Z" }
+    },
+    {
+      "name": "month, February of a leap year",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2028-02-15T12:00:00Z",
+      "containing": { "start": "2028-01-31T23:00:00Z", "end": "2028-02-29T23:00:00Z" },
+      "next": { "start": "2028-02-29T23:00:00Z", "end": "2028-03-31T22:00:00Z" }
+    },
+    {
+      "name": "month, leap day itself",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2028-02-29T12:00:00Z",
+      "containing": { "start": "2028-01-31T23:00:00Z", "end": "2028-02-29T23:00:00Z" },
+      "next": { "start": "2028-02-29T23:00:00Z", "end": "2028-03-31T22:00:00Z" }
+    },
+    {
+      "name": "month, spring change",
+      "unit": "month", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-03-15T12:00:00Z",
+      "containing": { "start": "2026-02-28T23:00:00Z", "end": "2026-03-31T22:00:00Z" },
+      "next": { "start": "2026-03-31T22:00:00Z", "end": "2026-04-30T22:00:00Z" }
+    },
+    {
+      "name": "month, local date behind the UTC date",
+      "unit": "month", "interval": 1, "zone": "America/New_York",
+      "instant": "2026-12-01T03:00:00Z",
+      "containing": { "start": "2026-11-01T04:00:00Z", "end": "2026-12-01T05:00:00Z" },
+      "next": { "start": "2026-12-01T05:00:00Z", "end": "2027-01-01T05:00:00Z" }
+    }
+  ]
+}

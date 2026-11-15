@@ -5,9 +5,14 @@
  * Statuses follow from events: the fold applies them in `creation-time` order, then by `id`,
  * and ignores an event whose precondition fails at its place, so offline reordering never fails.
  * A one-off occurrence closes when it becomes `completed` or `cancelled`, and reopens when it leaves them.
- * Periods and roll-over of recurring tasks are out of scope here; recurring occurrences only stay open.
- * See docs/specs/local-store.md, Lifecycle.
+ * A recurring occurrence covers one period (see periods.js) and stays open until its period ends, even at target.
+ * Roll-over then closes it with its status and opens the next period, as the server does; missed periods become
+ * occurrences with count 0, and the end date or count closes the last one with `end-recurrence` instead.
+ * Until a roll-over happens, the display rule shows a task past its period end as `ready` with count 0.
+ * See docs/specs/local-store.md, Lifecycle and Recurrence.
  */
+
+import { localDate, nextPeriod, periodContaining } from './periods.js';
 
 /** Occurrence statuses, in lifecycle order; `ready` replaces the former `todo`. */
 export const STATUSES = Object.freeze(['ready', 'in-progress', 'completed', 'cancelled']);
@@ -33,6 +38,12 @@ export const DEFAULT_RULES = Object.freeze({
 /** Rule field names, in schema order. */
 export const RULE_FIELDS = Object.freeze(Object.keys(DEFAULT_RULES));
 
+/** The grace period after a period end, during which a client may still name the previous occurrence. */
+export const GRACE_MS = 24 * 3_600_000;
+
+/** The system events that end the period of a recurring occurrence. */
+const PERIOD_ENDS = Object.freeze(['roll-over', 'end-recurrence']);
+
 /**
  * Return the status an occurrence takes from its count: `ready` at 0, `completed` at or above target, else `in-progress`.
  * @param {number} count the completion count
@@ -51,8 +62,31 @@ export function statusFromCount(count, target) {
  * @param {object} [rules] the lifecycle rules
  * @returns {boolean} true when a recurrence unit is set
  */
-function isRecurring(rules) {
+export function isRecurring(rules) {
   return Boolean(rules?.['recurrence-unit']);
+}
+
+/**
+ * Return the period rule of recurring rules, for periods.js.
+ * @param {object} rules the lifecycle rules
+ * @returns {{unit: string, interval: number, zone: string}} the rule
+ */
+function ruleOf(rules) {
+  return { unit: rules['recurrence-unit'], interval: rules['recurrence-interval'] ?? 1, zone: rules.timezone || 'UTC' };
+}
+
+/**
+ * Describe a recurrence in words, such as `Weekly` or `Every 2 weeks`.
+ * @param {object} rules the lifecycle rules
+ * @returns {string|null} the words, or null for a one-off task
+ */
+export function recurrenceLabel(rules) {
+  if (!isRecurring(rules)) {
+    return null;
+  }
+  const unit = rules['recurrence-unit'];
+  const interval = rules['recurrence-interval'] ?? 1;
+  return interval === 1 ? { day: 'Daily', week: 'Weekly', month: 'Monthly' }[unit] : `Every ${interval} ${unit}s`;
 }
 
 /**
@@ -71,21 +105,51 @@ export function normalizeRules(rules) {
 }
 
 /**
- * Return occurrence 1 of a task with the given rules, open from `startTime`.
+ * Return a new, open occurrence over a period, with the target of the rules.
  * @param {object} rules the full rules
- * @param {string} startTime the ISO start time, the task's creation time
+ * @param {number} number the occurrence number
+ * @param {{start: string, end: string|null}} period the period
  * @returns {object} the occurrence, without `task-id`
  */
-export function firstOccurrence(rules, startTime) {
+function opened(rules, number, period) {
   return {
-    occurrence: 1,
-    'start-time': startTime,
-    'due-time': isRecurring(rules) ? null : rules['due-time'] ?? null,
+    occurrence: number,
+    'start-time': period.start,
+    'due-time': period.end,
     'target-count': rules['target-count'] ?? 1,
     'completion-count': 0,
     status: 'ready',
     'close-time': null,
   };
+}
+
+/**
+ * Return occurrence 1 of a task with the given rules: a one-off task runs from `startTime` to its deadline,
+ * and a recurring task covers the period containing `startTime`.
+ * @param {object} rules the full rules
+ * @param {string} startTime the ISO start time, the task's creation time
+ * @returns {object} the occurrence, without `task-id`
+ */
+export function firstOccurrence(rules, startTime) {
+  const period = isRecurring(rules) ? periodContaining(startTime, ruleOf(rules)) : { start: startTime, end: rules['due-time'] ?? null };
+  return opened(rules, 1, period);
+}
+
+/**
+ * Tell whether an occurrence may follow a closed one: not when the closed one reaches the end count,
+ * nor when the next period starts after the end date, a local date in the rule's zone.
+ * @param {object} rules the recurring rules
+ * @param {number} closed the number of the closed occurrence
+ * @param {{start: string}} period the period the next occurrence would cover
+ * @returns {boolean} true when the recurrence goes on
+ */
+export function continuesAfter(rules, closed, period) {
+  const endCount = rules['recurrence-end-count'];
+  if (endCount && closed >= endCount) {
+    return false;
+  }
+  const endDate = rules['recurrence-end-date'];
+  return !endDate || localDate(period.start, ruleOf(rules).zone) <= endDate;
 }
 
 /**
@@ -116,6 +180,15 @@ export function applyEvent(occurrence, event, rules = DEFAULT_RULES) {
   const time = event['creation-time'];
   const { status } = occurrence;
   const count = occurrence['completion-count'];
+  if (isRecurring(rules) && occurrence['close-time'] !== null && !isPeriodEnd(event.type)) {
+    // A closed recurring occurrence takes only `reopen`, completed or cancelled, which opens a fresh period.
+    if (event.type === 'reopen') {
+      return { ...next, 'completion-count': 0, status: 'ready', 'close-time': null };
+    }
+    if (USER_EVENT_TYPES.includes(event.type) || event.type === 'expire') {
+      return null;
+    }
+  }
   switch (event.type) {
     case 'complete':
     case 'uncomplete': {
@@ -160,10 +233,164 @@ export function applyEvent(occurrence, event, rules = DEFAULT_RULES) {
       next.status = statusFromCount(count, occurrence['target-count']);
       next['close-time'] = null;
       break;
+    case 'roll-over':
+      // The occurrence keeps its status; staying in the same closed status keeps the close time.
+      next['close-time'] = occurrence['close-time'] ?? time;
+      return next;
+    case 'end-recurrence':
+      // Below target, the series ended unmet.
+      next.status = count >= occurrence['target-count'] ? 'completed' : 'cancelled';
+      next['close-time'] = next.status === status && occurrence['close-time'] ? occurrence['close-time'] : time;
+      return next;
     default:
       return next;
   }
   return settleClosing(next, rules, time);
+}
+
+/**
+ * Plan the roll-over of a recurring task up to a moment: close each occurrence whose period ended with a `roll-over`
+ * event, and open the next one, until the open occurrence covers `now` or the end rules close it with `end-recurrence`.
+ * Missed periods become occurrences that open and close in the same roll-over, with count 0 and status `ready`.
+ * Each event takes the due time of the occurrence it closes as its time.
+ * @param {object} rules the lifecycle rules
+ * @param {object} current the current occurrence
+ * @param {string|Date|number} now the moment to roll over to
+ * @returns {{occurrences: object[], events: object[], current: object}} the closed and opened occurrences, oldest first,
+ *   the events without identifiers, and the new current occurrence; empty and unchanged when nothing rolls over
+ */
+export function planRollOver(rules, current, now) {
+  const until = new Date(now).getTime();
+  const occurrences = [];
+  const events = [];
+  let occurrence = current;
+  while (isRecurring(rules) && occurrence['close-time'] === null && occurrence['due-time'] && Date.parse(occurrence['due-time']) <= until) {
+    const time = occurrence['due-time'];
+    const next = nextPeriod({ start: occurrence['start-time'], end: time }, ruleOf(rules));
+    const type = continuesAfter(rules, occurrence.occurrence, next) ? 'roll-over' : 'end-recurrence';
+    const closed = applyEvent(occurrence, { type, 'creation-time': time }, rules);
+    occurrences.push(closed);
+    events.push({ type, occurrence: occurrence.occurrence, 'creation-time': time });
+    if (type === 'end-recurrence') {
+      return { occurrences, events, current: closed };
+    }
+    occurrence = opened(rules, occurrence.occurrence + 1, next);
+  }
+  if (occurrence !== current) {
+    occurrences.push(occurrence);
+  }
+  return { occurrences, events, current: occurrence };
+}
+
+/**
+ * Return the occurrence a reopen, or a recurrence set on a closed task, opens after the closed current occurrence:
+ * the period containing `now`, unless the end rules allow no further occurrence.
+ * @param {object} rules the recurring rules
+ * @param {object} closed the closed current occurrence
+ * @param {string|Date|number} now the moment
+ * @returns {object|null} the occurrence to open, or null when the recurrence has ended
+ */
+export function freshOccurrence(rules, closed, now) {
+  const period = periodContaining(now, ruleOf(rules));
+  return continuesAfter(rules, closed.occurrence, period) ? opened(rules, closed.occurrence + 1, period) : null;
+}
+
+/**
+ * Fold all events of an occurrence again from its opening, as the server does after a late event joins it.
+ * A closed recurring occurrence stays closed through its `roll-over` or `end-recurrence` event.
+ * @param {object} occurrence the occurrence
+ * @param {object[]} events the events of that occurrence
+ * @param {object} rules the lifecycle rules
+ * @returns {object} the folded occurrence
+ */
+export function refoldOccurrence(occurrence, events, rules) {
+  return foldEvents({ ...occurrence, 'completion-count': 0, status: 'ready', 'close-time': null }, events, rules);
+}
+
+/**
+ * Tell whether a recurring task is past its period end without a roll-over yet, so the display rule applies.
+ * @param {object} task the task
+ * @param {string|Date|number} now the current time
+ * @returns {boolean} true when its open occurrence's due time has passed
+ */
+export function isStale(task, now) {
+  return isStaleOccurrence(task['lifecycle-rules'], task['current-occurrence'], now);
+}
+
+/**
+ * Tell whether an open recurring occurrence is past its period end, as `isStale` does for a task.
+ * @param {object} rules the lifecycle rules
+ * @param {object} occurrence the current occurrence
+ * @param {string|Date|number} now the current time
+ * @returns {boolean} true when its due time has passed
+ */
+export function isStaleOccurrence(rules, occurrence, now) {
+  return isRecurring(rules) && occurrence['close-time'] === null && Boolean(occurrence['due-time'])
+    && Date.parse(occurrence['due-time']) <= new Date(now).getTime();
+}
+
+/**
+ * Apply the display rule: a recurring task past its period end shows as `ready` with count 0 until it rolls over.
+ * The shown occurrence keeps its number and due time, so grace completion can still name it.
+ * @param {object} task the task
+ * @param {string|Date|number} now the current time
+ * @returns {object} the task to show: the same object when the rule does not apply
+ */
+export function displayTask(task, now) {
+  if (!isStale(task, now)) {
+    return task;
+  }
+  return { ...task, 'current-occurrence': { ...task['current-occurrence'], 'completion-count': 0, status: 'ready' } };
+}
+
+/**
+ * Apply the display rule to tasks, as views do before they filter, sort, group, and count them.
+ * @param {object[]} tasks the tasks
+ * @param {string|Date|number} now the current time
+ * @returns {object[]} the tasks to show
+ */
+export function displayTasks(tasks, now) {
+  return tasks.map((task) => displayTask(task, now));
+}
+
+/**
+ * Tell whether any task passed its period end between two times, so a view must filter its tasks again.
+ * @param {object[]} tasks the tasks
+ * @param {string|Date|number} from the time of the last render
+ * @param {string|Date|number} to the current time
+ * @returns {boolean} true when the display rule newly applies to a task
+ */
+export function becameStale(tasks, from, to) {
+  return tasks.some((task) => isStale(task, to) && !isStale(task, from));
+}
+
+/**
+ * Name the occurrence that grace completion completes, within 24 hours after its period ended:
+ * the cached current occurrence past its period end, or the previous one once the task rolled over.
+ * @param {object} task the task, as stored or as shown
+ * @param {string|Date|number} now the current time
+ * @returns {number|null} the occurrence number, or null outside the grace period
+ */
+export function graceOccurrence(task, now) {
+  if (!isRecurring(task['lifecycle-rules'])) {
+    return null;
+  }
+  const time = new Date(now).getTime();
+  const occurrence = task['current-occurrence'];
+  if (isStale(task, now)) {
+    return time <= Date.parse(occurrence['due-time']) + GRACE_MS ? occurrence.occurrence : null;
+  }
+  const start = Date.parse(occurrence['start-time']);
+  return occurrence.occurrence > 1 && time >= start && time <= start + GRACE_MS ? occurrence.occurrence - 1 : null;
+}
+
+/**
+ * Tell whether an event type ends the period of a recurring occurrence.
+ * @param {string} type the event type
+ * @returns {boolean} true for `roll-over` and `end-recurrence`
+ */
+export function isPeriodEnd(type) {
+  return PERIOD_ENDS.includes(type);
 }
 
 /**
@@ -187,13 +414,17 @@ export function byEventOrder(a, b) {
 /**
  * Fold events onto an occurrence in creation-time order, then by identifier.
  * An event whose precondition fails at its place is ignored.
+ * In a recurring occurrence the event that ends its period applies last, as the server's fold does,
+ * so it closes the occurrence with the status of all its other events, also of late ones.
  * @param {object} occurrence the occurrence before the events
  * @param {object[]} events the events
  * @param {object} [rules] the lifecycle rules
  * @returns {object} the occurrence after the events
  */
 export function foldEvents(occurrence, events, rules = DEFAULT_RULES) {
-  return [...events].sort(byEventOrder).reduce((current, event) => applyEvent(current, event, rules) ?? current, occurrence);
+  const recurring = isRecurring(rules);
+  const ordered = [...events].sort((a, b) => (recurring ? isPeriodEnd(a.type) - isPeriodEnd(b.type) : 0) || byEventOrder(a, b));
+  return ordered.reduce((current, event) => applyEvent(current, event, rules) ?? current, occurrence);
 }
 
 /**
@@ -247,12 +478,16 @@ export function eventsTowardsStatus(occurrence, status, rules = DEFAULT_RULES) {
 }
 
 /**
- * Apply a rule edit to a task: target and deadline edits move the open occurrence, as the service does.
- * Making a task recurring clears its deadline and overdue handling; stopping recurrence sets handling `keep`.
+ * Apply a rule edit to a task, as the service does: target and deadline edits move the open occurrence,
+ * and unit, interval, and timezone edits apply from the next period.
+ * Making an open one-off task recurring turns its occurrence into the period containing `time`;
+ * making a closed one opens a fresh occurrence over that period, unless the end rules allow none.
+ * Stopping recurrence turns the occurrence into a one-off occurrence without a deadline, with handling `keep`.
  * @param {object} task a task with `lifecycle-rules` and `current-occurrence`
  * @param {object} edit rule fields; `null` clears a field
  * @param {string} time the edit time
- * @returns {{'lifecycle-rules': object, 'current-occurrence': object}} the new rules and occurrence
+ * @returns {{'lifecycle-rules': object, 'current-occurrence': object}} the new rules and the current occurrence,
+ *   a new occurrence when its number differs from the old one
  */
 export function applyRuleEdit(task, edit, time) {
   const before = { ...DEFAULT_RULES, ...task['lifecycle-rules'] };
@@ -261,12 +496,28 @@ export function applyRuleEdit(task, edit, time) {
     Object.assign(rules, { 'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null, 'overdue-handling': 'keep' });
   }
   rules = normalizeRules(rules);
-  const occurrence = { ...task['current-occurrence'] };
-  if (occurrence['close-time'] === null || !isRecurring(rules)) {
-    occurrence['target-count'] = rules['target-count'];
-    if (!isRecurring(rules)) {
-      occurrence['due-time'] = rules['due-time'];
+  const current = task['current-occurrence'];
+  const open = current['close-time'] === null;
+  const occurrence = { ...current };
+  if (isRecurring(rules) && !isRecurring(before)) {
+    if (!open) {
+      return { 'lifecycle-rules': rules, 'current-occurrence': freshOccurrence(rules, current, time) ?? occurrence };
     }
+    const period = periodContaining(time, ruleOf(rules));
+    Object.assign(occurrence, { 'start-time': period.start, 'due-time': period.end });
+  }
+  else if (!isRecurring(rules) && isRecurring(before)) {
+    occurrence['due-time'] = null;
+    if (!open) {
+      // A closed occurrence keeps its target and fold, since a one-off fold would move its close time.
+      return { 'lifecycle-rules': rules, 'current-occurrence': occurrence };
+    }
+  }
+  else if (!isRecurring(rules)) {
+    occurrence['due-time'] = rules['due-time'];
+  }
+  if (open || !isRecurring(rules)) {
+    occurrence['target-count'] = rules['target-count'];
     if (occurrence.status !== 'cancelled' && occurrence['completion-count'] > 0) {
       occurrence.status = statusFromCount(occurrence['completion-count'], occurrence['target-count']);
     }

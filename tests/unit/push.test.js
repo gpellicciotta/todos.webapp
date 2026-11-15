@@ -121,7 +121,7 @@ describe('uploading the queue', () => {
       ['POST', 'complete', '2026-11-04T09:00:02.000Z', 1],
       ['POST', 'complete', '2026-11-04T09:00:03.000Z', 1],
     ]);
-    expect(events.map((call) => call.body.id)).toEqual((await store.eventsOfTask(task.id)).slice(1).map((event) => event.id));
+    expect(events.map((call) => call.body.id)).toEqual((await store.eventsOfTask(task.id)).filter((event) => event.type === 'complete').map((event) => event.id));
     const rules = service.calls.at(-1);
     expect([rules.method, rules.path]).toEqual(['PATCH', `/api/tasks/${task.id}/lifecycle-rules`]);
     expect(rules.body).toEqual({ 'due-time': '2026-11-09T10:00:00.000Z', 'edit-times': { 'due-time': '2026-11-04T09:00:04.000Z' } });

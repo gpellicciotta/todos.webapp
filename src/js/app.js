@@ -2,7 +2,7 @@
  * App entry point: theme, service worker, local store, start-up maintenance, shell, routes, and shortcuts.
  *
  * On start the app purges expired recycle bin entries, then starts the overdue timer,
- * whose first run cancels overdue `cancel` tasks (`OVD-4`, `OVD-5`, `BIN-5`).
+ * whose first run cancels overdue `cancel` tasks (`OVD-4`, `OVD-5`, `BIN-5`) and, in local mode, rolls recurring tasks over.
  * A new service worker waits for the Update toast (`TEC-19`); a worker activated in another tab shows a lasting Reload toast,
  * and a newer store version in another tab shows a lasting banner with Reload.
  * The vendored components draw their icons from the look sprite, which the app names once at start.
@@ -202,6 +202,9 @@ async function start() {
     }).catch((error) => console.error('Navigation refresh failed:', error));
   });
 
+  // The open counts follow the clock too: a recurring task past its period end counts as open (the display rule).
+  setInterval(() => refreshNav().catch((error) => console.error('Navigation refresh failed:', error)), 60_000);
+
   document.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || inTextField(event)
       || document.querySelector('dialog[open]')) {
@@ -229,7 +232,8 @@ async function start() {
   try {
     await refreshNav();
     await store.purgeExpired();
-    await startOverdueTimer({ store }).idle();
+    // In local mode the same timer rolls recurring tasks over; while connected the service does (`LOC-2`).
+    await startOverdueTimer({ store, rollOver: () => session.state() === 'local' }).idle();
   }
   catch (error) {
     console.error('Store failed:', error);

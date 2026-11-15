@@ -201,6 +201,28 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect((await phone.store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 3, status: 'completed' });
   });
 
+  it('makes a task weekly, and the server computes the same period and counts its tick', async () => {
+    const ada = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Water the plants', 'lifecycle-rules': { 'target-count': 2 } });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    ada.clock.tick(60_000);
+    const weekly = await ada.store.updateRules(task.id, { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' });
+    ada.clock.tick(60_000);
+    await ada.store.postEvent(task.id, 'complete');
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect(await ada.store.queue.count()).toBe(0);
+    const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+    expect(stored['lifecycle-rules']).toMatchObject({ 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels', 'due-time': null });
+    const local = weekly['current-occurrence'];
+    expect(Date.parse(stored['current-occurrence']['start-time'])).toBe(Date.parse(local['start-time']));
+    expect(Date.parse(stored['current-occurrence']['due-time'])).toBe(Date.parse(local['due-time']));
+    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'completion-count': 1, status: 'in-progress', 'close-time': null });
+    const occurrences = await (await ada.raw('GET', `/api/tasks/${task.id}/occurrences`, { Accept: 'application/json' })).json();
+    expect(occurrences.map((occurrence) => occurrence.occurrence)).toEqual([1]);
+    const events = await (await ada.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
+    expect(events.map((event) => event.type)).toEqual(expect.arrayContaining(['create', 'edit-lifecycle-rules', 'complete']));
+  });
+
   it('reverts an event the server refuses with 409', async () => {
     const ada = await device('code-ada');
     const task = await ada.store.createTask({ description: 'Refused' });

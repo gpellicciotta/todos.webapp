@@ -196,7 +196,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 
 ### Task Row
 ```text
-| [status] Description text, truncated...  [2/3] [due] [list] [list] [+1] [notes] [more] |
+| [status] Description text, truncated...  [2/3] [due|repeat] [list] [list] [+1] [notes] [more] |
 ```
 - The row is 48 px high and shows one line; the whole row opens the task editor.
 - A click on the status button ticks, the most frequent change (`TSK-4`):
@@ -212,6 +212,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   - Undo start (`unstart`, from In progress with no completion), with the To do icon.
   - Cancel task (`cancel`, unless cancelled), with the Cancelled icon.
   - Reopen (`reopen`, once cancelled), with the To do icon.
+  - Complete for previous period, with the Completed icon, for 24 hours after a recurring task's period ends (`TSK-16`).
+    It posts `complete` naming that period's occurrence, so a forgotten completion still counts.
 - It opens on a right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key.
   Focus starts on its first entry.
   **[Decided]** The task editor's status actions are its visible alternative, so rows need no chevron button.
@@ -225,6 +227,10 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   - `completed`: a filled circle with a check, in green, and struck-through muted text.
   - `cancelled`: a filled circle with a dash, in the danger color, and struck-through muted text.
 - The due chip shows a relative time, such as "Tomorrow 18:00"; overdue tasks show "Overdue" in the signal color (`OVD-2`).
+- A recurring task shows a repeat chip, such as "Weekly" or "Every 2 weeks", instead of a due chip (`TSK-16`).
+  It is never overdue, since its due times only end periods.
+- Past its period end, until it rolls over, a recurring row shows To do with count 0, such as "0/3".
+  The minute tick redraws such a row when its period ends.
 - List chips show at most two list names and a "+n" count; the list view leaves out its own list.
 - A note icon with a count appears when the task has notes; a people icon marks tasks in shared lists.
 - Compact layouts show only the status, the description, the count chip, and the due chip.
@@ -633,10 +639,21 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
   - Target count: a number field from 1 to 999 (`TSK-15`).
   - Due: a date field, an optional time field, and Clear (`TSK-5`, `TSK-6`).
   - Overdue behavior: Keep open or Cancel when overdue, shown once a due time is set (`TSK-7`).
-  - Target count, due time, and overdue behavior save as lifecycle rule edits.
+  - Repeat: Never, Daily, Weekly, or Monthly (`TSK-16`).
+    A first choice also sets every 1 and the browser's timezone; Never stops the recurrence.
+    A recurring task then shows Every (1 to 99), Ends on (a date), Ends after (a count), and Timezone.
+    Timezone takes an IANA name, with the browser's zones as suggestions.
+  - Target count, due time, overdue behavior, and the repeat fields save as lifecycle rule edits.
     A recurring task hides Due and Overdue behavior, since its periods set its due times.
+    Past its period end, the status shows To do with count 0 until the task rolls over.
   - Lists: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
   - Notes: an add note field, then the note thread, newest first (`NOT-1` to `NOT-5`).
+  - History: Show history lists the occurrences and the events, newest first (`TSK-17`).
+    An occurrence shows its number, period, status, and counts; a closed one still To do reads Missed.
+    A closed one still In progress reads Partly done.
+    An event shows its time, what happened, such as Ticked or Period ended, and its occurrence.
+    While connected it reads the server routes; in local mode, or when they fail, it reads the local stores.
+    [task-history.js](../../src/js/views/task-history.js) builds it.
   - Details: created, last updated, and owner when connected (`TSK-12`).
   - Delete task, at the bottom, after a divider and extra space, away from the notes.
 - Each note shows its author when connected: You for own notes, Collaborator for others, Former member for a deleted account.

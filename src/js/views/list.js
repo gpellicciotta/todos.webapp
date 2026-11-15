@@ -20,6 +20,7 @@ import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
 import { addedMessage, createAddBar, createAddHint, editorOpensAfterAdd, notifyIfHidden } from './add-bar.js';
 import { can, listRole, ROLE_LABELS } from '../core/permissions.js';
 import { createListMenu, fillListMenu, runListAction } from './list-actions.js';
+import { becameStale, displayTasks } from '../core/occurrences.js';
 import { attachReorder } from './reorder.js';
 import { createTaskList, make } from './task-list.js';
 import { createInfoLine, createViewModel, describeFilters } from './view-controls.js';
@@ -91,6 +92,8 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     model.set({ ...model.get(), filter });
   }
   let data = null;
+  // The time of the last render, so the minute tick sees a recurring task pass its period end.
+  let renderedAt = null;
   let pending = null;
   let gone = false;
   let deletedHere = false;
@@ -230,10 +233,13 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     }
     const state = model.get();
     const ctx = { now: now(), lists: data.lists, listsByTask: data.listsByTask, notesByTask: data.notesByTask, userId: data.userId };
-    const byOptions = filterTasks(data.tasks, { ...state.filter, text: undefined }, ctx);
+    renderedAt = ctx.now;
+    // The display rule comes first, so a recurring task past its period end filters, sorts, and groups as to do.
+    const tasks = displayTasks(data.tasks, ctx.now);
+    const byOptions = filterTasks(tasks, { ...state.filter, text: undefined }, ctx);
     const filtered = filterTasks(byOptions, state.filter, ctx);
     const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
-    const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx, data.tasks) : null;
+    const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx, tasks) : null;
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], state.filter, ctx).length > 0 });
     showAdded();
     addBar.setLists([...data.lists.values()]);
@@ -279,7 +285,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`); the rows stay.
   // Finished today only changes which rows show at midnight, so it renders again (`TV-14`).
   const timer = setInterval(() => {
-    if (model.get().filter.finishedToday === true) {
+    if (model.get().filter.finishedToday === true || (data && renderedAt && becameStale(data.tasks, renderedAt, now()))) {
       render();
     }
     else {

@@ -58,7 +58,7 @@ function upgrade(db, oldVersion, tx) {
 
 /** Facade operations that change data; subscribers hear of each one once it commits. */
 const WRITES = [
-  'createList', 'updateList', 'createTask', 'updateTask', 'postEvent', 'updateRules', 'expireTask',
+  'createList', 'updateList', 'createTask', 'updateTask', 'postEvent', 'updateRules', 'expireTask', 'rollOverTask',
   'addToList', 'removeFromList', 'moveInList',
   'addNote', 'editNote', 'deleteNote', 'deleteList', 'deleteTask', 'restoreList', 'restoreTask',
   'purgeForever', 'emptyBin', 'deleteAllData', 'purgeExpired', 'applyChanges',
@@ -122,7 +122,8 @@ export async function openStore({
   tracking = () => false,
 } = {}) {
   const db = await openDatabase(indexedDB, name, onVersionChange);
-  const ctx = { db, keyRange, now };
+  // Local mode is when no change joins the queue; only then does the store roll recurring tasks over (`LOC-2`).
+  const ctx = { db, keyRange, now, local: () => !tracking() };
   const listeners = new Set();
   const channel = broadcast && typeof BroadcastChannel === 'function' ? new BroadcastChannel(`${name}-changes`) : null;
   /**
@@ -158,9 +159,10 @@ export async function openStore({
     listLists: () => lists.listLists(ctx),
     createTask: (input, options) => tasks.createTask(ctx, input, options),
     updateTask: (id, changes, options) => tasks.updateTask(ctx, id, changes, options),
-    postEvent: (id, type) => tasks.postEvent(ctx, id, type),
+    postEvent: (id, type, options) => tasks.postEvent(ctx, id, type, options),
     updateRules: (id, edit) => tasks.updateRules(ctx, id, edit),
     expireTask: (id, options) => tasks.expireTask(ctx, id, options),
+    rollOverTask: (id, options) => tasks.rollOverTask(ctx, id, options),
     eventsOfTask: (taskId) => tasks.eventsOfTask(ctx, taskId),
     occurrencesOfTask: (taskId) => tasks.occurrencesOfTask(ctx, taskId),
     getTask: (id) => tasks.getTask(ctx, id),

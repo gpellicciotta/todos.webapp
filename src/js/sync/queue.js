@@ -217,24 +217,47 @@ function rulesEntry(before, after) {
 }
 
 /**
+ * Name how undoing a posted event restores the task: `previous` for a grace event that named a past occurrence,
+ * which leaves the current occurrence alone; `replace` when the event opened another occurrence, such as a recurring
+ * reopen or an event past the period end, so the whole occurrence before returns; `fold` when it changed the
+ * current occurrence in place.
+ * @param {object} before the current occurrence before the event
+ * @param {object} after the current occurrence after the event
+ * @param {object} event the event
+ * @returns {'previous'|'replace'|'fold'} the undo mode
+ */
+export function eventUndoMode(before, after, event) {
+  if (event.occurrence !== null && event.occurrence !== undefined && event.occurrence !== after.occurrence) {
+    return 'previous';
+  }
+  return before.occurrence !== after.occurrence || before['start-time'] !== after['start-time'] ? 'replace' : 'fold';
+}
+
+/**
  * Build the entries of events, one request each; each undo holds the occurrence before its event.
  * @param {string} taskId the task
  * @param {object} base the occurrence before the first event
  * @param {object} rules the lifecycle rules
  * @param {object[]} events the events, in order
+ * @param {'previous'|'replace'|'fold'} [mode] how undoing restores the task, see `eventUndoMode`
  * @returns {object[]} the entries
  */
-function eventEntries(taskId, base, rules, events) {
+function eventEntries(taskId, base, rules, events, mode = 'fold') {
   let occurrence = base;
   return events.map((event) => {
     const before = occurrence;
     occurrence = applyEvent(occurrence, event, rules) ?? occurrence;
+    // An unplaced event, past the period end of a recurring task, lets the service assign the period containing its time.
+    const fields = { id: event.id, type: event.type, 'creation-time': event['creation-time'] };
+    if (event.occurrence !== null && event.occurrence !== undefined) {
+      fields.occurrence = event.occurrence;
+    }
     return {
       target: { type: 'event', id: event.id, 'task-id': taskId },
       operation: 'post-event',
-      fields: { id: event.id, type: event.type, 'creation-time': event['creation-time'], occurrence: event.occurrence },
+      fields,
       'edit-times': {},
-      undo: { kind: 'event', taskId, id: event.id, before },
+      undo: { kind: 'event', taskId, id: event.id, before, mode },
     };
   });
 }
@@ -320,7 +343,8 @@ async function describe(ctx, operation, args, before, result) {
         ...eventEntries(result.id, eventBase(before, result), result['lifecycle-rules'], eventsOfWrite(result)),
       ] : [];
     case 'postEvent':
-      return eventEntries(result.task.id, before['current-occurrence'], before['lifecycle-rules'], [result.event]);
+      return eventEntries(result.task.id, before['current-occurrence'], before['lifecycle-rules'], [result.event],
+        eventUndoMode(before['current-occurrence'], result.task['current-occurrence'], result.event));
     case 'updateRules':
       return rulesEntry(before, result);
     case 'deleteTask':
@@ -488,6 +512,10 @@ function laterEvents(entries, taskId) {
 function rechain(changes, events, base, rules) {
   let occurrence = base;
   for (const entry of events) {
+    if (entry.undo?.mode === 'previous') {
+      // A grace event names a past occurrence, so it never folds onto the current one.
+      continue;
+    }
     changes.requeue.push({ ...entry, undo: { ...entry.undo, before: occurrence } });
     occurrence = applyEvent(occurrence, entry.fields, rules) ?? occurrence;
   }
@@ -575,10 +603,12 @@ function planUndo(data, undo, later = []) {
     case 'event': {
       changes.delete.events = [[undo.taskId, undo.id]];
       const task = data.tasks.find((candidate) => candidate.id === undo.taskId);
-      if (task && undo.before) {
-        // An event changes only the count, status, and close time; the other fields stay the stored ones.
+      if (task && undo.before && undo.mode !== 'previous') {
+        // An event in place changes only the count, status, and close time; the other fields stay the stored ones.
+        // An event that opened another occurrence gives back the whole occurrence before it.
         const current = task['current-occurrence'];
-        const base = { ...current, 'completion-count': undo.before['completion-count'], status: undo.before.status, 'close-time': undo.before['close-time'] };
+        const base = undo.mode === 'replace' ? undo.before
+          : { ...current, 'completion-count': undo.before['completion-count'], status: undo.before.status, 'close-time': undo.before['close-time'] };
         const occurrence = rechain(changes, laterEvents(later, undo.taskId), base, task['lifecycle-rules']);
         changes.put.tasks = [{ ...task, 'current-occurrence': occurrence }];
       }

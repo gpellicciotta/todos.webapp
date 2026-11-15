@@ -3,13 +3,20 @@ import {
   applyEvent,
   applyRuleEdit,
   DEFAULT_RULES,
+  displayTask,
   dueTimeOf,
   eventsTowardsStatus,
   firstOccurrence,
   foldEvents,
+  freshOccurrence,
   fromLegacyTask,
+  graceOccurrence,
+  isStale,
   normalizeRules,
   overdueHandlingOf,
+  planRollOver,
+  recurrenceLabel,
+  refoldOccurrence,
   shouldExpire,
   STATUSES,
   statusFromCount,
@@ -203,5 +210,155 @@ describe('the former task shape', () => {
       const { task } = fromLegacyTask(legacy(status), newId);
       expect(toLegacyTask(task)).toEqual({ ...legacy(status), 'last-update-time': at(9), 'last-activity-time': at(9) });
     }
+  });
+});
+
+describe('recurring tasks', () => {
+  const WEEKLY = normalizeRules({ 'target-count': 3, 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' });
+  // Wednesday 17 June 2026; its ISO week runs from Monday 15 June, local midnight, to Monday 22 June.
+  const CREATED = '2026-06-17T10:00:00.000Z';
+  const WEEK_1 = { start: '2026-06-14T22:00:00.000Z', end: '2026-06-21T22:00:00.000Z' };
+  const WEEK_ENDS = ['2026-06-21T22:00:00.000Z', '2026-06-28T22:00:00.000Z', '2026-07-05T22:00:00.000Z', '2026-07-12T22:00:00.000Z'];
+
+  /**
+   * Return a weekly task created on Wednesday, ticked once in its first week.
+   * @param {object} [rules] rule fields over the weekly rules
+   * @returns {object} the task
+   */
+  const weekly = (rules = {}) => {
+    const all = normalizeRules({ ...WEEKLY, ...rules });
+    return { 'lifecycle-rules': all, 'current-occurrence': applyEvent(firstOccurrence(all, CREATED), { type: 'complete', 'creation-time': CREATED }, all) };
+  };
+
+  it('opens occurrence 1 over the period containing the creation time', () => {
+    expect(firstOccurrence(WEEKLY, CREATED)).toEqual({
+      occurrence: 1, 'start-time': WEEK_1.start, 'due-time': WEEK_1.end, 'target-count': 3, 'completion-count': 0, status: 'ready', 'close-time': null,
+    });
+  });
+
+  it('rolls over missed periods: each closes with its status and its own roll-over event', () => {
+    const task = weekly();
+    const plan = planRollOver(task['lifecycle-rules'], task['current-occurrence'], '2026-07-08T10:00:00Z');
+    expect(plan.occurrences.map((o) => [o.occurrence, o['start-time'], o['due-time'], o['completion-count'], o.status, o['close-time']])).toEqual([
+      [1, WEEK_1.start, WEEK_ENDS[0], 1, 'in-progress', WEEK_ENDS[0]],
+      [2, WEEK_ENDS[0], WEEK_ENDS[1], 0, 'ready', WEEK_ENDS[1]],
+      [3, WEEK_ENDS[1], WEEK_ENDS[2], 0, 'ready', WEEK_ENDS[2]],
+      [4, WEEK_ENDS[2], WEEK_ENDS[3], 0, 'ready', null],
+    ]);
+    expect(plan.events).toEqual([
+      { type: 'roll-over', occurrence: 1, 'creation-time': WEEK_ENDS[0] },
+      { type: 'roll-over', occurrence: 2, 'creation-time': WEEK_ENDS[1] },
+      { type: 'roll-over', occurrence: 3, 'creation-time': WEEK_ENDS[2] },
+    ]);
+    expect(plan.current.occurrence).toBe(4);
+  });
+
+  it('changes nothing while the period covers now, for a closed occurrence, or for a one-off task', () => {
+    const task = weekly();
+    expect(planRollOver(task['lifecycle-rules'], task['current-occurrence'], '2026-06-21T21:59:59Z')).toEqual({ occurrences: [], events: [], current: task['current-occurrence'] });
+    const cancelled = applyEvent(task['current-occurrence'], { type: 'cancel', 'creation-time': CREATED }, task['lifecycle-rules']);
+    expect(planRollOver(task['lifecycle-rules'], cancelled, '2026-07-08T10:00:00Z').events).toEqual([]);
+    expect(planRollOver(DEFAULT_RULES, fresh({ 'due-time': at(10) }), at(20)).events).toEqual([]);
+  });
+
+  it('ends the recurrence at its end count with end-recurrence, below target as cancelled', () => {
+    const task = weekly({ 'recurrence-end-count': 3 });
+    const plan = planRollOver(task['lifecycle-rules'], task['current-occurrence'], '2026-07-20T10:00:00Z');
+    expect(plan.events.map((e) => [e.type, e.occurrence, e['creation-time']])).toEqual([
+      ['roll-over', 1, WEEK_ENDS[0]], ['roll-over', 2, WEEK_ENDS[1]], ['end-recurrence', 3, WEEK_ENDS[2]],
+    ]);
+    expect(plan.current).toMatchObject({ occurrence: 3, status: 'cancelled', 'close-time': WEEK_ENDS[2] });
+  });
+
+  it('ends the recurrence when the next period would start after the end date, completed at target', () => {
+    const rules = normalizeRules({ ...WEEKLY, 'target-count': 1, 'recurrence-end-date': '2026-06-28' });
+    let occurrence = firstOccurrence(rules, CREATED);
+    occurrence = applyEvent(occurrence, { type: 'complete', 'creation-time': CREATED }, rules);
+    const first = planRollOver(rules, occurrence, '2026-06-24T10:00:00Z');
+    expect(first.events.map((e) => e.type)).toEqual(['roll-over']);
+    const done = applyEvent(first.current, { type: 'complete', 'creation-time': '2026-06-24T10:00:00Z' }, rules);
+    const second = planRollOver(rules, done, '2026-07-08T10:00:00Z');
+    expect(second.events.map((e) => [e.type, e.occurrence])).toEqual([['end-recurrence', 2]]);
+    expect(second.current).toMatchObject({ occurrence: 2, status: 'completed', 'close-time': WEEK_ENDS[1] });
+  });
+
+  it('folds roll-over and end-recurrence events as the server does', () => {
+    const open = { ...firstOccurrence(WEEKLY, CREATED), 'completion-count': 3, status: 'completed' };
+    expect(applyEvent(open, { type: 'roll-over', 'creation-time': WEEK_1.end }, WEEKLY)).toMatchObject({ status: 'completed', 'close-time': WEEK_1.end });
+    const partly = { ...open, 'completion-count': 1, status: 'in-progress' };
+    expect(applyEvent(partly, { type: 'end-recurrence', 'creation-time': WEEK_1.end }, WEEKLY)).toMatchObject({ status: 'cancelled', 'close-time': WEEK_1.end });
+  });
+
+  it('refolds a closed occurrence with a late event: it stays closed and lifts its count', () => {
+    const closed = planRollOver(WEEKLY, firstOccurrence(WEEKLY, CREATED), '2026-06-24T10:00:00Z').occurrences[0];
+    const events = [
+      { id: 'a', type: 'create', 'creation-time': CREATED },
+      { id: 'b', type: 'roll-over', 'creation-time': WEEK_1.end },
+      { id: 'c', type: 'complete', 'creation-time': '2026-06-21T21:59:59.999Z' },
+    ];
+    expect(refoldOccurrence(closed, events, WEEKLY)).toMatchObject({ 'completion-count': 1, status: 'in-progress', 'close-time': WEEK_1.end });
+  });
+
+  it('opens a fresh period containing now for a reopen, unless the end rules allow none', () => {
+    const task = weekly();
+    const cancelled = applyEvent(task['current-occurrence'], { type: 'cancel', 'creation-time': CREATED }, WEEKLY);
+    expect(freshOccurrence(WEEKLY, cancelled, '2026-07-08T10:00:00Z')).toEqual({
+      occurrence: 2, 'start-time': WEEK_ENDS[2], 'due-time': WEEK_ENDS[3], 'target-count': 3, 'completion-count': 0, status: 'ready', 'close-time': null,
+    });
+    expect(freshOccurrence({ ...WEEKLY, 'recurrence-end-count': 1 }, cancelled, '2026-07-08T10:00:00Z')).toBeNull();
+  });
+
+  it('turns the open occurrence of a one-off task into the current period when it becomes recurring', () => {
+    const task = { 'lifecycle-rules': { ...DEFAULT_RULES, 'target-count': 2 }, 'current-occurrence': applyEvent(firstOccurrence({ ...DEFAULT_RULES, 'target-count': 2 }, CREATED), { type: 'complete', 'creation-time': CREATED }) };
+    const edited = applyRuleEdit(task, { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' }, '2026-06-24T10:00:00.000Z');
+    expect(edited['current-occurrence']).toMatchObject({
+      occurrence: 1, 'start-time': WEEK_ENDS[0], 'due-time': WEEK_ENDS[1], 'completion-count': 1, status: 'in-progress', 'close-time': null,
+    });
+  });
+
+  it('opens a fresh period when a closed one-off task becomes recurring, and drops the deadline when recurrence stops', () => {
+    const closed = applyEvent(firstOccurrence(DEFAULT_RULES, CREATED), { type: 'complete', 'creation-time': CREATED });
+    const task = { 'lifecycle-rules': { ...DEFAULT_RULES }, 'current-occurrence': closed };
+    const edited = applyRuleEdit(task, { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' }, '2026-06-24T10:00:00.000Z');
+    expect(edited['current-occurrence']).toMatchObject({ occurrence: 2, 'start-time': WEEK_ENDS[0], status: 'ready', 'close-time': null });
+    const stopped = applyRuleEdit({ 'lifecycle-rules': WEEKLY, 'current-occurrence': firstOccurrence(WEEKLY, CREATED) }, { 'recurrence-unit': null }, CREATED);
+    expect(stopped['current-occurrence']).toMatchObject({ occurrence: 1, 'due-time': null, 'close-time': null });
+  });
+
+  it('keeps the period of the open occurrence on a unit, interval, or timezone edit', () => {
+    const task = weekly();
+    const edited = applyRuleEdit(task, { 'recurrence-unit': 'day', 'recurrence-interval': 2 }, CREATED);
+    expect(edited['current-occurrence']).toMatchObject({ 'start-time': WEEK_1.start, 'due-time': WEEK_1.end });
+    expect(planRollOver(edited['lifecycle-rules'], edited['current-occurrence'], '2026-06-22T10:00:00Z').current)
+      .toMatchObject({ occurrence: 2, 'start-time': WEEK_1.end, 'due-time': '2026-06-23T22:00:00.000Z' });
+  });
+
+  it('shows a task past its period end as ready with count 0 until the roll-over', () => {
+    const task = weekly();
+    expect(isStale(task, '2026-06-21T21:59:59Z')).toBe(false);
+    expect(displayTask(task, '2026-06-21T21:59:59Z')).toBe(task);
+    expect(isStale(task, WEEK_1.end)).toBe(true);
+    const shown = displayTask(task, WEEK_1.end);
+    expect(shown['current-occurrence']).toMatchObject({ occurrence: 1, status: 'ready', 'completion-count': 0, 'target-count': 3, 'due-time': WEEK_1.end });
+    expect(task['current-occurrence'].status).toBe('in-progress');
+    const oneOff = { 'lifecycle-rules': DEFAULT_RULES, 'current-occurrence': fresh({ 'due-time': at(1) }) };
+    expect(displayTask(oneOff, at(5))).toBe(oneOff);
+  });
+
+  it('names the occurrence that grace completion completes, within 24 hours of a period end', () => {
+    const stale = weekly();
+    expect(graceOccurrence(stale, '2026-06-21T21:00:00Z')).toBeNull();
+    expect(graceOccurrence(stale, '2026-06-22T10:00:00Z')).toBe(1);
+    expect(graceOccurrence(stale, '2026-06-22T22:00:01Z')).toBeNull();
+    const rolled = { ...stale, 'current-occurrence': planRollOver(WEEKLY, stale['current-occurrence'], '2026-06-22T10:00:00Z').current };
+    expect(graceOccurrence(rolled, '2026-06-22T10:00:00Z')).toBe(1);
+    expect(graceOccurrence(rolled, '2026-06-23T10:00:00Z')).toBeNull();
+    expect(graceOccurrence({ 'lifecycle-rules': DEFAULT_RULES, 'current-occurrence': fresh() }, at(5))).toBeNull();
+  });
+
+  it('describes a recurrence in words', () => {
+    expect(['day', 'week', 'month'].map((unit) => recurrenceLabel({ 'recurrence-unit': unit, 'recurrence-interval': 1 }))).toEqual(['Daily', 'Weekly', 'Monthly']);
+    expect(recurrenceLabel({ 'recurrence-unit': 'week', 'recurrence-interval': 2 })).toBe('Every 2 weeks');
+    expect(recurrenceLabel(DEFAULT_RULES)).toBeNull();
   });
 });

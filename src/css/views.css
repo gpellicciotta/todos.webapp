@@ -289,6 +289,58 @@
   max-inline-size: var(--width-chip-max);
 }
 
+/* The recurrence details stack like section fields; the interval and end count stay as narrow as a chip. */
+.task-editor__recurrence {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.task-editor__recurrence[hidden] {
+  display: none;
+}
+
+.task-editor__recurrence :is([name='recurrence-interval'], [name='recurrence-end-count']) {
+  max-inline-size: var(--width-chip-max);
+}
+
+/* The history lists occurrences and events, newest first, in small text under Show history. */
+.task-history {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.task-history__status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.task-history__status:empty {
+  display: none;
+}
+
+.task-history__body {
+  display: grid;
+  gap: var(--space-2);
+  inline-size: 100%;
+}
+
+.task-history__title {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+}
+
+.task-history__list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  list-style: none;
+}
+
 .editor-panel__body > .banner {
   margin-block-start: var(--space-4);
 }

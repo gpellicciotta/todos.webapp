@@ -2,11 +2,14 @@
  * Task editor: every field of one task, saved on change, with no Save button.
  *
  * Sections, in order: description (`TSK-1`), status (`TSK-3`, `TSK-4`), target count (`TSK-15`),
- * due date and time (`TSK-5`, `TSK-6`), overdue behavior once a due time is set (`TSK-7`), lists (`TSK-8`),
- * notes (`NOT-1` to `NOT-5`), details (`TSK-12`), and Delete task (`TSK-11`).
+ * due date and time (`TSK-5`, `TSK-6`), overdue behavior once a due time is set (`TSK-7`), repeat (`TSK-16`), lists (`TSK-8`),
+ * notes (`NOT-1` to `NOT-5`), history (`TSK-17`), details (`TSK-12`), and Delete task (`TSK-11`).
  * The status section names the status, with the done and target counts above target 1, and offers the event actions
  * whose preconditions hold: the tick, `complete` or `uncomplete`, then `start`, `unstart`, `cancel`, and `reopen`.
  * Target count, deadline, and overdue behavior edit the lifecycle rules; a recurring task has no deadline to edit.
+ * Repeat makes the task recurring daily, weekly, or monthly in the browser's timezone; a recurring task then shows its
+ * interval, end date, end count, and timezone, and Never stops the recurrence. Past its period end, the status shows
+ * the display rule's `ready` with count 0 until the roll-over. History lists the occurrences and events on request.
  * An invalid value shows a field error and saves nothing.
  * A deleted task opens read-only with a Restore banner (`BIN-6`); an unknown task closes with a toast.
  * A viewer sees every field read-only under a banner naming the list owner, and only the task owner or the owner of a
@@ -18,11 +21,13 @@
  * there the panel sits beside the rows, so the user keeps typing the next task (`TSK-13`).
  */
 
-import { applyEvent, overdueHandlingOf } from '../core/occurrences.js';
+import { applyEvent, displayTask, overdueHandlingOf } from '../core/occurrences.js';
+import { browserTimezone, isValidTimezone } from '../core/periods.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 
 import { DESCRIPTION_MAX } from '../store/tasks.js';
 import { createEditorField } from './editor-panel.js';
+import { createTaskHistory } from './task-history.js';
 import { createNoteThread } from './notes.js';
 import { countWords, make as el, showsCount, spriteIcon, STATUS_ACTIONS, STATUS_LABELS } from './task-list.js';
 
@@ -43,6 +48,12 @@ const STRINGS = Object.freeze({
   restore: 'Restore', readOnly: (owner) => `You can only view this task${owner ? `. Its list owner is ${owner}` : ''}.`, notFound: 'That task was not found.', failed: 'That change could not be saved.',
   required: 'Enter a description.', tooLong: `A description holds at most ${DESCRIPTION_MAX} characters.`,
   dateFirst: 'Enter a date to set a time.', fullYear: 'Enter a four-digit year.',
+  repeat: 'Repeat', never: 'Never', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', interval: 'Every',
+  intervalHint: 'How many days, weeks, or months each period spans.', intervalRange: 'Enter a whole number from 1 to 99.',
+  endDate: 'Ends on', endDateHint: 'No period starts after this date.', endCount: 'Ends after',
+  endCountHint: 'The number of periods, whatever their outcome.', endCountRange: 'Enter a whole number of at least 1, or leave it empty.',
+  timezone: 'Timezone', timezoneHint: 'Periods start at midnight in this timezone.', timezoneInvalid: 'Enter a timezone such as Europe/Brussels.',
+  history: 'History',
 });
 
 let instances = 0;
@@ -110,9 +121,12 @@ function dueParts(iso) {
  * @param {object} context.store the store facade
  * @param {{show: Function}} context.toaster the toaster
  * @param {string} [context.locale] the locale of times, the user's by default
+ * @param {{send: Function}} [context.api] the API client, which the history reads the server routes with while connected
+ * @param {{state: () => string}} [context.session] the session; without one, the app is in local mode
+ * @param {() => Date} [context.now] the clock, for the display rule of the status
  * @returns {{idle: () => Promise<void>, returnFocus: () => HTMLElement|null, destroy: () => void}} the editor
  */
-export function mountTaskEditor(panel, route, { store, toaster, locale }) {
+export function mountTaskEditor(panel, route, { store, toaster, locale, api = null, session = null, now = () => new Date() }) {
   const doc = panel.document;
   const taskId = route.params.taskId;
   const format = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -331,6 +345,108 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   overdueSection.append(overdue);
   overdue.addEventListener('change', (event) => save({ 'overdue-handling': event.target.value }, null, 'updateRules'));
 
+  const unit = createEditorField(doc, {
+    label: STRINGS.repeat, name: 'recurrence-unit', tag: 'select',
+    choices: [['', STRINGS.never], ['day', STRINGS.daily], ['week', STRINGS.weekly], ['month', STRINGS.monthly]].map(([value, label]) => ({ value, label })),
+  });
+  /**
+   * Name the error of every native number constraint with the editor's own message.
+   * @param {string} message the message
+   * @returns {Object<string, string>} the messages by validity key
+   */
+  const numberMessages = (message) => ({ rangeOverflow: message, rangeUnderflow: message, stepMismatch: message, badInput: message });
+  const interval = createEditorField(doc, {
+    label: STRINGS.interval, name: 'recurrence-interval', type: 'number', hint: STRINGS.intervalHint, messages: numberMessages(STRINGS.intervalRange),
+  });
+  Object.assign(interval.control, { min: '1', max: '99', step: '1' });
+  interval.control.inputMode = 'numeric';
+  const endDate = createEditorField(doc, { label: STRINGS.endDate, name: 'recurrence-end-date', type: 'date', hint: STRINGS.endDateHint });
+  const endCount = createEditorField(doc, {
+    label: STRINGS.endCount, name: 'recurrence-end-count', type: 'number', hint: STRINGS.endCountHint, messages: numberMessages(STRINGS.endCountRange),
+  });
+  Object.assign(endCount.control, { min: '1', step: '1' });
+  endCount.control.inputMode = 'numeric';
+  const zone = createEditorField(doc, { label: STRINGS.timezone, name: 'timezone', hint: STRINGS.timezoneHint });
+  zone.control.autocomplete = 'off';
+  zone.control.spellcheck = false;
+  const zones = el(doc, 'datalist', 'task-editor__zones');
+  zones.id = `task-editor-${n}-zones`;
+  zones.append(...(Intl.supportedValuesOf?.('timeZone') ?? []).map((name) => Object.assign(doc.createElement('option'), { value: name })));
+  zone.control.setAttribute('list', zones.id);
+  const recurrence = el(doc, 'div', 'task-editor__recurrence');
+  recurrence.append(interval.element, endDate.element, endCount.element, zone.element, zones);
+  const repeatSection = section('repeat');
+  repeatSection.append(unit.element, recurrence);
+
+  /** Save the repeat unit: Never stops the recurrence, and a first unit also sets interval 1 and the browser's timezone. */
+  function saveUnit() {
+    const value = unit.control.value || null;
+    saved.set(unit.control, unit.control.value);
+    const recurring = Boolean(task?.['lifecycle-rules']['recurrence-unit']);
+    save(value && !recurring ? { 'recurrence-unit': value, 'recurrence-interval': 1, timezone: browserTimezone() } : { 'recurrence-unit': value }, unit, 'updateRules');
+  }
+  unit.control.addEventListener('change', saveUnit);
+
+  /**
+   * Save a whole-number rule field, or show its field error.
+   * @param {{control: HTMLInputElement, setError: Function}} field the field
+   * @param {string} name the rule field
+   * @param {(value: number|null) => boolean} valid whether a value, null for an empty field, may be saved
+   * @param {string} message the field error
+   */
+  function saveNumber(field, name, valid, message) {
+    const text = field.control.value.trim();
+    saved.set(field.control, field.control.value);
+    const value = text === '' ? null : /^\d+$/.test(text) ? Number(text) : NaN;
+    if (!valid(value)) {
+      field.setError(message);
+      return;
+    }
+    field.setError(null);
+    save({ [name]: value }, field, 'updateRules');
+  }
+  const saveInterval = () => saveNumber(interval, 'recurrence-interval', (value) => Number.isInteger(value) && value >= 1 && value <= 99, STRINGS.intervalRange);
+  const saveEndCount = () => saveNumber(endCount, 'recurrence-end-count', (value) => value === null || (Number.isInteger(value) && value >= 1), STRINGS.endCountRange);
+  interval.control.addEventListener('change', saveInterval);
+  endCount.control.addEventListener('change', saveEndCount);
+
+  /** Save the end date once focus leaves it, since a date field changes on each typed digit; a short year is a field error. */
+  function saveEndDate() {
+    const value = endDate.control.value;
+    saved.set(endDate.control, value);
+    if (value && Number(value.split('-')[0]) < 1000) {
+      endDate.setError(STRINGS.fullYear);
+      return;
+    }
+    endDate.setError(null);
+    save({ 'recurrence-end-date': value || null }, endDate, 'updateRules');
+  }
+  endDate.control.addEventListener('blur', () => {
+    if (task && endDate.control.value !== shown.get(endDate.control) && endDate.control.value !== saved.get(endDate.control)) {
+      saveEndDate();
+    }
+  });
+
+  /** Save the timezone; a name that is no IANA zone is a field error. */
+  function saveZone() {
+    const value = zone.control.value.trim();
+    saved.set(zone.control, zone.control.value);
+    if (!isValidTimezone(value)) {
+      zone.setError(STRINGS.timezoneInvalid);
+      return;
+    }
+    zone.setError(null);
+    save({ timezone: value }, zone, 'updateRules');
+  }
+  zone.control.addEventListener('change', saveZone);
+  for (const [field, rule] of [[interval, 'recurrence-interval'], [endCount, 'recurrence-end-count'], [zone, 'timezone']]) {
+    field.control.addEventListener('blur', () => {
+      if (task && field.control.value === shown.get(field.control)) {
+        put(field.control, String(task['lifecycle-rules'][rule] ?? ''));
+      }
+    });
+  }
+
   const chips = el(doc, 'ul', 'chip-list');
   const combo = createEditorField(doc, { label: STRINGS.addToList, name: 'add-to-list', hideLabel: true });
   const input = combo.control;
@@ -435,6 +551,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
 
   const thread = createNoteThread({ document: doc, store, taskId, onError: fail, locale });
   section('notes', STRINGS.notes).append(thread.element);
+  const history = createTaskHistory({ document: doc, store, taskId, api, session, locale });
+  section('history', STRINGS.history).append(history.element);
   const details = el(doc, 'p', 'editor-panel__details');
   section('details', STRINGS.details).append(details);
   const danger = el(doc, 'div', 'editor-panel__danger');
@@ -453,18 +571,20 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
    * A focused action that hides passes the focus to the first action left, so the keyboard user stays in the group.
    */
   function fillStatus() {
-    const occurrence = task['current-occurrence'];
+    const occurrence = displayTask(task, now())['current-occurrence'];
+    const rules = task['lifecycle-rules'];
     const counted = showsCount(occurrence);
     statusLine.dataset.status = occurrence.status;
     statusIcon.firstElementChild.setAttribute('href', `img/icons.svg#status-${occurrence.status}`);
     statusText.textContent = `${STATUS_LABELS[occurrence.status]}${counted ? `, ${countWords(occurrence)}` : ''}`;
-    const can = (event) => applyEvent(occurrence, { type: event, 'creation-time': occurrence['start-time'] }) !== null;
+    const can = (event) => applyEvent(occurrence, { type: event, 'creation-time': occurrence['start-time'] }, rules) !== null;
     const completed = occurrence.status === 'completed';
+    // A closed recurring occurrence takes only Reopen, so its tick hides.
     tick.dataset.event = completed ? 'uncomplete' : 'complete';
     tick.lastElementChild.textContent = counted ? (completed ? STRINGS.untick : STRINGS.tick)(occurrence)
       : completed ? STRINGS.uncomplete : STRINGS.complete;
     // The tick shows the icon of the status it leads to, such as In progress when unticking 3 of 3.
-    const after = applyEvent(occurrence, { type: tick.dataset.event, 'creation-time': occurrence['start-time'] });
+    const after = applyEvent(occurrence, { type: tick.dataset.event, 'creation-time': occurrence['start-time'] }, rules);
     tick.dataset.status = after?.status ?? 'completed';
     tick.querySelector('use').setAttribute('href', `img/icons.svg#status-${tick.dataset.status}`);
     const focused = actions.contains(doc.activeElement) ? doc.activeElement : null;
@@ -517,6 +637,15 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     }
     dueSection.hidden = recurring;
     overdueSection.hidden = recurring || !rules['due-time'];
+    if (!busy(unit.control)) {
+      put(unit.control, rules['recurrence-unit'] ?? '');
+    }
+    for (const [field, rule] of [[interval, 'recurrence-interval'], [endDate, 'recurrence-end-date'], [endCount, 'recurrence-end-count'], [zone, 'timezone']]) {
+      if (!busy(field.control)) {
+        put(field.control, String(rules[rule] ?? ''));
+      }
+    }
+    recurrence.hidden = !recurring;
     overdue.querySelector(`input[value="${overdueHandlingOf(task) ?? 'keep'}"]`).checked = true;
     const joined = lists.filter((list) => members.includes(list.id));
     chips.replaceChildren(...joined.map((list) => {
@@ -594,6 +723,11 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       }
       if (typed(date.control) || typed(time.control)) {
         saveDue();
+      }
+      for (const [control, saveTyped] of [[interval.control, saveInterval], [endDate.control, saveEndDate], [endCount.control, saveEndCount], [zone.control, saveZone]]) {
+        if (typed(control)) {
+          saveTyped();
+        }
       }
       destroyed = true;
       unsubscribe();

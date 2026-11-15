@@ -50,11 +50,11 @@ describe('createTask', () => {
     expect(task['lifecycle-rules']['due-time']).toBe(new Date(2026, 10, 8, 23, 59, 0, 0).toISOString());
   });
 
-  it('creates a recurring task without due time or overdue handling, as the service requires', async () => {
+  it('creates a recurring task without due time or overdue handling, as the service requires, over the current week', async () => {
     const weekly = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' };
     const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': weekly, 'overdue-handling': 'cancel' });
     expect(task['lifecycle-rules']).toMatchObject({ ...weekly, 'due-time': null, 'overdue-handling': null });
-    expect(task['current-occurrence']['due-time']).toBeNull();
+    expect(task['current-occurrence']).toMatchObject({ 'start-time': '2026-11-01T23:00:00.000Z', 'due-time': '2026-11-08T23:00:00.000Z' });
   });
 
   it('reaches a given starting status through events', async () => {
