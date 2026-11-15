@@ -155,3 +155,57 @@ Capture: seed Milk, Eggs, Bread, type Coffee, press Enter.
 - Before: Enter only searched for "Coffee"; nothing was added.
 - After, 390 px: Coffee is added and highlighted, the field is empty and focused, and no editor opens.
 - After, 1440 px: Coffee is added and highlighted, and the editor opens beside the focused field.
+
+### Rebase onto main after T0224
+The branch was rebased onto `08b7eb8` (T0224, the todos.server task shape).
+Conflicts in CHANGELOG.md, requirements.md, and the service worker version were resolved; VERSION is now `2026-11-15.7`.
+The compact unit test and the gallery "Just added" row moved to the new `ready` status shape.
+
+`node scripts/check-sw-version.mjs` (exit code 0)
+
+```text
+OK: 126 precached files match VERSION 2026-11-15.7.
+```
+
+`npm test` (exit code 0)
+
+```text
+
+> todos-webapp@0.4.1-pre test
+> vitest run
+
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0228-add-a-rapid-entry-mode-where-adding-keeps
+
+
+ Test Files  57 passed (57)
+      Tests  1299 passed (1299)
+   Start at  10:18:11
+   Duration  13.72s (environment 52%, tests 33%, import 9%, transform 3%, worker 2%, setup 1%)
+
+    Isolate  57 workers spawned · ~1.01s startup each (spawn + environment, per file)
+             at least ~7.20s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+`npx eslint .` (exit code 0, no output)
+
+```text
+(no output)
+```
+
+`npx playwright test --reporter=line` (exit code 0)
+
+```text
+
+Running 206 tests using 4 workers
+
+[... 205 lines omitted ...]
+[206/206] [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6)
+  206 passed (2.3m)
+```
+
+`python -m pytest -q tests/test_draw_wireframes.py` (exit code 0)
+
+```text
+84 passed in 0.46s
+```
