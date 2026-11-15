@@ -5,52 +5,33 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.4.1-pre
-- FrontEnd: Vendored support.webapp 0.1.0 with its neutral look, and took every design token from it under its contract names, with no visible change.
-- DevOps: Ran the vendored design check in CI and in `devops.py check`, so an edited copy or a private token in the app styles fails the build.
-- FrontEnd: Moved the app layout onto the vendored shell, with a skip link, a banner area, an action bar, a side panel, and an overlay layer.
-- FrontEnd: Moved the add bar into the action bar under the rows, also on wide screens, where it sat above the rows before.
-- FrontEnd: Opened the compact task, list, and view options editors as a full-window sheet over the top and bottom bars.
-- FrontEnd: Framed the wide editor panel by the side panel's start border instead of a floating card, and gave the wide top bar the surface ground.
-- FrontEnd: Replaced the app's dialog, menu, popover, toast, live region, update, and field modules with the vendored support.webapp ones.
-- FrontEnd: Loaded the design system through its public neutral look entry point and dropped the app's own control styles.
-- FrontEnd: Turned the user menu into the vendored account menu, with an avatar face and arrow-key navigation.
-- FrontEnd: Opened menus and popovers as native popovers in the top layer, with the package's 8 px corners.
-- FrontEnd: Showed an update activated in another tab as a lasting Reload toast instead of a banner.
-- FrontEnd: Gave list chip remove buttons the package skeleton, with chip corners and a visible hover in light mode.
-- DevOps: Gave the task row and chrome gallery focus ring tests 90 seconds, since full parallel runs pushed them near 30.
-- FrontEnd: Made a click on a task's status button, or `x` on its row, tick it toward its target.
-- FrontEnd: Ticking reopens a cancelled task, and undoes a completion once the task is completed.
-- FrontEnd: Opened a status menu of Start, Undo start, Cancel task, and Reopen by right-click, long press, or keys.
+- FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.
+- FrontEnd: Synced status changes as events and rule changes as rule edits, folding queued events into pulled tasks.
+- FrontEnd: Made a click on the status button, or `x` on a row, tick the task toward its target.
+- FrontEnd: Added Start, Undo start, Cancel task, and Reopen to a status menu opened by right-click, long press, or keys.
 - FrontEnd: Showed an Undo toast when a status change hides the row under the view's filters.
-- FrontEnd: Read due dates, times, and `#list` tags typed in the add field into the new task, with a preview line.
-- FrontEnd: Computed day, week, and month recurrence periods in IANA timezones, passing the shared todos.server vectors.
-- FrontEnd: Rolled recurring tasks over in local mode, with missed periods and the recurrence end date and count.
-- FrontEnd: Showed a connected recurring task past its period end as to do until the server rolls it over.
-- FrontEnd: Added Repeat, Every, Ends on, Ends after, and Timezone fields to the task editor.
-- FrontEnd: Offered Complete for previous period in the status menu for 24 hours after a period ends.
-- FrontEnd: Showed a repeat chip on recurring rows instead of a due chip.
-- FrontEnd: Added a task history of occurrences and events, read from the server or the local stores.
-- FrontEnd: Filtered, sorted, grouped, and counted recurring tasks past their period end as to do.
-- FrontEnd: Offered only Reopen on a recurring series that ended, completed or cancelled, as the server allows.
-- FrontEnd: Gave group headers 12 px of inline padding and a chevron, so the name and count sit clear of the edges.
-- FrontEnd: Showed a group's count as "6 of 10" while search or filters hide some of its tasks.
-- FrontEnd: Made each group header a button that collapses or expands its group, by click, Enter, or Space.
-- FrontEnd: Moved tasks to the todos.server shape, with lifecycle rules, occurrences, and events, in database version 5.
-- FrontEnd: Synced status changes as events and deadline edits as rule edits, folding queued events into pulled tasks.
-- FrontEnd: Kept local mode, overdue expiry, format 1 backups, note ownership, and reconnecting working on the new shape.
-- DevEx: Started the contract test server jar directly, since `devops.py server start` dropped its port option.
-- FrontEnd: Made Enter in the add field add the typed task, with a Make Enter add switch in Settings.
-- FrontEnd: Kept the focus in the add field after an add, and opened the editor only on wide screens.
+- FrontEnd: Showed done and target counts such as `2/3`, and added a Target count field to the editor.
+- FrontEnd: Replaced the editor's status control with event action buttons, saving rule fields as lifecycle rule edits.
+- FrontEnd: Added recurring tasks with day, week, and month periods in IANA timezones, end dates, and end counts.
+- FrontEnd: Rolled recurring tasks over in local mode, and offered Complete for previous period for 24 hours.
+- FrontEnd: Showed recurring tasks past their period end as to do, with a repeat chip instead of a due chip.
+- FrontEnd: Added a task history of occurrences, events, and their notes, read from the server or the local stores.
+- FrontEnd: Tied notes to an occurrence or the whole task, chosen in the note editor's Belongs to field.
+- FrontEnd: Made Enter add the typed task by default, with a Make Enter add switch in Settings.
+- FrontEnd: Kept the focus in the add field after an add, opening the editor beside the rows only on wide screens.
 - FrontEnd: Highlighted and announced each new row, scrolling to it even in long lists.
-- FrontEnd: Showed done and target counts, such as `2/3`, on rows and in the editor above target 1.
-- FrontEnd: Replaced the editor's status control with event action buttons, and added a Target count field.
-- FrontEnd: Saved target count, deadline, and overdue behavior as lifecycle rule edits, hiding the deadline of recurring tasks.
-- FrontEnd: Renamed the Last activity sort to Last update, and judged Finished today only by the occurrence close time.
-- FrontEnd: Tied notes to an occurrence or the whole task, shown by occurrence and changed with a Belongs to choice.
-- FrontEnd: Exported backup format 2, with top-level `lifecycle-rules`, `occurrences`, and `events`, and kept format 1 importable.
-- FrontEnd: Rebuilt imported occurrences by replaying events, ending on the exported rules, and closed ended series with `end-recurrence`.
-- FrontEnd: Merged imported events by identifier, and replayed new tasks, rule edits, events, and global notes with `import: true`.
-- DevEx: Added contract tests replaying format 2 imports, partial rule histories, ended series, and notes against a real server.
+- FrontEnd: Read due dates, times, and `#list` tags typed in the add field, with a preview line.
+- FrontEnd: Made group headers collapsible buttons with padding, a chevron, and an "n of m" count under filters.
+- FrontEnd: Renamed the Last activity sort to Last update.
+- FrontEnd: Exported backup format 2 with lifecycle rules, occurrences, and events, and kept format 1 importable.
+- FrontEnd: Rebuilt imported occurrences by replaying events, and replayed imports with `import: true` while connected.
+- FrontEnd: Moved the layout onto the vendored support.webapp 0.1.0 shell, neutral look, tokens, and shared components.
+- FrontEnd: Moved the add bar into the action bar under the rows, also on wide screens.
+- FrontEnd: Opened compact editors as full-window sheets, and framed the wide editor panel by the side panel border.
+- FrontEnd: Turned the user menu into an account menu with an avatar and arrow-key navigation.
+- FrontEnd: Opened menus and popovers in the top layer, and showed updates from other tabs as a Reload toast.
+- Build: Ran the vendored design check in CI and in `devops.py check`, failing on edited copies or private tokens.
+- DevEx: Added contract tests that run sync, recurrence, imports, and note links against a real todos server.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.
