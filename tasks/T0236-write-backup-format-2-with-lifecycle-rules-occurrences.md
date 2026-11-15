@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 3548.8, input: 440, output: 261176, cache_read: 45706692, cache_write: 592124}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T12:16:43Z"
 ---
 # T0236: Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable
 
@@ -73,4 +78,7 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
   - Files touched: 11.
   - Lines touched: 1314.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
