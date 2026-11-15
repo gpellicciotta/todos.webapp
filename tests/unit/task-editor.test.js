@@ -24,6 +24,8 @@ function fakeStore() {
     listsOfTask: vi.fn(async () => []),
     notesOfTask: vi.fn(async () => []),
     updateTask: vi.fn(async () => ({ ...TASK })),
+    updateRules: vi.fn(async () => ({ ...TASK })),
+    postEvent: vi.fn(async () => ({ task: { ...TASK } })),
     addNote: vi.fn(async () => ({})),
     subscribe: (listener) => {
       listeners.push(listener);
@@ -190,14 +192,15 @@ describe('mountTaskEditor', () => {
     const date = document.querySelector('input[name="due-date"]');
     typeAndLeave(document.querySelector('input[name="due-clock"]'), '10:00');
     await vi.waitFor(() => expect(errorOf(date)).toBe('Enter a date to set a time.'));
-    expect(store.updateTask).not.toHaveBeenCalled();
+    expect(store.updateRules).not.toHaveBeenCalled();
   });
 
   it('saves a date without a time as a date-only due time (TSK-6), and shows overdue behavior', async () => {
     const overdue = document.querySelector('[data-section="overdue"]');
     expect(overdue.hidden).toBe(true);
     typeAndLeave(document.querySelector('input[name="due-date"]'), '2026-11-08');
-    await vi.waitFor(() => expect(store.updateTask).toHaveBeenCalledWith('t1', { 'due-time': '2026-11-08' }));
+    await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'due-time': '2026-11-08' }));
+    expect(store.updateTask).not.toHaveBeenCalled();
   });
 
   it('saves the due date and time only when the field is left, not on each change while typing', async () => {
@@ -209,17 +212,139 @@ describe('mountTaskEditor', () => {
     time.focus();
     change(time, '18:00');
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(store.updateTask).not.toHaveBeenCalled();
+    expect(store.updateRules).not.toHaveBeenCalled();
     time.blur();
-    await vi.waitFor(() => expect(store.updateTask).toHaveBeenCalledTimes(1));
-    expect(store.updateTask.mock.calls[0][1]).toEqual({ 'due-time': new Date(2026, 4, 11, 18, 0).toISOString() });
+    await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledTimes(1));
+    expect(store.updateRules.mock.calls[0][1]).toEqual({ 'due-time': new Date(2026, 4, 11, 18, 0).toISOString() });
+  });
+
+  describe('status actions and lifecycle rules', () => {
+    /**
+     * Fill the editor with another version of the task, as a store change does.
+     * @param {object} fields the shortcut fields of `shapeTask`
+     * @returns {Promise<void>} resolves once filled
+     */
+    async function refill(fields) {
+      const next = shapeTask({ ...TASK, id: 't1', description: 'Buy paint', ...fields });
+      store.getTask.mockImplementation(async () => next);
+      const reads = store.listsOfTask.mock.calls.length;
+      store.listeners.forEach((listener) => listener({ operation: 'postEvent' }));
+      await vi.waitFor(() => expect(store.listsOfTask.mock.calls.length).toBeGreaterThan(reads));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    /**
+     * List the status actions the editor shows.
+     * @returns {string[]} the events of the visible action buttons
+     */
+    const actions = () => [...document.querySelectorAll('[data-section="status"] button[data-event]')]
+      .filter((button) => !button.hidden).map((button) => button.dataset.event);
+
+    it('has no status radio buttons, and shows only the actions whose preconditions hold', async () => {
+      expect(document.querySelector('input[name^="status-"]')).toBeNull();
+      expect(actions()).toEqual(['complete', 'start', 'cancel']);
+      await refill({ status: 'in-progress' });
+      expect(actions()).toEqual(['complete', 'unstart', 'cancel']);
+      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
+      expect(actions()).toEqual(['complete', 'cancel']);
+      await refill({ status: 'completed' });
+      expect(actions()).toEqual(['uncomplete', 'cancel']);
+      await refill({ status: 'cancelled' });
+      expect(actions()).toEqual(['reopen']);
+    });
+
+    it('names the status, the count above target 1, and the tick action', async () => {
+      const line = document.querySelector('.task-editor__status');
+      expect(line.textContent).toBe('To do');
+      const tick = () => document.querySelector('[data-section="status"] button[data-event="complete"], [data-section="status"] button[data-event="uncomplete"]');
+      expect(tick().textContent).toBe('Complete');
+      const iconOf = () => [tick().dataset.status, tick().querySelector('use').getAttribute('href')];
+      expect(iconOf()).toEqual(['completed', 'img/icons.svg#status-completed']);
+      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
+      expect(line.textContent).toBe('In progress, 2 of 3 done');
+      expect(tick().textContent).toBe('Tick, 2 of 3');
+      await refill({ status: 'completed', 'target-count': 3, 'completion-count': 3 });
+      expect(line.textContent).toBe('Completed, 3 of 3 done');
+      expect(tick().textContent).toBe('Untick, 3 of 3');
+      // Unticking 3 of 3 leads back to In progress, so the button shows that icon, not the completed one.
+      expect(iconOf()).toEqual(['in-progress', 'img/icons.svg#status-in-progress']);
+      await refill({ status: 'completed' });
+      expect(tick().textContent).toBe('Undo completion');
+      expect(iconOf()).toEqual(['ready', 'img/icons.svg#status-ready']);
+    });
+
+    it('posts the event of a clicked action, never a status through updateTask', async () => {
+      document.querySelector('button[data-event="start"]').click();
+      document.querySelector('button[data-event="complete"]').click();
+      document.querySelector('button[data-event="cancel"]').click();
+      await vi.waitFor(() => expect(store.postEvent).toHaveBeenCalledTimes(3));
+      expect(store.postEvent.mock.calls).toEqual([['t1', 'start'], ['t1', 'complete'], ['t1', 'cancel']]);
+      expect(store.updateTask).not.toHaveBeenCalled();
+    });
+
+    it('keeps the focus on the tick button while it stays shown, and moves it to the first action when it hides', async () => {
+      const complete = document.querySelector('button[data-event="complete"]');
+      complete.focus();
+      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
+      expect(document.activeElement).toBe(complete);
+      const cancel = document.querySelector('button[data-event="cancel"]');
+      cancel.focus();
+      await refill({ status: 'cancelled' });
+      expect(document.activeElement).toBe(document.querySelector('button[data-event="reopen"]'));
+    });
+
+    it('saves the target count through the lifecycle rules, and rejects counts outside 1 to 999', async () => {
+      const target = document.querySelector('input[name="target-count"]');
+      expect(target.value).toBe('1');
+      change(target, '0');
+      expect(errorOf(target)).toBe('Enter a whole number from 1 to 999.');
+      change(target, '2.5');
+      expect(errorOf(target)).toBe('Enter a whole number from 1 to 999.');
+      change(target, '1000');
+      expect(store.updateRules).not.toHaveBeenCalled();
+      change(target, '3');
+      await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'target-count': 3 }));
+      expect(errorOf(target)).toBeNull();
+      expect(store.updateTask).not.toHaveBeenCalled();
+    });
+
+    it('fills the target count from the rules', async () => {
+      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
+      expect(document.querySelector('input[name="target-count"]').value).toBe('3');
+    });
+
+    it('saves the overdue behavior through the lifecycle rules (TSK-7)', async () => {
+      await refill({ 'due-time': '2026-11-08T22:59:00.000Z' });
+      const overdue = document.querySelector('[data-section="overdue"]');
+      expect(overdue.hidden).toBe(false);
+      const cancel = overdue.querySelector('input[value="cancel"]');
+      cancel.checked = true;
+      cancel.dispatchEvent(new Event('change', { bubbles: true }));
+      await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'overdue-handling': 'cancel' }));
+      expect(store.updateTask).not.toHaveBeenCalled();
+    });
+
+    it('hides the deadline and overdue behavior of a recurring task, whose periods set its due times', async () => {
+      const recurring = shapeTask({ ...TASK, id: 't1', description: 'Buy paint' });
+      recurring['lifecycle-rules'] = { ...recurring['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 1,
+        timezone: 'Europe/Brussels', 'due-time': null, 'overdue-handling': null };
+      recurring['current-occurrence']['due-time'] = '2026-11-15T23:00:00.000Z';
+      store.getTask.mockImplementation(async () => recurring);
+      const reads = store.listsOfTask.mock.calls.length;
+      store.listeners.forEach((listener) => listener({ operation: 'updateRules' }));
+      await vi.waitFor(() => expect(store.listsOfTask.mock.calls.length).toBeGreaterThan(reads));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(document.querySelector('[data-section="due"]').hidden).toBe(true);
+      expect(document.querySelector('[data-section="overdue"]').hidden).toBe(true);
+      expect(document.querySelector('[data-section="target"]').hidden).toBe(false);
+    });
   });
 
   it('shows a field error for a year with fewer than four digits and saves nothing', async () => {
     const date = document.querySelector('input[name="due-date"]');
     typeAndLeave(date, '0202-05-11');
     await vi.waitFor(() => expect(errorOf(date)).toBe('Enter a four-digit year.'));
-    expect(store.updateTask).not.toHaveBeenCalled();
+    expect(store.updateRules).not.toHaveBeenCalled();
   });
 
   it('announces a field error through a live region', async () => {
@@ -304,10 +429,11 @@ describe('mountTaskEditor', () => {
     date.focus();
     date.value = '2026-11-08';
     panel.update({ name: 'tasks', view: 'tasks', editor: null, params: {} });
-    await vi.waitFor(() => expect(store.updateTask).toHaveBeenCalledWith('t1', { 'due-time': '2026-11-08' }));
+    await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'due-time': '2026-11-08' }));
     expect(store.updateTask).toHaveBeenCalledWith('t1', { description: 'Buy blue paint' });
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(store.updateTask).toHaveBeenCalledTimes(2);
+    expect(store.updateTask).toHaveBeenCalledTimes(1);
+    expect(store.updateRules).toHaveBeenCalledTimes(1);
   });
 
   it('saves an edited description once when Escape closes the editor after its change saved it', async () => {

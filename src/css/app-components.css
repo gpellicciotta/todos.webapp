@@ -375,6 +375,11 @@
   background-color: var(--color-surface);
 }
 
+/* Done and target counts keep their width while a tick changes them. */
+.task-row__count {
+  font-variant-numeric: tabular-nums;
+}
+
 /* List chips cap their width and truncate long list names. */
 .task-row__list {
   max-inline-size: var(--width-chip-max);
@@ -419,7 +424,7 @@
 }
 
 /*
- * Status button: an icon button showing the status icon; a click toggles completion, a long press opens the status menu.
+ * Status button: an icon button showing the status icon; a click ticks, and a long press opens the status menu.
  * Icons: status-ready (empty circle), status-in-progress (circle with a filled bottom half),
  * status-completed (filled circle with a check), status-cancelled (filled circle with a dash).
  * Read-only rows disable it but keep the icon at full icon contrast.
@@ -435,8 +440,9 @@
   cursor: default;
 }
 
-/* Status menu: the package menu, with each status icon between the check and the label. */
-.status-menu .menu__item > .icon:not(.menu__check) {
+/* Status menu: the package menu of event actions, each with the icon of the status it leads to. */
+.status-menu .menu__item > .icon,
+:is(.task-editor__status, .task-editor__actions > .button)[data-status] > .icon {
   color: var(--color-text-muted);
 }
 
@@ -445,17 +451,20 @@
  * The rules sit after the hover and disabled rules so that the color stays in every state.
  */
 .status-button[data-status='in-progress'],
-.status-menu .menu__item[data-status='in-progress'] > .icon:not(.menu__check) {
+.status-menu .menu__item[data-status='in-progress'] > .icon,
+:is(.task-editor__status, .task-editor__actions > .button)[data-status='in-progress'] > .icon {
   color: var(--color-status-in-progress);
 }
 
 .status-button[data-status='completed'],
-.status-menu .menu__item[data-status='completed'] > .icon:not(.menu__check) {
+.status-menu .menu__item[data-status='completed'] > .icon,
+:is(.task-editor__status, .task-editor__actions > .button)[data-status='completed'] > .icon {
   color: var(--color-status-completed);
 }
 
 .status-button[data-status='cancelled'],
-.status-menu .menu__item[data-status='cancelled'] > .icon:not(.menu__check) {
+.status-menu .menu__item[data-status='cancelled'] > .icon,
+:is(.task-editor__status, .task-editor__actions > .button)[data-status='cancelled'] > .icon {
   color: var(--color-status-cancelled);
 }
 

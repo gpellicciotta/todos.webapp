@@ -171,5 +171,5 @@ test('an expired session asks to sign in again and keeps local work going', asyn
   await open(page, '#/tasks');
   await page.getByRole('textbox', { name: 'Search or add a task' }).fill('Water the plants');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
-  await expect(page.getByText('Water the plants')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Water the plants' })).toBeVisible();
 });

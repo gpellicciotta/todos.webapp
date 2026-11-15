@@ -265,7 +265,7 @@ test.describe('List screen', () => {
     await gutters.locator('.status-button').click({ button: 'right' });
     const menu = page.getByRole('menu', { name: 'Status of Clean the gutters' });
     await expect(menu).toBeVisible();
-    await menu.getByRole('menuitemradio', { name: 'Cancelled' }).click();
+    await menu.getByRole('menuitem', { name: 'Cancel task' }).click();
     await expect(gutters).toHaveCount(0);
     await expect(page.locator('.toast', { hasText: 'Task marked cancelled.' })).toBeVisible();
 

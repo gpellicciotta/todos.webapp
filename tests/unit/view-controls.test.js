@@ -469,14 +469,14 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('list');
     expect([...panel.body.querySelectorAll('.view-options__row')].map((row) => row.dataset.row)).toEqual(['statuses', 'due', 'created']);
     const options = [...panel.body.querySelectorAll('select option')].map((option) => option.textContent);
-    expect(options).toEqual(['Manual order', 'Due time', 'Created', 'Last activity', 'Status', 'Description']);
+    expect(options).toEqual(['Manual order', 'Due time', 'Created', 'Last update', 'Status', 'Description']);
     expect(panel.body.querySelector('select').value).toBe('manual');
   });
 
   it('offers five sort fields in All tasks, starting at Created descending', async () => {
     await mount('tasks');
     expect([...panel.body.querySelectorAll('select option')].map((option) => option.textContent))
-      .toEqual(['Due time', 'Created', 'Last activity', 'Status', 'Description']);
+      .toEqual(['Due time', 'Created', 'Last update', 'Status', 'Description']);
     expect(panel.body.querySelector('select').value).toBe('creation-time');
     expect(panel.body.querySelector('input[name$="direction"]:checked').value).toBe('desc');
   });

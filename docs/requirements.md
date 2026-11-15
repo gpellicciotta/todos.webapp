@@ -58,7 +58,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LST-10: From 12 lists, the sidebar and the Lists screen offer a find field that filters lists by typed text.
   It ignores case and accents, matches names (the Lists screen also descriptions), and states how many lists match.
 - LST-11: A find with no match on the Lists screen offers to create a list with the typed name.
-- LST-12: Users sort the Lists screen by manual order, name, open task count, or last activity.
+- LST-12: Users sort the Lists screen by manual order, name, open task count, or last update.
   The device remembers the choice.
   Sorting and finding never change the stored order, and reordering is available only in manual order without find text.
 - LST-13: Users move a list to the top or bottom, besides moving it by one place, by menu entry or keyboard.
@@ -72,8 +72,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-1: Users create a task with a description of 1 to 500 characters.
 - TSK-2: A new task has status `ready` and overdue behavior `keep` unless the user picks otherwise.
 - TSK-3: A task status is one of `ready`, `in-progress`, `completed`, or `cancelled`.
-- TSK-4: Users change a task status from any status to any other; the app records the change as events.
-  One click on a task's status button completes an open task, or sets a finished task back to `ready`.
+- TSK-4: Users change a task status through events, offered only while their preconditions hold.
+  One click on a task's status button ticks: `complete` below target, `uncomplete` once completed.
+  On a cancelled task the click posts `reopen`.
+  The row's status menu and the editor's status buttons offer `start`, `unstart`, `cancel`, and `reopen`.
 - TSK-5: Users set, change, or clear an optional due time.
 - TSK-6: A due date without a time of day means 23:59 local time on that date.
 - TSK-7: Users set the overdue behavior to `keep` or `cancel` on a task with a due time.
@@ -86,6 +88,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
   A compact screen opens no editor, so tasks can be added in a row.
 - TSK-14: A due date, a time, and list tags typed in the add field set the new task's due time and lists.
   A preview line under the field names what the add will set; the parser works offline, in US English.
+- TSK-15: Users set a task's target count, the completions it takes to be completed, from 1 to 999.
+  Rows and the editor show the done and target counts, such as `2/3`, when the target is above 1.
 
 ### Notes
 - NOT-1: Users add notes to a task; each note holds 1 to 2000 characters of plain text.
@@ -130,6 +134,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-12: The app remembers the last used filters, grouping, and order per device, for All tasks and for each list on its own.
 - TV-13: The task view orders by creation time, newest first, until the user picks another order.
 - TV-14: Users limit the completed and cancelled tasks they see to those finished today.
+  A task finished when its current occurrence closed.
 
 ### View Options
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.

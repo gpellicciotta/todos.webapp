@@ -196,28 +196,39 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 
 ### Task Row
 ```text
-| [status] Description text, truncated...  [due] [list] [list] [+1] [notes] [more] |
+| [status] Description text, truncated...  [2/3] [due] [list] [list] [+1] [notes] [more] |
 ```
 - The row is 48 px high and shows one line; the whole row opens the task editor.
-- A click on the status button toggles completion, the most frequent change (`TSK-4`):
-  `todo` and `in-progress` become `completed`, and `completed` and `cancelled` become `todo`.
+- A click on the status button ticks, the most frequent change (`TSK-4`):
+  it posts `complete` below target and `uncomplete` once the occurrence is completed.
   Enter and Space on the button, and `x` on any control of the focused row, do the same.
-- Its accessible name states the action, such as "Mark Buy paint completed".
-  Its tooltip names the current status and how to reach the others.
-- The full status menu lists the four statuses; picking one sets it.
-  It opens on a right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key.
-  **[Decided]** The task editor's status control is its visible alternative, so rows need no chevron button.
-- A status change that hides the row under the view's filters shows an Undo toast, such as "Task marked completed.".
-  Undo, or Ctrl+Z, sets the old status back.
+- **[Decided]** On a cancelled task the click posts `reopen`, since a cancelled count changes only after it reopens.
+- Its accessible name states the action, such as "Mark Buy paint completed" at target 1.
+  Above target 1 it names the counts, such as "Tick French exercises, 2 of 3 done" or "Untick …".
+  A cancelled task reads "Reopen Buy paint".
+- Its tooltip names the status, the counts above target 1, and how to reach more actions.
+- The status menu offers the event actions whose preconditions hold, in this order:
+  - Start (`start`, from To do), with the In progress icon.
+  - Undo start (`unstart`, from In progress with no completion), with the To do icon.
+  - Cancel task (`cancel`, unless cancelled), with the Cancelled icon.
+  - Reopen (`reopen`, once cancelled), with the To do icon.
+- It opens on a right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key.
+  Focus starts on its first entry.
+  **[Decided]** The task editor's status actions are its visible alternative, so rows need no chevron button.
+- An event that hides the row under the view's filters shows an Undo toast, such as "Task marked completed.".
+  Undo, or Ctrl+Z, posts the inverse event: `uncomplete` for `complete`, `reopen` for `cancel`, and so on.
+- A count chip, such as "2/3", leads the chips when the target is above 1 (`TSK-15`).
+  It stays in compact layouts, where the list and note chips hide.
 - The status icons differ in shape, not only in color:
-  - `todo`: an empty circle, in the muted text color.
+  - `ready`: an empty circle, in the muted text color.
   - `in-progress`: a circle with a filled bottom half, in blue.
   - `completed`: a filled circle with a check, in green, and struck-through muted text.
   - `cancelled`: a filled circle with a dash, in the danger color, and struck-through muted text.
 - The due chip shows a relative time, such as "Tomorrow 18:00"; overdue tasks show "Overdue" in the signal color (`OVD-2`).
 - List chips show at most two list names and a "+n" count; the list view leaves out its own list.
 - A note icon with a count appears when the task has notes; a people icon marks tasks in shared lists.
-- Compact layouts show only the status, the description, and the due chip, plus the More button in a list view.
+- Compact layouts show only the status, the description, the count chip, and the due chip.
+  A list view adds the More button.
 - The More button opens the row menu; it has no status entry, since the status button sets it:
   - Add to list and Remove from this list (`TSK-8`).
     Add to list swaps the menu for the lists that do not hold the task yet, and appears only while one is left.
@@ -228,7 +239,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   a viewer has a disabled status button, no `x`, no status menu, and no More button; a task editor has Add to list (only to lists they may add to)
   and Remove from this list, and only the task owner or the owner of a list holding the task sees Delete.
 - [task-list.js](../../src/js/views/task-list.js) renders the rows and their menus for All tasks and the list view.
-  The status menu opens with focus on the current status; after a change, focus stays on that row's button.
+  After a change, focus stays on that row's status button.
   A row that leaves the view after a change passes focus to the row now at its place.
 
 ### Add Bar
@@ -353,8 +364,8 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - All four statuses with the choice show the open tasks and the work finished today.
   - An empty status filter with the choice does the same.
   - With only open statuses checked, it changes nothing.
-- **[Decided]** A finished task counts as finished today when its `last-update-time` falls on the current local day.
-  Tasks store no completion time; so editing an old finished task today also shows it.
+- **[Decided]** A finished task counts as finished today when its current occurrence's `close-time` falls on the current local day.
+  A completed recurring occurrence stays open until its period ends, so it falls back to `last-update-time`.
 - The info line and the row value add ", finished today", such as "Status: 4 statuses, finished today".
   An empty status filter reads "Status: all, finished today".
 - It persists with the other options and counts as a change, so Reset shows and clears it (`TV-12`, `VO-8`).
@@ -445,7 +456,8 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Filters sit in the view options: Lists, Status, Due, Created, and Shared when connected (`TV-2` to `TV-7`).
 - The Lists filter offers every list plus "In no list"; the Due filter offers Overdue, Today, This week, a range, and No due time.
 - **[Decided]** The default status filter is "open", `todo` and `in-progress`, matching the list view (`LV-10`).
-- Sort fields: Due time, Created, Last activity, Status, and Description (`TV-9`).
+- Sort fields: Due time, Created, Last update, Status, and Description (`TV-9`).
+  Status and due time come from the task's current occurrence; Last update sorts on `last-update-time`.
 - **[Decided]** The default sort is Created, newest first, so a new task comes first (`TV-13`).
   Sorting by Due time still puts tasks without a due time last (`TV-10`).
 - Grouping by List, Due date, or Status is available here first (`VO-9`); see [View Options](#view-options).
@@ -497,7 +509,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - Edit view options opens the view options route (`VO-4`).
 - Delete list asks for confirmation, then opens All tasks with an Undo toast (`LST-6`).
 - The view options replace the order buttons and the status chip (`VO-1`); Manual order is the first sort choice (`LV-6`).
-- **[Decided]** Due, Status, and A–Z sort ascending; Created and Activity show the newest first.
+- **[Decided]** Due, Status, and A–Z sort ascending; Created and Last update show the newest first.
 - **[Decided]** The order, the grouping, and the filters persist per device and per list (`TV-12`).
 - Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
 - A drag near the main column's top or bottom edge scrolls it; Escape or a lost pointer capture cancels the drag.
@@ -558,7 +570,7 @@ The sidebar and this screen share the rules below.
   The button creates the list and opens `#/lists/{{list-id}}/edit`, as a wide-screen add opens the task editor.
   It shows only for a valid new name; the floating plus keeps opening an empty editor.
 - **[Decided]** Sort: a "Sort: Manual order" button opens a menu with Manual order, Name (A to Z), Open tasks (most first),
-  and Last activity (newest first), where a list's last activity is the latest activity of its tasks.
+  and Last update (newest first), where a list's last update is the latest `last-update-time` of its tasks.
   The choice persists per device in `todos.view.lists` (`TV-12`) and never changes the stored order, as for tasks (`LV-7`).
   Compact layouts show the button as an icon in the pinned bar.
   Connected with a shared list, the menu ends with a Shared only checkbox that the info line names.
@@ -611,9 +623,18 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
 - Fields save on change, with no Save button; invalid values show a field error and are not saved.
 - Sections, in order:
   - Description: a multi-line field of at most 500 characters (`TSK-1`).
-  - Status: a segmented control with the four statuses (`TSK-3`, `TSK-4`).
+  - Status: the status icon and name, with the counts above target 1 (`TSK-3`).
+    It reads, for example, "In progress, 2 of 3 done".
+    Under it, buttons for the event actions whose preconditions hold (`TSK-4`).
+    The tick comes first: Complete or Undo completion at target 1.
+    Above target 1 it reads "Tick, 2 of 3" or "Untick, 3 of 3".
+    Start, Undo start, Cancel task, and Reopen follow, as in the row's status menu.
+    A focused button that hides passes the focus to the first button left.
+  - Target count: a number field from 1 to 999 (`TSK-15`).
   - Due: a date field, an optional time field, and Clear (`TSK-5`, `TSK-6`).
-  - Overdue behavior: Keep open or Cancel automatically, shown once a due time is set (`TSK-7`).
+  - Overdue behavior: Keep open or Cancel when overdue, shown once a due time is set (`TSK-7`).
+  - Target count, due time, and overdue behavior save as lifecycle rule edits.
+    A recurring task hides Due and Overdue behavior, since its periods set its due times.
   - Lists: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
   - Notes: an add note field, then the note thread, newest first (`NOT-1` to `NOT-5`).
   - Details: created, last updated, and owner when connected (`TSK-12`).
@@ -827,7 +848,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` and `/` focus the add and search field, and Escape closes the editor or a dialog.
-- `x` completes the task of the focused row, or sets a finished one back to To do.
+- `x` ticks the task of the focused row, as a click on its status button does.
 - Shift+Enter or Alt+Enter in the add and search field adds the typed task, like the Add button.
 - On the Lists screen `/` focuses the find field; `l` focuses the sidebar's find field, or opens Lists where there is none.
 - Alt+Up, Alt+Down, Alt+Shift+Up, and Alt+Shift+Down move a focused list by one place or to an end.

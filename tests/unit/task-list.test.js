@@ -60,6 +60,7 @@ describe('createTaskList', () => {
     document.body.innerHTML = '';
     store = {
       updateTask: vi.fn(async () => ({})),
+      postEvent: vi.fn(async () => ({})),
       deleteTask: vi.fn(async () => ({})),
       restoreTask: vi.fn(async () => ({})),
       addToList: vi.fn(async () => true),
@@ -96,18 +97,18 @@ describe('createTaskList', () => {
     expect(document.querySelector('[aria-current]')).toBeNull();
   });
 
-  it('opens the status menu with the current status checked, and sets the picked status (TSK-4)', () => {
+  it('opens the status menu with the event actions whose preconditions hold, and posts the picked one (TSK-4)', () => {
     const button = document.querySelectorAll('.status-button')[1];
     openStatusMenu(button);
     const menu = document.getElementById(button.getAttribute('aria-controls'));
     expect(isShowing(menu)).toBe(true);
-    const items = [...menu.querySelectorAll('[role="menuitemradio"]')];
-    expect(items.map((item) => item.textContent.trim())).toEqual(['To do', 'In progress', 'Completed', 'Cancelled']);
-    expect(items[0].getAttribute('aria-checked')).toBe('true');
+    const items = [...menu.querySelectorAll('[role="menuitem"]')];
+    expect(items.map((item) => item.textContent.trim())).toEqual(['Start', 'Cancel task']);
     expect(document.activeElement).toBe(items[0]);
-    items[2].click();
+    items[0].click();
     expect(isShowing(menu)).toBe(false);
-    expect(store.updateTask).toHaveBeenCalledWith('t2', { status: 'completed' });
+    expect(store.postEvent).toHaveBeenCalledWith('t2', 'start');
+    expect(store.updateTask).not.toHaveBeenCalled();
   });
 
   it('opens the status menu from the keyboard on the status button', () => {
@@ -115,10 +116,47 @@ describe('createTaskList', () => {
     button.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
     const menu = document.getElementById(button.getAttribute('aria-controls'));
     expect(isShowing(menu)).toBe(true);
-    expect(document.activeElement.textContent.trim()).toBe('In progress');
+    expect(document.activeElement.textContent.trim()).toBe('Undo start');
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    expect(store.updateTask).toHaveBeenCalledWith('t1', { status: 'completed' });
+    expect(store.postEvent).toHaveBeenCalledWith('t1', 'cancel');
+  });
+
+  it('shows done and target counts on a row whose target is above 1, and none at target 1', () => {
+    list.render([
+      shapeTask({ id: 'f', description: 'French exercises', status: 'in-progress', 'target-count': 3, 'completion-count': 2 }),
+      shapeTask({ id: 'g', description: 'Gym', status: 'completed', 'target-count': 3, 'completion-count': 4 }),
+      ...tasks,
+    ], ctx);
+    const rows = [...document.querySelectorAll('.task-row')];
+    expect(rows[0].querySelector('.task-row__count').textContent).toBe('2/3 done');
+    expect(rows[1].querySelector('.task-row__count').textContent).toBe('4/3 done');
+    expect(rows.slice(2).map((row) => row.querySelector('.task-row__count'))).toEqual([null, null, null]);
+    expect(rows[0].querySelector('.status-button').getAttribute('aria-label')).toBe('Tick French exercises, 2 of 3 done');
+    expect(rows[1].querySelector('.status-button').getAttribute('aria-label')).toBe('Untick Gym, 4 of 3 done');
+    expect(rows[0].querySelector('.status-button').title).toBe('In progress, 2 of 3 done. Right-click or press Down for more actions.');
+  });
+
+  it('ticks a target-3 task towards its target, and unticks it once completed', () => {
+    const french = (count) => shapeTask({
+      id: 'f', description: 'French exercises', status: count >= 3 ? 'completed' : count > 0 ? 'in-progress' : 'ready',
+      'target-count': 3, 'completion-count': count,
+    });
+    list.render([french(2)], ctx);
+    document.querySelector('.status-button').click();
+    list.render([french(3)], ctx);
+    expect(document.querySelector('.task-row__count').textContent).toBe('3/3 done');
+    document.querySelector('.status-button').click();
+    expect(store.postEvent.mock.calls).toEqual([['f', 'complete'], ['f', 'uncomplete']]);
+  });
+
+  it('renders the row again when only its count changes', () => {
+    const french = (count) => shapeTask({ id: 'f', description: 'French', status: 'in-progress', 'target-count': 3, 'completion-count': count });
+    list.render([french(1)], ctx);
+    const before = document.querySelector('.task-row');
+    list.render([french(2)], ctx);
+    expect(document.querySelector('.task-row')).not.toBe(before);
+    expect(document.querySelector('.task-row__count').textContent).toBe('2/3 done');
   });
 
   it('offers Add to list and Delete in the More menu, without Set status', async () => {
@@ -134,7 +172,7 @@ describe('createTaskList', () => {
     expect(store.addToList).toHaveBeenCalledWith('t2', 'l3');
   });
 
-  describe('one-click completion (TSK-4)', () => {
+  describe('ticking and the status menu (TSK-4)', () => {
     const four = [
       shapeTask({ id: 'a', description: 'Buy paint', status: 'ready', 'due-time': null }),
       shapeTask({ id: 'b', description: 'Call the plumber', status: 'in-progress', 'due-time': null }),
@@ -167,13 +205,12 @@ describe('createTaskList', () => {
       list.render(four, ctx);
     });
 
-    it('sets completed from todo and in-progress, and todo from completed and cancelled, on one click', () => {
+    it('ticks: completes open tasks, uncompletes completed ones, and reopens cancelled ones, on one click', () => {
       for (const { id } of four) {
         statusOf(id).click();
       }
-      expect(store.updateTask.mock.calls).toEqual([
-        ['a', { status: 'completed' }], ['b', { status: 'completed' }], ['c', { status: 'ready' }], ['d', { status: 'ready' }],
-      ]);
+      expect(store.postEvent.mock.calls).toEqual([['a', 'complete'], ['b', 'complete'], ['c', 'uncomplete'], ['d', 'reopen']]);
+      expect(store.updateTask).not.toHaveBeenCalled();
       expect(document.querySelector('.status-menu').hidden).toBe(true);
     });
 
@@ -181,22 +218,35 @@ describe('createTaskList', () => {
       expect(statusOf('a').getAttribute('aria-label')).toBe('Mark Buy paint completed');
       expect(statusOf('b').getAttribute('aria-label')).toBe('Mark Call the plumber completed');
       expect(statusOf('c').getAttribute('aria-label')).toBe('Mark Water the plants to do');
-      expect(statusOf('d').getAttribute('aria-label')).toBe('Mark Renew the gym pass to do');
-      expect(statusOf('b').title).toBe('In progress. Right-click or press Down for all statuses.');
+      expect(statusOf('d').getAttribute('aria-label')).toBe('Reopen Renew the gym pass');
+      expect(statusOf('b').title).toBe('In progress. Right-click or press Down for more actions.');
       expect(statusOf('a').hasAttribute('aria-haspopup')).toBe(false);
     });
 
-    it('opens the full status menu on right-click, and the menu still sets in-progress and cancelled', () => {
+    it('opens the status menu on right-click with start, unstart, cancel, and reopen as their preconditions hold', () => {
       const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
       statusOf('a').dispatchEvent(event);
       expect(event.defaultPrevented).toBe(true);
       const menu = document.querySelector('.status-menu');
       expect(isShowing(menu)).toBe(true);
-      expect(document.activeElement.dataset.status).toBe('ready');
-      menu.querySelector('[data-status="in-progress"]').click();
+      const offered = (id) => {
+        openStatusMenu(statusOf(id));
+        return [...menu.querySelectorAll('.menu__item')].map((item) => item.dataset.event);
+      };
+      expect(offered('a')).toEqual(['start', 'cancel']);
+      expect(offered('b')).toEqual(['unstart', 'cancel']);
+      expect(offered('c')).toEqual(['cancel']);
+      expect(offered('d')).toEqual(['reopen']);
+      menu.querySelector('[data-event="reopen"]').click();
       openStatusMenu(statusOf('b'));
-      menu.querySelector('[data-status="cancelled"]').click();
-      expect(store.updateTask.mock.calls).toEqual([['a', { status: 'in-progress' }], ['b', { status: 'cancelled' }]]);
+      menu.querySelector('[data-event="cancel"]').click();
+      expect(store.postEvent.mock.calls).toEqual([['d', 'reopen'], ['b', 'cancel']]);
+    });
+
+    it('offers no Undo start once an in-progress task has a completion', () => {
+      list.render([shapeTask({ id: 'p', description: 'Practice', status: 'in-progress', 'target-count': 3, 'completion-count': 1 })], ctx);
+      openStatusMenu(statusOf('p'));
+      expect([...document.querySelectorAll('.status-menu .menu__item')].map((item) => item.dataset.event)).toEqual(['cancel']);
     });
 
     it('closes an open status menu on a click of its button, without changing the status', async () => {
@@ -204,7 +254,7 @@ describe('createTaskList', () => {
       statusOf('a').click();
       expect(isShowing(document.querySelector('.status-menu'))).toBe(false);
       await new Promise((resolve) => setTimeout(resolve));
-      expect(store.updateTask).not.toHaveBeenCalled();
+      expect(store.postEvent).not.toHaveBeenCalled();
     });
 
     it('opens the menu with Down, Up, Shift+F10, or the Menu key, and leaves Enter to the click', async () => {
@@ -234,7 +284,7 @@ describe('createTaskList', () => {
         button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
         button.click();
         expect(isShowing(document.querySelector('.status-menu'))).toBe(true);
-        expect(store.updateTask).not.toHaveBeenCalled();
+        expect(store.postEvent).not.toHaveBeenCalled();
       }
       finally {
         vi.useRealTimers();
@@ -250,7 +300,7 @@ describe('createTaskList', () => {
         button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
         button.click();
         vi.advanceTimersByTime(1000);
-        expect(store.updateTask).toHaveBeenCalledWith('a', { status: 'completed' });
+        expect(store.postEvent).toHaveBeenCalledWith('a', 'complete');
         button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 10, clientY: 10 }));
         button.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'touch', clientX: 10, clientY: 40 }));
         vi.advanceTimersByTime(1000);
@@ -261,13 +311,13 @@ describe('createTaskList', () => {
       }
     });
 
-    it('toggles the focused row with x, from any control of the row', () => {
+    it('ticks the focused row with x, from any control of the row', () => {
       const open = document.querySelector('.task-row[data-task-id="b"] .task-row__open');
       open.focus();
       expect(press(open, 'x').defaultPrevented).toBe(true);
       statusOf('c').focus();
       press(statusOf('c'), 'x');
-      expect(store.updateTask.mock.calls).toEqual([['b', { status: 'completed' }], ['c', { status: 'ready' }]]);
+      expect(store.postEvent.mock.calls).toEqual([['b', 'complete'], ['c', 'uncomplete']]);
     });
 
     it('ignores x with a modifier key, and x typed in a text field', () => {
@@ -283,7 +333,7 @@ describe('createTaskList', () => {
       document.querySelector('.task-row[data-task-id="a"]').append(field);
       field.focus();
       press(field, 'x');
-      expect(store.updateTask).not.toHaveBeenCalled();
+      expect(store.postEvent).not.toHaveBeenCalled();
     });
 
     it('lets a viewer neither click, press x, nor open the menu (SHR-4)', () => {
@@ -301,10 +351,10 @@ describe('createTaskList', () => {
       open.focus();
       press(open, 'x');
       expect(isShowing(document.querySelector('.status-menu'))).toBe(false);
-      expect(store.updateTask).not.toHaveBeenCalled();
+      expect(store.postEvent).not.toHaveBeenCalled();
     });
 
-    it('shows an Undo toast when the change hides the row, and Undo sets the old status back', async () => {
+    it('shows an Undo toast when the change hides the row, and Undo posts the inverse event', async () => {
       list.render(four.slice(0, 2), ctx, { shows: OPEN });
       statusOf('b').click();
       await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
@@ -312,7 +362,7 @@ describe('createTaskList', () => {
       expect(message).toBe('Task marked completed.');
       expect(settings.undo).toBe(true);
       settings.onAction();
-      expect(store.updateTask.mock.calls).toEqual([['b', { status: 'completed' }], ['b', { status: 'in-progress' }]]);
+      expect(store.postEvent.mock.calls).toEqual([['b', 'complete'], ['b', 'uncomplete']]);
     });
 
     it('shows the Undo toast for x and for a menu pick that hide the row too', async () => {
@@ -322,7 +372,7 @@ describe('createTaskList', () => {
       press(open, 'x');
       await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
       openStatusMenu(statusOf('b'));
-      document.querySelector('.status-menu [data-status="cancelled"]').click();
+      document.querySelector('.status-menu [data-event="cancel"]').click();
       await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(2));
       expect(toaster.show.mock.lastCall[0]).toBe('Task marked cancelled.');
     });
@@ -332,7 +382,7 @@ describe('createTaskList', () => {
       statusOf('a').click();
       list.render(four, ctx);
       statusOf('c').click();
-      await vi.waitFor(() => expect(store.updateTask).toHaveBeenCalledTimes(2));
+      await vi.waitFor(() => expect(store.postEvent).toHaveBeenCalledTimes(2));
       await new Promise((resolve) => setTimeout(resolve));
       expect(toaster.show).not.toHaveBeenCalled();
     });
@@ -354,7 +404,7 @@ describe('createTaskList', () => {
     expect(danger).toEqual(['delete']);
   });
 
-  it('marks each status button and status menu item with its status', () => {
+  it('marks each status button with its status and each status menu item with its event and the status icon it leads to', () => {
     const buttons = [...document.querySelectorAll('.status-button')];
     expect(buttons.length).toBeGreaterThan(0);
     for (const button of buttons) {
@@ -362,7 +412,9 @@ describe('createTaskList', () => {
     }
     openStatusMenu(buttons[0]);
     const menu = document.getElementById(buttons[0].getAttribute('aria-controls'));
-    expect([...menu.querySelectorAll('[role="menuitemradio"]')].map((item) => item.dataset.status)).toEqual(['ready', 'in-progress', 'completed', 'cancelled']);
+    const items = [...menu.querySelectorAll('[role="menuitem"]')];
+    expect(items.map((item) => item.dataset.event)).toEqual(['unstart', 'cancel']);
+    expect(items.map((item) => item.querySelector('use').getAttribute('href'))).toEqual(['img/icons.svg#status-ready', 'img/icons.svg#status-cancelled']);
   });
 
   describe('by role (SHR-4, SHR-5)', () => {
@@ -459,11 +511,11 @@ describe('createTaskList', () => {
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
     list.render([...tasks].reverse(), ctx);
     expect(isShowing(menu)).toBe(true);
-    expect(document.activeElement.dataset.status).toBe('in-progress');
+    expect(document.activeElement.dataset.event).toBe('cancel');
     const trigger = [...document.querySelectorAll('.task-row')].find((row) => row.dataset.taskId === 't2').querySelector('.status-button');
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     document.activeElement.click();
-    expect(store.updateTask).toHaveBeenCalledWith('t2', { status: 'in-progress' });
+    expect(store.postEvent).toHaveBeenCalledWith('t2', 'cancel');
   });
 
   it('keeps an open More menu open when rows render again', () => {

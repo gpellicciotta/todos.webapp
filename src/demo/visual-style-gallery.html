@@ -421,7 +421,7 @@
             <select class="field__control" id="field-select">
               <option>Manual order</option>
               <option>Due date</option>
-              <option>Last activity</option>
+              <option>Last update</option>
               <option>Description</option>
             </select>
           </div>
@@ -691,14 +691,15 @@
 
       <section class="gallery-section" id="status-button" aria-labelledby="status-button-title" data-gallery-group="app">
         <h2 id="status-button-title">Status button</h2>
-        <p>The status icon of a task row; the shapes differ, so status never relies on color. A click completes an open task or sets a finished one back to To do; a right-click or long press opens the status menu.</p>
+        <p>The status icon of a task row; the shapes differ, so status never relies on color. A click ticks: it completes a task below target, undoes a completion, or reopens a cancelled task.</p>
+        <p>A right-click or long press opens the status menu.</p>
 
         <h3>Statuses</h3>
         <ul class="states">
           <li class="state"><button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Buy paint completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button><span class="state__label">To do</span></li>
           <li class="state"><button class="icon-button status-button" data-status="in-progress" type="button" aria-label="Mark Call the plumber completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button><span class="state__label">In progress</span></li>
           <li class="state"><button class="icon-button status-button" data-status="completed" type="button" aria-label="Mark Water the plants to do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg></button><span class="state__label">Completed</span></li>
-          <li class="state"><button class="icon-button status-button" data-status="cancelled" type="button" aria-label="Mark Renew the gym pass to do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg></button><span class="state__label">Cancelled</span></li>
+          <li class="state"><button class="icon-button status-button" data-status="cancelled" type="button" aria-label="Reopen Renew the gym pass"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg></button><span class="state__label">Cancelled</span></li>
         </ul>
 
         <h3>States</h3>
@@ -711,13 +712,15 @@
         </ul>
 
         <h3>Status menu</h3>
-        <p>The menu marks the current status; To do shows hover and Cancelled shows focus-visible.</p>
+        <p>The menu offers the event actions; each icon shows the status the action leads to.</p>
+        <p>This specimen shows all four entries; a task shows only those whose preconditions hold.</p>
+        <p>Start shows hover and Cancel task shows focus-visible.</p>
         <div class="stage">
           <div class="menu status-menu" role="menu" aria-label="Status of Call the plumber">
-            <button class="menu__item is-hover" type="button" role="menuitemradio" aria-checked="false" data-status="ready"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>To do</button>
-            <button class="menu__item" type="button" role="menuitemradio" aria-checked="true" data-status="in-progress"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>In progress</button>
-            <button class="menu__item" type="button" role="menuitemradio" aria-checked="false" data-status="completed"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg>Completed</button>
-            <button class="menu__item is-focus" type="button" role="menuitemradio" aria-checked="false" data-status="cancelled"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg>Cancelled</button>
+            <button class="menu__item is-hover" type="button" role="menuitem" data-event="start" data-status="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>Start</button>
+            <button class="menu__item" type="button" role="menuitem" data-event="unstart" data-status="ready"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>Undo start</button>
+            <button class="menu__item is-focus" type="button" role="menuitem" data-event="cancel" data-status="cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg>Cancel task</button>
+            <button class="menu__item" type="button" role="menuitem" data-event="reopen" data-status="ready"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>Reopen</button>
           </div>
         </div>
       </section>
@@ -725,7 +728,7 @@
       <section class="gallery-section" id="task-row" aria-labelledby="task-row-title" data-gallery-group="app">
         <h2 id="task-row-title">Task row</h2>
         <p>One 48 px line per task; the description truncates, and the whole row opens the task editor.</p>
-        <p>Below 36rem of list width, rows show only the status, the description, and the due chip.</p>
+        <p>Below 36rem of list width, rows show only the status, the description, the count chip, and the due chip.</p>
 
         <h3>Content</h3>
         <div class="row-states">
@@ -746,13 +749,14 @@
             </ul>
           </div>
           <div class="row-state">
-            <p class="state__label" id="row-overdue">In progress and overdue, with lists, notes, and the shared marker</p>
+            <p class="state__label" id="row-overdue">In progress at 1 of target 3 and overdue, with lists, notes, and the shared marker</p>
             <ul class="task-list" aria-labelledby="row-overdue">
               <li class="task-row" data-status="in-progress">
-                <button class="icon-button status-button" data-status="in-progress" type="button" aria-label="Mark Call the plumber about the leak completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button>
+                <button class="icon-button status-button" data-status="in-progress" type="button" aria-label="Tick Call the plumber about the leak, 1 of 3 done"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Call the plumber about the leak</span>
                   <span class="task-row__meta">
+                    <span class="chip task-row__count">1/3<span class="visually-hidden"> done</span></span>
                     <span class="chip chip--overdue"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#alert"/></svg>Overdue</span>
                     <span class="chip task-row__list"><span class="task-row__chip-text">Home</span></span>
                     <span class="chip task-row__list"><span class="task-row__chip-text">Errands</span></span>
@@ -785,7 +789,7 @@
             <p class="state__label" id="row-cancelled">Cancelled: muted and struck-through text</p>
             <ul class="task-list" aria-labelledby="row-cancelled">
               <li class="task-row" data-status="cancelled">
-                <button class="icon-button status-button" data-status="cancelled" type="button" aria-label="Mark Renew the gym membership to do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg></button>
+                <button class="icon-button status-button" data-status="cancelled" type="button" aria-label="Reopen Renew the gym membership"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Renew the gym membership</span>
                   <span class="task-row__meta">
@@ -1122,7 +1126,7 @@
               </div>
               <div class="editor-panel__section">
                 <h4 class="editor-panel__section-title">Details</h4>
-                <p class="editor-panel__details">Created 1 Nov · Last activity 3 Nov 09:12</p>
+                <p class="editor-panel__details">Created 1 Nov · Last updated 3 Nov 09:12</p>
               </div>
             </div>
           </aside>
@@ -1428,16 +1432,19 @@
                   <textarea class="field__control" id="pattern-description" maxlength="500">Buy paint for the hallway</textarea>
                 </div>
               </div>
-              <div class="editor-panel__section">
-                <fieldset class="segmented">
-                  <legend class="segmented__legend">Status</legend>
-                  <div class="segmented__options">
-                    <label class="segmented__option"><input type="radio" name="pattern-status" value="ready" checked><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>To do</label>
-                    <label class="segmented__option"><input type="radio" name="pattern-status" value="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>In progress</label>
-                    <label class="segmented__option"><input type="radio" name="pattern-status" value="completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg>Completed</label>
-                    <label class="segmented__option"><input type="radio" name="pattern-status" value="cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg>Cancelled</label>
-                  </div>
-                </fieldset>
+              <div class="editor-panel__section" data-section="status">
+                <h4 class="editor-panel__section-title">Status</h4>
+                <p class="task-editor__status" data-status="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg><span class="task-editor__status-text">In progress, 1 of 3 done</span></p>
+                <div class="task-editor__actions" role="group" aria-label="Status actions">
+                  <button class="button button--secondary" type="button" data-event="complete" data-status="completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg><span class="task-editor__action-text">Tick, 1 of 3</span></button>
+                  <button class="button button--secondary" type="button" data-event="cancel" data-status="cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg><span class="task-editor__action-text">Cancel task</span></button>
+                </div>
+              </div>
+              <div class="editor-panel__section" data-section="target">
+                <div class="field">
+                  <label class="field__label" for="pattern-target">Target count</label>
+                  <input class="field__control" id="pattern-target" type="number" min="1" max="999" step="1" value="3">
+                </div>
               </div>
               <div class="editor-panel__section">
                 <h4 class="editor-panel__section-title">Due</h4>
@@ -1452,10 +1459,12 @@
                   </div>
                   <button class="button button--quiet" type="button">Clear</button>
                 </div>
-                <fieldset class="choice-group">
-                  <legend>When overdue</legend>
-                  <label class="choice"><input type="radio" name="pattern-overdue" value="keep" checked> Keep open</label>
-                  <label class="choice"><input type="radio" name="pattern-overdue" value="cancel"> Cancel automatically</label>
+                <fieldset class="segmented">
+                  <legend class="segmented__legend">Overdue behavior</legend>
+                  <div class="segmented__options">
+                    <label class="segmented__option"><input type="radio" name="pattern-overdue" value="keep" checked> Keep open</label>
+                    <label class="segmented__option"><input type="radio" name="pattern-overdue" value="cancel"> Cancel when overdue</label>
+                  </div>
                 </fieldset>
               </div>
               <div class="editor-panel__section">
@@ -1496,7 +1505,7 @@
               </div>
               <div class="editor-panel__section">
                 <h4 class="editor-panel__section-title">Details</h4>
-                <p class="editor-panel__details">Created 1 Nov · Last updated 3 Nov 09:12 · Last activity 3 Nov 09:12</p>
+                <p class="editor-panel__details">Created 1 Nov · Last updated 3 Nov 09:12</p>
               </div>
               <div class="editor-panel__danger">
                 <button class="button button--danger" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#bin"/></svg>Delete task</button>

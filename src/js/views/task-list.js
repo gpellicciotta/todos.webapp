@@ -1,11 +1,13 @@
 /**
  * Task list: the task rows of All tasks and the list view, with their status and More menus.
  *
- * A row shows the status button, the description, the due chip, up to two list chips, and the note count.
- * The open link fills the row and opens the task editor route. A click on the status button completes an open task
- * and sets a finished one back to To do; `x` does the same on the focused row (`TSK-4`).
- * A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key on it opens the full status menu.
- * A status change that hides the row under the view's filters shows an Undo toast, which Ctrl+Z also runs.
+ * A row shows the status button, the description, the done and target counts above target 1, the due chip,
+ * up to two list chips, and the note count. The open link fills the row and opens the task editor route.
+ * A click on the status button ticks: it posts `complete` below target, `uncomplete` once completed, and `reopen`
+ * once cancelled; `x` does the same on the focused row (`TSK-4`).
+ * A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key on it opens the status menu,
+ * which offers `start`, `unstart`, `cancel`, and `reopen` while their preconditions hold.
+ * An event that hides the row under the view's filters shows an Undo toast, which Ctrl+Z also runs.
  * The More button offers Add to list and Delete, which moves the task to the recycle bin
  * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu; the status button sets it.
  * In a list view, the More menu adds Remove from this list, and Move up and Move down while moves are on,
@@ -29,7 +31,7 @@
  * `markAdded` highlights a new task's row for two seconds and scrolls it into view, rendering it first when needed.
  */
 
-import { applyEvent, dueTimeOf, eventsTowardsStatus, STATUSES, statusOf } from '../core/occurrences.js';
+import { applyEvent, dueTimeOf, statusOf } from '../core/occurrences.js';
 import { isOverdue } from '../core/overdue.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
@@ -53,7 +55,7 @@ const ROW_PX = 48;
 const HEADER_PX = 32;
 /** The most renders for one change: each measures the rows that showed for the first time, so few are needed. */
 const MAX_PASSES = 4;
-/** How long a touch must rest on a status button to open the status menu instead of toggling. */
+/** How long a touch must rest on a status button to open the status menu instead of ticking. */
 const LONG_PRESS_MS = 500;
 /** How far a touch may move before it no longer counts as a long press, in pixels. */
 const LONG_PRESS_SLOP = 10;
@@ -64,12 +66,56 @@ export const STATUS_LABELS = Object.freeze({
   ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
 });
 
+/**
+ * The event actions of the status menu, in menu order, with their labels and the status each leads to,
+ * whose icon the item shows. The status button ticks, so `complete` and `uncomplete` have no entry.
+ */
+export const STATUS_ACTIONS = Object.freeze([
+  Object.freeze({ event: 'start', label: 'Start', status: 'in-progress' }),
+  Object.freeze({ event: 'unstart', label: 'Undo start', status: 'ready' }),
+  Object.freeze({ event: 'cancel', label: 'Cancel task', status: 'cancelled' }),
+  Object.freeze({ event: 'reopen', label: 'Reopen', status: 'ready' }),
+]);
+
+/** The event that undoes each user event, for the Undo toast. */
+const INVERSE = Object.freeze({
+  complete: 'uncomplete', uncomplete: 'complete', start: 'unstart', unstart: 'start', cancel: 'reopen', reopen: 'cancel',
+});
+
+/**
+ * Tell whether an occurrence shows its done and target counts: a target above 1, or a count past a target of 1.
+ * @param {object} occurrence the current occurrence
+ * @returns {boolean} true when the counts show
+ */
+export function showsCount(occurrence) {
+  return occurrence['target-count'] > 1 || occurrence['completion-count'] > 1;
+}
+
+/**
+ * Return the done and target counts of an occurrence as words, such as `2 of 3 done`.
+ * @param {object} occurrence the current occurrence
+ * @returns {string} the counts
+ */
+export function countWords(occurrence) {
+  return `${occurrence['completion-count']} of ${occurrence['target-count']} done`;
+}
+
 /** Row strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   statusOf: 'Status of ',
-  mark: (description, status) => `Mark ${description} ${STATUS_LABELS[status].toLowerCase()}`,
-  statusHint: (status) => `${STATUS_LABELS[status]}. Right-click or press Down for all statuses.`,
+  tick: (type, description, occurrence) => {
+    if (type === 'reopen') {
+      return `Reopen ${description}`;
+    }
+    if (showsCount(occurrence)) {
+      return `${type === 'complete' ? 'Tick' : 'Untick'} ${description}, ${countWords(occurrence)}`;
+    }
+    return `Mark ${description} ${type === 'complete' ? 'completed' : 'to do'}`;
+  },
+  statusHint: (occurrence) => `${STATUS_LABELS[occurrence.status]}${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`
+    + '. Right-click or press Down for more actions.',
   marked: (status) => `Task marked ${STATUS_LABELS[status].toLowerCase()}.`,
+  done: ' done',
   moreFor: 'More actions for ',
   addToList: 'Add to list',
   addTo: 'Add to a list: ',
@@ -89,27 +135,25 @@ const STRINGS = Object.freeze({
 });
 
 /**
- * Return the status one click on the status button sets: open tasks complete, finished tasks go back to To do.
- * @param {string} status the current status
- * @returns {string} the new status
+ * Return the event one click on the status button posts, its tick: `complete` below target, `uncomplete` once completed,
+ * and `reopen` for a cancelled occurrence, whose count changes only after it reopens.
+ * @param {object} occurrence the current occurrence
+ * @returns {'complete'|'uncomplete'|'reopen'} the event type
  */
-export function toggledStatus(status) {
-  return status === 'ready' || status === 'in-progress' ? 'completed' : 'ready';
-}
-/**
- * Return a copy of a task as it would read after a status change, folding the events the change queues.
- * @param {object} task the task
- * @param {string} status the new status, one of `STATUSES`
- * @param {string} time the ISO time of the change
- * @returns {object} the changed copy
- */
-function withStatus(task, status, time) {
-  const rules = task['lifecycle-rules'];
-  let occurrence = task['current-occurrence'];
-  for (const type of eventsTowardsStatus(occurrence, status, rules)) {
-    occurrence = applyEvent(occurrence, { type, 'creation-time': time }, rules) ?? occurrence;
+export function tickEvent(occurrence) {
+  if (occurrence.status === 'cancelled') {
+    return 'reopen';
   }
-  return { ...task, 'current-occurrence': occurrence, 'last-update-time': time };
+  return occurrence.status === 'completed' ? 'uncomplete' : 'complete';
+}
+
+/**
+ * Return the status menu actions whose preconditions hold for an occurrence, as the todos.server status rules say.
+ * @param {object} occurrence the current occurrence
+ * @returns {object[]} the entries of `STATUS_ACTIONS` that apply
+ */
+export function statusActions(occurrence) {
+  return STATUS_ACTIONS.filter(({ event }) => applyEvent(occurrence, { type: event, 'creation-time': occurrence['start-time'] }) !== null);
 }
 
 
@@ -242,8 +286,8 @@ function chip(doc, className, text, { icon, hidden } = {}) {
  * @param {object} task the task
  * @param {object} ctx the render context of `render`
  * @param {object} options the list options
- * @returns {{key: string, dueKey: string, due: object|null, href: string, handle: boolean, names: string[],
- *   notes: number, locked: boolean, menu: boolean}} the row content
+ * @returns {{key: string, dueKey: string, due: object|null, count: string|null, href: string, handle: boolean,
+ *   names: string[], notes: number, locked: boolean, menu: boolean}} the row content
  */
 function viewOf(task, ctx, options) {
   const ids = ctx.listsByTask?.get(task.id) ?? [];
@@ -254,9 +298,11 @@ function viewOf(task, ctx, options) {
   const href = options.hrefOf(task);
   const handle = Boolean(options.moves?.enabled());
   const due = formatDue(task, ctx.now);
+  const occurrence = task['current-occurrence'];
+  const count = showsCount(occurrence) ? `${occurrence['completion-count']}/${occurrence['target-count']}` : null;
   return {
-    key: JSON.stringify([statusOf(task), task.description, href, handle, names, notes, access.locked, access.menu]),
-    dueKey: due ? `${due.overdue}|${due.text}` : '', due, href, handle, names, notes, locked: access.locked, menu: access.menu,
+    key: JSON.stringify([statusOf(task), count, task.description, href, handle, names, notes, access.locked, access.menu]),
+    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, href, handle, names, notes, locked: access.locked, menu: access.menu,
   };
 }
 
@@ -280,13 +326,16 @@ function accessOf(task, ctx, listId) {
 }
 
 /**
- * Create the chips of a row: the due chip, up to two list chips, and the note count.
+ * Create the chips of a row: the done and target counts, the due chip, up to two list chips, and the note count.
  * @param {Document} doc the document
- * @param {{due: object|null, names: string[], notes: number}} view the row content of `viewOf`
+ * @param {{count: string|null, due: object|null, names: string[], notes: number}} view the row content of `viewOf`
  * @returns {HTMLElement|null} the chips, or null without any
  */
-function metaOf(doc, { due, names, notes }) {
+function metaOf(doc, { count, due, names, notes }) {
   const meta = make(doc, 'span', 'task-row__meta');
+  if (count) {
+    meta.append(chip(doc, 'chip task-row__count', count, { hidden: STRINGS.done }));
+  }
   if (due) {
     meta.append(chip(doc, due.overdue ? 'chip chip--overdue' : 'chip', due.text, { icon: due.overdue ? 'alert' : 'clock' }));
   }
@@ -397,8 +446,9 @@ function renderRow(doc, task, view, template, selected) {
   const more = row.lastElementChild;
   const open = more.previousElementSibling;
   const status = open.previousElementSibling;
-  status.setAttribute('aria-label', STRINGS.mark(task.description, toggledStatus(statusOf(task))));
-  status.title = STRINGS.statusHint(statusOf(task));
+  const occurrence = task['current-occurrence'];
+  status.setAttribute('aria-label', STRINGS.tick(tickEvent(occurrence), task.description, occurrence));
+  status.title = STRINGS.statusHint(occurrence);
   status.dataset.status = statusOf(task);
   status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${statusOf(task)}`);
   open.href = view.href;
@@ -603,35 +653,37 @@ export function createTaskList({
   }
 
   /**
-   * Set the status of a task; when the change hides its row under the view's filters, show an Undo toast.
-   * The row is judged with the change applied, so a task finished now counts as finished today.
+   * Post a user event on a task; when the change hides its row under the view's filters, show an Undo toast,
+   * whose Undo posts the inverse event. The row is judged with the event applied, so a task finished now counts as
+   * finished today. An event whose precondition fails, such as after another tab changed the task, posts nothing.
    * @param {object} task the task
-   * @param {string} status the new status
+   * @param {string} type the event type
    */
-  function setStatus(task, status) {
-    const before = statusOf(task);
-    if (status === before) {
+  function post(task, type) {
+    const time = new Date(ctx.now ?? Date.now()).toISOString();
+    const occurrence = applyEvent(task['current-occurrence'], { type, 'creation-time': time }, task['lifecycle-rules']);
+    if (!occurrence) {
       return;
     }
-    const changed = withStatus(task, status, new Date(ctx.now ?? Date.now()).toISOString());
-    const hides = shows !== null && !shows(changed);
-    store.updateTask(task.id, { status }).then(() => {
+    const hides = shows !== null && !shows({ ...task, 'current-occurrence': occurrence, 'last-update-time': time });
+    store.postEvent(task.id, type).then(() => {
       if (hides) {
-        toaster.show(STRINGS.marked(status), {
+        toaster.show(STRINGS.marked(occurrence.status), {
           undo: true,
-          onAction: () => store.updateTask(task.id, { status: before }).catch(fail),
+          onAction: () => store.postEvent(task.id, INVERSE[type]).catch(fail),
         });
       }
     }, fail);
   }
 
   /**
-   * Complete an open task, or set a finished task back to To do, unless the user's role locks its status (`SHR-4`).
+   * Tick a task, unless the user's role locks its status (`SHR-4`): complete below target, uncomplete once completed,
+   * and reopen once cancelled.
    * @param {object|undefined} task the task
    */
-  function toggle(task) {
+  function tick(task) {
     if (task && !accessOf(task, ctx, listId).locked) {
-      setStatus(task, toggledStatus(statusOf(task)));
+      post(task, tickEvent(task['current-occurrence']));
     }
   }
 
@@ -665,7 +717,7 @@ export function createTaskList({
   }
 
   /**
-   * Open the status menu of a task, with focus on its current status.
+   * Open the status menu of a task: the event actions whose preconditions hold, with focus on the first.
    * @param {HTMLElement} trigger the status button
    * @param {object} task the task
    */
@@ -674,10 +726,9 @@ export function createTaskList({
       return;
     }
     statusMenu.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}`);
-    statusMenu.replaceChildren(...STATUSES.map((status) => menuItem(doc, 'menuitemradio', STATUS_LABELS[status], { status },
-      { icon: `status-${status}`, checked: status === statusOf(task) })));
-    openMenu(trigger, statusMenu, (item) => setStatus(task, item.dataset.status),
-      () => statusMenu.querySelector('[aria-checked="true"]'), 'status');
+    statusMenu.replaceChildren(...statusActions(task['current-occurrence']).map(({ event, label, status }) =>
+      menuItem(doc, 'menuitem', label, { event, status }, { icon: `status-${status}` })));
+    openMenu(trigger, statusMenu, (item) => post(task, item.dataset.event), 'first', 'status');
   }
 
   /**
@@ -749,12 +800,12 @@ export function createTaskList({
   }
 
   /**
-   * Return the key of a menu item: its status, action, or list identifier.
+   * Return the key of a menu item: its event, action, or list identifier.
    * @param {Element|null} item the item
    * @returns {string|undefined} the key
    */
   function itemKey(item) {
-    return item?.dataset.status ?? item?.dataset.action ?? item?.dataset.listId;
+    return item?.dataset.event ?? item?.dataset.action ?? item?.dataset.listId;
   }
 
   /**
@@ -1266,7 +1317,7 @@ export function createTaskList({
     }
   }
 
-  // The click that ends a long press must neither toggle the status nor reach the popover, which would close the menu.
+  // The click that ends a long press must neither tick nor reach the popover, which would close the menu.
   list.addEventListener('click', (event) => {
     if (pressed && event.target.closest?.('[data-role="status"]') === pressed) {
       pressed = null;
@@ -1282,7 +1333,7 @@ export function createTaskList({
     }
     const trigger = menuButton(event);
     if (trigger?.dataset.role === 'status') {
-      toggle(taskOf(event));
+      tick(taskOf(event));
     }
     else if (trigger) {
       // The menu makes the button its popover invoker during this click, whose default toggle would close it again.
@@ -1302,7 +1353,7 @@ export function createTaskList({
     }
     else if (event.key === 'x' && !event.altKey && !event.ctrlKey && !event.metaKey && !inTextField(event) && taskOf(event)) {
       event.preventDefault();
-      toggle(taskOf(event));
+      tick(taskOf(event));
     }
   });
   list.addEventListener('contextmenu', (event) => {

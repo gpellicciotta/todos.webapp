@@ -18,9 +18,9 @@ All notable changes to this project are documented here.
 - FrontEnd: Showed an update activated in another tab as a lasting Reload toast instead of a banner.
 - FrontEnd: Gave list chip remove buttons the package skeleton, with chip corners and a visible hover in light mode.
 - DevOps: Gave the task row and chrome gallery focus ring tests 90 seconds, since full parallel runs pushed them near 30.
-- FrontEnd: Made one click on a task's status button complete it, or set a finished task back to To do.
-- FrontEnd: Opened the full status menu by right-click, long press, Down, Up, Shift+F10, or the Menu key.
-- FrontEnd: Added the `x` shortcut, which toggles completion of the focused row.
+- FrontEnd: Made a click on a task's status button, or `x` on its row, tick it toward its target.
+- FrontEnd: Ticking reopens a cancelled task, and undoes a completion once the task is completed.
+- FrontEnd: Opened a status menu of Start, Undo start, Cancel task, and Reopen by right-click, long press, or keys.
 - FrontEnd: Showed an Undo toast when a status change hides the row under the view's filters.
 - FrontEnd: Read due dates, times, and `#list` tags typed in the add field into the new task, with a preview line.
 - FrontEnd: Gave group headers 12 px of inline padding and a chevron, so the name and count sit clear of the edges.
@@ -33,6 +33,10 @@ All notable changes to this project are documented here.
 - FrontEnd: Made Enter in the add field add the typed task, with a Make Enter add switch in Settings.
 - FrontEnd: Kept the focus in the add field after an add, and opened the editor only on wide screens.
 - FrontEnd: Highlighted and announced each new row, scrolling to it even in long lists.
+- FrontEnd: Showed done and target counts, such as `2/3`, on rows and in the editor above target 1.
+- FrontEnd: Replaced the editor's status control with event action buttons, and added a Target count field.
+- FrontEnd: Saved target count, deadline, and overdue behavior as lifecycle rule edits, hiding the deadline of recurring tasks.
+- FrontEnd: Renamed the Last activity sort to Last update, and judged Finished today only by the occurrence close time.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

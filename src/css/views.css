@@ -265,8 +265,28 @@
   color: var(--color-text-muted);
 }
 
-.task-editor__fields:disabled :is(.combo-box, .editor-panel__row > .button, .chip--removable .chip__remove) {
+.task-editor__fields:disabled :is(.combo-box, .editor-panel__row > .button, .chip--removable .chip__remove, .task-editor__actions) {
   display: none;
+}
+
+/* The status line names the status and its counts beside the status icon; the event actions wrap under it. */
+.task-editor__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.task-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The target count holds at most three digits, so its field stays as narrow as a chip. */
+.editor-panel__section[data-section='target'] .field__control {
+  max-inline-size: var(--width-chip-max);
 }
 
 .editor-panel__body > .banner {

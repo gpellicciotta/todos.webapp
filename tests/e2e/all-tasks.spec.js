@@ -186,7 +186,7 @@ test('one click completes a task, x toggles the focused row, and Undo or Ctrl+Z 
   expect(problems).toEqual([]);
 });
 
-test('the status menu changes a status by right-click and by keyboard (TSK-4)', async ({ page }) => {
+test('the status menu posts start and cancel by right-click and by keyboard (TSK-4)', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
   await openApp(page);
@@ -195,8 +195,8 @@ test('the status menu changes a status by right-click and by keyboard (TSK-4)', 
   await row.locator('.status-button').click({ button: 'right' });
   const menu = page.getByRole('menu', { name: 'Status of Book flights' });
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitemradio', { name: 'To do' })).toHaveAttribute('aria-checked', 'true');
-  await menu.getByRole('menuitemradio', { name: 'In progress' }).click();
+  await expect(menu.getByRole('menuitem')).toHaveText(['Start', 'Cancel task']);
+  await menu.getByRole('menuitem', { name: 'Start' }).click();
   await expect(row).toHaveAttribute('data-status', 'in-progress');
   await expect(row.locator('.status-button')).toBeFocused();
 
@@ -204,8 +204,7 @@ test('the status menu changes a status by right-click and by keyboard (TSK-4)', 
   await paint.locator('.status-button').focus();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menu', { name: 'Status of Buy paint' })).toBeVisible();
-  await expect(page.getByRole('menuitemradio', { name: 'To do' })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Start' })).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(paint).toHaveCount(0);
@@ -217,7 +216,7 @@ test('the status menu changes a status by right-click and by keyboard (TSK-4)', 
     store.close();
     return Object.fromEntries(tasks.map((task) => [task.description, task['current-occurrence'].status]));
   });
-  expect(statuses['Buy paint']).toBe('completed');
+  expect(statuses['Buy paint']).toBe('cancelled');
   expect(statuses['Book flights']).toBe('in-progress');
   expect(problems).toEqual([]);
 });
@@ -416,9 +415,8 @@ test('a store change while the status menu is open keeps the menu open and focus
   await seed(page);
   await page.locator('.task-row', { hasText: 'Book flights' }).locator('.status-button').focus();
   await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'Status of Book flights' });
-  await expect(menu.getByRole('menuitemradio', { name: 'In progress' })).toBeFocused();
+  await expect(menu.getByRole('menuitem', { name: 'Start' })).toBeFocused();
   await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore({ broadcast: true });
@@ -427,7 +425,7 @@ test('a store change while the status menu is open keeps the menu open and focus
   });
   await expect(page.locator('.task-row')).toHaveCount(5);
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitemradio', { name: 'In progress' })).toBeFocused();
+  await expect(menu.getByRole('menuitem', { name: 'Start' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('.task-row', { hasText: 'Book flights' })).toHaveAttribute('data-status', 'in-progress');
   await expect(page.locator('.task-row', { hasText: 'Book flights' }).locator('.status-button')).toBeFocused();

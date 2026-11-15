@@ -190,7 +190,7 @@ describe('filterTasks', () => {
 });
 
 describe('the Finished today only choice (TV-14)', () => {
-  // The finish time of a completed or cancelled task is its last update time.
+  // The finish time of a completed or cancelled task is the close time of its current occurrence.
   const finished = [
     task('f1', { status: 'ready', 'last-update-time': local(2026, 9, 1, 9) }),
     task('f2', { status: 'in-progress', 'last-update-time': local(2026, 9, 1, 9) }),
@@ -227,12 +227,61 @@ describe('the Finished today only choice (TV-14)', () => {
     expect(ids(filterTasks(edge, { finishedToday: true }, ctx))).toEqual(['m2', 'm3']);
   });
 
+  it('reads the close time of the current occurrence, not a later update such as a note', () => {
+    const closed = task('c1', { status: 'completed', 'last-update-time': local(2026, 10, 4, 10) });
+    closed['current-occurrence']['close-time'] = local(2026, 10, 3, 18);
+    const reopened = task('c2', { status: 'cancelled', 'last-update-time': local(2026, 10, 3, 10) });
+    reopened['current-occurrence']['close-time'] = local(2026, 10, 4, 9);
+    expect(ids(filterTasks([closed, reopened], { statuses: ['completed', 'cancelled'], finishedToday: true }, ctx))).toEqual(['c2']);
+  });
+
+  it('falls back to the last update time for a completed recurring occurrence that stays open until its period ends', () => {
+    const weekly = task('r1', { status: 'completed', 'last-update-time': local(2026, 10, 4, 8) });
+    weekly['lifecycle-rules'] = { ...weekly['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC', 'overdue-handling': null };
+    weekly['current-occurrence']['close-time'] = null;
+    const old = task('r2', { status: 'completed', 'last-update-time': local(2026, 10, 2, 8) });
+    old['current-occurrence']['close-time'] = null;
+    expect(ids(filterTasks([weekly, old], { statuses: ['completed'], finishedToday: true }, ctx))).toEqual(['r1']);
+  });
+
   it('never hides a new task, and Show clears it with the statuses', () => {
     const fresh = task('n', { 'creation-time': '2026-11-04T12:00:00.000Z' });
     expect(hidingFilters(fresh, { statuses: [], finishedToday: true }, { now: NOW })).toEqual([]);
     const filter = { statuses: ['completed'], finishedToday: true, due: ['today'] };
     expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['ready', 'in-progress'], due: ['today'] });
     expect(clearFilters(filter, ['due'])).toEqual({ statuses: ['completed'], finishedToday: true });
+  });
+});
+
+describe('the current occurrence as the source of status and due time', () => {
+  /**
+   * Build a task whose current occurrence disagrees with stray top-level fields of the former shape.
+   * @param {string} id the task identifier
+   * @param {object} occurrence the current occurrence fields
+   * @returns {object} the task
+   */
+  function drifted(id, occurrence) {
+    const base = task(id);
+    return { ...base, status: 'completed', 'due-time': null, 'current-occurrence': { ...base['current-occurrence'], ...occurrence } };
+  }
+
+  it('filters, groups, and sorts on the status and due time of the current occurrence', () => {
+    const due = local(2026, 10, 4, 18);
+    const a = drifted('a', { status: 'in-progress', 'due-time': due });
+    const b = drifted('b', { status: 'ready' });
+    expect(ids(filterTasks([a, b], { statuses: ['in-progress'] }, ctx))).toEqual(['a']);
+    expect(ids(filterTasks([a, b], { due: ['today'] }, ctx))).toEqual(['a']);
+    expect(groupTasks([a, b], 'status', ctx).map((group) => [group.key, ids(group.tasks)])).toEqual([['ready', ['b']], ['in-progress', ['a']]]);
+    expect(ids(sortTasks([b, a], { field: 'due-time', direction: 'asc' }))).toEqual(['a', 'b']);
+    expect(ids(sortTasks([a, b], { field: 'status', direction: 'asc' }))).toEqual(['b', 'a']);
+  });
+
+  it('sorts by the last update time, which every change of the task or its parts moves', () => {
+    const older = task('o', { 'creation-time': local(2026, 10, 1, 9), 'last-update-time': local(2026, 10, 4, 11) });
+    const newer = task('n', { 'creation-time': local(2026, 10, 3, 9), 'last-update-time': local(2026, 10, 3, 10) });
+    expect(ids(sortTasks([newer, older], { field: 'last-update-time', direction: 'desc' }))).toEqual(['o', 'n']);
+    expect(ids(sortTasks([newer, older], { field: 'last-update-time', direction: 'asc' }))).toEqual(['n', 'o']);
+    expect(() => sortTasks([older], { field: 'last-activity-time', direction: 'desc' })).toThrow(RangeError);
   });
 });
 

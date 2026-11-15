@@ -65,11 +65,11 @@ const FILTERS = Object.freeze([
 
 /** Sort field names, with Manual order for the list view (`LV-6`). */
 export const FIELD_LABELS = Object.freeze({
-  [MANUAL]: 'Manual order', 'due-time': 'Due time', 'creation-time': 'Created', 'last-update-time': 'Last activity',
+  [MANUAL]: 'Manual order', 'due-time': 'Due time', 'creation-time': 'Created', 'last-update-time': 'Last update',
   status: 'Status', description: 'Description',
 });
 
-/** The direction a field starts with: Due, Status, and Description ascend; Created and Activity show the newest first. */
+/** The direction a field starts with: Due, Status, and Description ascend; Created and Last update show the newest first. */
 export const NATURAL_DIRECTION = Object.freeze({
   [MANUAL]: 'asc', 'due-time': 'asc', 'creation-time': 'desc', 'last-update-time': 'desc', status: 'asc', description: 'asc',
 });

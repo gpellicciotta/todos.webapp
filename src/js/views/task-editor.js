@@ -1,9 +1,13 @@
 /**
  * Task editor: every field of one task, saved on change, with no Save button.
  *
- * Sections, in order: description (`TSK-1`), status (`TSK-3`, `TSK-4`), due date and time (`TSK-5`, `TSK-6`),
- * overdue behavior once a due time is set (`TSK-7`), lists (`TSK-8`), notes (`NOT-1` to `NOT-5`),
- * details (`TSK-12`), and Delete task (`TSK-11`). An invalid value shows a field error and saves nothing.
+ * Sections, in order: description (`TSK-1`), status (`TSK-3`, `TSK-4`), target count (`TSK-15`),
+ * due date and time (`TSK-5`, `TSK-6`), overdue behavior once a due time is set (`TSK-7`), lists (`TSK-8`),
+ * notes (`NOT-1` to `NOT-5`), details (`TSK-12`), and Delete task (`TSK-11`).
+ * The status section names the status, with the done and target counts above target 1, and offers the event actions
+ * whose preconditions hold: the tick, `complete` or `uncomplete`, then `start`, `unstart`, `cancel`, and `reopen`.
+ * Target count, deadline, and overdue behavior edit the lifecycle rules; a recurring task has no deadline to edit.
+ * An invalid value shows a field error and saves nothing.
  * A deleted task opens read-only with a Restore banner (`BIN-6`); an unknown task closes with a toast.
  * A viewer sees every field read-only under a banner naming the list owner, and only the task owner or the owner of a
  * list holding the task may delete it; the lists offered follow the roles (`SHR-4`, `SHR-5`).
@@ -14,17 +18,22 @@
  * there the panel sits beside the rows, so the user keeps typing the next task (`TSK-13`).
  */
 
-import { dueTimeOf, overdueHandlingOf, STATUSES, statusOf } from '../core/occurrences.js';
+import { applyEvent, overdueHandlingOf } from '../core/occurrences.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 
 import { DESCRIPTION_MAX } from '../store/tasks.js';
 import { createEditorField } from './editor-panel.js';
 import { createNoteThread } from './notes.js';
-import { make as el, spriteIcon, STATUS_LABELS } from './task-list.js';
+import { countWords, make as el, showsCount, spriteIcon, STATUS_ACTIONS, STATUS_LABELS } from './task-list.js';
 
 /** Editor strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
-  title: 'Task', description: 'Description', status: 'Status', dueDate: 'Due date', dueTime: 'Due time',
+  title: 'Task', description: 'Description', status: 'Status', actions: 'Status actions', target: 'Target count',
+  targetHint: 'How many times to do the task before it is completed.',
+  targetRange: 'Enter a whole number from 1 to 999.',
+  complete: 'Complete', uncomplete: 'Undo completion', tick: (occurrence) => `Tick, ${occurrence['completion-count']} of ${occurrence['target-count']}`,
+  untick: (occurrence) => `Untick, ${occurrence['completion-count']} of ${occurrence['target-count']}`,
+  dueDate: 'Due date', dueTime: 'Due time',
   clear: 'Clear', clearLabel: 'Clear the due date', overdue: 'Overdue behavior',
   keep: 'Keep open', cancel: 'Cancel when overdue', lists: 'Lists',
   addToList: 'Add to list', createList: (name) => `Create list "${name}"`,
@@ -37,6 +46,9 @@ const STRINGS = Object.freeze({
 });
 
 let instances = 0;
+
+/** The highest target count the editor takes; the service stores up to 32767, but no task needs that many. */
+const TARGET_MAX = 999;
 
 /** Below 64rem the editor panel covers the main column, add field included. */
 const COMPACT = '(width < 64rem)';
@@ -140,11 +152,12 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
    * Store task changes; a validation failure shows on the field, other failures in a toast.
    * @param {object} changes the changed fields
    * @param {{setError: Function}} [field] the field that shows a validation failure
+   * @param {'updateTask'|'updateRules'} [operation] the store method: task fields or lifecycle rules
    * @returns {Promise<void>}
    */
-  async function save(changes, field) {
+  async function save(changes, field, operation = 'updateTask') {
     try {
-      await store.updateTask(taskId, changes);
+      await store[operation](taskId, changes);
       field?.setError(null);
     }
     catch (error) {
@@ -201,9 +214,68 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     }
   });
 
-  const status = segmented(doc, STRINGS.status, `status-${n}`, STATUSES.map((value) => [value, STATUS_LABELS[value]]));
-  section('status').append(status);
-  status.addEventListener('change', (event) => save({ status: event.target.value }));
+  const statusLine = el(doc, 'p', 'task-editor__status');
+  const statusIcon = spriteIcon(doc, 'status-ready');
+  const statusText = el(doc, 'span', 'task-editor__status-text');
+  statusLine.append(statusIcon, statusText);
+  const actions = el(doc, 'div', 'task-editor__actions');
+  actions.setAttribute('role', 'group');
+  actions.setAttribute('aria-label', STRINGS.actions);
+  /**
+   * Create the button of an event action.
+   * @param {string} event the event type
+   * @param {string} [status] the status whose icon the button shows
+   * @returns {HTMLButtonElement} the button
+   */
+  const actionButton = (event, status) => {
+    const button = el(doc, 'button', 'button button--secondary');
+    button.type = 'button';
+    button.dataset.event = event;
+    if (status) {
+      button.dataset.status = status;
+      button.append(spriteIcon(doc, `status-${status}`));
+    }
+    button.append(el(doc, 'span', 'task-editor__action-text'));
+    actions.append(button);
+    return button;
+  };
+  const tick = actionButton('complete', 'completed');
+  const statusButtons = STATUS_ACTIONS.map(({ event, label, status }) => {
+    const button = actionButton(event, status);
+    button.lastElementChild.textContent = label;
+    return button;
+  });
+  const statusSection = section('status');
+  statusSection.append(el(doc, 'h3', 'editor-panel__section-title', STRINGS.status), statusLine, actions);
+  actions.addEventListener('click', (event) => {
+    const button = event.target.closest?.('button[data-event]');
+    if (button && !button.hidden) {
+      store.postEvent(taskId, button.dataset.event).catch(fail);
+    }
+  });
+
+  const target = createEditorField(doc, { label: STRINGS.target, name: 'target-count', type: 'number', hint: STRINGS.targetHint });
+  Object.assign(target.control, { min: '1', max: String(TARGET_MAX), step: '1' });
+  target.control.inputMode = 'numeric';
+  const targetSection = section('target');
+  targetSection.append(target.element);
+  /** Save the target count through the lifecycle rules; anything but a whole number from 1 to 999 is a field error. */
+  function saveTarget() {
+    const text = target.control.value.trim();
+    saved.set(target.control, target.control.value);
+    const value = /^\d+$/.test(text) ? Number(text) : NaN;
+    const error = Number.isInteger(value) && value >= 1 && value <= TARGET_MAX ? null : STRINGS.targetRange;
+    target.setError(error);
+    if (!error) {
+      save({ 'target-count': value }, target, 'updateRules');
+    }
+  }
+  target.control.addEventListener('change', saveTarget);
+  target.control.addEventListener('blur', () => {
+    if (task && target.control.value === shown.get(target.control)) {
+      put(target.control, String(task['lifecycle-rules']['target-count']));
+    }
+  });
 
   const date = createEditorField(doc, { label: STRINGS.dueDate, name: 'due-date', type: 'date' });
   const time = createEditorField(doc, { label: STRINGS.dueTime, name: 'due-clock', type: 'time' });
@@ -212,7 +284,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   clear.setAttribute('aria-label', STRINGS.clearLabel);
   const dueRow = el(doc, 'div', 'editor-panel__row');
   dueRow.append(date.element, time.element, clear);
-  section('due').append(dueRow);
+  const dueSection = section('due');
+  dueSection.append(dueRow);
 
   /** Save the due date and time; a time without a date or a year below 1000 is a field error. */
   function saveDue() {
@@ -230,14 +303,14 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       const [hours, minutes] = clock.split(':').map(Number);
       value = new Date(year, month - 1, dayOfMonth, hours, minutes).toISOString();
     }
-    save({ 'due-time': value }, date);
+    save({ 'due-time': value }, date, 'updateRules');
   }
   dueRow.addEventListener('focusout', () => setTimeout(() => {
     if (destroyed || dueRow.contains(doc.activeElement) || !task) {
       return;
     }
     if (date.control.value === shown.get(date.control) && time.control.value === shown.get(time.control)) {
-      const due = dueParts(dueTimeOf(task));
+      const due = dueParts(task['lifecycle-rules']['due-time']);
       put(date.control, due.date);
       put(time.control, due.time);
       date.setError(null);
@@ -256,7 +329,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   const overdue = segmented(doc, STRINGS.overdue, `overdue-${n}`, [['keep', STRINGS.keep], ['cancel', STRINGS.cancel]]);
   const overdueSection = section('overdue');
   overdueSection.append(overdue);
-  overdue.addEventListener('change', (event) => save({ 'overdue-handling': event.target.value }));
+  overdue.addEventListener('change', (event) => save({ 'overdue-handling': event.target.value }, null, 'updateRules'));
 
   const chips = el(doc, 'ul', 'chip-list');
   const combo = createEditorField(doc, { label: STRINGS.addToList, name: 'add-to-list', hideLabel: true });
@@ -376,6 +449,35 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
   panel.body.append(banner, lock, fields, danger);
 
   /**
+   * Show the status, its counts, and the event actions whose preconditions hold for the current occurrence.
+   * A focused action that hides passes the focus to the first action left, so the keyboard user stays in the group.
+   */
+  function fillStatus() {
+    const occurrence = task['current-occurrence'];
+    const counted = showsCount(occurrence);
+    statusLine.dataset.status = occurrence.status;
+    statusIcon.firstElementChild.setAttribute('href', `img/icons.svg#status-${occurrence.status}`);
+    statusText.textContent = `${STATUS_LABELS[occurrence.status]}${counted ? `, ${countWords(occurrence)}` : ''}`;
+    const can = (event) => applyEvent(occurrence, { type: event, 'creation-time': occurrence['start-time'] }) !== null;
+    const completed = occurrence.status === 'completed';
+    tick.dataset.event = completed ? 'uncomplete' : 'complete';
+    tick.lastElementChild.textContent = counted ? (completed ? STRINGS.untick : STRINGS.tick)(occurrence)
+      : completed ? STRINGS.uncomplete : STRINGS.complete;
+    // The tick shows the icon of the status it leads to, such as In progress when unticking 3 of 3.
+    const after = applyEvent(occurrence, { type: tick.dataset.event, 'creation-time': occurrence['start-time'] });
+    tick.dataset.status = after?.status ?? 'completed';
+    tick.querySelector('use').setAttribute('href', `img/icons.svg#status-${tick.dataset.status}`);
+    const focused = actions.contains(doc.activeElement) ? doc.activeElement : null;
+    tick.hidden = !after;
+    for (const button of statusButtons) {
+      button.hidden = !can(button.dataset.event);
+    }
+    if (focused?.hidden) {
+      [...actions.children].find((button) => !button.hidden)?.focus();
+    }
+  }
+
+  /**
    * Tell whether a field keeps its value on a fill: while focused or showing an error.
    * @param {HTMLElement} control the control
    * @returns {boolean} true when the fill skips it
@@ -402,13 +504,19 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     if (!busy(description.control)) {
       put(description.control, task.description);
     }
-    status.querySelector(`input[value="${statusOf(task)}"]`).checked = true;
-    const due = dueParts(dueTimeOf(task));
+    fillStatus();
+    const rules = task['lifecycle-rules'];
+    if (!busy(target.control)) {
+      put(target.control, String(rules['target-count']));
+    }
+    const recurring = Boolean(rules['recurrence-unit']);
+    const due = dueParts(rules['due-time']);
     if (!busy(date.control) && !busy(time.control)) {
       put(date.control, due.date);
       put(time.control, due.time);
     }
-    overdueSection.hidden = !dueTimeOf(task);
+    dueSection.hidden = recurring;
+    overdueSection.hidden = recurring || !rules['due-time'];
     overdue.querySelector(`input[value="${overdueHandlingOf(task) ?? 'keep'}"]`).checked = true;
     const joined = lists.filter((list) => members.includes(list.id));
     chips.replaceChildren(...joined.map((list) => {
@@ -480,6 +588,9 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
         && control.value !== saved.get(control);
       if (typed(description.control)) {
         saveDescription();
+      }
+      if (typed(target.control)) {
+        saveTarget();
       }
       if (typed(date.control) || typed(time.control)) {
         saveDue();

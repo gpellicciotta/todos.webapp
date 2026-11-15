@@ -99,7 +99,7 @@ test('every field saves on change without a Save button, and the changes survive
   await description.blur();
   await expect(description).not.toHaveAttribute('aria-invalid', 'true');
   await expect(page.locator('.task-row__description', { hasText: 'Buy blue paint' })).toHaveCount(1);
-  await panel.getByText('In progress').click();
+  await panel.getByRole('button', { name: 'Start' }).click();
   await expect(panel.getByRole('group', { name: 'Overdue behavior' })).toBeHidden();
   await panel.getByLabel('Due date', { exact: true }).fill('2030-05-06');
   await panel.getByLabel('Due time', { exact: true }).fill('18:00');
@@ -117,13 +117,64 @@ test('every field saves on change without a Save button, and the changes survive
   }, id)).toBe('cancel');
   await page.reload();
   await expect(panel.getByLabel('Description')).toHaveValue('Buy blue paint');
-  await expect(panel.getByLabel('In progress')).toBeChecked();
+  await expect(panel.locator('.task-editor__status')).toHaveText('In progress');
+  await expect(panel.getByRole('button', { name: 'Undo start' })).toBeVisible();
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
   await expect(panel.getByLabel('Due time', { exact: true })).toHaveValue('18:00');
   await expect(panel.getByLabel('Cancel when overdue')).toBeChecked();
   await panel.getByRole('button', { name: 'Clear the due date' }).click();
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('');
   await expect(panel.getByRole('group', { name: 'Overdue behavior' })).toBeHidden();
+  expect(problems).toEqual([]);
+});
+
+test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle rules in local mode', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  const id = await seed(page);
+  const panel = await openEditor(page);
+  const target = panel.getByLabel('Target count');
+  await expect(target).toHaveValue('1');
+  await target.fill('3');
+  await target.press('Tab');
+  const row = page.locator('.task-row', { hasText: 'Buy paint' });
+  await expect(row.locator('.task-row__count')).toHaveText('0/3 done');
+  for (const done of [1, 2]) {
+    await row.getByRole('button', { name: `Tick Buy paint, ${done - 1} of 3 done` }).click();
+    await expect(row.locator('.task-row__count')).toHaveText(`${done}/3 done`);
+  }
+  await expect(row).toHaveAttribute('data-status', 'in-progress');
+  await expect(panel.locator('.task-editor__status')).toHaveText('In progress, 2 of 3 done');
+  // The third tick reaches the target, so the default open filter hides the row behind an Undo toast.
+  await row.getByRole('button', { name: 'Tick Buy paint, 2 of 3 done' }).click();
+  await expect(row).toHaveCount(0);
+  await expect(page.locator('.toast', { hasText: 'Task marked completed.' })).toBeVisible();
+  await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
+  await expect(panel.getByRole('button', { name: 'Untick, 3 of 3' })).toBeVisible();
+
+  await panel.getByLabel('Due date', { exact: true }).fill('2030-05-06');
+  await panel.getByLabel('Due time', { exact: true }).fill('18:00');
+  await panel.getByLabel('Due time', { exact: true }).blur();
+  const due = new Date(2030, 4, 6, 18, 0).toISOString();
+  const read = () => page.evaluate(async (taskId) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const task = await store.getTask(taskId);
+    const events = await store.eventsOfTask(taskId);
+    store.close();
+    return {
+      rules: task['lifecycle-rules'], occurrence: task['current-occurrence'], events: events.map((event) => event.type),
+    };
+  }, id);
+  await expect.poll(async () => (await read()).rules['due-time']).toBe(due);
+  const stored = await read();
+  expect(stored.rules['target-count']).toBe(3);
+  expect(stored.occurrence).toMatchObject({ 'target-count': 3, 'completion-count': 3, status: 'completed', 'due-time': due });
+  expect(stored.events).toEqual(['create', 'complete', 'complete', 'complete']);
+  await page.reload();
+  await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
+  await expect(panel.getByLabel('Target count')).toHaveValue('3');
+  await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
   expect(problems).toEqual([]);
 });
 

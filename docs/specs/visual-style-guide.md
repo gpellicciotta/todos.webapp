@@ -183,11 +183,12 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
 - [Filter chip](../../src/demo/visual-style-gallery.html#filter-chip): a chip that opens a popover and shows its active value.
   It carries `aria-expanded`, never `aria-pressed`; `data-active="true"` adds the signal outline of a set filter.
   The task views no longer use it: the view options rows replace the chips.
-- [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row, for status in the editor and the grouping choice in the view options.
+- [Segmented control](../../src/demo/visual-style-gallery.html#segmented-control): radio buttons in one row.
+  The editor uses it for overdue behavior, and the view options for grouping.
   The checked option adds a signal outline and semibold text, so it never relies on color alone.
 - [Menu](../../src/demo/visual-style-gallery.html#menu) and [popover](../../src/demo/visual-style-gallery.html#popover): anchored native `popover` panels at `--elevation-1`, in the top layer.
   They close on Escape, a light dismiss, and when focus leaves.
-  Choice menus use `menuitemradio` items with a check icon on the current one.
+  Choice menus use `menuitemradio` items with a check icon on the current one; action menus use `menuitem` items.
   `attachMenu(trigger, menu, { onSelect })` in [menu.js](../../src/vendor/design/js/menu.js) makes a menu button.
   Enter, Space, or ArrowDown open it at the first item; arrows wrap and skip `aria-disabled` items.
   `attachPopover(trigger, panel)` in [popover.js](../../src/vendor/design/js/popover.js) anchors a non-modal panel.
@@ -215,23 +216,28 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
 Defined in [app-components.css](../../src/css/app-components.css) and [app-chrome.css](../../src/css/app-chrome.css), on top of the controls.
 App states use attributes the app sets, such as `data-status` and `aria-current`, never gallery classes.
 
-- [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` that toggles completion on click.
+- [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` that ticks on click.
+  A tick completes the task below target, undoes a completion once completed, and reopens a cancelled task.
   A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key opens the status menu instead.
   It sets no text selection and no touch callout, so a long press reaches the menu.
-  Its `aria-label` names the click action, such as "Mark Buy paint completed".
+  Its `aria-label` names the click action, such as "Mark Buy paint completed" or "Tick French exercises, 2 of 3 done".
   The icon shapes differ, so status never relies on color. The app sets `data-status` on the button, which colors the icon:
-  - `todo`: an empty circle, in the muted text color.
+  - `ready`: an empty circle, in the muted text color.
   - `in-progress`: a circle with a filled bottom half, in blue.
   - `completed`: a filled circle with a check, in green, with struck-through muted text.
   - `cancelled`: a filled circle with a dash, in the danger color, with struck-through muted text.
 
-  The status menu is a `.menu.status-menu` of `menuitemradio` items, each with its status icon in the same color (`data-status` on the item).
+  The status menu is a `.menu.status-menu` of `menuitem` actions: Start, Undo start, Cancel task, and Reopen.
+  Each item carries its event in `data-event` and the status it leads to in `data-status`, which colors its icon.
+  A task shows only the actions whose preconditions hold.
   Read-only rows disable the button but keep its icon at full icon contrast.
 - [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, one line at `--row-height`.
   It holds the drag handle, the status button, the open link, and the More button.
-  The open link holds the description, due chip, two list chips, a "+n" chip, notes, and the shared marker.
+  The open link holds the description, a count chip, the due chip, and two list chips.
+  A "+n" chip, the note count, and the shared marker follow.
+  The `.task-row__count` chip, such as "2/3", shows the done and target counts above target 1, in tabular figures.
   The description truncates with an ellipsis; list chips truncate at `--width-chip-max`.
-  Below 36rem of list width, rows show only the status, the description, and the due chip.
+  Below 36rem of list width, rows show only the status, the description, the count chip, and the due chip.
   States use attributes the app sets:
   - Status: `data-status` mutes and strikes through completed and cancelled text.
   - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.
