@@ -13,11 +13,11 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 2295.4, input: 340, output: 110026, cache_read: 22404276, cache_write: 341724}
-  review: {turns: 4, duration_s: 246.2, input: 0, output: 0, cache_read: 0}
+  review: {turns: 8, duration_s: 535.8, input: 0, output: 0, cache_read: 0}
 review_status: pending
 review_round: 1
 review_requested_at: "2026-11-15T02:09:30Z"
-work_duration: 1349.9
+work_duration: 1573.0
 ---
 # T0223: Improve task group headers with more padding, an 'n of m' count, and collapsible groups
 
