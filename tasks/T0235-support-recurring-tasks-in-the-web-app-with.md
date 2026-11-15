@@ -13,9 +13,17 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 3526.2, input: 584, output: 244618, cache_read: 68740592, cache_write: 663792}
-review_status: pending
+  review: {turns: 2, duration_s: 1632.2, input: 988364, output: 73376, cache_read: 10907824}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-15T11:11:58Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261115-b303ad
+work_duration: 2594.4
+size_status: approved
+size_approved: 25 files, 1433 lines
+size_approved_by: "@giova"
+size_approved_at: "2026-11-15T11:32:10Z"
 ---
 # T0235: Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history
 
@@ -92,4 +100,26 @@ Follow the [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurr
 
 - [2026-11-15] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 1 rejected by @gemini: Period math, local roll-over, the recurrence editor, history, unit tests, e2e tests, and contract tests pass.
+  - Findings: [review-findings-1.md](T0235-support-recurring-tasks-in-the-web-app-with/review-findings-1.md).
+
+- [2026-11-15] **[Size]**
+  Size approved by @giova for 25 files, 1433 lines.
+
+- [2026-11-15] **[Implement]**
+  Reworked review round 1: display rule before filters and counts, ended-series reopen only, period-end fold order, and queue undo modes.
+
+- [2026-11-15] **[Verify]**
+  Regression tests fail 10 of 10 on the reviewed source; unit, lint, SW, Markdown, e2e, and contract suites pass after the rework.
+  - Unit: 1398 passed.
+  - E2E: 209 passed.
+  - Contract: 10 passed.
+
+- [2026-11-15] **[Implement]**
+  Size note: now 24 counted files and 1409 lines, above the large line; human size approval is still pending.
+  - Files touched: 24.
+  - Lines touched: 1409.
+  - Reopenings: 0.
 
