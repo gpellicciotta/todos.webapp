@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1967.6, input: 336, output: 119024, cache_read: 23399060, cache_write: 375054}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T01:04:19Z"
 ---
 # T0225: Complete a task with one click on its status button, keeping the full status menu one step away
 
@@ -70,4 +75,7 @@ Size estimate: 8 files, 300 lines.
   - Files touched: 15.
   - Lines touched: 615.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
