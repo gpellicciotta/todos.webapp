@@ -646,6 +646,31 @@ describe('createTaskList', () => {
       expect(scroll.mock.contexts.at(-1)).toBe(row);
     });
 
+    it('renders, scrolls to, and highlights a new task past the rendered rows for two seconds, across renders', () => {
+      const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        const added = shapeTask({ id: 'new', description: 'Coffee', status: 'ready' });
+        const withAdded = [...many, added];
+        other.render(withAdded, ctx);
+        expect(rowOf('new')).toBeUndefined();
+        expect(other.markAdded('new')).toBe(true);
+        const row = rowOf('new');
+        expect(row.classList.contains('task-row--added')).toBe(true);
+        expect(scroll.mock.contexts.at(-1)).toBe(row);
+        expect(shown().filter((each) => each.classList.contains('task-row--added'))).toHaveLength(1);
+        scrollTo(4995 * ROW);
+        other.render(withAdded, ctx);
+        expect(rowOf('new').classList.contains('task-row--added')).toBe(true);
+        vi.advanceTimersByTime(2000);
+        expect(rowOf('new').classList.contains('task-row--added')).toBe(false);
+        expect(other.markAdded('missing')).toBe(false);
+      }
+      finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('moves the focused last rendered row with Alt+Down past the rendered rows', () => {
       const link = rowOf('m29').querySelector('.task-row__open');
       link.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true, cancelable: true }));

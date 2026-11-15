@@ -882,6 +882,18 @@
             </ul>
           </div>
           <div class="row-state">
+            <p class="state__label" id="row-added">Just added: the newest add, for two seconds</p>
+            <ul class="task-list" aria-labelledby="row-added">
+              <li class="task-row task-row--added" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Pick up the dry cleaning completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
+                <a class="task-row__open" href="#task-row">
+                  <span class="task-row__description">Pick up the dry cleaning</span>
+                </a>
+                <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Pick up the dry cleaning"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
+              </li>
+            </ul>
+          </div>
+          <div class="row-state">
             <p class="state__label" id="row-handle">Manual order: a drag handle on pointer devices</p>
             <ul class="task-list" aria-labelledby="row-handle">
               <li class="task-row" data-status="ready">

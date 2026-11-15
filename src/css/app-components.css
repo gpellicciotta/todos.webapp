@@ -240,7 +240,22 @@
   background-color: var(--color-surface-selected);
 }
 
-.task-row:has(.task-row__open[aria-current='page'])::after {
+/* Just added: the row of the newest add, for two seconds, so a run of adds shows where each task went.
+ * Like a selected row, it keeps hover and press feedback. */
+.task-row.task-row--added {
+  background-color: var(--color-surface-selected);
+}
+
+.task-row.task-row--added:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.task-row.task-row--added:is(:has(.task-row__open:active), .is-active) {
+  background-color: var(--color-surface-active);
+}
+
+.task-row:has(.task-row__open[aria-current='page'])::after,
+.task-row.task-row--added::after {
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;

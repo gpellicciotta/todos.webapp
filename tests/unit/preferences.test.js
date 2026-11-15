@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_SERVER_URL, parseServerUrl, readPreference, readServerUrl, readTheme, writePreference, writeServerUrl, writeTheme,
+  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readPreference, readServerUrl, readTheme, writeEnterAdds, writePreference,
+  writeServerUrl, writeTheme,
 } from '../../src/js/core/preferences.js';
 import { BUILD_DATE, VERSION } from '../../src/js/version.js';
 
@@ -77,6 +78,26 @@ describe('theme preference', () => {
       expect(readTheme(() => storage)).toBe(theme);
     }
     expect(writeTheme('dark', () => throwing)).toBe(false);
+  });
+});
+
+describe('Make Enter add preference', () => {
+  it('is on when storage is empty, throws, or holds anything but false', () => {
+    const storage = memoryStorage();
+    expect(readEnterAdds(() => storage)).toBe(true);
+    expect(readEnterAdds(() => throwing)).toBe(true);
+    storage.setItem('todos.enter-adds', JSON.stringify('no'));
+    expect(readEnterAdds(() => storage)).toBe(true);
+  });
+
+  it('stores the choice under todos.enter-adds, so a reload reads it back', () => {
+    const storage = memoryStorage();
+    expect(writeEnterAdds(false, () => storage)).toBe(true);
+    expect(storage.data.get('todos.enter-adds')).toBe('false');
+    expect(readEnterAdds(() => storage)).toBe(false);
+    expect(writeEnterAdds(true, () => storage)).toBe(true);
+    expect(readEnterAdds(() => storage)).toBe(true);
+    expect(writeEnterAdds(false, () => throwing)).toBe(false);
   });
 });
 

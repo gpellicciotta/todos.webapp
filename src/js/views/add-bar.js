@@ -1,9 +1,11 @@
 /**
  * Add bar: one text field that searches the view, and an Add button that creates a task (`TSK-1`, `VO-3`).
  *
- * Typing reports the text to `onSearch` once it pauses for 150 ms; Enter reports it at once and never adds.
+ * Typing reports the text to `onSearch` once it pauses for 150 ms.
  * The Add button, Shift+Enter, or Alt+Enter creates the task, then clears the field and the filter,
  * and focuses the field again, so the next task can follow; the task editor of a wide screen leaves it there.
+ * Enter adds too while the device's Make Enter add preference is on, its default; when it is off, or for a viewer,
+ * Enter reports the search at once and never adds.
  * The button reads "Add anyway" while the typed text equals a known description, ignoring case and spaces.
  * A viewer, who cannot add tasks, sees "Search tasks" and no Add button (`VO-14`).
  * The field holds at most 500 characters; a counter appears from 450.
@@ -12,6 +14,7 @@
  * field names what they set, and the search keeps the raw text.
  */
 
+import { readEnterAdds } from '../core/preferences.js';
 import { hidingFilters, normalizeDescription } from '../core/query.js';
 import { describeQuickAdd, parseQuickAdd } from '../core/quick-add.js';
 import { DESCRIPTION_MAX } from '../store/tasks.js';
@@ -20,6 +23,8 @@ import { describeFilters } from './view-controls.js';
 
 const COUNTER_FROM = 450;
 const SEARCH_DELAY_MS = 150;
+/** Below 64rem the task editor covers the add field, so an add opens no editor there (`TSK-13`). */
+const COMPACT = '(width < 64rem)';
 let instances = 0;
 
 /** Add bar strings, for the strings module of TEC-13 to absorb. */
@@ -29,6 +34,8 @@ const STRINGS = Object.freeze({
   add: 'Add',
   addAnyway: 'Add anyway',
   addHint: 'Add (Shift+Enter or Alt+Enter)',
+  addHintEnter: 'Add (Enter, Shift+Enter, or Alt+Enter)',
+  added: (description) => `Added “${description}”.`,
   show: 'Show',
   noMatch: 'No task matches. Add creates it.',
   creates: (text) => `Add creates a new task “${text}”.`,
@@ -47,11 +54,13 @@ const STRINGS = Object.freeze({
  * @param {string} [options.text] the starting text
  * @param {boolean} [options.viewer] whether the user cannot add tasks (`VO-14`)
  * @param {() => Date} [options.now] the clock, for typed dates and times
+ * @param {() => Storage} [options.getStorage] returns the storage of the Make Enter add preference
  * @returns {{element: HTMLFormElement, input: HTMLInputElement, setText: Function, setKnown: Function,
  *   setViewer: Function, setLists: Function, descriptionOf: Function, destroy: Function}} the add bar
  */
 export function createAddBar({
   document: doc = globalThis.document, onAdd, onSearch = () => {}, text = '', viewer = false, now = () => new Date(),
+  getStorage = () => globalThis.localStorage,
 }) {
   const id = `add-bar-${(instances += 1)}`;
   const element = doc.createElement('form');
@@ -60,8 +69,7 @@ export function createAddBar({
   element.innerHTML = `<div class="field add-bar__field">
       <label class="field__label visually-hidden" for="${id}"></label>
       <input class="field__control" id="${id}" type="text" maxlength="${DESCRIPTION_MAX}"
-        autocomplete="off" enterkeyhint="done" data-shortcut="add search" aria-describedby="${id}-counter ${id}-preview"
-        aria-keyshortcuts="Shift+Enter Alt+Enter">
+        autocomplete="off" enterkeyhint="done" data-shortcut="add search" aria-describedby="${id}-counter ${id}-preview">
       <p class="field__counter add-bar__counter" id="${id}-counter" hidden></p>
     </div>
     <button class="button" type="submit"></button>
@@ -73,7 +81,6 @@ export function createAddBar({
   const preview = element.querySelector('.add-bar__preview');
   const buttonText = doc.createTextNode(STRINGS.add);
   button.append(spriteIcon(doc, 'plus'), buttonText);
-  button.title = STRINGS.addHint;
   input.value = text;
   let busy = false;
   let timer = null;
@@ -107,6 +114,20 @@ export function createAddBar({
     buttonText.data = parsed.description && known.has(normalizeDescription(parsed.description)) ? STRINGS.addAnyway : STRINGS.add;
     preview.textContent = readOnly ? '' : describeQuickAdd(parsed, now());
     preview.hidden = preview.textContent === '';
+  }
+
+  /**
+   * Name the keys that add, on the field and in the Add button tooltip, for the stored Make Enter add choice.
+   * A viewer's field only searches, so it names none (`VO-14`).
+   */
+  function updateShortcuts() {
+    if (readOnly) {
+      input.removeAttribute('aria-keyshortcuts');
+      return;
+    }
+    const enterAdds = readEnterAdds(getStorage);
+    input.setAttribute('aria-keyshortcuts', enterAdds ? 'Enter Shift+Enter Alt+Enter' : 'Shift+Enter Alt+Enter');
+    button.title = enterAdds ? STRINGS.addHintEnter : STRINGS.addHint;
   }
 
   /** Report the text now, and drop a report still waiting. */
@@ -155,16 +176,19 @@ export function createAddBar({
     clearTimeout(timer);
     timer = setTimeout(emit, SEARCH_DELAY_MS);
   });
+  // Settings may change the choice while this view stays mounted, so focus reads it again.
+  input.addEventListener('focus', updateShortcuts);
   input.addEventListener('keydown', (event) => {
     if (event.isComposing) {
       return;
     }
-    // Shift+Enter and Alt+Enter add, like the Add button.
-    if (event.key === 'Enter' && (event.shiftKey || event.altKey)) {
+    // Shift+Enter and Alt+Enter add, like the Add button; Enter does too while Make Enter add is on.
+    const enterAdds = event.key === 'Enter' && !readOnly && Boolean(parse(input.value).description) && readEnterAdds(getStorage);
+    if (event.key === 'Enter' && (event.shiftKey || event.altKey || enterAdds)) {
       event.preventDefault();
       add();
     }
-    // Enter applies the search; without this, the form would submit and add the task.
+    // Otherwise Enter applies the search; without this, the form would submit and add the task.
     else if (event.key === 'Enter') {
       event.preventDefault();
       if (timer !== null) {
@@ -178,6 +202,7 @@ export function createAddBar({
   });
   updateCounter();
   updateLabels();
+  updateShortcuts();
 
   return {
     element, input,
@@ -212,6 +237,7 @@ export function createAddBar({
     setViewer(next) {
       readOnly = next;
       updateLabels();
+      updateShortcuts();
     },
 
     /**
@@ -239,6 +265,25 @@ export function createAddBar({
       }
     },
   };
+}
+
+/**
+ * Tell whether an add opens the new task's editor: only on a wide screen, where the editor sits beside the add field
+ * and leaves it the focus; on a compact screen it would cover the field (`TSK-13`).
+ * @param {Document} doc the document
+ * @returns {boolean} true to open the editor
+ */
+export function editorOpensAfterAdd(doc) {
+  return !doc.defaultView?.matchMedia?.(COMPACT).matches;
+}
+
+/**
+ * Name a new task for the polite live region, since the focus stays in the add field.
+ * @param {string} description the description
+ * @returns {string} the message
+ */
+export function addedMessage(description) {
+  return STRINGS.added(description);
 }
 
 /**

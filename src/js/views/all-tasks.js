@@ -16,9 +16,10 @@
 import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-order.js';
 import { isSharedList } from '../core/permissions.js';
 import { clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
+import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 import { formatRoute } from '../ui/router.js';
-import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
+import { addedMessage, createAddBar, createAddHint, editorOpensAfterAdd, notifyIfHidden } from './add-bar.js';
 import { createTaskList, make, spriteIcon } from './task-list.js';
 import { createInfoLine, createViewModel, describeFilters } from './view-controls.js';
 
@@ -136,7 +137,7 @@ export function mountAllTasks(view, {
   header.append(more, menu);
   const menuBehavior = attachMenu(more, menu, { onSelect: () => navigate(formatRoute('view-options')) });
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
-  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, text: model.get().filter.text ?? '', now });
+  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, text: model.get().filter.text ?? '', now, getStorage });
   const addHint = createAddHint({ document: doc, describe: (text) => addBar.descriptionOf(text) });
   const addBlock = make(doc, 'div', 'add-block');
   addBlock.append(addBar.element);
@@ -148,10 +149,13 @@ export function mountAllTasks(view, {
   empty.className = 'empty-state';
   root.append(...(actionBar ? [] : [addBlock]), taskList.element, addHint.element, empty);
   actionBar?.append(addBlock);
+  const announcer = createLiveRegion({ document: doc, parent: root });
+  /** The task the last add created, until a render shows its row. */
+  let added = null;
   view.replaceChildren(root);
 
   /**
-   * Store a new task in the tagged lists only, whatever the Lists filter selects, and open its editor.
+   * Store a new task in the tagged lists only, whatever the Lists filter selects; name and highlight it, and open its editor on a wide screen.
    * When the Lists filter hides the task, the toast offers Show.
    * @param {string} description the trimmed description
    * @param {{due?: string|null, listIds?: string[]}} [extra] the typed due time and the tagged lists (`TSK-14`)
@@ -176,7 +180,20 @@ export function mountAllTasks(view, {
       asked = true;
       persist();
     }
-    navigate(formatRoute('task', { taskId: task.id }));
+    announcer.announce(addedMessage(task.description));
+    added = task.id;
+    showAdded();
+    if (editorOpensAfterAdd(doc)) {
+      navigate(formatRoute('task', { taskId: task.id }));
+    }
+  }
+
+  /** Highlight the row of the newest add once the data holds it; a task the view options hide has no row. */
+  function showAdded() {
+    if (added && data?.tasks.some((task) => task.id === added)) {
+      taskList.markAdded(added);
+      added = null;
+    }
   }
 
   /**
@@ -292,6 +309,7 @@ export function mountAllTasks(view, {
       ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) }, data.tasks)
       : null;
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], filter, ctx).length > 0 });
+    showAdded();
     addBar.setKnown(exactMatchIndex(byOptions));
     const nothingMatches = addHint.update({ text: filter.text ?? '', shown: shown.length, viewer: false });
     empty.hidden = shown.length > 0 || nothingMatches;
@@ -362,6 +380,7 @@ export function mountAllTasks(view, {
       unsubscribe();
       clearInterval(timer);
       taskList.destroy();
+      announcer.destroy();
     },
   };
 }

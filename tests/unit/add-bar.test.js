@@ -10,6 +10,7 @@ describe('createAddBar', () => {
 
   beforeEach(() => {
     document.body.innerHTML = '';
+    localStorage.clear();
     onAdd = vi.fn(async () => {});
     onSearch = vi.fn();
     bar = createAddBar({ document, onAdd, onSearch });
@@ -116,7 +117,8 @@ describe('createAddBar', () => {
       expect(onSearch).toHaveBeenLastCalledWith('paint');
     });
 
-    it('applies the search on Enter and never adds', () => {
+    it('applies the search on Enter and never adds while Make Enter add is off', () => {
+      localStorage.setItem('todos.enter-adds', 'false');
       type('paint');
       const event = press('Enter');
       expect(event.defaultPrevented).toBe(true);
@@ -174,9 +176,70 @@ describe('createAddBar', () => {
   });
 
   describe('add shortcut', () => {
-    it('names Shift+Enter and Alt+Enter on the field and in the Add button tooltip', () => {
+    it('names Enter, Shift+Enter, and Alt+Enter on the field and in the Add button tooltip by default', () => {
+      expect(input.getAttribute('aria-keyshortcuts')).toBe('Enter Shift+Enter Alt+Enter');
+      expect(bar.element.querySelector('button[type="submit"]').title).toBe('Add (Enter, Shift+Enter, or Alt+Enter)');
+    });
+
+    it('names no adding keys for a viewer, whose field only searches (VO-14)', () => {
+      bar.setViewer(true);
+      expect(input.hasAttribute('aria-keyshortcuts')).toBe(false);
+      input.dispatchEvent(new FocusEvent('focus'));
+      expect(input.hasAttribute('aria-keyshortcuts')).toBe(false);
+      bar.setViewer(false);
+      expect(input.getAttribute('aria-keyshortcuts')).toBe('Enter Shift+Enter Alt+Enter');
+      const viewer = createAddBar({ document, onAdd, onSearch, viewer: true });
+      expect(viewer.input.hasAttribute('aria-keyshortcuts')).toBe(false);
+    });
+
+    it('names only Shift+Enter and Alt+Enter once Make Enter add is off, from the next focus', () => {
+      localStorage.setItem('todos.enter-adds', 'false');
+      input.dispatchEvent(new FocusEvent('focus'));
       expect(input.getAttribute('aria-keyshortcuts')).toBe('Shift+Enter Alt+Enter');
       expect(bar.element.querySelector('button[type="submit"]').title).toBe('Add (Shift+Enter or Alt+Enter)');
+    });
+
+    it('adds the trimmed description on Enter by default, clears the field, and keeps focus', async () => {
+      input.focus();
+      type('  Buy paint  ');
+      const event = press('Enter');
+      expect(event.defaultPrevented).toBe(true);
+      await vi.waitFor(() => expect(input.value).toBe(''));
+      expect(onAdd).toHaveBeenCalledTimes(1);
+      expect(onAdd).toHaveBeenCalledWith('Buy paint', { due: null, listIds: [] });
+      expect(onSearch).toHaveBeenLastCalledWith('');
+      expect(document.activeElement).toBe(input);
+    });
+
+    it('reads the stored choice on each Enter, so a change in Settings applies without a reload', async () => {
+      type('Buy paint');
+      localStorage.setItem('todos.enter-adds', 'false');
+      press('Enter');
+      expect(onAdd).not.toHaveBeenCalled();
+      localStorage.setItem('todos.enter-adds', 'true');
+      press('Enter');
+      await vi.waitFor(() => expect(onAdd).toHaveBeenCalledTimes(1));
+    });
+
+    it('applies the search on Enter for a viewer and in a field without a description', () => {
+      type('   ');
+      expect(press('Enter').defaultPrevented).toBe(true);
+      bar.setViewer(true);
+      type('paint');
+      expect(press('Enter').defaultPrevented).toBe(true);
+      expect(onSearch).toHaveBeenLastCalledWith('paint');
+      expect(onAdd).not.toHaveBeenCalled();
+      expect(input.value).toBe('paint');
+    });
+
+    it('uses the storage it is given for the choice', async () => {
+      const stored = new Map([['todos.enter-adds', 'false']]);
+      const own = createAddBar({ document, onAdd, onSearch, getStorage: () => ({ getItem: (key) => stored.get(key) ?? null }) });
+      document.body.append(own.element);
+      own.input.value = 'Buy paint';
+      own.input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+      expect(own.input.getAttribute('aria-keyshortcuts')).toBe('Shift+Enter Alt+Enter');
+      expect(onAdd).not.toHaveBeenCalled();
     });
 
     it.each([['Shift+Enter', { shiftKey: true }], ['Alt+Enter', { altKey: true }]])(

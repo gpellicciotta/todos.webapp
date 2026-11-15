@@ -1,7 +1,8 @@
 /**
- * Settings screen: Appearance, Data, Connection, and About sections on one page.
+ * Settings screen: Appearance, Adding tasks, Data, Connection, and About sections on one page.
  *
  * The theme choice applies at once and persists on this device (`todos.theme`).
+ * The Make Enter add switch, on by default, sets whether Enter in the add field adds; it persists as `todos.enter-adds`.
  * Export backup saves the backup file at once and names it in a toast (`BAK-1`, `BAK-4`); Import backup opens its dialog.
  * In local mode the Connection section explains connected mode, and Connect opens the connect screen.
  * The server URL is kept per device and checked on change (`CON-12`); an empty field restores the default.
@@ -12,7 +13,9 @@
  */
 
 import { backupFileName, exportBackup } from '../core/backup.js';
-import { DEFAULT_SERVER_URL, parseServerUrl, readServerUrl, readTheme, writeServerUrl, writeTheme } from '../core/preferences.js';
+import {
+  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readServerUrl, readTheme, writeEnterAdds, writeServerUrl, writeTheme,
+} from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { confirmDialog } from '../../vendor/design/js/dialog.js';
 import { applyTheme } from '../ui/layout.js';
@@ -29,6 +32,10 @@ const STRINGS = Object.freeze({
   theme: 'Theme',
   themes: Object.freeze({ system: 'System', light: 'Light', dark: 'Dark' }),
   themeNotSaved: 'The theme could not be saved on this device. It applies until you reload.',
+  adding: 'Adding tasks',
+  enterAdds: 'Make Enter add',
+  enterAddsHint: 'Shift+Enter and Alt+Enter always add. When this is off, Enter only searches.',
+  enterAddsNotSaved: 'Make Enter add could not be saved on this device, so it stays as it was.',
   data: 'Data',
   exportBackup: 'Export backup',
   importBackup: 'Import backup',
@@ -82,6 +89,7 @@ const STRINGS = Object.freeze({
  */
 const SHORTCUTS = Object.freeze([
   Object.freeze({ keys: ['n', '/'], action: 'Focus the search and add field.' }),
+  Object.freeze({ keys: ['Enter'], action: 'Add the task, in the search and add field, while Make Enter add is on; otherwise apply the search.' }),
   Object.freeze({ keys: ['Shift+Enter', 'Alt+Enter'], action: 'Add the task or list, in the search and add field.' }),
   Object.freeze({ keys: ['Escape'], action: 'Clear the search and add field, or close the editor or a dialog.' }),
   Object.freeze({ keys: ['Alt+Up', 'Alt+Down'], action: "Move the focused list, or the focused task in a list's manual order." }),
@@ -179,6 +187,35 @@ function appearanceSection(doc, getStorage, toaster) {
     options.append(option);
   }
   element.append(fieldset);
+  return element;
+}
+
+/**
+ * Create the Adding tasks section: the Make Enter add switch, which applies at once and persists on this device.
+ * @param {Document} doc the document
+ * @param {() => Storage} [getStorage] returns the storage of the preference
+ * @param {{show: (message: string) => void}} [toaster] reports a choice that could not be saved
+ * @returns {HTMLElement} the section
+ */
+function addingSection(doc, getStorage, toaster) {
+  const element = section(doc, 'adding', STRINGS.adding);
+  const label = make(doc, 'label', 'switch');
+  const control = doc.createElement('input');
+  control.className = 'switch__control';
+  control.type = 'checkbox';
+  control.setAttribute('role', 'switch');
+  control.checked = readEnterAdds(getStorage);
+  const hint = make(doc, 'p', 'settings__hint', STRINGS.enterAddsHint);
+  hint.id = 'settings-enter-adds-hint';
+  control.setAttribute('aria-describedby', hint.id);
+  control.addEventListener('change', () => {
+    if (!writeEnterAdds(control.checked, getStorage)) {
+      control.checked = !control.checked;
+      toaster?.show(STRINGS.enterAddsNotSaved);
+    }
+  });
+  label.append(control, doc.createTextNode(STRINGS.enterAdds));
+  element.append(label, hint);
   return element;
 }
 
@@ -578,7 +615,7 @@ export function mountSettings(view, {
   const root = make(doc, 'div', 'settings');
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, navigate });
   const data = dataSection(doc, store, toaster, { session, sync });
-  root.append(appearanceSection(doc, getStorage, toaster), data.element, connection.element, aboutSection(doc));
+  root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), data.element, connection.element, aboutSection(doc));
   view.replaceChildren(root);
   return {
     /** Follow a route of this view; Settings has no sub-routes of its own. */

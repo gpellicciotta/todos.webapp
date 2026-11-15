@@ -121,7 +121,7 @@ for (const viewport of [COMPACT, WIDE]) {
   });
 }
 
-test('Add adds a task, opens it, keeps focus in the add bar, and asks for persistent storage once (TSK-1, TSK-13, TEC-5)', async ({ page }) => {
+test('Enter or Add adds a task, opens it beside the add bar, keeps the focus there, and asks for persistent storage once (TSK-1, TSK-13, TEC-5)', async ({ page }) => {
   const problems = watch(page);
   await page.addInitScript(() => {
     window.persistCalls = 0;
@@ -136,9 +136,6 @@ test('Add adds a task, opens it, keeps focus in the add bar, and asks for persis
   const add = page.getByLabel('Search or add a task');
   await add.fill('Buy paint');
   await add.press('Enter');
-  await expect(add).toHaveValue('Buy paint');
-  await expect(page.locator('.task-row')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.locator('.task-row')).toHaveCount(1);
   await expect(page.locator('.task-row__description')).toHaveText('Buy paint');
   await expect(page.locator('.empty-state')).toBeHidden();
@@ -455,9 +452,15 @@ test('Reset in an empty result focuses search, and deleting the last shown row f
   expect(problems).toEqual([]);
 });
 
-test('typing in the add field searches, Enter never adds, and Add creates the task and clears the filter (VO-3, TSK-1)', async ({ page }) => {
+test('typing in the add field searches, Enter never adds once Make Enter add is off in Settings, and Add creates the task (VO-3, TSK-1)', async ({ page }) => {
   const problems = watch(page);
   await openApp(page);
+  await page.goto('/#/settings');
+  const enterAdds = page.getByRole('switch', { name: 'Make Enter add' });
+  await expect(enterAdds).toBeChecked();
+  await enterAdds.click();
+  await expect(enterAdds).not.toBeChecked();
+  await page.goto('/#/tasks');
   await seed(page);
   const field = page.getByLabel('Search or add a task');
   await field.fill('paint');
@@ -543,16 +546,50 @@ for (const shortcut of ['Shift+Enter', 'Alt+Enter']) {
   });
 }
 
-test('on a compact screen, the task editor takes the focus after an add, as it covers the add field (TSK-13)', async ({ page }) => {
+test('on a compact screen, Enter adds task after task, keeps the focus in the add field, and opens no editor (TSK-13)', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(COMPACT);
   await openApp(page);
   const field = page.getByLabel('Search or add a task');
-  await field.fill('Paint the fence');
+  const groceries = ['Milk', 'Eggs', 'Bread', 'Apples', 'Coffee'];
+  for (const item of groceries) {
+    await field.fill(item);
+    await field.press('Enter');
+    await expect(field).toHaveValue('');
+    await expect(field).toBeFocused();
+  }
+  await field.fill('Butter');
   await field.press('Shift+Enter');
-  await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
-  await expect(page.getByRole('textbox', { name: 'Description' })).toBeFocused();
-  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the fence');
+  await expect(field).toHaveValue('');
+  await expect(page.locator('.task-row__description')).toHaveText(['Butter', ...[...groceries].reverse()]);
+  await expect(page).toHaveURL(/#\/tasks$/);
+  await expect(page.locator('[data-editor-slot] .task-editor')).toHaveCount(0);
+  await expect(field).toBeFocused();
+  await expect(page.locator('[data-live-region="polite"]', { hasText: 'Added “Butter”.' })).toHaveCount(1);
+  expect(problems).toEqual([]);
+});
+
+test('a just added row keeps the hover feedback of other rows while it is highlighted', async ({ page }) => {
+  const problems = watch(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize(COMPACT);
+  await openApp(page);
+  const field = page.getByLabel('Search or add a task');
+  for (const item of ['Milk', 'Eggs']) {
+    await field.fill(item);
+    await field.press('Enter');
+  }
+  const background = (locator) => locator.evaluate((row) => getComputedStyle(row).backgroundColor);
+  const milk = page.locator('.task-row', { hasText: 'Milk' });
+  const eggs = page.locator('.task-row', { hasText: 'Eggs' });
+  await expect(eggs).toHaveClass(/task-row--added/);
+  await milk.hover();
+  const hovered = await background(milk);
+  const highlighted = await background(eggs);
+  expect(highlighted).not.toBe(hovered);
+  await eggs.hover();
+  await expect(eggs).toHaveClass(/task-row--added/);
+  expect(await background(eggs)).toBe(hovered);
   expect(problems).toEqual([]);
 });
 

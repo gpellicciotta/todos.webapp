@@ -19,9 +19,10 @@ describe('mountList', () => {
 
   /**
    * Mount the List screen of a new list named Home.
+   * @param {() => Storage|null} [getStorage] returns the per-device preferences
    * @returns {Promise<HTMLElement>} the view element
    */
-  async function mount() {
+  async function mount(getStorage = () => null) {
     ({ store } = await freshStore());
     const home = await store.createList({ name: 'Home' });
     const view = document.body.appendChild(document.createElement('div'));
@@ -29,7 +30,7 @@ describe('mountList', () => {
     navigate = vi.fn();
     toaster = { show: vi.fn() };
     models = { list: createViewModel('list', () => null) };
-    screen = mountList(view, { store, toaster, navigate, viewModels: models, getStorage: () => null });
+    screen = mountList(view, { store, toaster, navigate, viewModels: models, getStorage });
     await screen.idle();
     return view;
   }
@@ -126,8 +127,8 @@ describe('mountList', () => {
     expect((await store.listLists()).map((list) => list.name)).toEqual(['Home']);
   });
 
-  it('filters its rows from the add field, and only the Add button adds (VO-3)', async () => {
-    const view = await mount();
+  it('filters its rows from the add field, and Enter only searches while Make Enter add is off (VO-3)', async () => {
+    const view = await mount(() => ({ getItem: (key) => (key === 'todos.enter-adds' ? 'false' : null), setItem: () => {} }));
     const home = (await store.listLists())[0];
     await store.createTask({ description: 'Buy paint' }, { lists: [home.id] });
     await store.createTask({ description: 'Call Dana' }, { lists: [home.id] });
@@ -155,6 +156,30 @@ describe('mountList', () => {
     toaster.show.mock.calls[0][1].onAction();
     expect(models.list.get().filter.statuses).toEqual(['ready', 'in-progress']);
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
+  });
+
+  it('adds on Enter on a compact screen without opening the editor, and marks and announces the new row (TSK-13)', async () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: query === '(width < 64rem)', media: query }));
+    try {
+      const view = await mount();
+      const field = view.querySelector('[data-shortcut~="add"]');
+      field.focus();
+      for (const text of ['Milk', 'Eggs']) {
+        field.value = text;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        await vi.waitFor(() => expect(field.value).toBe(''));
+      }
+      await vi.waitFor(() => expect([...view.querySelectorAll('.task-row__description')].map((node) => node.textContent)).toEqual(['Milk', 'Eggs']));
+      expect(navigate).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(field);
+      const eggs = (await store.snapshot()).tasks.find((task) => task.description === 'Eggs');
+      await vi.waitFor(() => expect(view.querySelector('.task-row--added')?.dataset.taskId).toBe(eggs.id));
+      await vi.waitFor(() => expect(view.querySelector('[data-live-region="polite"]').textContent).toBe('Added “Eggs”.'));
+    }
+    finally {
+      vi.restoreAllMocks();
+    }
   });
 
   it('renders again on the minute tick while Finished today only is on, so a task finished yesterday leaves (TV-14)', async () => {

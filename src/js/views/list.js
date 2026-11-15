@@ -17,7 +17,7 @@ import {
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
-import { createAddBar, createAddHint, notifyIfHidden } from './add-bar.js';
+import { addedMessage, createAddBar, createAddHint, editorOpensAfterAdd, notifyIfHidden } from './add-bar.js';
 import { can, listRole, ROLE_LABELS } from '../core/permissions.js';
 import { createListMenu, fillListMenu, runListAction } from './list-actions.js';
 import { attachReorder } from './reorder.js';
@@ -112,7 +112,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   header.append(description, owner, more, menu);
 
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
-  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, now });
+  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, now, getStorage });
   const addHint = createAddHint({ document: doc, describe: (text) => addBar.descriptionOf(text) });
   const moves = { enabled: () => can(listRole(data?.list), 'reorder-task') && model.get().order.field === 'manual' && (model.get().group ?? 'none') === 'none', step: (taskId, step) => reorder.step(taskId, step) };
   const taskList = createTaskList({
@@ -127,11 +127,13 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   actionBar?.append(addBlock);
   view.replaceChildren(root);
   const announcer = createLiveRegion({ document: doc, parent: root });
+  /** The task the last add created, until a render shows its row. */
+  let added = null;
   const behavior = attachMenu(more, menu, { onSelect: act });
   let menuRole = null;
 
   /**
-   * Store a new task at the end of this list (`LV-5`), and of each tagged list, and open its editor.
+   * Store a new task at the end of this list (`LV-5`), and of each tagged list; name and highlight it, and open its editor on a wide screen.
    * @param {string} text the trimmed description
    * @param {{due?: string|null, listIds?: string[]}} [extra] the typed due time and the tagged lists (`TSK-14`)
    * @returns {Promise<void>} resolves once stored; rejects when the task could not be stored
@@ -151,7 +153,20 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
       task, listIds: joined, filter: model.get().filter, lists: [...(data?.lists.values() ?? [])], now: now(), toaster,
       onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
     });
-    navigate(formatRoute('list-task', { listId, taskId: task.id }));
+    announcer.announce(addedMessage(task.description));
+    added = task.id;
+    showAdded();
+    if (editorOpensAfterAdd(doc)) {
+      navigate(formatRoute('list-task', { listId, taskId: task.id }));
+    }
+  }
+
+  /** Highlight the row of the newest add once the data holds it; a task the view options hide has no row. */
+  function showAdded() {
+    if (added && data?.tasks.some((task) => task.id === added)) {
+      taskList.markAdded(added);
+      added = null;
+    }
   }
 
   /**
@@ -220,6 +235,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
     const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx, data.tasks) : null;
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], state.filter, ctx).length > 0 });
+    showAdded();
     addBar.setLists([...data.lists.values()]);
     addBar.setKnown(exactMatchIndex(byOptions));
     const viewer = !can(role, 'create-task');

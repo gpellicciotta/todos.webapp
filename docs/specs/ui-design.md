@@ -232,13 +232,17 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   A row that leaves the view after a change passes focus to the row now at its place.
 
 ### Add Bar
-- One text field and an Add button; only the Add button or Shift+Enter or Alt+Enter creates the task (`TSK-1`, `VO-3`).
-  Enter applies the typed search at once but never adds.
-- **[Decided]** After an add, the new task opens in the task editor (`TSK-13`).
+- One text field and an Add button; Add, Shift+Enter, Alt+Enter, or Enter creates the task (`TSK-1`, `VO-3`).
+  Enter adds only while Make Enter add is on in Settings.
+  When it is off, Enter applies the search and never adds.
+- **[Decided]** Every add keeps the focus in the add field, so tasks can be added in a row (`TSK-13`).
+  Earlier, Enter never added and a compact add focused the editor's Description.
+- **[Decided]** Wide layouts open the new task in the editor beside the field, without moving the focus.
   The route is `#/tasks/{{task-id}}` in All tasks and `#/lists/{{list-id}}/tasks/{{task-id}}` in a list view.
+- **[Decided]** Compact layouts open no editor, since it would cover the add field; the route stays.
+- The new row is highlighted for two seconds and scrolled into view, even in a long list.
+  The polite live region says "Added “{{description}}”.", since the focus does not move.
   A failed add opens nothing and keeps the text in the field.
-- **[Decided]** Wide layouts keep the focus in the add field, beside the editor, so tasks can be added in a row.
-  Compact layouts give the focus to the editor's Description, since the editor covers the add field.
 - The field also searches the view; [Search and Add](#search-and-add) describes this.
 - In a list view, the new task joins that list at its end, and its tagged lists (`TSK-9`, `LV-5`, `TSK-14`).
 - **[Decided]** In All tasks, the new task joins only its tagged lists (`TSK-14`), even while the Lists filter selects lists.
@@ -262,10 +266,14 @@ Home                                                              3
 - **[Decided]** The add field doubles as search (`VO-3`): its placeholder reads "Search or add a task".
   Typing filters the rows to tasks whose description or notes match, on top of the view options (`TV-6`, `TV-8`).
   A duplicate is hard to miss, since an existing task appears while the user types.
-- **[Decided]** Only the Add button and its shortcuts add.
-  Enter never adds, so a user who only searches cannot create a task by accident.
-  **[Decided]** Shift+Enter or Alt+Enter in the field adds at once, in All tasks and in every list view.
-  The field names both in `aria-keyshortcuts`, and the Add button's tooltip names them.
+- **[Decided]** Enter adds by default, like the Add button, so a grocery list needs no extra step per task.
+  Enter in a field without a description, or for a viewer, applies the search instead.
+  **[Decided]** The Make Enter add switch in Settings turns this off for users who only want Enter to search.
+  The device stores the choice as `todos.enter-adds`.
+  The add bar reads it on each Enter, so a change applies at once.
+  **[Decided]** Shift+Enter or Alt+Enter in the field always adds, in All tasks and in every list view.
+  The field names the adding keys in `aria-keyshortcuts`, and the Add button's tooltip names them too.
+  Both follow the switch from the field's next focus; a viewer's field names no keys (`VO-14`).
   Keyboard users can also Tab to Add and press Enter or Space.
 - **[Decided]** The info line sits right under the field (`VO-7`):
   - It starts with the count, such as "24 tasks", or "12 of 24 tasks" while filters or text narrow the view.
@@ -547,7 +555,7 @@ The sidebar and this screen share the rules below.
 - **[Decided]** Enter in the field opens the first match, like the sidebar field; Escape clears the text; Down moves into the rows.
   The text lasts for the session, and a Back from a list restores it with the scroll position.
 - **[Decided]** No match shows "No list matches "{{text}}"." and a Create list "{{text}}" button.
-  The button creates the list and opens `#/lists/{{list-id}}/edit`, as Add opens the task editor (`TSK-13`).
+  The button creates the list and opens `#/lists/{{list-id}}/edit`, as a wide-screen add opens the task editor.
   It shows only for a valid new name; the floating plus keeps opening an empty editor.
 - **[Decided]** Sort: a "Sort: Manual order" button opens a menu with Manual order, Name (A to Z), Open tasks (most first),
   and Last activity (newest first), where a list's last activity is the latest activity of its tasks.
@@ -686,6 +694,9 @@ Wireframe: [settings.svg](../img/ui/settings.svg).
 
 Settings is one page with these sections:
 - Appearance: theme as System, Light, or Dark.
+- Adding tasks: the Make Enter add switch, on by default, with a hint that names the other adding keys.
+  The hint reads "Shift+Enter and Alt+Enter always add. When this is off, Enter only searches."
+  It applies at once; a choice the browser cannot store shows a toast and the switch turns back.
 - Data: Export backup, Import backup, and Delete all data (`BAK-1`, `BAK-5`, `BAK-15`).
 - Delete all data is a danger button, last in Data; connected, it is disabled with the hint "Disconnect first. Deleting here never removes data from your account."
 - Its dialog names the counts, offers Export backup, and enables Delete everything only after the user types DELETE, exact and case-sensitive.
@@ -829,7 +840,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.
 - Focus moves to the editor's description when it opens, and back to the row when it closes.
-  After an add from the add field on a wide layout, focus stays in the add field (`TSK-13`).
+  After an add from the add field, focus stays in the add field on every layout (`TSK-13`).
 - Live regions announce toasts, sync state changes, and moved rows.
 
 ---

@@ -243,9 +243,74 @@ describe('Delete all data in Settings', () => {
   });
 });
 
+describe('Adding tasks in Settings', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /**
+   * Mount Settings over an in-memory storage.
+   * @param {Map<string, string>} stored the stored entries
+   * @param {{show: Function}} [toaster] the toaster
+   * @returns {HTMLInputElement} the Make Enter add switch
+   */
+  function mountSwitch(stored, toaster = { show: vi.fn() }) {
+    const storage = {
+      getItem: (key) => stored.get(key) ?? null,
+      setItem: (key, value) => stored.set(key, String(value)),
+      removeItem: (key) => stored.delete(key),
+    };
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    mountSettings(view, { session, toaster, getStorage: () => storage });
+    const section = view.querySelector('section[aria-labelledby="settings-adding"]');
+    expect(section.querySelector('h2').textContent).toBe('Adding tasks');
+    return section.querySelector('input[type="checkbox"][role="switch"]');
+  }
+
+  it('shows Make Enter add as a labeled switch, on by default, with a hint naming the other keys', () => {
+    const control = mountSwitch(new Map());
+    expect(control.checked).toBe(true);
+    expect(control.closest('label.switch').textContent.trim()).toBe('Make Enter add');
+    expect(control.className).toBe('switch__control');
+    const hint = document.getElementById(control.getAttribute('aria-describedby'));
+    expect(hint.textContent).toBe('Shift+Enter and Alt+Enter always add. When this is off, Enter only searches.');
+  });
+
+  it('stores the choice under todos.enter-adds at once, and shows a stored off', () => {
+    const stored = new Map();
+    const control = mountSwitch(stored);
+    control.click();
+    expect(stored.get('todos.enter-adds')).toBe('false');
+    document.body.innerHTML = '';
+    expect(mountSwitch(stored).checked).toBe(false);
+  });
+
+  it('sits right after Appearance', () => {
+    mountSwitch(new Map());
+    const keys = [...document.querySelectorAll('.settings > section')].map((section) => section.getAttribute('aria-labelledby'));
+    expect(keys.slice(0, 2)).toEqual(['settings-appearance', 'settings-adding']);
+  });
+
+  it('reports a choice that could not be saved', () => {
+    const toaster = { show: vi.fn() };
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const blocked = { getItem: () => null, setItem: () => {
+      throw new Error('blocked');
+    } };
+    mountSettings(view, { session, toaster, getStorage: () => blocked });
+    const control = view.querySelector('input[role="switch"]');
+    control.click();
+    expect(control.checked).toBe(true);
+    expect(toaster.show).toHaveBeenCalledWith('Make Enter add could not be saved on this device, so it stays as it was.');
+  });
+});
+
 describe('Keyboard shortcuts in About', () => {
   const EXPECTED = [
     [['n', '/'], 'Focus the search and add field.'],
+    [['Enter'], 'Add the task, in the search and add field, while Make Enter add is on; otherwise apply the search.'],
     [['Shift+Enter', 'Alt+Enter'], 'Add the task or list, in the search and add field.'],
     [['Escape'], 'Clear the search and add field, or close the editor or a dialog.'],
     [['Alt+Up', 'Alt+Down'], "Move the focused list, or the focused task in a list's manual order."],
@@ -261,7 +326,7 @@ describe('Keyboard shortcuts in About', () => {
     return view.querySelector('section[aria-labelledby="settings-about"]');
   }
 
-  it('lists the six shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd', () => {
+  it('lists the seven shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd', () => {
     const about = mountAbout();
     const heading = about.querySelector('h3');
     expect(heading.textContent).toBe('Keyboard shortcuts');
@@ -275,7 +340,7 @@ describe('Keyboard shortcuts in About', () => {
 
   it('joins alternative keys with "or", so a screen reader reads each term as text', () => {
     const terms = [...mountAbout().querySelectorAll('.settings__shortcuts dt')].map((term) => term.textContent);
-    expect(terms).toEqual(['n or /', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'x', 'Ctrl+Z or Cmd+Z']);
+    expect(terms).toEqual(['n or /', 'Enter', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'x', 'Ctrl+Z or Cmd+Z']);
   });
 
   it('sits after the version line and before the source link', () => {

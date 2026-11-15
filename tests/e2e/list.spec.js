@@ -73,23 +73,41 @@ function rows(page) {
 }
 
 test.describe('List screen', () => {
-  test('the add field filters the list rows, and Add puts the new task at the end of the list (VO-3, LV-5)', async ({ page }) => {
+  test('the add field filters the list rows, and Enter puts the new task at the end of the list (VO-3, LV-5)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);
     const field = page.getByLabel('Search or add a task');
     await field.fill('paint');
     await expect(page.locator('.list-view .task-row')).toHaveCount(1);
-    await field.press('Enter');
-    await expect(page.locator('.list-view .task-row')).toHaveCount(1);
     await field.fill('Paint the door');
     await expect(page.locator('.add-hint')).toHaveText('No task matches. Add creates it.');
-    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await field.press('Enter');
     await expect(field).toHaveValue('');
     await expect(page).toHaveURL(new RegExp('#/lists/[0-9a-f-]+/tasks/[0-9a-f-]+$'));
     await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the door');
     await expect(field).toBeFocused();
     await expect(page.locator('.list-view .task-row')).toHaveCount(4);
     expect((await rows(page)).at(-1)).toBe('Paint the door');
+    expect(problems).toEqual([]);
+  });
+
+  test('on a compact screen, Enter adds five tasks in a row at the end of the list without opening the editor (TSK-13, LV-5)', async ({ page }) => {
+    const problems = watch(page);
+    const listId = await openList(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const field = page.getByLabel('Search or add a task');
+    const groceries = ['Milk', 'Eggs', 'Bread', 'Apples', 'Coffee'];
+    for (const item of groceries) {
+      await field.fill(item);
+      await field.press('Enter');
+      await expect(field).toHaveValue('');
+      await expect(field).toBeFocused();
+    }
+    await expect(page.locator('.list-view .task-row')).toHaveCount(8);
+    expect((await rows(page)).slice(-5)).toEqual(groceries);
+    await expect(page).toHaveURL(new RegExp(`#/lists/${listId}$`));
+    await expect(page.locator('[data-editor-slot] .task-editor')).toHaveCount(0);
+    await expect(page.locator('[data-live-region="polite"]', { hasText: 'Added “Coffee”.' })).toHaveCount(1);
     expect(problems).toEqual([]);
   });
 

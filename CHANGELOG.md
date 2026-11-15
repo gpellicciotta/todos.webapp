@@ -30,6 +30,9 @@ All notable changes to this project are documented here.
 - FrontEnd: Synced status changes as events and deadline edits as rule edits, folding queued events into pulled tasks.
 - FrontEnd: Kept local mode, overdue expiry, format 1 backups, note ownership, and reconnecting working on the new shape.
 - DevEx: Started the contract test server jar directly, since `devops.py server start` dropped its port option.
+- FrontEnd: Made Enter in the add field add the typed task, with a Make Enter add switch in Settings.
+- FrontEnd: Kept the focus in the add field after an add, and opened the editor only on wide screens.
+- FrontEnd: Highlighted and announced each new row, scrolling to it even in long lists.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

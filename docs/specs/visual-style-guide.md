@@ -236,6 +236,9 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - Status: `data-status` mutes and strikes through completed and cancelled text.
   - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.
     A selected row keeps hover and press feedback.
+  - Just added: the `task-row--added` class shows the same ground and edge for two seconds after an add.
+    It marks where the new task went while the focus stays in the add field.
+    It does not animate, and it keeps hover and press feedback.
   - Dragging: `data-dragging="true"` lifts the row to `--elevation-2`.
   - Drop target: `data-drop="before"` or `"after"` draws a signal line on that row edge.
   - Read-only: `data-readonly="true"`, a disabled status button that stays flat on hover, and no handle or More button.

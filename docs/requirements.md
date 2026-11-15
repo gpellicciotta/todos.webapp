@@ -82,7 +82,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-10: A task in no list stays visible in the task view.
 - TSK-11: Deleting a task moves it to the recycle bin and hides it from every list and view.
 - TSK-12: Every task records its creation time and last update time, which every change of it or its parts moves.
-- TSK-13: A task created from the add field opens in the task editor.
+- TSK-13: A task added from the add field opens in the editor on a wide screen; the field keeps the focus.
+  A compact screen opens no editor, so tasks can be added in a row.
 - TSK-14: A due date, a time, and list tags typed in the add field set the new task's due time and lists.
   A preview line under the field names what the add will set; the parser works offline, in US English.
 
@@ -133,7 +134,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ### View Options
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.
 - VO-2: At rest the view shows only the search and add field and a subtle line of active filters and task count.
-- VO-3: Typing in the field filters the view to matching tasks; only the Add button or its shortcut creates a task.
+- VO-3: Typing in the field filters the view to matching tasks; Add, its shortcuts, or Enter create a task.
+  A per-device setting turns Enter adding off, so Enter only searches.
 - VO-4: The More menu of the task view and of each list view offers "Edit view options".
 - VO-5: View options open in the side panel on wide layouts and as a full screen on compact layouts.
 - VO-6: View options hold every filter, the grouping choice, the sort choice, and a Reset button.

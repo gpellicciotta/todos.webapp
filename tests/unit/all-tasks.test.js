@@ -191,7 +191,8 @@ describe('mountAllTasks', () => {
   it('filters the rows from the add field and says what Add creates, or that nothing matches', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     screen = mountAllTasks(document.querySelector('[data-view]'), {
-      store: fakeStore(), toaster: { show: vi.fn() }, memory: { text: 'paint' }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+      store: fakeStore(), toaster: { show: vi.fn() }, memory: { text: 'paint' },
+      getStorage: () => ({ getItem: (key) => (key === 'todos.enter-adds' ? 'false' : null), setItem: vi.fn() }),
     });
     await screen.idle();
     const hint = document.querySelector('.add-hint');
@@ -271,6 +272,27 @@ describe('mountAllTasks', () => {
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('#/tasks/t2'));
     await vi.waitFor(() => expect(field.value).toBe(''));
     await vi.waitFor(() => expect(document.activeElement).toBe(field));
+  });
+
+  it('opens no editor on a compact screen, keeps the focus in the add field, and announces the new task (TSK-13)', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: query === '(width < 64rem)', media: query }));
+    const store = { ...fakeStore(), createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))) };
+    const navigate = vi.fn();
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show: vi.fn() }, navigate, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    const field = document.querySelector('[data-shortcut~="add"]');
+    field.focus();
+    field.value = 'Paint the door';
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(field.value).toBe(''));
+    expect(store.createTask).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(field);
+    await vi.waitFor(() => expect(document.querySelector('[data-live-region="polite"]').textContent).toBe('Added “Paint the door”.'));
+    vi.restoreAllMocks();
   });
 
   it('opens no editor when adding fails', async () => {

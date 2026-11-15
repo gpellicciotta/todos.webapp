@@ -1170,6 +1170,11 @@ def settings_sections(f, x, y, width):
 
     top = section("Appearance", 100)
     segmented(f, x + 16, top, width - 32, ["System", "Light", "Dark"], 0, 13, 40)
+    top = section("Adding tasks", 112)
+    f.rect(x + 16, top + 4, 40, 24, "primary", radius=12)
+    f.circle(x + 44, top + 16, 9, "icon")
+    f.text(x + 68, top + 21, "Make Enter add", 14)
+    f.text(x + 16, top + 52, "Shift+Enter and Alt+Enter always add.", 13, "muted")
     top = section("Data", 100)
     left = button(f, x + 16, top, "Export backup") + 8
     button(f, left, top, "Import backup")
@@ -1195,7 +1200,7 @@ def settings():
     settings_sections(wide, MAIN_LEFT, 96, 640)
     wide.text(MAIN_LEFT + 680, 140, "Connected, the Connection section shows the account,", 13, "muted")
     wide.text(MAIN_LEFT + 680, 160, "server, sync state, Sync log, and Disconnect.", 13, "muted")
-    return "Settings", "Theme, backup export and import, connection, server URL, and app version.", compact, wide
+    return "Settings", "Theme, Make Enter add, backups, connection, server URL, and app version.", compact, wide
 
 
 LOG_ENTRIES = [

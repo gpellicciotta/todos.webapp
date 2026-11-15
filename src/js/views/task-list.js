@@ -26,6 +26,7 @@
  * The focused row, the row of an open menu, the dragged row, and the selected row stay rendered with their
  * neighbors, so focus, menus, Tab order, and drags survive a scroll. Rows carry `aria-setsize` and `aria-posinset`.
  * The menus live outside the list, since the list is a size container, which would anchor fixed menus.
+ * `markAdded` highlights a new task's row for two seconds and scrolls it into view, rendering it first when needed.
  */
 
 import { applyEvent, dueTimeOf, eventsTowardsStatus, STATUSES, statusOf } from '../core/occurrences.js';
@@ -44,6 +45,8 @@ const FULL_ROWS = 200;
  * A list's first render leaves them out and adds them once its rows painted, so the view opens sooner.
  */
 const BUFFER_ROWS = 20;
+/** How long the row of a new task stays highlighted. */
+const ADDED_MS = 2000;
 /** The row height until a row was measured: the 48 px of the `--row-height` token. */
 const ROW_PX = 48;
 /** The header height until a header was measured: 32 px, two thirds of the row height. */
@@ -562,6 +565,9 @@ export function createTaskList({
   let watchedWidth = -1;
   let fillFrame = null;
   let fillTimer = null;
+  /** The new task whose row is highlighted, and the timer that ends the highlight. */
+  let added = null;
+  let addedTimer = null;
   let ctx = {};
   let active = null;
   let justClosed = null;
@@ -1032,7 +1038,17 @@ export function createTaskList({
     rows = entries;
     placeRows(list, [...entries.values()].map((entry) => entry.row));
     place(indexes, entries);
+    markRows();
     return items.length > FULL_ROWS && settle(entries, indexes, anchor);
+  }
+
+  /** Highlight the rendered row of the newest added task, and only that one; rows rebuilt by a render get it back. */
+  function markRows() {
+    for (const entry of rows.values()) {
+      if (entry.taskId) {
+        entry.row.classList.toggle('task-row--added', entry.taskId === added);
+      }
+    }
   }
 
   /**
@@ -1452,8 +1468,34 @@ export function createTaskList({
       return middles;
     },
 
+    /**
+     * Show which row an add created: highlight it for two seconds and scroll it into view.
+     * In a long list the row renders first, since it may sit past the rendered rows.
+     * @param {string} taskId the new task
+     * @returns {boolean} true when the task shows in the list; a task the view options hide has no row
+     */
+    markAdded(taskId) {
+      const key = items.find((item) => item.task?.id === taskId)?.key;
+      if (key === undefined) {
+        return false;
+      }
+      added = taskId;
+      clearTimeout(addedTimer);
+      addedTimer = setTimeout(() => {
+        added = null;
+        markRows();
+      }, ADDED_MS);
+      if (!rows.has(key)) {
+        draw(false, [key]);
+      }
+      markRows();
+      rows.get(key)?.row.scrollIntoView?.({ block: 'nearest' });
+      return true;
+    },
+
     /** Close any open menu, and stop adding rows and following scrolls. */
     destroy() {
+      clearTimeout(addedTimer);
       cancelFill();
       cancelPress();
       detach();
