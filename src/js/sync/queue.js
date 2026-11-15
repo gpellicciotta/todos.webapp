@@ -9,7 +9,9 @@
  * See docs/specs/local-store.md, Sync Queue.
  */
 
-import { applyEvent, applyRuleEdit, firstOccurrence, RULE_FIELDS } from '../core/occurrences.js';
+import {
+  applyEvent, applyRuleEdit, byEventOrder, firstOccurrence, firstRules, replayableRuleEdits, RULE_FIELDS, ruleEditOf, USER_EVENT_TYPES,
+} from '../core/occurrences.js';
 import { request, STORES, transact } from '../store/idb.js';
 import { eventsOfWrite } from '../store/tasks.js';
 import { createSyncLog } from './sync-log.js';
@@ -264,6 +266,45 @@ function eventEntries(taskId, base, rules, events, mode = 'fold') {
 }
 
 /**
+ * Build the entries that replay imported events of a task with `import: true`, in time order.
+ * A rule edit becomes an `update-rules` entry with the event's `event-id`, its new values, and its time as edit time.
+ * A user event becomes a `post-event` entry with its exported `id`, time, and occurrence; other events never queue.
+ * A refused replayed event only leaves the events store, since the change feed then brings the service's task.
+ * @param {string} taskId the task
+ * @param {object[]} events its imported events
+ * @returns {object[]} the entries without `created`
+ */
+function replayEntries(taskId, events) {
+  return [...events].sort(byEventOrder).flatMap((event) => {
+    const time = event['creation-time'];
+    if (event.type === 'edit-lifecycle-rules') {
+      const edit = ruleEditOf(event);
+      return [{
+        target: { type: 'rules', id: taskId },
+        operation: 'update-rules',
+        fields: { ...edit, import: true, 'event-id': event.id },
+        'edit-times': Object.fromEntries(Object.keys(edit).map((name) => [name, time])),
+        undo: { kind: 'rules', id: taskId, fields: Object.fromEntries(Object.keys(edit).map((name) => [name, { from: event.details[name].old ?? null, to: edit[name] }])) },
+      }];
+    }
+    if (!USER_EVENT_TYPES.includes(event.type)) {
+      return [];
+    }
+    const fields = { id: event.id, type: event.type, 'creation-time': time };
+    if (event.occurrence !== null && event.occurrence !== undefined) {
+      fields.occurrence = event.occurrence;
+    }
+    return [{
+      target: { type: 'event', id: event.id, 'task-id': taskId },
+      operation: 'post-event',
+      fields: { ...fields, import: true },
+      'edit-times': {},
+      undo: { kind: 'event', taskId, id: event.id, before: null, mode: 'previous' },
+    }];
+  });
+}
+
+/**
  * Return the occurrence a task update starts its events from: the old one, moved by the update's rule edit.
  * @param {object} before the task before
  * @param {object} after the task after
@@ -424,8 +465,11 @@ export async function trackChange(ctx, queue, operation, args) {
  * No entry carries an edit time, so the service takes its receive time and the whole row wins.
  * Restores go first and bin moves last, since the service refuses writes to a binned row without an edit time.
  * An import adds memberships and notes only, so it never queues a removal.
+ * With `changes.replay`, as for backup format 2, the entries replay each new task's lifecycle with `import: true`:
+ * the create carries the first rules and the `event-id` of the `create` event, then its rule edits and user events follow in time order.
+ * An existing task posts only its new user events, with `import: true`. System events never queue.
  * @param {{lists: object[], tasks: object[], memberships: object[], notes: object[]}} data the store snapshot before the import
- * @param {{put: object}} changes the planned writes, which hold the final records
+ * @param {{put: object, replay?: boolean}} changes the planned writes, which hold the final records
  * @param {Date} now the import time
  * @returns {object[]} the entries without `seq`, in upload order
  */
@@ -434,18 +478,28 @@ export function importEntries(data, changes, now) {
   const restores = [];
   const content = [];
   const bins = [];
+  const replay = changes.replay === true;
   const entry = (target, operation, fields, undo) => ({ target, operation, fields, 'edit-times': {}, undo, created });
+  const eventsOf = (taskId) => (changes.put.events ?? []).filter((event) => event['task-id'] === taskId);
   const rows = [
     ['list', 'lists', LIST_FIELDS, (record) => ({ id: record.id, name: record.name, description: record.description, 'creation-time': record['creation-time'] })],
-    ['task', 'tasks', TASK_FIELDS, (record) => ({
-      id: record.id,
-      description: record.description,
-      'lifecycle-rules': record['lifecycle-rules'],
-      'creation-time': record['creation-time'],
-      lists: [],
-    })],
+    ['task', 'tasks', TASK_FIELDS, (record) => {
+      const fields = {
+        id: record.id,
+        description: record.description,
+        'lifecycle-rules': record['lifecycle-rules'],
+        'creation-time': record['creation-time'],
+        lists: [],
+      };
+      if (!replay) {
+        return fields;
+      }
+      const own = eventsOf(record.id);
+      const create = own.find((event) => event.type === 'create');
+      return { ...fields, 'lifecycle-rules': firstRules(record['lifecycle-rules'], own), import: true, ...(create ? { 'event-id': create.id } : {}) };
+    }],
   ];
-  const events = (changes.put.events ?? []).filter((event) => event.type !== 'create');
+  const events = (changes.put.events ?? []).filter((event) => USER_EVENT_TYPES.includes(event.type));
   for (const [type, store, names, createFields] of rows) {
     const known = new Map(data[store].map((record) => [record.id, record]));
     for (const record of changes.put[store] ?? []) {
@@ -466,9 +520,18 @@ export function importEntries(data, changes, now) {
             kind: 'rules', id: record.id, fields: Object.fromEntries(RULE_FIELDS.map((name) => [name, { from: oldRules[name], to: rules[name] }])),
           }));
         }
-        const base = old ? eventBase(old, record) : firstOccurrence(rules, record['creation-time']);
-        const own = events.filter((event) => event['task-id'] === record.id);
-        content.push(...eventEntries(record.id, base, rules, own).map((item) => ({ ...item, created })));
+        if (replay) {
+          // A rule edit that breaks the rule shape stays local, since the replay skipped it and the service would refuse it.
+          const applied = replayableRuleEdits(rules, eventsOf(record.id));
+          const own = old ? events.filter((event) => event['task-id'] === record.id)
+            : eventsOf(record.id).filter((event) => event.type !== 'edit-lifecycle-rules' || applied.has(event.id));
+          content.push(...replayEntries(record.id, own).map((item) => ({ ...item, created })));
+        }
+        else {
+          const base = old ? eventBase(old, record) : firstOccurrence(rules, record['creation-time']);
+          const own = events.filter((event) => event['task-id'] === record.id);
+          content.push(...eventEntries(record.id, base, rules, own).map((item) => ({ ...item, created })));
+        }
       }
       const from = old?.['deletion-time'] ?? null;
       const to = record['deletion-time'] ?? null;
@@ -492,8 +555,9 @@ export function importEntries(data, changes, now) {
       if (note['last-update-time'] && note['last-update-time'] !== note['creation-time']) {
         fields['last-update-time'] = note['last-update-time'];
       }
-      if (Number.isInteger(note.occurrence)) {
-        fields.occurrence = note.occurrence;
+      // Format 2 replays keep a global note global: without `occurrence`, the service links the note to the period of its time.
+      if (replay || Number.isInteger(note.occurrence)) {
+        fields.occurrence = note.occurrence ?? null;
       }
       content.push(entry({ type: 'note', id: note.id, 'task-id': note['task-id'] }, 'create-note', fields,
         { kind: 'remove-note', taskId: note['task-id'], id: note.id }));

@@ -47,6 +47,10 @@ All notable changes to this project are documented here.
 - FrontEnd: Saved target count, deadline, and overdue behavior as lifecycle rule edits, hiding the deadline of recurring tasks.
 - FrontEnd: Renamed the Last activity sort to Last update, and judged Finished today only by the occurrence close time.
 - FrontEnd: Tied notes to an occurrence or the whole task, shown by occurrence and changed with a Belongs to choice.
+- FrontEnd: Exported backup format 2, with top-level `lifecycle-rules`, `occurrences`, and `events`, and kept format 1 importable.
+- FrontEnd: Rebuilt imported occurrences by replaying events, ending on the exported rules, and closed ended series with `end-recurrence`.
+- FrontEnd: Merged imported events by identifier, and replayed new tasks, rule edits, events, and global notes with `import: true`.
+- DevEx: Added contract tests replaying format 2 imports, partial rule histories, ended series, and notes against a real server.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

@@ -202,7 +202,7 @@ test('Export backup downloads todos-backup-{{date}}.json holding the stored data
   const file = await exportFile(page);
   expect(file.name).toBe(`todos-backup-${today}.json`);
   const backup = JSON.parse(file.text);
-  expect(backup).toMatchObject({ format: 'todos-backup', 'format-version': 1, 'app-version': VERSION });
+  expect(backup).toMatchObject({ format: 'todos-backup', 'format-version': 2, 'app-version': VERSION });
   expect(backup.lists.map((list) => [list.id, list.name])).toEqual([[ids.listId, 'Home']]);
   expect(backup.tasks.map((task) => task.id).sort()).toEqual([ids.waterId, ids.billId].sort());
   expect(backup.memberships.map((m) => m['task-id'])).toEqual([ids.waterId, ids.billId]);
@@ -249,6 +249,48 @@ test('Overwrite updates the counts, and Import restores the missing task and bin
   const byId = Object.fromEntries(tasks.map((task) => [task.id, task]));
   expect(byId[ids.billId]?.['deletion-time']).toBeNull();
   expect(byId[extraId]['deletion-time']).not.toBeNull();
+  expect(problems).toEqual([]);
+});
+
+test('a target-3 task with two completions shows 2/3 after an export and an import into an empty app', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/#/settings');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  const listId = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const home = await store.createList({ name: 'Home' });
+    const paint = await store.createTask({ description: 'Buy paint' }, { lists: [home.id] });
+    await store.updateRules(paint.id, { 'target-count': 3 });
+    await store.postEvent(paint.id, 'complete');
+    await store.postEvent(paint.id, 'complete');
+    store.close();
+    return home.id;
+  });
+  const file = await exportFile(page);
+  const backup = JSON.parse(file.text);
+  expect(backup['format-version']).toBe(2);
+  expect(backup.occurrences).toEqual([expect.objectContaining({ 'target-count': 3, 'completion-count': 2, status: 'in-progress' })]);
+  const types = ['create', 'edit-lifecycle-rules', 'complete', 'complete'];
+  expect(backup.events.map((event) => event.type)).toEqual(types);
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    await store.deleteAllData();
+    store.close();
+  });
+  expect(await snapshot(page)).toMatchObject({ lists: [], tasks: [], occurrences: [], events: [] });
+  const dialog = await pickFile(page, file);
+  await expect(dialog.getByRole('status')).toHaveText('3 added · 0 updated · 0 to recycle bin');
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.goto(`/#/lists/${listId}`);
+  const row = page.locator('.task-row', { hasText: 'Buy paint' });
+  await expect(row.locator('.task-row__count')).toHaveText('2/3 done');
+  await expect(row).toHaveAttribute('data-status', 'in-progress');
+  const stored = await snapshot(page);
+  expect(stored.events.map((event) => event.type)).toEqual(types);
+  expect(stored.events.map((event) => event.id)).toEqual(backup.events.map((event) => event.id));
   expect(problems).toEqual([]);
 });
 

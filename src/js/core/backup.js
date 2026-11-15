@@ -4,39 +4,67 @@
  * docs/specs/backup-format.md describes the file format and the import rules.
  * Imports plan their writes from a store snapshot with a pure function, so the preview
  * and the import count the same changes, and the store applies them in one transaction.
+ * Format 2 holds tasks without their parts, and top-level `lifecycle-rules`, `occurrences`, and `events` arrays.
+ * Import rebuilds the occurrences from the rules and events, so `occurrences` is export-only.
  * Format 1 holds the former task shape, with `status`, `due-time`, and `overdue-handling`, and notes with `author`.
- * Export maps tasks and notes back to it; import compares in that shape and maps written records into the store shape,
+ * Its import compares in that shape and maps written records into the store shape,
  * with each status change as events at the import time.
  */
 
-import { applyEvent, applyRuleEdit, eventsTowardsStatus, fromLegacyTask, makeEvent, statusOf, toLegacyTask } from './occurrences.js';
+import {
+  applyEvent, applyRuleEdit, byEventOrder, eventsTowardsOccurrence, eventsTowardsStatus, fromLegacyTask, isPeriodEnd,
+  isRecurring, makeEvent, normalizeRules, planRollOver, replayEvents, RULE_FIELDS, rulesShapeProblem, STATUSES, statusFromCount, statusOf, toLegacyTask,
+} from './occurrences.js';
+import { isValidTimezone } from './periods.js';
 import { NAME_MAX, DESCRIPTION_MAX as LIST_DESCRIPTION_MAX } from '../store/lists.js';
 import { TEXT_MAX } from '../store/notes.js';
-import { OVERDUE_HANDLINGS, DESCRIPTION_MAX as TASK_DESCRIPTION_MAX } from '../store/tasks.js';
+import { OVERDUE_HANDLINGS, RECURRENCE_UNITS, DESCRIPTION_MAX as TASK_DESCRIPTION_MAX } from '../store/tasks.js';
 import { isValidKey, keyBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
 import { uuid7 } from '../lib/uuid7.js';
 import { importEntries } from '../sync/queue.js';
 
 export const FORMAT = 'todos-backup';
-export const FORMAT_VERSION = 1;
+/** The format version that export writes. */
+export const FORMAT_VERSION = 2;
+/** The format versions that import reads. */
+export const FORMAT_VERSIONS = [1, 2];
 export const MODES = ['merge', 'overwrite'];
 
-/** The fields of each record type, in file order. */
+/** The fields of each record type of format 2, in file order. */
 export const FIELDS = {
   lists: ['id', 'name', 'description', 'owner', 'creation-time', 'last-update-time', 'deletion-time'],
+  tasks: ['id', 'description', 'owner-id', 'creation-time', 'last-update-time', 'deletion-time'],
+  'lifecycle-rules': ['task-id', ...RULE_FIELDS],
+  occurrences: ['task-id', 'occurrence', 'start-time', 'due-time', 'target-count', 'completion-count', 'status', 'close-time'],
+  events: ['id', 'task-id', 'occurrence', 'creation-time', 'owner-id', 'type', 'details'],
+  memberships: ['list-id', 'task-id', 'position', 'added-time'],
+  notes: ['id', 'task-id', 'text', 'owner-id', 'occurrence', 'creation-time', 'last-update-time'],
+};
+
+/** The fields of each record type of format 1, in file order. */
+export const FORMAT_1_FIELDS = {
+  lists: FIELDS.lists,
   tasks: [
     'id', 'description', 'status', 'due-time', 'overdue-handling', 'owner-id',
     'creation-time', 'last-update-time', 'last-activity-time', 'deletion-time',
   ],
-  memberships: ['list-id', 'task-id', 'position', 'added-time'],
+  memberships: FIELDS.memberships,
   notes: ['id', 'task-id', 'text', 'author', 'creation-time', 'edit-time'],
 };
 
-const TYPES = Object.keys(FIELDS);
+/** The record types that import counts. */
+const TYPES = ['lists', 'tasks', 'memberships', 'notes'];
 /** The task statuses of format 1, where `todo` stands for `ready`. */
 export const FORMAT_STATUSES = ['todo', 'in-progress', 'completed', 'cancelled'];
+/** The event types of format 2, as the service's `TaskEvent` schema lists them. */
+export const EVENT_TYPES = [
+  'create', 'complete', 'uncomplete', 'start', 'unstart', 'cancel', 'reopen',
+  'edit-task', 'edit-lifecycle-rules', 'expire', 'roll-over', 'end-recurrence',
+];
 const ID_MAX = 128;
+const COUNT_MAX = 32767;
 const TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** A backup file or import request is invalid; `code` names the reason and `path` the bad value. */
 export class BackupError extends Error {
@@ -76,13 +104,31 @@ function compare(a, b) {
 }
 
 /**
- * Copy the known fields of a record, in file order.
+ * Copy the given fields of a record, in that order.
  * @param {object} record the record
- * @param {string} type the record type
+ * @param {string[]} fields the field names
  * @returns {object} the copy
  */
-function pick(record, type) {
-  return Object.fromEntries(FIELDS[type].map((field) => [field, record[field] ?? null]));
+function pick(record, fields) {
+  return Object.fromEntries(fields.map((field) => [field, record[field] ?? null]));
+}
+
+/**
+ * Return a task part without its `task-id`, as the task embeds it.
+ * @param {object} part a rules or occurrence record
+ * @returns {object} the part
+ */
+function embedded(part) {
+  return Object.fromEntries(Object.entries(part).filter(([name]) => name !== 'task-id'));
+}
+
+/**
+ * Return full rules with every rule field, in schema order.
+ * @param {object} rules the rules
+ * @returns {object} the rules
+ */
+function rulesOf(rules) {
+  return pick(normalizeRules(rules), RULE_FIELDS);
 }
 
 /**
@@ -126,6 +172,25 @@ function checkTime(value, path, nullable = false) {
   // Date.parse rolls impossible dates over, such as February 30 to March 2, so compare the components back.
   if (Number.isNaN(ms) || new Date(ms).toISOString().slice(0, 19) !== value.slice(0, 19)) {
     fail(path, 'must be a valid UTC time such as 2026-11-04T09:00:00.000Z');
+  }
+  return value;
+}
+
+/**
+ * Check a whole number in a range, or null when allowed.
+ * @param {unknown} value the value
+ * @param {string} path its path
+ * @param {number} min the minimum
+ * @param {number} max the maximum
+ * @param {boolean} [nullable] whether null is allowed
+ * @returns {number|null} the number
+ */
+function checkInteger(value, path, min, max, nullable = false) {
+  if (value === null && nullable) {
+    return null;
+  }
+  if (!Number.isInteger(value) || value < min || value > max) {
+    fail(path, `must be a whole number from ${min} to ${max}${nullable ? ', or null' : ''}`);
   }
   return value;
 }
@@ -201,6 +266,20 @@ function checkPerson(value, path) {
 }
 
 /**
+ * Check an owner identifier: null, an integer, or a non-empty string.
+ * @param {unknown} value the value, null when missing
+ * @param {string} path its path
+ * @returns {number|string|null} the identifier
+ */
+function checkOwnerId(value, path) {
+  const id = value ?? null;
+  if (id !== null && !Number.isInteger(id) && (typeof id !== 'string' || !id)) {
+    fail(path, 'must be null, an integer, or a string');
+  }
+  return id;
+}
+
+/**
  * Validate the records of one type, also checking unique keys and references.
  * @param {object} data the backup object
  * @param {string} type the record type
@@ -227,7 +306,96 @@ function checkRecords(data, type, check, keyOf, keyField) {
 }
 
 /**
+ * Check one lifecycle rule value, as the store's rule checks do; every field but `target-count` may be null.
+ * @param {string} field the rule field
+ * @param {unknown} value the value
+ * @param {string} path its path
+ * @returns {unknown} the value, null when missing
+ */
+function checkRuleField(field, value, path) {
+  if (field === 'target-count') {
+    return checkInteger(value, path, 1, COUNT_MAX);
+  }
+  if (value === null || value === undefined) {
+    return null;
+  }
+  switch (field) {
+    case 'due-time':
+      return checkTime(value, path);
+    case 'overdue-handling':
+      return checkEnum(value, path, OVERDUE_HANDLINGS);
+    case 'recurrence-unit':
+      return checkEnum(value, path, RECURRENCE_UNITS);
+    case 'recurrence-interval':
+      return checkInteger(value, path, 1, 99);
+    case 'recurrence-end-count':
+      return checkInteger(value, path, 1, COUNT_MAX);
+    case 'recurrence-end-date':
+      if (typeof value !== 'string' || !LOCAL_DATE.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+        || new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) !== value) {
+        fail(path, 'must be a date such as 2026-12-31');
+      }
+      return value;
+    default:
+      if (!isValidTimezone(value)) {
+        fail(path, 'must be an IANA zone name, such as Europe/Brussels');
+      }
+      return value;
+  }
+}
+
+/**
+ * Check the lifecycle rules of a format 2 task; a recurring rule needs its interval and timezone,
+ * and keeps `due-time` and `overdue-handling` empty, as the store does.
+ * @param {object} raw the rules record
+ * @param {string} path its path
+ * @param {(value: unknown, path: string) => string} checkTask checks the task reference
+ * @returns {object} the rules, with `task-id` first
+ */
+function checkRules(raw, path, checkTask) {
+  const rules = {
+    'task-id': checkTask(raw['task-id'], `${path}.task-id`),
+    ...Object.fromEntries(RULE_FIELDS.map((field) => [field, checkRuleField(field, field === 'target-count' ? raw[field] ?? 1 : raw[field], `${path}.${field}`)])),
+  };
+  const problem = rulesShapeProblem(embedded(rules));
+  if (problem) {
+    const recurring = isRecurring(rules);
+    fail(`${path}.${problem}`, recurring && ['recurrence-interval', 'timezone'].includes(problem) ? 'is required for a recurring task'
+      : `must be null for a ${recurring ? 'recurring' : 'one-off'} task`);
+  }
+  return { 'task-id': rules['task-id'], ...normalizeRules(embedded(rules)) };
+}
+
+/**
+ * Check the `details` of a format 2 event: an `edit-lifecycle-rules` event lists the old and new value of each changed rule field,
+ * and each value follows the rule checks.
+ * @param {object} raw the event record
+ * @param {string} path the path of the event
+ * @returns {object|null} the details
+ */
+function checkDetails(raw, path) {
+  const details = raw.details ?? null;
+  if (raw.type !== 'edit-lifecycle-rules') {
+    return details === null ? null : structuredClone(checkObject(details, `${path}.details`));
+  }
+  if (typeof details !== 'object' || details === null || Array.isArray(details) || Object.keys(details).length === 0) {
+    fail(`${path}.details`, 'must list the old and new value of each changed rule field');
+  }
+  return Object.fromEntries(Object.entries(details).map(([field, change]) => {
+    const at = `${path}.details.${field}`;
+    if (!RULE_FIELDS.includes(field)) {
+      fail(at, `must be a rule field, one of ${RULE_FIELDS.join(', ')}`);
+    }
+    if (typeof change !== 'object' || change === null || !('old' in change) || !('new' in change)) {
+      fail(at, 'must hold the old and new value');
+    }
+    return [field, { old: checkRuleField(field, change.old, `${at}.old`), new: checkRuleField(field, change.new, `${at}.new`) }];
+  }));
+}
+
+/**
  * Validate a backup object and return its normalized copy, without unknown fields.
+ * A format 2 task without a `lifecycle-rules` record gets the default rules.
  * @param {unknown} data the parsed file
  * @returns {object} the backup
  */
@@ -242,14 +410,15 @@ export function validateBackup(data) {
   if (!Number.isInteger(version)) {
     fail('format-version', 'must be an integer');
   }
-  if (version !== FORMAT_VERSION) {
+  if (!FORMAT_VERSIONS.includes(version)) {
     throw new BackupError('unsupported-version',
-      `Unsupported backup format version ${version}; this app reads version ${FORMAT_VERSION}.`, 'format-version');
+      `Unsupported backup format version ${version}; this app reads versions ${FORMAT_VERSIONS.join(' and ')}.`, 'format-version');
   }
   if (typeof data['app-version'] !== 'string' || !data['app-version']) {
     fail('app-version', 'must be a non-empty string');
   }
   const exportTime = checkTime(data['export-time'], 'export-time');
+  const one = version === 1;
 
   const lists = checkRecords(data, 'lists', (raw, path) => ({
     id: checkId(raw.id, `${path}.id`),
@@ -269,24 +438,20 @@ export function validateBackup(data) {
     names.add(key);
   });
 
-  const tasks = checkRecords(data, 'tasks', (raw, path) => {
-    const ownerId = raw['owner-id'] ?? null;
-    if (ownerId !== null && !Number.isInteger(ownerId) && (typeof ownerId !== 'string' || !ownerId)) {
-      fail(`${path}.owner-id`, 'must be null, an integer, or a string');
-    }
-    return {
-      id: checkId(raw.id, `${path}.id`),
-      description: checkText(raw.description, `${path}.description`, 1, TASK_DESCRIPTION_MAX),
+  const tasks = checkRecords(data, 'tasks', (raw, path) => ({
+    id: checkId(raw.id, `${path}.id`),
+    description: checkText(raw.description, `${path}.description`, 1, TASK_DESCRIPTION_MAX),
+    ...(one ? {
       status: checkEnum(raw.status, `${path}.status`, FORMAT_STATUSES),
       'due-time': checkTime(raw['due-time'] ?? null, `${path}.due-time`, true),
       'overdue-handling': checkEnum(raw['overdue-handling'], `${path}.overdue-handling`, OVERDUE_HANDLINGS),
-      'owner-id': ownerId,
-      'creation-time': checkTime(raw['creation-time'], `${path}.creation-time`),
-      'last-update-time': checkTime(raw['last-update-time'], `${path}.last-update-time`),
-      'last-activity-time': checkTime(raw['last-activity-time'], `${path}.last-activity-time`),
-      'deletion-time': checkTime(raw['deletion-time'] ?? null, `${path}.deletion-time`, true),
-    };
-  }, (task) => task.id, 'id');
+    } : {}),
+    'owner-id': checkOwnerId(raw['owner-id'], `${path}.owner-id`),
+    'creation-time': checkTime(raw['creation-time'], `${path}.creation-time`),
+    'last-update-time': checkTime(raw['last-update-time'], `${path}.last-update-time`),
+    ...(one ? { 'last-activity-time': checkTime(raw['last-activity-time'], `${path}.last-activity-time`) } : {}),
+    'deletion-time': checkTime(raw['deletion-time'] ?? null, `${path}.deletion-time`, true),
+  }), (task) => task.id, 'id');
 
   const listIds = new Set(lists.map((list) => list.id));
   const taskIds = new Set(tasks.map((task) => task.id));
@@ -303,6 +468,33 @@ export function validateBackup(data) {
     }
     return value;
   };
+  const checkTask = (value, path) => checkRef(value, path, taskIds);
+
+  const parts = {};
+  if (!one) {
+    const rules = checkRecords(data, 'lifecycle-rules', (raw, path) => checkRules(raw, path, checkTask), (r) => r['task-id'], 'task-id');
+    const ruled = new Set(rules.map((r) => r['task-id']));
+    parts['lifecycle-rules'] = [...rules, ...tasks.filter((task) => !ruled.has(task.id)).map((task) => ({ 'task-id': task.id, ...rulesOf({}) }))];
+    parts.occurrences = checkRecords(data, 'occurrences', (raw, path) => ({
+      'task-id': checkTask(raw['task-id'], `${path}.task-id`),
+      occurrence: checkInteger(raw.occurrence, `${path}.occurrence`, 1, Number.MAX_SAFE_INTEGER),
+      'start-time': checkTime(raw['start-time'], `${path}.start-time`),
+      'due-time': checkTime(raw['due-time'] ?? null, `${path}.due-time`, true),
+      'target-count': checkInteger(raw['target-count'], `${path}.target-count`, 1, COUNT_MAX),
+      'completion-count': checkInteger(raw['completion-count'], `${path}.completion-count`, 0, COUNT_MAX),
+      status: checkEnum(raw.status, `${path}.status`, STATUSES),
+      'close-time': checkTime(raw['close-time'] ?? null, `${path}.close-time`, true),
+    }), (o) => `${o['task-id']}\n${o.occurrence}`, null);
+    parts.events = checkRecords(data, 'events', (raw, path) => ({
+      id: checkId(raw.id, `${path}.id`),
+      'task-id': checkTask(raw['task-id'], `${path}.task-id`),
+      occurrence: checkInteger(raw.occurrence ?? null, `${path}.occurrence`, 1, Number.MAX_SAFE_INTEGER, true),
+      'creation-time': checkTime(raw['creation-time'], `${path}.creation-time`),
+      'owner-id': checkOwnerId(raw['owner-id'], `${path}.owner-id`),
+      type: checkEnum(raw.type, `${path}.type`, EVENT_TYPES),
+      details: checkDetails(raw, path),
+    }), (event) => event.id, 'id');
+  }
 
   const memberships = checkRecords(data, 'memberships', (raw, path) => {
     if (!isValidKey(raw.position) || raw.position.length > MAX_KEY_LENGTH) {
@@ -310,28 +502,37 @@ export function validateBackup(data) {
     }
     return {
       'list-id': checkRef(raw['list-id'], `${path}.list-id`, listIds),
-      'task-id': checkRef(raw['task-id'], `${path}.task-id`, taskIds),
+      'task-id': checkTask(raw['task-id'], `${path}.task-id`),
       position: raw.position,
       'added-time': checkTime(raw['added-time'], `${path}.added-time`),
     };
   }, (m) => `${m['list-id']}\n${m['task-id']}`, null);
 
-  const notes = checkRecords(data, 'notes', (raw, path) => ({
+  const notes = checkRecords(data, 'notes', (raw, path) => (one ? {
     id: checkId(raw.id, `${path}.id`),
-    'task-id': checkRef(raw['task-id'], `${path}.task-id`, taskIds),
+    'task-id': checkTask(raw['task-id'], `${path}.task-id`),
     text: checkText(raw.text, `${path}.text`, 1, TEXT_MAX),
     author: checkPerson(raw.author, `${path}.author`),
     'creation-time': checkTime(raw['creation-time'], `${path}.creation-time`),
     'edit-time': checkTime(raw['edit-time'] ?? null, `${path}.edit-time`, true),
+  } : {
+    id: checkId(raw.id, `${path}.id`),
+    'task-id': checkTask(raw['task-id'], `${path}.task-id`),
+    text: checkText(raw.text, `${path}.text`, 1, TEXT_MAX),
+    'owner-id': checkOwnerId(raw['owner-id'], `${path}.owner-id`),
+    occurrence: checkInteger(raw.occurrence ?? null, `${path}.occurrence`, 1, Number.MAX_SAFE_INTEGER, true),
+    'creation-time': checkTime(raw['creation-time'], `${path}.creation-time`),
+    'last-update-time': checkTime(raw['last-update-time'], `${path}.last-update-time`),
   }), (note) => note.id, 'id');
 
   return {
     format: FORMAT,
-    'format-version': FORMAT_VERSION,
+    'format-version': version,
     'app-version': data['app-version'],
     'export-time': exportTime,
     lists,
     tasks,
+    ...parts,
     memberships,
     notes,
   };
@@ -449,7 +650,8 @@ export function backupFileName(date = new Date()) {
 }
 
 /**
- * Export every list, task, membership, and note of the store, including recycle bin entries.
+ * Export every list, task, membership, and note of the store, including recycle bin entries, in format 2.
+ * Each task's rules, occurrences, and events go to the top-level `lifecycle-rules`, `occurrences`, and `events` arrays.
  * @param {object} store the store facade
  * @param {{now?: Date, appVersion: string}} options the export time and the app version
  * @returns {Promise<object>} the backup object; `JSON.stringify(backup, null, 2)` gives the file text
@@ -459,16 +661,35 @@ export async function exportBackup(store, { now = new Date(), appVersion }) {
     throw new TypeError('exportBackup needs the app version.');
   }
   const data = await store.snapshot();
+  const tasks = [...data.tasks].sort((a, b) => compare(a.id, b.id));
+  const known = new Set(tasks.map((task) => task.id));
+  // The occurrences store holds every occurrence; the task's own copy of its current one wins.
+  const occurrences = new Map();
+  const keyOf = (taskId, number) => `${taskId}\n${number}`;
+  for (const occurrence of data.occurrences ?? []) {
+    if (known.has(occurrence['task-id'])) {
+      occurrences.set(keyOf(occurrence['task-id'], occurrence.occurrence), occurrence);
+    }
+  }
+  for (const task of tasks) {
+    const current = task['current-occurrence'];
+    occurrences.set(keyOf(task.id, current.occurrence), { 'task-id': task.id, ...current });
+  }
   return {
     format: FORMAT,
     'format-version': FORMAT_VERSION,
     'app-version': appVersion,
     'export-time': now.toISOString(),
-    lists: data.lists.map((list) => pick(list, 'lists')).sort((a, b) => compare(a.id, b.id)),
-    tasks: data.tasks.map((task) => pick(toLegacyTask(task), 'tasks')).sort((a, b) => compare(a.id, b.id)),
-    memberships: data.memberships.map((m) => pick(m, 'memberships')).sort((a, b) => compare(a['list-id'], b['list-id'])
+    lists: data.lists.map((list) => pick(list, FIELDS.lists)).sort((a, b) => compare(a.id, b.id)),
+    tasks: tasks.map((task) => pick(task, FIELDS.tasks)),
+    'lifecycle-rules': tasks.map((task) => ({ 'task-id': task.id, ...rulesOf(task['lifecycle-rules']) })),
+    occurrences: [...occurrences.values()].map((occurrence) => pick(occurrence, FIELDS.occurrences))
+      .sort((a, b) => compare(a['task-id'], b['task-id']) || a.occurrence - b.occurrence),
+    events: (data.events ?? []).filter((event) => known.has(event['task-id'])).map((event) => pick(event, FIELDS.events))
+      .sort((a, b) => compare(a['task-id'], b['task-id']) || byEventOrder(a, b)),
+    memberships: data.memberships.map((m) => pick(m, FIELDS.memberships)).sort((a, b) => compare(a['list-id'], b['list-id'])
       || compare(a.position, b.position) || compare(a['task-id'], b['task-id'])),
-    notes: data.notes.map((note) => pick(toFormatNote(note), 'notes')).sort((a, b) => compare(a['task-id'], b['task-id'])
+    notes: data.notes.map((note) => pick(note, FIELDS.notes)).sort((a, b) => compare(a['task-id'], b['task-id'])
       || compare(a['creation-time'], b['creation-time']) || compare(a.id, b.id)),
   };
 }
@@ -493,20 +714,223 @@ function later(a, b) {
 }
 
 /**
- * Tell whether two records hold the same values in the known fields of their type.
+ * Tell whether two records hold the same values in the given fields.
  * @param {object} a a record
  * @param {object} b another record
- * @param {string} type the record type
+ * @param {string[]} fields the field names
  * @returns {boolean} true when equal
  */
-function same(a, b, type) {
-  return FIELDS[type].every((field) => JSON.stringify(a[field] ?? null) === JSON.stringify(b[field] ?? null));
+function same(a, b, fields) {
+  return fields.every((field) => JSON.stringify(a[field] ?? null) === JSON.stringify(b[field] ?? null));
+}
+
+/**
+ * Hash a text to a 53-bit number (cyrb53), for identifiers that need no secrecy.
+ * @param {string} text the text
+ * @param {number} seed the seed
+ * @returns {number} the hash
+ */
+function hash53(text, seed) {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ code, 2654435761);
+    h2 = Math.imul(h2 ^ code, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
+/**
+ * Return the identifier of an event that an import writes anew: a UUIDv7 with the event time,
+ * and the other bits from its task, type, occurrence, time, and sequence number.
+ * The same import therefore writes the same identifiers again, so importing a file twice changes nothing.
+ * @param {{'task-id': string, type: string, occurrence: number|null, 'creation-time': string, seq?: number}} event the event fields
+ * @returns {string} the UUIDv7
+ */
+function newEventId(event) {
+  const key = JSON.stringify([event['task-id'], event.type, event.occurrence ?? null, event['creation-time'], event.seq ?? 0]);
+  const time = Date.parse(event['creation-time']).toString(16).padStart(12, '0').slice(-12);
+  const bits = hash53(key, 1).toString(16).padStart(14, '0') + hash53(key, 2).toString(16).padStart(14, '0');
+  const variant = (8 + (parseInt(bits[3], 16) & 3)).toString(16);
+  return `${time.slice(0, 8)}-${time.slice(8)}-7${bits.slice(0, 3)}-${variant}${bits.slice(4, 7)}-${bits.slice(7, 19)}`;
+}
+
+/**
+ * How each format compares records with the store, and turns written notes into the store shape.
+ * Imports compare in the shape of the file, so unchanged records count as unchanged; only what gets written is converted.
+ */
+const SHAPES = {
+  1: {
+    fields: FORMAT_1_FIELDS,
+    storeTask: toLegacyTask,
+    storeNote: toFormatNote,
+    backupTasks: (file) => file.tasks.map(foldTimes),
+    noteTime: (note) => note['edit-time'] ?? note['creation-time'],
+    writtenNote: fromFormatNote,
+  },
+  2: {
+    fields: { ...FIELDS, tasks: [...FIELDS.tasks, 'lifecycle-rules'] },
+    storeTask: (task) => ({ ...pick(task, FIELDS.tasks), 'lifecycle-rules': rulesOf(task['lifecycle-rules']) }),
+    storeNote: (note) => pick(note, FIELDS.notes),
+    backupTasks: (file) => {
+      const rules = new Map(file['lifecycle-rules'].map((record) => [record['task-id'], embedded(record)]));
+      return file.tasks.map((task) => ({ ...task, 'lifecycle-rules': rules.get(task.id) }));
+    },
+    noteTime: (note) => note['last-update-time'],
+    writtenNote: (note) => note,
+  },
+};
+
+/**
+ * Group records by their `task-id`.
+ * @param {object[]} records the records
+ * @returns {Map<string, object[]>} the records of each task
+ */
+function byTask(records) {
+  const groups = new Map();
+  for (const record of records) {
+    groups.set(record['task-id'], [...(groups.get(record['task-id']) ?? []), record]);
+  }
+  return groups;
+}
+
+/**
+ * Return the events a format 2 backup lacks for the count and status of a task's exported current occurrence,
+ * such as the events another device made, which a connected device does not keep.
+ * A recurring task first rolls over up to that occurrence; the events take the import time,
+ * or the last moment of a recurring occurrence's period when that came earlier.
+ * @param {object} record the backup task, with its `lifecycle-rules`
+ * @param {object[]} events the backup events of the task
+ * @param {object[]} occurrences the backup occurrences of the task
+ * @param {string} time the ISO import time
+ * @returns {object[]} the missing events, empty when the backup events explain its current occurrence
+ */
+function missingEvents(record, events, occurrences, time) {
+  const wanted = occurrences.reduce((last, occurrence) => (!last || occurrence.occurrence > last.occurrence ? occurrence : last), null);
+  if (!wanted) {
+    return [];
+  }
+  const replay = replayEvents(record, record['lifecycle-rules'], events, newEventId, { settleAt: record['last-update-time'] });
+  const { rules } = replay;
+  let current = replay.current;
+  const missing = [];
+  /**
+   * Add a missing event.
+   * @param {string} type the event type
+   * @param {string} at the ISO event time
+   */
+  const add = (type, at) => {
+    const base = { 'task-id': record.id, type, 'creation-time': at, occurrence: current.occurrence };
+    const event = makeEvent({ ...base, id: newEventId({ ...base, seq: missing.length }) });
+    current = applyEvent(current, event, rules) ?? current;
+    missing.push(event);
+  };
+  if (isRecurring(rules) && current['close-time'] === null && wanted.occurrence > current.occurrence) {
+    const plan = planRollOver(rules, current, wanted['start-time']);
+    if (plan.current.occurrence === wanted.occurrence) {
+      for (const event of plan.events) {
+        const base = { 'task-id': record.id, type: event.type, 'creation-time': event['creation-time'], occurrence: event.occurrence };
+        missing.push(makeEvent({ ...base, id: newEventId(base) }));
+      }
+      current = plan.current;
+    }
+  }
+  if (current.occurrence !== wanted.occurrence) {
+    return [];
+  }
+  const recurring = isRecurring(rules);
+  const end = recurring && current['due-time'] ? Date.parse(current['due-time']) - 1 : Infinity;
+  const at = new Date(Math.min(Date.parse(time), end)).toISOString();
+  // A closed recurring occurrence gets its count inside its period; the end of the series, or a user cancel, then closes it.
+  const closesSeries = recurring && wanted['close-time'] !== null && current['close-time'] === null;
+  const goal = closesSeries ? { ...wanted, status: statusFromCount(wanted['completion-count'], current['target-count']), 'close-time': null } : wanted;
+  for (const type of eventsTowardsOccurrence(current, goal, rules)) {
+    add(type, at);
+  }
+  if (closesSeries) {
+    const plan = planRollOver(rules, current, wanted['close-time']);
+    const [event] = plan.events;
+    if (plan.events.length === 1 && event.type === 'end-recurrence' && plan.current.status === wanted.status) {
+      const base = { 'task-id': record.id, type: event.type, 'creation-time': event['creation-time'], occurrence: event.occurrence };
+      missing.push(makeEvent({ ...base, id: newEventId(base) }));
+    }
+    else if (wanted.status === 'cancelled') {
+      add('cancel', new Date(Math.min(Date.parse(at), Date.parse(wanted['close-time']))).toISOString());
+    }
+  }
+  return missing;
+}
+
+/**
+ * Turn a written format 2 task into the store shape, with its occurrences rebuilt from its rules and events.
+ * Merge keeps the local events and adds the backup ones by identifier; overwrite takes exactly the backup events.
+ * @param {object} record the backup task, with its `lifecycle-rules`
+ * @param {object|undefined} stored the stored task
+ * @param {object} context the import: `overwrite`, `time`, and the backup and store events and occurrences by task
+ * @returns {{task: object, occurrences: object[], put: object[], remove: object[], dropOccurrences: number[]}} the store task,
+ *   its other occurrences, the events to store and to remove, and the numbers of stored occurrences to remove
+ */
+function rebuildTask(record, stored, { overwrite, time, fileEvents, fileOccurrences, storeEvents, storeOccurrences }) {
+  const own = fileEvents.get(record.id) ?? [];
+  const backupEvents = [...own, ...missingEvents(record, own, fileOccurrences.get(record.id) ?? [], time)];
+  const local = stored ? storeEvents.get(record.id) ?? [] : [];
+  const localIds = new Set(local.map((event) => event.id));
+  // A local period end already closes its occurrence, so the backup's one for the same occurrence stays out.
+  const ended = new Set(local.filter((event) => isPeriodEnd(event.type)).map((event) => event.occurrence));
+  const events = overwrite ? backupEvents
+    : [...local, ...backupEvents.filter((event) => !localIds.has(event.id) && !(isPeriodEnd(event.type) && ended.has(event.occurrence)))];
+  const replay = replayEvents(record, record['lifecycle-rules'], events, newEventId, { settleAt: record['last-update-time'] });
+  const task = {
+    ...stored,
+    id: record.id,
+    description: record.description,
+    'owner-id': record['owner-id'],
+    'lifecycle-rules': replay.rules,
+    'current-occurrence': replay.current,
+    'creation-time': record['creation-time'],
+    'last-update-time': record['last-update-time'],
+    'deletion-time': record['deletion-time'],
+  };
+  const final = [...replay.events, ...replay.added];
+  const finalIds = new Set(final.map((event) => event.id));
+  const numbers = new Set(replay.occurrences.map((occurrence) => occurrence.occurrence));
+  return {
+    task,
+    occurrences: replay.occurrences.filter((occurrence) => occurrence.occurrence !== replay.current.occurrence)
+      .map((occurrence) => ({ 'task-id': record.id, ...occurrence })),
+    put: overwrite ? final : final.filter((event) => !localIds.has(event.id)),
+    remove: overwrite ? local.filter((event) => !finalIds.has(event.id)) : [],
+    dropOccurrences: (storeOccurrences.get(record.id) ?? []).map((occurrence) => occurrence.occurrence).filter((number) => !numbers.has(number)),
+  };
+}
+
+/**
+ * Tell whether rebuilding a format 2 task in overwrite mode leaves its stored events and occurrences as they are.
+ * @param {object} record the backup task, with its `lifecycle-rules`
+ * @param {object} stored the stored task
+ * @param {object} context the import, as for `rebuildTask`
+ * @returns {boolean} true when the events, the occurrences, and the current occurrence all match
+ */
+function rebuildMatches(record, stored, context) {
+  const rebuilt = rebuildTask(record, stored, context);
+  const text = (records, names) => records.map((item) => JSON.stringify(pick(item, names))).sort().join('\n');
+  const local = { events: context.storeEvents.get(record.id) ?? [], occurrences: context.storeOccurrences.get(record.id) ?? [] };
+  const current = { 'task-id': record.id, ...rebuilt.task['current-occurrence'] };
+  return rebuilt.remove.length === 0 && rebuilt.dropOccurrences.length === 0
+    && text(rebuilt.put, FIELDS.events) === text(local.events, FIELDS.events)
+    && text([...rebuilt.occurrences, current], FIELDS.occurrences) === text(local.occurrences, FIELDS.occurrences)
+    && JSON.stringify(pick(rebuilt.task['current-occurrence'], FIELDS.occurrences.slice(1)))
+      === JSON.stringify(pick(stored['current-occurrence'], FIELDS.occurrences.slice(1)));
 }
 
 /**
  * Plan an import: compute the writes and their counts from a store snapshot, without writing.
- * @param {{lists: object[], tasks: object[], memberships: object[], notes: object[]}} data the store snapshot
- * @param {object} backup a validated backup
+ * @param {{lists: object[], tasks: object[], memberships: object[], notes: object[], occurrences?: object[], events?: object[]}} store
+ *   the store snapshot
+ * @param {object} file a validated backup of format 1 or 2
  * @param {string} mode `merge` or `overwrite`
  * @param {{now: Date, ownerId?: number|string|null, connected?: boolean}} options the time for binning, the connected user,
  *   and whether the device is connected, which adds the queue entries to `changes.queue` and keeps existing notes
@@ -515,9 +939,11 @@ function same(a, b, type) {
 export function planImport(store, file, mode, { now, ownerId = null, connected = false }) {
   checkMode(mode, connected);
   const time = now.toISOString();
-  // Compare in the shape of format 1, so unchanged records count as unchanged; convert only what gets written.
-  const data = { ...store, tasks: store.tasks.map(toLegacyTask), notes: store.notes.map(toFormatNote) };
-  const backup = { ...file, tasks: file.tasks.map(foldTimes) };
+  const version = file['format-version'];
+  const shape = SHAPES[version];
+  const fields = shape.fields;
+  const data = { ...store, tasks: store.tasks.map(shape.storeTask), notes: store.notes.map(shape.storeNote) };
+  const backup = { ...file, tasks: shape.backupTasks(file) };
   const overwrite = mode === 'overwrite';
   const result = emptyCounts();
   /**
@@ -548,6 +974,15 @@ export function planImport(store, file, mode, { now, ownerId = null, connected =
   };
   const written = { lists: new Map(), tasks: new Map() };
   const binnedNow = new Set();
+  const context = {
+    overwrite,
+    time,
+    fileEvents: byTask(file.events ?? []),
+    fileOccurrences: byTask(file.occurrences ?? []),
+    storeEvents: byTask(store.events ?? []),
+    storeOccurrences: byTask(store.occurrences ?? []),
+  };
+  const storedTasks = new Map(store.tasks.map((task) => [task.id, task]));
   /**
    * Record the new state of a list or task.
    * @param {string} type `lists` or `tasks`
@@ -573,7 +1008,9 @@ export function planImport(store, file, mode, { now, ownerId = null, connected =
       }
       let record = null;
       if (overwrite) {
-        record = same(current, incoming, type) ? null : incoming;
+        const unchanged = same(current, incoming, fields[type])
+          && (version === 1 || type === 'lists' || rebuildMatches(incoming, storedTasks.get(incoming.id), context));
+        record = unchanged ? null : incoming;
       }
       else if (later(incoming['last-update-time'], current['last-update-time'])) {
         record = incoming;
@@ -628,7 +1065,10 @@ export function planImport(store, file, mode, { now, ownerId = null, connected =
     rename(final.lists.get(id));
   }
 
-  const changes = { put: { lists: [], tasks: [], memberships: [], notes: [], events: [] }, delete: { memberships: [], notes: [] } };
+  const changes = {
+    put: { lists: [], tasks: [], occurrences: [], memberships: [], notes: [], events: [] },
+    delete: { memberships: [], notes: [], events: [], occurrences: [] },
+  };
   const linkable = (listId, taskId) => final.lists.has(listId) && final.tasks.has(taskId)
     && !foreignLists.has(listId) && !lockedTasks.has(taskId);
 
@@ -646,7 +1086,7 @@ export function planImport(store, file, mode, { now, ownerId = null, connected =
     .sort((a, b) => compare(a['list-id'], b['list-id']) || compare(a.position, b.position));
   for (const incoming of incomingMembers) {
     const current = localMembers.get(keyOf(incoming));
-    if (!linkable(incoming['list-id'], incoming['task-id']) || (current && (!overwrite || same(current, incoming, 'memberships')))) {
+    if (!linkable(incoming['list-id'], incoming['task-id']) || (current && (!overwrite || same(current, incoming, fields.memberships)))) {
       count('memberships', 'skipped');
       continue;
     }
@@ -672,12 +1112,12 @@ export function planImport(store, file, mode, { now, ownerId = null, connected =
   }
 
   // Notes: merge keeps the later version (BAK-6); overwrite takes the backup set of each backup task.
-  const noteTime = (note) => note['edit-time'] ?? note['creation-time'];
+  const { noteTime } = shape;
   const localNotes = new Map(data.notes.map((note) => [note.id, note]));
   for (const incoming of backup.notes) {
     const current = localNotes.get(incoming.id);
     // Connected, an import only creates missing notes: the service takes no edit time for a note text.
-    const changed = current && !connected && (overwrite ? !same(current, incoming, 'notes') : later(noteTime(incoming), noteTime(current)));
+    const changed = current && !connected && (overwrite ? !same(current, incoming, fields.notes) : later(noteTime(incoming), noteTime(current)));
     if (!final.tasks.has(incoming['task-id']) || lockedTasks.has(incoming['task-id']) || (current && !changed)) {
       count('notes', 'skipped');
       continue;
@@ -685,7 +1125,7 @@ export function planImport(store, file, mode, { now, ownerId = null, connected =
     if (current && current['task-id'] !== incoming['task-id']) {
       changes.delete.notes.push([current['task-id'], current.id]);
     }
-    changes.put.notes.push(fromFormatNote(incoming, store.notes.find((note) => note.id === incoming.id)));
+    changes.put.notes.push(shape.writtenNote(incoming, store.notes.find((note) => note.id === incoming.id)));
     count('notes', current ? 'updated' : 'added');
   }
   if (overwrite) {
@@ -700,12 +1140,27 @@ export function planImport(store, file, mode, { now, ownerId = null, connected =
   }
 
   changes.put.lists = [...written.lists.values()];
-  const storedTasks = new Map(store.tasks.map((task) => [task.id, task]));
   for (const record of written.tasks.values()) {
-    const { task, events } = toStoreTask(record, storedTasks.get(record.id), time);
-    changes.put.tasks.push(task);
-    changes.put.events.push(...events);
+    const stored = storedTasks.get(record.id);
+    if (version === 1) {
+      const { task, events } = toStoreTask(record, stored, time);
+      changes.put.tasks.push(task);
+      changes.put.events.push(...events);
+    }
+    else if (binnedNow.has(record.id)) {
+      changes.put.tasks.push({ ...stored, 'deletion-time': time, 'last-update-time': time });
+    }
+    else {
+      const rebuilt = rebuildTask(record, stored, context);
+      changes.put.tasks.push(rebuilt.task);
+      changes.put.occurrences.push(...rebuilt.occurrences);
+      changes.put.events.push(...rebuilt.put);
+      changes.delete.events.push(...rebuilt.remove.map((event) => [record.id, event.id]));
+      changes.delete.occurrences.push(...rebuilt.dropOccurrences.map((number) => [record.id, number]));
+    }
   }
+  // Format 2 replays each new task through the service routes, with `import: true` (todos.server JSON format).
+  changes.replay = version === 2;
   if (connected) {
     changes.queue = importEntries(store, changes, now);
   }

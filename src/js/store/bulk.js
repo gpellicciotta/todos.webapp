@@ -38,8 +38,10 @@ export function snapshot(ctx) {
  * Plan and apply bulk writes in one transaction.
  * The planner receives the snapshot and the store clock's current time, and returns
  * `{changes, result}`: `changes.put` maps store names to records to store,
- * `changes.delete` maps `memberships`, `notes`, and `events` to keys to remove, and `lists` and `tasks` to identifiers to remove.
+ * `changes.delete` maps `memberships`, `notes`, `events`, and `occurrences` to keys to remove,
+ * and `lists` and `tasks` to identifiers to remove.
  * Removing a task also removes its occurrences and events; storing a task also stores its current occurrence.
+ * `changes.put.occurrences` stores other occurrences, each with its `task-id`, after the tasks.
  * With `options.queue`, `changes.queue` lists change queue entries without `seq` to append,
  * and `changes.requeue` lists stored entries, with their `seq`, to replace.
 
@@ -61,6 +63,9 @@ export function applyChanges(ctx, planner, { queue = false } = {}) {
     for (const key of changes.delete?.events ?? []) {
       await request(store(STORES.events).delete(key));
     }
+    for (const key of changes.delete?.occurrences ?? []) {
+      await request(store(STORES.occurrences).delete(key));
+    }
     for (const id of changes.delete?.lists ?? []) {
       await request(store(STORES.lists).delete(id));
     }
@@ -77,6 +82,9 @@ export function applyChanges(ctx, planner, { queue = false } = {}) {
       await request(store(STORES.tasks).put(task));
       const occurrence = task['current-occurrence'];
       await request(store(STORES.occurrences).put({ 'task-id': task.id, ...occurrence }, [task.id, occurrence.occurrence]));
+    }
+    for (const occurrence of changes.put?.occurrences ?? []) {
+      await request(store(STORES.occurrences).put(occurrence, [occurrence['task-id'], occurrence.occurrence]));
     }
     for (const membership of changes.put?.memberships ?? []) {
       await request(store(STORES.memberships).put(membership, [membership['list-id'], membership['task-id']]));

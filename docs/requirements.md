@@ -178,10 +178,13 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ### Backup and Restore
 - BAK-1: Users export a backup of all stored data as one JSON file, in both modes.
 - BAK-2: A backup holds lists, tasks, memberships with positions, notes, and recycle bin entries.
+  It also holds each task's lifecycle rules, occurrences, and events.
 - BAK-3: A backup records a format version, the app version, and the export time.
+  Import also reads backups of the previous format version.
 - BAK-4: The backup file name is `todos-backup-{{yyyy-mm-dd}}.json`.
 - BAK-5: Users import a backup in merge mode or overwrite mode.
 - BAK-6: Merge mode matches lists, tasks, and notes by identifier; the most recently updated version wins.
+  A task that merges in also adds the imported events by identifier, and never removes events.
 - BAK-7: Merge mode adds missing memberships at the end of each list and keeps existing positions.
 - BAK-8: Overwrite mode replaces all data the user owns with the backup contents.
 - BAK-9: Overwrite mode moves owned lists and tasks missing from the backup to the recycle bin.

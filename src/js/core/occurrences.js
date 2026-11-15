@@ -89,9 +89,13 @@ export function recurrenceLabel(rules) {
   return interval === 1 ? { day: 'Daily', week: 'Weekly', month: 'Monthly' }[unit] : `Every ${interval} ${unit}s`;
 }
 
+/** The rule fields that only a recurring task holds. */
+export const RECURRENCE_FIELDS = Object.freeze(['recurrence-interval', 'recurrence-end-date', 'recurrence-end-count', 'timezone']);
+
 /**
  * Complete rules and keep the one-off and recurring shapes apart, as the service does:
- * a recurring task keeps `due-time` and `overdue-handling` empty.
+ * a recurring task keeps `due-time` and `overdue-handling` empty,
+ * and a one-off task keeps the recurrence fields empty, with overdue handling `keep` by default.
  * @param {object} rules rule fields over the defaults
  * @returns {object} the full rules
  */
@@ -101,7 +105,48 @@ export function normalizeRules(rules) {
     full['due-time'] = null;
     full['overdue-handling'] = null;
   }
+  else {
+    for (const field of RECURRENCE_FIELDS) {
+      full[field] = null;
+    }
+    full['overdue-handling'] = full['overdue-handling'] ?? 'keep';
+  }
   return full;
+}
+
+/**
+ * Name the field that breaks the one-off or recurring shape of rules, as the service checks them.
+ * A recurring rule needs `recurrence-interval` and `timezone` and holds no deadline; a one-off rule holds no recurrence field.
+ * @param {object} rules the rules
+ * @returns {string|null} the field, or null when the shape holds
+ */
+export function rulesShapeProblem(rules) {
+  const full = { ...DEFAULT_RULES, ...rules };
+  if (isRecurring(full)) {
+    return ['recurrence-interval', 'timezone'].find((field) => full[field] === null || full[field] === undefined)
+      ?? ['due-time', 'overdue-handling'].find((field) => full[field] !== null && full[field] !== undefined) ?? null;
+  }
+  return RECURRENCE_FIELDS.find((field) => full[field] !== null && full[field] !== undefined) ?? null;
+}
+
+/**
+ * Return the rules after an edit, as the service merges it: setting `recurrence-unit` on a one-off task clears its deadline,
+ * and clearing it clears the recurrence fields and sets overdue handling `keep`.
+ * @param {object} before the rules before
+ * @param {object} edit the rule fields of the edit
+ * @returns {{rules: object, problem: string|null}} the normalized rules, and the field that breaks the shape of the merged
+ *   rules, which the service refuses with `400 Bad Request`; null when the edit applies
+ */
+export function editedRules(before, edit) {
+  const old = { ...DEFAULT_RULES, ...before };
+  const merged = { ...old, ...edit };
+  if (!isRecurring(merged) && isRecurring(old)) {
+    Object.assign(merged, Object.fromEntries(RECURRENCE_FIELDS.map((field) => [field, null])), { 'overdue-handling': 'keep' });
+  }
+  if (isRecurring(merged) && !isRecurring(old)) {
+    Object.assign(merged, { 'due-time': null, 'overdue-handling': null });
+  }
+  return { rules: normalizeRules(merged), problem: rulesShapeProblem(merged) };
 }
 
 /**
@@ -491,11 +536,7 @@ export function eventsTowardsStatus(occurrence, status, rules = DEFAULT_RULES) {
  */
 export function applyRuleEdit(task, edit, time) {
   const before = { ...DEFAULT_RULES, ...task['lifecycle-rules'] };
-  let rules = { ...before, ...edit };
-  if (!isRecurring(rules) && isRecurring(before)) {
-    Object.assign(rules, { 'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null, 'overdue-handling': 'keep' });
-  }
-  rules = normalizeRules(rules);
+  const { rules } = editedRules(before, edit);
   const current = task['current-occurrence'];
   const open = current['close-time'] === null;
   const occurrence = { ...current };
@@ -586,6 +627,255 @@ function laterTime(a, b) {
  */
 export function makeEvent({ id, 'task-id': taskId, type, 'creation-time': time, 'owner-id': ownerId = null, occurrence = 1 }) {
   return { id, 'task-id': taskId, occurrence, 'creation-time': time, 'owner-id': ownerId, type, details: null };
+}
+
+/**
+ * Return the first rules of a task: its current rules with every `edit-lifecycle-rules` event undone, newest first.
+ * Each such event lists the old and new value of every field it changed (todos.server JSON format).
+ * @param {object} rules the current rules
+ * @param {object[]} events the events of the task
+ * @returns {object} the full rules the task was created with
+ */
+export function firstRules(rules, events) {
+  const first = { ...DEFAULT_RULES, ...rules };
+  const edits = events.filter((event) => event.type === 'edit-lifecycle-rules').sort(byEventOrder).reverse();
+  for (const event of edits) {
+    for (const [field, change] of Object.entries(event.details ?? {})) {
+      if (RULE_FIELDS.includes(field)) {
+        first[field] = change?.old ?? null;
+      }
+    }
+  }
+  // A partial history can undo into a broken shape, such as a unit without timezone; the task then starts with its current rules.
+  return normalizeRules(rulesShapeProblem(first) ? rules : first);
+}
+
+/**
+ * Return the `edit-lifecycle-rules` events that a replay applies, from the first rules on, in time order:
+ * an edit that would break the one-off or recurring shape, which the service refuses, is left out.
+ * @param {object} rules the current rules
+ * @param {object[]} events the events of the task
+ * @returns {Set<string>} the identifiers of the edits that apply
+ */
+export function replayableRuleEdits(rules, events) {
+  let active = firstRules(rules, events);
+  const applied = new Set();
+  for (const event of events.filter((candidate) => candidate.type === 'edit-lifecycle-rules').sort(byEventOrder)) {
+    const { rules: next, problem } = editedRules(active, ruleEditOf(event));
+    if (!problem) {
+      applied.add(event.id);
+      active = next;
+    }
+  }
+  return applied;
+}
+
+/**
+ * Return the rule fields that an `edit-lifecycle-rules` event set, with their new values.
+ * @param {object} event the event
+ * @returns {object} the edit
+ */
+export function ruleEditOf(event) {
+  return Object.fromEntries(Object.entries(event.details ?? {}).filter(([field]) => RULE_FIELDS.includes(field))
+    .map(([field, change]) => [field, change?.new ?? null]));
+}
+
+/**
+ * Rebuild the occurrences of a task from its rules and events, as a JSON import replays them.
+ * The task starts with its first rules; the events then apply in time order, each after a roll-over up to its time.
+ * A `roll-over` or `end-recurrence` event closes the occurrence it names, when that is the open current one;
+ * other period ends are left out, and missing ones are written anew, as the server does while replaying.
+ * A user event that names a closed earlier occurrence joins it, and that occurrence folds again.
+ * The rule edits can miss changes, such as deadline edits through `updateTask`, or end in an older value than `rules`.
+ * The replay therefore settles on `rules` with a new `edit-lifecycle-rules` event at `settleAt`, or after the last event.
+ * @param {{id: string, 'creation-time': string}} task the task
+ * @param {object} rules the current rules of the task, which the replay ends with
+ * @param {object[]} events the events of the task
+ * @param {(event: object) => string} newId returns the identifier of a new event from its `task-id`, `type`, `occurrence`,
+ *   and `creation-time`
+ * @param {{settleAt?: string|null}} [options] the moment of the task's last change, such as its `last-update-time`
+ * @returns {{rules: object, current: object, occurrences: object[], events: object[], added: object[]}} the rules after the
+ *   replay, the current occurrence, every occurrence by number, the events that took part, and the events written anew
+ */
+export function replayEvents(task, rules, events, newId, { settleAt = null } = {}) {
+  const goal = normalizeRules(rules);
+  let active = firstRules(rules, events);
+  let occurrence = firstOccurrence(active, task['creation-time']);
+  let own = [];
+  const past = new Map();
+  const kept = [];
+  const added = [];
+  /**
+   * Build a new event, with an identifier from its fields.
+   * @param {object} fields `type`, `creation-time`, and `occurrence`
+   * @returns {object} the event
+   */
+  const create = (fields) => {
+    const base = { 'task-id': task.id, ...fields };
+    return makeEvent({ ...base, id: newId(base) });
+  };
+  /** Move the current occurrence and its events to the past ones. */
+  const retire = () => {
+    past.set(occurrence.occurrence, { occurrence, events: own, rules: active });
+    own = [];
+  };
+  /**
+   * Close the open current occurrence with a period end, and open the next period after a roll-over.
+   * @param {object} event the `roll-over` or `end-recurrence` event
+   */
+  const endPeriod = (event) => {
+    const next = nextPeriod({ start: occurrence['start-time'], end: occurrence['due-time'] }, ruleOf(active));
+    own.push(event);
+    occurrence = applyEvent(occurrence, event, active);
+    if (event.type === 'roll-over') {
+      const number = occurrence.occurrence + 1;
+      retire();
+      occurrence = opened(active, number, next);
+    }
+  };
+  /**
+   * Roll over up to a moment, writing the period ends anew.
+   * @param {string} time the ISO moment
+   */
+  const rollTo = (time) => {
+    const plan = planRollOver(active, occurrence, time);
+    for (const { type, 'creation-time': at } of plan.events) {
+      const event = create({ type, 'creation-time': at, occurrence: occurrence.occurrence });
+      added.push(event);
+      endPeriod(event);
+    }
+  };
+  /**
+   * Apply a rule edit at a moment, as `updateRules` does.
+   * @param {object} edit the rule fields
+   * @param {string} time the ISO moment
+   * @returns {object} the old rules
+   */
+  const editRules = (edit, time) => {
+    const edited = applyRuleEdit({ 'lifecycle-rules': active, 'current-occurrence': occurrence }, edit, time);
+    if (edited['current-occurrence'].occurrence !== occurrence.occurrence) {
+      retire();
+    }
+    const old = active;
+    active = edited['lifecycle-rules'];
+    occurrence = edited['current-occurrence'];
+    return old;
+  };
+  let lastEdit = -Infinity;
+  /**
+   * Reach the current rules at a moment, with an `edit-lifecycle-rules` event for the fields that differ.
+   * The event comes strictly after the last rule edit, since the service merges rule fields by edit time.
+   * @param {string} moment the ISO moment
+   */
+  const settle = (moment) => {
+    const edit = Object.fromEntries(RULE_FIELDS.filter((field) => (active[field] ?? null) !== (goal[field] ?? null))
+      .map((field) => [field, goal[field] ?? null]));
+    if (Object.keys(edit).length === 0) {
+      return;
+    }
+    const time = new Date(Math.max(Date.parse(moment), lastEdit + 1)).toISOString();
+    rollTo(time);
+    const old = editRules(edit, time);
+    const details = Object.fromEntries(RULE_FIELDS.filter((field) => (old[field] ?? null) !== (active[field] ?? null))
+      .map((field) => [field, { old: old[field] ?? null, new: active[field] ?? null }]));
+    const event = { ...create({ type: 'edit-lifecycle-rules', 'creation-time': time, occurrence: occurrence.occurrence }), details };
+    own.push(event);
+    added.push(event);
+  };
+
+  let settled = settleAt === null;
+  let last = task['creation-time'];
+  for (const event of [...events].sort(byEventOrder)) {
+    const time = event['creation-time'];
+    if (!settled && Date.parse(time) > Date.parse(settleAt)) {
+      settle(settleAt);
+      settled = true;
+    }
+    last = Date.parse(time) > Date.parse(last) ? time : last;
+    if (isPeriodEnd(event.type)) {
+      if (isRecurring(active) && occurrence['close-time'] === null && event.occurrence === occurrence.occurrence && occurrence['due-time']) {
+        kept.push(event);
+        endPeriod(event);
+      }
+      continue;
+    }
+    rollTo(time);
+    const earlier = past.get(event.occurrence);
+    if (earlier && event.occurrence < occurrence.occurrence && (USER_EVENT_TYPES.includes(event.type) || event.type === 'expire')) {
+      earlier.events.push(event);
+      earlier.occurrence = refoldOccurrence(earlier.occurrence, earlier.events, earlier.rules);
+      kept.push(event);
+      continue;
+    }
+    if (event.type === 'edit-lifecycle-rules') {
+      // An edit that breaks the rule shape stays in the history without effect, as the service would refuse it.
+      if (!editedRules(active, ruleEditOf(event)).problem) {
+        editRules(ruleEditOf(event), time);
+        lastEdit = Math.max(lastEdit, Date.parse(time));
+      }
+    }
+    else if (event.type === 'reopen' && isRecurring(active) && occurrence['close-time'] !== null) {
+      const fresh = freshOccurrence(active, occurrence, time);
+      if (fresh) {
+        retire();
+        occurrence = fresh;
+      }
+    }
+    else {
+      occurrence = applyEvent(occurrence, event, active) ?? occurrence;
+    }
+    own.push(event);
+    kept.push(event);
+  }
+  // A rule edit after `settleAt`, or none, settles after the last event.
+  settle(settled ? last : settleAt);
+  const occurrences = [...[...past.values()].map((entry) => entry.occurrence), occurrence].sort((a, b) => a.occurrence - b.occurrence);
+  return { rules: active, current: occurrence, occurrences, events: kept, added };
+}
+
+/**
+ * Return the user events that move an occurrence to the count and status of another, such as an exported one:
+ * `reopen` out of `cancelled`, `complete` or `uncomplete` for each missing or extra completion,
+ * then `start`, `unstart`, or `cancel` for the status.
+ * @param {object} occurrence the occurrence
+ * @param {object} wanted the occurrence to match
+ * @param {object} [rules] the lifecycle rules
+ * @returns {string[]} the event types, in order; empty when nothing applies
+ */
+export function eventsTowardsOccurrence(occurrence, wanted, rules = DEFAULT_RULES) {
+  const types = [];
+  let current = occurrence;
+  /**
+   * Apply an event type when its precondition holds.
+   * @param {string} type the event type
+   * @returns {boolean} true when it applied
+   */
+  const step = (type) => {
+    const next = applyEvent(current, { type, 'creation-time': current['start-time'] }, rules);
+    if (!next) {
+      return false;
+    }
+    types.push(type);
+    current = next;
+    return true;
+  };
+  if (current.status === 'cancelled' && wanted.status !== 'cancelled') {
+    step('reopen');
+  }
+  const count = wanted['completion-count'];
+  while (current['completion-count'] !== count && step(current['completion-count'] < count ? 'complete' : 'uncomplete')) {
+    // Each step moves the count by one.
+  }
+  if (wanted.status === 'cancelled' && current.status !== 'cancelled') {
+    step('cancel');
+  }
+  else if (wanted.status === 'in-progress' && current.status === 'ready') {
+    step('start');
+  }
+  else if (wanted.status === 'ready' && current.status === 'in-progress') {
+    step('unstart');
+  }
+  return types;
 }
 
 /**

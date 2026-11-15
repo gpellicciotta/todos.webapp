@@ -141,6 +141,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   A failing precondition throws a `StoreError` with code `conflict`.
 - `updateRules(id, edit)` edits the rules; target and due time edits move the open occurrence.
 - A recurring task keeps `due-time` and `overdue-handling` null, in `createTask`, `updateRules`, and backup imports alike.
+  A one-off task keeps the recurrence fields and `timezone` null, with overdue handling `keep` by default.
 - `updateTask(id, changes)` keeps the status edit of the current views and maps it onto events (`TSK-4`).
   - `completed` posts `complete`, `cancelled` posts `cancel`, and `in-progress` posts `start`.
   - Going back posts `uncomplete`, `unstart`, or `reopen`, as the todos.server T0218 mapping does.
@@ -264,8 +265,9 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `snapshot()` returns `{lists, tasks, memberships, notes, occurrences, events}` with every record, in key order, from one transaction.
 - `applyChanges(planner)` reads the same snapshot and passes it, with the store time, to `planner`.
   - The planner runs synchronously and returns `{changes, result}`; `applyChanges` resolves with `result`.
-  - `changes.put` holds records to store per store name; `changes.delete` holds `memberships`, `notes`, and `events` keys.
+  - `changes.put` holds records to store per store name; `changes.delete` holds `memberships`, `notes`, `events`, and `occurrences` keys.
   - Storing a task stores its current occurrence; removing a task removes its occurrences and events.
+  - `changes.put.occurrences` stores other occurrences, such as those a format 2 backup import rebuilds.
   - Reading, planning, and writing share one transaction, so nothing changes in between and a failure stores nothing.
   - The writes skip the store's validation; the backup module validates every record first.
 

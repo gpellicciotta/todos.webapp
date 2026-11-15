@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { exportBackup, importBackup } from '../../src/js/core/backup.js';
 import { writeServerUrl } from '../../src/js/core/preferences.js';
 import { createApi } from '../../src/js/sync/api.js';
 import { createEngine } from '../../src/js/sync/engine.js';
@@ -268,6 +269,146 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(occurrences.map((occurrence) => occurrence.occurrence)).toEqual([1]);
     const events = await (await ada.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
     expect(events.map((event) => event.type)).toEqual(expect.arrayContaining(['create', 'edit-lifecycle-rules', 'complete']));
+  });
+
+  it('replays a format 2 backup imported while connected, so the server rebuilds a target-3 task at 2 of 3', async () => {
+    const { store: source, clock } = await freshStore();
+    clock.now = Date.now() - 2 * 3_600_000;
+    const task = await source.createTask({ description: 'Paint the fence' });
+    clock.tick(60_000);
+    await source.updateRules(task.id, { 'target-count': 3 });
+    for (let tick = 0; tick < 2; tick++) {
+      clock.tick(60_000);
+      await source.postEvent(task.id, 'complete');
+    }
+    const backup = await exportBackup(source, { appVersion: '0.5.0-pre' });
+    source.close();
+
+    const ada = await device('code-ada');
+    expect(await ada.engine.syncNow()).toBe('synced');
+    await importBackup(ada.store, backup, 'merge', { connected: true });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect(await ada.store.queue.count()).toBe(0);
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+    const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+    expect(stored['lifecycle-rules']['target-count']).toBe(3);
+    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'target-count': 3, 'completion-count': 2, status: 'in-progress' });
+    const events = await (await ada.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
+    expect(events.map((event) => [event.id, event.type]).sort()).toEqual(backup.events.map((event) => [event.id, event.type]).sort());
+  });
+
+  it('replays a partial rule history with one more rule edit, so the server reaches the exported rules', async () => {
+    const { store: source, clock } = await freshStore();
+    clock.now = Date.now() - 2 * 3_600_000;
+    const task = await source.createTask({ description: 'Sand the deck' });
+    clock.tick(60_000);
+    await source.updateRules(task.id, { 'target-count': 3 });
+    const backup = await exportBackup(source, { appVersion: '0.5.0-pre' });
+    source.close();
+    // A rule change that left no event, such as one pulled from another device.
+    backup['lifecycle-rules'][0]['target-count'] = 5;
+    backup.occurrences[0]['target-count'] = 5;
+
+    const ada = await device('code-ada');
+    expect(await ada.engine.syncNow()).toBe('synced');
+    await importBackup(ada.store, backup, 'merge', { connected: true });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+    const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+    expect(stored['lifecycle-rules']['target-count']).toBe(5);
+    expect(stored['current-occurrence']).toMatchObject({ 'target-count': 5, 'completion-count': 0, status: 'ready' });
+  });
+
+  it('replays ended daily series without a user cancel, and the server closes them with end-recurrence', async () => {
+    const day = 86_400_000;
+    const midnight = Math.floor(Date.now() / day) * day;
+    const { store: source, clock } = await freshStore();
+    clock.now = midnight - 3 * day + 9 * 3_600_000;
+    const daily = { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'recurrence-end-count': 2 };
+    const met = await source.createTask({ description: 'Daily met', 'lifecycle-rules': daily });
+    const unmet = await source.createTask({ description: 'Daily unmet', 'lifecycle-rules': daily });
+    const backup = await exportBackup(source, { appVersion: '0.5.0-pre' });
+    source.close();
+    // A connected device keeps no roll-over or completion events made elsewhere: only the exported occurrences tell.
+    backup.events = backup.events.filter((event) => event.type === 'create');
+    const ended = (task, count) => ({
+      'task-id': task.id, occurrence: 2, 'start-time': new Date(midnight - 2 * day).toISOString(), 'due-time': new Date(midnight - day).toISOString(),
+      'target-count': 1, 'completion-count': count, status: count ? 'completed' : 'cancelled', 'close-time': new Date(midnight - day).toISOString(),
+    });
+    backup.occurrences = [ended(met, 1), ended(unmet, 0)];
+
+    const ada = await device('code-ada');
+    expect(await ada.engine.syncNow()).toBe('synced');
+    await importBackup(ada.store, backup, 'merge', { connected: true });
+    expect((await ada.store.queue.all()).filter((entry) => entry.operation === 'post-event').map((entry) => [entry.target['task-id'], entry.fields.type]))
+      .toEqual([[met.id, 'complete']]);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+    for (const [task, status] of [[met, 'completed'], [unmet, 'cancelled']]) {
+      // The hourly run would roll the task over to now; a task request without `import: true` does so at once.
+      const edited = await fetch(`${stack.url}/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${ada.session.token()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: `${task.description}, checked` }),
+      });
+      expect(edited.status).toBe(200);
+      const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+      expect(stored['current-occurrence']).toMatchObject({ occurrence: 2, status, 'close-time': expect.any(String) });
+      const events = await (await ada.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
+      expect(events.map((event) => event.type)).toContain('end-recurrence');
+      expect(events.map((event) => event.type)).not.toContain('cancel');
+    }
+  });
+
+  it('replays a global note of a recurring task as global, and a linked note on its occurrence', async () => {
+    const { store: source, clock } = await freshStore();
+    clock.now = Date.now() - 2 * 3_600_000;
+    const weekly = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC' };
+    const task = await source.createTask({ description: 'Stretch', 'lifecycle-rules': weekly });
+    clock.tick(60_000);
+    const global = await source.addNote(task.id, { text: 'Any week', occurrence: null });
+    const linked = await source.addNote(task.id, { text: 'This week' });
+    expect([global.occurrence, linked.occurrence]).toEqual([null, 1]);
+    const backup = await exportBackup(source, { appVersion: '0.5.0-pre' });
+    source.close();
+
+    const ada = await device('code-ada');
+    expect(await ada.engine.syncNow()).toBe('synced');
+    await importBackup(ada.store, backup, 'merge', { connected: true });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+    const notes = await (await ada.raw('GET', `/api/tasks/${task.id}/notes`, { Accept: 'application/json' })).json();
+    expect(Object.fromEntries(notes.map((note) => [note.id, note.occurrence]))).toEqual({ [global.id]: null, [linked.id]: 1 });
+  });
+
+  it('replays partial rule histories across one-off and recurring changes without a refused rule request', async () => {
+    const { store: source, clock } = await freshStore();
+    clock.now = Date.now() - 2 * 3_600_000;
+    const recurring = await source.createTask({ description: 'Recurring later' });
+    const oneOff = await source.createTask({ description: 'One-off again' });
+    clock.tick(60_000);
+    await source.updateRules(recurring.id, { 'target-count': 3 });
+    await source.updateRules(oneOff.id, { 'target-count': 2 });
+    const backup = await exportBackup(source, { appVersion: '0.5.0-pre' });
+    source.close();
+    // Unlogged changes: the first task became weekly, and the second ended a recurrence whose interval edit was logged.
+    const rulesOf = (task) => backup['lifecycle-rules'].find((rules) => rules['task-id'] === task.id);
+    const editOf = (task) => backup.events.find((event) => event['task-id'] === task.id && event.type === 'edit-lifecycle-rules');
+    Object.assign(rulesOf(recurring), { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null });
+    editOf(recurring).details = { 'target-count': { old: 1, new: 3 }, timezone: { old: null, new: 'UTC' } };
+    editOf(oneOff).details = { 'target-count': { old: 1, new: 2 }, 'recurrence-interval': { old: null, new: 2 } };
+    backup.occurrences = [];
+
+    const ada = await device('code-ada');
+    expect(await ada.engine.syncNow()).toBe('synced');
+    await importBackup(ada.store, backup, 'merge', { connected: true });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+    for (const task of [recurring, oneOff]) {
+      const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+      const expected = Object.fromEntries(Object.entries(rulesOf(task)).filter(([name]) => name !== 'task-id'));
+      expect(stored['lifecycle-rules']).toEqual(expected);
+    }
   });
 
   it('reverts an event the server refuses with 409', async () => {
