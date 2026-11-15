@@ -139,3 +139,6 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 - [2026-11-15] **[Size]**
   Size approved by @giova for 60 files, 2734 lines.
 
+- [2026-11-15] **[Size]**
+  Resumed after @giova approved the size for 60 files and 2734 lines; the round 1 rework at 9543de7 stays verified and unchanged.
+
