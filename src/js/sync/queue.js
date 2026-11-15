@@ -16,6 +16,7 @@ import { createSyncLog } from './sync-log.js';
 
 const LIST_FIELDS = ['name', 'description'];
 const TASK_FIELDS = ['description'];
+const NOTE_FIELDS = ['text', 'occurrence'];
 const OPERATIONS = new Set([
   'createList', 'updateList', 'deleteList', 'restoreList', 'createTask', 'updateTask', 'deleteTask', 'restoreTask',
   'postEvent', 'updateRules', 'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
@@ -362,23 +363,31 @@ async function describe(ctx, operation, args, before, result) {
         kind: 'position', listId: args[1], taskId: args[0], from: before?.position, to: after?.position,
       });
     }
-    case 'addNote':
+    case 'addNote': {
+      const fields = { id: result.id, text: result.text, 'creation-time': result['creation-time'] };
+      // A linked or explicitly global note names its link; an unplaced one leaves it to the service, which rolls over first.
+      if (result.occurrence !== null || args[1]?.occurrence === null) {
+        fields.occurrence = result.occurrence;
+      }
       return [{
         target: { type: 'note', id: result.id, 'task-id': result['task-id'] },
         operation: 'create-note',
-        fields: { id: result.id, text: result.text, 'creation-time': result['creation-time'] },
+        fields,
         'edit-times': {},
         undo: { kind: 'remove-note', taskId: result['task-id'], id: result.id },
       }];
-    case 'editNote':
-      return before.text === result.text ? [] : [{
+    }
+    case 'editNote': {
+      const changed = NOTE_FIELDS.filter((name) => differs(before[name], result[name]));
+      const pick = (note) => Object.fromEntries(changed.map((name) => [name, note[name] ?? null]));
+      return changed.length === 0 ? [] : [{
         target: { type: 'note', id: result.id, 'task-id': result['task-id'] },
         operation: 'edit-note',
-        fields: { text: result.text },
-        'edit-times': { text: result['last-update-time'] },
-
-        undo: { kind: 'note-text', taskId: result['task-id'], id: result.id, from: before.text, to: result.text },
+        fields: pick(result),
+        'edit-times': Object.fromEntries(changed.map((name) => [name, result['last-update-time']])),
+        undo: { kind: 'note-fields', taskId: result['task-id'], id: result.id, from: pick(before), to: pick(result) },
       }];
+    }
     case 'deleteNote':
       return [{
         target: { type: 'note', id: before.id, 'task-id': before['task-id'] },
@@ -483,6 +492,9 @@ export function importEntries(data, changes, now) {
       if (note['last-update-time'] && note['last-update-time'] !== note['creation-time']) {
         fields['last-update-time'] = note['last-update-time'];
       }
+      if (Number.isInteger(note.occurrence)) {
+        fields.occurrence = note.occurrence;
+      }
       content.push(entry({ type: 'note', id: note.id, 'task-id': note['task-id'] }, 'create-note', fields,
         { kind: 'remove-note', taskId: note['task-id'], id: note.id }));
     }
@@ -570,7 +582,17 @@ function planUndo(data, undo, later = []) {
       }
       break;
     }
+    case 'note-fields': {
+      // Each field goes back only while it still holds the rejected value.
+      const note = data.notes.find((candidate) => candidate.id === undo.id);
+      const back = Object.keys(undo.to).filter((name) => note && (note[name] ?? null) === undo.to[name]);
+      if (back.length > 0) {
+        changes.put.notes = [{ ...note, ...Object.fromEntries(back.map((name) => [name, undo.from[name]])) }];
+      }
+      break;
+    }
     case 'note-text': {
+      // Entries queued before note links existed.
       const note = data.notes.find((candidate) => candidate.id === undo.id);
       if (note?.text === undo.to) {
         changes.put.notes = [{ ...note, text: undo.from }];

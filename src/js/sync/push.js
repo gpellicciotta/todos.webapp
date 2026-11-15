@@ -78,7 +78,7 @@ function toRequest(entry, mapList) {
     case 'create-note':
       return ['POST', `/api/tasks/${target['task-id']}/notes`, { body: fields }];
     case 'edit-note':
-      return ['PUT', `/api/tasks/${target['task-id']}/notes/${target.id}`, { body: fields, editTime }];
+      return ['PUT', `/api/tasks/${target['task-id']}/notes/${target.id}`, { body: { ...fields, 'edit-times': times }, editTime }];
     case 'delete-note':
       return ['DELETE', `/api/tasks/${target['task-id']}/notes/${target.id}`, { editTime }];
     default:

@@ -216,3 +216,94 @@ describe('schema upgrade', () => {
     }
   });
 });
+
+describe('note links to occurrences', () => {
+  const DAILY = { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC' };
+  let daily;
+
+  beforeEach(async () => {
+    daily = await store.createTask({ description: 'Water the plants', 'lifecycle-rules': DAILY });
+    clock.tick();
+  });
+
+  it('links a note on a recurring task to the occurrence whose period holds its creation time', async () => {
+    expect((await store.addNote(daily.id, { text: 'Day one' })).occurrence).toBe(1);
+    clock.tick(24 * 3_600_000);
+    await store.rollOverTask(daily.id);
+    expect((await store.addNote(daily.id, { text: 'Day two' })).occurrence).toBe(2);
+  });
+
+  it('keeps a note on a one-off task global unless the caller links it', async () => {
+    expect((await store.addNote(task.id, { text: 'Global' })).occurrence).toBeNull();
+    expect((await store.addNote(task.id, { text: 'Linked', occurrence: 1 })).occurrence).toBe(1);
+    expect((await store.addNote(daily.id, { text: 'Whole task', occurrence: null })).occurrence).toBeNull();
+  });
+
+  it('keeps a note global when its creation time lies in no stored period', async () => {
+    const connected = await freshStore({ tracking: () => true });
+    const recurring = await connected.store.createTask({ description: 'Walk', 'lifecycle-rules': DAILY });
+    connected.clock.tick(24 * 3_600_000);
+    // Connected, the service rolls over; the period holding the note is not stored yet.
+    expect((await connected.store.addNote(recurring.id, { text: 'Late' })).occurrence).toBeNull();
+    connected.store.close();
+  });
+
+  it('links by the newest occurrence that began by the creation time, as the service does', async () => {
+    const WEEKLY = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC' };
+    const weekly = await store.createTask({ description: 'Mow', 'lifecycle-rules': WEEKLY });
+    const first = {
+      occurrence: 1, 'start-time': '2026-11-02T00:00:00.000Z', 'due-time': '2026-11-09T00:00:00.000Z', 'target-count': 1,
+      'completion-count': 0, status: 'cancelled', 'close-time': '2026-11-04T09:00:00.000Z',
+    };
+    // A reopen opened occurrence 2 in the same week; an end rule then closed it at noon.
+    const second = { ...first, occurrence: 2, 'due-time': '2026-11-04T12:00:00.000Z', 'close-time': '2026-11-04T12:00:00.000Z' };
+    for (const current of [first, second]) {
+      await store.applyChanges((data) => ({
+        changes: { put: { tasks: [{ ...data.tasks.find((candidate) => candidate.id === weekly.id), 'current-occurrence': current }] } }, result: null,
+      }));
+    }
+    clock.now = Date.parse('2026-11-04T13:00:00.000Z');
+    // Occurrence 1 still spans the time, but occurrence 2 began later and has ended: the note stays global.
+    expect((await store.addNote(weekly.id, { text: 'After the end' })).occurrence).toBeNull();
+    clock.now = Date.parse('2026-11-04T11:00:00.000Z');
+    expect((await store.addNote(weekly.id, { text: 'Before noon' })).occurrence).toBe(2);
+  });
+
+  it.each([
+    ['0', 0, 'invalid'],
+    ['a fraction', 1.5, 'invalid'],
+    ['a string', '1', 'invalid'],
+  ])('refuses a link to %s', async (_, occurrence, code) => {
+    await expect(store.addNote(daily.id, { text: 'Bad', occurrence })).rejects.toMatchObject({ field: 'occurrence', code });
+    const note = await store.addNote(daily.id, { text: 'Good' });
+    await expect(store.editNote(note.id, { occurrence })).rejects.toMatchObject({ field: 'occurrence', code });
+  });
+
+  it('refuses a link past the current occurrence with a conflict', async () => {
+    await expect(store.addNote(task.id, { text: 'Future', occurrence: 2 })).rejects.toBeInstanceOf(StoreError);
+    await expect(store.addNote(task.id, { text: 'Future', occurrence: 2 })).rejects.toMatchObject({ code: 'conflict' });
+    const note = await store.addNote(task.id, { text: 'Now' });
+    await expect(store.editNote(note.id, { occurrence: 2 })).rejects.toMatchObject({ code: 'conflict' });
+    expect(await store.notesOfTask(task.id)).toEqual([note]);
+  });
+
+  it('changes and clears a link, setting the last update time and keeping the text', async () => {
+    clock.tick(24 * 3_600_000);
+    await store.rollOverTask(daily.id);
+    const note = await store.addNote(daily.id, { text: 'Pruned' });
+    clock.tick(60_000);
+    const moved = await store.editNote(note.id, { occurrence: 1 });
+    expect(moved).toMatchObject({ text: 'Pruned', occurrence: 1, 'last-update-time': new Date(clock.now).toISOString() });
+    clock.tick(60_000);
+    const cleared = await store.editNote(note.id, { occurrence: null });
+    expect(cleared).toMatchObject({ text: 'Pruned', occurrence: null });
+    const both = await store.editNote(note.id, { text: 'Pruned twice', occurrence: 2 });
+    expect(both).toMatchObject({ text: 'Pruned twice', occurrence: 2 });
+    expect(await store.notesOfTask(daily.id)).toEqual([both]);
+  });
+
+  it('refuses an edit without text or link', async () => {
+    const note = await store.addNote(daily.id, { text: 'Keep' });
+    await expect(store.editNote(note.id, {})).rejects.toBeInstanceOf(ValidationError);
+  });
+});

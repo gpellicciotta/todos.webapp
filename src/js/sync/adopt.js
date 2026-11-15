@@ -180,7 +180,10 @@ async function runStep(api, { kind, record }) {
       break;
     case 'note':
       request = ['POST', `/api/tasks/${record['task-id']}/notes`, {
-        body: { id: record.id, text: record.text, 'creation-time': record['creation-time'], 'last-update-time': record['last-update-time'] ?? record['creation-time'] },
+        body: {
+          id: record.id, text: record.text, occurrence: record.occurrence ?? null,
+          'creation-time': record['creation-time'], 'last-update-time': record['last-update-time'] ?? record['creation-time'],
+        },
         editTime: record['creation-time'],
       }];
       break;

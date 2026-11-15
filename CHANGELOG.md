@@ -46,6 +46,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Replaced the editor's status control with event action buttons, and added a Target count field.
 - FrontEnd: Saved target count, deadline, and overdue behavior as lifecycle rule edits, hiding the deadline of recurring tasks.
 - FrontEnd: Renamed the Last activity sort to Last update, and judged Finished today only by the occurrence close time.
+- FrontEnd: Tied notes to an occurrence or the whole task, shown by occurrence and changed with a Belongs to choice.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

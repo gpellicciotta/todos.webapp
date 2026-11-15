@@ -60,7 +60,8 @@ Keyed out of line by `[list-id, task-id]`, since IndexedDB key paths cannot hold
 ### `notes`
 Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
 - `id`, `task-id`, `text`, `owner-id`, `occurrence`, `creation-time`, `last-update-time`.
-- `owner-id` is null for local notes; `last-update-time` equals `creation-time` until the first edit; `occurrence` is null.
+- `owner-id` is null for local notes; `last-update-time` equals `creation-time` until the first edit.
+- `occurrence` numbers the occurrence the note belongs to, or is null for a global note (`NOT-6`).
 - The key order lets one key range read all notes of a task.
 - Editing or deleting by note id scans the keys only, matching the second key part.
 
@@ -95,6 +96,14 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - Note texts hold 1 to 2000 characters after trimming surrounding spaces (`NOT-1`).
 - A task lists its notes newest first, by creation time, then by identifier (`NOT-3`).
 - Adding, editing, or deleting a note sets the task's `last-update-time` (`NOT-5`).
+- Note links follow the todos.server business logic spec, Notes and Occurrences (`NOT-6`):
+  - `addNote` without `occurrence` takes the newest occurrence that began by the creation time.
+    That occurrence counts only while its period still runs at the creation time.
+  - A one-off task, or a time in no period, keeps the note global; `occurrence: null` keeps any note global.
+  - `editNote(id, {text, occurrence})` changes the text, the link, or both; a plain string changes the text.
+  - In local mode a recurring task rolls over before a note links to it.
+  - A link below 1 throws a `ValidationError`.
+  - A link past the current occurrence throws a `StoreError` with code `conflict`.
 - An unknown task or note throws a `StoreError` with code `not-found`.
 - Invalid input throws a `ValidationError` naming the field and the rule, and stores nothing.
 - Every write runs in one transaction, so a failure leaves no partial change.
@@ -296,6 +305,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   - Events: `post-event`, sent in order as `POST /api/tasks/{{task-id}}/events` with `id`, `type`, `creation-time`, and `occurrence`.
   - Memberships: `add-`, `move-`, and `remove-membership`.
   - Notes: `create-note`, `edit-note`, and `delete-note`.
+    A create sends `occurrence` when linked or explicitly global; otherwise the service places the note.
+    An edit sends the changed `text` and `occurrence` with their `edit-times`; undo restores both.
 - One request per entry, in `seq` order. A retry repeats the request, and every create is idempotent by identifier (`SYN-10`).
 - Requests send `Authorization`, `Edit-Time`, and `Client-Version: todos.webapp/{{version}}` without `-pre`.
 - Requests never send `If-Match`.
@@ -332,6 +343,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
     `list-map` records the old identifier.
   - Name of a trashed list, or a trashed local list with a taken name: rename to `{{name}} (local)`, `(local 2)`, and so on.
 - It uploads lists, tasks with their rules, memberships, the user events of each task, and notes, then the recycle bin states.
+  Each note carries its `occurrence` link, null for a global note.
   Each is one request; events replay with `import: true`, which the uploading task owner may send.
 - Memberships go by list and position, so each list keeps its manual order.
 - A create that finds the row (`200`) is followed by an update with the local edit times.
@@ -356,6 +368,7 @@ and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6
   - A pulled one-off task past its due time with handling `cancel` stays expired, as the local overdue handling expired it.
 
   - A row whose creation is still queued is never replaced. A pending trash, membership change, or note edit or delete stays.
+    A queued note edit keeps its own fields, `text` or `occurrence`, and takes the other from the feed.
   - A replay that loses a field gets `conflicts` in its reply. The app logs `overwritten` and applies the kept value, unless a later queued change sets that field.
   - Conflicts on `existence` of a membership are logged only; the next feed change corrects the row.
   - Notes never conflict with each other, since each is its own record (`SYN-7`).

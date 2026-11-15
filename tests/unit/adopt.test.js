@@ -39,6 +39,16 @@ async function fill(store, listCount, taskCount) {
 }
 
 describe('adopting local data on first connect', () => {
+  it('uploads the occurrence link of each note', async () => {
+    const { store, service, api } = await setup();
+    const daily = await store.createTask({ description: 'Water', 'lifecycle-rules': { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC' } });
+    await store.addNote(daily.id, { text: 'Linked' });
+    await store.addNote(daily.id, { text: 'Whole task', occurrence: null });
+    await adopt({ store, api, account: ACCOUNT });
+    const posts = service.calls.filter((call) => call.method === 'POST' && call.path.endsWith('/notes'));
+    expect(posts.map((call) => [call.body.text, call.body.occurrence])).toEqual([['Linked', 1], ['Whole task', null]]);
+  });
+
   it('merges a local list into the account list with the same name', async () => {
     const { store, service, api } = await setup({ lists: [{ id: 'acct-1', name: 'groceries', description: 'Weekly' }] });
     const local = await store.createList({ name: 'Groceries', description: 'Mine' });

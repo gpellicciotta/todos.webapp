@@ -1,7 +1,11 @@
 /**
- * Note thread of the task editor: the add note field on top, then the notes, newest first (`NOT-1` to `NOT-5`).
+ * Note thread of the task editor: the add note field on top, then the notes, newest first (`NOT-1` to `NOT-6`).
  *
+ * The thread shows the global notes, then the notes of the current occurrence, then those of earlier ones (`NOT-6`).
+ * Each linked note shows its occurrence, so notes of past periods stay reachable for edits and deletes.
  * Each note shows its author, its time, and "edited" after a change (`NOT-2`).
+ * The edit form of a note also chooses what it belongs to: the whole task, or one occurrence, newest first.
+ * It offers every occurrence up to the current one; while connected it labels the earlier ones from the server route.
  * Own notes, every note in local mode, have Edit and Delete in a More menu; deleting asks in place (`NOT-4`).
  * Notes of others show Collaborator, or Former member when their author's account was deleted.
 
@@ -13,15 +17,17 @@
 import { TEXT_MAX } from '../store/notes.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 import { createEditorField } from './editor-panel.js';
+import { dayFormat, occurrenceLabel } from './task-history.js';
 import { spriteIcon } from './task-list.js';
 
 /** Thread strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   add: 'Add note', placeholder: 'Add a note', list: 'Notes, newest first', you: 'You', edited: 'edited',
+  listLinked: 'Notes on the whole task, then on the current occurrence, then on earlier ones, newest first',
   other: 'Collaborator', formerMember: 'Former member',
   more: 'More actions for your note of ', edit: 'Edit', editLabel: 'Edit note', save: 'Save note',
   cancel: 'Cancel', delete: 'Delete', keep: 'Keep', confirm: 'Delete this note?',
-  confirmOf: 'Delete your note of ', required: 'Enter a note.',
+  confirmOf: 'Delete your note of ', required: 'Enter a note.', link: 'Belongs to', wholeTask: 'Whole task',
   tooLong: `A note holds at most ${TEXT_MAX} characters.`,
 });
 
@@ -82,10 +88,13 @@ function button(doc, className, text, role) {
  * @param {string} options.taskId the task identifier
  * @param {(error: unknown) => void} options.onError reports a change that could not be saved
  * @param {string} [options.locale] the locale of note times, the user's by default
+ * @param {() => Promise<object[]|null>} [options.loadOccurrences] reads the occurrences the store may lack, such as
+ *   the server's while connected; the edit form calls it once per current occurrence, and null keeps the known ones
  * @returns {{element: HTMLElement, render: (notes: object[], readOnly: boolean) => void, destroy: () => void}} the thread
  */
-export function createNoteThread({ document: doc = globalThis.document, store, taskId, onError, locale }) {
+export function createNoteThread({ document: doc = globalThis.document, store, taskId, onError, locale, loadOccurrences = null }) {
   const format = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const day = dayFormat(locale);
   const element = doc.createElement('div');
   element.className = 'note-thread';
   const add = doc.createElement('div');
@@ -105,6 +114,8 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
   element.append(add, list);
   let menus = [];
   let notes = [];
+  let links = { occurrences: [], current: null };
+  let loaded = { current: null, occurrences: [] };
   let readOnly = false;
   let userId = null;
   let editing = null;
@@ -136,7 +147,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
     try {
       await change();
       done();
-      render(notes, readOnly, userId);
+      render(notes, readOnly, userId, links);
       field.control.focus();
     }
     catch (failure) {
@@ -151,8 +162,56 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
   function leave(note) {
     editing = null;
     confirming = null;
-    render(notes, readOnly, userId);
+    render(notes, readOnly, userId, links);
     list.querySelector(`[data-note-id="${note.id}"] [data-role="more"]`)?.focus();
+  }
+
+  /**
+   * Name the occurrence a note belongs to by its number and period, or by its number alone when it is not known here.
+   * @param {number} number the occurrence number
+   * @returns {string} the label
+   */
+  function labelOf(number) {
+    const occurrence = [...links.occurrences, ...loaded.occurrences].find((candidate) => candidate.occurrence === number);
+    return occurrence ? occurrenceLabel(occurrence, day) : `#${number}`;
+  }
+
+  /**
+   * Render the choice of what a note belongs to: the whole task, or one occurrence, newest first.
+   * @param {object} note the note
+   * @returns {HTMLElement} the field
+   */
+  function renderLink(note) {
+    const newest = Math.max(links.current ?? 0, Number.isInteger(note.occurrence) ? note.occurrence : 0);
+    const numbers = Array.from({ length: newest }, (_, index) => index + 1);
+    const choices = [{ value: '', label: STRINGS.wholeTask },
+      ...numbers.reverse().map((number) => ({ value: String(number), label: labelOf(number) }))];
+    const link = createEditorField(doc, { label: STRINGS.link, name: 'note-link', tag: 'select', choices });
+    link.control.value = editing.link;
+    link.control.dataset.role = 'link';
+    link.control.addEventListener('change', () => {
+      editing.link = link.control.value;
+    });
+    return link.element;
+  }
+
+  /**
+   * Read the occurrences the store may lack once per current occurrence, then label the open edit form with them.
+   */
+  function loadLabels() {
+    if (!loadOccurrences || loaded.current === links.current) {
+      return;
+    }
+    const current = links.current;
+    loaded = { current, occurrences: [] };
+    loadOccurrences().then((occurrences) => {
+      if (occurrences && loaded.current === current) {
+        loaded = { current, occurrences };
+        render(notes, readOnly, userId, links);
+      }
+    }, () => {
+      // The known occurrences keep labeling the choice.
+    });
   }
 
   /**
@@ -183,13 +242,14 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
       const error = noteError(edit.control.value);
       edit.setError(error);
       if (!error) {
-        save(() => store.editNote(note.id, edit.control.value), () => {
+        const occurrence = editing.link === '' ? null : Number(editing.link);
+        save(() => store.editNote(note.id, { text: edit.control.value, occurrence }), () => {
           editing = null;
         });
       }
     });
     row.append(cancel, submit);
-    item.append(edit.element, row);
+    item.append(edit.element, renderLink(note), row);
   }
 
   /**
@@ -242,6 +302,12 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
     time.textContent = when;
     const edited = Boolean(note['last-update-time']) && note['last-update-time'] !== note['creation-time'];
     meta.append(author, ' · ', time, ...(edited ? [` · ${STRINGS.edited}`] : []));
+    if (Number.isInteger(note.occurrence)) {
+      const mark = doc.createElement('span');
+      mark.className = 'note__occurrence';
+      mark.textContent = labelOf(note.occurrence);
+      meta.append(' · ', mark);
+    }
     header.append(meta);
     if (!readOnly && own) {
 
@@ -259,10 +325,14 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
         menu.append(entry);
       }
       menus.push(attachMenu(more, menu, { onSelect: (entry) => {
-        editing = entry.dataset.role === 'menu-edit' ? { id: note.id, draft: note.text } : null;
+        editing = entry.dataset.role === 'menu-edit'
+          ? { id: note.id, draft: note.text, link: Number.isInteger(note.occurrence) ? String(note.occurrence) : '' } : null;
         confirming = entry.dataset.role === 'menu-delete' ? note.id : null;
-        render(notes, readOnly, userId);
+        render(notes, readOnly, userId, links);
         list.querySelector(`[data-note-id="${note.id}"] [data-role="${editing ? 'edit' : 'keep'}"]`)?.focus();
+        if (editing) {
+          loadLabels();
+        }
       } }));
       header.append(more, menu);
     }
@@ -284,21 +354,29 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
 
   /**
    * Show the notes, keeping focus on the same control of the same note.
-   * @param {object[]} next the notes, newest first
+   * With a current occurrence, the global notes come first, then those of the current occurrence; others stay hidden.
+   * @param {object[]} next the notes of the task, newest first
    * @param {boolean} locked whether the task is read-only, such as a deleted task
    * @param {number|string|null} [user] the connected user, null in local mode, which tells own notes
+   * @param {{occurrences: object[], current: number|null}} [context] the occurrences of the task and the current number
    */
-  function render(next, locked, user = null) {
+  function render(next, locked, user = null, context = { occurrences: [], current: null }) {
     const focused = doc.activeElement;
     const noteId = list.contains(focused) ? focused.closest('.note')?.dataset.noteId : null;
     const role = noteId ? focused.dataset.role : null;
     notes = next;
+    links = context;
     readOnly = locked;
     userId = user;
     add.hidden = locked;
     menus.forEach((menu) => menu.destroy());
     menus = [];
-    list.replaceChildren(...notes.map(renderNote));
+    const global = notes.filter((note) => !Number.isInteger(note.occurrence));
+    const linked = notes.filter((note) => Number.isInteger(note.occurrence));
+    const shown = links.current === null ? notes : [...global, ...linked.filter((note) => note.occurrence === links.current),
+      ...linked.filter((note) => note.occurrence !== links.current)];
+    list.setAttribute('aria-label', links.current === null || linked.length === 0 ? STRINGS.list : STRINGS.listLinked);
+    list.replaceChildren(...shown.map(renderNote));
     if (role) {
       list.querySelector(`[data-note-id="${noteId}"] [data-role="${role}"]`)?.focus();
     }

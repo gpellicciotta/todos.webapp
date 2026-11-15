@@ -174,6 +174,14 @@ describe('merging a pulled row', () => {
     expect([...result.notes.values()].map((n) => [n.id, n.text])).toEqual([['n1', 'Mine'], ['n2', 'Changed'], ['n3', 'Note n3']]);
   });
 
+  it('keeps the local link of a note while its link change is queued, and takes the service text', () => {
+    const local = { ...empty(), tasks: [task('t1')], notes: [note('n1', 't1', { occurrence: 2 })] };
+    const pending = [entry('edit-note', { type: 'note', id: 'n1', 'task-id': 't1' }, { occurrence: 2 })];
+    const page = feed({ notes: [note('n1', 't1', { text: 'Theirs', occurrence: 1, revision: 12 })] });
+    const result = applied(local, plan(local, page, { pending }).changes);
+    expect(result.notes.get('n1')).toMatchObject({ text: 'Theirs', occurrence: 2 });
+  });
+
   it('maps the feed note fields owner-id, last-update-time, and occurrence to the local note', () => {
     const page = feed({ notes: [note('n1', 't1', { 'last-update-time': '2026-11-04T10:00:00.000Z', occurrence: 1 }), note('n2', 't1', { 'owner-id': null })] });
     const result = applied(empty(), plan(empty(), page).changes).notes;
@@ -291,7 +299,7 @@ describe('replayed changes that lost a field', () => {
     expect(applied(local, changes).tasks.get('t1').description).toBe('Newer');
   });
 
-  it('applies the kept position of a membership and the kept text of a note', () => {
+  it('applies the kept position of a membership and the kept text and link of a note', () => {
     const local = { ...empty(), memberships: [membership('l1', 't1', { position: 'a5' })], notes: [note('n1', 't1', { text: 'Mine' })] };
     const moved = planConflicts(local, entry('move-membership', { type: 'membership', id: 't1', 'list-id': 'l1' }),
       [{ field: 'position', 'list-id': 'l1', sent: 'a5', kept: 'a2', 'kept-edit-time': T0 }], []);
@@ -299,6 +307,9 @@ describe('replayed changes that lost a field', () => {
     const edited = planConflicts(local, entry('edit-note', { type: 'note', id: 'n1', 'task-id': 't1' }),
       [{ field: 'text', sent: 'Mine', kept: 'Theirs', 'kept-edit-time': T0 }], []);
     expect(applied(local, edited).notes.get('n1').text).toBe('Theirs');
+    const linked = planConflicts(local, entry('edit-note', { type: 'note', id: 'n1', 'task-id': 't1' }),
+      [{ field: 'occurrence', sent: null, kept: 1, 'kept-edit-time': T0 }], []);
+    expect(applied(local, linked).notes.get('n1').occurrence).toBe(1);
   });
 
   it('applies the kept value of a rule field to the rules and the open occurrence', () => {

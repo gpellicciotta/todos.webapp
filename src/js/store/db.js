@@ -174,7 +174,7 @@ export async function openStore({
     moveInList: (taskId, listId, placement) => tasks.moveInList(ctx, taskId, listId, placement),
     listMemberships: () => tasks.listMemberships(ctx),
     addNote: (taskId, input) => notes.addNote(ctx, taskId, input),
-    editNote: (id, text) => notes.editNote(ctx, id, text),
+    editNote: (id, changes) => notes.editNote(ctx, id, changes),
     deleteNote: (id) => notes.deleteNote(ctx, id),
     notesOfTask: (taskId) => notes.notesOfTask(ctx, taskId),
     deleteList: (id) => bin.deleteList(ctx, id),

@@ -341,6 +341,25 @@
   list-style: none;
 }
 
+/* The notes of an occurrence sit under it, indented behind a rule, keeping their line breaks. */
+.task-history__notes {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  padding-inline-start: var(--space-3);
+  border-inline-start: var(--border-width) solid var(--color-border);
+  list-style: none;
+}
+
+.task-history__note {
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.task-history__note-time {
+  color: var(--color-text-muted);
+}
+
 .editor-panel__body > .banner {
   margin-block-start: var(--space-4);
 }

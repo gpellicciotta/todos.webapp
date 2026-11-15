@@ -27,7 +27,7 @@ import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 
 import { DESCRIPTION_MAX } from '../store/tasks.js';
 import { createEditorField } from './editor-panel.js';
-import { createTaskHistory } from './task-history.js';
+import { createTaskHistory, readServerOccurrences } from './task-history.js';
 import { createNoteThread } from './notes.js';
 import { countWords, make as el, showsCount, spriteIcon, STATUS_ACTIONS, STATUS_LABELS } from './task-list.js';
 
@@ -549,7 +549,9 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     }
   });
 
-  const thread = createNoteThread({ document: doc, store, taskId, onError: fail, locale });
+  // While connected the store holds only the current occurrence, so the note link choice labels the others from the server.
+  const loadOccurrences = () => (api && session?.state?.() === 'connected' ? readServerOccurrences(api, taskId) : Promise.resolve(null));
+  const thread = createNoteThread({ document: doc, store, taskId, onError: fail, locale, loadOccurrences });
   section('notes', STRINGS.notes).append(thread.element);
   const history = createTaskHistory({ document: doc, store, taskId, api, session, locale });
   section('history', STRINGS.history).append(history.element);
@@ -607,8 +609,9 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   /**
    * Fill the fields from the stored task, its lists, and its notes.
    * @param {object[]} notes the notes, newest first
+   * @param {object[]} occurrences the stored occurrences of the task
    */
-  function fill(notes) {
+  function fill(notes, occurrences) {
     const deleted = Boolean(task['deletion-time']);
     const wasDeleted = shownDeleted;
     shownDeleted = Boolean(task['deletion-time']);
@@ -662,7 +665,10 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
       return item;
     }));
     showOptions(!listbox.hidden);
-    thread.render(notes, deleted || !can(role, 'add-note'), userId);
+    // The task holds the newest copy of its current occurrence; the store may lack the earlier ones while connected.
+    const current = task['current-occurrence'];
+    const known = [...occurrences.filter((occurrence) => occurrence.occurrence !== current.occurrence), current];
+    thread.render(notes, deleted || !can(role, 'add-note'), userId, { occurrences: known, current: current.occurrence });
     details.textContent = [[STRINGS.created, 'creation-time'], [STRINGS.updated, 'last-update-time']]
       .map(([label, key]) => `${label}${format.format(new Date(task[key]))}`).join(' · ');
     if (wasDeleted && !deleted) {
@@ -687,8 +693,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
         panel.close();
         return;
       }
-      const [all, ids, notes, user] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId),
-        store.queue?.getState?.('user-id')]);
+      const [all, ids, notes, occurrences, user] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId),
+        store.occurrencesOfTask(taskId), store.queue?.getState?.('user-id')]);
       if (destroyed) {
         return;
       }
@@ -696,7 +702,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
       userId = user ?? null;
       lists = [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
       members = ids;
-      fill(notes);
+      fill(notes, occurrences);
+      history.showNotes(notes);
       if (first && !addFieldKeepsFocus(doc)) {
         (task['deletion-time'] ? restore : description.control).focus();
       }

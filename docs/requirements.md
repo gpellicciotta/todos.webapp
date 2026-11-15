@@ -103,6 +103,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - NOT-3: A task shows its notes in creation order, newest first.
 - NOT-4: Users edit or delete their own notes.
 - NOT-5: Adding, editing, or deleting a note updates the task's last update time.
+- NOT-6: A note belongs to the whole task or to one occurrence; users change that link when editing.
+  A new note on a recurring task belongs to the occurrence of its creation time.
+  A new note on a one-off task is global.
+  A task shows its global notes, then its linked notes; the history shows each occurrence's notes.
 
 ### Overdue Handling
 - OVD-1: A task is overdue when its due time has passed and its status is `ready` or `in-progress`.

@@ -647,11 +647,15 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
     A recurring task hides Due and Overdue behavior, since its periods set its due times.
     Past its period end, the status shows To do with count 0 until the task rolls over.
   - Lists: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
-  - Notes: an add note field, then the note thread, newest first (`NOT-1` to `NOT-5`).
+  - Notes: an add note field, then the note thread, newest first (`NOT-1` to `NOT-6`).
+    The thread shows global notes, then those of the current occurrence, then those of earlier ones.
+    Each linked note shows its occurrence, such as "#2 · Nov 5 – Nov 5".
   - History: Show history lists the occurrences and the events, newest first (`TSK-17`).
     An occurrence shows its number, period, status, and counts; a closed one still To do reads Missed.
     A closed one still In progress reads Partly done.
     An event shows its time, what happened, such as Ticked or Period ended, and its occurrence.
+    Under each occurrence come its notes, newest first, each with its time.
+    An open history shows note changes without a refresh.
     While connected it reads the server routes; in local mode, or when they fail, it reads the local stores.
     [task-history.js](../../src/js/views/task-history.js) builds it.
   - Details: created, last updated, and owner when connected (`TSK-12`).
@@ -659,6 +663,9 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
 - Each note shows its author when connected: You for own notes, Collaborator for others, Former member for a deleted account.
 - Each note shows its time, and "edited" after a change; only own notes have Edit and Delete.
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
+- The note edit form has a Belongs to select: Whole task, then occurrences 1 to the current one, newest first.
+  Options carry the history labels; while connected, the edit form reads earlier periods from the server.
+  It shows the current link as text, works by keyboard, and saves with Save note on any task.
 - A viewer sees all fields read-only and a banner naming the list owner (`SHR-4`).
   Only the task owner or the owner of a list holding the task sees Delete task.
 - A deleted task opens read-only with a Restore button (`BIN-6`).

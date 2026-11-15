@@ -319,3 +319,55 @@ test.describe('recurring tasks in local mode', () => {
     expect(problems).toEqual([]);
   });
 });
+
+test.describe('note links in local mode', () => {
+  test.use({ timezoneId: 'UTC' });
+
+  test('a note on a daily task shows on its occurrence in the history, and can be made global', async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(WIDE);
+    await page.clock.install({ time: new Date('2026-11-04T10:00:00Z') });
+    await seed(page);
+    const panel = await openEditor(page);
+    await panel.getByLabel('Repeat').selectOption('day');
+    await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Daily');
+    for (const text of ['Watered the roses.', 'Pruned the hedge.']) {
+      await panel.getByRole('textbox', { name: 'Add note' }).fill(text);
+      await panel.getByRole('button', { name: 'Add note' }).click();
+      await expect(panel.locator('.note', { hasText: text }).locator('.note__occurrence')).toContainText('#1');
+    }
+    await panel.getByRole('button', { name: 'Show history' }).click();
+    const firstOccurrence = panel.locator('[data-history="occurrences"] [data-occurrence="1"]');
+    await expect(firstOccurrence.locator('.task-history__note')).toHaveText([/Pruned the hedge\./, /Watered the roses\./]);
+
+    // While the note is edited its text sits in a field, so find it by its identifier.
+    const rosesId = await panel.locator('.note', { hasText: 'Watered the roses.' }).getAttribute('data-note-id');
+    const roses = panel.locator(`.note[data-note-id="${rosesId}"]`);
+    await roses.getByRole('button', { name: /More actions for your note/ }).click();
+    await roses.getByRole('menuitem', { name: 'Edit' }).click();
+    const link = roses.getByLabel('Belongs to');
+    await expect(link.locator('option:checked')).toContainText('#1');
+    await link.focus();
+    await page.keyboard.press('ArrowUp');
+    await expect(link).toHaveValue('');
+    await roses.getByRole('button', { name: 'Save note' }).click();
+    await expect(roses.locator('.note__occurrence')).toHaveCount(0);
+    await expect(panel.locator('.note').first()).toContainText('Watered the roses.');
+    await panel.getByRole('button', { name: 'Refresh history' }).click();
+    await expect(firstOccurrence.locator('.task-history__note')).toHaveText([/Pruned the hedge\./]);
+
+    // The next day the task rolls over: the global note leads, and the note of the past day follows, marked with it.
+    await page.keyboard.press('Escape');
+    await page.clock.fastForward(24 * 3_600_000);
+    await page.reload();
+    const reopened = await openEditor(page);
+    await expect(reopened.locator('.note .note__text')).toHaveText(['Watered the roses.', 'Pruned the hedge.']);
+    const hedge = reopened.locator('.note', { hasText: 'Pruned the hedge.' });
+    await expect(hedge.locator('.note__occurrence')).toContainText('#1');
+    await expect(hedge.getByRole('button', { name: /More actions for your note/ })).toBeVisible();
+    await reopened.getByRole('button', { name: 'Show history' }).click();
+    await expect(reopened.locator('[data-history="occurrences"] [data-occurrence="1"] .task-history__note')).toHaveText([/Pruned the hedge\./]);
+    await expect(reopened.locator('[data-history="occurrences"] [data-occurrence="2"] .task-history__note')).toHaveCount(0);
+    expect(problems).toEqual([]);
+  });
+});

@@ -29,7 +29,6 @@ const OPERATION_FIELDS = {
   'add-membership': ['existence'],
   'remove-membership': ['existence'],
   'move-membership': ['position'],
-  'edit-note': ['text'],
   'delete-note': ['existence'],
 };
 
@@ -325,8 +324,11 @@ export function planPage(data, feed, { pending = [], userId = null, final = true
       continue;
     }
     const next = toNote(incoming);
-    if (local && mine.fields.has('text')) {
-      next.text = local.text;
+    const kept = local ? ['text', 'occurrence'].filter((name) => mine.fields.has(name)) : [];
+    for (const name of kept) {
+      next[name] = local[name] ?? null;
+    }
+    if (kept.length > 0) {
       next['last-update-time'] = local['last-update-time'];
     }
     state.notes.set(incoming.id, next);
@@ -402,11 +404,10 @@ export function planConflicts(data, entry, conflicts, pending) {
         edited.set(`tasks:${JSON.stringify(target.id)}`, { kind: 'tasks', row: { ...row, ...settled } });
       }
     }
-    else if (field === 'text') {
-
+    else if (field === 'text' || (target.type === 'note' && field === 'occurrence')) {
       const row = data.notes.find((note) => note.id === target.id);
-      if (row && !index.get(`note:${target.id}`)?.fields.has('text')) {
-        edit('notes', row, 'text', kept);
+      if (row && !index.get(`note:${target.id}`)?.fields.has(field)) {
+        edit('notes', row, field, kept);
       }
     }
     else if ((target.type === 'list' || target.type === 'task') && names.includes(field)) {

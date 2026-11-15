@@ -185,3 +185,54 @@ describe('queued events and rule edits', () => {
     expect(after['current-occurrence']).toMatchObject({ 'target-count': 2, 'completion-count': 1, status: 'in-progress', 'close-time': null });
   });
 });
+
+describe('queued note links', () => {
+  const DAILY = { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC' };
+
+  it('sends the occurrence of a linked or explicitly global note, and leaves an unplaced one to the service', async () => {
+    const { store } = await freshStore(TRACKED);
+    const daily = await store.createTask({ description: 'Water', 'lifecycle-rules': DAILY });
+    const oneOff = await store.createTask({ description: 'Paint' });
+    await store.addNote(daily.id, { text: 'Linked' });
+    await store.addNote(daily.id, { text: 'Whole task', occurrence: null });
+    await store.addNote(oneOff.id, { text: 'Unplaced' });
+    const creates = (await store.queue.all()).filter((entry) => entry.operation === 'create-note');
+    expect(creates.map((entry) => entry.fields.occurrence)).toEqual([1, null, undefined]);
+    expect('occurrence' in creates[2].fields).toBe(false);
+  });
+
+  it('sends only the changed note fields, each with its edit time', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const oneOff = await store.createTask({ description: 'Paint' });
+    const note = await store.addNote(oneOff.id, { text: 'Hi' });
+    clock.tick();
+    const linked = await store.editNote(note.id, { text: 'Hi', occurrence: 1 });
+    clock.tick();
+    const both = await store.editNote(note.id, { text: 'Hello', occurrence: null });
+    const edits = (await store.queue.all()).filter((entry) => entry.operation === 'edit-note');
+    expect(edits.map((entry) => entry.fields)).toEqual([{ occurrence: 1 }, { text: 'Hello', occurrence: null }]);
+    expect(edits[0]['edit-times']).toEqual({ occurrence: linked['last-update-time'] });
+    expect(edits[1]['edit-times']).toEqual({ text: both['last-update-time'], occurrence: both['last-update-time'] });
+  });
+
+  it('restores the previous link and text when a rejected note edit is undone', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const oneOff = await store.createTask({ description: 'Paint' });
+    const note = await store.addNote(oneOff.id, { text: 'Hi' });
+    clock.tick();
+    await store.editNote(note.id, { text: 'Hello', occurrence: 1 });
+    const edit = (await store.queue.all()).find((entry) => entry.operation === 'edit-note');
+    await store.queue.undo(store, edit);
+    expect((await store.notesOfTask(oneOff.id))[0]).toMatchObject({ text: 'Hi', occurrence: null });
+  });
+
+  it('still undoes a note text entry queued before links existed', async () => {
+    const { store } = await freshStore(TRACKED);
+    const oneOff = await store.createTask({ description: 'Paint' });
+    const note = await store.addNote(oneOff.id, { text: 'Hi' });
+    await store.editNote(note.id, 'Hello');
+    const edit = (await store.queue.all()).find((entry) => entry.operation === 'edit-note');
+    await store.queue.undo(store, { ...edit, undo: { kind: 'note-text', taskId: oneOff.id, id: note.id, from: 'Hi', to: 'Hello' } });
+    expect((await store.notesOfTask(oneOff.id))[0].text).toBe('Hi');
+  });
+});

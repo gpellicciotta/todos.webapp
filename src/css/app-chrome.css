@@ -711,6 +711,12 @@
   font-weight: var(--weight-medium);
 }
 
+/* The occurrence a note belongs to, after its time; global notes have none. */
+.note__occurrence {
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
 .note__text {
   margin: 0;
   overflow-wrap: anywhere;

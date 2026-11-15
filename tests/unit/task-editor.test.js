@@ -23,6 +23,8 @@ function fakeStore() {
     listLists: vi.fn(async () => []),
     listsOfTask: vi.fn(async () => []),
     notesOfTask: vi.fn(async () => []),
+    occurrencesOfTask: vi.fn(async () => []),
+    editNote: vi.fn(async () => ({})),
     updateTask: vi.fn(async () => ({ ...TASK })),
     updateRules: vi.fn(async () => ({ ...TASK })),
     postEvent: vi.fn(async () => ({ task: { ...TASK } })),
@@ -464,6 +466,122 @@ describe('mountTaskEditor', () => {
     expect(document.activeElement).toBe(document.querySelector('.note [data-role="more"]'));
   });
 
+  describe('note links', () => {
+    const OCC1 = {
+      occurrence: 1, 'start-time': '2026-11-04T00:00:00.000Z', 'due-time': '2026-11-05T00:00:00.000Z', 'target-count': 1,
+      'completion-count': 1, status: 'completed', 'close-time': '2026-11-05T00:00:00.000Z',
+    };
+    const OCC2 = { ...OCC1, occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', 'completion-count': 0, status: 'ready', 'close-time': null };
+    const DAILY = {
+      ...TASK, 'lifecycle-rules': { ...TASK['lifecycle-rules'], 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null },
+      'current-occurrence': OCC2,
+    };
+    const note = (id, occurrence, time) => ({ id, 'task-id': 't1', text: `Note ${id}`, 'owner-id': null, occurrence, 'creation-time': time, 'last-update-time': time });
+    const NOTES = [
+      note('n4', null, '2026-11-05T12:00:00.000Z'), note('n3', 1, '2026-11-05T11:00:00.000Z'),
+      note('n2', 2, '2026-11-05T10:00:00.000Z'), note('n1', null, '2026-11-04T10:00:00.000Z'), note('n0', 1, '2026-11-04T09:00:00.000Z'),
+    ];
+
+    /**
+     * Show the daily task with its notes and occurrences in the editor.
+     * @returns {Promise<void>} resolves once the notes show
+     */
+    async function showDaily() {
+      store.getTask.mockImplementation(async () => ({ ...DAILY }));
+      store.occurrencesOfTask.mockImplementation(async () => [{ 'task-id': 't1', ...OCC1 }, { 'task-id': 't1', ...OCC2 }]);
+      store.notesOfTask.mockImplementation(async () => NOTES);
+      store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
+      await vi.waitFor(() => expect(document.querySelectorAll('.note')).toHaveLength(5));
+    }
+
+    it('lists the global notes, then the current occurrence, then earlier ones, each linked note marked with its occurrence', async () => {
+      await showDaily();
+      const shown = [...document.querySelectorAll('.note')];
+      expect(shown.map((item) => item.dataset.noteId)).toEqual(['n4', 'n1', 'n2', 'n3', 'n0']);
+      expect(shown[0].querySelector('.note__occurrence')).toBeNull();
+      expect(shown[2].querySelector('.note__occurrence').textContent).toContain('#2');
+      expect(shown[3].querySelector('.note__occurrence').textContent).toContain('#1');
+    });
+
+    it('keeps own notes of earlier occurrences editable and deletable', async () => {
+      await showDaily();
+      document.querySelector('[data-note-id="n3"] [data-role="more"]').click();
+      document.querySelector('[data-note-id="n3"] [data-role="menu-edit"]').click();
+      change(document.querySelector('[data-note-id="n3"] select[name="note-link"]'), '');
+      document.querySelector('[data-note-id="n3"] [data-role="save"]').click();
+      await vi.waitFor(() => expect(store.editNote).toHaveBeenCalledWith('n3', { text: 'Note n3', occurrence: null }));
+      expect(document.querySelector('[data-note-id="n0"] [data-role="more"]')).not.toBeNull();
+    });
+
+    it('offers every occurrence up to the current one, even when the store holds only the current one', async () => {
+      const third = { ...OCC2, occurrence: 3 };
+      store.getTask.mockImplementation(async () => ({ ...DAILY, 'current-occurrence': third }));
+      store.occurrencesOfTask.mockImplementation(async () => [{ 'task-id': 't1', ...third }]);
+      store.notesOfTask.mockImplementation(async () => NOTES);
+      store.listeners.forEach((listener) => listener({ operation: 'rollOverTask', remote: true }));
+      await vi.waitFor(() => expect(document.querySelectorAll('.note')).toHaveLength(5));
+      document.querySelector('[data-note-id="n4"] [data-role="more"]').click();
+      document.querySelector('[data-note-id="n4"] [data-role="menu-edit"]').click();
+      const link = document.querySelector('[data-note-id="n4"] select[name="note-link"]');
+      expect([...link.options].map((option) => option.textContent.split(' · ')[0])).toEqual(['Whole task', '#3', '#2', '#1']);
+    });
+
+    it('shows note changes in an open history without a refresh', async () => {
+      await showDaily();
+      store.eventsOfTask = vi.fn(async () => []);
+      document.querySelector('[data-section="history"] button[data-action="history"]').click();
+      const notesOf = (number) => [...document.querySelectorAll(`[data-history="occurrences"] [data-occurrence="${number}"] .task-history__note`)]
+        .map((item) => item.textContent);
+      await vi.waitFor(() => expect(notesOf(1)).toHaveLength(2));
+      store.notesOfTask.mockImplementation(async () => [note('n5', 1, '2026-11-05T13:00:00.000Z'), ...NOTES]);
+      store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
+      await vi.waitFor(() => expect(notesOf(1)).toHaveLength(3));
+      expect(notesOf(1)[0]).toContain('Note n5');
+      expect(store.eventsOfTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('offers Whole task and each occurrence, newest first, in the note edit form, and saves the chosen link', async () => {
+      await showDaily();
+      document.querySelector('[data-note-id="n2"] [data-role="more"]').click();
+      document.querySelector('[data-note-id="n2"] [data-role="menu-edit"]').click();
+      const link = document.querySelector('[data-note-id="n2"] select[name="note-link"]');
+      expect([...link.options].map((option) => option.textContent.split(' · ')[0])).toEqual(['Whole task', '#2', '#1']);
+      expect(link.selectedOptions[0].textContent).toContain('#2');
+      expect(link.labels[0].textContent).toBe('Belongs to');
+      change(link, '');
+      document.querySelector('[data-note-id="n2"] [data-role="save"]').click();
+      await vi.waitFor(() => expect(store.editNote).toHaveBeenCalledWith('n2', { text: 'Note n2', occurrence: null }));
+    });
+
+    it('offers the link choice on a one-off task too', async () => {
+      store.notesOfTask.mockImplementation(async () => [note('n1', null, TASK['creation-time'])]);
+      store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
+      await vi.waitFor(() => expect(document.querySelector('.note')).not.toBeNull());
+      document.querySelector('.note [data-role="more"]').click();
+      document.querySelector('.note [data-role="menu-edit"]').click();
+      const link = document.querySelector('.note select[name="note-link"]');
+      expect([...link.options].map((option) => option.textContent.split(' · ')[0])).toEqual(['Whole task', '#1']);
+      expect(link.value).toBe('');
+      change(link, '1');
+      document.querySelector('.note [data-role="save"]').click();
+      await vi.waitFor(() => expect(store.editNote).toHaveBeenCalledWith('n1', { text: 'Note n1', occurrence: 1 }));
+    });
+
+    it('lists the notes of each occurrence under it in the history, newest first', async () => {
+      await showDaily();
+      store.eventsOfTask = vi.fn(async () => []);
+      document.querySelector('[data-section="history"] button[data-action="history"]').click();
+      const notesOf = (number) => [...document.querySelectorAll(`[data-history="occurrences"] [data-occurrence="${number}"] .task-history__note`)]
+        .map((item) => item.textContent);
+      await vi.waitFor(() => expect(notesOf(1)).toHaveLength(2));
+      expect(notesOf(1)[0]).toContain('Note n3');
+      expect(notesOf(1)[1]).toContain('Note n0');
+      expect(notesOf(2)).toHaveLength(1);
+      expect(notesOf(2)[0]).toContain('Note n2');
+      expect(document.querySelector('[data-history="occurrences"]').textContent).not.toContain('Note n4');
+    });
+  });
+
   it('styles Delete task and the note Delete controls as danger', async () => {
     const remove = [...document.querySelectorAll('.editor-panel__danger button')].find((button) => button.textContent === 'Delete task');
     expect(remove.classList.contains('button--danger')).toBe(true);
@@ -587,6 +705,47 @@ describe('mountTaskEditor history while connected', () => {
     expect(entries('occurrences')[0]).toContain('#2');
     expect(entries('occurrences')[0]).toContain('0 of 3 done');
     expect(store.eventsOfTask).not.toHaveBeenCalled();
+  });
+});
+
+describe('mountTaskEditor note links while connected', () => {
+  let panel;
+
+  afterEach(() => {
+    panel.destroy();
+  });
+
+  it('labels the earlier occurrences of the link choice from the server occurrences', async () => {
+    resetBody('<div data-editor-slot hidden></div>');
+    const store = fakeStore();
+    const current = { occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', 'target-count': 1,
+      'completion-count': 0, status: 'ready', 'close-time': null };
+    const first = { ...current, occurrence: 1, 'start-time': '2026-11-04T00:00:00.000Z', 'due-time': '2026-11-05T00:00:00.000Z', 'close-time': '2026-11-05T00:00:00.000Z' };
+    store.getTask.mockImplementation(async () => ({
+      ...TASK, 'lifecycle-rules': { ...TASK['lifecycle-rules'], 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC' }, 'current-occurrence': current,
+    }));
+    store.occurrencesOfTask.mockImplementation(async () => [{ 'task-id': 't1', ...current }]);
+    store.notesOfTask.mockImplementation(async () => [{
+      id: 'n1', 'task-id': 't1', text: 'Hi', 'owner-id': null, occurrence: 2, 'creation-time': current['start-time'], 'last-update-time': current['start-time'],
+    }]);
+    const api = { send: vi.fn(async () => ({ status: 200, ok: true, headers: { get: () => null }, body: [{ 'task-id': 't1', ...first }, { 'task-id': 't1', ...current }] })) };
+    let editor;
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, api, session: { state: () => 'connected' } });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+    await vi.waitFor(() => expect(document.querySelector('.note')).not.toBeNull());
+    expect(api.send).not.toHaveBeenCalled();
+    document.querySelector('.note [data-role="more"]').click();
+    document.querySelector('.note [data-role="menu-edit"]').click();
+    const option = () => [...document.querySelector('.note select[name="note-link"]').options].find((candidate) => candidate.value === '1');
+    await vi.waitFor(() => expect(option().textContent).toMatch(/^#1 · /));
+    expect(api.send.mock.calls.map(([method, path]) => [method, path])).toEqual([['GET', '/api/tasks/t1/occurrences']]);
   });
 });
 

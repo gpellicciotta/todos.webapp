@@ -104,6 +104,20 @@ describe('uploading the queue', () => {
     expect(Object.keys(update.headers).map((name) => name.toLowerCase())).not.toContain('if-match');
   });
 
+  it('sends the changed note fields of an edit with their edit times', async () => {
+    const { store, clock, service, push } = await setup();
+    const task = await store.createTask({ description: 'Paint' });
+    const note = await store.addNote(task.id, { text: 'Hi' });
+    await push.drainOnce();
+    clock.tick(60_000);
+    const edited = await store.editNote(note.id, { text: 'Hello', occurrence: 1 });
+    await push.drainOnce();
+    const edit = service.calls.at(-1);
+    expect([edit.method, edit.path]).toEqual(['PUT', `/api/tasks/${task.id}/notes/${note.id}`]);
+    const time = edited['last-update-time'];
+    expect(edit.body).toEqual({ text: 'Hello', occurrence: 1, 'edit-times': { text: time, occurrence: time } });
+  });
+
   it('creates a task with its rules, posts its events in order, and patches its rules', async () => {
     const { store, clock, service, push } = await setup();
     const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });

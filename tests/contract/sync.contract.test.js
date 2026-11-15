@@ -142,6 +142,53 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect((await serverState(ada)).notes).toHaveLength(1);
   });
 
+  it('posts a note linked to its occurrence, then makes it global and links it again', async () => {
+    const ada = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Water daily', 'lifecycle-rules': { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC' } });
+    ada.clock.tick(1000);
+    const note = await ada.store.addNote(task.id, { text: 'Roses first' });
+    expect(note.occurrence).toBe(1);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    const stored = async () => (await (await ada.raw('GET', `/api/tasks/${task.id}/notes`, { Accept: 'application/json' })).json())[0];
+    expect(await stored()).toMatchObject({ id: note.id, occurrence: 1 });
+    ada.clock.tick(60_000);
+    await ada.store.editNote(note.id, { occurrence: null });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect(await stored()).toMatchObject({ id: note.id, text: 'Roses first', occurrence: null });
+    ada.clock.tick(60_000);
+    await ada.store.editNote(note.id, { text: 'Roses and tulips', occurrence: 1 });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect(await stored()).toMatchObject({ text: 'Roses and tulips', occurrence: 1 });
+    expect(await ada.store.queue.count()).toBe(0);
+    expect((await ada.store.notesOfTask(task.id))[0]).toMatchObject({ text: 'Roses and tulips', occurrence: 1 });
+  });
+
+  it('merges note edits of two devices by field: the later link wins and the text survives', async () => {
+    const phone = await device('code-ada');
+    const laptop = await device('code-ada');
+    const list = await phone.store.createList({ name: 'Note merge' });
+    const task = await phone.store.createTask({ description: 'Water', 'lifecycle-rules': { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC' } }, { lists: [list.id] });
+    const note = await phone.store.addNote(task.id, { text: 'Roses' });
+    await phone.engine.syncNow();
+    await laptop.engine.syncNow();
+    expect((await laptop.store.notesOfTask(task.id))[0]).toMatchObject({ id: note.id, occurrence: 1 });
+
+    phone.clock.tick(60_000);
+    laptop.clock.tick(120_000);
+    await phone.store.editNote(note.id, { text: 'Roses and tulips', occurrence: null });
+    // The laptop's later edits end on occurrence 1, so the phone's older unlink loses.
+    await laptop.store.editNote(note.id, { occurrence: null });
+    await laptop.store.editNote(note.id, { occurrence: 1 });
+    await laptop.engine.syncNow();
+    await phone.engine.syncNow();
+    await laptop.engine.syncNow();
+    for (const who of [phone, laptop]) {
+      expect((await who.store.notesOfTask(task.id))[0]).toMatchObject({ text: 'Roses and tulips', occurrence: 1 });
+    }
+    const overwritten = (await phone.store.queue.log()).filter((record) => record.kind === 'overwritten');
+    expect(overwritten.map((record) => record.field)).toContain('occurrence');
+  });
+
   it('merges edits of two devices: different fields both survive, and the later edit of one field wins', async () => {
     const phone = await device('code-ada');
     const laptop = await device('code-ada');
