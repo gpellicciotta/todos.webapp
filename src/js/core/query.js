@@ -7,20 +7,20 @@
  * Callers pass live tasks from `listTasks()`; the store already leaves out tasks in the recycle bin.
  */
 
-import { STATUSES } from '../store/tasks.js';
+import { dueTimeOf, STATUSES, statusOf } from './occurrences.js';
 import { isOverdue } from './overdue.js';
 
 /** The value of the Lists filter that selects tasks in no list. */
 export const NO_LIST = 'no-list';
 
 /** The default filter of All tasks and the list view: open tasks only (`LV-10`). */
-export const DEFAULT_FILTER = Object.freeze({ statuses: Object.freeze(['todo', 'in-progress']) });
+export const DEFAULT_FILTER = Object.freeze({ statuses: Object.freeze(['ready', 'in-progress']) });
 
 /** The default order of All tasks: creation time descending, so a new task comes first (`TV-13`). */
 export const DEFAULT_ORDER = Object.freeze({ field: 'creation-time', direction: 'desc' });
 
 /** The sortable task fields (`TV-9`, `LV-6`). */
-export const SORT_FIELDS = Object.freeze(['due-time', 'creation-time', 'last-activity-time', 'status', 'description']);
+export const SORT_FIELDS = Object.freeze(['due-time', 'creation-time', 'last-update-time', 'status', 'description']);
 
 /** The named options of the Due filter; a `{from, to}` range is the other option. */
 export const DUE_OPTIONS = Object.freeze(['overdue', 'today', 'this-week', 'none']);
@@ -33,7 +33,7 @@ const DUE_GROUPS = Object.freeze([
   ['later', 'Later'], ['no-due', 'No due date'],
 ]);
 const STATUS_GROUPS = Object.freeze({
-  todo: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
+  ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
 });
 const NO_LIST_LABEL = 'No list';
 
@@ -194,16 +194,16 @@ export function filterTasks(tasks, filter = {}, ctx = {}) {
   }
   if (isSet(filter.statuses)) {
     const wanted = new Set(filter.statuses);
-    tests.push((task) => wanted.has(task.status));
+    tests.push((task) => wanted.has(statusOf(task)));
   }
   if (filter.finishedToday === true) {
-    // A finished task's last update time stands for the time it finished (`TV-14`).
+    // A finished task's occurrence closed when it finished (`TV-14`).
     const { today } = dueWindows(new Date(ctx.now ?? Date.now()), ctx.weekStart ?? 1);
     tests.push((task) => {
-      if (!FINISHED.has(task.status)) {
+      if (!FINISHED.has(statusOf(task))) {
         return true;
       }
-      const finished = timeOf(task['last-update-time']);
+      const finished = timeOf(task['current-occurrence']['close-time'] ?? task['last-update-time']);
       return finished !== null && finished >= today.from && finished < today.to;
     });
   }
@@ -212,7 +212,7 @@ export function filterTasks(tasks, filter = {}, ctx = {}) {
     const windows = dueWindows(now, ctx.weekStart ?? 1);
     const options = filter.due.map((option) => dueTest(option, now.getTime(), windows));
     tests.push((task) => {
-      const due = timeOf(task['due-time']);
+      const due = timeOf(dueTimeOf(task));
       return options.some((test) => test(due, task));
     });
   }
@@ -297,7 +297,7 @@ export function clearFilters(filter, keys) {
  * @returns {string} the group key
  */
 function dueGroupOf(task, now, windows) {
-  const due = timeOf(task['due-time']);
+  const due = timeOf(dueTimeOf(task));
   if (due === null) {
     return 'no-due';
   }
@@ -342,7 +342,7 @@ export function groupTasks(tasks, grouping, ctx = {}, all = null) {
   switch (grouping) {
     case 'status':
       order = STATUSES.map((status) => [status, STATUS_GROUPS[status]]);
-      place = (task) => [task.status];
+      place = (task) => [statusOf(task)];
       break;
     case 'due': {
       const now = new Date(ctx.now ?? Date.now());
@@ -402,12 +402,13 @@ function compareIds(a, b) {
 function sortKey(task, field) {
   switch (field) {
     case 'due-time':
-      return timeOf(task['due-time']);
+      return timeOf(dueTimeOf(task));
     case 'creation-time':
-    case 'last-activity-time':
+    case 'last-update-time':
       return timeOf(task[field]) ?? 0;
     case 'status': {
-      const index = STATUSES.indexOf(task.status);
+      const index = STATUSES.indexOf(statusOf(task));
+
       return index < 0 ? STATUSES.length : index;
     }
     default:

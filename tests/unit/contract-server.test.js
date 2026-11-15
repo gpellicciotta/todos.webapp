@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { APP_NAME, APP_SECRET, environmentText, serverDir, startAuthStandIn, startCommand, stopCommand } from '../contract/server.js';
 
-const OPTIONS = { dir: '/work/todos', port: 18080, envFile: '/tmp/contract.env', python: 'python3' };
+const OPTIONS = { dir: '/work/todos', port: 18080, envFile: '/tmp/contract.env' };
+const slashes = (value) => value.replaceAll('\\', '/');
 
 describe('the contract test server helper', () => {
   it('skips without TODOS_SERVER_DIR, and resolves the directory when it is set', () => {
@@ -10,17 +11,24 @@ describe('the contract test server helper', () => {
     expect(serverDir({ TODOS_SERVER_DIR: '/work/todos' })).toMatch(/todos$/);
   });
 
-  it('starts the server on an in-memory database in the background', () => {
+  it('starts the built server jar on an in-memory database, with the environment file and port', () => {
     const { command, args, cwd } = startCommand(OPTIONS);
-    expect(command).toBe('python3');
-    expect(args.slice(1)).toEqual(['server', 'start', '--memory-db', '--background', '--port', '18080', '--env-file', '/tmp/contract.env']);
-    expect(args[0].replaceAll('\\', '/')).toBe('/work/todos/scripts/devops.py');
+    expect(command).toBe('java');
+    expect(args.map(slashes)).toEqual([
+      '-Denvironment-properties-file=/tmp/contract.env',
+      '-DPORT=18080',
+      '-DBASE_URL=http://localhost:18080',
+      '-jar', '/work/todos/output/server/install/todos/todos-server.jar',
+      '--config-file=/work/todos/server/src/main/resources/todos.config',
+      '--mail.back-end-type=com.pellicciotta.support.mail.DummyBackEnd',
+      '--db.jdbc-url=memory',
+      'start',
+    ]);
     expect(cwd).toBe('/work/todos');
   });
 
-  it('stops the server on the same port', () => {
-    const { args } = stopCommand(OPTIONS);
-    expect(args.slice(1)).toEqual(['server', 'stop', '--port', '18080', '--env-file', '/tmp/contract.env']);
+  it('stops the server process through processes kill', () => {
+    expect(stopCommand(4321)).toEqual({ command: 'processes', args: ['kill', '4321', '--force', '--yes'] });
   });
 
   it('points the server at the Auth stand-in and sets a minimum client version', () => {

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyOverdueHandling, isOverdue, startOverdueTimer } from '../../src/js/core/overdue.js';
 import { freshStore } from './store-helpers.js';
+import { shapeTask } from './task-shape.js';
 
 const NOW = Date.UTC(2026, 10, 4, 9, 0, 0);
 
@@ -10,11 +11,11 @@ const NOW = Date.UTC(2026, 10, 4, 9, 0, 0);
  * @returns {object} the task
  */
 function taskWith(fields) {
-  return { status: 'todo', 'due-time': new Date(NOW - 1000).toISOString(), 'deletion-time': null, ...fields };
+  return shapeTask({ 'due-time': new Date(NOW - 1000).toISOString(), ...fields });
 }
 
 describe('isOverdue', () => {
-  it.each(['todo', 'in-progress'])('is true for a %s task whose due time passed', (status) => {
+  it.each(['ready', 'in-progress'])('is true for a %s task whose due time passed', (status) => {
     expect(isOverdue(taskWith({ status }), new Date(NOW))).toBe(true);
   });
 
@@ -50,7 +51,7 @@ describe('applyOverdueHandling', () => {
     store.close();
   });
 
-  it('cancels overdue cancel tasks and leaves every other task unchanged', async () => {
+  it('expires overdue cancel tasks through an expire event and leaves every other task unchanged', async () => {
     const past = new Date(clock.now + 30_000).toISOString();
     const future = new Date(clock.now + 3_600_000).toISOString();
     const cancel = await store.createTask({ description: 'Cancel me', 'due-time': past, 'overdue-handling': 'cancel' });
@@ -75,10 +76,10 @@ describe('applyOverdueHandling', () => {
     expect(cancelled.map((task) => task.id).sort()).toEqual([cancel.id, started.id].sort());
     for (const id of [cancel.id, started.id]) {
       expect(await store.getTask(id)).toMatchObject({
-        status: 'cancelled',
+        'current-occurrence': { status: 'cancelled', 'close-time': '2026-11-04T09:01:00.000Z' },
         'last-update-time': '2026-11-04T09:01:00.000Z',
-        'last-activity-time': '2026-11-04T09:01:00.000Z',
       });
+      expect((await store.eventsOfTask(id)).at(-1)).toMatchObject({ type: 'expire', 'owner-id': null, 'creation-time': '2026-11-04T09:01:00.000Z' });
     }
     for (const task of untouched) {
       expect(await store.getTask(task.id)).toEqual(task);
@@ -99,8 +100,8 @@ describe('applyOverdueHandling', () => {
     const cancelled = await applyOverdueHandling(stale, new Date(clock.now));
 
     expect(cancelled.map((task) => task.id)).toEqual([open.id]);
-    expect(await store.getTask(completed.id)).toMatchObject({ status: 'completed' });
-    expect(await store.getTask(deleted.id)).toMatchObject({ status: 'todo' });
+    expect(await store.getTask(completed.id)).toMatchObject({ 'current-occurrence': { status: 'completed' } });
+    expect(await store.getTask(deleted.id)).toMatchObject({ 'current-occurrence': { status: 'ready' } });
   });
 
   it('returns no tasks when nothing is overdue', async () => {
@@ -134,20 +135,21 @@ describe('startOverdueTimer', () => {
 
     const stop = startOverdueTimer({ store });
     await stop.idle();
-    expect((await store.getTask(overdueOnStart.id)).status).toBe('cancelled');
-    expect((await store.getTask(dueSoon.id)).status).toBe('todo');
+    const statusOf = async (id) => (await store.getTask(id))['current-occurrence'].status;
+    expect(await statusOf(overdueOnStart.id)).toBe('cancelled');
+    expect(await statusOf(dueSoon.id)).toBe('ready');
 
     await vi.advanceTimersByTimeAsync(59_999);
     await stop.idle();
-    expect((await store.getTask(dueSoon.id)).status).toBe('todo');
+    expect(await statusOf(dueSoon.id)).toBe('ready');
 
     await vi.advanceTimersByTimeAsync(1);
     await stop.idle();
     expect(await store.getTask(dueSoon.id)).toMatchObject({
-      status: 'cancelled',
+      'current-occurrence': { status: 'cancelled' },
       'last-update-time': '2026-11-04T09:01:00.000Z',
-      'last-activity-time': '2026-11-04T09:01:00.000Z',
     });
+
 
     stop();
     expect(vi.getTimerCount()).toBe(0);

@@ -16,29 +16,51 @@ afterEach(() => {
 });
 
 describe('createTask', () => {
-  it('defaults to status todo and overdue handling keep', async () => {
+  it('embeds default one-off rules and a ready occurrence 1, and logs a create event', async () => {
     const task = await store.createTask({ description: 'Buy paint' });
-    expect(task).toMatchObject({
+    const time = '2026-11-04T09:00:00.000Z';
+    expect(task).toEqual({
+      id: task.id,
       description: 'Buy paint',
-      status: 'todo',
-      'due-time': null,
-      'overdue-handling': 'keep',
-      'creation-time': '2026-11-04T09:00:00.000Z',
-      'last-update-time': '2026-11-04T09:00:00.000Z',
-      'last-activity-time': '2026-11-04T09:00:00.000Z',
+      'owner-id': null,
+      'lifecycle-rules': {
+        'target-count': 1, 'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
+        'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
+      },
+      'current-occurrence': {
+        occurrence: 1, 'start-time': time, 'due-time': null, 'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': null,
+      },
+      'creation-time': time,
+      'last-update-time': time,
       'deletion-time': null,
     });
     expect(task.id[14]).toBe('7');
+    expect((await store.eventsOfTask(task.id)).map((event) => [event.type, event['creation-time'], event.occurrence])).toEqual([['create', time, 1]]);
+    expect(await store.occurrencesOfTask(task.id)).toEqual([{ 'task-id': task.id, ...task['current-occurrence'] }]);
   });
 
-  it('stores a due time as a UTC ISO string', async () => {
+  it('stores a due time as a UTC ISO string in the rules and the occurrence', async () => {
     const task = await store.createTask({ description: 'Call', 'due-time': '2026-11-08T18:00:00+01:00' });
-    expect(task['due-time']).toBe('2026-11-08T17:00:00.000Z');
+    expect(task['lifecycle-rules']['due-time']).toBe('2026-11-08T17:00:00.000Z');
+    expect(task['current-occurrence']['due-time']).toBe('2026-11-08T17:00:00.000Z');
   });
 
   it('stores a date-only due time as 23:59 local time on that date', async () => {
     const task = await store.createTask({ description: 'Pay rent', 'due-time': '2026-11-08' });
-    expect(task['due-time']).toBe(new Date(2026, 10, 8, 23, 59, 0, 0).toISOString());
+    expect(task['lifecycle-rules']['due-time']).toBe(new Date(2026, 10, 8, 23, 59, 0, 0).toISOString());
+  });
+
+  it('creates a recurring task without due time or overdue handling, as the service requires', async () => {
+    const weekly = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' };
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': weekly, 'overdue-handling': 'cancel' });
+    expect(task['lifecycle-rules']).toMatchObject({ ...weekly, 'due-time': null, 'overdue-handling': null });
+    expect(task['current-occurrence']['due-time']).toBeNull();
+  });
+
+  it('reaches a given starting status through events', async () => {
+    const task = await store.createTask({ description: 'Done already', status: 'completed' });
+    expect(task['current-occurrence']).toMatchObject({ status: 'completed', 'completion-count': 1 });
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create', 'complete']);
   });
 
   it('rejects an impossible date-only due time', async () => {
@@ -78,7 +100,7 @@ describe('createTask', () => {
 });
 
 describe('updateTask', () => {
-  it('changes every editable field and updates both timestamps', async () => {
+  it('changes the description, maps the deadline onto the rules, and the status onto events', async () => {
     const task = await store.createTask({ description: 'Buy paint' });
     clock.tick(60_000);
     const updated = await store.updateTask(task.id, {
@@ -89,31 +111,37 @@ describe('updateTask', () => {
     });
     expect(updated).toMatchObject({
       description: 'Buy white paint',
-      status: 'in-progress',
-      'due-time': '2026-11-06T18:00:00.000Z',
-      'overdue-handling': 'cancel',
+      'lifecycle-rules': { 'due-time': '2026-11-06T18:00:00.000Z', 'overdue-handling': 'cancel' },
+      'current-occurrence': { status: 'in-progress', 'due-time': '2026-11-06T18:00:00.000Z' },
       'creation-time': task['creation-time'],
       'last-update-time': '2026-11-04T09:01:00.000Z',
-      'last-activity-time': '2026-11-04T09:01:00.000Z',
     });
+    expect((await store.eventsOfTask(task.id)).map((event) => [event.type, event['creation-time']])).toEqual([
+      ['create', task['creation-time']], ['start', '2026-11-04T09:01:00.000Z'],
+    ]);
   });
 
-  it('allows any status to change to any other status', async () => {
+  it('maps every status edit onto the events that reach it', async () => {
     const task = await store.createTask({ description: 'Cycle' });
-    for (const status of ['completed', 'cancelled', 'in-progress', 'todo', 'cancelled', 'completed']) {
-      await expect(store.updateTask(task.id, { status })).resolves.toMatchObject({ status });
+    for (const status of ['completed', 'cancelled', 'in-progress', 'ready', 'cancelled', 'completed', 'in-progress', 'ready']) {
+      clock.tick();
+      await expect(store.updateTask(task.id, { status })).resolves.toMatchObject({ 'current-occurrence': { status } });
     }
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual([
+      'create', 'complete', 'cancel', 'reopen', 'uncomplete', 'start', 'unstart', 'cancel', 'reopen', 'complete', 'uncomplete', 'start', 'unstart',
+    ]);
   });
 
   it('clears the due time with null', async () => {
     const task = await store.createTask({ description: 'A', 'due-time': '2026-11-06T18:00:00Z' });
-    await expect(store.updateTask(task.id, { 'due-time': null })).resolves.toMatchObject({ 'due-time': null });
+    const updated = await store.updateTask(task.id, { 'due-time': null });
+    expect([updated['lifecycle-rules']['due-time'], updated['current-occurrence']['due-time']]).toEqual([null, null]);
   });
 
   it('leaves omitted fields unchanged and ignores read-only fields', async () => {
     const task = await store.createTask({ description: 'Keep me', status: 'in-progress' });
     const updated = await store.updateTask(task.id, { 'creation-time': '2000-01-01T00:00:00Z', id: 'other' });
-    expect(updated).toMatchObject({ id: task.id, description: 'Keep me', status: 'in-progress' });
+    expect(updated).toMatchObject({ id: task.id, description: 'Keep me', 'current-occurrence': { status: 'in-progress' } });
     expect(updated['creation-time']).toBe(task['creation-time']);
   });
 
@@ -122,9 +150,63 @@ describe('updateTask', () => {
     await expect(store.updateTask(task.id)).resolves.toMatchObject({ description: 'Same' });
   });
 
+  it('rejects an unknown status', async () => {
+    const task = await store.createTask({ description: 'Same' });
+    await expect(store.updateTask(task.id, { status: 'todo' })).rejects.toMatchObject({ field: 'status', code: 'invalid' });
+  });
+
   it('fails for an unknown task', async () => {
-    const error = await store.updateTask('0192f1a2-0000-7000-8000-00000000ffff', { status: 'todo' }).catch((e) => e);
+    const error = await store.updateTask('0192f1a2-0000-7000-8000-00000000ffff', { status: 'ready' }).catch((e) => e);
     expect(error).toMatchObject({ code: 'not-found' });
+  });
+});
+
+describe('events and rules', () => {
+  it('ticks a target-3 task through complete events until it is completed', async () => {
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    const counts = [];
+    for (let tick = 0; tick < 3; tick++) {
+      clock.tick();
+      const { event, task: after } = await store.postEvent(task.id, 'complete');
+      expect(event).toMatchObject({ 'task-id': task.id, type: 'complete', occurrence: 1, 'owner-id': null, details: null });
+      expect(event.id[14]).toBe('7');
+      counts.push([after['current-occurrence']['completion-count'], after['current-occurrence'].status]);
+    }
+    expect(counts).toEqual([[1, 'in-progress'], [2, 'in-progress'], [3, 'completed']]);
+    expect((await store.getTask(task.id))['last-update-time']).toBe('2026-11-04T09:00:03.000Z');
+  });
+
+  it('refuses an event whose precondition fails, storing nothing', async () => {
+    const task = await store.createTask({ description: 'Fresh' });
+    await expect(store.postEvent(task.id, 'uncomplete')).rejects.toMatchObject({ code: 'conflict' });
+    await expect(store.postEvent(task.id, 'expire')).rejects.toMatchObject({ code: 'invalid' });
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
+  });
+
+  it('edits the target and deadline of the rules and the open occurrence', async () => {
+    const task = await store.createTask({ description: 'Water', status: 'completed' });
+    clock.tick();
+    const updated = await store.updateRules(task.id, { 'target-count': 2, 'due-time': '2026-11-09T10:00:00Z' });
+    expect(updated['lifecycle-rules']).toMatchObject({ 'target-count': 2, 'due-time': '2026-11-09T10:00:00.000Z' });
+    expect(updated['current-occurrence']).toMatchObject({ 'target-count': 2, 'completion-count': 1, status: 'in-progress', 'close-time': null });
+    expect(updated['last-update-time']).toBe('2026-11-04T09:00:01.000Z');
+    await expect(store.updateRules(task.id, { 'target-count': 0 })).rejects.toMatchObject({ field: 'target-count', code: 'invalid' });
+  });
+
+  it('expires an overdue task with handling cancel through a system event', async () => {
+    const task = await store.createTask({ description: 'Late', 'due-time': '2026-11-04T08:00:00Z', 'overdue-handling': 'cancel' });
+    const expired = await store.expireTask(task.id);
+    expect(expired['current-occurrence']).toMatchObject({ status: 'cancelled', 'close-time': '2026-11-04T09:00:00.000Z' });
+    expect((await store.eventsOfTask(task.id)).map((event) => [event.type, event['owner-id']])).toEqual([['create', null], ['expire', null]]);
+    await expect(store.expireTask(task.id)).resolves.toBeNull();
+  });
+
+  it('removes the occurrences and events of a purged task', async () => {
+    const task = await store.createTask({ description: 'Gone', status: 'in-progress' });
+    await store.deleteTask(task.id);
+    await store.purgeForever('task', task.id);
+    expect(await store.eventsOfTask(task.id)).toEqual([]);
+    expect(await store.occurrencesOfTask(task.id)).toEqual([]);
   });
 });
 
@@ -145,14 +227,17 @@ describe('list membership', () => {
     expect(await store.tasksOfList(home.id)).toEqual([]);
   });
 
-  it('updates the last activity time on membership changes, not the last update time', async () => {
+  it('moves the last update time on membership changes (TSK-12)', async () => {
     const home = await store.createList({ name: 'Home' });
     const task = await store.createTask({ description: 'Buy paint' });
     clock.tick(10_000);
     await store.addToList(task.id, home.id);
+    expect((await store.getTask(task.id))['last-update-time']).toBe('2026-11-04T09:00:10.000Z');
+    clock.tick(10_000);
+    await store.removeFromList(task.id, home.id);
     const after = await store.getTask(task.id);
-    expect(after['last-activity-time']).toBe('2026-11-04T09:00:10.000Z');
-    expect(after['last-update-time']).toBe(task['last-update-time']);
+    expect(after['last-update-time']).toBe('2026-11-04T09:00:20.000Z');
+    expect(Object.keys(after)).not.toContain('last-activity-time');
   });
 
   it('rejects unknown tasks and lists', async () => {
@@ -293,13 +378,11 @@ describe('manual order', () => {
     expect(homeAfter.filter(([id]) => id !== b.id)).toEqual([[a.id, 'a0'], [c.id, 'a2']]);
   });
 
-  it('updates the last activity time of the moved task, not its last update time', async () => {
+  it('moves the last update time of the moved task only', async () => {
     clock.tick(5000);
     await store.moveInList(c.id, home.id, { before: a.id });
-    const moved = await store.getTask(c.id);
-    expect(moved['last-activity-time']).toBe('2026-11-04T09:00:05.000Z');
-    expect(moved['last-update-time']).toBe(c['last-update-time']);
-    expect((await store.getTask(a.id))['last-activity-time']).toBe(a['last-activity-time']);
+    expect((await store.getTask(c.id))['last-update-time']).toBe('2026-11-04T09:00:05.000Z');
+    expect((await store.getTask(a.id))['last-update-time']).toBe(a['last-update-time']);
   });
 
   it.each([

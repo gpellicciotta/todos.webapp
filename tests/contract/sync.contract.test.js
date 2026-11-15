@@ -130,9 +130,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(counts(await serverState(second))).toEqual([2, 3, 3]);
   });
 
-  // The server started with --memory-db answers 500 to a new note: its ToDo's repository does not know the users of its Auth repository.
-  // This test passes while that holds; it turns red once the todos task T0207 fixes it, so then replace `it.fails` with `it`.
-  it.fails('uploads a note with its task on first connect', async () => {
+  it('uploads a note with its task on first connect', async () => {
     const ada = await device('code-ada', {
       localData: async (store) => {
         const list = await store.createList({ name: 'Notes' });
@@ -148,7 +146,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     const phone = await device('code-ada');
     const laptop = await device('code-ada');
     const list = await phone.store.createList({ name: 'Merge' });
-    const task = await phone.store.createTask({ description: 'Paint', status: 'todo' }, { lists: [list.id] });
+    const task = await phone.store.createTask({ description: 'Paint' }, { lists: [list.id] });
     await phone.engine.syncNow();
     await laptop.engine.syncNow();
 
@@ -160,7 +158,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     await laptop.engine.syncNow();
     await phone.engine.syncNow();
     for (const who of [phone, laptop]) {
-      expect(await who.store.getTask(task.id)).toMatchObject({ description: 'Paint the door', status: 'in-progress' });
+      expect(await who.store.getTask(task.id)).toMatchObject({ description: 'Paint the door', 'current-occurrence': { status: 'in-progress' } });
     }
 
     phone.clock.tick(60_000);
@@ -176,6 +174,52 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     const overwritten = (await phone.store.queue.log()).filter((record) => record.kind === 'overwritten');
     expect(overwritten).toHaveLength(1);
     expect(overwritten[0]).toMatchObject({ field: 'description', sent: 'Paint the fence', kept: 'Paint the shed' });
+  });
+
+  it('ticks a target-3 task three times through events, and another device sees it completed', async () => {
+    const phone = await device('code-ada');
+    const laptop = await device('code-ada');
+    const list = await phone.store.createList({ name: 'Ticks' });
+    const task = await phone.store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } }, { lists: [list.id] });
+    expect(await phone.engine.syncNow()).toBe('synced');
+    for (let tick = 0; tick < 3; tick++) {
+      phone.clock.tick(60_000);
+      await phone.store.postEvent(task.id, 'complete');
+    }
+    expect(await phone.engine.syncNow()).toBe('synced');
+    expect(await phone.store.queue.count()).toBe(0);
+
+    const stored = await (await phone.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+    expect(stored['lifecycle-rules']['target-count']).toBe(3);
+    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'target-count': 3, 'completion-count': 3, status: 'completed' });
+    const events = await (await phone.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
+    const ids = (await phone.store.eventsOfTask(task.id)).filter((event) => event.type === 'complete').map((event) => event.id);
+    expect(events.filter((event) => event.type === 'complete').map((event) => event.id).sort()).toEqual([...ids].sort());
+
+    expect(await laptop.engine.syncNow()).toBe('synced');
+    expect((await laptop.store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 3, status: 'completed' });
+    expect((await phone.store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 3, status: 'completed' });
+  });
+
+  it('reverts an event the server refuses with 409', async () => {
+    const ada = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Refused' });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    ada.clock.tick(60_000);
+    await ada.store.postEvent(task.id, 'complete');
+    // Another device cancelled the task before this tick, so the tick fails its precondition at its place.
+    const cancelTime = new Date(Date.parse(task['creation-time']) + 1000).toISOString();
+    const posted = await fetch(`${stack.url}/api/tasks/${task.id}/events`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${ada.session.token()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: '0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2c99', type: 'cancel', 'creation-time': cancelTime }),
+    });
+    expect(posted.status).toBe(201);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([
+      expect.objectContaining({ operation: 'post-event', status: 409 }),
+    ]);
+    expect((await ada.store.getTask(task.id))['current-occurrence']).toMatchObject({ status: 'cancelled', 'completion-count': 0 });
   });
 
   it('delivers a purged list as a tombstone', async () => {

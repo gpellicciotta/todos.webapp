@@ -8,6 +8,8 @@ export const STORES = {
   tasks: 'tasks',
   memberships: 'memberships',
   notes: 'notes',
+  occurrences: 'occurrences',
+  events: 'events',
   queue: 'sync-queue',
   state: 'sync-state',
   log: 'sync-log',

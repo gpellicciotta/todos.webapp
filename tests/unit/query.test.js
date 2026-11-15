@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { isOverdue } from '../../src/js/core/overdue.js';
 import { freshStore } from './store-helpers.js';
+import { shapeTask } from './task-shape.js';
+
 import {
   DEFAULT_FILTER,
   clearFilters,
@@ -30,19 +32,7 @@ const WORK = '019a4e00-0000-7000-8000-00000000000b';
  * @returns {object} the task
  */
 function task(id, fields = {}) {
-  return {
-    id,
-    description: `Task ${id}`,
-    status: 'todo',
-    'due-time': null,
-    'overdue-handling': 'keep',
-    'owner-id': null,
-    'creation-time': '2026-11-01T09:00:00.000Z',
-    'last-update-time': '2026-11-01T09:00:00.000Z',
-    'last-activity-time': '2026-11-01T09:00:00.000Z',
-    'deletion-time': null,
-    ...fields,
-  };
+  return shapeTask({ id, description: `Task ${id}`, ...fields });
 }
 
 /**
@@ -64,12 +54,12 @@ function ids(tasks) {
 }
 
 const tasks = [
-  task('t1', { description: 'Buy paint', status: 'todo', 'due-time': local(2026, 10, 3, 18) }),
+  task('t1', { description: 'Buy paint', status: 'ready', 'due-time': local(2026, 10, 3, 18) }),
   task('t2', { description: 'call plumber', status: 'in-progress', 'due-time': local(2026, 10, 4, 18) }),
   task('t3', { description: 'Fix door', status: 'completed', 'due-time': local(2026, 10, 2, 18) }),
   task('t4', { description: 'Pay rent', status: 'cancelled', 'due-time': local(2026, 10, 8, 23, 59) }),
-  task('t5', { description: 'Read book', status: 'todo', 'due-time': local(2026, 10, 10, 9) }),
-  task('t6', { description: 'Water plants', status: 'todo', 'creation-time': '2026-10-20T09:00:00.000Z' }),
+  task('t5', { description: 'Read book', status: 'ready', 'due-time': local(2026, 10, 10, 9) }),
+  task('t6', { description: 'Water plants', status: 'ready', 'creation-time': '2026-10-20T09:00:00.000Z' }),
 ];
 
 const ctx = {
@@ -89,7 +79,7 @@ describe('filterTasks', () => {
   });
 
   it('defaults to the open statuses', () => {
-    expect(DEFAULT_FILTER).toEqual({ statuses: ['todo', 'in-progress'] });
+    expect(DEFAULT_FILTER).toEqual({ statuses: ['ready', 'in-progress'] });
     expect(ids(filterTasks(tasks, DEFAULT_FILTER, ctx))).toEqual(['t1', 't2', 't5', 't6']);
   });
 
@@ -104,8 +94,8 @@ describe('filterTasks', () => {
   });
 
   it('combines filters with AND', () => {
-    expect(ids(filterTasks(tasks, { lists: [HOME], statuses: ['todo'] }, ctx))).toEqual(['t1', 't5']);
-    expect(ids(filterTasks(tasks, { lists: [HOME], statuses: ['todo'], text: 'anna' }, ctx))).toEqual(['t5']);
+    expect(ids(filterTasks(tasks, { lists: [HOME], statuses: ['ready'] }, ctx))).toEqual(['t1', 't5']);
+    expect(ids(filterTasks(tasks, { lists: [HOME], statuses: ['ready'], text: 'anna' }, ctx))).toEqual(['t5']);
     expect(filterTasks(tasks, { lists: [WORK], statuses: ['cancelled'] }, ctx)).toEqual([]);
   });
 
@@ -202,7 +192,7 @@ describe('filterTasks', () => {
 describe('the Finished today only choice (TV-14)', () => {
   // The finish time of a completed or cancelled task is its last update time.
   const finished = [
-    task('f1', { status: 'todo', 'last-update-time': local(2026, 9, 1, 9) }),
+    task('f1', { status: 'ready', 'last-update-time': local(2026, 9, 1, 9) }),
     task('f2', { status: 'in-progress', 'last-update-time': local(2026, 9, 1, 9) }),
     task('f3', { status: 'completed', 'last-update-time': local(2026, 10, 4, 8) }),
     task('f4', { status: 'completed', 'last-update-time': local(2026, 10, 3, 20) }),
@@ -211,7 +201,7 @@ describe('the Finished today only choice (TV-14)', () => {
   ];
 
   it('keeps open tasks and the tasks finished today, and drops the tasks finished earlier', () => {
-    const statuses = ['todo', 'in-progress', 'completed', 'cancelled'];
+    const statuses = ['ready', 'in-progress', 'completed', 'cancelled'];
     expect(ids(filterTasks(finished, { statuses, finishedToday: true }, ctx))).toEqual(['f1', 'f2', 'f3', 'f5']);
     expect(ids(filterTasks(finished, { statuses }, ctx))).toHaveLength(6);
   });
@@ -223,7 +213,7 @@ describe('the Finished today only choice (TV-14)', () => {
   });
 
   it('changes nothing when only open statuses are checked, or when the choice is off', () => {
-    expect(ids(filterTasks(finished, { statuses: ['todo', 'in-progress'], finishedToday: true }, ctx))).toEqual(['f1', 'f2']);
+    expect(ids(filterTasks(finished, { statuses: ['ready', 'in-progress'], finishedToday: true }, ctx))).toEqual(['f1', 'f2']);
     expect(ids(filterTasks(finished, { finishedToday: false }, ctx))).toHaveLength(6);
   });
 
@@ -241,7 +231,7 @@ describe('the Finished today only choice (TV-14)', () => {
     const fresh = task('n', { 'creation-time': '2026-11-04T12:00:00.000Z' });
     expect(hidingFilters(fresh, { statuses: [], finishedToday: true }, { now: NOW })).toEqual([]);
     const filter = { statuses: ['completed'], finishedToday: true, due: ['today'] };
-    expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['todo', 'in-progress'], due: ['today'] });
+    expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['ready', 'in-progress'], due: ['today'] });
     expect(clearFilters(filter, ['due'])).toEqual({ statuses: ['completed'], finishedToday: true });
   });
 });
@@ -271,13 +261,13 @@ describe('sortTasks', () => {
 
   it('sorts by creation and last activity time', () => {
     const list = [
-      task('x', { 'creation-time': '2026-11-02T00:00:00.000Z', 'last-activity-time': '2026-11-03T00:00:00.000Z' }),
-      task('y', { 'creation-time': '2026-11-01T00:00:00.000Z', 'last-activity-time': '2026-11-05T00:00:00.000Z' }),
-      task('z', { 'creation-time': '2026-11-03T00:00:00.000Z', 'last-activity-time': '2026-11-04T00:00:00.000Z' }),
+      task('x', { 'creation-time': '2026-11-02T00:00:00.000Z', 'last-update-time': '2026-11-03T00:00:00.000Z' }),
+      task('y', { 'creation-time': '2026-11-01T00:00:00.000Z', 'last-update-time': '2026-11-05T00:00:00.000Z' }),
+      task('z', { 'creation-time': '2026-11-03T00:00:00.000Z', 'last-update-time': '2026-11-04T00:00:00.000Z' }),
     ];
     expect(ids(sortTasks(list, { field: 'creation-time', direction: 'asc' }))).toEqual(['y', 'x', 'z']);
     expect(ids(sortTasks(list, { field: 'creation-time', direction: 'desc' }))).toEqual(['z', 'x', 'y']);
-    expect(ids(sortTasks(list, { field: 'last-activity-time', direction: 'desc' }))).toEqual(['y', 'z', 'x']);
+    expect(ids(sortTasks(list, { field: 'last-update-time', direction: 'desc' }))).toEqual(['y', 'z', 'x']);
   });
 
   it('sorts by status in lifecycle order', () => {
@@ -391,7 +381,7 @@ describe('queries over the local store', () => {
 
 describe('performance', () => {
   it('filters and sorts 5000 tasks in under 50 ms', () => {
-    const statuses = ['todo', 'in-progress', 'completed', 'cancelled'];
+    const statuses = ['ready', 'in-progress', 'completed', 'cancelled'];
     const words = ['paint', 'plumber', 'door', 'rent', 'book', 'plants', 'garden', 'report'];
     const many = [];
     const listsByTask = new Map();
@@ -412,7 +402,7 @@ describe('performance', () => {
       }
     }
     const perfCtx = { now: NOW, listsByTask, notesByTask, sharedListIds: new Set([WORK]) };
-    const filter = { lists: [HOME, NO_LIST], statuses: ['todo', 'in-progress'], due: ['overdue', 'this-week', 'none'], text: 'p' };
+    const filter = { lists: [HOME, NO_LIST], statuses: ['ready', 'in-progress'], due: ['overdue', 'this-week', 'none'], text: 'p' };
     const run = () => sortTasks(filterTasks(many, filter, perfCtx), DEFAULT_ORDER);
 
     run();
@@ -446,7 +436,7 @@ describe('exact match and hidden task helpers', () => {
 
   it('clears the named filters, restoring the default statuses', () => {
     const filter = { statuses: ['completed'], due: ['today'], lists: [HOME] };
-    expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['todo', 'in-progress'], lists: [HOME] });
+    expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['ready', 'in-progress'], lists: [HOME] });
     expect(filter.due).toEqual(['today']);
   });
 });
@@ -456,9 +446,9 @@ describe('groupTasks (VO-9 to VO-12)', () => {
 
   it('groups by status in lifecycle order and hides empty groups', () => {
     const groups = groupTasks(tasks, 'status', ctx);
-    expect(summary(groups)).toEqual([['todo', ['t1', 't5', 't6']], ['in-progress', ['t2']], ['completed', ['t3']], ['cancelled', ['t4']]]);
+    expect(summary(groups)).toEqual([['ready', ['t1', 't5', 't6']], ['in-progress', ['t2']], ['completed', ['t3']], ['cancelled', ['t4']]]);
     expect(groups.map((group) => group.label)).toEqual(['To do', 'In progress', 'Completed', 'Cancelled']);
-    expect(summary(groupTasks(filterTasks(tasks, DEFAULT_FILTER, ctx), 'status', ctx))).toEqual([['todo', ['t1', 't5', 't6']], ['in-progress', ['t2']]]);
+    expect(summary(groupTasks(filterTasks(tasks, DEFAULT_FILTER, ctx), 'status', ctx))).toEqual([['ready', ['t1', 't5', 't6']], ['in-progress', ['t2']]]);
   });
 
   it('groups by due date from a fixed clock: Overdue, Today, Tomorrow, This week, Later, No due date', () => {
@@ -508,7 +498,7 @@ describe('groupTasks (VO-9 to VO-12)', () => {
 
   it('keeps the input order inside each group, so sort applies per group', () => {
     const sorted = sortTasks(tasks, { field: 'description', direction: 'desc' });
-    expect(summary(groupTasks(sorted, 'status', ctx))[0]).toEqual(['todo', ['t6', 't5', 't1']]);
+    expect(summary(groupTasks(sorted, 'status', ctx))[0]).toEqual(['ready', ['t6', 't5', 't1']]);
   });
 
   it('counts each group among all tasks as its total, or among its own tasks without them', () => {

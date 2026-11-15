@@ -20,7 +20,7 @@ const THEMES = [
 
 const APP_SECTIONS = ['Status button', 'Task row', 'Task list'];
 
-const STATUSES = ['todo', 'in-progress', 'completed', 'cancelled'];
+const STATUSES = ['ready', 'in-progress', 'completed', 'cancelled'];
 
 /**
  * Collect console errors, page errors, failed requests, and HTTP errors of a page.
@@ -317,7 +317,7 @@ test('the task list pattern shows only open rows under the Status: open of its i
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
   await expect(page.locator('#task-list .info-line__text')).toContainText('Status: open');
   const statuses = await page.locator('#task-list .task-row').evaluateAll((rows) => rows.map((row) => row.dataset.status));
-  expect(statuses.filter((status) => !['todo', 'in-progress'].includes(status))).toEqual([]);
+  expect(statuses.filter((status) => !['ready', 'in-progress'].includes(status))).toEqual([]);
 });
 
 for (const theme of THEMES) {
@@ -325,7 +325,7 @@ for (const theme of THEMES) {
     await openGallery(page, VIEWPORTS[1], theme);
     await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; }' });
     const expected = {
-      todo: await tokenColor(page, '--color-text-muted'),
+      ready: await tokenColor(page, '--color-text-muted'),
       'in-progress': await tokenColor(page, '--color-status-in-progress'),
       completed: await tokenColor(page, '--color-status-completed'),
       cancelled: await tokenColor(page, '--color-status-cancelled'),

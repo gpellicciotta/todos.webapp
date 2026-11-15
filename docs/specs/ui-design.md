@@ -608,9 +608,10 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
   - Overdue behavior: Keep open or Cancel automatically, shown once a due time is set (`TSK-7`).
   - Lists: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
   - Notes: an add note field, then the note thread, newest first (`NOT-1` to `NOT-5`).
-  - Details: created, last updated, last activity, and owner when connected (`TSK-12`).
+  - Details: created, last updated, and owner when connected (`TSK-12`).
   - Delete task, at the bottom, after a divider and extra space, away from the notes.
-- Each note shows its author when connected, its time, and "edited" after a change.
+- Each note shows its author when connected: You for own notes, Collaborator for others, Former member for a deleted account.
+- Each note shows its time, and "edited" after a change; only own notes have Edit and Delete.
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
 - A viewer sees all fields read-only and a banner naming the list owner (`SHR-4`).
   Only the task owner or the owner of a list holding the task sees Delete task.

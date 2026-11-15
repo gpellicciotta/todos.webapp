@@ -48,11 +48,11 @@ describe('list counts in the sidebar and on the Lists screen', () => {
     const home = await store.createList({ name: 'Home' });
     const work = await store.createList({ name: 'Work' });
     const empty = await store.createList({ name: 'Empty' });
-    const open = await store.createTask({ description: 'Open one', status: 'todo' }, { lists: [home.id] });
+    const open = await store.createTask({ description: 'Open one', status: 'ready' }, { lists: [home.id] });
     const progress = await store.createTask({ description: 'In progress', status: 'in-progress' }, { lists: [home.id] });
     const done = await store.createTask({ description: 'Done', status: 'completed' }, { lists: [home.id] });
     const cancelled = await store.createTask({ description: 'Cancelled', status: 'cancelled' }, { lists: [home.id] });
-    const shared = await store.createTask({ description: 'Shared', status: 'todo' }, { lists: [home.id, work.id] });
+    const shared = await store.createTask({ description: 'Shared', status: 'ready' }, { lists: [home.id, work.id] });
     ids = { home: home.id, work: work.id, empty: empty.id, open: open.id, progress: progress.id, done: done.id, cancelled: cancelled.id, shared: shared.id };
     root = document.body.appendChild(document.createElement('div'));
     shell = renderShell(root, { navigate: vi.fn() });
@@ -80,7 +80,7 @@ describe('list counts in the sidebar and on the Lists screen', () => {
   it('follow task status changes, deletes, and list changes together', async () => {
     await mount();
     await store.updateTask(ids.open, { status: 'completed' });
-    await store.updateTask(ids.done, { status: 'todo' });
+    await store.updateTask(ids.done, { status: 'ready' });
     await store.updateTask(ids.cancelled, { status: 'in-progress' });
     await store.deleteTask(ids.shared);
     await refreshSidebar();

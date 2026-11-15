@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { countLists, countOf, EMPTY_COUNT } from '../../src/js/core/list-counts.js';
 
-const task = (id, status, activity, extra = {}) => ({ id, status, 'last-activity-time': activity, ...extra });
+const task = (id, status, activity, extra = {}) => ({ id, 'current-occurrence': { status }, 'last-update-time': activity, ...extra });
 const member = (taskId, listId) => ({ 'task-id': taskId, 'list-id': listId });
 
 describe('countLists', () => {
   const tasks = [
-    task('t1', 'todo', '2026-01-01T10:00:00.000Z'),
+    task('t1', 'ready', '2026-01-01T10:00:00.000Z'),
     task('t2', 'in-progress', '2026-01-03T10:00:00.000Z'),
     task('t3', 'completed', '2026-01-05T10:00:00.000Z'),
     task('t4', 'cancelled', '2026-01-02T10:00:00.000Z'),
-    task('t5', 'todo', '2026-01-04T10:00:00.000Z'),
+    task('t5', 'ready', '2026-01-04T10:00:00.000Z'),
   ];
   const memberships = [
     member('t1', 'home'), member('t2', 'home'), member('t3', 'home'),
@@ -32,7 +32,7 @@ describe('countLists', () => {
   });
 
   it('excludes deleted tasks everywhere', () => {
-    const withDeleted = [...tasks, task('t6', 'todo', '2026-02-01T10:00:00.000Z', { 'deletion-time': '2026-02-02T10:00:00.000Z' })];
+    const withDeleted = [...tasks, task('t6', 'ready', '2026-02-01T10:00:00.000Z', { 'deletion-time': '2026-02-02T10:00:00.000Z' })];
     const counts = countLists(withDeleted, [...memberships, member('t6', 'home')]);
     expect(counts.all).toBe(3);
     expect(counts.byList.get('home')).toEqual({ open: 2, total: 3, activity: Date.parse('2026-01-05T10:00:00.000Z') });
@@ -44,7 +44,7 @@ describe('countLists', () => {
   });
 
   it('gives a missing or invalid activity time a null activity', () => {
-    const counts = countLists([task('a', 'todo', undefined), task('b', 'todo', 'not a date')], [member('a', 'x'), member('b', 'x')]);
+    const counts = countLists([task('a', 'ready', undefined), task('b', 'ready', 'not a date')], [member('a', 'x'), member('b', 'x')]);
     expect(counts.byList.get('x')).toEqual({ open: 2, total: 2, activity: null });
   });
 
@@ -57,7 +57,7 @@ describe('countLists', () => {
 
 describe('countOf', () => {
   it('reads a list count, or the empty count', () => {
-    const counts = countLists([task('a', 'todo', '2026-01-01T00:00:00.000Z')], [member('a', 'x')]);
+    const counts = countLists([task('a', 'ready', '2026-01-01T00:00:00.000Z')], [member('a', 'x')]);
     expect(countOf(counts, 'x').open).toBe(1);
     expect(countOf(counts, 'none')).toBe(EMPTY_COUNT);
     expect(EMPTY_COUNT).toEqual({ open: 0, total: 0, activity: null });
@@ -89,9 +89,10 @@ describe('countLists at scale', () => {
     const memberships = [];
     for (let index = 0; index < 5000; index += 1) {
       const record = { id: `t${index}` };
-      countedProperty(record, 'status', index % 2 === 0 ? 'todo' : 'completed', taskReads);
+      countedProperty(record, 'current-occurrence', { status: index % 2 === 0 ? 'ready' : 'completed' }, taskReads);
       countedProperty(record, 'deletion-time', undefined, taskReads);
-      countedProperty(record, 'last-activity-time', new Date(Date.UTC(2026, 0, 1) + index * 1000).toISOString(), taskReads);
+      countedProperty(record, 'last-update-time', new Date(Date.UTC(2026, 0, 1) + index * 1000).toISOString(), taskReads);
+
       tasks.push(record);
       for (const listIndex of [index % 500, (index * 7 + 1) % 500]) {
         const entry = {};

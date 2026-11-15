@@ -113,7 +113,7 @@ test('every field saves on change without a Save button, and the changes survive
     const store = await openStore();
     const task = await store.getTask(taskId);
     store.close();
-    return task['overdue-handling'];
+    return task['lifecycle-rules']['overdue-handling'];
   }, id)).toBe('cancel');
   await page.reload();
   await expect(panel.getByLabel('Description')).toHaveValue('Buy blue paint');
@@ -137,7 +137,7 @@ test('typing a due date by keyboard saves nothing until focus leaves the due fie
     const store = await openStore();
     const task = await store.getTask(taskId);
     store.close();
-    return task['due-time'];
+    return task['lifecycle-rules']['due-time'];
   }, id);
   const date = panel.getByLabel('Due date', { exact: true });
   await date.focus();

@@ -11,7 +11,7 @@ import { request, StoreError, STORES, transact } from './idb.js';
 export const RETENTION_DAYS = 30;
 const RETENTION_MS = RETENTION_DAYS * 86_400_000;
 const TYPES = { list: STORES.lists, task: STORES.tasks };
-const ALL_STORES = [STORES.lists, STORES.tasks, STORES.memberships, STORES.notes];
+const ALL_STORES = [STORES.lists, STORES.tasks, STORES.memberships, STORES.notes, STORES.occurrences, STORES.events];
 
 /**
  * Return the object store name of a bin entry type.
@@ -80,9 +80,6 @@ function moveToBin(ctx, type, id) {
     }
     const time = ctx.now().toISOString();
     const updated = { ...record, 'deletion-time': time, 'last-update-time': time };
-    if (type === 'task') {
-      updated['last-activity-time'] = time;
-    }
     await request(tx.objectStore(storeOf(type)).put(updated));
     return updated;
   });
@@ -104,16 +101,13 @@ function restore(ctx, type, id) {
     }
     const time = now.toISOString();
     const updated = { ...record, 'deletion-time': null, 'last-update-time': time };
-    if (type === 'task') {
-      updated['last-activity-time'] = time;
-    }
     await request(tx.objectStore(storeOf(type)).put(updated));
     return updated;
   });
 }
 
 /**
- * Remove a list or task for good inside a transaction, with its memberships and, for a task, its notes.
+ * Remove a list or task for good inside a transaction, with its memberships and, for a task, its notes, occurrences, and events.
  * @param {IDBTransaction} tx a read-write transaction covering all stores
  * @param {{keyRange: typeof IDBKeyRange}} ctx store context
  * @param {string} type `list` or `task`
@@ -131,7 +125,9 @@ async function removeRecord(tx, ctx, type, id) {
   for (const key of keys.filter((candidate) => candidate[1] === id)) {
     await request(memberships.delete(key));
   }
-  await request(tx.objectStore(STORES.notes).delete(ctx.keyRange.bound([id], [id, []])));
+  for (const name of [STORES.notes, STORES.occurrences, STORES.events]) {
+    await request(tx.objectStore(name).delete(ctx.keyRange.bound([id], [id, []])));
+  }
 }
 
 /**

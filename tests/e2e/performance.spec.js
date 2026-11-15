@@ -24,20 +24,26 @@ async function seed(page, count) {
   return page.evaluate(async (total) => {
     const { openStore } = await import('/js/store/db.js');
     const { uuid7 } = await import('/js/lib/uuid7.js');
+    const { DEFAULT_RULES, firstOccurrence } = await import('/js/core/occurrences.js');
     const store = await openStore({ broadcast: true });
     const time = new Date().toISOString();
-    const tasks = Array.from({ length: total }, (_, index) => ({
-      id: uuid7(),
-      description: `Task ${String(index).padStart(4, '0')}`,
-      status: 'todo',
-      'due-time': index % 3 === 0 ? new Date(Date.now() + ((index % 20) - 10) * 86_400_000).toISOString() : null,
-      'overdue-handling': 'keep',
-      'owner-id': null,
-      'creation-time': time,
-      'last-update-time': time,
-      'last-activity-time': time,
-      'deletion-time': null,
-    }));
+    const tasks = Array.from({ length: total }, (_, index) => {
+      const rules = {
+        ...DEFAULT_RULES,
+        'due-time': index % 3 === 0 ? new Date(Date.now() + ((index % 20) - 10) * 86_400_000).toISOString() : null,
+      };
+      return {
+        id: uuid7(),
+        description: `Task ${String(index).padStart(4, '0')}`,
+        'owner-id': null,
+        'lifecycle-rules': rules,
+        'current-occurrence': firstOccurrence(rules, time),
+        'creation-time': time,
+        'last-update-time': time,
+        'deletion-time': null,
+      };
+    });
+
     await store.applyChanges(() => ({ changes: { put: { tasks } }, result: null }));
     store.close();
   }, count);

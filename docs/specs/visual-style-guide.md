@@ -321,7 +321,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - Symbols hold no colors: filled parts set `fill="currentColor"` and `stroke="none"`.
 - Mark decorative icons with `aria-hidden="true"`; buttons carry the accessible name, not the icon.
 - Keep one stroke width and one 24 px grid across the set.
-- Status icons: `status-todo`, `status-in-progress`, `status-completed`, and `status-cancelled`.
+- Status icons: `status-ready`, `status-in-progress`, `status-completed`, and `status-cancelled`.
 - Sync icons: `sync-local`, `sync-synced`, `sync-syncing`, `sync-offline`, `sync-sign-in`, and `sync-error`.
 
 ---

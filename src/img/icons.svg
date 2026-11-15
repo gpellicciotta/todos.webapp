@@ -7,7 +7,7 @@
   -->
 
   <!-- Task status: the shapes differ, so status never relies on color. -->
-  <symbol id="status-todo" viewBox="0 0 24 24">
+  <symbol id="status-ready" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="9"/>
   </symbol>
   <symbol id="status-in-progress" viewBox="0 0 24 24">

@@ -4,16 +4,33 @@ import { planConflicts, planDisconnect, planPage, planReset } from '../../src/js
 const T0 = '2026-11-04T09:00:00.000Z';
 const NOW = new Date('2026-11-05T09:00:00.000Z');
 
-const task = (id, extra = {}) => ({
-  id, description: `Task ${id}`, status: 'todo', 'due-time': null, 'overdue-handling': 'keep', 'owner-id': 7,
-  'creation-time': T0, 'last-update-time': T0, 'last-activity-time': T0, 'deletion-time': null, revision: 10, ...extra,
+/**
+ * Build a task in the wire and store shape; `status`, `count`, `target`, `due`, and `handling` set its rules and occurrence.
+ * @param {string} id the identifier
+ * @param {object} [extra] the shortcuts and other fields
+ * @returns {object} the task
+ */
+const task = (id, { status = 'ready', count = 0, target = 1, due = null, handling = 'keep', ...extra } = {}) => ({
+  id,
+  description: `Task ${id}`,
+  'owner-id': 7,
+  'lifecycle-rules': {
+    'target-count': target, 'due-time': due, 'overdue-handling': handling, 'recurrence-unit': null,
+    'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
+  },
+  'current-occurrence': {
+    occurrence: 1, 'start-time': T0, 'due-time': due, 'target-count': target, 'completion-count': count, status,
+    'close-time': status === 'completed' || status === 'cancelled' ? T0 : null,
+  },
+  'creation-time': T0, 'last-update-time': T0, 'deletion-time': null, revision: 10, ...extra,
 });
+const statusOf = (row) => row['current-occurrence'].status;
 const list = (id, extra = {}) => ({
   id, name: `List ${id}`, description: '', owner: { id: 7 }, role: 'owner', sharing: [],
   'creation-time': T0, 'last-update-time': T0, 'deletion-time': null, revision: 10, ...extra,
 });
 const note = (id, taskId, extra = {}) => ({
-  id, 'task-id': taskId, 'author-id': 7, text: `Note ${id}`, 'creation-time': T0, 'last-edit-time': T0, revision: 10, ...extra,
+  id, 'task-id': taskId, 'owner-id': 7, text: `Note ${id}`, occurrence: null, 'creation-time': T0, 'last-update-time': T0, revision: 10, ...extra,
 });
 const membership = (listId, taskId, extra = {}) => ({ 'list-id': listId, 'task-id': taskId, position: 'a0', revision: 10, ...extra });
 const empty = () => ({ lists: [], tasks: [], memberships: [], notes: [] });
@@ -66,19 +83,49 @@ describe('merging a pulled row', () => {
   it('keeps edits to different fields of one task from two devices', () => {
     const local = { ...empty(), tasks: [task('t1', { description: 'Local text', revision: 10 })] };
     const pending = [entry('update-task', { type: 'task', id: 't1' }, { description: 'Local text' })];
-    const page = feed({ tasks: [task('t1', { description: 'Old text', status: 'completed', revision: 12 })] });
+    const page = feed({ tasks: [task('t1', { description: 'Old text', status: 'completed', count: 1, revision: 12 })] });
     const { changes } = plan(local, page, { pending });
     const merged = applied(local, changes).tasks.get('t1');
-    expect(merged).toMatchObject({ description: 'Local text', status: 'completed', revision: 12 });
+    expect(merged).toMatchObject({ description: 'Local text', 'current-occurrence': { status: 'completed' }, revision: 12 });
   });
 
-  it('keeps a pending field over the pulled row and takes the other fields', () => {
-    const local = { ...empty(), tasks: [task('t1', { status: 'in-progress' })] };
-    const pending = [entry('update-task', { type: 'task', id: 't1' }, { status: 'in-progress' })];
-    const page = feed({ tasks: [task('t1', { status: 'cancelled', 'due-time': '2026-12-01T10:00:00.000Z', revision: 11 })] });
-    const merged = applied(local, plan(local, page, { pending }).changes).tasks.get('t1');
-    expect(merged.status).toBe('in-progress');
-    expect(merged['due-time']).toBe('2026-12-01T10:00:00.000Z');
+  it('replaces the cached rules and current occurrence with the server copy, then reapplies queued events', () => {
+    const local = { ...empty(), tasks: [task('t1', { target: 3, count: 1, status: 'in-progress' })] };
+    const event = (seq, type, time) => entry('post-event', { type: 'event', id: `e${seq}`, 'task-id': 't1' }, { id: `e${seq}`, type, 'creation-time': time, occurrence: 1 }, { seq });
+    const pending = [event(1, 'complete', '2026-11-04T10:00:00.000Z'), event(2, 'complete', '2026-11-04T10:01:00.000Z')];
+    const server = task('t1', { target: 3, count: 1, status: 'in-progress', due: '2026-11-20T10:00:00.000Z', revision: 14 });
+    const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
+    expect(merged['lifecycle-rules']).toEqual(server['lifecycle-rules']);
+    expect(merged['current-occurrence']).toEqual({ ...server['current-occurrence'], 'completion-count': 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' });
+    expect(merged.revision).toBe(14);
+  });
+
+  it('folds only the queued events of the pulled occurrence, not those of an occurrence the service closed', () => {
+    const local = { ...empty(), tasks: [task('t1', { status: 'completed', count: 1 })] };
+    const pending = [entry('post-event', { type: 'event', id: 'e1', 'task-id': 't1' }, { id: 'e1', type: 'complete', 'creation-time': T0, occurrence: 1 })];
+    const server = task('t1', { revision: 14 });
+    server['current-occurrence'] = { ...server['current-occurrence'], occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z' };
+    const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
+    expect(merged['current-occurrence']).toMatchObject({ occurrence: 2, 'completion-count': 0, status: 'ready' });
+  });
+
+  it('keeps a pending rule field over the server copy and moves the open occurrence with it', () => {
+    const local = { ...empty(), tasks: [task('t1', { due: '2026-11-09T10:00:00.000Z' })] };
+    const pending = [entry('update-rules', { type: 'rules', id: 't1' }, { 'due-time': '2026-11-09T10:00:00.000Z' })];
+    const server = task('t1', { due: '2026-12-01T10:00:00.000Z', handling: 'cancel', revision: 11 });
+    const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
+    expect(merged['lifecycle-rules']).toMatchObject({ 'due-time': '2026-11-09T10:00:00.000Z', 'overdue-handling': 'cancel' });
+    expect(merged['current-occurrence']['due-time']).toBe('2026-11-09T10:00:00.000Z');
+  });
+
+  it('keeps a local expire while the server copy is still open past its deadline with handling cancel', () => {
+    const due = '2026-11-05T08:00:00.000Z';
+    const local = { ...empty(), tasks: [task('t1', { due, handling: 'cancel', status: 'cancelled' })] };
+    const server = task('t1', { due, handling: 'cancel', revision: 11 });
+    const merged = applied(local, plan(local, feed({ tasks: [server] })).changes).tasks.get('t1');
+    expect(merged['current-occurrence']).toMatchObject({ status: 'cancelled', 'close-time': NOW.toISOString() });
+    const kept = task('t1', { due, handling: 'keep', revision: 12 });
+    expect(statusOf(applied(local, plan(local, feed({ tasks: [kept] })).changes).tasks.get('t1'))).toBe('ready');
   });
 
   it('keeps a pending trash of a list and a pending membership removal', () => {
@@ -127,11 +174,13 @@ describe('merging a pulled row', () => {
     expect([...result.notes.values()].map((n) => [n.id, n.text])).toEqual([['n1', 'Mine'], ['n2', 'Changed'], ['n3', 'Note n3']]);
   });
 
-  it('maps the feed note fields to the local note', () => {
-    const page = feed({ notes: [note('n1', 't1', { 'last-edit-time': '2026-11-04T10:00:00.000Z' }), note('n2', 't1')] });
+  it('maps the feed note fields owner-id, last-update-time, and occurrence to the local note', () => {
+    const page = feed({ notes: [note('n1', 't1', { 'last-update-time': '2026-11-04T10:00:00.000Z', occurrence: 1 }), note('n2', 't1', { 'owner-id': null })] });
     const result = applied(empty(), plan(empty(), page).changes).notes;
-    expect(result.get('n1')).toMatchObject({ author: 7, 'edit-time': '2026-11-04T10:00:00.000Z' });
-    expect(result.get('n2')['edit-time']).toBeNull();
+    expect(result.get('n1')).toEqual({
+      id: 'n1', 'task-id': 't1', text: 'Note n1', 'owner-id': 7, occurrence: 1, 'creation-time': T0, 'last-update-time': '2026-11-04T10:00:00.000Z', revision: 10,
+    });
+    expect(result.get('n2')).toMatchObject({ 'owner-id': null, 'last-update-time': T0, occurrence: null });
   });
 });
 
@@ -251,6 +300,14 @@ describe('replayed changes that lost a field', () => {
       [{ field: 'text', sent: 'Mine', kept: 'Theirs', 'kept-edit-time': T0 }], []);
     expect(applied(local, edited).notes.get('n1').text).toBe('Theirs');
   });
+
+  it('applies the kept value of a rule field to the rules and the open occurrence', () => {
+    const local = { ...empty(), tasks: [task('t1', { target: 3 })] };
+    const conflicts = [{ field: 'target-count', sent: 3, kept: 2, 'kept-edit-time': T0 }];
+    const changes = planConflicts(local, entry('update-rules', { type: 'rules', id: 't1' }, { 'target-count': 3 }), conflicts, []);
+    const row = applied(local, changes).tasks.get('t1');
+    expect([row['lifecycle-rules']['target-count'], row['current-occurrence']['target-count']]).toEqual([2, 2]);
+  });
 });
 
 describe('rebuilding after a 410', () => {
@@ -268,9 +325,19 @@ describe('rebuilding after a 410', () => {
 
   it('strips the revision of a row with queued changes, so the snapshot can merge into it', () => {
     const local = { ...empty(), tasks: [task('t1')] };
-    const pending = [entry('update-task', { type: 'task', id: 't1' }, { status: 'completed' })];
+    const pending = [entry('update-task', { type: 'task', id: 't1' }, { description: 'Mine' })];
     const row = applied(local, planReset(local, pending)).tasks.get('t1');
     expect(row.revision).toBeUndefined();
+  });
+
+  it('keeps a task with only queued events or rule edits', () => {
+    const local = { ...empty(), tasks: [task('t1'), task('t2')] };
+    const pending = [
+      entry('post-event', { type: 'event', id: 'e1', 'task-id': 't1' }, { id: 'e1', type: 'start', 'creation-time': T0, occurrence: 1 }),
+      entry('update-rules', { type: 'rules', id: 't2' }, { 'target-count': 2 }, { seq: 2 }),
+    ];
+    const result = applied(local, planReset(local, pending)).tasks;
+    expect([...result.keys()].sort()).toEqual(['t1', 't2']);
   });
 });
 
@@ -289,5 +356,32 @@ describe('disconnecting', () => {
     expect([...result.notes.keys()]).toEqual(['n2']);
     expect(result.tasks.get('mine').revision).toBeUndefined();
     expect(result.lists.get('own')).not.toHaveProperty('sharing');
+    expect([result.tasks.get('mine')['owner-id'], result.notes.get('n2')['owner-id']]).toEqual([null, null]);
+  });
+
+  it('gives kept tasks local events that reproduce a status set on another device', () => {
+    let next = 0;
+    const newId = () => `x${next++}`;
+    const event = (id, taskId, type) => ({ id, 'task-id': taskId, type, 'creation-time': T0, occurrence: 1, 'owner-id': null, details: null });
+    const local = {
+      ...empty(),
+      tasks: [task('done', { status: 'completed', count: 1 }), task('ticked', { target: 3, count: 2, status: 'in-progress' }), task('mine', { status: 'in-progress' })],
+      events: [event('c1', 'done', 'create'), event('c3', 'mine', 'create'), event('s3', 'mine', 'start')],
+    };
+    const { put, delete: removed } = planDisconnect(local, 7, { newId });
+    const types = (taskId) => put.events.filter((row) => row['task-id'] === taskId).map((row) => row.type);
+    expect(types('done')).toEqual(['complete']);
+    expect(types('ticked')).toEqual(['create', 'complete', 'complete']);
+    expect(types('mine')).toEqual([]);
+    expect(removed.events).toEqual([]);
+    expect(put.events.find((row) => row.type === 'complete')).toMatchObject({ 'creation-time': T0, occurrence: 1 });
+  });
+
+  it('replaces local events that fold to another status than the pulled occurrence', () => {
+    const event = (id, type) => ({ id, 'task-id': 'mine', type, 'creation-time': T0, occurrence: 1, 'owner-id': null, details: null });
+    const local = { ...empty(), tasks: [task('mine', { status: 'cancelled' })], events: [event('c', 'create'), event('s', 'start')] };
+    const { put, delete: removed } = planDisconnect(local, 7, { newId: () => 'x1' });
+    expect(removed.events).toEqual([['mine', 's']]);
+    expect(put.events.map((row) => row.type)).toEqual(['cancel']);
   });
 });

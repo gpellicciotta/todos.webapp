@@ -8,9 +8,9 @@
  * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, Group by, and Sort by.
  */
 
+import { STATUSES } from '../core/occurrences.js';
 import { readPreference, removePreference, writePreference } from '../core/preferences.js';
 import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, GROUPINGS, NO_LIST, SORT_FIELDS } from '../core/query.js';
-import { STATUSES } from '../store/tasks.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { spriteIcon, STATUS_LABELS } from './task-list.js';
 
@@ -65,13 +65,13 @@ const FILTERS = Object.freeze([
 
 /** Sort field names, with Manual order for the list view (`LV-6`). */
 export const FIELD_LABELS = Object.freeze({
-  [MANUAL]: 'Manual order', 'due-time': 'Due time', 'creation-time': 'Created', 'last-activity-time': 'Last activity',
+  [MANUAL]: 'Manual order', 'due-time': 'Due time', 'creation-time': 'Created', 'last-update-time': 'Last activity',
   status: 'Status', description: 'Description',
 });
 
 /** The direction a field starts with: Due, Status, and Description ascend; Created and Activity show the newest first. */
 export const NATURAL_DIRECTION = Object.freeze({
-  [MANUAL]: 'asc', 'due-time': 'asc', 'creation-time': 'desc', 'last-activity-time': 'desc', status: 'asc', description: 'asc',
+  [MANUAL]: 'asc', 'due-time': 'asc', 'creation-time': 'desc', 'last-update-time': 'desc', status: 'asc', description: 'asc',
 });
 
 /** The groupings with a control, by kind of view; a list view cannot group by list (`LV-11`). */
@@ -119,6 +119,7 @@ function readRange(value) {
 /**
  * Keep the valid parts of a stored view state and fill the rest with the defaults.
  * The List screen of v0.1.0 stored `{order, statuses}`; that shape still reads.
+ * Views stored before the lifecycle rules read `todo` as `ready` and `last-activity-time` as `last-update-time`.
  * @param {unknown} raw the stored value
  * @param {'tasks'|'list'} [kind] the kind of view
  * @returns {{filter: object, order: object, group: string}} the view state, without search text
@@ -130,12 +131,14 @@ export function sanitizeViewState(raw, kind = 'tasks') {
   }
   const old = typeof raw.order === 'string' && !raw.filter;
   const stored = old ? { statuses: raw.statuses } : raw.filter;
-  const order = old ? { field: raw.order, direction: NATURAL_DIRECTION[raw.order] } : raw.order;
+  const renamed = (field) => (field === 'last-activity-time' ? 'last-update-time' : field);
+  const order = old ? { field: renamed(raw.order), direction: NATURAL_DIRECTION[renamed(raw.order)] } : raw.order && { ...raw.order, field: renamed(raw.order.field) };
   if (stored && typeof stored === 'object') {
     state.filter = {};
     if (Array.isArray(stored.statuses)) {
-      state.filter.statuses = stored.statuses.filter((status) => STATUSES.includes(status));
+      state.filter.statuses = [...new Set(stored.statuses.map((status) => (status === 'todo' ? 'ready' : status)))].filter((status) => STATUSES.includes(status));
     }
+
     if (stored.finishedToday === true) {
       state.filter.finishedToday = true;
     }

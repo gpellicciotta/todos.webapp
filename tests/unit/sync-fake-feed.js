@@ -2,12 +2,32 @@
  * Test double for the ToDo's service with a change feed: one user, one revision counter, per-field edit times, and tombstones.
  * Rows carry a `revision`; `GET /api/changes` pages them in revision order and answers `410` for a cursor outside the history.
  * Cursors read `c{{revision}}`. `fail` decides per call whether to answer an error status or refuse the connection.
+ * Tasks embed `lifecycle-rules` and `current-occurrence`; posted events fold into the occurrence like the service does.
  */
+
+import { applyEvent, applyRuleEdit, byEventOrder, DEFAULT_RULES, firstOccurrence, foldEvents, RULE_FIELDS } from '../../src/js/core/occurrences.js';
 
 const MERGED = {
   lists: ['name', 'description', 'deletion-time'],
-  tasks: ['description', 'status', 'due-time', 'overdue-handling', 'deletion-time'],
+  tasks: ['description', 'deletion-time'],
 };
+
+/**
+ * Build a stored task of the service from the fields a test or a create gives.
+ * @param {object} fields task fields, optionally with partial `lifecycle-rules`
+ * @returns {object} the task without `edit-times` and `revision`
+ */
+export function serviceTask(fields) {
+  const rules = { ...DEFAULT_RULES, ...fields['lifecycle-rules'] };
+  return {
+    'owner-id': USER.id,
+    'deletion-time': null,
+    'last-update-time': fields['creation-time'],
+    ...fields,
+    'lifecycle-rules': rules,
+    'current-occurrence': fields['current-occurrence'] ?? firstOccurrence(rules, fields['creation-time']),
+  };
+}
 const USER = { id: 7, email: 'ada@example.com', name: 'Ada' };
 
 /**
@@ -25,7 +45,9 @@ export function fakeFeed({ protocol = 1 } = {}) {
     tasks: new Map(),
     memberships: new Map(),
     notes: new Map(),
+    events: new Map(),
     tombstones: [],
+
     calls: [],
     fail: () => null,
   };
@@ -141,16 +163,39 @@ export function fakeFeed({ protocol = 1 } = {}) {
       return list ? { status: 200, body: { ...view(list), conflicts: merge('lists', list, patch, headers['Edit-Time']) } } : { status: 404 };
     }
     if (kind === 'tasks' && !id) {
-      const reply = create(service.tasks, body, { 'owner-id': USER.id, status: 'todo', 'due-time': null, 'overdue-handling': 'keep', 'deletion-time': null, 'last-update-time': body['creation-time'], 'last-activity-time': body['creation-time'] });
+      const reply = create(service.tasks, serviceTask(body), {});
       for (const listId of reply.status === 201 ? body.lists ?? [] : []) {
         service.memberships.set(`${listId}/${body.id}`, { 'list-id': listId, 'task-id': body.id, position: 'a0', revision: next() });
       }
       return reply;
     }
     if (kind === 'tasks' && sub === 'notes') {
-      return create(service.notes, { ...body, 'task-id': id, 'author-id': USER.id }, {});
+      return create(service.notes, { occurrence: null, 'last-update-time': body['creation-time'], ...body, 'task-id': id, 'owner-id': USER.id }, {});
     }
     const task = service.tasks.get(id);
+    if (kind === 'tasks' && task && sub === 'events') {
+      if (service.events.has(body.id)) {
+        return { status: 200, body: { event: service.events.get(body.id), task: view(task) } };
+      }
+      // Like the service, check the precondition at the event's place in creation-time order, then refold.
+      const event = { ...body, 'task-id': id };
+      const own = [...service.events.values()].filter((other) => other['task-id'] === id);
+      const base = { ...task['current-occurrence'], 'completion-count': 0, status: 'ready', 'close-time': null };
+      const before = foldEvents(base, own.filter((other) => byEventOrder(other, event) < 0), task['lifecycle-rules']);
+      if (!applyEvent(before, event, task['lifecycle-rules'])) {
+        return { status: 409, body: { message: 'precondition failed' } };
+      }
+      service.events.set(body.id, event);
+      const occurrence = foldEvents(base, [...own, event], task['lifecycle-rules']);
+      Object.assign(task, { 'current-occurrence': occurrence, 'last-update-time': body['creation-time'], revision: next() });
+
+      return { status: 201, body: { event: service.events.get(body.id), task: view(task) } };
+    }
+    if (kind === 'tasks' && task && sub === 'lifecycle-rules') {
+      const edit = Object.fromEntries(RULE_FIELDS.filter((name) => name in body).map((name) => [name, body[name]]));
+      Object.assign(task, applyRuleEdit(task, edit, new Date().toISOString()), { revision: next() });
+      return { status: 200, body: view(task) };
+    }
     if (kind === 'tasks' && task) {
       const patch = method === 'DELETE' ? { 'deletion-time': headers['Edit-Time'] } : body;
       return { status: 200, body: { ...view(task), conflicts: merge('tasks', task, patch, headers['Edit-Time']) } };
@@ -183,9 +228,7 @@ export function fakeFeed({ protocol = 1 } = {}) {
    * @param {string[]} listIds the lists that hold it
    */
   service.seedTask = (task, listIds = []) => {
-    service.tasks.set(task.id, {
-      status: 'todo', 'due-time': null, 'overdue-handling': 'keep', 'deletion-time': null, 'last-activity-time': task['creation-time'], 'last-update-time': task['creation-time'], ...task, 'edit-times': {}, revision: next(),
-    });
+    service.tasks.set(task.id, { ...serviceTask(task), 'edit-times': {}, revision: next() });
     for (const listId of listIds) {
       service.memberships.set(`${listId}/${task.id}`, { 'list-id': listId, 'task-id': task.id, position: 'a0', revision: next() });
     }

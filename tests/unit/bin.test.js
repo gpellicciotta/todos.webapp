@@ -105,7 +105,6 @@ describe('deleteTask', () => {
     expect(deleted).toMatchObject({
       'deletion-time': '2026-11-04T09:00:01.000Z',
       'last-update-time': '2026-11-04T09:00:01.000Z',
-      'last-activity-time': '2026-11-04T09:00:01.000Z',
     });
     expect(await store.listTasks()).toEqual([]);
     expect(await store.tasksOfList(home.id)).toEqual([]);
@@ -140,11 +139,11 @@ describe('restore', () => {
     expect(restored).toMatchObject({
       'deletion-time': null,
       'last-update-time': '2026-11-04T09:00:02.000Z',
-      'last-activity-time': '2026-11-04T09:00:02.000Z',
     });
     expect((await store.listsOfTask(task.id)).sort()).toEqual([home.id, work.id].sort());
     expect((await store.tasksOfList(home.id)).map((t) => t.id)).toEqual([task.id]);
-    await expect(store.updateTask(task.id, { status: 'completed' })).resolves.toMatchObject({ status: 'completed' });
+    await expect(store.updateTask(task.id, { status: 'completed' })).resolves.toMatchObject({ 'current-occurrence': { status: 'completed' } });
+
   });
 
   it('brings back a list with all its memberships', async () => {

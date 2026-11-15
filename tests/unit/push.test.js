@@ -63,7 +63,7 @@ describe('uploading the queue', () => {
     await store.addNote(task.id, { text: 'Blue' });
     expect(await push.drainOnce()).toBe('synced');
     expect(service.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
-      'POST /api/lists', 'POST /api/tasks', `PUT /api/tasks/${task.id}`, `POST /api/tasks/${task.id}/notes`,
+      'POST /api/lists', 'POST /api/tasks', `POST /api/tasks/${task.id}/events`, `POST /api/tasks/${task.id}/notes`,
     ]);
     expect(service.calls[1].body.lists).toEqual([list.id]);
     expect(await store.queue.count()).toBe(0);
@@ -97,11 +97,35 @@ describe('uploading the queue', () => {
     const task = await store.createTask({ description: 'Paint' });
     await push.drainOnce();
     clock.tick(60_000);
-    const updated = await store.updateTask(task.id, { description: 'Paint it', status: 'todo' });
+    const updated = await store.updateTask(task.id, { description: 'Paint it', status: 'ready' });
     await push.drainOnce();
     const update = service.calls.at(-1);
     expect(update.body).toEqual({ description: 'Paint it', 'edit-times': { description: updated['last-update-time'] } });
     expect(Object.keys(update.headers).map((name) => name.toLowerCase())).not.toContain('if-match');
+  });
+
+  it('creates a task with its rules, posts its events in order, and patches its rules', async () => {
+    const { store, clock, service, push } = await setup();
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    for (let tick = 0; tick < 3; tick++) {
+      clock.tick();
+      await store.postEvent(task.id, 'complete');
+    }
+    clock.tick();
+    await store.updateRules(task.id, { 'due-time': '2026-11-09T10:00:00Z' });
+    expect(await push.drainOnce()).toBe('synced');
+    expect(service.calls[0].body['lifecycle-rules']).toMatchObject({ 'target-count': 3, 'due-time': null });
+    const events = service.calls.filter((call) => call.path === `/api/tasks/${task.id}/events`);
+    expect(events.map((call) => [call.method, call.body.type, call.body['creation-time'], call.body.occurrence])).toEqual([
+      ['POST', 'complete', '2026-11-04T09:00:01.000Z', 1],
+      ['POST', 'complete', '2026-11-04T09:00:02.000Z', 1],
+      ['POST', 'complete', '2026-11-04T09:00:03.000Z', 1],
+    ]);
+    expect(events.map((call) => call.body.id)).toEqual((await store.eventsOfTask(task.id)).slice(1).map((event) => event.id));
+    const rules = service.calls.at(-1);
+    expect([rules.method, rules.path]).toEqual(['PATCH', `/api/tasks/${task.id}/lifecycle-rules`]);
+    expect(rules.body).toEqual({ 'due-time': '2026-11-09T10:00:00.000Z', 'edit-times': { 'due-time': '2026-11-04T09:00:04.000Z' } });
+    expect(await store.queue.count()).toBe(0);
   });
 });
 
@@ -132,6 +156,34 @@ describe('handling replies', () => {
     expect(await store.queue.count()).toBe(0);
     expect(rejected).toHaveLength(1);
     expect((await store.queue.log())[0]).toMatchObject({ kind: 'rejected', status, operation: 'update-task' });
+  });
+
+  it('reverts an event answered 409 and logs it like other rejected changes', async () => {
+    const { store, service, push, rejected } = await setup();
+    const task = await store.createTask({ description: 'Paint' });
+    await push.drainOnce();
+    await store.updateTask(task.id, { status: 'completed' });
+    service.fail = (call) => (call.path.endsWith('/events') ? 409 : null);
+    expect(await push.drainOnce()).toBe('synced');
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ status: 'ready', 'completion-count': 0, 'close-time': null });
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
+    expect(rejected).toHaveLength(1);
+    expect((await store.queue.log())[0]).toMatchObject({ kind: 'rejected', status: 409, operation: 'post-event', message: 'The service refused a status change, so it was undone.' });
+  });
+
+  it('restores the occurrence when the service refuses every queued tick', async () => {
+    const { store, clock, service, push, rejected } = await setup();
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 3 } });
+    await push.drainOnce();
+    for (let tick = 0; tick < 3; tick++) {
+      clock.tick();
+      await store.postEvent(task.id, 'complete');
+    }
+    service.fail = (call) => (call.path.endsWith('/events') ? 403 : null);
+    expect(await push.drainOnce()).toBe('synced');
+    expect(rejected).toHaveLength(3);
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 0, status: 'ready', 'close-time': null });
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
   });
 
   it('removes a rejected create and drops the queued changes that depend on it', async () => {

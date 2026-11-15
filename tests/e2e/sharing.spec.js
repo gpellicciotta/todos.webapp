@@ -16,9 +16,17 @@ const list = (id, name, fields) => ({
   id, name, description: '', 'creation-time': TIME, 'last-update-time': TIME, 'deletion-time': null, revision: 10, ...fields,
 });
 const task = (id, description, fields = {}) => ({
-  id, description, status: 'todo', 'due-time': null, 'overdue-handling': 'keep', 'owner-id': 3, 'creation-time': TIME,
-  'last-update-time': TIME, 'last-activity-time': TIME, 'deletion-time': null, revision: 10, ...fields,
+  id, description, 'owner-id': 3, 'creation-time': TIME, 'last-update-time': TIME, 'deletion-time': null, revision: 10,
+  'lifecycle-rules': {
+    'target-count': 1, 'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
+    'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
+  },
+  'current-occurrence': {
+    occurrence: 1, 'start-time': TIME, 'due-time': null, 'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': null,
+  },
+  ...fields,
 });
+
 const member = (listId, taskId) => ({ 'list-id': listId, 'task-id': taskId, position: 'a0', 'added-time': TIME, revision: 10 });
 
 /**

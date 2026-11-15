@@ -1,55 +1,49 @@
 /**
- * Overdue handling: the overdue flag and the cancellation of overdue `cancel` tasks (`OVD-1` to `OVD-6`).
+ * Overdue handling: the overdue flag and the expiry of overdue `cancel` tasks (`OVD-1` to `OVD-6`).
  *
  * The app runs the check once on start, for tasks that became overdue while it was closed (`OVD-5`),
- * and then every minute, so a `cancel` task changes within one minute of its due time (`OVD-4`).
+ * and then every minute, so a `cancel` task expires within one minute of its due time (`OVD-4`).
+ * Expiring writes a system `expire` event, as the service's hourly run does; the event never joins the change queue.
  */
 
+import { dueTimeOf, OPEN_STATUSES, shouldExpire, statusOf } from './occurrences.js';
+
 export const INTERVAL_MS = 60_000;
-const OPEN_STATUSES = ['todo', 'in-progress'];
 
 /**
- * Tell whether a task is overdue: its due time has passed and it is still open.
+ * Tell whether a task is overdue: the due time of its current occurrence has passed and it is still open.
  * @param {object} task a task record
  * @param {Date|number} now the current time, as a Date or Unix milliseconds
  * @returns {boolean} true when the task is overdue
  */
 export function isOverdue(task, now) {
-  if (!task['due-time'] || !OPEN_STATUSES.includes(task.status)) {
+  const due = dueTimeOf(task);
+  if (!due || !OPEN_STATUSES.includes(statusOf(task))) {
     return false;
   }
-  return Date.parse(task['due-time']) < new Date(now).getTime();
+  return Date.parse(due) < new Date(now).getTime();
 }
 
 /**
- * Tell whether overdue handling must cancel a task now.
- * @param {object} task a task record
- * @param {Date|number} now the current time
- * @returns {boolean} true for an open, overdue task with handling `cancel`
- */
-function mustCancel(task, now) {
-  return task['overdue-handling'] === 'cancel' && isOverdue(task, now);
-}
-
-/**
- * Cancel every overdue task with handling `cancel`.
- * Each update re-checks the stored task in its own transaction, so a task completed, changed,
- * or deleted since the first read is left alone (`OVD-6`). `updateTask` sets the last update and activity times.
+ * Expire every overdue task with handling `cancel` through an `expire` event.
+ * Each expiry re-checks the stored task in its own transaction, so a task completed, changed,
+ * or deleted since the first read is left alone (`OVD-6`). The expiry sets the last update time.
  * @param {object} store the store facade
  * @param {Date|number} [now] the current time
- * @returns {Promise<object[]>} the cancelled tasks
+ * @returns {Promise<object[]>} the expired tasks
  */
 export async function applyOverdueHandling(store, now = new Date()) {
   const tasks = await store.listTasks();
   const cancelled = [];
   for (const task of tasks) {
-    if (!mustCancel(task, now)) {
+    if (!shouldExpire(task, now)) {
       continue;
     }
     let result = null;
     try {
-      result = await store.updateTask(task.id, { status: 'cancelled' }, { when: (stored) => mustCancel(stored, now) });
+      result = await store.expireTask(task.id, { now: new Date(now) });
     }
+
     catch (error) {
       if (error?.code !== 'deleted' && error?.code !== 'not-found') {
         throw error;

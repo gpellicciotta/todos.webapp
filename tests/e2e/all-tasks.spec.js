@@ -167,7 +167,7 @@ test('one click completes a task, x toggles the focused row, and Undo or Ctrl+Z 
   await expect(flights).toHaveCount(0);
   const toast = page.locator('.toast', { hasText: 'Task marked completed.' });
   await toast.getByRole('button', { name: 'Undo' }).click();
-  await expect(flights).toHaveAttribute('data-status', 'todo');
+  await expect(flights).toHaveAttribute('data-status', 'ready');
 
   const paint = page.locator('.task-row', { hasText: 'Buy paint' });
   await paint.locator('.task-row__open').focus();
@@ -175,17 +175,17 @@ test('one click completes a task, x toggles the focused row, and Undo or Ctrl+Z 
   await expect(paint).toHaveCount(0);
   await page.locator('main').focus();
   await page.keyboard.press('Control+z');
-  await expect(paint).toHaveAttribute('data-status', 'todo');
+  await expect(paint).toHaveAttribute('data-status', 'ready');
 
   const statuses = async () => page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore();
     const tasks = await store.listTasks();
     store.close();
-    return Object.fromEntries(tasks.map((task) => [task.description, task.status]));
+    return Object.fromEntries(tasks.map((task) => [task.description, task['current-occurrence'].status]));
   });
-  expect((await statuses())['Book flights']).toBe('todo');
-  expect((await statuses())['Buy paint']).toBe('todo');
+  expect((await statuses())['Book flights']).toBe('ready');
+  expect((await statuses())['Buy paint']).toBe('ready');
   expect(problems).toEqual([]);
 });
 
@@ -218,7 +218,7 @@ test('the status menu changes a status by right-click and by keyboard (TSK-4)', 
     const store = await openStore();
     const tasks = await store.listTasks();
     store.close();
-    return Object.fromEntries(tasks.map((task) => [task.description, task.status]));
+    return Object.fromEntries(tasks.map((task) => [task.description, task['current-occurrence'].status]));
   });
   expect(statuses['Buy paint']).toBe('completed');
   expect(statuses['Book flights']).toBe('in-progress');
@@ -513,7 +513,7 @@ test('a due day, a time, and a list tag typed in the add field set the new task,
     tomorrow.setHours(18, 0, 0, 0);
     const lists = snapshot.memberships.filter((membership) => membership['task-id'] === id)
       .map((membership) => snapshot.lists.find((list) => list.id === membership['list-id']).name);
-    return { description: task.description, due: task['due-time'], expected: tomorrow.toISOString(), lists };
+    return { description: task.description, due: task['lifecycle-rules']['due-time'], expected: tomorrow.toISOString(), lists };
   });
   expect(added).toEqual({ description: 'Buy paint', due: added.expected, expected: added.expected, lists: ['Home'] });
   expect(problems).toEqual([]);

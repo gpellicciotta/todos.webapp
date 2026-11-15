@@ -5,7 +5,9 @@
  * never lists times tasks. Deleted tasks count nowhere.
  */
 
-const OPEN = new Set(['todo', 'in-progress']);
+import { OPEN_STATUSES, statusOf } from './occurrences.js';
+
+const OPEN = new Set(OPEN_STATUSES);
 
 /** The count of a list without tasks. */
 export const EMPTY_COUNT = Object.freeze({ open: 0, total: 0, activity: null });
@@ -23,8 +25,8 @@ export function countLists(tasks, memberships) {
   let all = 0;
   for (const task of tasks) {
     if (!task['deletion-time']) {
-      const open = OPEN.has(task.status);
-      const time = Date.parse(task['last-activity-time']);
+      const open = OPEN.has(statusOf(task));
+      const time = Date.parse(task['last-update-time']);
       all += open ? 1 : 0;
       byTask.set(task.id, { open, activity: Number.isNaN(time) ? null : time });
     }

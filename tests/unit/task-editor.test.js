@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEditorPanel } from '../../src/js/views/editor-panel.js';
 import { resetBody } from './dom-reset.js';
 import { mountTaskEditor } from '../../src/js/views/task-editor.js';
+import { shapeTask } from './task-shape.js';
 
-const TASK = {
-  id: 't1', description: 'Buy paint', status: 'todo', 'due-time': null, 'overdue-handling': 'keep',
-  'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
-  'last-activity-time': '2026-11-04T09:00:00.000Z', 'deletion-time': null,
-};
+const TASK = shapeTask({
+  id: 't1', description: 'Buy paint', status: 'ready', 'due-time': null, 'overdue-handling': 'keep',
+  'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z', 'deletion-time': null,
+});
+
 
 /**
  * Create a store stand-in that holds one task in no list and without notes.
@@ -240,7 +241,7 @@ describe('mountTaskEditor', () => {
 
   it('cancels only the note edit on Escape in its field', async () => {
     store.notesOfTask.mockImplementation(async () => [{
-      id: 'n1', 'task-id': 't1', text: 'Two coats', author: null, 'creation-time': TASK['creation-time'], 'edit-time': null,
+      id: 'n1', 'task-id': 't1', text: 'Two coats', 'owner-id': null, 'creation-time': TASK['creation-time'], 'last-update-time': TASK['creation-time'],
     }]);
     store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
     await vi.waitFor(() => expect(document.querySelector('.note')).not.toBeNull());
@@ -259,7 +260,7 @@ describe('mountTaskEditor', () => {
     expect(remove.classList.contains('button--danger')).toBe(true);
     expect(remove.classList.contains('button--secondary')).toBe(false);
     store.notesOfTask.mockImplementation(async () => [{
-      id: 'n1', 'task-id': 't1', text: 'Two coats', author: null, 'creation-time': TASK['creation-time'], 'edit-time': null,
+      id: 'n1', 'task-id': 't1', text: 'Two coats', 'owner-id': null, 'creation-time': TASK['creation-time'], 'last-update-time': TASK['creation-time'],
     }]);
     store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
     await vi.waitFor(() => expect(document.querySelector('.note')).not.toBeNull());
@@ -426,6 +427,33 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
 
   afterEach(() => {
     panel.destroy();
+  });
+
+  it('offers Edit and Delete on synced own notes only, and names the authors of other notes (NOT-2, NOT-4)', async () => {
+    const note = (id, owner, revision) => ({
+      id, 'task-id': 't1', text: id, 'owner-id': owner, occurrence: null, revision,
+      'creation-time': TASK['creation-time'], 'last-update-time': TASK['creation-time'],
+    });
+    resetBody('<div data-editor-slot hidden></div>');
+    const store = fakeStore();
+    store.listLists = vi.fn(async () => [{ id: 'l1', name: 'Home', role: 'editor', owner: { id: 9, name: 'Sam Roe' } }]);
+    store.listsOfTask = vi.fn(async () => ['l1']);
+    store.notesOfTask = vi.fn(async () => [note('mine', 3, 5), note('theirs', 9, 6), note('orphan', null, 7), note('draft', null, undefined)]);
+    store.queue = { getState: vi.fn(async () => 3) };
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() } });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+    await vi.waitFor(() => expect(document.querySelectorAll('.note')).toHaveLength(4));
+    const shown = [...document.querySelectorAll('.note')].map((item) => [
+      item.dataset.noteId, item.querySelector('.note__author').textContent, Boolean(item.querySelector('[data-role="more"]')),
+    ]);
+    expect(shown).toEqual([['mine', 'You', true], ['theirs', 'Collaborator', false], ['orphan', 'Former member', false], ['draft', 'You', true]]);
   });
 
   it('builds each list chip from the package skeleton, with a .chip__remove button', async () => {

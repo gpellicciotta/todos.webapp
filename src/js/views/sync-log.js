@@ -162,7 +162,7 @@ async function findItem(store, entry) {
       const exists = Boolean(list) && !list['deletion-time'];
       return { name: list?.name ?? entry.name ?? LOG_STRINGS.unknownList, href: exists ? `#/lists/${encodeURIComponent(list.id)}` : null };
     }
-    const taskId = target.type === 'task' ? target.id : target['task-id'] ?? (target.type === 'membership' ? target.id : null);
+    const taskId = target.type === 'task' || target.type === 'rules' ? target.id : target['task-id'] ?? (target.type === 'membership' ? target.id : null);
     if (taskId) {
       const task = await store.getTask(taskId);
       const exists = Boolean(task) && !task['deletion-time'];

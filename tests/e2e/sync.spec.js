@@ -130,7 +130,7 @@ test('an overwritten value shows the dot; opening the Sync log clears it and lis
   await open(page, '#/tasks');
   await expect(indicator(page)).toHaveAttribute('data-state', 'synced');
   await seedLog(page, {
-    id: 'log-1', time: new Date().toISOString(), kind: 'overwritten', target: { type: 'task', id: 'gone' }, field: 'due-time',
+    id: 'log-1', time: new Date().toISOString(), kind: 'overwritten', target: { type: 'rules', id: 'gone' }, field: 'due-time',
     sent: 'Fri 10:00', kept: 'Today 18:00',
   });
   await page.reload();
@@ -144,6 +144,7 @@ test('an overwritten value shows the dot; opening the Sync log clears it and lis
   await expect(entry).toHaveCount(1);
   await expect(entry).toContainText('Overwritten value');
   await expect(entry).toContainText('Lost: Fri 10:00 · Kept: Today 18:00');
+  await expect(entry).toContainText('A task');
   await expect(indicator(page).locator('.sync-indicator__dot')).toHaveCount(0);
 });
 

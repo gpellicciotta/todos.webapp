@@ -6,11 +6,19 @@ The IndexedDB schema that holds the app's data in the browser.
 
 ## Database
 - Name: `todos`; one database per browser profile (`LOC-5`).
-- Version: 4; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
+- Version: 5; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
 - Version 1 created `lists`, `tasks`, and `memberships`; version 2 adds `notes` and keeps existing data.
 - Version 3 gives existing memberships a `position`, per list in added-time order, then by task id.
 - Version 4 adds the sync stores `sync-queue`, `sync-state`, and `sync-log`; existing stores and data stay unchanged.
-- Records use the field names of the service's `List`, `Task`, and `Note` schemas, in kebab-case.
+- Version 5 adds `occurrences` and `events`; [migrate.js](../../src/js/store/migrate.js) converts the data like the todos.server migration:
+  - Each task gets default one-off rules with its due time and overdue handling, and occurrence 1.
+  - `todo` becomes `ready`; `in-progress` adds a `start` event; `completed` adds a `complete` event, count 1, and closes.
+  - `cancelled` adds a `cancel` event and closes; every task gets a `create` event at its creation time.
+  - Status events and close times take the task's `last-update-time`.
+  - `last-update-time` takes the later of it and `last-activity-time`, which goes.
+  - Notes rename `author` to `owner-id` and `edit-time` to `last-update-time`, and get `occurrence` null.
+  - Queued task changes become `update-rules` and `post-event` entries, appended after the queue.
+- Records use the field names of the service's `List`, `Task`, `Note`, `Occurrence`, and `TaskEvent` schemas, in kebab-case.
 - Times are ISO-8601 strings in UTC with milliseconds, such as `2026-11-04T09:00:00.000Z`.
 - Identifiers are UUIDv7 strings from [uuid7.js](../../src/js/lib/uuid7.js), sorting by creation time (`TEC-9`).
 
@@ -26,9 +34,20 @@ Keyed by `id`.
 
 ### `tasks`
 Keyed by `id`.
-- `id`, `description`, `status`, `due-time`, `overdue-handling`, `owner-id`.
-- `creation-time`, `last-update-time`, `last-activity-time`, `deletion-time`.
-- `last-update-time` changes with task fields; `last-activity-time` also changes with memberships (`TSK-12`).
+- `id`, `description`, `owner-id`, `lifecycle-rules`, `current-occurrence`.
+- `creation-time`, `last-update-time`, `deletion-time`.
+- `lifecycle-rules` and `current-occurrence` match the service's `LifecycleRules` and `Occurrence`, without `task-id`.
+- `last-update-time` changes with every change of the task, its rules, events, memberships, and notes (`TSK-12`, `NOT-5`).
+
+### `occurrences`
+Keyed out of line by `[task-id, occurrence]`; added in version 5.
+- The service's `Occurrence` fields: `task-id`, `occurrence`, `start-time`, `due-time`, `target-count`, `completion-count`, `status`, `close-time`.
+- Every write of a task also writes its current occurrence here; past occurrences of recurring tasks follow with T0235.
+
+### `events`
+Keyed out of line by `[task-id, id]`; added in version 5.
+- The service's `TaskEvent` fields: `id`, `task-id`, `occurrence`, `creation-time`, `owner-id`, `type`, `details`.
+- Local events: `create`, the user events, and `expire`. Synced tasks hold only the events made on this device.
 
 ### `memberships`
 Keyed out of line by `[list-id, task-id]`, since IndexedDB key paths cannot hold dashed names.
@@ -38,8 +57,8 @@ Keyed out of line by `[list-id, task-id]`, since IndexedDB key paths cannot hold
 
 ### `notes`
 Keyed out of line by `[task-id, id]`, for the same reason; added in version 2.
-- `id`, `task-id`, `text`, `author`, `creation-time`, `edit-time`.
-- `author` is null for local notes; `edit-time` is null until the first edit.
+- `id`, `task-id`, `text`, `owner-id`, `occurrence`, `creation-time`, `last-update-time`.
+- `owner-id` is null for local notes; `last-update-time` equals `creation-time` until the first edit; `occurrence` is null.
 - The key order lets one key range read all notes of a task.
 - Editing or deleting by note id scans the keys only, matching the second key part.
 
@@ -70,10 +89,10 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - List names hold 1 to 100 characters, descriptions at most 1000 (`LST-1`, `LST-2`).
 - Task descriptions hold 1 to 500 characters after trimming surrounding spaces (`TSK-1`).
 - A date-only due time, such as `2026-11-08`, is stored as 23:59 local time on that date (`TSK-6`).
-- New tasks default to status `todo` and overdue handling `keep` (`TSK-2`).
+- New tasks get default one-off rules, target 1 and overdue handling `keep`, and a `ready` occurrence 1 (`TSK-2`).
 - Note texts hold 1 to 2000 characters after trimming surrounding spaces (`NOT-1`).
 - A task lists its notes newest first, by creation time, then by identifier (`NOT-3`).
-- Adding, editing, or deleting a note sets the task's `last-activity-time`, not its `last-update-time` (`NOT-5`).
+- Adding, editing, or deleting a note sets the task's `last-update-time` (`NOT-5`).
 - An unknown task or note throws a `StoreError` with code `not-found`.
 - Invalid input throws a `ValidationError` naming the field and the rule, and stores nothing.
 - Every write runs in one transaction, so a failure leaves no partial change.
@@ -82,7 +101,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 
 ## Recycle Bin
 [bin.js](../../src/js/store/bin.js) uses the existing `deletion-time` fields and needs no schema change.
-- Deleting a list or task sets its `deletion-time` and `last-update-time`; a task also sets `last-activity-time`.
+- Deleting a list or task sets its `deletion-time` and `last-update-time`.
 - Memberships stay stored, so restoring a list or task brings them all back (`BIN-3`).
 - A deleted list is hidden from `listLists` and `listsOfTask`, and `tasksOfList` returns no tasks for it.
 - A deleted list's tasks stay in their other lists, or in no list, and keep their activity time (`LST-6`, `LST-7`).
@@ -92,7 +111,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   - Tasks: `updateTask`, `addToList`, `removeFromList`, `moveInList`, and every note change.
 - `listBin` returns entries with `type`, `id`, `name` or `description`, `deletion-time`, and `purge-time`, newest first.
 - `purge-time` is 30 days after `deletion-time`; restoring later throws code `expired` (`BIN-2`).
-- `purgeForever(type, id)` removes a bin entry and its memberships, and a task's notes (`BIN-4`).
+- `purgeForever(type, id)` removes a bin entry and its memberships, and a task's notes, occurrences, and events (`BIN-4`).
 - Restoring keeps each membership's `position`, so the task returns to its place in every list.
 - `purgeExpired(now)` removes every entry deleted more than 30 days ago in one transaction (`BIN-5`).
 - `emptyBin()` permanently removes every bin entry, with memberships and notes, in one transaction and returns the purged `{type, id}` entries (`BIN-7`).
@@ -102,10 +121,29 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 
 ---
 
+## Lifecycle
+[occurrences.js](../../src/js/core/occurrences.js) runs the todos.server status rules locally, so local mode keeps every feature (`LOC-2`).
+- Statuses are `ready`, `in-progress`, `completed`, and `cancelled`; a task's status is that of its current occurrence.
+- The fold applies events in `creation-time` order, then by `id`, and ignores an event whose precondition fails at its place.
+- A one-off occurrence closes on `completed` or `cancelled`, and reopens when it leaves them.
+- `postEvent(id, type)` posts `complete`, `uncomplete`, `start`, `unstart`, `cancel`, or `reopen` with a UUIDv7 and the client time.
+  A failing precondition throws a `StoreError` with code `conflict`.
+- `updateRules(id, edit)` edits the rules; target and due time edits move the open occurrence.
+- A recurring task keeps `due-time` and `overdue-handling` null, in `createTask`, `updateRules`, and backup imports alike.
+- `updateTask(id, changes)` keeps the status edit of the current views and maps it onto events (`TSK-4`).
+  - `completed` posts `complete`, `cancelled` posts `cancel`, and `in-progress` posts `start`.
+  - Going back posts `uncomplete`, `unstart`, or `reopen`, as the todos.server T0218 mapping does.
+  - `due-time` and `overdue-handling` edit the rules.
+- `eventsOfTask(id)` and `occurrencesOfTask(id)` read a task's events and occurrences.
+- Periods, roll-over, and recurring reopen follow with T0235.
+
+---
+
 ## Overdue Handling
-[overdue.js](../../src/js/core/overdue.js) computes the flag and cancels overdue tasks through the store facade.
-- `isOverdue(task, now)` is true when `due-time` is before `now` and the status is `todo` or `in-progress` (`OVD-1`).
-- `applyOverdueHandling(store, now)` sets overdue `cancel` tasks to `cancelled` via `updateTask` (`OVD-4`).
+[overdue.js](../../src/js/core/overdue.js) computes the flag and expires overdue tasks through the store facade.
+- `isOverdue(task, now)` is true when the current occurrence's `due-time` is before `now` and it is `ready` or `in-progress` (`OVD-1`).
+- `applyOverdueHandling(store, now)` writes an `expire` event for each overdue `cancel` task via `expireTask` (`OVD-4`).
+- The `expire` event never joins the change queue, since the service writes its own on its hourly run.
 - It never changes deleted, `completed`, or `cancelled` tasks (`OVD-6`).
 - `startOverdueTimer` runs it once on start, then every minute; the returned function stops it (`OVD-5`).
 
@@ -125,7 +163,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   - Otherwise the move throws a `ValidationError`; a task outside the list throws `not-found`.
   - A deleted task or list throws `deleted`.
   - Only the moved membership changes; other lists of the task keep their order (`LV-4`).
-  - The move sets the task's `last-activity-time`, not its `last-update-time`.
+  - The move sets the task's `last-update-time`.
 - A rebalance gives the whole list keys `a0`, `a1`, and so on, keeping its order.
   - It runs before a new key would exceed 128 characters, the service limit.
   - It also runs when the neighbors share a position, such as after a merge.
@@ -150,7 +188,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - Callers pass tasks from `listTasks()`, which already leaves out the recycle bin.
 - `indexMemberships(listMemberships(), liveListIds)` builds `listsByTask` without lists in the recycle bin.
   - `liveListIds` come from `listLists()`; a task only in deleted lists then counts as in no list.
-- `sortTasks(tasks, order)` sorts by `due-time`, `creation-time`, `last-activity-time`, `status`, or `description`.
+- `sortTasks(tasks, order)` sorts by `due-time`, `creation-time`, `last-update-time`, `status`, or `description`.
+- Status and due time come from the current occurrence; stored views read `todo` as `ready`, and `last-activity-time` as `last-update-time`.
   - Directions are `asc` and `desc`; ties break on the task id in the same direction.
   - Tasks without a due time sort last in both directions (`TV-10`).
   - Statuses sort in lifecycle order; descriptions ignore case.
@@ -162,10 +201,11 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 
 ## Bulk Operations
 [bulk.js](../../src/js/store/bulk.js) serves backup export and import; see [backup-format.md](backup-format.md).
-- `snapshot()` returns `{lists, tasks, memberships, notes}` with every record, in key order, from one transaction.
+- `snapshot()` returns `{lists, tasks, memberships, notes, occurrences, events}` with every record, in key order, from one transaction.
 - `applyChanges(planner)` reads the same snapshot and passes it, with the store time, to `planner`.
   - The planner runs synchronously and returns `{changes, result}`; `applyChanges` resolves with `result`.
-  - `changes.put` holds records to store per store name; `changes.delete` holds `memberships` and `notes` keys.
+  - `changes.put` holds records to store per store name; `changes.delete` holds `memberships`, `notes`, and `events` keys.
+  - Storing a task stores its current occurrence; removing a task removes its occurrences and events.
   - Reading, planning, and writing share one transaction, so nothing changes in between and a failure stores nothing.
   - The writes skip the store's validation; the backup module validates every record first.
 
@@ -200,7 +240,9 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   - `purgeForever`, `emptyBin`, `deleteAllData`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
 - An entry holds `seq`, `target`, `operation`, `fields`, `edit-times`, `created`, and `undo`.
   - `fields` holds only what changed (`SYN-5`). `edit-times` holds the client time of each field. Creates carry all fields.
-  - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type.
+  - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type. A task create carries its `lifecycle-rules`.
+  - Rules: `update-rules`, sent as `PATCH /api/tasks/{{task-id}}/lifecycle-rules` with the edit time of each field.
+  - Events: `post-event`, sent in order as `POST /api/tasks/{{task-id}}/events` with `id`, `type`, `creation-time`, and `occurrence`.
   - Memberships: `add-`, `move-`, and `remove-membership`.
   - Notes: `create-note`, `edit-note`, and `delete-note`.
 - One request per entry, in `seq` order. A retry repeats the request, and every create is idempotent by identifier (`SYN-10`).
@@ -220,6 +262,9 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - Undo changes only fields that still hold the value the rejected change gave them.
 - Later local edits therefore stay.
 - A rejected create removes the row and drops the queued entries that build on it.
+- A rejected event, such as a `409 Conflict`, leaves the events store, and the occurrence before it refolds the later queued events.
+  Those later entries get the refolded occurrence as their own undo base, so rejecting several in a row restores the original.
+  A rejected rule edit refolds the later queued events the same way, under the old rules.
 - One tab syncs (`SYN-12`): the holder of the Web Lock `todos-sync` drains the queue.
   It shares its state on the `todos-sync` BroadcastChannel.
   Other tabs show that state and take over when the leader closes.
@@ -235,7 +280,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
     Locally the list takes the account list's identifier and its memberships follow.
     `list-map` records the old identifier.
   - Name of a trashed list, or a trashed local list with a taken name: rename to `{{name}} (local)`, `(local 2)`, and so on.
-- It uploads lists, tasks, memberships, and notes, then the recycle bin states, one request each.
+- It uploads lists, tasks with their rules, memberships, the user events of each task, and notes, then the recycle bin states.
+  Each is one request; events replay with `import: true`, which the uploading task owner may send.
 - Memberships go by list and position, so each list keeps its manual order.
 - A create that finds the row (`200`) is followed by an update with the local edit times.
 - A row the service refuses is logged and stays on the device.
@@ -245,7 +291,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 ## Change Feed Download
 [pull.js](../../src/js/sync/pull.js) downloads the feed, [merge.js](../../src/js/sync/merge.js) plans how it changes the data,
 and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6`).
-- Lists, tasks, memberships, and notes store the feed's `revision`; lists also keep `role` and `sharing`, and notes keep `author`.
+- Lists, tasks, memberships, and notes store the feed's `revision`; lists also keep `role` and `sharing`.
+- Notes map the wire `owner-id`, `occurrence`, and `last-update-time` to the same local fields.
 - Computed fields are not stored: `overdue`, `role` of tasks, `task-count`, and `lists` of tasks. Screens derive them.
 - A run replays the queue, then pulls every page after the stored cursor until `has-more` is false. Without a cursor it fetches a snapshot.
 - The leader tab pulls every 30 seconds while the page is visible, and after going online, gaining focus, becoming visible, or replaying the queue.
@@ -253,6 +300,10 @@ and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6
 - A page applies its tombstones first, then its entries. Each applies only when its revision is above the stored one, or the row is absent.
 - The merge keeps what the user changed and the service has not heard of yet:
   - A field with an entry in the queue keeps its local value; the other fields take the pulled value (`SYN-5`, `SYN-6`).
+  - A task takes the service's rules and current occurrence; rule fields with a queued edit keep their local value.
+  - Queued events of the pulled occurrence fold onto it in queue order, until the service confirms them.
+  - A pulled one-off task past its due time with handling `cancel` stays expired, as the local overdue handling expired it.
+
   - A row whose creation is still queued is never replaced. A pending trash, membership change, or note edit or delete stays.
   - A replay that loses a field gets `conflicts` in its reply. The app logs `overwritten` and applies the kept value, unless a later queued change sets that field.
   - Conflicts on `existence` of a membership are logged only; the next feed change corrects the row.
@@ -267,5 +318,8 @@ and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6
 - A feed `protocol` other than `1` stops syncing, and the state becomes `update-required` (`SYN-11`).
 - Sync states: `local-only`, `synced`, `syncing`, `offline`, `sign-in-needed`, `error`, and `update-required`.
 - Disconnecting (`CON-8`, `CON-9`) keeps own lists and tasks, and removes the rest with its memberships and notes.
-  Kept rows lose `revision`, `role`, and `sharing`. The queue, the cursor, and the adoption state go. No route is called.
+  Kept rows lose `revision`, `role`, and `sharing`, and tasks and notes lose their service `owner-id`.
+  The queue, the cursor, and the adoption state go. No route is called.
+  A kept task whose local events fold to another status than its occurrence gets events that reproduce it, so the next adoption keeps it.
+
 - A local write between the pull's read of the queue and the entry joining it can lose to the pulled value; the next replay restores it.

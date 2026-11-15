@@ -8,11 +8,20 @@
  * - A row stores the `revision` of the feed. An entry or tombstone applies only when its revision is above the stored one,
  *   or the row is absent. Tombstones apply first. A row whose creation is still queued is never replaced.
  * - Computed fields (`overdue`, `role` of tasks, `task-count`, `lists` of tasks) are not stored; screens derive them.
+ * - Tasks embed their `lifecycle-rules` and `current-occurrence`. The merge takes the service's, keeps the rule fields
+ *   with a queued edit, and folds the queued events onto the occurrence until the service confirms them.
  */
 
+import {
+  applyEvent, applyRuleEdit, DEFAULT_RULES, firstOccurrence, foldEvents, makeEvent, RULE_FIELDS, shouldExpire, USER_EVENT_TYPES,
+} from '../core/occurrences.js';
+import { uuid7 } from '../lib/uuid7.js';
+
+
 const LIST_FIELDS = ['name', 'description', 'deletion-time'];
-const TASK_FIELDS = ['description', 'status', 'due-time', 'overdue-handling', 'deletion-time'];
+const TASK_FIELDS = ['description', 'deletion-time'];
 const OPERATION_FIELDS = {
+  'post-event': ['current-occurrence'],
   'delete-list': ['deletion-time'],
   'restore-list': ['deletion-time'],
   'delete-task': ['deletion-time'],
@@ -32,7 +41,16 @@ const membershipKey = (listId, taskId) => `${listId}/${taskId}`;
  * @returns {string} the row key, such as `task:{{id}}`
  */
 function rowKey(target) {
-  return target.type === 'membership' ? `membership:${membershipKey(target['list-id'], target.id)}` : `${target.type}:${target.id}`;
+  switch (target.type) {
+    case 'membership':
+      return `membership:${membershipKey(target['list-id'], target.id)}`;
+    case 'event':
+      return `task:${target['task-id']}`;
+    case 'rules':
+      return `task:${target.id}`;
+    default:
+      return `${target.type}:${target.id}`;
+  }
 }
 
 /**
@@ -119,13 +137,11 @@ const toList = (list) => ({
 const toTask = (task) => ({
   id: task.id,
   description: task.description,
-  status: task.status,
-  'due-time': task['due-time'] ?? null,
-  'overdue-handling': task['overdue-handling'] ?? 'keep',
   'owner-id': task['owner-id'] ?? null,
+  'lifecycle-rules': { ...DEFAULT_RULES, ...task['lifecycle-rules'] },
+  'current-occurrence': { ...task['current-occurrence'] },
   'creation-time': task['creation-time'],
   'last-update-time': task['last-update-time'] ?? task['creation-time'],
-  'last-activity-time': task['last-activity-time'] ?? task['last-update-time'] ?? task['creation-time'],
   'deletion-time': task['deletion-time'] ?? null,
   revision: task.revision,
 });
@@ -134,11 +150,37 @@ const toNote = (note) => ({
   id: note.id,
   'task-id': note['task-id'],
   text: note.text,
-  author: note['author-id'] ?? null,
+  'owner-id': note['owner-id'] ?? null,
+  occurrence: note.occurrence ?? null,
   'creation-time': note['creation-time'],
-  'edit-time': note['last-edit-time'] && note['last-edit-time'] !== note['creation-time'] ? note['last-edit-time'] : null,
+  'last-update-time': note['last-update-time'] ?? note['creation-time'],
   revision: note.revision,
 });
+
+/**
+ * Settle the rules and occurrence of a pulled task against the queue and the clock.
+ * Rule fields with a queued edit keep their local value and move the occurrence with them; queued events fold onto
+ * the service's occurrence in their order. A one-off task past its deadline with handling `cancel` stays expired,
+ * as the local overdue handling and the service's next hourly run both expire it (`OVD-4`).
+ * @param {object} next the pulled task, changed in place
+ * @param {object|undefined} local the stored task
+ * @param {Set<string>} fields the field names with a queued change
+ * @param {object[]} events the queued events of the task, in queue order
+ * @param {Date} now the merge time
+ */
+function settleLifecycle(next, local, fields, events, now) {
+  const pendingRules = RULE_FIELDS.filter((name) => fields.has(name));
+  if (local && pendingRules.length > 0) {
+    const edit = Object.fromEntries(pendingRules.map((name) => [name, local['lifecycle-rules'][name] ?? null]));
+    Object.assign(next, applyRuleEdit(next, edit, local['last-update-time']));
+  }
+  if (events.length > 0) {
+    next['current-occurrence'] = foldEvents(next['current-occurrence'], events, next['lifecycle-rules']);
+  }
+  if (shouldExpire(next, now)) {
+    next['current-occurrence'] = applyEvent(next['current-occurrence'], { type: 'expire', 'creation-time': now.toISOString() }, next['lifecycle-rules']);
+  }
+}
 
 /**
  * Tell whether a feed row is newer than the stored one.
@@ -241,7 +283,14 @@ export function planPage(data, feed, { pending = [], userId = null, final = true
         next[name] = local[name];
       }
       next['last-update-time'] = local['last-update-time'];
-      next['last-activity-time'] = local['last-activity-time'] ?? next['last-activity-time'];
+    }
+    if (kind === 'tasks') {
+      // Only events of the pulled occurrence fold onto it; those of an occurrence the service closed replay on their own.
+      const number = next['current-occurrence'].occurrence;
+      const events = pending.filter((entry) => entry.operation === 'post-event' && entry.target['task-id'] === incoming.id
+        && (entry.fields.occurrence ?? number) === number).map((entry) => entry.fields);
+
+      settleLifecycle(next, local, mine.fields, events, now);
     }
     state[kind].set(incoming.id, next);
     touched[kind].add(incoming.id);
@@ -278,7 +327,7 @@ export function planPage(data, feed, { pending = [], userId = null, final = true
     const next = toNote(incoming);
     if (local && mine.fields.has('text')) {
       next.text = local.text;
-      next['edit-time'] = local['edit-time'];
+      next['last-update-time'] = local['last-update-time'];
     }
     state.notes.set(incoming.id, next);
     touched.notes.add(incoming.id);
@@ -346,7 +395,15 @@ export function planConflicts(data, entry, conflicts, pending) {
         edit('memberships', row, 'position', kept);
       }
     }
+    else if (target.type === 'rules' && RULE_FIELDS.includes(field)) {
+      const row = edited.get(`tasks:${JSON.stringify(target.id)}`)?.row ?? data.tasks.find((candidate) => candidate.id === target.id);
+      if (row && !index.get(`task:${target.id}`)?.fields.has(field)) {
+        const settled = applyRuleEdit(row, { [field]: kept }, conflict['kept-edit-time'] ?? row['last-update-time']);
+        edited.set(`tasks:${JSON.stringify(target.id)}`, { kind: 'tasks', row: { ...row, ...settled } });
+      }
+    }
     else if (field === 'text') {
+
       const row = data.notes.find((note) => note.id === target.id);
       if (row && !index.get(`note:${target.id}`)?.fields.has('text')) {
         edit('notes', row, 'text', kept);
@@ -422,7 +479,7 @@ export function planReset(data, pending) {
  * @param {number|string|null} userId the user who disconnects
  * @returns {object} the changes for `applyChanges`
  */
-export function planDisconnect(data, userId) {
+export function planDisconnect(data, userId, { newId = (time) => uuid7(() => Date.parse(time)) } = {}) {
   const gone = {
     lists: new Set(data.lists.filter((list) => !ownsList(list, userId)).map((list) => list.id)),
     tasks: new Set(data.tasks.filter((task) => !ownsTask(task, userId)).map((task) => task.id)),
@@ -431,18 +488,55 @@ export function planDisconnect(data, userId) {
   const kept = (rows, set) => rows.filter((row) => !set.has(row.id));
   const memberships = data.memberships.filter((row) => !gone.lists.has(row['list-id']) && !gone.tasks.has(row['task-id']));
   const notes = data.notes.filter((row) => !gone.tasks.has(row['task-id']));
+  const tasks = kept(data.tasks, gone.tasks);
+  const events = { put: [], delete: [] };
+  for (const task of tasks) {
+    const own = (data.events ?? []).filter((event) => event['task-id'] === task.id);
+    const settled = localEventsOf(task, own, newId);
+    events.put.push(...settled.put);
+    events.delete.push(...settled.delete.map((event) => [task.id, event.id]));
+  }
+  // Kept rows become local data: the service's owner identifiers go, so a later connect adopts them like local data.
   return {
     put: {
       lists: kept(data.lists, gone.lists).map((row) => strip(row, 'role', 'sharing')),
-      tasks: kept(data.tasks, gone.tasks).map((row) => strip(row)),
+      tasks: tasks.map((row) => ({ ...strip(row), 'owner-id': null })),
       memberships: memberships.map((row) => strip(row)),
-      notes: notes.map((row) => strip(row)),
+      notes: notes.map((row) => ({ ...strip(row), 'owner-id': null })),
+      events: events.put,
     },
     delete: {
       lists: [...gone.lists],
       tasks: [...gone.tasks],
       memberships: data.memberships.filter((row) => !memberships.includes(row)).map((row) => [row['list-id'], row['task-id']]),
       notes: data.notes.filter((row) => !notes.includes(row)).map((row) => [row['task-id'], row.id]),
+      events: events.delete,
     },
   };
+}
+
+/**
+ * Make the local events of a kept task reproduce its current occurrence, so a later adoption replays its status.
+ * A pulled task holds only the events made on this device; when they fold to another count or status,
+ * they give way to one `complete` per completion, a `start` for an untouched `in-progress`, and a `cancel` for `cancelled`.
+ * @param {object} task the kept task
+ * @param {object[]} own its stored events
+ * @param {(time: string) => string} newId returns a new event identifier for an event time
+ * @returns {{put: object[], delete: object[]}} the events to store and to remove
+ */
+export function localEventsOf(task, own, newId) {
+  const current = task['current-occurrence'];
+  const rules = task['lifecycle-rules'];
+  const base = { ...firstOccurrence(rules, task['creation-time']), 'target-count': current['target-count'] };
+  const users = own.filter((event) => USER_EVENT_TYPES.includes(event.type));
+  const folded = foldEvents(base, users, rules);
+  const put = own.some((event) => event.type === 'create') ? [] : [makeEvent({ id: newId(task['creation-time']), 'task-id': task.id, type: 'create', 'creation-time': task['creation-time'] })];
+  if (folded.status === current.status && folded['completion-count'] === current['completion-count']) {
+    return { put, delete: [] };
+  }
+  const count = Math.max(0, current['completion-count']);
+  const types = [...Array(count).fill('complete'), ...(current.status === 'in-progress' && count === 0 ? ['start'] : []), ...(current.status === 'cancelled' ? ['cancel'] : [])];
+  const time = current['close-time'] ?? task['last-update-time'] ?? task['creation-time'];
+  put.push(...types.map((type) => makeEvent({ id: newId(time), 'task-id': task.id, type, 'creation-time': time, occurrence: current.occurrence })));
+  return { put, delete: users };
 }

@@ -118,6 +118,29 @@ describe('adopting local data on first connect', () => {
     expect(adds).toEqual([c.id, a.id, b.id]);
   });
 
+  it('uploads a task with its rules, then replays its user events in order with import', async () => {
+    const { store, service, api } = await setup();
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    await store.postEvent(task.id, 'complete');
+    await store.postEvent(task.id, 'complete');
+    const result = await adopt({ store, api, account: ACCOUNT });
+    expect(service.calls.find((call) => call.path === '/api/tasks').body['lifecycle-rules']).toMatchObject({ 'target-count': 3 });
+    const posted = service.calls.filter((call) => call.path === `/api/tasks/${task.id}/events`).map((call) => call.body);
+    const local = (await store.eventsOfTask(task.id)).filter((event) => event.type === 'complete');
+    expect(posted).toEqual(local.map((event) => ({ id: event.id, type: 'complete', 'creation-time': event['creation-time'], occurrence: 1, import: true })));
+    expect(result).toMatchObject({ tasks: 1, events: 2, rejected: 0 });
+  });
+
+  it('logs a refused event with its task, so the sync log can name and link it', async () => {
+    const { store, service, api } = await setup();
+    const task = await store.createTask({ description: 'Exercises' });
+    const { event } = await store.postEvent(task.id, 'start');
+    service.fail = (call) => (call.path.endsWith('/events') ? 409 : null);
+    const result = await adopt({ store, api, account: ACCOUNT });
+    expect(result).toMatchObject({ events: 0, rejected: 1 });
+    expect((await store.queue.log()).map((record) => record.target)).toEqual([{ type: 'event', id: event.id, 'task-id': task.id }]);
+  });
+
   it('drops queued changes that the upload of the whole local data covers', async () => {
     const { store, api } = await setup();
     await store.createList({ name: 'Home' });

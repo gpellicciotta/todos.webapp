@@ -5,18 +5,40 @@
  * keyed by `[list-id, task-id]`, so each list can keep its own order.
  * Each membership has a fractional-index `position`; a list shows its tasks in ascending position order (`LV-2` to `LV-5`).
  * Deleted tasks and lists keep their memberships, but are hidden and reject changes (`BIN-6`).
+ *
+ * A task embeds its `lifecycle-rules` and `current-occurrence`, like the service's `Task` schema.
+ * Statuses change only through events, which the `events` store keeps; `occurrences` keeps each occurrence.
+ * Every change of a task or its parts sets its `last-update-time` (`TSK-12`, `NOT-5`).
  */
 
+import {
+  applyEvent, applyRuleEdit, eventsTowardsStatus, firstOccurrence, makeEvent, normalizeRules, RULE_FIELDS, shouldExpire,
+  STATUSES, USER_EVENT_TYPES,
+} from '../core/occurrences.js';
 import { keyBetween, keysBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
 import { uuid7 } from '../lib/uuid7.js';
 import { request, StoreError, STORES, transact, ValidationError } from './idb.js';
 
+export { STATUSES };
 export const DESCRIPTION_MAX = 500;
-export const STATUSES = ['todo', 'in-progress', 'completed', 'cancelled'];
 export const OVERDUE_HANDLINGS = ['keep', 'cancel'];
+export const RECURRENCE_UNITS = ['day', 'week', 'month'];
 
-const EDITABLE = ['description', 'status', 'due-time', 'overdue-handling'];
+/** The stores a task write covers: the task, its occurrences, and its events. */
+export const TASK_STORES = [STORES.tasks, STORES.occurrences, STORES.events];
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** The events each write created, for the change queue; a WeakMap keeps them off the returned records. */
+const WRITTEN_EVENTS = new WeakMap();
+
+/**
+ * Return the events a task write created, in order.
+ * @param {object|null} task the task a write returned
+ * @returns {object[]} the events, empty when it created none
+ */
+export function eventsOfWrite(task) {
+  return (task && WRITTEN_EVENTS.get(task)) ?? [];
+}
 
 /**
  * Parse a due time; a date without a time of day means 23:59 local time on that date (`TSK-6`).
@@ -80,6 +102,134 @@ function checkField(field, value) {
 }
 
 /**
+ * Validate one lifecycle rule field and return its normalized value.
+ * @param {string} field the rule field
+ * @param {unknown} value the input value
+ * @returns {unknown} the value to store
+ */
+function checkRule(field, value) {
+  const optional = value === null || value === undefined;
+  const fail = (rule) => {
+    throw new ValidationError(field, 'invalid', `Not a valid ${field}: ${value}; ${rule}.`);
+  };
+  switch (field) {
+    case 'target-count':
+      if (!Number.isInteger(value) || value < 1) {
+        fail('it is a whole number of at least 1');
+      }
+      return value;
+    case 'due-time':
+      return checkField('due-time', value);
+    case 'overdue-handling':
+      return optional ? null : checkField('overdue-handling', value);
+    case 'recurrence-unit':
+      if (!optional && !RECURRENCE_UNITS.includes(value)) {
+        fail('it is day, week, or month');
+      }
+      return value ?? null;
+    case 'recurrence-interval':
+      if (!optional && (!Number.isInteger(value) || value < 1 || value > 99)) {
+        fail('it is a whole number from 1 to 99');
+      }
+      return value ?? null;
+    case 'recurrence-end-count':
+      if (!optional && (!Number.isInteger(value) || value < 1)) {
+        fail('it is a whole number of at least 1');
+      }
+      return value ?? null;
+    case 'recurrence-end-date':
+      if (!optional && (typeof value !== 'string' || !LOCAL_DATE.test(value))) {
+        fail('it is a date such as 2026-12-31');
+      }
+      return value ?? null;
+    case 'timezone':
+      if (!optional && (typeof value !== 'string' || !value)) {
+        fail('it is an IANA zone name');
+      }
+      return value ?? null;
+    default:
+      throw new StoreError('invalid', `Unknown lifecycle rule field: ${field}.`);
+  }
+}
+
+/**
+ * Validate the rule fields of an edit, ignoring unknown fields.
+ * @param {object} edit rule fields
+ * @returns {object} the normalized fields that the edit holds
+ */
+function checkRuleEdit(edit) {
+  return Object.fromEntries(RULE_FIELDS.filter((field) => field in edit).map((field) => [field, checkRule(field, edit[field])]));
+}
+
+/**
+ * Return a new event identifier, increasing within the same millisecond.
+ * @param {{now: () => Date}} ctx store context
+ * @returns {string} the UUIDv7
+ */
+function newEventId(ctx) {
+  return uuid7(() => ctx.now().getTime());
+}
+
+/**
+ * Store a task and its current occurrence inside a transaction covering `TASK_STORES`.
+ * @param {IDBTransaction} tx the transaction
+ * @param {object} task the task
+ * @returns {Promise<void>}
+ */
+export async function putTask(tx, task) {
+  await request(tx.objectStore(STORES.tasks).put(task));
+  const occurrence = task['current-occurrence'];
+  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': task.id, ...occurrence }, [task.id, occurrence.occurrence]));
+}
+
+/**
+ * Store events inside a transaction covering the events store.
+ * @param {IDBTransaction} tx the transaction
+ * @param {object[]} events the events
+ * @returns {Promise<void>}
+ */
+export async function putEvents(tx, events) {
+  for (const event of events) {
+    await request(tx.objectStore(STORES.events).put(event, [event['task-id'], event.id]));
+  }
+}
+
+/**
+ * Apply user events to a task in order, as one action at one time.
+ * @param {{now: () => Date}} ctx store context
+ * @param {object} task the task
+ * @param {string[]} types the event types
+ * @param {string} time the ISO time of the action
+ * @returns {{task: object, events: object[]}} the task after the events, and the events
+ * @throws {StoreError} with code `conflict` when an event's precondition fails
+ */
+function applyUserEvents(ctx, task, types, time) {
+  let occurrence = task['current-occurrence'];
+  const events = [];
+  for (const type of types) {
+    const event = makeEvent({ id: newEventId(ctx), 'task-id': task.id, type, 'creation-time': time, occurrence: occurrence.occurrence });
+    const next = applyEvent(occurrence, event, task['lifecycle-rules']);
+    if (!next) {
+      throw new StoreError('conflict', `A ${type} event does not apply to a ${occurrence.status} task.`);
+    }
+    occurrence = next;
+    events.push(event);
+  }
+  return { task: { ...task, 'current-occurrence': occurrence }, events };
+}
+
+/**
+ * Return a task that remembers the events its write created.
+ * @param {object} task the stored task
+ * @param {object[]} events the events
+ * @returns {object} the task
+ */
+function remember(task, events) {
+  WRITTEN_EVENTS.set(task, events);
+  return task;
+}
+
+/**
  * Read a task inside a transaction, failing when it does not exist.
  * @param {IDBTransaction} tx the transaction
  * @param {string} id the task identifier
@@ -108,16 +258,16 @@ export async function mustGetLiveTask(tx, id) {
 }
 
 /**
- * Set a task's last activity time inside a transaction, leaving its last update time unchanged.
+ * Set a task's last update time inside a transaction, for a change of one of its parts (`TSK-12`, `NOT-5`).
  * Fails when the task is missing or deleted, so deleted tasks accept no note or membership changes.
  * @param {IDBTransaction} tx a read-write transaction covering the tasks store
  * @param {string} id the task identifier
- * @param {string} time the ISO time of the activity
+ * @param {string} time the ISO time of the change
  * @returns {Promise<object>} the updated task
  */
-export async function markActivity(tx, id, time) {
+export async function touchTask(tx, id, time) {
   const task = await mustGetLiveTask(tx, id);
-  const updated = { ...task, 'last-activity-time': time };
+  const updated = { ...task, 'last-update-time': time };
   await request(tx.objectStore(STORES.tasks).put(updated));
   return updated;
 }
@@ -267,38 +417,51 @@ export function backfillPositions(store) {
 }
 
 /**
- * Create a task, optionally inside lists.
+ * Create a task, optionally inside lists, with its rules, occurrence 1, and a `create` event.
  * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date}} ctx store context
- * @param {object} input the new task: `description` is required, other editable fields are optional
+ * @param {object} input the new task: `description` is required; `lifecycle-rules`, `due-time`, `overdue-handling`,
+ *   `owner-id`, and `id` are optional; a `status` other than `ready` is reached through events
  * @param {{lists?: string[]}} [options] identifiers of the lists the task joins, each after its last task
  * @returns {Promise<object>} the stored task
  */
 export async function createTask(ctx, input, { lists = [] } = {}) {
   const time = ctx.now().toISOString();
-  const task = {
+  const edit = { ...input['lifecycle-rules'] };
+  for (const field of ['due-time', 'overdue-handling']) {
+    if (field in input) {
+      edit[field] = input[field];
+    }
+  }
+  const rules = normalizeRules(checkRuleEdit(edit));
+  const status = input.status === undefined ? 'ready' : checkField('status', input.status);
+  const created = {
     id: input.id ?? uuid7(() => ctx.now().getTime()),
     description: checkField('description', input.description),
-    status: checkField('status', input.status ?? 'todo'),
-    'due-time': checkField('due-time', input['due-time'] ?? null),
-    'overdue-handling': checkField('overdue-handling', input['overdue-handling'] ?? 'keep'),
     'owner-id': input['owner-id'] ?? null,
+    'lifecycle-rules': rules,
+    'current-occurrence': firstOccurrence(rules, time),
     'creation-time': time,
     'last-update-time': time,
-    'last-activity-time': time,
     'deletion-time': null,
   };
-  return transact(ctx.db, [STORES.lists, STORES.tasks, STORES.memberships], 'readwrite', async (tx) => {
+  const create = makeEvent({ id: newEventId(ctx), 'task-id': created.id, type: 'create', 'creation-time': time, 'owner-id': created['owner-id'] });
+  const { task, events } = applyUserEvents(ctx, created, eventsTowardsStatus(created['current-occurrence'], status, rules), time);
+  return transact(ctx.db, [STORES.lists, STORES.memberships, ...TASK_STORES], 'readwrite', async (tx) => {
     await request(tx.objectStore(STORES.tasks).add(task));
+    await putTask(tx, task);
+    await putEvents(tx, [create, ...events]);
     for (const listId of lists) {
       await mustGetLiveList(tx, listId);
       await putMembership(tx, ctx.keyRange, task.id, listId, time);
     }
-    return task;
+    return remember(task, events);
   });
 }
 
 /**
- * Update editable task fields; omitted and read-only fields stay unchanged.
+ * Update a task; omitted and read-only fields stay unchanged.
+ * `description` changes the task, `due-time` and `overdue-handling` edit its rules,
+ * and `status` posts the events that reach it, mirroring the todos.server status mapping.
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {string} id the task identifier
  * @param {object} changes new values for `description`, `status`, `due-time`, or `overdue-handling`
@@ -307,23 +470,117 @@ export async function createTask(ctx, input, { lists = [] } = {}) {
  * @returns {Promise<object|null>} the updated task, or null when `when` declined
  */
 export function updateTask(ctx, id, changes = {}, { when } = {}) {
-  return transact(ctx.db, [STORES.tasks], 'readwrite', async (tx) => {
-    const task = await mustGetLiveTask(tx, id);
-    if (when && !when(task)) {
+  const description = 'description' in changes ? checkField('description', changes.description) : undefined;
+  const status = 'status' in changes ? checkField('status', changes.status) : undefined;
+  const ruleEdit = checkRuleEdit(Object.fromEntries(['due-time', 'overdue-handling'].filter((field) => field in changes).map((field) => [field, changes[field]])));
+  return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
+    const stored = await mustGetLiveTask(tx, id);
+    if (when && !when(stored)) {
       return null;
     }
-    const updated = { ...task };
-    for (const field of EDITABLE) {
-      if (field in changes) {
-        updated[field] = checkField(field, changes[field]);
-      }
-    }
     const time = ctx.now().toISOString();
-    updated['last-update-time'] = time;
-    updated['last-activity-time'] = time;
-    await request(tx.objectStore(STORES.tasks).put(updated));
+    let updated = { ...stored, 'last-update-time': time };
+    if (description !== undefined) {
+      updated.description = description;
+    }
+    if (Object.keys(ruleEdit).length > 0) {
+      updated = { ...updated, ...applyRuleEdit(updated, ruleEdit, time) };
+    }
+    let events = [];
+    if (status !== undefined) {
+      ({ task: updated, events } = applyUserEvents(ctx, updated, eventsTowardsStatus(updated['current-occurrence'], status, updated['lifecycle-rules']), time));
+    }
+    await putTask(tx, updated);
+    await putEvents(tx, events);
+    return remember(updated, events);
+  });
+}
+
+/**
+ * Post a user event on a task, as the tick button and event actions do.
+ * @param {{db: IDBDatabase, now: () => Date}} ctx store context
+ * @param {string} id the task identifier
+ * @param {string} type `complete`, `uncomplete`, `start`, `unstart`, `cancel`, or `reopen`
+ * @returns {Promise<{event: object, task: object}>} the stored event and the updated task
+ * @throws {StoreError} with code `conflict` when the precondition fails, and `invalid` for other types
+ */
+export function postEvent(ctx, id, type) {
+  if (!USER_EVENT_TYPES.includes(type)) {
+    throw new StoreError('invalid', `Clients cannot post a ${type} event.`);
+  }
+  return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
+    const stored = await mustGetLiveTask(tx, id);
+    const time = ctx.now().toISOString();
+    const { task, events } = applyUserEvents(ctx, { ...stored, 'last-update-time': time }, [type], time);
+    await putTask(tx, task);
+    await putEvents(tx, events);
+    return { event: events[0], task: remember(task, events) };
+  });
+}
+
+/**
+ * Edit the lifecycle rules of a task; target and deadline edits move the open occurrence.
+ * @param {{db: IDBDatabase, now: () => Date}} ctx store context
+ * @param {string} id the task identifier
+ * @param {object} edit rule fields; `null` clears a field
+ * @returns {Promise<object>} the updated task
+ */
+export function updateRules(ctx, id, edit = {}) {
+  const checked = checkRuleEdit(edit);
+  return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
+    const stored = await mustGetLiveTask(tx, id);
+    const time = ctx.now().toISOString();
+    const updated = { ...stored, ...applyRuleEdit(stored, checked, time), 'last-update-time': time };
+    await putTask(tx, updated);
     return updated;
   });
+}
+
+/**
+ * Expire an overdue task with overdue handling `cancel` through a system `expire` event (`OVD-4`).
+ * The service writes its own `expire` event, so this one never joins the change queue.
+ * @param {{db: IDBDatabase, now: () => Date}} ctx store context
+ * @param {string} id the task identifier
+ * @param {{now?: Date}} [options] the time of the expiry, the store clock by default
+ * @returns {Promise<object|null>} the expired task, or null when the task is not due to expire
+ */
+export function expireTask(ctx, id, { now = ctx.now() } = {}) {
+  return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
+    const stored = await mustGetLiveTask(tx, id);
+    if (!shouldExpire(stored, now)) {
+      return null;
+    }
+    const time = now.toISOString();
+    const occurrence = stored['current-occurrence'];
+    const event = makeEvent({ id: newEventId(ctx), 'task-id': id, type: 'expire', 'creation-time': time, occurrence: occurrence.occurrence });
+    const task = { ...stored, 'current-occurrence': applyEvent(occurrence, event, stored['lifecycle-rules']), 'last-update-time': time };
+    await putTask(tx, task);
+    await putEvents(tx, [event]);
+    return task;
+  });
+}
+
+/**
+ * Return the events of a task, in fold order: creation time, then identifier.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context
+ * @param {string} taskId the task identifier
+ * @returns {Promise<object[]>} the events
+ */
+export async function eventsOfTask(ctx, taskId) {
+  const events = await transact(ctx.db, [STORES.events], 'readonly',
+    (tx) => request(tx.objectStore(STORES.events).getAll(ctx.keyRange.bound([taskId], [taskId, []]))));
+  return events.sort((a, b) => a['creation-time'].localeCompare(b['creation-time']) || (a.id < b.id ? -1 : 1));
+}
+
+/**
+ * Return the occurrences of a task, oldest first.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context
+ * @param {string} taskId the task identifier
+ * @returns {Promise<object[]>} the occurrences, each with its `task-id`
+ */
+export function occurrencesOfTask(ctx, taskId) {
+  return transact(ctx.db, [STORES.occurrences], 'readonly',
+    (tx) => request(tx.objectStore(STORES.occurrences).getAll(ctx.keyRange.bound([taskId], [taskId, []]))));
 }
 
 /**
@@ -359,7 +616,7 @@ export function addToList(ctx, taskId, listId) {
     await mustGetLiveList(tx, listId);
     const time = ctx.now().toISOString();
     if (await putMembership(tx, ctx.keyRange, taskId, listId, time)) {
-      await request(tx.objectStore(STORES.tasks).put({ ...task, 'last-activity-time': time }));
+      await request(tx.objectStore(STORES.tasks).put({ ...task, 'last-update-time': time }));
     }
   });
 }
@@ -382,7 +639,7 @@ export function removeFromList(ctx, taskId, listId) {
     const key = [listId, taskId];
     if (await request(store.get(key))) {
       await request(store.delete(key));
-      await request(tx.objectStore(STORES.tasks).put({ ...task, 'last-activity-time': ctx.now().toISOString() }));
+      await request(tx.objectStore(STORES.tasks).put({ ...task, 'last-update-time': ctx.now().toISOString() }));
     }
   });
 }
@@ -451,7 +708,7 @@ export function tasksOfList(ctx, listId) {
 /**
  * Move a task directly before or after another task of the same list (`LV-3`, `LV-4`).
  * Only this membership changes, unless the list needs a rebalance; the other lists of the task keep their order.
- * Sets the last activity time of the task, not its last update time; a deleted task or list fails with `deleted`.
+ * Sets the last update time of the task; a deleted task or list fails with `deleted`.
  * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date}} ctx store context
  * @param {string} taskId the task identifier
  * @param {string} listId the list identifier
@@ -483,6 +740,6 @@ export async function moveInList(ctx, taskId, listId, placement = {}) {
       throw new ValidationError(field, 'invalid', `Task ${neighborId} is not in list ${listId}.`);
     }
     await placeMembership(tx, others, own, field === 'before' ? neighbor : neighbor + 1);
-    await markActivity(tx, taskId, ctx.now().toISOString());
+    await touchTask(tx, taskId, ctx.now().toISOString());
   });
 }

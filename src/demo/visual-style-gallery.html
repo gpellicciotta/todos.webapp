@@ -511,7 +511,7 @@
           <fieldset class="segmented">
             <legend class="segmented__legend">Status</legend>
             <div class="segmented__options">
-              <label class="segmented__option"><input type="radio" name="status" value="todo"> To do</label>
+              <label class="segmented__option"><input type="radio" name="status" value="ready"> To do</label>
               <label class="segmented__option is-hover"><input type="radio" name="status" value="in-progress"> In progress</label>
               <label class="segmented__option"><input type="radio" name="status" value="completed" checked> Completed</label>
               <label class="segmented__option is-focus"><input type="radio" name="status" value="cancelled"> Cancelled</label>
@@ -520,7 +520,7 @@
           <fieldset class="segmented">
             <legend class="segmented__legend">Status, read-only</legend>
             <div class="segmented__options">
-              <label class="segmented__option"><input type="radio" name="status-disabled" value="todo" disabled> To do</label>
+              <label class="segmented__option"><input type="radio" name="status-disabled" value="ready" disabled> To do</label>
               <label class="segmented__option"><input type="radio" name="status-disabled" value="in-progress" checked disabled> In progress</label>
               <label class="segmented__option"><input type="radio" name="status-disabled" value="completed" disabled> Completed</label>
               <label class="segmented__option"><input type="radio" name="status-disabled" value="cancelled" disabled> Cancelled</label>
@@ -695,7 +695,7 @@
 
         <h3>Statuses</h3>
         <ul class="states">
-          <li class="state"><button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Buy paint completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button><span class="state__label">To do</span></li>
+          <li class="state"><button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Buy paint completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button><span class="state__label">To do</span></li>
           <li class="state"><button class="icon-button status-button" data-status="in-progress" type="button" aria-label="Mark Call the plumber completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button><span class="state__label">In progress</span></li>
           <li class="state"><button class="icon-button status-button" data-status="completed" type="button" aria-label="Mark Water the plants to do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg></button><span class="state__label">Completed</span></li>
           <li class="state"><button class="icon-button status-button" data-status="cancelled" type="button" aria-label="Mark Renew the gym pass to do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg></button><span class="state__label">Cancelled</span></li>
@@ -714,7 +714,7 @@
         <p>The menu marks the current status; To do shows hover and Cancelled shows focus-visible.</p>
         <div class="stage">
           <div class="menu status-menu" role="menu" aria-label="Status of Call the plumber">
-            <button class="menu__item is-hover" type="button" role="menuitemradio" aria-checked="false" data-status="todo"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg>To do</button>
+            <button class="menu__item is-hover" type="button" role="menuitemradio" aria-checked="false" data-status="ready"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>To do</button>
             <button class="menu__item" type="button" role="menuitemradio" aria-checked="true" data-status="in-progress"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>In progress</button>
             <button class="menu__item" type="button" role="menuitemradio" aria-checked="false" data-status="completed"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg>Completed</button>
             <button class="menu__item is-focus" type="button" role="menuitemradio" aria-checked="false" data-status="cancelled"><svg class="icon menu__check" aria-hidden="true" focusable="false"><use href="../img/icons.svg#check"/></svg><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg>Cancelled</button>
@@ -732,8 +732,8 @@
           <div class="row-state">
             <p class="state__label" id="row-todo">To do, with a due time and a list</p>
             <ul class="task-list" aria-labelledby="row-todo">
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Buy paint for the hallway</span>
                   <span class="task-row__meta">
@@ -799,8 +799,8 @@
           <div class="row-state">
             <p class="state__label" id="row-long">Long description and list name, truncated</p>
             <ul class="task-list" aria-labelledby="row-long">
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Prepare the slides for the quarterly team review and send them to everyone before the Friday meeting starts completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Prepare the slides for the quarterly team review and send them to everyone before the Friday meeting starts completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Prepare the slides for the quarterly team review and send them to everyone before the Friday meeting starts</span>
                   <span class="task-row__meta">
@@ -822,8 +822,8 @@
           <div class="row-state">
             <p class="state__label" id="row-hover">Hover</p>
             <ul class="task-list" aria-labelledby="row-hover">
-              <li class="task-row is-hover" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Book flights for the spring trip completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row is-hover" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Book flights for the spring trip completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Book flights for the spring trip</span>
                   <span class="task-row__meta">
@@ -838,8 +838,8 @@
           <div class="row-state">
             <p class="state__label" id="row-focus">Focus-visible</p>
             <ul class="task-list" aria-labelledby="row-focus">
-              <li class="task-row is-focus" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Send the invoice to the client completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row is-focus" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Send the invoice to the client completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Send the invoice to the client</span>
                   <span class="task-row__meta">
@@ -853,8 +853,8 @@
           <div class="row-state">
             <p class="state__label" id="row-active">Active</p>
             <ul class="task-list" aria-labelledby="row-active">
-              <li class="task-row is-active" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Read chapter 4 of the novel completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row is-active" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Read chapter 4 of the novel completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Read chapter 4 of the novel</span>
                   <span class="task-row__meta">
@@ -868,8 +868,8 @@
           <div class="row-state">
             <p class="state__label" id="row-selected">Selected: its task is open in the editor</p>
             <ul class="task-list" aria-labelledby="row-selected">
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row" aria-current="page">
                   <span class="task-row__description">Buy paint for the hallway</span>
                   <span class="task-row__meta">
@@ -884,9 +884,9 @@
           <div class="row-state">
             <p class="state__label" id="row-handle">Manual order: a drag handle on pointer devices</p>
             <ul class="task-list" aria-labelledby="row-handle">
-              <li class="task-row" data-status="todo">
+              <li class="task-row" data-status="ready">
                 <span class="task-row__handle" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#grip"/></svg></span>
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Clean the gutters completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Clean the gutters completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Clean the gutters</span>
                   <span class="task-row__meta">
@@ -900,9 +900,9 @@
           <div class="row-state">
             <p class="state__label" id="row-dragging">Dragging</p>
             <ul class="task-list" aria-labelledby="row-dragging">
-              <li class="task-row" data-status="todo" data-dragging="true">
+              <li class="task-row" data-status="ready" data-dragging="true">
                 <span class="task-row__handle" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#grip"/></svg></span>
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Replace the smoke detector batteries completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Replace the smoke detector batteries completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Replace the smoke detector batteries</span>
                 </a>
@@ -913,9 +913,9 @@
           <div class="row-state">
             <p class="state__label" id="row-drop-before">Drop target, before this row</p>
             <ul class="task-list" aria-labelledby="row-drop-before">
-              <li class="task-row" data-status="todo" data-drop="before">
+              <li class="task-row" data-status="ready" data-drop="before">
                 <span class="task-row__handle" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#grip"/></svg></span>
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Sort the winter clothes completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Sort the winter clothes completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Sort the winter clothes</span>
                   <span class="task-row__meta">
@@ -929,9 +929,9 @@
           <div class="row-state">
             <p class="state__label" id="row-drop-after">Drop target, after this row</p>
             <ul class="task-list" aria-labelledby="row-drop-after">
-              <li class="task-row" data-status="todo" data-drop="after">
+              <li class="task-row" data-status="ready" data-drop="after">
                 <span class="task-row__handle" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#grip"/></svg></span>
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Fix the squeaky door completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Fix the squeaky door completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Fix the squeaky door</span>
                 </a>
@@ -942,8 +942,8 @@
           <div class="row-state">
             <p class="state__label" id="row-readonly">Read-only: a viewer of a shared list</p>
             <ul class="task-list" aria-labelledby="row-readonly">
-              <li class="task-row" data-status="todo" data-readonly="true">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Pick up the dry cleaning completed" disabled><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready" data-readonly="true">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Pick up the dry cleaning completed" disabled><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-row">
                   <span class="task-row__description">Pick up the dry cleaning</span>
                   <span class="task-row__meta">
@@ -1249,8 +1249,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Call the plumber about the leak"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-list">
                   <span class="task-row__description">Buy paint for the hallway</span>
                   <span class="task-row__meta">
@@ -1263,8 +1263,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Buy paint for the hallway"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Book flights for the spring trip completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Book flights for the spring trip completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-list">
                   <span class="task-row__description">Book flights for the spring trip</span>
                   <span class="task-row__meta">
@@ -1275,8 +1275,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Book flights for the spring trip"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Renew passport completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Renew passport completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-list">
                   <span class="task-row__description">Renew passport</span>
                   <span class="task-row__meta">
@@ -1290,8 +1290,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Renew passport"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Prepare slides for the team review of the third quarter results and the plans for next year completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Prepare slides for the team review of the third quarter results and the plans for next year completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-list">
                   <span class="task-row__description">Prepare slides for the team review of the third quarter results and the plans for next year</span>
                   <span class="task-row__meta">
@@ -1301,8 +1301,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Prepare slides for the team review of the third quarter results and the plans for next year"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Send the invoice to the client completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Send the invoice to the client completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-list">
                   <span class="task-row__description">Send the invoice to the client</span>
                   <span class="task-row__meta">
@@ -1311,15 +1311,15 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Send the invoice to the client"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Water the plants completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Water the plants completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-list">
                   <span class="task-row__description">Water the plants</span>
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Water the plants"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Read chapter 4 of the novel completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Read chapter 4 of the novel completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-list">
                   <span class="task-row__description">Read chapter 4 of the novel</span>
                   <span class="task-row__meta">
@@ -1361,8 +1361,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Call the plumber about the leak"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Buy paint for the hallway completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-editor" aria-current="page">
                   <span class="task-row__description">Buy paint for the hallway</span>
                   <span class="task-row__meta">
@@ -1375,8 +1375,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Buy paint for the hallway"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Book flights for the spring trip completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Book flights for the spring trip completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-editor">
                   <span class="task-row__description">Book flights for the spring trip</span>
                   <span class="task-row__meta">
@@ -1387,8 +1387,8 @@
                 </a>
                 <button class="icon-button task-row__more" type="button" aria-haspopup="menu" aria-label="More actions for Book flights for the spring trip"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#more"/></svg></button>
               </li>
-              <li class="task-row" data-status="todo">
-                <button class="icon-button status-button" data-status="todo" type="button" aria-label="Mark Renew passport completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg></button>
+              <li class="task-row" data-status="ready">
+                <button class="icon-button status-button" data-status="ready" type="button" aria-label="Mark Renew passport completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
                 <a class="task-row__open" href="#task-editor">
                   <span class="task-row__description">Renew passport</span>
                   <span class="task-row__meta">
@@ -1420,7 +1420,7 @@
                 <fieldset class="segmented">
                   <legend class="segmented__legend">Status</legend>
                   <div class="segmented__options">
-                    <label class="segmented__option"><input type="radio" name="pattern-status" value="todo" checked><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-todo"/></svg>To do</label>
+                    <label class="segmented__option"><input type="radio" name="pattern-status" value="ready" checked><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>To do</label>
                     <label class="segmented__option"><input type="radio" name="pattern-status" value="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>In progress</label>
                     <label class="segmented__option"><input type="radio" name="pattern-status" value="completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg>Completed</label>
                     <label class="segmented__option"><input type="radio" name="pattern-status" value="cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg>Cancelled</label>

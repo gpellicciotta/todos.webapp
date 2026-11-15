@@ -241,7 +241,7 @@ test.describe('List screen', () => {
     await expect(paint).toHaveCount(0);
     const done = page.locator('.toast', { hasText: 'Task marked completed.' });
     await done.getByRole('button', { name: 'Undo' }).click();
-    await expect(paint).toHaveAttribute('data-status', 'todo');
+    await expect(paint).toHaveAttribute('data-status', 'ready');
 
     const gutters = page.locator('.list-view .task-row', { hasText: 'Clean the gutters' });
     await gutters.locator('.status-button').click({ button: 'right' });
@@ -265,9 +265,9 @@ test.describe('List screen', () => {
       const store = await openStore();
       const tasks = await store.listTasks();
       store.close();
-      return Object.fromEntries(tasks.map((task) => [task.description, task.status]));
+      return Object.fromEntries(tasks.map((task) => [task.description, task['current-occurrence'].status]));
     });
-    expect(statuses).toMatchObject({ 'Buy paint': 'todo', 'Clean the gutters': 'cancelled', 'Fix the door': 'in-progress' });
+    expect(statuses).toMatchObject({ 'Buy paint': 'ready', 'Clean the gutters': 'cancelled', 'Fix the door': 'in-progress' });
     expect(problems).toEqual([]);
   });
 

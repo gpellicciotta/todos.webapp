@@ -1,7 +1,7 @@
 /**
  * Local data store on IndexedDB: schema, transactions, errors, and the store facade.
  *
- * Records use the field names of the ToDo's service `List`, `Task`, and `Note` schemas, in kebab-case.
+ * Records use the field names of the ToDo's service `List`, `Task`, `Note`, `Occurrence`, and `TaskEvent` schemas, in kebab-case.
  * See docs/specs/local-store.md for the stores and their records.
  */
 
@@ -9,6 +9,7 @@ import * as bin from './bin.js';
 import * as bulk from './bulk.js';
 import { StoreError, STORES } from './idb.js';
 import * as lists from './lists.js';
+import { migrateToLifecycle } from './migrate.js';
 import * as notes from './notes.js';
 import * as tasks from './tasks.js';
 import { createQueue, isTracked, trackChange } from '../sync/queue.js';
@@ -16,7 +17,7 @@ import { createQueue, isTracked, trackChange } from '../sync/queue.js';
 export { StoreError, ValidationError } from './idb.js';
 
 export const DB_NAME = 'todos';
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 /**
  * Create or upgrade the schema.
@@ -45,11 +46,20 @@ function upgrade(db, oldVersion, tx) {
     db.createObjectStore(STORES.state, { keyPath: 'key' });
     db.createObjectStore(STORES.log, { keyPath: 'id' }).createIndex('time', 'time');
   }
+  if (oldVersion < 5) {
+    // Out-of-line keys [task-id, occurrence] and [task-id, id]; one key range reads the occurrences or events of a task.
+    db.createObjectStore(STORES.occurrences);
+    db.createObjectStore(STORES.events);
+    if (oldVersion >= 1) {
+      migrateToLifecycle(tx);
+    }
+  }
 }
 
 /** Facade operations that change data; subscribers hear of each one once it commits. */
 const WRITES = [
-  'createList', 'updateList', 'createTask', 'updateTask', 'addToList', 'removeFromList', 'moveInList',
+  'createList', 'updateList', 'createTask', 'updateTask', 'postEvent', 'updateRules', 'expireTask',
+  'addToList', 'removeFromList', 'moveInList',
   'addNote', 'editNote', 'deleteNote', 'deleteList', 'deleteTask', 'restoreList', 'restoreTask',
   'purgeForever', 'emptyBin', 'deleteAllData', 'purgeExpired', 'applyChanges',
 ];
@@ -148,6 +158,11 @@ export async function openStore({
     listLists: () => lists.listLists(ctx),
     createTask: (input, options) => tasks.createTask(ctx, input, options),
     updateTask: (id, changes, options) => tasks.updateTask(ctx, id, changes, options),
+    postEvent: (id, type) => tasks.postEvent(ctx, id, type),
+    updateRules: (id, edit) => tasks.updateRules(ctx, id, edit),
+    expireTask: (id, options) => tasks.expireTask(ctx, id, options),
+    eventsOfTask: (taskId) => tasks.eventsOfTask(ctx, taskId),
+    occurrencesOfTask: (taskId) => tasks.occurrencesOfTask(ctx, taskId),
     getTask: (id) => tasks.getTask(ctx, id),
     listTasks: () => tasks.listTasks(ctx),
     addToList: (taskId, listId) => tasks.addToList(ctx, taskId, listId),

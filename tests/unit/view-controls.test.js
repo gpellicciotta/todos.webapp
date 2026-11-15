@@ -25,13 +25,13 @@ const LISTS = [{ id: 'l-home', name: 'Home' }, { id: 'l-work', name: 'Work' }];
 describe('view state per device (TV-12)', () => {
   it('starts with the open status filter and created newest first, or manual order in a list view', () => {
     expect(loadViewState('tasks', () => memoryStorage())).toEqual({
-      filter: { statuses: ['todo', 'in-progress'] },
+      filter: { statuses: ['ready', 'in-progress'] },
       order: { field: 'creation-time', direction: 'desc' },
       group: 'none',
     });
     expect(defaultViewState()).toEqual(loadViewState('tasks', () => memoryStorage()));
     expect(loadViewState('list', () => memoryStorage())).toEqual({
-      filter: { statuses: ['todo', 'in-progress'] },
+      filter: { statuses: ['ready', 'in-progress'] },
       order: { field: 'manual', direction: 'asc' },
       group: 'none',
     });
@@ -103,7 +103,9 @@ describe('view state per device (TV-12)', () => {
     expect(loadViewState('tasks', () => broken)).toEqual(defaultViewState());
     const odd = memoryStorage();
     odd.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: ['done', 'todo'], due: ['soon'] }, order: { field: 'size', direction: 'up' }, group: 'color' }));
-    expect(loadViewState('tasks', () => odd)).toEqual({ filter: { statuses: ['todo'] }, order: defaultViewState().order, group: 'none' });
+    expect(loadViewState('tasks', () => odd)).toEqual({ filter: { statuses: ['ready'] }, order: defaultViewState().order, group: 'none' });
+    odd.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: ['todo', 'ready'] }, order: { field: 'last-activity-time', direction: 'desc' } }));
+    expect(loadViewState('tasks', () => odd)).toMatchObject({ filter: { statuses: ['ready'] }, order: { field: 'last-update-time', direction: 'desc' } });
     const blocked = () => {
       throw new Error('SecurityError');
     };
@@ -114,7 +116,7 @@ describe('view state per device (TV-12)', () => {
 
 describe('describeFilters', () => {
   it('names each active filter with its value', () => {
-    expect(describeFilters({ statuses: ['todo', 'in-progress'] }, LISTS)).toEqual(['Status: open']);
+    expect(describeFilters({ statuses: ['ready', 'in-progress'] }, LISTS)).toEqual(['Status: open']);
     expect(describeFilters({
       statuses: ['completed'], lists: ['l-home'], due: ['this-week'], created: { from: '2026-11-01' }, text: 'paint',
     }, LISTS)).toEqual(['Search: paint', 'Lists: Home', 'Status: completed', 'Due: this week', 'Created: from 2026-11-01']);
@@ -181,7 +183,7 @@ describe('the Shared filter (TV-7)', () => {
     expect(describeFilters({ shared: true }, LISTS)).toEqual(['Shared: yes']);
     expect(describeFilters({ shared: false }, LISTS)).toEqual(['Shared: no']);
     const storage = memoryStorage();
-    const state = { ...defaultViewState(), filter: { statuses: ['todo'], shared: false } };
+    const state = { ...defaultViewState(), filter: { statuses: ['ready'], shared: false } };
     saveViewState('tasks', state, () => storage);
     expect(loadViewState('tasks', () => storage).filter.shared).toBe(false);
     expect(isDefaultViewState({ ...defaultViewState(), filter: { ...defaultViewState().filter, shared: true } })).toBe(false);
@@ -189,13 +191,13 @@ describe('the Shared filter (TV-7)', () => {
 
   it('drops a stored value that is not a boolean', () => {
     const storage = memoryStorage();
-    storage.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: ['todo'], shared: 'yes' }, order: { field: 'creation-time', direction: 'desc' } }));
+    storage.setItem('todos.view.tasks', JSON.stringify({ filter: { statuses: ['ready'], shared: 'yes' }, order: { field: 'creation-time', direction: 'desc' } }));
     expect(loadViewState('tasks', () => storage).filter.shared).toBeUndefined();
   });
 });
 
 describe('the Finished today only choice (TV-14)', () => {
-  const all = ['todo', 'in-progress', 'completed', 'cancelled'];
+  const all = ['ready', 'in-progress', 'completed', 'cancelled'];
 
   it('names the choice after the status value, in the info line and in empty results', () => {
     const line = (filter) => describeInfoLine({ shown: 3, total: 9, state: { filter, order: defaultViewState().order }, lists: LISTS });
@@ -203,7 +205,7 @@ describe('the Finished today only choice (TV-14)', () => {
     expect(line({ statuses: ['completed'], finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: completed, finished today']);
     expect(line({ statuses: [], finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: all, finished today']);
     expect(describeFilters({ statuses: [], finishedToday: true }, LISTS)).toEqual(['Status: all, finished today']);
-    expect(describeFilters({ statuses: ['todo', 'in-progress'], finishedToday: true }, LISTS)).toEqual(['Status: open, finished today']);
+    expect(describeFilters({ statuses: ['ready', 'in-progress'], finishedToday: true }, LISTS)).toEqual(['Status: open, finished today']);
   });
 
   it('keeps the choice in the device storage only when it is true', () => {
@@ -314,7 +316,7 @@ describe('createViewModel', () => {
     it('drops the search text when another list is selected', () => {
       const model = createViewModel('list', () => memoryStorage());
       model.select('l-home');
-      model.set({ ...defaultViewState('list'), filter: { statuses: ['todo'], text: 'paint' } });
+      model.set({ ...defaultViewState('list'), filter: { statuses: ['ready'], text: 'paint' } });
       model.select('l-work');
       expect(model.get().filter.text).toBeUndefined();
     });
@@ -553,9 +555,9 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('tasks');
     const region = panel.body.querySelector('[data-region="statuses"]');
     toggle(region.querySelector('input[value="completed"]'), true);
-    expect(models.tasks.get().filter.statuses).toEqual(['todo', 'in-progress', 'completed']);
+    expect(models.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed']);
     expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses');
-    for (const status of ['todo', 'in-progress', 'completed']) {
+    for (const status of ['ready', 'in-progress', 'completed']) {
       toggle(region.querySelector(`input[value="${status}"]`), false);
     }
     expect(models.tasks.get().filter.statuses).toEqual([]);
@@ -572,10 +574,10 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(choice.checked).toBe(false);
     toggle(region.querySelector('input[value="completed"]'), true);
     toggle(choice, true);
-    expect(models.tasks.get().filter).toEqual({ statuses: ['todo', 'in-progress', 'completed'], finishedToday: true });
+    expect(models.tasks.get().filter).toEqual({ statuses: ['ready', 'in-progress', 'completed'], finishedToday: true });
     expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses, finished today');
     toggle(choice, false);
-    expect(models.tasks.get().filter).toEqual({ statuses: ['todo', 'in-progress', 'completed'] });
+    expect(models.tasks.get().filter).toEqual({ statuses: ['ready', 'in-progress', 'completed'] });
     expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses');
   });
 
@@ -635,12 +637,12 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('tasks');
     models.tasks.set({ filter: { statuses: [], due: ['today'], text: 'paint' }, order: { field: 'status', direction: 'desc' } });
     expect(panel.body.querySelector('select').value).toBe('status');
-    expect(panel.body.querySelector('[data-region="statuses"] input[value="todo"]').checked).toBe(false);
+    expect(panel.body.querySelector('[data-region="statuses"] input[value="ready"]').checked).toBe(false);
     expect(panel.body.querySelector('[data-region="due"] input[value="today"]').checked).toBe(true);
     panel.body.querySelector('.view-options__reset').click();
     expect(models.tasks.get()).toEqual(defaultViewState());
     expect(panel.body.querySelector('select').value).toBe('creation-time');
-    expect(panel.body.querySelector('[data-region="statuses"] input[value="todo"]').checked).toBe(true);
+    expect(panel.body.querySelector('[data-region="statuses"] input[value="ready"]').checked).toBe(true);
   });
 
   it('labels the Show button with the shown count, and closes the panel on click', async () => {

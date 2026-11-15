@@ -21,11 +21,14 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 
 ## Glossary
 - **List:** A named tag on tasks, with an optional description; the unit of sharing.
-- **Task:** A piece of work with a description, a status, and an optional due time.
+- **Task:** A piece of work with a description, lifecycle rules, occurrences, and events.
+- **Lifecycle rules:** A task's target count, due time, overdue behavior, and recurrence.
+- **Occurrence:** One run of a task; the current occurrence holds the task's status and due time.
+- **Event:** An action on a task, such as `complete` or `cancel`; events decide the status.
 - **Membership:** The link between a task and one list, holding the task's position in that list.
 - **Note:** A timestamped text entry attached to one task.
 - **Owner:** The creator of a list or task; in local mode, the single local user.
-- **Last activity time:** The latest change to a task, its memberships, or its notes.
+- **Last update time:** The latest change to a task, its rules, events, memberships, or notes.
 - **Backup:** A single file holding all data the app stores.
 
 ---
@@ -67,10 +70,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 
 ### Tasks
 - TSK-1: Users create a task with a description of 1 to 500 characters.
-- TSK-2: A new task has status `todo` and overdue behavior `keep` unless the user picks otherwise.
-- TSK-3: A task status is one of `todo`, `in-progress`, `completed`, or `cancelled`.
-- TSK-4: Users change a task status from any status to any other status.
-  One click on a task's status button completes an open task, or sets a finished task back to `todo`.
+- TSK-2: A new task has status `ready` and overdue behavior `keep` unless the user picks otherwise.
+- TSK-3: A task status is one of `ready`, `in-progress`, `completed`, or `cancelled`.
+- TSK-4: Users change a task status from any status to any other; the app records the change as events.
+  One click on a task's status button completes an open task, or sets a finished task back to `ready`.
 - TSK-5: Users set, change, or clear an optional due time.
 - TSK-6: A due date without a time of day means 23:59 local time on that date.
 - TSK-7: Users set the overdue behavior to `keep` or `cancel` on a task with a due time.
@@ -78,7 +81,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-9: A task created inside a list view starts as a member of that list.
 - TSK-10: A task in no list stays visible in the task view.
 - TSK-11: Deleting a task moves it to the recycle bin and hides it from every list and view.
-- TSK-12: Every task records its creation time, last update time, and last activity time.
+- TSK-12: Every task records its creation time and last update time, which every change of it or its parts moves.
 - TSK-13: A task created from the add field opens in the task editor.
 - TSK-14: A due date, a time, and list tags typed in the add field set the new task's due time and lists.
   A preview line under the field names what the add will set; the parser works offline, in US English.
@@ -88,14 +91,14 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - NOT-2: Each note records its creation time, its last edit time, and, when connected, its author.
 - NOT-3: A task shows its notes in creation order, newest first.
 - NOT-4: Users edit or delete their own notes.
-- NOT-5: Adding, editing, or deleting a note updates the task's last activity time.
+- NOT-5: Adding, editing, or deleting a note updates the task's last update time.
 
 ### Overdue Handling
-- OVD-1: A task is overdue when its due time has passed and its status is `todo` or `in-progress`.
+- OVD-1: A task is overdue when its due time has passed and its status is `ready` or `in-progress`.
 - OVD-2: Views mark overdue tasks visibly.
 - OVD-3: An overdue task with behavior `keep` stays open and keeps its overdue mark.
-- OVD-4: An overdue task with behavior `cancel` changes to `cancelled` within one minute while the app is open.
-- OVD-5: On start, the app cancels every task that became overdue with behavior `cancel` while it was closed.
+- OVD-4: An overdue task with behavior `cancel` expires to `cancelled` within one minute while the app is open.
+- OVD-5: On start, the app expires every task that became overdue with behavior `cancel` while it was closed.
 - OVD-6: Overdue handling never changes deleted, `completed`, or `cancelled` tasks.
 
 ### List View
@@ -104,7 +107,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LV-3: Users reorder tasks by dragging, and by keyboard move-up and move-down actions.
 - LV-4: Each list keeps its own manual order; reordering one list leaves other lists unchanged.
 - LV-5: A task added to a list goes after its last task.
-- LV-6: Users sort the view by manual order, due time, creation time, last activity time, status, or description.
+- LV-6: Users sort the view by manual order, due time, creation time, last update time, status, or description.
 - LV-7: A sort other than manual order affects the current view only and never changes the stored manual order.
 - LV-8: Choosing manual order restores it; manual reordering is unavailable while another sort or a grouping is active.
 - LV-9: Users create, edit, change status of, and delete tasks directly in the list view.
@@ -120,7 +123,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-6: Users filter by text contained in the description or the notes.
 - TV-7: When connected, users filter by shared or not shared.
 - TV-8: Filters combine with AND; each filter with several values matches any of them.
-- TV-9: Users order by due time, creation time, last activity time, status, or description, ascending or descending.
+- TV-9: Users order by due time, creation time, last update time, status, or description, ascending or descending.
 - TV-10: Tasks without a due time sort last in both directions when ordering by due time.
 - TV-11: Users create, edit, change status of, and delete tasks directly in the task view.
 - TV-12: The app remembers the last used filters, grouping, and order per device, for All tasks and for each list on its own.
@@ -271,8 +274,10 @@ Designs for v1.0.0 must not block these additions, for example by assuming one g
 
 ## Service Dependencies
 Connected mode needs these service changes beyond the current REST API spec:
-- Task notes: a notes resource with identifiers, text, author, and creation and edit times.
-- Last activity time: a task field covering field, membership, and note changes.
+- Task notes: a notes resource with identifiers, text, owner, and creation and last update times.
+- Last update time: a task field covering field, rule, event, membership, and note changes.
+- Lifecycle rules, occurrences, and events: the task shape and event route of todos task T0241.
+
 - Sync protocol: a change feed, tombstones, and revisions, planned in todos tasks T0136 to T0140.
 - Per-field merge: updates that carry only changed fields and resolve same-field conflicts by edit time.
 - Local data adoption: first-connect upload, including merging lists with matching names.

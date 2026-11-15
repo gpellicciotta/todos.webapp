@@ -14,8 +14,10 @@
  * there the panel sits beside the rows, so the user keeps typing the next task (`TSK-13`).
  */
 
+import { dueTimeOf, overdueHandlingOf, STATUSES, statusOf } from '../core/occurrences.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
-import { DESCRIPTION_MAX, STATUSES } from '../store/tasks.js';
+
+import { DESCRIPTION_MAX } from '../store/tasks.js';
 import { createEditorField } from './editor-panel.js';
 import { createNoteThread } from './notes.js';
 import { make as el, spriteIcon, STATUS_LABELS } from './task-list.js';
@@ -27,7 +29,7 @@ const STRINGS = Object.freeze({
   keep: 'Keep open', cancel: 'Cancel when overdue', lists: 'Lists',
   addToList: 'Add to list', createList: (name) => `Create list "${name}"`,
   removeFrom: 'Remove from ', notes: 'Notes', details: 'Details', created: 'Created ',
-  updated: 'Last updated ', activity: 'Last activity ', delete: 'Delete task',
+  updated: 'Last updated ', delete: 'Delete task',
   deleted: 'Task moved to the recycle bin.', inBin: 'This task is in the recycle bin.',
   restore: 'Restore', readOnly: (owner) => `You can only view this task${owner ? `. Its list owner is ${owner}` : ''}.`, notFound: 'That task was not found.', failed: 'That change could not be saved.',
   required: 'Enter a description.', tooLong: `A description holds at most ${DESCRIPTION_MAX} characters.`,
@@ -235,7 +237,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       return;
     }
     if (date.control.value === shown.get(date.control) && time.control.value === shown.get(time.control)) {
-      const due = dueParts(task['due-time']);
+      const due = dueParts(dueTimeOf(task));
       put(date.control, due.date);
       put(time.control, due.time);
       date.setError(null);
@@ -400,14 +402,14 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
     if (!busy(description.control)) {
       put(description.control, task.description);
     }
-    status.querySelector(`input[value="${task.status}"]`).checked = true;
-    const due = dueParts(task['due-time']);
+    status.querySelector(`input[value="${statusOf(task)}"]`).checked = true;
+    const due = dueParts(dueTimeOf(task));
     if (!busy(date.control) && !busy(time.control)) {
       put(date.control, due.date);
       put(time.control, due.time);
     }
-    overdueSection.hidden = !task['due-time'];
-    overdue.querySelector(`input[value="${task['overdue-handling']}"]`).checked = true;
+    overdueSection.hidden = !dueTimeOf(task);
+    overdue.querySelector(`input[value="${overdueHandlingOf(task) ?? 'keep'}"]`).checked = true;
     const joined = lists.filter((list) => members.includes(list.id));
     chips.replaceChildren(...joined.map((list) => {
       const item = doc.createElement('li');
@@ -423,9 +425,9 @@ export function mountTaskEditor(panel, route, { store, toaster, locale }) {
       return item;
     }));
     showOptions(!listbox.hidden);
-    thread.render(notes, deleted || !can(role, 'add-note'));
-    details.textContent = [[STRINGS.created, 'creation-time'], [STRINGS.updated, 'last-update-time'],
-      [STRINGS.activity, 'last-activity-time']].map(([label, key]) => `${label}${format.format(new Date(task[key]))}`).join(' · ');
+    thread.render(notes, deleted || !can(role, 'add-note'), userId);
+    details.textContent = [[STRINGS.created, 'creation-time'], [STRINGS.updated, 'last-update-time']]
+      .map(([label, key]) => `${label}${format.format(new Date(task[key]))}`).join(' · ');
     if (wasDeleted && !deleted) {
       description.control.focus();
     }

@@ -3,6 +3,8 @@
  *
  * Each note shows its author, its time, and "edited" after a change (`NOT-2`).
  * Own notes, every note in local mode, have Edit and Delete in a More menu; deleting asks in place (`NOT-4`).
+ * Notes of others show Collaborator, or Former member when their author's account was deleted.
+
  * Rendering again keeps an open edit, its draft text, a pending delete question, and focus.
  * A typed new note stays as a draft per task for the session, so closing the editor never drops it.
  * Escape in a note's edit field cancels that edit only.
@@ -16,6 +18,7 @@ import { spriteIcon } from './task-list.js';
 /** Thread strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   add: 'Add note', placeholder: 'Add a note', list: 'Notes, newest first', you: 'You', edited: 'edited',
+  other: 'Collaborator', formerMember: 'Former member',
   more: 'More actions for your note of ', edit: 'Edit', editLabel: 'Edit note', save: 'Save note',
   cancel: 'Cancel', delete: 'Delete', keep: 'Keep', confirm: 'Delete this note?',
   confirmOf: 'Delete your note of ', required: 'Enter a note.',
@@ -24,6 +27,22 @@ const STRINGS = Object.freeze({
 
 /** Typed new notes that were not added yet, by task identifier. */
 const drafts = new Map();
+
+/**
+ * Tell whether the user wrote a note: in local mode every note is the user's;
+ * connected, a note is the user's when its `owner-id` is the user, or it was written here and not uploaded yet.
+ * A synced note without owner comes from a deleted account.
+ * @param {object} note the note
+ * @param {number|string|null} userId the connected user, or null in local mode
+ * @returns {boolean} true for the user's own note
+ */
+export function ownsNote(note, userId) {
+  const owner = note['owner-id'] ?? null;
+  if (userId === null || userId === undefined) {
+    return true;
+  }
+  return owner === null ? note.revision === undefined : String(owner) === String(userId);
+}
 
 /**
  * Check a note text before it is stored.
@@ -87,6 +106,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
   let menus = [];
   let notes = [];
   let readOnly = false;
+  let userId = null;
   let editing = null;
   let confirming = null;
 
@@ -116,7 +136,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
     try {
       await change();
       done();
-      render(notes, readOnly);
+      render(notes, readOnly, userId);
       field.control.focus();
     }
     catch (failure) {
@@ -131,7 +151,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
   function leave(note) {
     editing = null;
     confirming = null;
-    render(notes, readOnly);
+    render(notes, readOnly, userId);
     list.querySelector(`[data-note-id="${note.id}"] [data-role="more"]`)?.focus();
   }
 
@@ -215,13 +235,16 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
     meta.className = 'note__meta';
     const author = doc.createElement('span');
     author.className = 'note__author';
-    author.textContent = note.author?.name ?? STRINGS.you;
+    const own = ownsNote(note, userId);
+    author.textContent = own ? STRINGS.you : (note['owner-id'] ?? null) === null ? STRINGS.formerMember : STRINGS.other;
     const time = doc.createElement('time');
     time.dateTime = note['creation-time'];
     time.textContent = when;
-    meta.append(author, ' · ', time, ...(note['edit-time'] ? [` · ${STRINGS.edited}`] : []));
+    const edited = Boolean(note['last-update-time']) && note['last-update-time'] !== note['creation-time'];
+    meta.append(author, ' · ', time, ...(edited ? [` · ${STRINGS.edited}`] : []));
     header.append(meta);
-    if (!readOnly && !note.author) {
+    if (!readOnly && own) {
+
       const more = button(doc, 'icon-button', '', 'more');
       more.setAttribute('aria-label', `${STRINGS.more}${when}`);
       more.append(spriteIcon(doc, 'more'));
@@ -238,7 +261,7 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
       menus.push(attachMenu(more, menu, { onSelect: (entry) => {
         editing = entry.dataset.role === 'menu-edit' ? { id: note.id, draft: note.text } : null;
         confirming = entry.dataset.role === 'menu-delete' ? note.id : null;
-        render(notes, readOnly);
+        render(notes, readOnly, userId);
         list.querySelector(`[data-note-id="${note.id}"] [data-role="${editing ? 'edit' : 'keep'}"]`)?.focus();
       } }));
       header.append(more, menu);
@@ -263,13 +286,15 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
    * Show the notes, keeping focus on the same control of the same note.
    * @param {object[]} next the notes, newest first
    * @param {boolean} locked whether the task is read-only, such as a deleted task
+   * @param {number|string|null} [user] the connected user, null in local mode, which tells own notes
    */
-  function render(next, locked) {
+  function render(next, locked, user = null) {
     const focused = doc.activeElement;
     const noteId = list.contains(focused) ? focused.closest('.note')?.dataset.noteId : null;
     const role = noteId ? focused.dataset.role : null;
     notes = next;
     readOnly = locked;
+    userId = user;
     add.hidden = locked;
     menus.forEach((menu) => menu.destroy());
     menus = [];

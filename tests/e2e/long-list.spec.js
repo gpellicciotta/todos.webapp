@@ -17,13 +17,15 @@ function seed(page, count) {
   return page.evaluate(async (total) => {
     const { openStore } = await import('/js/store/db.js');
     const { uuid7 } = await import('/js/lib/uuid7.js');
+    const { DEFAULT_RULES, firstOccurrence } = await import('/js/core/occurrences.js');
     const store = await openStore({ broadcast: true });
     const time = new Date().toISOString();
     const tasks = Array.from({ length: total }, (_, index) => ({
-      id: uuid7(), description: `Task ${String(index).padStart(4, '0')}`, status: 'todo', 'due-time': null,
-      'overdue-handling': 'keep', 'owner-id': null, 'creation-time': time, 'last-update-time': time,
-      'last-activity-time': time, 'deletion-time': null,
+      id: uuid7(), description: `Task ${String(index).padStart(4, '0')}`, 'owner-id': null,
+      'lifecycle-rules': DEFAULT_RULES, 'current-occurrence': firstOccurrence(DEFAULT_RULES, time),
+      'creation-time': time, 'last-update-time': time, 'deletion-time': null,
     }));
+
     await store.applyChanges(() => ({ changes: { put: { tasks } }, result: null }));
     store.close();
   }, count);

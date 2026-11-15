@@ -26,6 +26,10 @@ All notable changes to this project are documented here.
 - FrontEnd: Gave group headers 12 px of inline padding and a chevron, so the name and count sit clear of the edges.
 - FrontEnd: Showed a group's count as "6 of 10" while search or filters hide some of its tasks.
 - FrontEnd: Made each group header a button that collapses or expands its group, by click, Enter, or Space.
+- FrontEnd: Moved tasks to the todos.server shape, with lifecycle rules, occurrences, and events, in database version 5.
+- FrontEnd: Synced status changes as events and deadline edits as rule edits, folding queued events into pulled tasks.
+- FrontEnd: Kept local mode, overdue expiry, format 1 backups, note ownership, and reconnecting working on the new shape.
+- DevEx: Started the contract test server jar directly, since `devops.py server start` dropped its port option.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

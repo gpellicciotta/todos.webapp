@@ -2,7 +2,7 @@
  * Helper of the contract tests: starts a real todos server on an in-memory database, with a local stand-in for Auth.
  *
  * The server signs users in through the Auth service, so the stand-in grants the codes of a few known accounts.
- * The server is started and stopped with `scripts/devops.py` of the todos checkout named by `TODOS_SERVER_DIR`.
+ * The server is the built jar of the todos checkout named by `TODOS_SERVER_DIR`; `processes kill` stops it.
  * Run the suite with `npm run test:contract`; docs/devops.md, Contract Tests, has the details.
  */
 
@@ -17,6 +17,8 @@ export const APP_NAME = 'todos';
 export const APP_SECRET = 'contract-test-secret';
 /** The lowest version the server accepts from `todos.webapp`; the stale client of the `426` test sits below it. */
 export const MIN_CLIENT_VERSION = '0.1.0';
+/** How long the server may take to answer its status route after the start. */
+const START_TIMEOUT_MS = 60_000;
 
 /**
  * Name the todos checkout.
@@ -29,33 +31,36 @@ export function serverDir(env = process.env) {
 }
 
 /**
- * Build a `devops.py server` command of the todos checkout.
- * @param {string} action `start` or `stop`
- * @param {{dir: string, port: number, envFile: string, python?: string}} options the checkout, the port, and the environment file
+ * Build the command that starts the built server jar on an in-memory database, as `devops.py server start --memory-db` does.
+ * `devops.py` takes no port or environment file, so the helper runs the jar itself.
+ * @param {{dir: string, port: number, envFile: string}} options the checkout, the port, and the environment file
  * @returns {{command: string, args: string[], cwd: string}} the command
  */
-function devops(action, { dir, port, envFile, python = process.env.PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3') }) {
-  const flags = action === 'start' ? ['--memory-db', '--background'] : [];
+export function startCommand({ dir, port, envFile }) {
   return {
-    command: python,
-    args: [join(dir, 'scripts', 'devops.py'), 'server', action, ...flags, '--port', String(port), '--env-file', envFile],
+    command: 'java',
+    args: [
+      `-Denvironment-properties-file=${envFile}`,
+      `-DPORT=${port}`,
+      `-DBASE_URL=http://localhost:${port}`,
+      '-jar', join(dir, 'output', 'server', 'install', 'todos', 'todos-server.jar'),
+      `--config-file=${join(dir, 'server', 'src', 'main', 'resources', 'todos.config')}`,
+      '--mail.back-end-type=com.pellicciotta.support.mail.DummyBackEnd',
+      '--db.jdbc-url=memory',
+      'start',
+    ],
     cwd: dir,
   };
 }
 
 /**
- * Build the command that starts the server on an in-memory database in the background.
- * @param {{dir: string, port: number, envFile: string, python?: string}} options the checkout, the port, and the environment file
- * @returns {{command: string, args: string[], cwd: string}} the command
+ * Build the command that stops the server process, with `processes kill` from support.python.
+ * @param {number} pid the server process
+ * @returns {{command: string, args: string[]}} the command
  */
-export const startCommand = (options) => devops('start', options);
-
-/**
- * Build the command that stops the server again.
- * @param {{dir: string, port: number, envFile: string, python?: string}} options the checkout, the port, and the environment file
- * @returns {{command: string, args: string[], cwd: string}} the command
- */
-export const stopCommand = (options) => devops('stop', options);
+export function stopCommand(pid) {
+  return { command: 'processes', args: ['kill', String(pid), '--force', '--yes'] };
+}
 
 /**
  * Write the environment file of the server: Auth at the stand-in, a minimum client version, no per-IP throttle, and no real secrets.
@@ -157,20 +162,33 @@ export async function startStack({ dir, accounts }) {
   const scratch = mkdtempSync(join(tmpdir(), 'todos-contract-'));
   const envFile = join(scratch, 'contract.env');
   writeFileSync(envFile, environmentText({ port, authUrl: auth.url }));
-  const options = { dir, port, envFile };
+  const { command, args, cwd } = startCommand({ dir, port, envFile });
+  const server = spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  let output = '';
+  let exited = null;
+  server.stdout.on('data', (chunk) => (output += chunk));
+  server.stderr.on('data', (chunk) => (output += chunk));
+  server.once('error', (error) => (exited = error.message));
+  server.once('exit', (code) => (exited = `exit ${code}`));
   const stop = async () => {
     try {
-      await run(stopCommand(options));
+      if (exited === null && server.pid) {
+        await run({ ...stopCommand(server.pid), cwd });
+      }
     }
     finally {
       await auth.close();
       rmSync(scratch, { recursive: true, force: true });
     }
   };
-  const started = await run(startCommand(options));
-  if (started.code !== 0) {
-    await stop();
-    throw new Error(`devops.py could not start the server (exit ${started.code}):\n${started.output}`);
+  const url = `http://localhost:${port}`;
+  for (let waited = 0; waited < START_TIMEOUT_MS && exited === null; waited += 250) {
+    const healthy = await fetch(`${url}/api/status`).then((response) => response.ok, () => false);
+    if (healthy) {
+      return { url, stop };
+    }
+    await new Promise((done) => setTimeout(done, 250));
   }
-  return { url: `http://localhost:${port}`, stop };
+  await stop();
+  throw new Error(`The server did not start (${exited ?? 'no healthy status'}):\n${output}`);
 }

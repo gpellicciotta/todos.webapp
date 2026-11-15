@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   BackupError, backupFileName, exportBackup, importBackup, parseBackup, previewImport,
 } from '../../src/js/core/backup.js';
+import { toLegacyTask } from '../../src/js/core/occurrences.js';
 import { freshStore } from './store-helpers.js';
 
 const FIXTURE_TEXT = readFileSync(new URL('../fixtures/backup-v1.json', import.meta.url), 'utf8');
@@ -95,7 +96,46 @@ describe('exportBackup', () => {
     const homeOrder = backup.memberships.filter((m) => m['list-id'] === home.id).map((m) => m['task-id']);
     expect(homeOrder).toEqual([lamp.id, door.id]);
     expect(backup.memberships.every((m) => typeof m.position === 'string')).toBe(true);
-    expect(backup.notes).toEqual([note]);
+    expect(backup.notes).toEqual([{
+      id: note.id, 'task-id': door.id, text: 'Hinge is loose', author: null, 'creation-time': note['creation-time'], 'edit-time': null,
+    }]);
+  });
+
+  it('maps the new task shape back to the format 1 task fields', async () => {
+    clock.tick();
+    const task = await store.createTask({ description: 'Paint', 'due-time': '2026-11-08T18:00:00Z', 'overdue-handling': 'cancel' });
+    clock.tick();
+    await store.updateTask(task.id, { status: 'completed' });
+    const note = await store.addNote(task.id, { text: 'Blue', 'owner-id': 7 });
+    clock.tick();
+    await store.editNote(note.id, 'Green');
+    const backup = await exportBackup(store, { now: new Date('2026-11-04T12:00:00.000Z'), appVersion: '0.1.0-pre' });
+    expect(backup.tasks).toEqual([{
+      id: task.id, description: 'Paint', status: 'completed', 'due-time': '2026-11-08T18:00:00.000Z', 'overdue-handling': 'cancel', 'owner-id': null,
+      'creation-time': '2026-11-04T09:00:01.000Z', 'last-update-time': '2026-11-04T09:00:03.000Z', 'last-activity-time': '2026-11-04T09:00:03.000Z',
+      'deletion-time': null,
+    }]);
+    expect(backup.notes).toEqual([{
+      id: note.id, 'task-id': task.id, text: 'Green', author: { id: 7 }, 'creation-time': '2026-11-04T09:00:02.000Z', 'edit-time': '2026-11-04T09:00:03.000Z',
+    }]);
+    expect(backup).not.toHaveProperty('events');
+  });
+
+  it('exports a recurring task to format 1 and imports it back with its recurring rules intact', async () => {
+    const weekly = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' };
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': weekly });
+    const backup = await exportBackup(store, { now: new Date('2026-11-04T12:00:00.000Z'), appVersion: '0.1.0-pre' });
+    expect(backup.tasks[0]).toMatchObject({ status: 'todo', 'due-time': null, 'overdue-handling': 'keep' });
+    backup.tasks[0].description = 'Exercises, renamed';
+    backup.tasks[0]['last-update-time'] = '2026-11-05T00:00:00.000Z';
+    backup.tasks[0]['last-activity-time'] = '2026-11-05T00:00:00.000Z';
+    clock.tick(86_400_000);
+    await importBackup(store, backup, 'merge', { connected: true });
+    const imported = await store.getTask(task.id);
+    expect(imported.description).toBe('Exercises, renamed');
+    expect(imported['lifecycle-rules']).toEqual(task['lifecycle-rules']);
+    const rules = (await store.queue.all()).find((entry) => entry.operation === 'update-rules');
+    expect(rules.fields).toMatchObject({ ...weekly, 'due-time': null, 'overdue-handling': null });
   });
 
   it('exports an empty store as empty arrays', async () => {
@@ -234,16 +274,25 @@ describe('merge import', () => {
     expect((await store.notesOfTask(T103)).map((note) => note.id)).toEqual([N202]);
   });
 
-  it('keeps the later last activity time of a replaced task', async () => {
+  it('maps a newer format 1 task onto the new shape, its status onto events', async () => {
     const data = fixture();
     data.tasks[0]['last-update-time'] = '2026-11-05T00:00:00.000Z';
-    data.tasks[0]['last-activity-time'] = '2026-11-01T00:00:00.000Z';
+    data.tasks[0]['last-activity-time'] = '2026-11-06T00:00:00.000Z';
+    data.tasks[0].status = 'completed';
+    at('2026-11-07T10:00:00.000Z');
     await importBackup(store, data, 'merge');
-    expect(await store.getTask(T101)).toMatchObject({
+    const task = await store.getTask(T101);
+    expect(task).toMatchObject({
       description: 'Almond milk\n\nunsweetened',
-      'last-update-time': '2026-11-05T00:00:00.000Z',
-      'last-activity-time': '2026-11-04T09:00:00.000Z',
+      'lifecycle-rules': { 'due-time': '2026-11-05T22:59:00.000Z', 'overdue-handling': 'keep' },
+      'current-occurrence': { status: 'completed', 'completion-count': 1, 'due-time': '2026-11-05T22:59:00.000Z' },
+      'last-update-time': '2026-11-06T00:00:00.000Z',
     });
+    expect(Object.keys(task)).not.toContain('status');
+    expect((await store.eventsOfTask(T101)).map((event) => [event.type, event['creation-time']])).toEqual([
+      ['create', '2026-11-02T09:00:00.000Z'], ['complete', '2026-11-07T10:00:00.000Z'],
+    ]);
+    expect((await store.eventsOfTask(T102)).map((event) => event.type)).toEqual(['create', 'complete']);
   });
 
   it('renames an added list whose name a kept list already uses', async () => {
@@ -300,13 +349,13 @@ describe('overwrite import', () => {
     expect(await store.getList(L1)).toEqual(data.lists[0]);
     expect(await store.getList(L2)).toEqual(data.lists[1]);
     for (const task of data.tasks) {
-      expect(await store.getTask(task.id)).toEqual(task);
+      const last = task['last-activity-time'] > task['last-update-time'] ? task['last-activity-time'] : task['last-update-time'];
+      expect(toLegacyTask(await store.getTask(task.id))).toEqual({ ...task, 'last-update-time': last, 'last-activity-time': last });
     }
     expect(await store.getList(home.id)).toMatchObject({ 'deletion-time': '2026-11-04T09:00:01.000Z' });
     expect(await store.getTask(local.id)).toMatchObject({
       'deletion-time': '2026-11-04T09:00:01.000Z',
       'last-update-time': '2026-11-04T09:00:01.000Z',
-      'last-activity-time': '2026-11-04T09:00:01.000Z',
     });
     expect(await store.getTask(gone.id)).toEqual(gone);
     expect((await store.listLists()).map((list) => list.id)).toEqual([L1]);
@@ -315,7 +364,7 @@ describe('overwrite import', () => {
     const memberships = await store.listMemberships();
     expect(memberships.filter((m) => m['task-id'] !== local.id)).toEqual(data.memberships);
     expect(memberships.find((m) => m['task-id'] === local.id)).toMatchObject({ 'list-id': L1 });
-    expect(await store.notesOfTask(T101)).toEqual([data.notes[0]]);
+    expect((await store.notesOfTask(T101)).map((note) => [note.id, note.text, note['owner-id']])).toEqual([[data.notes[0].id, data.notes[0].text, null]]);
     expect((await store.notesOfTask(T101)).map((note) => note.id)).not.toContain(localNote.id);
 
     await store.restoreTask(local.id);
@@ -363,7 +412,7 @@ describe('overwrite import', () => {
     const before = { list: await store.getList(foreign.id), shared: await store.getTask(shared.id), mine: await store.getTask(mine.id) };
     const data = fixture();
     data.lists.push({ ...before.list, name: 'Renamed', 'last-update-time': '2027-01-01T00:00:00.000Z' });
-    data.tasks.push({ ...before.mine, description: 'Changed', 'last-update-time': '2027-01-01T00:00:00.000Z' });
+    data.tasks.push({ ...toLegacyTask(before.mine), description: 'Changed', 'last-update-time': '2027-01-01T00:00:00.000Z' });
 
     const result = await importBackup(store, data, 'overwrite', { ownerId: 12 });
 
@@ -408,7 +457,7 @@ describe('round trip', () => {
     const note = await store.addNote(door.id, { text: 'Hinge' });
     clock.tick();
     await store.editNote(note.id, 'Hinge is loose\n\n  top one ');
-    await store.addNote(lamp.id, { text: 'Bulb', author: { id: 3, name: 'Ada' } });
+    await store.addNote(lamp.id, { text: 'Bulb', 'owner-id': 3 });
     await store.deleteList(old.id);
     await store.deleteTask(solo.id);
 
@@ -421,7 +470,12 @@ describe('round trip', () => {
     try {
       const result = await importBackup(target, parseBackup(text), 'overwrite');
       expect(result).toMatchObject(counts({ added: 3 + 3 + 4 + 2 }));
-      expect(await target.snapshot()).toEqual(await store.snapshot());
+      const [copy, original] = [await target.snapshot(), await store.snapshot()];
+      for (const type of ['lists', 'memberships', 'notes']) {
+        expect(copy[type]).toEqual(original[type]);
+      }
+      const shape = (task) => [task.id, task['lifecycle-rules'], task['current-occurrence'].status, task['last-update-time']];
+      expect(copy.tasks.map(shape)).toEqual(original.tasks.map(shape));
       expect(JSON.stringify(await exportBackup(target, options), null, 2)).toBe(text);
     }
     finally {
@@ -443,7 +497,7 @@ describe('import while connected', () => {
     const old = fixture();
     old.lists = [{ ...old.lists[0], name: 'Old name', description: 'Old description', 'last-update-time': OLD }];
     old.tasks = [
-      { ...old.tasks[0], description: 'Old milk', status: 'in-progress', 'last-update-time': OLD },
+      { ...old.tasks[0], description: 'Old milk', status: 'in-progress', 'last-update-time': OLD, 'last-activity-time': OLD },
       { ...old.tasks[1], description: 'Local bread', 'last-update-time': NEWER_LOCAL },
     ];
     old.memberships = old.memberships.filter((m) => m['list-id'] === L1);
@@ -467,22 +521,25 @@ describe('import while connected', () => {
   it('queues all fields of a newer row without an edit time, nothing for an older row, and only missing notes', async () => {
     const { result, entries } = await connectedImport();
     expect(entries.map((entry) => `${entry.operation} ${entry.target.type}`)).toEqual([
-      'update-list list', 'create-list list', 'update-task task', 'create-task task',
+      'update-list list', 'create-list list', 'update-task task', 'update-rules rules', 'post-event event', 'create-task task', 'post-event event',
       'add-membership membership', 'create-note note', 'delete-list list', 'delete-task task',
     ]);
-    const [updateList, createList, updateTask, createTask, addMembership, createNote] = entries;
+    const [updateList, createList, updateTask, updateRules, unstart, createTask, start, addMembership, createNote] = entries;
     expect(updateList).toMatchObject({
       target: { type: 'list', id: L1 },
       fields: { name: 'Groceries', description: 'Weekly shopping\n  - fruit first\n' },
       'edit-times': {},
     });
-    expect(updateTask).toMatchObject({
-      target: { type: 'task', id: T101 },
-      fields: { description: 'Almond milk\n\nunsweetened', status: 'todo', 'due-time': '2026-11-05T22:59:00.000Z', 'overdue-handling': 'keep' },
+    expect(updateTask).toMatchObject({ target: { type: 'task', id: T101 }, fields: { description: 'Almond milk\n\nunsweetened' }, 'edit-times': {} });
+    expect(updateRules).toMatchObject({
+      target: { type: 'rules', id: T101 },
+      fields: { 'target-count': 1, 'due-time': '2026-11-05T22:59:00.000Z', 'overdue-handling': 'keep' },
       'edit-times': {},
     });
+    expect(unstart).toMatchObject({ target: { type: 'event', 'task-id': T101 }, fields: { type: 'unstart', 'creation-time': '2026-11-07T10:00:00.000Z', occurrence: 1 } });
+    expect(start).toMatchObject({ target: { type: 'event', 'task-id': T103 }, fields: { type: 'start', 'creation-time': '2026-11-03T07:00:00.000Z' } });
     expect(createList.fields).toMatchObject({ id: L2, name: 'Old projects', 'creation-time': '2026-11-01T08:00:00.000Z' });
-    expect(createTask.fields).toMatchObject({ id: T103, description: 'Paint the shed', lists: [] });
+    expect(createTask.fields).toMatchObject({ id: T103, description: 'Paint the shed', lists: [], 'lifecycle-rules': { 'overdue-handling': 'keep' } });
     expect(addMembership.target).toMatchObject({ id: T103, 'list-id': L2 });
     expect(createNote).toMatchObject({ target: { id: N202, 'task-id': T103 }, fields: { id: N202, text: 'Needs two coats\n  of paint' } });
     expect(entries.every((entry) => entry.created === '2026-11-07T10:00:00.000Z')).toBe(true);
@@ -515,7 +572,7 @@ describe('import while connected', () => {
   it('never queues a removal, and refuses overwrite mode', async () => {
     const { entries } = await connectedImport();
     const inBackup = new Set([...fixture().lists, ...fixture().tasks, ...fixture().notes].map((record) => record.id));
-    expect(entries.every((entry) => inBackup.has(entry.target.id))).toBe(true);
+    expect(entries.every((entry) => inBackup.has(entry.target.type === 'event' ? entry.target['task-id'] : entry.target.id))).toBe(true);
     expect(entries.map((entry) => entry.operation)).not.toContain('remove-membership');
     expect(entries.map((entry) => entry.operation)).not.toContain('delete-note');
     const before = await store.snapshot();

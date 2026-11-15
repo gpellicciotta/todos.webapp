@@ -153,7 +153,7 @@ describe('mountList', () => {
     expect(field.value).toBe('');
     expect(toaster.show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
     toaster.show.mock.calls[0][1].onAction();
-    expect(models.list.get().filter.statuses).toEqual(['todo', 'in-progress']);
+    expect(models.list.get().filter.statuses).toEqual(['ready', 'in-progress']);
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
   });
 
@@ -231,7 +231,7 @@ describe('mountList', () => {
     const snapshot = await store.snapshot();
     const [task] = snapshot.tasks;
     expect(task.description).toBe('Paint the door');
-    expect(task['due-time']).toBe(new Date(2099, 11, 24, 23, 59).toISOString());
+    expect(task['lifecycle-rules']['due-time']).toBe(new Date(2099, 11, 24, 23, 59).toISOString());
     const joined = snapshot.memberships.filter((membership) => membership['task-id'] === task.id).map((membership) => membership['list-id']);
     expect(joined.sort()).toEqual([view.dataset.listId, work.id].sort());
   });

@@ -56,12 +56,23 @@ describe('the Sync log screen', () => {
     clock.tick(1000);
     await store.queue.appendLog([{ kind: 'rejected', operation: 'update-task', target: { type: 'task', id: 't1' }, fields: { status: 'completed' }, status: 403, message: 'The service refused a task change, so it was undone.' }]);
     clock.tick(1000);
-    await store.queue.appendLog([{ kind: 'overwritten', target: { type: 'task', id: 't2' }, field: 'due-time', sent: '2026-11-06T10:00:00Z', kept: '2026-11-07T18:00:00Z' }]);
+    await store.queue.appendLog([{ kind: 'overwritten', target: { type: 'rules', id: 't2' }, field: 'due-time', sent: '2026-11-06T10:00:00Z', kept: '2026-11-07T18:00:00Z' }]);
     await screen.update();
     const kinds = [...view.querySelectorAll('.sync-log-entry')].map((entry) => entry.dataset.kind);
     expect(kinds).toEqual(['overwritten', 'rejected', 'lost-access', 'error']);
     const titles = [...view.querySelectorAll('.sync-log-entry__kind')].map((node) => node.textContent);
     expect(titles).toEqual(['Overwritten value', 'Rejected change', 'Lost access', 'Sync error']);
+  });
+
+  it('names and links the task of a rule edit and of an adopted event (SYN-8, SYN-9)', async () => {
+    const { store, clock, view, screen } = await mount();
+    const task = await store.createTask({ description: 'Water the plants' });
+    await store.queue.appendLog([{ kind: 'overwritten', target: { type: 'rules', id: task.id }, field: 'due-time', sent: '2026-11-06T10:00:00Z', kept: '2026-11-07T18:00:00Z' }]);
+    clock.tick(1000);
+    await store.queue.appendLog([{ kind: 'rejected', operation: 'adopt-event', target: { type: 'event', id: 'e1', 'task-id': task.id }, status: 409, message: 'The service refused a local row, which stays on this device.' }]);
+    await screen.update();
+    const items = [...view.querySelectorAll('.sync-log-entry')].map((entry) => [entry.querySelector('.sync-log-entry__item').textContent.split(' · ')[0], entry.querySelector('a')?.getAttribute('href')]);
+    expect(items).toEqual([['Water the plants', `#/tasks/${task.id}`], ['Water the plants', `#/tasks/${task.id}`]]);
   });
 
   it('shows the item, the field, the lost value, and the kept value of an overwritten value', async () => {

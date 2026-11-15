@@ -1,5 +1,5 @@
 /**
- * Test double for the ToDo's REST API: keeps lists, tasks, memberships, and notes in memory and records every call.
+ * Test double for the ToDo's REST API: keeps lists, tasks, memberships, notes, and events in memory and records every call.
  * Creates are idempotent by identifier, like the service. `fail` decides per call whether to answer an error status,
  * or to apply the call and then lose the reply (`'lost-reply'`), or to refuse the connection (`'network'`).
  */
@@ -18,6 +18,7 @@ export function fakeService({ lists = [] } = {}) {
     tasks: new Map(),
     memberships: new Map(),
     notes: new Map(),
+    events: new Map(),
     calls: [],
     created: 0,
     fail: () => null,
@@ -75,14 +76,26 @@ export function fakeService({ lists = [] } = {}) {
       if (!task) {
         return { status: 404 };
       }
-      if (method === 'DELETE') {
+      if (sub === 'events') {
+        if (service.events.has(body.id)) {
+          return { status: 200, body: { event: service.events.get(body.id), task } };
+        }
+        const event = { ...body, 'task-id': id };
+        delete event.import;
+        service.events.set(body.id, event);
+        return { status: 201, body: { event, task } };
+      }
+      if (sub === 'lifecycle-rules') {
+        task['lifecycle-rules'] = { ...task['lifecycle-rules'], ...Object.fromEntries(Object.entries(body).filter(([field]) => field !== 'edit-times')) };
+      }
+      else if (method === 'DELETE') {
         task['deletion-time'] = 'deleted';
       }
       else if (sub === 'restore') {
         task['deletion-time'] = null;
       }
       else {
-        Object.assign(task, ...['description', 'status', 'due-time', 'overdue-handling'].filter((field) => field in body).map((field) => ({ [field]: body[field] })));
+        Object.assign(task, ...['description'].filter((field) => field in body).map((field) => ({ [field]: body[field] })));
       }
       return { status: 200, body: task };
     }

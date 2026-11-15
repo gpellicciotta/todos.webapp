@@ -23,6 +23,7 @@ const DONE_ON_404 = new Set(['delete-list', 'delete-task', 'delete-note', 'remov
 const LABELS = {
   'create-list': 'a new list', 'update-list': 'a list change', 'delete-list': 'a list deletion', 'restore-list': 'a list restore',
   'create-task': 'a new task', 'update-task': 'a task change', 'delete-task': 'a task deletion', 'restore-task': 'a task restore',
+  'post-event': 'a status change', 'update-rules': 'a deadline change',
   'add-membership': 'adding a task to a list', 'move-membership': 'a task move', 'remove-membership': 'removing a task from a list',
   'create-note': 'a new note', 'edit-note': 'a note change', 'delete-note': 'a note deletion',
 };
@@ -64,6 +65,11 @@ function toRequest(entry, mapList) {
       return ['DELETE', `/api/tasks/${target.id}`, { editTime }];
     case 'restore-task':
       return ['POST', `/api/tasks/${target.id}/restore`, { editTime }];
+    case 'update-rules':
+      return ['PATCH', `/api/tasks/${target.id}/lifecycle-rules`, { body: { ...fields, 'edit-times': times } }];
+    case 'post-event':
+      return ['POST', `/api/tasks/${target['task-id']}/events`, { body: fields }];
+
     case 'add-membership':
     case 'move-membership':
       return ['PUT', `/api/lists/${list}/tasks/${target.id}`, { body: fields, editTime }];

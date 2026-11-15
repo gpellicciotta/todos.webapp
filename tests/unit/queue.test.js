@@ -16,7 +16,7 @@ describe('the change queue', () => {
     store.close();
     const reopened = await openStore({ indexedDB: factory, keyRange: IDBKeyRange, name: 'test', now: () => new Date(clock.now), ...TRACKED });
     const entries = await reopened.queue.all();
-    expect(entries.map((entry) => entry.operation)).toEqual(['create-list', 'create-task', 'update-task']);
+    expect(entries.map((entry) => entry.operation)).toEqual(['create-list', 'create-task', 'post-event']);
     expect(entries.map((entry) => entry.seq)).toEqual([...entries.map((entry) => entry.seq)].sort((a, b) => a - b));
     expect(entries[1].target).toEqual({ type: 'task', id: task.id });
     expect(entries[1].fields.lists).toEqual([list.id]);
@@ -24,9 +24,9 @@ describe('the change queue', () => {
 
   it('records only the changed fields of an update, each with its edit time', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Paint', status: 'todo' });
+    const task = await store.createTask({ description: 'Paint', status: 'ready' });
     clock.tick(5000);
-    const updated = await store.updateTask(task.id, { description: 'Paint the fence', status: 'todo' });
+    const updated = await store.updateTask(task.id, { description: 'Paint the fence', status: 'ready' });
     const list = await store.createList({ name: 'Home' });
     clock.tick(5000);
     await store.updateList(list.id, { name: 'Home', description: 'Rooms' });
@@ -84,5 +84,104 @@ describe('the change queue', () => {
     expect((await store.getTask(task.id)).description).toBe('Paint');
     await store.queue.undo(store, create);
     expect(await store.getTask(task.id)).toBeUndefined();
+  });
+});
+
+describe('queued events and rule edits', () => {
+  it('creates a task with its rules, and queues each status edit as events in order (SYN-1)', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Paint', 'due-time': '2026-11-08T18:00:00Z' });
+    clock.tick();
+    await store.updateTask(task.id, { status: 'completed' });
+    clock.tick();
+    await store.updateTask(task.id, { status: 'in-progress' });
+    const [create, ...events] = await store.queue.all();
+    expect(create.fields).toEqual({
+      id: task.id,
+      description: 'Paint',
+      'lifecycle-rules': task['lifecycle-rules'],
+      'creation-time': task['creation-time'],
+      lists: [],
+    });
+    expect(events.map((entry) => [entry.operation, entry.fields.type, entry.fields['creation-time'], entry.fields.occurrence])).toEqual([
+      ['post-event', 'complete', '2026-11-04T09:00:01.000Z', 1],
+      ['post-event', 'uncomplete', '2026-11-04T09:00:02.000Z', 1],
+      ['post-event', 'start', '2026-11-04T09:00:02.000Z', 1],
+    ]);
+    const stored = await store.eventsOfTask(task.id);
+    expect(events.map((entry) => entry.target)).toEqual(stored.slice(1).map((event) => ({ type: 'event', id: event.id, 'task-id': task.id })));
+    expect(events.map((entry) => entry.fields.id)).toEqual(stored.slice(1).map((event) => event.id));
+  });
+
+  it('queues a deadline edit as a rule edit with its edit time, and an event action as one event', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Paint' });
+    clock.tick(5000);
+    await store.updateTask(task.id, { 'due-time': '2026-11-08T18:00:00Z', 'overdue-handling': 'cancel' });
+    await store.postEvent(task.id, 'start');
+    const [, rules, event] = await store.queue.all();
+    expect(rules).toMatchObject({
+      target: { type: 'rules', id: task.id },
+      operation: 'update-rules',
+      fields: { 'due-time': '2026-11-08T18:00:00.000Z', 'overdue-handling': 'cancel' },
+      'edit-times': { 'due-time': '2026-11-04T09:00:05.000Z', 'overdue-handling': '2026-11-04T09:00:05.000Z' },
+    });
+    expect(event).toMatchObject({ operation: 'post-event', fields: { type: 'start', occurrence: 1 } });
+  });
+
+  it('queues no system event: an overdue expire stays local', async () => {
+    const { store } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Late', 'due-time': '2026-11-04T08:00:00Z', 'overdue-handling': 'cancel' });
+    await store.expireTask(task.id);
+    expect((await store.queue.all()).map((entry) => entry.operation)).toEqual(['create-task']);
+  });
+
+  it('undoes a rejected event and refolds the events queued after it', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 3 } });
+    for (let tick = 0; tick < 3; tick++) {
+      clock.tick();
+      await store.postEvent(task.id, 'complete');
+    }
+    const [, first] = await store.queue.all();
+    await store.queue.undo(store, first);
+    const after = await store.getTask(task.id);
+    expect(after['current-occurrence']).toMatchObject({ 'completion-count': 2, status: 'in-progress', 'close-time': null });
+    expect((await store.eventsOfTask(task.id)).map((event) => event.id)).not.toContain(first.target.id);
+  });
+
+  it('restores the original occurrence when every queued event is rolled back in turn (SYN-9)', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 3 } });
+    for (let tick = 0; tick < 3; tick++) {
+      clock.tick();
+      await store.postEvent(task.id, 'complete');
+    }
+    for (let entry = (await store.queue.all())[1]; entry; entry = (await store.queue.all())[1]) {
+      await store.queue.undo(store, entry);
+      await store.queue.remove([entry.seq]);
+    }
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 0, status: 'ready', 'close-time': null });
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
+  });
+
+  it('restores the rules and occurrence when a rule edit and the event after it are both rolled back', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 2 } });
+    await store.postEvent(task.id, 'complete');
+    await store.queue.clear();
+    clock.tick();
+    await store.updateRules(task.id, { 'target-count': 1 });
+    clock.tick();
+    await store.postEvent(task.id, 'uncomplete');
+    const [rules, event] = await store.queue.all();
+    await store.queue.undo(store, rules);
+    await store.queue.remove([rules.seq]);
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ 'target-count': 2, 'completion-count': 0, status: 'ready' });
+    await store.queue.undo(store, (await store.queue.all())[0]);
+    expect(event.operation).toBe('post-event');
+    const after = await store.getTask(task.id);
+    expect(after['lifecycle-rules']['target-count']).toBe(2);
+    expect(after['current-occurrence']).toMatchObject({ 'target-count': 2, 'completion-count': 1, status: 'in-progress', 'close-time': null });
   });
 });

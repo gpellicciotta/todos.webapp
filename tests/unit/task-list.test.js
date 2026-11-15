@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { attachReorder } from '../../src/js/views/reorder.js';
 import { createTaskList, formatDue } from '../../src/js/views/task-list.js';
 import { isShowing } from './popover-shim.js';
+import { shapeTask } from './task-shape.js';
 
 const NOW = new Date(2026, 10, 4, 9, 0); // Wednesday 4 November 2026, 09:00 local time
 
@@ -27,15 +28,15 @@ function openStatusMenu(button) {
 
 describe('formatDue', () => {
   it('shows a relative time, and Overdue for open tasks past their due time (OVD-2)', () => {
-    expect(formatDue({ 'due-time': null, status: 'todo' }, NOW, 'en-GB')).toBeNull();
-    expect(formatDue({ 'due-time': at(4, 8), status: 'todo' }, NOW, 'en-GB')).toEqual({ text: 'Overdue', overdue: true });
-    expect(formatDue({ 'due-time': at(4, 8), status: 'completed' }, NOW, 'en-GB')).toEqual({ text: 'Today 08:00', overdue: false });
-    expect(formatDue({ 'due-time': at(4, 18), status: 'todo' }, NOW, 'en-GB')).toEqual({ text: 'Today 18:00', overdue: false });
-    expect(formatDue({ 'due-time': at(5, 18), status: 'todo' }, NOW, 'en-GB').text).toBe('Tomorrow 18:00');
-    expect(formatDue({ 'due-time': at(5, 23, 59), status: 'todo' }, NOW, 'en-GB').text).toBe('Tomorrow');
-    expect(formatDue({ 'due-time': at(9, 10), status: 'todo' }, NOW, 'en-GB').text).toBe('Mon 10:00');
-    expect(formatDue({ 'due-time': at(12, 23, 59), status: 'todo' }, NOW, 'en-GB').text).toBe('12 Nov');
-    expect(formatDue({ 'due-time': new Date(2027, 0, 3, 23, 59).toISOString(), status: 'todo' }, NOW, 'en-GB').text).toBe('3 Jan 2027');
+    expect(formatDue(shapeTask({ 'due-time': null, status: 'ready' }), NOW, 'en-GB')).toBeNull();
+    expect(formatDue(shapeTask({ 'due-time': at(4, 8), status: 'ready' }), NOW, 'en-GB')).toEqual({ text: 'Overdue', overdue: true });
+    expect(formatDue(shapeTask({ 'due-time': at(4, 8), status: 'completed' }), NOW, 'en-GB')).toEqual({ text: 'Today 08:00', overdue: false });
+    expect(formatDue(shapeTask({ 'due-time': at(4, 18), status: 'ready' }), NOW, 'en-GB')).toEqual({ text: 'Today 18:00', overdue: false });
+    expect(formatDue(shapeTask({ 'due-time': at(5, 18), status: 'ready' }), NOW, 'en-GB').text).toBe('Tomorrow 18:00');
+    expect(formatDue(shapeTask({ 'due-time': at(5, 23, 59), status: 'ready' }), NOW, 'en-GB').text).toBe('Tomorrow');
+    expect(formatDue(shapeTask({ 'due-time': at(9, 10), status: 'ready' }), NOW, 'en-GB').text).toBe('Mon 10:00');
+    expect(formatDue(shapeTask({ 'due-time': at(12, 23, 59), status: 'ready' }), NOW, 'en-GB').text).toBe('12 Nov');
+    expect(formatDue(shapeTask({ 'due-time': new Date(2027, 0, 3, 23, 59).toISOString(), status: 'ready' }), NOW, 'en-GB').text).toBe('3 Jan 2027');
   });
 });
 
@@ -44,9 +45,9 @@ describe('createTaskList', () => {
   let toaster;
   let list;
   const tasks = [
-    { id: 't1', description: 'Call the plumber', status: 'in-progress', 'due-time': at(3, 10) },
-    { id: 't2', description: 'Buy paint', status: 'todo', 'due-time': null },
-    { id: 't3', description: 'Water the plants', status: 'completed', 'due-time': null },
+    shapeTask({ id: 't1', description: 'Call the plumber', status: 'in-progress', 'due-time': at(3, 10) }),
+    shapeTask({ id: 't2', description: 'Buy paint', status: 'ready', 'due-time': null }),
+    shapeTask({ id: 't3', description: 'Water the plants', status: 'completed', 'due-time': null }),
   ];
   const ctx = {
     now: NOW,
@@ -75,7 +76,7 @@ describe('createTaskList', () => {
 
   it('renders one row per task with its status, link, due chip, list chips, and note count', () => {
     const rows = [...document.querySelectorAll('.task-row')];
-    expect(rows.map((row) => row.dataset.status)).toEqual(['in-progress', 'todo', 'completed']);
+    expect(rows.map((row) => row.dataset.status)).toEqual(['in-progress', 'ready', 'completed']);
     const first = rows[0];
     expect(first.querySelector('.status-button').getAttribute('aria-label')).toBe('Mark Call the plumber completed');
     expect(first.querySelector('.status-button use').getAttribute('href')).toBe('img/icons.svg#status-in-progress');
@@ -135,12 +136,12 @@ describe('createTaskList', () => {
 
   describe('one-click completion (TSK-4)', () => {
     const four = [
-      { id: 'a', description: 'Buy paint', status: 'todo', 'due-time': null },
-      { id: 'b', description: 'Call the plumber', status: 'in-progress', 'due-time': null },
-      { id: 'c', description: 'Water the plants', status: 'completed', 'due-time': null },
-      { id: 'd', description: 'Renew the gym pass', status: 'cancelled', 'due-time': null },
+      shapeTask({ id: 'a', description: 'Buy paint', status: 'ready', 'due-time': null }),
+      shapeTask({ id: 'b', description: 'Call the plumber', status: 'in-progress', 'due-time': null }),
+      shapeTask({ id: 'c', description: 'Water the plants', status: 'completed', 'due-time': null }),
+      shapeTask({ id: 'd', description: 'Renew the gym pass', status: 'cancelled', 'due-time': null }),
     ];
-    const OPEN = (task) => ['todo', 'in-progress'].includes(task.status);
+    const OPEN = (task) => ['ready', 'in-progress'].includes(task['current-occurrence'].status);
 
     /**
      * Find the status button of a task.
@@ -171,7 +172,7 @@ describe('createTaskList', () => {
         statusOf(id).click();
       }
       expect(store.updateTask.mock.calls).toEqual([
-        ['a', { status: 'completed' }], ['b', { status: 'completed' }], ['c', { status: 'todo' }], ['d', { status: 'todo' }],
+        ['a', { status: 'completed' }], ['b', { status: 'completed' }], ['c', { status: 'ready' }], ['d', { status: 'ready' }],
       ]);
       expect(document.querySelector('.status-menu').hidden).toBe(true);
     });
@@ -191,7 +192,7 @@ describe('createTaskList', () => {
       expect(event.defaultPrevented).toBe(true);
       const menu = document.querySelector('.status-menu');
       expect(isShowing(menu)).toBe(true);
-      expect(document.activeElement.dataset.status).toBe('todo');
+      expect(document.activeElement.dataset.status).toBe('ready');
       menu.querySelector('[data-status="in-progress"]').click();
       openStatusMenu(statusOf('b'));
       menu.querySelector('[data-status="cancelled"]').click();
@@ -266,7 +267,7 @@ describe('createTaskList', () => {
       expect(press(open, 'x').defaultPrevented).toBe(true);
       statusOf('c').focus();
       press(statusOf('c'), 'x');
-      expect(store.updateTask.mock.calls).toEqual([['b', { status: 'completed' }], ['c', { status: 'todo' }]]);
+      expect(store.updateTask.mock.calls).toEqual([['b', { status: 'completed' }], ['c', { status: 'ready' }]]);
     });
 
     it('ignores x with a modifier key, and x typed in a text field', () => {
@@ -340,7 +341,7 @@ describe('createTaskList', () => {
       const seen = [];
       list.render(four, ctx, { shows: (task) => seen.push(task) > 0 });
       statusOf('a').click();
-      expect(seen[0].status).toBe('completed');
+      expect(seen[0]['current-occurrence']).toMatchObject({ status: 'completed', 'close-time': NOW.toISOString() });
       expect(seen[0]['last-update-time']).toBe(NOW.toISOString());
     });
   });
@@ -361,7 +362,7 @@ describe('createTaskList', () => {
     }
     openStatusMenu(buttons[0]);
     const menu = document.getElementById(buttons[0].getAttribute('aria-controls'));
-    expect([...menu.querySelectorAll('[role="menuitemradio"]')].map((item) => item.dataset.status)).toEqual(['todo', 'in-progress', 'completed', 'cancelled']);
+    expect([...menu.querySelectorAll('[role="menuitemradio"]')].map((item) => item.dataset.status)).toEqual(['ready', 'in-progress', 'completed', 'cancelled']);
   });
 
   describe('by role (SHR-4, SHR-5)', () => {
@@ -372,7 +373,7 @@ describe('createTaskList', () => {
       lists: new Map([['l1', { id: 'l1', name: 'Home', role, owner: sam }], ['l2', { id: 'l2', name: 'Mine', role: 'owner', owner: mine }]]),
       listsByTask: new Map([['t1', ['l1']]]),
     });
-    const foreign = [{ id: 't1', description: 'Call the plumber', status: 'todo', 'due-time': null, 'owner-id': 9 }];
+    const foreign = [shapeTask({ id: 't1', description: 'Call the plumber', status: 'ready', 'due-time': null, 'owner-id': 9 })];
 
     /**
      * Render the foreign task for a role and tell what its row and menu offer.
@@ -506,7 +507,7 @@ describe('createTaskList', () => {
   });
 
   it('updates only the due chips on the clock tick, keeping rows, an open menu, and focus', () => {
-    const due = { id: 't4', description: 'Pay the rent', status: 'todo', 'due-time': at(4, 10) };
+    const due = shapeTask({ id: 't4', description: 'Pay the rent', status: 'ready', 'due-time': at(4, 10) });
     list.render([...tasks, due], ctx);
     const before = [...document.querySelectorAll('.task-row')];
     expect(before[3].querySelector('.chip').textContent).toMatch(/^Today /);
@@ -520,7 +521,7 @@ describe('createTaskList', () => {
   });
 
   it('renders every row of a list up to 200 tasks at once, with its place in the set', () => {
-    const many = Array.from({ length: 200 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    const many = Array.from({ length: 200 }, (_, index) => shapeTask({ id: `m${index}`, description: `Task ${index}`, status: 'ready' }));
     list.render(many, ctx);
     const rows = [...document.querySelectorAll('.task-row')];
     expect(rows).toHaveLength(200);
@@ -529,9 +530,9 @@ describe('createTaskList', () => {
   });
 
   it('keeps every row of a render that changes more than 60 rows, replacing each in place', () => {
-    const many = Array.from({ length: 150 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    const many = Array.from({ length: 150 }, (_, index) => shapeTask({ id: `m${index}`, description: `Task ${index}`, status: 'ready' }));
     list.render(many, ctx);
-    list.render(many.map((task) => ({ ...task, status: 'completed' })), ctx);
+    list.render(many.map((task) => (shapeTask({ ...task, status: 'completed' }))), ctx);
     const rows = [...document.querySelectorAll('.task-row')];
     expect(rows).toHaveLength(150);
     expect(rows.every((row) => row.dataset.status === 'completed')).toBe(true);
@@ -539,7 +540,7 @@ describe('createTaskList', () => {
 
   describe('with a long list', () => {
     const ROW = 48;
-    const many = Array.from({ length: 5000 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    const many = Array.from({ length: 5000 }, (_, index) => shapeTask({ id: `m${index}`, description: `Task ${index}`, status: 'ready' }));
     let other;
     let scrolled;
     let reorder;
@@ -673,7 +674,7 @@ describe('createTaskList', () => {
     const groups = Array.from({ length: 50 }, (_, group) => ({
       key: `g${group}`,
       label: `Group ${group}`,
-      tasks: Array.from({ length: 100 }, (_, index) => ({ id: `m${group * 100 + index}`, description: `Task ${group * 100 + index}`, status: 'todo' })),
+      tasks: Array.from({ length: 100 }, (_, index) => shapeTask({ id: `m${group * 100 + index}`, description: `Task ${group * 100 + index}`, status: 'ready' })),
     }));
     const TOTAL = 5000 * ROW + 50 * HEADER;
     let other;
@@ -770,7 +771,7 @@ describe('createTaskList', () => {
     });
 
     it('keeps a task of two groups as two rows with separate keys', () => {
-      const dup = { id: 'dup', description: 'Shared', status: 'todo' };
+      const dup = shapeTask({ id: 'dup', description: 'Shared', status: 'ready' });
       other.render([], ctx, { groups: [
         { key: 'a', label: 'A', tasks: [dup] }, { key: 'b', label: 'B', tasks: [dup] },
       ] });
@@ -781,7 +782,7 @@ describe('createTaskList', () => {
     });
 
     it('marks every row of the selected task and keeps focus on the same group row after a render', () => {
-      const dup = { id: 'dup', description: 'Shared', status: 'todo' };
+      const dup = shapeTask({ id: 'dup', description: 'Shared', status: 'ready' });
       const two = [{ key: 'a', label: 'A', tasks: [dup] }, { key: 'b', label: 'B', tasks: [dup] }];
       other.render([], ctx, { groups: two });
       other.setSelected('dup');
@@ -795,8 +796,8 @@ describe('createTaskList', () => {
     });
 
     it('passes focus from a removed row to the next task row, not to a header', () => {
-      const dup = { id: 'dup', description: 'Shared', status: 'todo' };
-      const next = { id: 'next', description: 'Next', status: 'todo' };
+      const dup = shapeTask({ id: 'dup', description: 'Shared', status: 'ready' });
+      const next = shapeTask({ id: 'next', description: 'Next', status: 'ready' });
       other.render([], ctx, { groups: [{ key: 'a', label: 'A', tasks: [dup] }, { key: 'b', label: 'B', tasks: [next] }] });
       other.element.querySelector('.task-row').querySelector('.status-button').focus();
       other.render([], ctx, { groups: [{ key: 'b', label: 'B', tasks: [next] }] });
@@ -807,7 +808,7 @@ describe('createTaskList', () => {
   describe('with a long list of rows taller than 48 px', () => {
     const ROW = 48;
     const TALL = 96;
-    const many = Array.from({ length: 5000 }, (_, index) => ({ id: `m${index}`, description: `Task ${index}`, status: 'todo' }));
+    const many = Array.from({ length: 5000 }, (_, index) => shapeTask({ id: `m${index}`, description: `Task ${index}`, status: 'ready' }));
     let other;
     let scrolled;
     let tallEvery;
@@ -938,9 +939,9 @@ describe('createTaskList', () => {
   });
 
   describe('with groups', () => {
-    const paint = { id: 'g1', description: 'Buy paint', status: 'todo' };
-    const door = { id: 'g2', description: 'Fix the door', status: 'todo' };
-    const plumber = { id: 'g3', description: 'Call the plumber', status: 'in-progress' };
+    const paint = shapeTask({ id: 'g1', description: 'Buy paint', status: 'ready' });
+    const door = shapeTask({ id: 'g2', description: 'Fix the door', status: 'ready' });
+    const plumber = shapeTask({ id: 'g3', description: 'Call the plumber', status: 'in-progress' });
 
     /**
      * Read the list as text: each header as `# name count (accessible name, expanded)`, each row as its description.
@@ -955,13 +956,13 @@ describe('createTaskList', () => {
 
     it('shows the count as n of m while a filter hides tasks of a group, else the plain total', () => {
       list.render([], ctx, { groups: [
-        { key: 'todo', label: 'To do', tasks: [paint, door], total: 6 },
+        { key: 'ready', label: 'To do', tasks: [paint, door], total: 6 },
         { key: 'in-progress', label: 'In progress', tasks: [plumber], total: 1 },
       ] });
       expect(entries()).toEqual([
         '# To do 2 of 6 (To do, 2 of 6 tasks, true)', 'Buy paint', 'Fix the door', '# In progress 1 (In progress, 1 task, true)', 'Call the plumber',
       ]);
-      list.render([], ctx, { groups: [{ key: 'todo', label: 'To do', tasks: [paint, door] }] });
+      list.render([], ctx, { groups: [{ key: 'ready', label: 'To do', tasks: [paint, door] }] });
       expect(entries()).toEqual(['# To do 2 (To do, 2 tasks, true)', 'Buy paint', 'Fix the door']);
       const header = document.querySelector('.group-header');
       expect(header.querySelector('h3 > button.group-header__toggle')).not.toBeNull();
@@ -969,7 +970,7 @@ describe('createTaskList', () => {
 
     it('collapses and expands a group from its header, hiding only its rows', () => {
       const groups = [
-        { key: 'todo', label: 'To do', tasks: [paint, door] },
+        { key: 'ready', label: 'To do', tasks: [paint, door] },
         { key: 'in-progress', label: 'In progress', tasks: [plumber] },
       ];
       list.render([], ctx, { groups });
@@ -987,20 +988,20 @@ describe('createTaskList', () => {
 
     it('keeps a group collapsed across renders, filter changes, and a group that leaves and comes back', () => {
       list.render([], ctx, { groups: [
-        { key: 'todo', label: 'To do', tasks: [paint, door] },
+        { key: 'ready', label: 'To do', tasks: [paint, door] },
         { key: 'in-progress', label: 'In progress', tasks: [plumber] },
       ] });
       const toggle = document.querySelector('.group-header__toggle');
       toggle.focus();
       toggle.click();
       list.render([], ctx, { groups: [
-        { key: 'todo', label: 'To do', tasks: [door], total: 2 },
+        { key: 'ready', label: 'To do', tasks: [door], total: 2 },
         { key: 'in-progress', label: 'In progress', tasks: [plumber] },
       ] });
       expect(entries()).toEqual(['# To do 1 of 2 (To do, 1 of 2 tasks, false)', '# In progress 1 (In progress, 1 task, true)', 'Call the plumber']);
       expect(document.activeElement).toBe(toggle);
       list.render([], ctx, { groups: [{ key: 'in-progress', label: 'In progress', tasks: [plumber] }] });
-      list.render([], ctx, { groups: [{ key: 'todo', label: 'To do', tasks: [paint] }] });
+      list.render([], ctx, { groups: [{ key: 'ready', label: 'To do', tasks: [paint] }] });
       expect(entries()).toEqual(['# To do 1 (To do, 1 task, false)']);
       list.render([paint], ctx);
       expect(entries()).toEqual(['Buy paint']);

@@ -4,12 +4,17 @@
  * docs/specs/backup-format.md describes the file format and the import rules.
  * Imports plan their writes from a store snapshot with a pure function, so the preview
  * and the import count the same changes, and the store applies them in one transaction.
+ * Format 1 holds the former task shape, with `status`, `due-time`, and `overdue-handling`, and notes with `author`.
+ * Export maps tasks and notes back to it; import compares in that shape and maps written records into the store shape,
+ * with each status change as events at the import time.
  */
 
+import { applyEvent, applyRuleEdit, eventsTowardsStatus, fromLegacyTask, makeEvent, statusOf, toLegacyTask } from './occurrences.js';
 import { NAME_MAX, DESCRIPTION_MAX as LIST_DESCRIPTION_MAX } from '../store/lists.js';
 import { TEXT_MAX } from '../store/notes.js';
-import { OVERDUE_HANDLINGS, STATUSES, DESCRIPTION_MAX as TASK_DESCRIPTION_MAX } from '../store/tasks.js';
+import { OVERDUE_HANDLINGS, DESCRIPTION_MAX as TASK_DESCRIPTION_MAX } from '../store/tasks.js';
 import { isValidKey, keyBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
+import { uuid7 } from '../lib/uuid7.js';
 import { importEntries } from '../sync/queue.js';
 
 export const FORMAT = 'todos-backup';
@@ -28,6 +33,8 @@ export const FIELDS = {
 };
 
 const TYPES = Object.keys(FIELDS);
+/** The task statuses of format 1, where `todo` stands for `ready`. */
+export const FORMAT_STATUSES = ['todo', 'in-progress', 'completed', 'cancelled'];
 const ID_MAX = 128;
 const TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
@@ -270,7 +277,7 @@ export function validateBackup(data) {
     return {
       id: checkId(raw.id, `${path}.id`),
       description: checkText(raw.description, `${path}.description`, 1, TASK_DESCRIPTION_MAX),
-      status: checkEnum(raw.status, `${path}.status`, STATUSES),
+      status: checkEnum(raw.status, `${path}.status`, FORMAT_STATUSES),
       'due-time': checkTime(raw['due-time'] ?? null, `${path}.due-time`, true),
       'overdue-handling': checkEnum(raw['overdue-handling'], `${path}.overdue-handling`, OVERDUE_HANDLINGS),
       'owner-id': ownerId,
@@ -347,6 +354,91 @@ export function parseBackup(text) {
 }
 
 /**
+ * Convert a stored note to format 1: `owner-id` becomes `author`, and a last update after the creation the `edit-time`.
+ * @param {object} note the stored note
+ * @returns {object} the format 1 note
+ */
+function toFormatNote(note) {
+  const owner = note['owner-id'] ?? null;
+  const updated = note['last-update-time'] ?? note['creation-time'];
+  return {
+    id: note.id,
+    'task-id': note['task-id'],
+    text: note.text,
+    author: owner === null ? null : { id: owner },
+    'creation-time': note['creation-time'],
+    'edit-time': updated === note['creation-time'] ? null : updated,
+  };
+}
+
+/**
+ * Convert a format 1 note to the store shape; it stays global, or keeps the occurrence of the stored note.
+ * @param {object} note the format 1 note
+ * @param {object|undefined} current the stored note with the same identifier
+ * @returns {object} the store note
+ */
+function fromFormatNote(note, current) {
+  return {
+    id: note.id,
+    'task-id': note['task-id'],
+    text: note.text,
+    'owner-id': note.author?.id ?? null,
+    occurrence: current?.occurrence ?? null,
+    'creation-time': note['creation-time'],
+    'last-update-time': note['edit-time'] ?? note['creation-time'],
+  };
+}
+
+/**
+ * Fold the two times of a format 1 task into the store's single last update time, the later of both.
+ * @param {object} task a format 1 task
+ * @returns {object} the task with both times set to the later one
+ */
+function foldTimes(task) {
+  const last = Date.parse(task['last-activity-time']) > Date.parse(task['last-update-time']) ? task['last-activity-time'] : task['last-update-time'];
+  return { ...task, 'last-update-time': last, 'last-activity-time': last };
+}
+
+/**
+ * Turn a written format 1 task into the store shape.
+ * A known task keeps its occurrences and events: deadline changes edit its rules, and a status change posts events at `time`.
+ * @param {object} record the format 1 task to store
+ * @param {object|undefined} stored the stored task
+ * @param {string} time the ISO import time
+ * @returns {{task: object, events: object[]}} the store task and its new events
+ */
+function toStoreTask(record, stored, time) {
+  if (!stored) {
+    return fromLegacyTask(record, (at) => uuid7(() => Date.parse(at)));
+  }
+  let task = {
+    ...stored,
+    description: record.description,
+    'owner-id': record['owner-id'],
+    'creation-time': record['creation-time'],
+    'last-update-time': record['last-update-time'],
+    'deletion-time': record['deletion-time'],
+  };
+  const rules = task['lifecycle-rules'];
+  // Format 1 knows no recurrence: a recurring task keeps its rules, which hold no deadline.
+  const deadline = rules['recurrence-unit'] ? [] : ['due-time', 'overdue-handling'];
+  const edit = Object.fromEntries(deadline.filter((name) => (rules[name] ?? null) !== (record[name] ?? null)).map((name) => [name, record[name]]));
+
+  if (Object.keys(edit).length > 0) {
+    task = { ...task, ...applyRuleEdit(task, edit, time) };
+  }
+  const wanted = record.status === 'todo' ? 'ready' : record.status;
+  const events = [];
+  let occurrence = task['current-occurrence'];
+  for (const type of statusOf(task) === wanted ? [] : eventsTowardsStatus(occurrence, wanted, task['lifecycle-rules'])) {
+    const event = makeEvent({ id: uuid7(() => Date.parse(time)), 'task-id': task.id, type, 'creation-time': time, occurrence: occurrence.occurrence });
+    occurrence = applyEvent(occurrence, event, task['lifecycle-rules']);
+    events.push(event);
+  }
+  return { task: { ...task, 'current-occurrence': occurrence }, events };
+}
+
+/**
  * Return the backup file name for an export date, in local time (`BAK-4`).
  * @param {Date} [date] the export time
  * @returns {string} the file name
@@ -373,10 +465,10 @@ export async function exportBackup(store, { now = new Date(), appVersion }) {
     'app-version': appVersion,
     'export-time': now.toISOString(),
     lists: data.lists.map((list) => pick(list, 'lists')).sort((a, b) => compare(a.id, b.id)),
-    tasks: data.tasks.map((task) => pick(task, 'tasks')).sort((a, b) => compare(a.id, b.id)),
+    tasks: data.tasks.map((task) => pick(toLegacyTask(task), 'tasks')).sort((a, b) => compare(a.id, b.id)),
     memberships: data.memberships.map((m) => pick(m, 'memberships')).sort((a, b) => compare(a['list-id'], b['list-id'])
       || compare(a.position, b.position) || compare(a['task-id'], b['task-id'])),
-    notes: data.notes.map((note) => pick(note, 'notes')).sort((a, b) => compare(a['task-id'], b['task-id'])
+    notes: data.notes.map((note) => pick(toFormatNote(note), 'notes')).sort((a, b) => compare(a['task-id'], b['task-id'])
       || compare(a['creation-time'], b['creation-time']) || compare(a.id, b.id)),
   };
 }
@@ -420,9 +512,12 @@ function same(a, b, type) {
  *   and whether the device is connected, which adds the queue entries to `changes.queue` and keeps existing notes
  * @returns {{changes: object, result: object}} the writes, and the counts
  */
-export function planImport(data, backup, mode, { now, ownerId = null, connected = false }) {
+export function planImport(store, file, mode, { now, ownerId = null, connected = false }) {
   checkMode(mode, connected);
   const time = now.toISOString();
+  // Compare in the shape of format 1, so unchanged records count as unchanged; convert only what gets written.
+  const data = { ...store, tasks: store.tasks.map(toLegacyTask), notes: store.notes.map(toFormatNote) };
+  const backup = { ...file, tasks: file.tasks.map(foldTimes) };
   const overwrite = mode === 'overwrite';
   const result = emptyCounts();
   /**
@@ -482,9 +577,6 @@ export function planImport(data, backup, mode, { now, ownerId = null, connected 
       }
       else if (later(incoming['last-update-time'], current['last-update-time'])) {
         record = incoming;
-        if (type === 'tasks' && later(current['last-activity-time'], incoming['last-activity-time'])) {
-          record = { ...incoming, 'last-activity-time': current['last-activity-time'] };
-        }
       }
       if (!record) {
         count(type, 'skipped');
@@ -498,11 +590,7 @@ export function planImport(data, backup, mode, { now, ownerId = null, connected 
       const owns = type === 'lists' ? ownsList : ownsTask;
       for (const current of data[type]) {
         if (!inBackup.has(current.id) && !current['deletion-time'] && editable[type](current) && owns(current)) {
-          const binned = { ...current, 'deletion-time': time, 'last-update-time': time };
-          if (type === 'tasks') {
-            binned['last-activity-time'] = time;
-          }
-          write(type, binned);
+          write(type, { ...current, 'deletion-time': time, 'last-update-time': time, ...(type === 'tasks' ? { 'last-activity-time': time } : {}) });
           binnedNow.add(current.id);
           count(type, 'binned');
         }
@@ -540,7 +628,7 @@ export function planImport(data, backup, mode, { now, ownerId = null, connected 
     rename(final.lists.get(id));
   }
 
-  const changes = { put: { lists: [], tasks: [], memberships: [], notes: [] }, delete: { memberships: [], notes: [] } };
+  const changes = { put: { lists: [], tasks: [], memberships: [], notes: [], events: [] }, delete: { memberships: [], notes: [] } };
   const linkable = (listId, taskId) => final.lists.has(listId) && final.tasks.has(taskId)
     && !foreignLists.has(listId) && !lockedTasks.has(taskId);
 
@@ -597,7 +685,7 @@ export function planImport(data, backup, mode, { now, ownerId = null, connected 
     if (current && current['task-id'] !== incoming['task-id']) {
       changes.delete.notes.push([current['task-id'], current.id]);
     }
-    changes.put.notes.push(incoming);
+    changes.put.notes.push(fromFormatNote(incoming, store.notes.find((note) => note.id === incoming.id)));
     count('notes', current ? 'updated' : 'added');
   }
   if (overwrite) {
@@ -612,10 +700,16 @@ export function planImport(data, backup, mode, { now, ownerId = null, connected 
   }
 
   changes.put.lists = [...written.lists.values()];
-  changes.put.tasks = [...written.tasks.values()];
-  if (connected) {
-    changes.queue = importEntries(data, changes, now);
+  const storedTasks = new Map(store.tasks.map((task) => [task.id, task]));
+  for (const record of written.tasks.values()) {
+    const { task, events } = toStoreTask(record, storedTasks.get(record.id), time);
+    changes.put.tasks.push(task);
+    changes.put.events.push(...events);
   }
+  if (connected) {
+    changes.queue = importEntries(store, changes, now);
+  }
+
   return { changes, result };
 }
 

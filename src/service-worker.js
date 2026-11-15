@@ -15,7 +15,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-15.3';
+const VERSION = '2026-11-15.6';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -39,6 +39,7 @@ const PRECACHE = [
   'js/core/list-find.js',
   'js/core/list-order.js',
   'js/core/list-sort.js',
+  'js/core/occurrences.js',
   'js/core/overdue.js',
   'js/core/permissions.js',
   'js/core/preferences.js',
@@ -51,6 +52,7 @@ const PRECACHE = [
   'js/store/db.js',
   'js/store/idb.js',
   'js/store/lists.js',
+  'js/store/migrate.js',
   'js/store/notes.js',
   'js/store/tasks.js',
   'js/sync/adopt.js',

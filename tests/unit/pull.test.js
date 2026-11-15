@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createApi, SyncStop } from '../../src/js/sync/api.js';
+import { adopt } from '../../src/js/sync/adopt.js';
 import { createPull } from '../../src/js/sync/pull.js';
 import { freshStore } from './store-helpers.js';
-import { fakeFeed } from './sync-fake-feed.js';
-import { fakeSession } from './sync-fake-service.js';
+import { fakeFeed, serviceTask } from './sync-fake-feed.js';
+import { fakeService, fakeSession } from './sync-fake-service.js';
 
 const T0 = '2026-11-04T09:00:00.000Z';
 const ACCOUNT = { email: 'ada@example.com', server: 'https://todos.example.com' };
@@ -31,9 +32,9 @@ describe('downloading the change feed', () => {
   it('downloads everything the account can see and stores the cursor and the user', async () => {
     const { store, service, pull } = await setup();
     service.lists.set('l1', { ...listRow('l1'), owner: { id: 7 }, role: 'owner', 'deletion-time': null, sharing: [], 'edit-times': {}, revision: 101 });
-    service.tasks.set('t1', { ...taskRow('t1'), status: 'todo', 'due-time': null, 'overdue-handling': 'keep', 'deletion-time': null, 'edit-times': {}, revision: 102 });
+    service.tasks.set('t1', { ...serviceTask(taskRow('t1')), 'edit-times': {}, revision: 102 });
     service.memberships.set('l1/t1', { 'list-id': 'l1', 'task-id': 't1', position: 'a0', revision: 103 });
-    service.notes.set('n1', { id: 'n1', 'task-id': 't1', 'author-id': 7, text: 'Hi', 'creation-time': T0, 'last-edit-time': T0, revision: 104 });
+    service.notes.set('n1', { id: 'n1', 'task-id': 't1', 'owner-id': 7, text: 'Hi', occurrence: null, 'creation-time': T0, 'last-update-time': T0, revision: 104 });
     service.revision = 104;
     await pull.pullOnce();
     expect((await store.getList('l1')).revision).toBe(101);
@@ -76,15 +77,19 @@ describe('downloading the change feed', () => {
     expect(events).toContain('applyChanges');
   });
 
-  it('keeps a pending local field over the pulled value', async () => {
+  it('takes the pulled fields and folds a pending event onto the pulled occurrence', async () => {
     const { store, service, pull } = await setup();
-    service.seedTask(taskRow('t1'), []);
+    service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'target-count': 2 } }), []);
     await pull.pullOnce();
-    await store.updateTask('t1', { status: 'completed' });
+    await store.postEvent('t1', 'complete');
     const row = service.tasks.get('t1');
-    Object.assign(row, { description: 'Remote text', status: 'cancelled', revision: ++service.revision });
+    const ticked = { ...row['current-occurrence'], status: 'in-progress', 'completion-count': 1 };
+    Object.assign(row, { description: 'Remote text', 'current-occurrence': ticked, revision: ++service.revision });
     await pull.pullOnce();
-    expect(await store.getTask('t1')).toMatchObject({ description: 'Remote text', status: 'completed' });
+    expect(await store.getTask('t1')).toMatchObject({
+      description: 'Remote text', 'current-occurrence': { status: 'completed', 'completion-count': 2, 'close-time': expect.any(String) },
+    });
+
   });
 
   it('writes nothing when the feed holds no change', async () => {
@@ -111,7 +116,8 @@ describe('lost access', () => {
     expect(await store.getList('l1')).toBeUndefined();
     expect((await store.listTasks()).map((task) => task.id)).toEqual(['mine']);
     expect(lost).toEqual([{ list: 'Garden', undone: 1, message: 'You no longer have access to Garden. 1 change was undone.' }]);
-    expect((await store.queue.all()).map((entry) => entry.target.id)).toEqual(['mine']);
+    expect((await store.queue.all()).map((entry) => entry.target['task-id'])).toEqual(['mine']);
+
     expect((await store.queue.log()).filter((record) => record.kind === 'lost-access')).toMatchObject([{ target: { type: 'list', id: 'l1' }, name: 'Garden', undone: 1 }]);
   });
 
@@ -193,5 +199,19 @@ describe('disconnecting', () => {
     expect(await store.queue.getState('adoption')).toBeNull();
     expect(await store.queue.count()).toBe(0);
     expect(service.calls).toEqual([]);
+  });
+
+  it('keeps a status set on another device through a disconnect and the next adoption (CON-8, CON-4)', async () => {
+    const { store, service, pull } = await setup();
+    const done = { occurrence: 1, 'start-time': T0, 'due-time': null, 'target-count': 1, 'completion-count': 1, status: 'completed', 'close-time': T0 };
+    service.seedTask(taskRow('t1', { 'current-occurrence': done }), []);
+    await pull.pullOnce();
+    await pull.disconnect();
+    expect(await store.getTask('t1')).toMatchObject({ 'owner-id': null, 'current-occurrence': { status: 'completed' } });
+
+    const upload = fakeService();
+    await adopt({ store, api: createApi({ session: fakeSession(), fetch: upload.fetch }), account: ACCOUNT });
+    const posted = upload.calls.filter((call) => call.path === '/api/tasks/t1/events').map((call) => call.body.type);
+    expect(posted).toEqual(['complete']);
   });
 });

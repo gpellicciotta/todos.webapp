@@ -44,6 +44,13 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 ### `tasks`
 - `id`, `description`, `status`, `due-time`, `overdue-handling`, `owner-id`.
 - `creation-time`, `last-update-time`, `last-activity-time`, `deletion-time`.
+- Format 1 keeps the former task shape; the store maps it to and from lifecycle rules and occurrences.
+  - Export writes the current occurrence's status, with `ready` as `todo`, and the one-off rules.
+  - Export writes the store's single `last-update-time` into both time fields.
+  - Import folds both times into `last-update-time`, taking the later one.
+  - Import maps a status onto events: an added task gets a `create` event and at most one status event.
+  - A replaced task keeps its events and occurrences, and gets the events from its old to its new status at the import time.
+  - Format 2 of todos.webapp task T0236 adds `lifecycle-rules`, `occurrences`, and `events`.
 
 ### `memberships`
 - `list-id`, `task-id`, `position`, `added-time`.
@@ -52,6 +59,7 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 ### `notes`
 - `id`, `task-id`, `text`, `author`, `creation-time`, `edit-time`.
 - `author` is null for local notes; `edit-time` is null until the first edit.
+- The store's `owner-id` maps to `author` as `{id}`, and its `last-update-time` after creation to `edit-time`.
 
 ### Order
 - Lists and tasks are sorted by `id`.
@@ -89,8 +97,8 @@ Both modes run in one store transaction, so a failure leaves no partial change (
 Matches lists, tasks, and notes by `id`; the most recently updated version wins (`BAK-6`).
 - A record missing locally is added.
 - Lists and tasks compare `last-update-time`; notes compare `edit-time`, or `creation-time` when not edited.
+- A task's backup time is the later of its `last-update-time` and `last-activity-time`.
 - A strictly later backup version replaces the local record; otherwise the local record stays.
-- A replaced task keeps the later `last-activity-time` of both versions.
 - A missing membership goes after the last task of its list, in backup order (`BAK-7`).
 - A list without local memberships takes the backup positions as they are.
 - Existing memberships keep their positions; merge never removes anything.
@@ -102,7 +110,8 @@ Replaces all data the user owns with the backup contents (`BAK-8`).
 - Memberships between a backup list and a backup task take exactly the backup set and positions.
 - Notes of backup tasks take exactly the backup set.
 - Owned lists and tasks missing from the backup move to the recycle bin (`BAK-9`).
-  - Binning works like deleting: it sets `deletion-time` and `last-update-time`, and a task's `last-activity-time`.
+  - Binning works like deleting: it sets `deletion-time` and `last-update-time`.
+
   - Their memberships and notes stay, so restoring brings them back.
 - Records already in the recycle bin and missing from the backup stay unchanged.
 - Importing an export into an empty store reproduces the same data (`BAK-14`).

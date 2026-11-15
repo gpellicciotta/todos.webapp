@@ -3,12 +3,12 @@
  *
  * Notes live in their own store, keyed out of line by `[task-id, id]`,
  * so one key range reads all notes of a task.
- * Every note change sets the task's last activity time in the same transaction.
+ * Every note change sets the task's last update time in the same transaction (`NOT-5`).
  */
 
 import { uuid7 } from '../lib/uuid7.js';
 import { request, StoreError, STORES, transact, ValidationError } from './idb.js';
-import { markActivity, mustGetTask } from './tasks.js';
+import { mustGetTask, touchTask } from './tasks.js';
 
 export const TEXT_MAX = 2000;
 
@@ -48,8 +48,8 @@ async function mustFindKey(tx, id) {
  * Add a note to a task.
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {string} taskId the task identifier
- * @param {{id?: string, text: string, author?: object|null}} input the new note; the author is null locally
- * @returns {Promise<object>} the stored note
+ * @param {{id?: string, text: string, 'owner-id'?: number|string|null}} input the new note; the owner is null locally
+ * @returns {Promise<object>} the stored note, global (`occurrence` null), last updated at its creation time
  */
 export async function addNote(ctx, taskId, input = {}) {
   const time = ctx.now().toISOString();
@@ -57,19 +57,20 @@ export async function addNote(ctx, taskId, input = {}) {
     id: input.id ?? uuid7(() => ctx.now().getTime()),
     'task-id': taskId,
     text: checkText(input.text),
-    author: input.author ?? null,
+    'owner-id': input['owner-id'] ?? null,
+    occurrence: null,
     'creation-time': time,
-    'edit-time': null,
+    'last-update-time': time,
   };
   return transact(ctx.db, [STORES.tasks, STORES.notes], 'readwrite', async (tx) => {
-    await markActivity(tx, taskId, time);
+    await touchTask(tx, taskId, time);
     await request(tx.objectStore(STORES.notes).add(note, [taskId, note.id]));
     return note;
   });
 }
 
 /**
- * Replace a note's text and set its edit time.
+ * Replace a note's text and set its last update time.
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {string} id the note identifier
  * @param {string} text the new text
@@ -81,9 +82,9 @@ export async function editNote(ctx, id, text) {
     const key = await mustFindKey(tx, id);
     const store = tx.objectStore(STORES.notes);
     const time = ctx.now().toISOString();
-    const updated = { ...(await request(store.get(key))), text: checked, 'edit-time': time };
+    const updated = { ...(await request(store.get(key))), text: checked, 'last-update-time': time };
     await request(store.put(updated, key));
-    await markActivity(tx, updated['task-id'], time);
+    await touchTask(tx, updated['task-id'], time);
     return updated;
   });
 }
@@ -98,7 +99,7 @@ export function deleteNote(ctx, id) {
   return transact(ctx.db, [STORES.tasks, STORES.notes], 'readwrite', async (tx) => {
     const key = await mustFindKey(tx, id);
     await request(tx.objectStore(STORES.notes).delete(key));
-    await markActivity(tx, key[0], ctx.now().toISOString());
+    await touchTask(tx, key[0], ctx.now().toISOString());
   });
 }
 

@@ -28,8 +28,8 @@
  * The menus live outside the list, since the list is a size container, which would anchor fixed menus.
  */
 
+import { applyEvent, dueTimeOf, eventsTowardsStatus, STATUSES, statusOf } from '../core/occurrences.js';
 import { isOverdue } from '../core/overdue.js';
-import { STATUSES } from '../store/tasks.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 
@@ -58,7 +58,7 @@ let instances = 0;
 
 /** Status names, in lifecycle order. */
 export const STATUS_LABELS = Object.freeze({
-  todo: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
+  ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
 });
 
 /** Row strings, for the strings module of TEC-13 to absorb. */
@@ -91,8 +91,24 @@ const STRINGS = Object.freeze({
  * @returns {string} the new status
  */
 export function toggledStatus(status) {
-  return status === 'todo' || status === 'in-progress' ? 'completed' : 'todo';
+  return status === 'ready' || status === 'in-progress' ? 'completed' : 'ready';
 }
+/**
+ * Return a copy of a task as it would read after a status change, folding the events the change queues.
+ * @param {object} task the task
+ * @param {string} status the new status, one of `STATUSES`
+ * @param {string} time the ISO time of the change
+ * @returns {object} the changed copy
+ */
+function withStatus(task, status, time) {
+  const rules = task['lifecycle-rules'];
+  let occurrence = task['current-occurrence'];
+  for (const type of eventsTowardsStatus(occurrence, status, rules)) {
+    occurrence = applyEvent(occurrence, { type, 'creation-time': time }, rules) ?? occurrence;
+  }
+  return { ...task, 'current-occurrence': occurrence, 'last-update-time': time };
+}
+
 
 /**
  * Tell whether a key event comes from a text field, where letter shortcuts must type instead.
@@ -173,13 +189,13 @@ function dateFormat(locale, settings) {
  * @returns {{text: string, overdue: boolean}|null} the chip, or null without a due time
  */
 export function formatDue(task, now = new Date(), locale = undefined) {
-  if (!task['due-time']) {
+  if (!dueTimeOf(task)) {
     return null;
   }
   if (isOverdue(task, now)) {
     return { text: STRINGS.overdue, overdue: true };
   }
-  const due = new Date(task['due-time']);
+  const due = new Date(dueTimeOf(task));
   const current = new Date(now);
   const days = Math.round((startOfDay(due) - startOfDay(current)) / DAY_MS);
   const time = due.getHours() === 23 && due.getMinutes() === 59
@@ -236,7 +252,7 @@ function viewOf(task, ctx, options) {
   const handle = Boolean(options.moves?.enabled());
   const due = formatDue(task, ctx.now);
   return {
-    key: JSON.stringify([task.status, task.description, href, handle, names, notes, access.locked, access.menu]),
+    key: JSON.stringify([statusOf(task), task.description, href, handle, names, notes, access.locked, access.menu]),
     dueKey: due ? `${due.overdue}|${due.text}` : '', due, href, handle, names, notes, locked: access.locked, menu: access.menu,
   };
 }
@@ -302,7 +318,7 @@ function rowTemplate(doc, handle) {
   const status = make(doc, 'button', 'icon-button status-button');
   status.type = 'button';
   status.dataset.role = 'status';
-  status.append(spriteIcon(doc, 'status-todo'));
+  status.append(spriteIcon(doc, 'status-ready'));
   const open = make(doc, 'a', 'task-row__open');
   open.dataset.role = 'open';
   open.append(make(doc, 'span', 'task-row__description'));
@@ -373,15 +389,15 @@ function fillHeader(header, group, collapsed) {
  */
 function renderRow(doc, task, view, template, selected) {
   const row = template.cloneNode(true);
-  row.dataset.status = task.status;
+  row.dataset.status = statusOf(task);
   row.dataset.taskId = task.id;
   const more = row.lastElementChild;
   const open = more.previousElementSibling;
   const status = open.previousElementSibling;
-  status.setAttribute('aria-label', STRINGS.mark(task.description, toggledStatus(task.status)));
-  status.title = STRINGS.statusHint(task.status);
-  status.dataset.status = task.status;
-  status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${task.status}`);
+  status.setAttribute('aria-label', STRINGS.mark(task.description, toggledStatus(statusOf(task))));
+  status.title = STRINGS.statusHint(statusOf(task));
+  status.dataset.status = statusOf(task);
+  status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${statusOf(task)}`);
   open.href = view.href;
   if (task.id === selected) {
     open.setAttribute('aria-current', 'page');
@@ -587,16 +603,17 @@ export function createTaskList({
    * @param {string} status the new status
    */
   function setStatus(task, status) {
-    if (status === task.status) {
+    const before = statusOf(task);
+    if (status === before) {
       return;
     }
-    const changed = { ...task, status, 'last-update-time': new Date(ctx.now ?? Date.now()).toISOString() };
+    const changed = withStatus(task, status, new Date(ctx.now ?? Date.now()).toISOString());
     const hides = shows !== null && !shows(changed);
     store.updateTask(task.id, { status }).then(() => {
       if (hides) {
         toaster.show(STRINGS.marked(status), {
           undo: true,
-          onAction: () => store.updateTask(task.id, { status: task.status }).catch(fail),
+          onAction: () => store.updateTask(task.id, { status: before }).catch(fail),
         });
       }
     }, fail);
@@ -608,7 +625,7 @@ export function createTaskList({
    */
   function toggle(task) {
     if (task && !accessOf(task, ctx, listId).locked) {
-      setStatus(task, toggledStatus(task.status));
+      setStatus(task, toggledStatus(statusOf(task)));
     }
   }
 
@@ -652,7 +669,7 @@ export function createTaskList({
     }
     statusMenu.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}`);
     statusMenu.replaceChildren(...STATUSES.map((status) => menuItem(doc, 'menuitemradio', STATUS_LABELS[status], { status },
-      { icon: `status-${status}`, checked: status === task.status })));
+      { icon: `status-${status}`, checked: status === statusOf(task) })));
     openMenu(trigger, statusMenu, (item) => setStatus(task, item.dataset.status),
       () => statusMenu.querySelector('[aria-checked="true"]'), 'status');
   }

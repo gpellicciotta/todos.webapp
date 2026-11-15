@@ -115,18 +115,20 @@ $env:TODOS_SERVER_DIR = "../todos"; npm run test:contract
 ```
 
 - The suite is opt-in: without `TODOS_SERVER_DIR` it skips with one message. `npm test` and CI never run it.
-- `TODOS_SERVER_DIR` names a todos checkout that has Java, Python, and a built server, as `python scripts/devops.py server start` needs.
-- [server.js](../tests/contract/server.js) starts it with `devops.py server start --memory-db --background` on a free port, and stops it afterwards.
+- `TODOS_SERVER_DIR` names a todos checkout with a built server: `./gradlew :server:installDist` writes `output/server/install/todos`.
+- [server.js](../tests/contract/server.js) runs that jar with Java on an in-memory database and a free port, as `devops.py server start --memory-db` does.
+  `devops.py` takes no port or environment file, so the helper starts the jar itself.
   It passes a temporary environment file with no secrets, so the checkout needs no `.env`.
+  It stops the server with `processes kill` from support.python, which must be on the `PATH`.
 - The server signs users in through Auth, so the helper runs a local stand-in for Auth that grants two known codes: a user and an admin.
   The tests sign in through the real `/api/auth-token` routes of the server with the session code of the app.
 - The environment file turns off the per-IP throttle and sets `TODOS_SYNC_MIN_CLIENT_VERSIONS=todos.webapp=0.1.0`.
   A client that reports version `0.0.1` then gets `426`.
 - The tests use the sync modules directly on `fake-indexeddb`, with real `fetch` and no browser.
-  They cover first-connect adoption, same-named list merge, two-device merge, a purged-list tombstone, `410`, and `426`.
+  They cover first-connect adoption with a note, same-named list merge, two-device merge, a purged-list tombstone, `410`, and `426`.
+  They also tick a target-3 task three times through events, and see a `409` event rolled back.
 - The `410` test forges a cursor above the newest revision. Only the purge job raises the tombstone floor, and a running server has no route for it; the todos tests cover that path.
-- A server started with `--memory-db` answers `500` to a new note, since its two in-memory repositories do not share users.
-  The note test uses `it.fails` until the todos task T0207 fixes that; it then turns red, so switch it to `it`.
+
 
 ### Service Worker Version Check
 [sw-precache-hashes.json](../scripts/sw-precache-hashes.json) records `VERSION` and a SHA-256 hash per precached file.

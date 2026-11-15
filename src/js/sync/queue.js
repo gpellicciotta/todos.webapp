@@ -2,21 +2,23 @@
  * Change queue: the local changes that wait for upload while connected (`SYN-1`, `SYN-2`).
  *
  * The store facade records every local write after it commits, when the `tracking` option says the device is connected.
- * An entry holds `seq` (the order), `target` (`{type, id}`, plus `list-id` or `task-id` for memberships and notes),
+ * An entry holds `seq` (the order), `target` (`{type, id}`, plus `list-id` or `task-id` for memberships, notes, and events),
  * `operation`, `fields` (only what changed), `edit-times` (one per changed field), `created`,
  * and `undo`, the data that rolls the change back locally if the service rejects it (`SYN-9`).
  * Besides the queue, this module reads and writes the `sync-state` and `sync-log` stores.
  * See docs/specs/local-store.md, Sync Queue.
  */
 
+import { applyEvent, applyRuleEdit, firstOccurrence, RULE_FIELDS } from '../core/occurrences.js';
 import { request, STORES, transact } from '../store/idb.js';
+import { eventsOfWrite } from '../store/tasks.js';
 import { createSyncLog } from './sync-log.js';
 
 const LIST_FIELDS = ['name', 'description'];
-const TASK_FIELDS = ['description', 'status', 'due-time', 'overdue-handling'];
+const TASK_FIELDS = ['description'];
 const OPERATIONS = new Set([
   'createList', 'updateList', 'deleteList', 'restoreList', 'createTask', 'updateTask', 'deleteTask', 'restoreTask',
-  'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
+  'postEvent', 'updateRules', 'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
 ]);
 
 /**
@@ -100,7 +102,10 @@ export function createQueue(ctx) {
      * @param {object} entry the entry
      * @returns {Promise<void>}
      */
-    undo: (store, entry) => store.applyChanges((data) => ({ changes: planUndo(data, entry.undo), result: null })),
+    undo: async (store, entry) => {
+      const later = (await queue.all()).filter((other) => other.seq > entry.seq);
+      await store.applyChanges((data) => ({ changes: planUndo(data, entry.undo, later), result: null }), { queue: true });
+    },
   };
   return queue;
 }
@@ -131,6 +136,8 @@ function readBefore(ctx, operation, args) {
       return named(STORES.lists, args[0]);
     case 'updateTask':
     case 'restoreTask':
+    case 'postEvent':
+    case 'updateRules':
       return named(STORES.tasks, args[0]);
     case 'addToList':
     case 'removeFromList':
@@ -177,6 +184,71 @@ function updateEntry(type, operation, before, after, names) {
     'edit-times': Object.fromEntries(changed.map((name) => [name, time])),
     undo: { kind: 'fields', type, id: after.id, fields: Object.fromEntries(changed.map((name) => [name, { from: before[name], to: after[name] }])) },
   }];
+}
+
+/**
+ * Tell whether two rule values differ.
+ * @param {unknown} a a value
+ * @param {unknown} b another value
+ * @returns {boolean} true when they differ
+ */
+const differs = (a, b) => (a ?? null) !== (b ?? null);
+
+/**
+ * Build the entry of a rule edit: only the changed rule fields, each with the task's last update time as edit time.
+ * @param {object} before the task before
+ * @param {object} after the task after
+ * @returns {object[]} the entry, or none when no rule changed
+ */
+function rulesEntry(before, after) {
+  const [old, rules] = [before['lifecycle-rules'], after['lifecycle-rules']];
+  const changed = RULE_FIELDS.filter((name) => differs(old[name], rules[name]));
+  if (changed.length === 0) {
+    return [];
+  }
+  const time = after['last-update-time'];
+  return [{
+    target: { type: 'rules', id: after.id },
+    operation: 'update-rules',
+    fields: Object.fromEntries(changed.map((name) => [name, rules[name]])),
+    'edit-times': Object.fromEntries(changed.map((name) => [name, time])),
+    undo: { kind: 'rules', id: after.id, fields: Object.fromEntries(changed.map((name) => [name, { from: old[name], to: rules[name] }])) },
+  }];
+}
+
+/**
+ * Build the entries of events, one request each; each undo holds the occurrence before its event.
+ * @param {string} taskId the task
+ * @param {object} base the occurrence before the first event
+ * @param {object} rules the lifecycle rules
+ * @param {object[]} events the events, in order
+ * @returns {object[]} the entries
+ */
+function eventEntries(taskId, base, rules, events) {
+  let occurrence = base;
+  return events.map((event) => {
+    const before = occurrence;
+    occurrence = applyEvent(occurrence, event, rules) ?? occurrence;
+    return {
+      target: { type: 'event', id: event.id, 'task-id': taskId },
+      operation: 'post-event',
+      fields: { id: event.id, type: event.type, 'creation-time': event['creation-time'], occurrence: event.occurrence },
+      'edit-times': {},
+      undo: { kind: 'event', taskId, id: event.id, before },
+    };
+  });
+}
+
+/**
+ * Return the occurrence a task update starts its events from: the old one, moved by the update's rule edit.
+ * @param {object} before the task before
+ * @param {object} after the task after
+ * @returns {object} the occurrence
+ */
+function eventBase(before, after) {
+  const [old, rules] = [before['lifecycle-rules'], after['lifecycle-rules']];
+  const edit = Object.fromEntries(RULE_FIELDS.filter((name) => differs(old[name], rules[name])).map((name) => [name, rules[name]]));
+  return Object.keys(edit).length > 0 ? applyRuleEdit(before, edit, after['last-update-time'])['current-occurrence'] : before['current-occurrence'];
 }
 
 /**
@@ -234,17 +306,23 @@ async function describe(ctx, operation, args, before, result) {
         fields: {
           id: result.id,
           description: result.description,
-          status: result.status,
-          'due-time': result['due-time'],
-          'overdue-handling': result['overdue-handling'],
+          'lifecycle-rules': result['lifecycle-rules'],
           'creation-time': result['creation-time'],
           lists: args[1]?.lists ?? [],
         },
         'edit-times': {},
         undo: { kind: 'remove-task', id: result.id },
-      }];
+      }, ...eventEntries(result.id, firstOccurrence(result['lifecycle-rules'], result['creation-time']), result['lifecycle-rules'], eventsOfWrite(result))];
     case 'updateTask':
-      return result ? updateEntry('task', 'update-task', before, result, TASK_FIELDS) : [];
+      return result ? [
+        ...updateEntry('task', 'update-task', before, result, TASK_FIELDS),
+        ...rulesEntry(before, result),
+        ...eventEntries(result.id, eventBase(before, result), result['lifecycle-rules'], eventsOfWrite(result)),
+      ] : [];
+    case 'postEvent':
+      return eventEntries(result.task.id, before['current-occurrence'], before['lifecycle-rules'], [result.event]);
+    case 'updateRules':
+      return rulesEntry(before, result);
     case 'deleteTask':
       return binEntry('task', 'delete-task', result, null);
     case 'restoreTask':
@@ -273,7 +351,8 @@ async function describe(ctx, operation, args, before, result) {
         target: { type: 'note', id: result.id, 'task-id': result['task-id'] },
         operation: 'edit-note',
         fields: { text: result.text },
-        'edit-times': { text: result['edit-time'] },
+        'edit-times': { text: result['last-update-time'] },
+
         undo: { kind: 'note-text', taskId: result['task-id'], id: result.id, from: before.text, to: result.text },
       }];
     case 'deleteNote':
@@ -328,13 +407,12 @@ export function importEntries(data, changes, now) {
     ['task', 'tasks', TASK_FIELDS, (record) => ({
       id: record.id,
       description: record.description,
-      status: record.status,
-      'due-time': record['due-time'],
-      'overdue-handling': record['overdue-handling'],
+      'lifecycle-rules': record['lifecycle-rules'],
       'creation-time': record['creation-time'],
       lists: [],
     })],
   ];
+  const events = (changes.put.events ?? []).filter((event) => event.type !== 'create');
   for (const [type, store, names, createFields] of rows) {
     const known = new Map(data[store].map((record) => [record.id, record]));
     for (const record of changes.put[store] ?? []) {
@@ -347,6 +425,17 @@ export function importEntries(data, changes, now) {
       }
       else {
         content.push(entry(target, `create-${type}`, createFields(record), { kind: `remove-${type}`, id: record.id }));
+      }
+      if (type === 'task') {
+        const [oldRules, rules] = [old?.['lifecycle-rules'], record['lifecycle-rules']];
+        if (old) {
+          content.push(entry({ type: 'rules', id: record.id }, 'update-rules', Object.fromEntries(RULE_FIELDS.map((name) => [name, rules[name]])), {
+            kind: 'rules', id: record.id, fields: Object.fromEntries(RULE_FIELDS.map((name) => [name, { from: oldRules[name], to: rules[name] }])),
+          }));
+        }
+        const base = old ? eventBase(old, record) : firstOccurrence(rules, record['creation-time']);
+        const own = events.filter((event) => event['task-id'] === record.id);
+        content.push(...eventEntries(record.id, base, rules, own).map((item) => ({ ...item, created })));
       }
       const from = old?.['deletion-time'] ?? null;
       const to = record['deletion-time'] ?? null;
@@ -367,8 +456,8 @@ export function importEntries(data, changes, now) {
   for (const note of changes.put.notes ?? []) {
     if (!noted.has(note.id)) {
       const fields = { id: note.id, text: note.text, 'creation-time': note['creation-time'] };
-      if (note['edit-time']) {
-        fields['last-edit-time'] = note['edit-time'];
+      if (note['last-update-time'] && note['last-update-time'] !== note['creation-time']) {
+        fields['last-update-time'] = note['last-update-time'];
       }
       content.push(entry({ type: 'note', id: note.id, 'task-id': note['task-id'] }, 'create-note', fields,
         { kind: 'remove-note', taskId: note['task-id'], id: note.id }));
@@ -378,13 +467,44 @@ export function importEntries(data, changes, now) {
 }
 
 /**
+ * Return the queued events of a task.
+ * @param {object[]} entries queue entries
+ * @param {string} taskId the task
+ * @returns {object[]} its `post-event` entries, in queue order
+ */
+function laterEvents(entries, taskId) {
+  return entries.filter((other) => other.operation === 'post-event' && other.target['task-id'] === taskId);
+}
+
+/**
+ * Fold queued events onto a new base after a rollback, and give each entry the occurrence before it,
+ * so rolling back a later entry too restores the right occurrence.
+ * @param {object} changes the planned changes; `changes.requeue` receives the rewritten entries
+ * @param {object[]} events the queued `post-event` entries of the task, in order
+ * @param {object} base the occurrence before the first of them
+ * @param {object} rules the lifecycle rules
+ * @returns {object} the occurrence after them
+ */
+function rechain(changes, events, base, rules) {
+  let occurrence = base;
+  for (const entry of events) {
+    changes.requeue.push({ ...entry, undo: { ...entry.undo, before: occurrence } });
+    occurrence = applyEvent(occurrence, entry.fields, rules) ?? occurrence;
+  }
+  return occurrence;
+}
+
+/**
  * Plan the bulk changes that roll back one change.
+ * A rolled-back event leaves the events store, and the occurrence before it takes the events queued after it again.
  * @param {{lists: object[], tasks: object[], memberships: object[], notes: object[]}} data the store snapshot
  * @param {object} undo the entry's undo data
+ * @param {object[]} [later] the queue entries after the rolled-back one
  * @returns {object} the changes for `applyChanges`
  */
-function planUndo(data, undo) {
-  const changes = { put: {}, delete: { memberships: [], notes: [] } };
+function planUndo(data, undo, later = []) {
+  const changes = { put: {}, delete: { memberships: [], notes: [], events: [] }, requeue: [] };
+
   const key = (membership) => [membership['list-id'], membership['task-id']];
   switch (undo.kind) {
     case 'remove-list':
@@ -434,7 +554,38 @@ function planUndo(data, undo) {
         changes.put.notes = [undo.note];
       }
       break;
+    case 'rules': {
+      const task = data.tasks.find((candidate) => candidate.id === undo.id);
+      const rules = task?.['lifecycle-rules'] ?? {};
+      const reverted = Object.entries(undo.fields).filter(([name, { to }]) => !differs(rules[name], to));
+      if (reverted.length > 0) {
+        const edit = Object.fromEntries(reverted.map(([name, { from }]) => [name, from ?? null]));
+        const settled = applyRuleEdit(task, edit, task['last-update-time']);
+        const events = laterEvents(later, undo.id);
+        let occurrence = settled['current-occurrence'];
+        if (events.length > 0 && events[0].undo?.before) {
+          // The queued events folded onto the edited rules; refold them from the first one's base under the old rules.
+          const base = applyRuleEdit({ 'lifecycle-rules': rules, 'current-occurrence': events[0].undo.before }, edit, task['last-update-time']);
+          occurrence = rechain(changes, events, base['current-occurrence'], settled['lifecycle-rules']);
+        }
+        changes.put.tasks = [{ ...task, ...settled, 'current-occurrence': occurrence }];
+      }
+      break;
+    }
+    case 'event': {
+      changes.delete.events = [[undo.taskId, undo.id]];
+      const task = data.tasks.find((candidate) => candidate.id === undo.taskId);
+      if (task && undo.before) {
+        // An event changes only the count, status, and close time; the other fields stay the stored ones.
+        const current = task['current-occurrence'];
+        const base = { ...current, 'completion-count': undo.before['completion-count'], status: undo.before.status, 'close-time': undo.before['close-time'] };
+        const occurrence = rechain(changes, laterEvents(later, undo.taskId), base, task['lifecycle-rules']);
+        changes.put.tasks = [{ ...task, 'current-occurrence': occurrence }];
+      }
+      break;
+    }
     default:
+
       break;
   }
   return changes;

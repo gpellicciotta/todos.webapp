@@ -20,22 +20,23 @@ afterEach(() => {
 });
 
 describe('addNote', () => {
-  it('stores the text, creation time, no edit time, and a null local author', async () => {
+  it('stores the text, a last update time equal to the creation time, no occurrence, and a null local owner', async () => {
     const note = await store.addNote(task.id, { text: 'Bought white paint' });
-    expect(note).toMatchObject({
+    expect(note).toEqual({
+      id: note.id,
       'task-id': task.id,
       text: 'Bought white paint',
-      author: null,
+      'owner-id': null,
+      occurrence: null,
       'creation-time': '2026-11-04T09:00:01.000Z',
-      'edit-time': null,
+      'last-update-time': '2026-11-04T09:00:01.000Z',
     });
     expect(note.id[14]).toBe('7');
   });
 
-  it('keeps a given author', async () => {
-    const author = { id: 7, name: 'Ada' };
-    const note = await store.addNote(task.id, { text: 'Hi', author });
-    expect(note.author).toEqual(author);
+  it('keeps a given owner', async () => {
+    const note = await store.addNote(task.id, { text: 'Hi', 'owner-id': 7 });
+    expect(note['owner-id']).toBe(7);
   });
 
   it('trims the text before checking its length', async () => {
@@ -58,7 +59,7 @@ describe('addNote', () => {
     expect(error).toBeInstanceOf(ValidationError);
     expect(error).toMatchObject({ field: 'text', code });
     expect(await store.notesOfTask(task.id)).toEqual([]);
-    expect((await store.getTask(task.id))['last-activity-time']).toBe(task['last-activity-time']);
+    expect((await store.getTask(task.id))['last-update-time']).toBe(task['last-update-time']);
   });
 
   it('fails with not-found for an unknown task', async () => {
@@ -104,7 +105,7 @@ describe('notesOfTask', () => {
 });
 
 describe('editNote', () => {
-  it('replaces the text and sets the edit time, keeping the creation time', async () => {
+  it('replaces the text and sets the last update time, keeping the creation time', async () => {
     const note = await store.addNote(task.id, { text: 'Draft' });
     clock.tick(60_000);
     const edited = await store.editNote(note.id, '  Final  ');
@@ -113,7 +114,7 @@ describe('editNote', () => {
       'task-id': task.id,
       text: 'Final',
       'creation-time': '2026-11-04T09:00:01.000Z',
-      'edit-time': '2026-11-04T09:01:01.000Z',
+      'last-update-time': '2026-11-04T09:01:01.000Z',
     });
     expect(await store.notesOfTask(task.id)).toEqual([edited]);
   });
@@ -147,23 +148,17 @@ describe('deleteNote', () => {
 });
 
 describe('task activity', () => {
-  it('updates the last activity time, not the last update time, on every note change', async () => {
+  it('moves the last update time of the task on every note change (NOT-5)', async () => {
     const note = await store.addNote(task.id, { text: 'Added' });
-    let current = await store.getTask(task.id);
-    expect(current['last-activity-time']).toBe('2026-11-04T09:00:01.000Z');
-    expect(current['last-update-time']).toBe(task['last-update-time']);
+    expect((await store.getTask(task.id))['last-update-time']).toBe('2026-11-04T09:00:01.000Z');
 
     clock.tick();
     await store.editNote(note.id, 'Edited');
-    current = await store.getTask(task.id);
-    expect(current['last-activity-time']).toBe('2026-11-04T09:00:02.000Z');
-    expect(current['last-update-time']).toBe(task['last-update-time']);
+    expect((await store.getTask(task.id))['last-update-time']).toBe('2026-11-04T09:00:02.000Z');
 
     clock.tick();
     await store.deleteNote(note.id);
-    current = await store.getTask(task.id);
-    expect(current['last-activity-time']).toBe('2026-11-04T09:00:03.000Z');
-    expect(current['last-update-time']).toBe(task['last-update-time']);
+    expect((await store.getTask(task.id))['last-update-time']).toBe('2026-11-04T09:00:03.000Z');
   });
 });
 
@@ -207,9 +202,9 @@ describe('schema upgrade', () => {
       indexedDB: factory, keyRange: IDBKeyRange, name: 'legacy', now: () => new Date(Date.UTC(2026, 10, 4, 9, 0, 0)),
     });
     try {
-      expect(DB_VERSION).toBe(4);
+      expect(DB_VERSION).toBe(5);
       expect(await upgraded.listLists()).toMatchObject([{ id: 'list-1', name: 'Home' }]);
-      expect(await upgraded.listTasks()).toMatchObject([{ id: 'task-1', description: 'Fix door' }]);
+      expect(await upgraded.listTasks()).toMatchObject([{ id: 'task-1', description: 'Fix door', 'current-occurrence': { status: 'ready' } }]);
       expect((await upgraded.tasksOfList('list-1')).map((t) => t.id)).toEqual(['task-1']);
       expect(await upgraded.listMemberships()).toMatchObject([{ 'list-id': 'list-1', 'task-id': 'task-1', position: 'a0' }]);
       expect(await upgraded.notesOfTask('task-1')).toEqual([]);

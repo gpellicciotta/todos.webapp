@@ -220,10 +220,15 @@ describe('two devices', () => {
 
     const [mine, theirs] = [await a.store.getTask(task.id), await b.store.getTask(task.id)];
     for (const row of [mine, theirs]) {
-      expect(row).toMatchObject({ description: 'Paint the door', status: 'completed', 'due-time': '2026-12-01T10:00:00.000Z' });
+      expect(row).toMatchObject({
+        description: 'Paint the door',
+        'lifecycle-rules': { 'due-time': '2026-12-01T10:00:00.000Z' },
+        'current-occurrence': { status: 'completed', 'due-time': '2026-12-01T10:00:00.000Z' },
+      });
     }
     expect(mine.revision).toBe(theirs.revision);
-    const lost = (await a.store.queue.log()).filter((record) => record.kind === 'overwritten');
-    expect(lost).toMatchObject([{ field: 'status', sent: 'in-progress', kept: 'completed' }]);
+    // Statuses never merge: both devices' events fold in creation-time order, so the start and the completion both count.
+    expect(await a.store.queue.log()).toEqual([]);
+
   });
 });

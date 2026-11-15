@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountAllTasks } from '../../src/js/views/all-tasks.js';
 import { createViewModel, defaultViewState } from '../../src/js/views/view-controls.js';
+import { shapeTask } from './task-shape.js';
 
 /**
  * Create a store stand-in that holds one open task.
@@ -9,10 +10,10 @@ import { createViewModel, defaultViewState } from '../../src/js/views/view-contr
  * @returns {object} the store
  */
 function fakeStore(dueTime = null) {
-  const task = {
-    id: 't1', description: 'Buy paint', status: 'todo', 'due-time': dueTime,
-    'creation-time': '2026-11-04T09:00:00.000Z', 'last-activity-time': '2026-11-04T09:00:00.000Z',
-  };
+  const task = shapeTask({
+    id: 't1', description: 'Buy paint', status: 'ready', 'due-time': dueTime,
+    'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
+  });
   return {
     snapshot: async () => ({ lists: [], tasks: [task], memberships: [], notes: [] }),
     subscribe: () => () => {},
@@ -102,11 +103,11 @@ describe('mountAllTasks', () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     try {
       let time = new Date(2026, 10, 4, 23, 59, 30);
-      const done = {
+      const done = shapeTask({
         id: 't2', description: 'Fix door', status: 'completed', 'due-time': null, 'creation-time': '2026-11-01T09:00:00.000Z',
-        'last-update-time': new Date(2026, 10, 4, 18).toISOString(), 'last-activity-time': new Date(2026, 10, 4, 18).toISOString(),
-      };
-      const open = { ...done, id: 't1', description: 'Buy paint', status: 'todo' };
+        'last-update-time': new Date(2026, 10, 4, 18).toISOString(),
+      });
+      const open = shapeTask({ ...done, id: 't1', description: 'Buy paint', status: 'ready' });
       const store = { snapshot: async () => ({ lists: [], tasks: [open, done], memberships: [], notes: [] }), subscribe: () => () => {} };
       const storage = { getItem: () => null, setItem: vi.fn() };
       const viewModels = { tasks: createViewModel('tasks', () => storage) };
@@ -211,7 +212,7 @@ describe('mountAllTasks', () => {
 
   it('shows a toast with Show when the new task is hidden by the view options', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
-    const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
+    const store = { ...fakeStore(), createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))) };
     const show = vi.fn();
     const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
     screen = mountAllTasks(document.querySelector('[data-view]'), {
@@ -227,7 +228,7 @@ describe('mountAllTasks', () => {
     expect(show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
     expect(show.mock.calls[0][1].actionLabel).toBe('Show');
     show.mock.calls[0][1].onAction();
-    expect(viewModels.tasks.get().filter.statuses).toEqual(['todo', 'in-progress']);
+    expect(viewModels.tasks.get().filter.statuses).toEqual(['ready', 'in-progress']);
   });
 
   it('adds the task to no list while the Lists filter selects lists, and toasts that the filter hides it', async () => {
@@ -236,7 +237,7 @@ describe('mountAllTasks', () => {
     const store = {
       snapshot: async () => ({ lists, tasks: [], memberships: [], notes: [] }),
       subscribe: () => () => {},
-      createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })),
+      createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))),
     };
     const show = vi.fn();
     const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
@@ -257,7 +258,7 @@ describe('mountAllTasks', () => {
 
   it('opens the task editor of a new task and gives the focus back to the add field', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
-    const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
+    const store = { ...fakeStore(), createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))) };
     const navigate = vi.fn();
     screen = mountAllTasks(document.querySelector('[data-view]'), {
       store, toaster: { show: vi.fn() }, navigate, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
@@ -292,7 +293,7 @@ describe('mountAllTasks', () => {
 
   it('shows no toast when the new task is visible', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
-    const store = { ...fakeStore(), createTask: vi.fn(async (input) => ({ id: 't2', ...input, status: 'todo', 'due-time': null, 'creation-time': new Date().toISOString() })) };
+    const store = { ...fakeStore(), createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))) };
     const show = vi.fn();
     screen = mountAllTasks(document.querySelector('[data-view]'), {
       store, toaster: { show }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
@@ -315,14 +316,14 @@ describe('mountAllTasks', () => {
      * @returns {object} the store
      */
     function groupedStore() {
-      const make = (id, description, status, due) => ({
+      const make = (id, description, status, due) => shapeTask({
         id, description, status, 'due-time': due,
-        'creation-time': '2026-11-04T09:00:00.000Z', 'last-activity-time': '2026-11-04T09:00:00.000Z',
+        'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
       });
       const tasks = [
-        make('t1', 'Buy paint', 'todo', new Date(2026, 10, 5, 9).toISOString()),
+        make('t1', 'Buy paint', 'ready', new Date(2026, 10, 5, 9).toISOString()),
         make('t2', 'Call plumber', 'in-progress', new Date(2026, 10, 3, 9).toISOString()),
-        make('t3', 'Book flights', 'todo', null),
+        make('t3', 'Book flights', 'ready', null),
         make('t4', 'Water plants', 'completed', null),
       ];
       const memberships = [
@@ -371,7 +372,7 @@ describe('mountAllTasks', () => {
     });
 
     it('groups by status with a count in each header and hides empty groups', async () => {
-      await mountGrouped('status', { filter: { statuses: ['todo', 'in-progress', 'completed'] } });
+      await mountGrouped('status', { filter: { statuses: ['ready', 'in-progress', 'completed'] } });
       expect(entries()).toEqual(['# To do 2', 'Book flights', 'Buy paint', '# In progress 1', 'Call plumber', '# Completed 1', 'Water plants']);
     });
 
@@ -425,10 +426,11 @@ describe('mountAllTasks', () => {
   });
 
   describe('the Shared filter (TV-7)', () => {
-    const task = (id, description) => ({
-      id, description, status: 'todo', 'due-time': null, 'owner-id': 3,
-      'creation-time': '2026-11-04T09:00:00.000Z', 'last-activity-time': '2026-11-04T09:00:00.000Z',
+    const task = (id, description) => shapeTask({
+      id, description, status: 'ready', 'due-time': null, 'owner-id': 3,
+      'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
     });
+
     const store = {
       snapshot: async () => ({
         lists: [
@@ -457,7 +459,7 @@ describe('mountAllTasks', () => {
       document.body.innerHTML = '<div data-view="tasks"></div>';
       const storage = { getItem: () => null, setItem: vi.fn() };
       const viewModels = { tasks: createViewModel('tasks', () => storage) };
-      viewModels.tasks.set({ filter: { statuses: ['todo'], ...(shared === undefined ? {} : { shared }) }, order: defaultViewState().order });
+      viewModels.tasks.set({ filter: { statuses: ['ready'], ...(shared === undefined ? {} : { shared }) }, order: defaultViewState().order });
       screen = mountAllTasks(document.querySelector('[data-view]'), {
         store, toaster: { show: vi.fn() }, viewModels, getStorage: () => storage, session: { state: () => state },
       });
