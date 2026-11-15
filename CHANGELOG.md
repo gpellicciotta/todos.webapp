@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.4.1-pre
+## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.
 - FrontEnd: Synced status changes as events and rule changes as rule edits, folding queued events into pulled tasks.
 - FrontEnd: Made a click on the status button, or `x` on a row, tick the task toward its target.
