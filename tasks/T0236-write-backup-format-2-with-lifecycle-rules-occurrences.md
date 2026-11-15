@@ -5,25 +5,27 @@ session: claude-20261115-81474f
 needs: []
 branch: task/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
 worktree: .plan/work/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
-status: active
+status: completed
 started_at: "2026-11-15T14:13:06Z"
-ended_at: —
+ended_at: "2026-11-15T14:59:55Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 8, duration_s: 6878.8, input: 780, output: 421080, cache_read: 110165660, cache_write: 1610262}
-  review: {turns: 4, duration_s: 3617.2, input: 1737052, output: 223160, cache_read: 33385588}
-review_status: pending
+  review: {turns: 6, duration_s: 5593.0, input: 2993118, output: 335762, cache_read: 41812896}
+review_status: approved
 review_round: 3
 review_requested_at: "2026-11-15T14:43:21Z"
-review_session: antigravity-20261115-8d9d10
-work_duration: 10039.7
+review_session: antigravity-20261115-8a71a6
+work_duration: 11578.0
 size_status: approved
 size_estimate: 12 files, 1695 lines
 size_approved: 12 files, 1695 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T14:04:03Z"
+reviewed_by: "@gemini"
+completion-commit: b9b62fca74fb5fb58ed7c9ea0aacb3b09b434719
 ---
 # T0236: Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable
 
@@ -42,7 +44,7 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 - [x] **[Implement]** Write format 2 and import it, rebuilding occurrences and replaying events with import true.
 - [x] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
 - [x] **[Doc]**       Update backup-format.md, the backup requirements, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-13] **[Doc]**
@@ -162,4 +164,11 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 
 - [2026-11-15] **[Review]**
   Round 3 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 3 approved by @gemini: Round 2 fixes for connected global notes, rule shape validation, partial rule replay, and changelog consolidation are verified.
+  - Findings: [review-findings-3.md](T0236-write-backup-format-2-with-lifecycle-rules-occurrences/review-findings-3.md).
+
+- [2026-11-15] **[Complete]**
+  Task completed successfully.
 
