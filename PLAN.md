@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-*(Currently no tasks)*
+- [x] T0239 [owner: @claude-code] [protocol: adhoc] Made occurrences optional when validating format 2 backups on import.
 
 ## Backlog
 - [ ] T0238 Make the compact layout shell e2e test wait for the action bar, since full parallel runs fail it.
