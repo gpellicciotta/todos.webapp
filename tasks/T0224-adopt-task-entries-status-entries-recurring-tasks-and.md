@@ -14,8 +14,8 @@ protocol: standard
 size_status: approved
 size_estimate: 30 files, 1600 lines
 usage:
-  worker: {turns: 2, duration_s: 115.6, input: 36, output: 4652, cache_read: 734980, cache_write: 86730}
-work_duration: 87.4
+  worker: {turns: 4, duration_s: 3716.2, input: 40, output: 4668, cache_read: 734980, cache_write: 86730}
+work_duration: 2029.8
 size_approved: 30 files, 1600 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-14T23:30:40Z"
@@ -36,11 +36,11 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 - [x] **[Implement]** Author unit tests for the version 5 migration, occurrence folding, event queueing, push, and merge.
 - [x] **[Implement]** Extend the contract suite to tick a target-3 task through events against a local server.
 - [x] **[Verify]**    Run the unit and contract suites and capture the expected red-phase failures.
-- [ ] **[Implement]** Add occurrences and events stores with a version 5 migration and the event fold.
-- [ ] **[Implement]** Queue and push events, merge the new task shape, and rename note fields.
-- [ ] **[Implement]** Point status, due time, and activity readers in core, views, and backup at the new shape.
-- [ ] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
-- [ ] **[Doc]**       Update local-store.md, the affected requirements, and CHANGELOG.md.
+- [x] **[Implement]** Add occurrences and events stores with a version 5 migration and the event fold.
+- [x] **[Implement]** Queue and push events, merge the new task shape, and rename note fields.
+- [x] **[Implement]** Point status, due time, and activity readers in core, views, and backup at the new shape.
+- [x] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
+- [x] **[Doc]**       Update local-store.md, the affected requirements, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -74,4 +74,28 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 - [2026-11-15] **[Verify]**
   Captured the red phase: 41 unit failures and 4 contract failures, all for the missing task shape, events, and store methods.
   - Contract harness now runs the server jar; devops.py lost --port.
+
+- [2026-11-15] **[Size]**
+  Size note: mid-task diff measures 40 counted files, 1995 lines, above the approved 30 files, 1600 lines. Kept whole: the task shape change cannot merge in parts.
+
+- [2026-11-15] **[Implement]**
+  Added occurrences and events stores, the version 5 migration, event queueing and push, the event-folding merge, and occurrence readers in core, views, and backup.
+  - Contract harness runs the server jar; T0207 note test is now it.
+
+- [2026-11-15] **[Verify]**
+  Ran lint, check:sw, npm test, the contract suite on a local todos.server clone, and the e2e suite; all passed.
+  - Unit: 1221 passed.
+  - Contract: 9 passed.
+  - E2e: 201 passed.
+
+- [2026-11-15] **[Size]**
+  Size note: Measured 58 counted files and 2289 lines, above the approved 30 files and 1600 lines.
+  - src/js 18 files, 962 lines; tests/unit 23 files, 981 lines.
+  - Fixture updates for the new shape grew the test count.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 58.
+  - Lines touched: 2289.
+  - Reopenings: 0.
 
