@@ -1,11 +1,11 @@
 ---
 id: T0236
-owner: ~
-needs: [T0224]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
+worktree: .plan/work/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
+status: active
+started_at: "2026-11-15T11:46:57Z"
 ended_at: —
 review: agent
 preview: none
