@@ -31,11 +31,11 @@ Start after todos.server T0241 is released; follow its [T0215 design](../../../t
 T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on this task.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the todos.server T0215 spec, local-store.md, and the store, sync, and status reader code.
+- [x] **[Read]**      Read the todos.server T0215 spec, local-store.md, and the store, sync, and status reader code.
 - [x] **[Decided]**   The user approved splitting the redesign into T0224, T0234, T0235, and T0236 on 2026-11-13.
-- [ ] **[Implement]** Author unit tests for the version 5 migration, occurrence folding, event queueing, push, and merge.
-- [ ] **[Implement]** Extend the contract suite to tick a target-3 task through events against a local server.
-- [ ] **[Verify]**    Run the unit and contract suites and capture the expected red-phase failures.
+- [x] **[Implement]** Author unit tests for the version 5 migration, occurrence folding, event queueing, push, and merge.
+- [x] **[Implement]** Extend the contract suite to tick a target-3 task through events against a local server.
+- [x] **[Verify]**    Run the unit and contract suites and capture the expected red-phase failures.
 - [ ] **[Implement]** Add occurrences and events stores with a version 5 migration and the event fold.
 - [ ] **[Implement]** Queue and push events, merge the new task shape, and rename note fields.
 - [ ] **[Implement]** Point status, due time, and activity readers in core, views, and backup at the new shape.
@@ -64,4 +64,14 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 
 - [2026-11-15] **[Size]**
   Size approved by @giova for 30 files, 1600 lines.
+
+- [2026-11-15] **[Decided]**
+  Manager decision: build and test against todos.server main with a local server; do not wait for the v3.4.0 release.
+
+- [2026-11-15] **[Decided]**
+  Started against todos.server main after size approval; T0241 is merged there, and the contract suite runs a local server.
+
+- [2026-11-15] **[Verify]**
+  Captured the red phase: 41 unit failures and 4 contract failures, all for the missing task shape, events, and store methods.
+  - Contract harness now runs the server jar; devops.py lost --port.
 
