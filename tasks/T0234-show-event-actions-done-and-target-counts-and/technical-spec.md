@@ -14,6 +14,19 @@ Dependencies: T0224 (store and sync on the new task shape) and todos.server T024
 - **[Decided]** The "Last activity" sort becomes "Last update" on `last-update-time` (`LST-12`, `LV-6`, `TV-9`).
 - **[Decided]** "Finished today only" (`TV-14`) uses the current occurrence's `close-time`.
 
+### Implementation Decisions
+- **[Decided]** A click on a cancelled task's status button posts `reopen`, since `complete` fails on a cancelled occurrence.
+- **[Decided]** The editor shows the status actions as buttons under the status line, not a menu, since the panel has room.
+- **[Decided]** Menu and button labels: Start, Undo start, Cancel task, Reopen; the editor tick reads Complete, Undo completion, or "Tick, 2 of 3".
+- **[Decided]** The target count field takes 1 to 999; the service stores up to 32767, but no task needs that many.
+- **[Decided]** Counts also show when a target of 1 has more than one completion, so `uncomplete` there stays readable.
+- **[Decided]** Finished today only falls back to `last-update-time` for a completed recurring occurrence, which stays open.
+- **[Decided]** A recurring task's editor hides Due and Overdue behavior, since its rules hold neither.
+- `query.js` and `all-tasks.js` needed no change: T0224 already moved them onto the current occurrence.
+- Undeclared files: `src/css/app-components.css`, `src/css/views.css`, `src/demo/visual-style-gallery.html`.
+- Undeclared files: `src/service-worker.js`, `tests/e2e/all-tasks.spec.js`, `tests/e2e/connect.spec.js`.
+- Mechanical command: `node scripts/check-sw-version.mjs --update` rewrites `scripts/sw-precache-hashes.json`.
+
 ### Declared Files
 - `src/js/views/task-list.js`
 - `src/js/views/task-editor.js`
