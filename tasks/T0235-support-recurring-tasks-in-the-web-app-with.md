@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 3526.2, input: 584, output: 244618, cache_read: 68740592, cache_write: 663792}
+  worker: {turns: 4, duration_s: 4806.8, input: 728, output: 305832, cache_read: 95442830, cache_write: 772940}
   review: {turns: 2, duration_s: 1632.2, input: 988364, output: 73376, cache_read: 10907824}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-15T11:11:58Z"
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-15T11:36:43Z"
 review_session: antigravity-20261115-b303ad
 work_duration: 2594.4
 size_status: approved
@@ -122,4 +121,7 @@ Follow the [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurr
   - Files touched: 24.
   - Lines touched: 1409.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 2 requested (mode: agent).
 
