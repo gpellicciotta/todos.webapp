@@ -16,6 +16,32 @@ Dependencies: T0224, todos.server T0221 (recurrence, grace, occurrences route), 
 - **[Decided]** During the 24-hour grace period, the row menu offers "Complete for previous period", naming the cached occurrence.
 - **[Decided]** A history view lists events and occurrences, read online from the server routes, or from the local stores in local mode.
 
+### Decisions During Execution
+- **[Decided]** Recurring occurrences carry their period as `start-time` and `due-time`, as the server's do.
+- **[Decided]** Local mode rolls over in the store before each event and rule edit, and on the minute timer.
+- **[Decided]** A connected event past the period end joins the locally computed current period.
+  It is queued without `occurrence`, so the server assigns the period containing its time.
+- **[Decided]** The display rule applies to rows, the status menu, and the editor status.
+  Filters, groups, and sidebar counts keep reading the stored status.
+- **[Decided]** Recurring rows show a repeat chip instead of a due chip and are never overdue.
+- **[Decided]** Grace completion sits in the row's status menu as "Complete for previous period".
+- **[Decided]** The history view is a History section of the task editor, loaded by Show history.
+- **[Decided]** Local `edit-lifecycle-rules`, `roll-over`, and `end-recurrence` events stay local, never queued.
+- **[Decided]** The contract suite runs against a read-only clone of todos.server `9564bec`.
+  The clone is built in the ignored `node_modules/.cache/t0235/`, as T0234 did.
+
+### Undeclared Files
+- `src/js/core/overdue.js` and `src/js/store/db.js`: the roll-over timer and the store's local-mode flag.
+- `src/js/sync/queue.js`: unplaced events omit `occurrence`.
+- `src/css/views.css`: recurrence field and history list styles.
+- `src/index.html`, `src/service-worker.js`: module preload, precache, and `VERSION` for the two new modules.
+- `tests/contract/sync.contract.test.js`: a weekly task synced against the real server.
+- `tests/unit/push.test.js`, `tests/unit/store-tasks.test.js`: expectations for local rule events and recurring periods.
+- `tests/unit/store-recurrence.test.js` (new): store roll-over, grace, reopen, and timer tests.
+- `scripts/sw-precache-hashes.json`: generated.
+
+Mechanical command: `node scripts/check-sw-version.mjs --update`
+
 ### Declared Files
 - `src/js/core/occurrences.js`
 - `src/js/store/tasks.js`

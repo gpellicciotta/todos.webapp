@@ -1,6 +1,7 @@
 ---
 id: T0235
 owner: "@claude"
+session: claude-20261115-2d98ad
 needs: []
 branch: task/T0235-support-recurring-tasks-in-the-web-app-with
 worktree: .plan/work/T0235-support-recurring-tasks-in-the-web-app-with
@@ -22,17 +23,17 @@ Start after T0224, todos.server T0221, and todos.server T0219, which authors `do
 Follow the [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurring-tasks-status-entries-and-the-task/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the T0215 spec, the shared recurrence vectors, the T0224 occurrence fold, and the editor code.
+- [x] **[Read]**      Read the T0215 spec, the shared recurrence vectors, the T0224 occurrence fold, and the editor code.
 - [x] **[Decided]**   Local mode keeps recurring tasks with local period math and roll-over, decided on 2026-11-13.
-- [ ] **[Implement]** Author periods tests over the shared vectors and roll-over, display rule, and grace unit tests.
-- [ ] **[Implement]** Author e2e tests that set a weekly recurrence locally, tick it, and roll it over.
-- [ ] **[Verify]**    Run the unit and e2e suites and capture the expected red-phase failures.
-- [ ] **[Implement]** Add periods.js and local roll-over with missed periods and recurrence ends.
-- [ ] **[Implement]** Add the recurrence editor, the display rule, and the grace completion menu item.
-- [ ] **[Implement]** Add the history view over the events and occurrences routes and local stores.
-- [ ] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
-- [ ] **[Visual]**    Capture before and after screenshots of the editor, a recurring row, and the history view.
-- [ ] **[Doc]**       Update requirements, local-store.md, ui-design.md, and CHANGELOG.md.
+- [x] **[Implement]** Author periods tests over the shared vectors and roll-over, display rule, and grace unit tests.
+- [x] **[Implement]** Author e2e tests that set a weekly recurrence locally, tick it, and roll it over.
+- [x] **[Verify]**    Run the unit and e2e suites and capture the expected red-phase failures.
+- [x] **[Implement]** Add periods.js and local roll-over with missed periods and recurrence ends.
+- [x] **[Implement]** Add the recurrence editor, the display rule, and the grace completion menu item.
+- [x] **[Implement]** Add the history view over the events and occurrences routes and local stores.
+- [x] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
+- [x] **[Visual]**    Capture before and after screenshots of the editor, a recurring row, and the history view.
+- [x] **[Doc]**       Update requirements, local-store.md, ui-design.md, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -41,3 +42,46 @@ Follow the [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurr
 
 - [2026-11-13] **[Doc]**
   Wrote the recurrence part of the approved T0224 split, with local period math for local mode.
+
+- [2026-11-15] **[Verify]**
+  Ran unit, lint, service worker, e2e, and contract suites green; output is in validation-proof.md.
+  - Unit: 1388 passed.
+  - E2E: 209 passed.
+  - Contract: 10 passed against todos.server 9564bec.
+
+- [2026-11-15] **[Visual]**
+  Captured screenshots of the editor, a recurring row, and the history view.
+  - [before-editor.png](T0235-support-recurring-tasks-in-the-web-app-with/before-editor.png), [after-editor.png](T0235-support-recurring-tasks-in-the-web-app-with/after-editor.png).
+  - [before-recurring-row.png](T0235-support-recurring-tasks-in-the-web-app-with/before-recurring-row.png), [after-recurring-row.png](T0235-support-recurring-tasks-in-the-web-app-with/after-recurring-row.png).
+  - [after-history.png](T0235-support-recurring-tasks-in-the-web-app-with/after-history.png).
+
+- [2026-11-15] **[Implement]**
+  Size note: counted 21 files and 1250 lines, above the large line; undeclared files are listed in technical-spec.md.
+  - Files touched: 21.
+  - Lines touched: 1250.
+  - Reopenings: 0.
+
+- [2026-11-15] **[Read]**
+  Read the server business logic and REST specs, the Java roll-over and placement code, the shared vectors, and the web app fold and editor.
+
+- [2026-11-15] **[Implement]**
+  Wrote failing unit tests over the 31 shared vectors, roll-over, end rules, display rule, grace, rule editor, and history.
+
+- [2026-11-15] **[Implement]**
+  Wrote a failing e2e test that sets a weekly recurrence locally, ticks it, fast-forwards the clock, and reads the history.
+
+- [2026-11-15] **[Verify]**
+  Captured the red phase: 33 unit failures in 5 files and the e2e test failing on the missing Repeat field.
+
+- [2026-11-15] **[Implement]**
+  Added periods.js, store roll-over with missed periods and end rules, fresh-period reopen, and the local roll-over timer.
+
+- [2026-11-15] **[Implement]**
+  Added the recurrence editor fields, the display rule in rows and the editor, the repeat chip, and grace completion.
+
+- [2026-11-15] **[Implement]**
+  Added task-history.js, reading the server routes while connected and the local stores otherwise, inside the task editor.
+
+- [2026-11-15] **[Doc]**
+  Updated requirements with TSK-16 and TSK-17, local-store.md Recurrence, ui-design.md rows and editor, and CHANGELOG.md.
+
