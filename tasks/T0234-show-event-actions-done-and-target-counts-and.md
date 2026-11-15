@@ -1,11 +1,11 @@
 ---
 id: T0234
-owner: ~
-needs: [T0224]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0234-show-event-actions-done-and-target-counts-and
+worktree: .plan/work/T0234-show-event-actions-done-and-target-counts-and
+status: active
+started_at: "2026-11-15T09:49:17Z"
 ended_at: —
 review: agent
 preview: none
