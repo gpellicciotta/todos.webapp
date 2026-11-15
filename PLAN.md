@@ -9,7 +9,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [!] T0237 [reason: blocked: needs T0224 occurrences in the store and T0235 task history view] [needs: T0224, T0235] [owner: @claude] Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence.
 - [x] T0225 Complete a task with one click on its status button, keeping the full status menu one step away.
 - [!] T0228 [reason: needs review: choose Rapid entry toggle location, add bar or Settings (recommended Settings)] [owner: @claude] Add a rapid entry mode where adding keeps focus in the field and skips the task editor.
-- [~] T0229 [owner: @claude] Parse due dates, times, and list tags typed in the add field into the new task.
+- [x] T0229 Parse due dates, times, and list tags typed in the add field into the new task.
 - [ ] T0223 Improve task group headers with more padding, an 'n of m' count, and collapsible groups.
 
 ## Backlog

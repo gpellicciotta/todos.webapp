@@ -5,17 +5,22 @@ session: claude-20261115-121929
 needs: []
 branch: task/T0229-parse-due-dates-times-and-list-tags-typed
 worktree: .plan/work/T0229-parse-due-dates-times-and-list-tags-typed
-status: active
+status: completed
 started_at: "2026-11-15T01:27:48Z"
-ended_at: —
+ended_at: "2026-11-15T01:49:44Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1928.0, input: 292, output: 111750, cache_read: 16840292, cache_write: 314752}
-review_status: pending
+  review: {turns: 2, duration_s: 669.0, input: 306078, output: 31934, cache_read: 3765862}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-15T01:44:03Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261115-494ec4
+work_duration: 1316.2
+completion-commit: 0dc1fc4b9ebc0b6841c457f9882f29f06b86605e
 ---
 # T0229: Parse due dates, times, and list tags typed in the add field into the new task
 
@@ -39,7 +44,7 @@ Size estimate: 6 files, 250 lines.
 - [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
 - [x] **[Visual]**    Inspect the preview line at 390 px and 1440 px, in both themes.
 - [x] **[Doc]**       Add the syntax to the requirements, the Search and Add design, About, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-12] **[Doc]**
@@ -79,4 +84,11 @@ Size estimate: 6 files, 250 lines.
 
 - [2026-11-15] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 1 approved by @gemini: Approved.
+  - Findings: [review-findings-1.md](T0229-parse-due-dates-times-and-list-tags-typed/review-findings-1.md).
+
+- [2026-11-15] **[Complete]**
+  Task completed successfully.
 
