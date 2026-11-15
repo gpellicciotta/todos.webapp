@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 4, duration_s: 5283.4, input: 652, output: 367618, cache_read: 83889846, cache_write: 761856}
+  worker: {turns: 6, duration_s: 5835.2, input: 676, output: 371536, cache_read: 87975760, cache_write: 1539988}
   review: {turns: 2, duration_s: 1660.0, input: 882562, output: 103670, cache_read: 16594072}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-15T12:16:43Z"
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-15T14:17:52Z"
 review_session: antigravity-20261115-1916b3
 work_duration: 3510.0
 size_status: approved
@@ -133,4 +132,7 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
   - npm test: 1472 passed.
   - contract: 15 passed.
   - e2e: 211 passed.
+
+- [2026-11-15] **[Review]**
+  Round 2 requested (mode: agent).
 
