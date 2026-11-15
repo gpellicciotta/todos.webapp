@@ -3,10 +3,13 @@ task: T0237
 round: 1
 verdict: rejected
 reviewer: "@gemini"
-reviewed_at: 2026-11-15T13:04:59Z
+reviewed_at: 2026-11-15T13:21:53Z
 reviewed_commit: "f785d8c"
 base_commit: "4141dfc"
 branch: task/T0237-show-task-notes-on-their-occurrence-and-let
+session: antigravity-20261115-2ddebf
+session_agent: antigravity
+session_created_at: 2026-11-15T13:04:59Z
 ---
 # Review Findings: Task T0237 (Round 1)
 

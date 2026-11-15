@@ -13,10 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 2423.4, input: 528, output: 142678, cache_read: 41633182, cache_write: 545794}
-work_duration: 92.3
-review_status: pending
+  review: {turns: 2, duration_s: 2022.2, input: 666458, output: 88392, cache_read: 14179790}
+work_duration: 49931.3
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-15T13:04:59Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261115-2ddebf
 ---
 # T0237: Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence
 
@@ -83,4 +86,26 @@ Start after todos.server T0249 adds the link to the REST note routes.
 
 - [2026-11-15] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 1 rejected by @gemini: Unit, contract, Playwright, lint, and service-worker checks pass on `f785d8c`.
+  - Findings: [review-findings-1.md](T0237-show-task-notes-on-their-occurrence-and-let/review-findings-1.md).
+
+- [2026-11-15] **[Implement]**
+  Addressed review round 1: server-matching default links, edit-times in note edits, editable past notes, full link choices, live history notes.
+  - Occurrences 1 to current; connected edit forms label them from the server.
+  - CHANGELOG consolidated; added doc sentences kept to 20 words.
+  - technical-spec.md lists undeclared files and the mechanical command.
+
+- [2026-11-15] **[Verify]**
+  Rework verified: unit 1423 passed, lint and precache OK, contract 12 passed, full e2e 210 passed.
+  - The new contract case also passes without the push fix; header suffices.
+  - Round 2 screenshots: after-r2 captures in screenshots/.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes after review round 1.
+  - Files touched: 23.
+  - Lines touched: 905.
+  - Reopenings: 0.
+  - Size note: above the large line; human size approval still outstanding.
 

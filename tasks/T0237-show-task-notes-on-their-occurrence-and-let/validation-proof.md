@@ -180,3 +180,132 @@ Light and dark, 1440 px and 390 px; the spec failed on console errors, page erro
 | History | [dark 390](screenshots/before-dark-390-history.png)         | [dark 390](screenshots/after-dark-390-history.png)        |
 
 All eight captures per phase are in `screenshots/`, for light and dark at 1440 px and 390 px.
+
+### Review Round 1 Rework
+
+#### Key Changes
+- `addNote` links by the newest occurrence that began by the creation time, as the server's `defaultLink` does.
+- `edit-note` requests send `edit-times` in the body.
+- The thread lists earlier-occurrence notes after the current ones, with Edit and Delete on own notes.
+- Belongs to offers occurrences 1 to the current one; while connected, the edit form labels them from the server.
+- An open history redraws its notes on note changes.
+- CHANGELOG consolidated to one entry; added doc sentences trimmed to 20 words or fewer.
+
+#### Red phase: affected unit tests
+Command: `npx vitest run tests/unit/push.test.js tests/unit/store-notes.test.js tests/unit/task-editor.test.js`
+Exit code: 1
+
+Two older view tests fail only because the daily fixture now shows 5 notes.
+
+```text
+ FAIL  tests/unit/push.test.js > uploading the queue > sends the changed note fields of an edit with their edit times
+ FAIL  tests/unit/store-notes.test.js > note links to occurrences > links by the newest occurrence that began by the creation time, as the service does
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > note links > keeps own notes of earlier occurrences editable and deletable
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > note links > lists the global notes, then the current occurrence, then earlier ones, each linked note marked with its occurrence
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > note links > lists the notes of each occurrence under it in the history, newest first
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > note links > offers Whole task and each occurrence, newest first, in the note edit form, and saves the chosen link
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > note links > offers every occurrence up to the current one, even when the store holds only the current one
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor > note links > shows note changes in an open history without a refresh
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor note links while connected > labels the earlier occurrences of the link choice from the server occurrences
+[... 94 lines omitted ...]
+AssertionError: expected 1 to be null
+AssertionError: expected { text: 'Hello', occurrence: 1 } to deeply equal { text: 'Hello', occurrence: 1, …(1) }
+AssertionError: expected …(3) to have a length of 5 but got 3
+TypeError: Cannot read properties of undefined (reading 'textContent')
+ Test Files  3 failed (3)
+      Tests  9 failed | 94 passed (103)
+```
+
+#### Contract case for two-device note link merges
+With `src/js/sync/push.js` of `4141dfc`, the new case already passes.
+The `Edit-Time` header gives the server the same merge, since one entry's fields share one time.
+The unit push test is the red proof for the body field; the contract case covers the end-to-end merge.
+
+Command: `TODOS_SERVER_DIR=node_modules/.cache/t0237/todos-server npx vitest run --config vitest.contract.config.js -t "merges note edits"`
+Exit code: 0
+
+```text
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+```
+
+#### Green phase: full unit suite
+Command: `npx vitest run`
+Exit code: 0
+
+```text
+ Test Files  60 passed (60)
+      Tests  1423 passed (1423)
+   Start at  14:28:46
+   Duration  11.76s (environment 48%, tests 37%, import 10%, transform 2%, worker 1%, setup 1%)
+    Isolate  60 workers spawned · ~775ms startup each (spawn + environment, per file)
+             at least ~5.87s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+#### Green phase: lint and service worker precache
+Command: `npm run lint`
+Exit code: 0
+
+```text
+> todos-webapp@0.4.1-pre lint
+> eslint .
+```
+
+Command: `npm run check:sw`
+Exit code: 0
+
+```text
+> todos-webapp@0.4.1-pre check:sw
+> node scripts/check-sw-version.mjs
+OK: 128 precached files match VERSION 2026-11-15.15.
+```
+
+#### Green phase: contract suite against a local todos.server
+Command: `TODOS_SERVER_DIR=node_modules/.cache/t0237/todos-server npm run test:contract`
+Exit code: 0
+
+```text
+> todos-webapp@0.4.1-pre test:contract
+> vitest run --config vitest.contract.config.js
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0237-show-task-notes-on-their-occurrence-and-let
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  14:29:51
+   Duration  3.70s (tests 94%, import 4%, transform 3%)
+```
+
+#### Green phase: task editor e2e spec
+Command: `npx playwright test tests/e2e/task-editor.spec.js`
+Exit code: 0
+
+```text
+Running 10 tests using 4 workers
+  ✓   2 [chromium] › tests\e2e\task-editor.spec.js:64:3 › the editor opens from a row with focus on the description, and Escape returns to the row at 390 px (3.4s)
+  ✓   4 [chromium] › tests\e2e\task-editor.spec.js:64:3 › the editor opens from a row with focus on the description, and Escape returns to the row at 1440 px (3.4s)
+  ✓   3 [chromium] › tests\e2e\task-editor.spec.js:87:1 › every field saves on change without a Save button, and the changes survive a reload (TSK-1 to TSK-7) (4.1s)
+  ✓   1 [chromium] › tests\e2e\task-editor.spec.js:131:1 › ticks a target-3 task to 3/3 and edits its deadline through the lifecycle rules in local mode (4.2s)
+  ✓   5 [chromium] › tests\e2e\task-editor.spec.js:182:1 › typing a due date by keyboard saves nothing until focus leaves the due fields (2.4s)
+  ✓   8 [chromium] › tests\e2e\task-editor.spec.js:265:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6) (3.0s)
+  ✓   6 [chromium] › tests\e2e\task-editor.spec.js:209:1 › the Add to list box adds the task to an existing list or a new one, and chips remove it (TSK-8) (3.9s)
+  ✓   7 [chromium] › tests\e2e\task-editor.spec.js:233:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5) (4.7s)
+  ✓   9 [chromium] › tests\e2e\task-editor.spec.js:292:3 › recurring tasks in local mode › a weekly task ticked this week comes back as ready next week, and its history shows the roll-over (3.1s)
+  ✓  10 [chromium] › tests\e2e\task-editor.spec.js:326:3 › note links in local mode › a note on a daily task shows on its occurrence in the history, and can be made global (3.1s)
+  10 passed (11.8s)
+```
+
+#### Green phase: full e2e suite
+Command: `npx playwright test`
+Exit code: 0
+
+```text
+  210 passed (2.2m)
+```
+
+#### Visual verification after the rework
+The capture spec rolls the daily task over and adds a global note and an occurrence 2 note.
+No console errors, page errors, or HTTP 400 or higher responses occurred.
+
+| View    | Light 1440 px                                              | Dark 390 px                                              |
+| :------ | :--------------------------------------------------------- | :------------------------------------------------------- |
+| Notes   | [after-r2](screenshots/after-r2-light-1440-notes.png)      | [after-r2](screenshots/after-r2-dark-390-notes.png)      |
+| History | [after-r2](screenshots/after-r2-light-1440-history.png)    | [after-r2](screenshots/after-r2-dark-390-history.png)    |
