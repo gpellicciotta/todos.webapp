@@ -12,13 +12,12 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 6, duration_s: 3784.2, input: 624, output: 148742, cache_read: 44566734, cache_write: 504924}
+  worker: {turns: 8, duration_s: 4588.6, input: 732, output: 181072, cache_read: 57693548, cache_write: 574240}
   review: {turns: 2, duration_s: 1493.8, input: 476944, output: 63972, cache_read: 9177308}
 work_duration: 29248.0
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-15T09:21:35Z"
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-15T09:41:14Z"
 review_session: antigravity-20261115-d40cd3
 ---
 # T0228: Let Enter add by default, keep focus in the add field, and open the editor unfocused only on wide screens.
@@ -114,4 +113,7 @@ Size note: Enter's new default touched existing specs, Settings, docs, the galle
   - Files touched: 22.
   - Lines touched: 626.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 2 requested (mode: agent).
 
