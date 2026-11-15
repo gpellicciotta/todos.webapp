@@ -5,20 +5,22 @@ session: claude-20261115-09d5df
 needs: []
 branch: task/T0225-complete-a-task-with-one-click-on-its
 worktree: .plan/work/T0225-complete-a-task-with-one-click-on-its
-status: active
+status: completed
 started_at: "2026-11-15T00:47:40Z"
-ended_at: —
+ended_at: "2026-11-15T01:26:21Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 3111.4, input: 424, output: 134504, cache_read: 32504060, cache_write: 413654}
-  review: {turns: 2, duration_s: 864.8, input: 400968, output: 42604, cache_read: 7035968}
-review_status: pending
+  review: {turns: 4, duration_s: 1424.2, input: 694080, output: 62422, cache_read: 10480316}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-15T01:21:34Z"
-review_session: antigravity-20261115-b62b32
-work_duration: 1437.5
+review_session: antigravity-20261115-0292ad
+work_duration: 2320.5
+reviewed_by: "@gemini"
+completion-commit: 1ce59eca455371d3ea8a509060574f5fc8f50dd6
 ---
 # T0225: Complete a task with one click on its status button, keeping the full status menu one step away
 
@@ -42,7 +44,7 @@ Size estimate: 8 files, 300 lines.
 - [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
 - [x] **[Visual]**    Inspect rows at 390 px and 1440 px, in both themes, by mouse, touch, and keyboard.
 - [x] **[Doc]**       Update TSK-4, the Task Row design, the shortcut list, the wireframes, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-12] **[Doc]**
@@ -102,4 +104,11 @@ Size estimate: 8 files, 300 lines.
 
 - [2026-11-15] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 2 approved by @gemini: All round 1 defects and process gaps are resolved, and the task meets every goal and project guideline.
+  - Findings: [review-findings-2.md](T0225-complete-a-task-with-one-click-on-its/review-findings-2.md).
+
+- [2026-11-15] **[Complete]**
+  Task completed successfully.
 

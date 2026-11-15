@@ -7,7 +7,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0235 [needs: T0224] Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history.
 - [ ] T0236 [needs: T0224] Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable.
 - [!] T0237 [reason: blocked: needs T0224 occurrences in the store and T0235 task history view] [needs: T0224, T0235] [owner: @claude] Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence.
-- [~] T0225 [owner: @claude] Complete a task with one click on its status button, keeping the full status menu one step away.
+- [x] T0225 Complete a task with one click on its status button, keeping the full status menu one step away.
 - [ ] T0228 Add a rapid entry mode where adding keeps focus in the field and skips the task editor.
 - [ ] T0229 Parse due dates, times, and list tags typed in the add field into the new task.
 - [ ] T0223 Improve task group headers with more padding, an 'n of m' count, and collapsible groups.
