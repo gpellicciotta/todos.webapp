@@ -22,3 +22,13 @@
 - Integration: e2e filters a grouped list, checks the "6 of 10" style count, then collapses and expands a group by mouse and keyboard.
 
 Completion check: `npm run test:unit` and the list e2e spec pass.
+
+### Execution Notes
+- Undeclared files touched: `src/js/core/query.js`, `src/js/views/list.js`, `src/js/views/all-tasks.js`, `src/service-worker.js`.
+- Also touched: `tests/unit/query.test.js`, `tests/unit/task-list.test.js`, `tests/unit/all-tasks.test.js`, `tests/e2e/all-tasks.spec.js`.
+- Also touched: `docs/requirements.md`, `docs/specs/visual-style-guide.md`, `scripts/draw-wireframes.py`.
+- `tests/unit/list.test.js` needed no change; its grouped test still passes.
+
+Size note: 15 counted files and 427 lines; one header element, its count source, tests, and docs cannot merge apart.
+Mechanical command: `python scripts/draw-wireframes.py docs/img/ui` (keeps only `docs/img/ui/view-options.svg`).
+Mechanical command: `node scripts/check-sw-version.mjs --update` (rewrites `scripts/sw-precache-hashes.json`).
