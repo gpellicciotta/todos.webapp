@@ -13,17 +13,18 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 6, duration_s: 5835.2, input: 676, output: 371536, cache_read: 87975760, cache_write: 1539988}
-  review: {turns: 2, duration_s: 1660.0, input: 882562, output: 103670, cache_read: 16594072}
-review_status: pending
+  review: {turns: 4, duration_s: 3617.2, input: 1737052, output: 223160, cache_read: 33385588}
+review_status: rejected
 review_round: 2
 review_requested_at: "2026-11-15T14:17:52Z"
-review_session: antigravity-20261115-1916b3
-work_duration: 3510.0
+review_session: antigravity-20261115-8d9d10
+work_duration: 10039.7
 size_status: approved
 size_estimate: 12 files, 1695 lines
 size_approved: 12 files, 1695 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T14:04:03Z"
+reviewed_by: "@gemini"
 ---
 # T0236: Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable
 
@@ -135,4 +136,28 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 
 - [2026-11-15] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 2 rejected by @gemini: Round 1 fixes, size approval, ESLint, SW check, 1,472 unit tests, 11 e2e tests, and 15 contract tests pass.
+  - Findings: [review-findings-2.md](T0236-write-backup-format-2-with-lifecycle-rules-occurrences/review-findings-2.md).
+
+- [2026-11-15] **[Implement]**
+  Reworked review round 2: global notes replay with occurrence null, rule shapes stay valid across partial one-off and recurring histories, and the changelog consolidates format 2.
+  - Shape-breaking rule edits stay local without effect.
+
+- [2026-11-15] **[Verify]**
+  Eight new unit tests and two new contract tests failed on the round 2 sources; all suites pass at 3ef88e3.
+  - npm test: 1480 passed.
+  - contract: 17 passed.
+  - e2e: 211 passed.
+
+- [2026-11-15] **[Verify]**
+  Size note: round 2 rework grows the task to 11 counted files and 1883 lines, beyond the approved 1695.
+  - The rework adds shape checks and regression tests.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 11.
+  - Lines touched: 1883.
+  - Reopenings: 0.
 

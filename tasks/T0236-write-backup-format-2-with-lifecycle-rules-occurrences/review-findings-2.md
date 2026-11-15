@@ -3,10 +3,13 @@ task: T0236
 round: 2
 verdict: rejected
 reviewer: "@gemini"
-reviewed_at: 2026-11-15T14:17:53Z
+reviewed_at: 2026-11-15T14:34:15Z
 reviewed_commit: "2ea366d"
 base_commit: "4a2896e"
 branch: task/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
+session: antigravity-20261115-8d9d10
+session_agent: antigravity
+session_created_at: 2026-11-15T14:17:53Z
 ---
 # Review Findings: Task T0236 (Round 2)
 

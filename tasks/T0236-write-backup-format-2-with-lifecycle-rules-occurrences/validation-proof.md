@@ -214,3 +214,55 @@ OK: 128 precached files match VERSION 2026-11-15.16.
 ```
 
 `npm run lint` printed no findings.
+
+## Review Round 2 Rework
+
+### Fixes
+- Connected format 2 note replays send `occurrence: null` for global notes; format 1 still omits it.
+- `checkRules` rejects one-off rules with recurrence fields and recurring rules with a deadline, with field paths.
+- `normalizeRules` clears recurrence fields on one-off rules; `editedRules` merges edits as the service does.
+- `firstRules` falls back to the exported rules on a broken shape; replays and the queue skip shape-breaking rule edits.
+- CHANGELOG.md consolidates the format 2 bullets into four net deliverables.
+
+### Red phase: new tests on the round 2 sources (2ea366d backup.js, occurrences.js, queue.js)
+Command: `npx vitest run tests/unit/backup.test.js` (exit code 1)
+
+```text
+     × rejects a version 2 file with a one-off rule with a timezone 11ms
+     × rejects a version 2 file with a one-off rule with an interval 2ms
+     × rejects a version 2 file with a one-off rule with an end count 1ms
+     × rejects a version 2 file with a recurring rule with a due time 1ms
+     × rejects a version 2 file with a recurring rule with overdue handling 1ms
+     × keeps a global note global, and a linked note linked, when it replays notes 7ms
+     × replays a timezone edit of a task whose recurrence came from an unlogged change without breaking the rule shape 4ms
+     × replays an interval edit that an unlogged end of recurrence left on a one-off task without breaking the rule shape 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  8 failed | 103 passed (111)
+```
+
+Command: `TODOS_SERVER_DIR=work/todos-server npx vitest run --config vitest.contract.config.js -t "global note of a recurring|across one-off and recurring"` (exit code 1)
+
+```text
+ × ... replays a global note of a recurring task as global, and a linked note on its occurrence 450ms
+ × ... replays partial rule histories across one-off and recurring changes without a refused rule request 144ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+AssertionError: expected [ { …(8) }, { …(8) } ] to deeply equal []
+      Tests  2 failed | 15 skipped (17)
+```
+
+### Green: all suites at 3ef88e3
+Commands: `npm test`, `npm run lint`, `npm run check:sw`, the contract suite, and `npm run test:e2e` (each exit code 0)
+
+```text
+ Test Files  60 passed (60)
+      Tests  1480 passed (1480)
+OK: 128 precached files match VERSION 2026-11-15.17.
+ ✓ replays a global note of a recurring task as global, and a linked note on its occurrence 117ms
+ ✓ replays partial rule histories across one-off and recurring changes without a refused rule request 137ms
+[... 15 other passing contract tests omitted ...]
+      Tests  17 passed (17)
+  211 passed (2.4m)
+```
+
+`npm run lint` printed no findings.
