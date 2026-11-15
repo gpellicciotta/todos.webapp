@@ -1,11 +1,11 @@
 ---
 id: T0229
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0229-parse-due-dates-times-and-list-tags-typed
+worktree: .plan/work/T0229-parse-due-dates-times-and-list-tags-typed
+status: active
+started_at: "2026-11-15T01:27:48Z"
 ended_at: —
 review: agent
 preview: none
