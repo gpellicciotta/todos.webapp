@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 130.2, input: 56, output: 6580, cache_read: 1365036, cache_write: 97836}
+  worker: {turns: 4, duration_s: 2423.4, input: 528, output: 142678, cache_read: 41633182, cache_write: 545794}
 work_duration: 92.3
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T13:04:59Z"
 ---
 # T0237: Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence
 
@@ -77,4 +80,7 @@ Start after todos.server T0249 adds the link to the REST note routes.
   - Files touched: 21.
   - Lines touched: 675.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
