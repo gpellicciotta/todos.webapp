@@ -5,14 +5,17 @@ session: claude-20261115-c362c7
 needs: []
 branch: task/T0228-add-a-rapid-entry-mode-where-adding-keeps
 worktree: .plan/work/T0228-add-a-rapid-entry-mode-where-adding-keeps
-status: suspended
-started_at: "2026-11-15T01:26:39Z"
+status: active
+started_at: "2026-11-15T08:15:25Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 79.0, input: 32, output: 3986, cache_read: 602388, cache_write: 77042}
+work_duration: 51.7
 ---
-# T0228: Add a rapid entry mode where adding keeps focus in the field and skips the task editor
+# T0228: Let Enter add by default, keep focus in the add field, and open the editor unfocused only on wide screens.
 
 ## Goals
 Let users type many tasks in a row, such as a grocery list, without extra steps per task.
@@ -50,4 +53,7 @@ Size estimate: 8 files, 250 lines.
   Needs user choice: Rapid entry toggle in the add bar, or a Settings switch. Recommended Settings, beside Theme, keeping the 390 px add bar uncluttered.
   - Option A: add bar toggle, quick per-session switching.
   - Option B: Settings switch, device preference.
+
+- [2026-11-15] **[Decided]**
+  User made Enter add by default with a Make Enter add Settings switch; compact adds skip the editor, wide adds open it unfocused.
 
