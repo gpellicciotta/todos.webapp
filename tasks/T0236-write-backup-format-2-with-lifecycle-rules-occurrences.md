@@ -5,7 +5,7 @@ session: claude-20261115-81474f
 needs: []
 branch: task/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
 worktree: .plan/work/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
-status: active
+status: suspended
 started_at: "2026-11-15T11:46:57Z"
 ended_at: —
 review: agent
@@ -13,9 +13,15 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 3548.8, input: 440, output: 261176, cache_read: 45706692, cache_write: 592124}
-review_status: pending
+  review: {turns: 2, duration_s: 1660.0, input: 882562, output: 103670, cache_read: 16594072}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-15T12:16:43Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261115-1916b3
+work_duration: 2620.6
+size_status: requested
+size_estimate: 12 files, 1695 lines
 ---
 # T0236: Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable
 
@@ -81,4 +87,34 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 
 - [2026-11-15] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 1 rejected by @gemini: Format 2 export, format 1 compatibility, ESLint, SW check, 1,431 unit tests, backup e2e, and 11 contract tests pass.
+  - Findings: [review-findings-1.md](T0236-write-backup-format-2-with-lifecycle-rules-occurrences/review-findings-1.md).
+
+- [2026-11-15] **[Size]**
+  Size note: 12 files, 1324 lines, above the large line; round 1 rework adds more. Manager: keep whole, since format 2 export and import cannot merge apart; human approval needed.
+
+- [2026-11-15] **[Implement]**
+  Reworked review round 1: replays settle on the exported rules, overwrite rebuilds tasks with differing events, rule edit values are validated, ended series close with end-recurrence.
+  - Deterministic UUIDv7 identifiers keep repeated imports unchanged.
+  - Settling edit comes 1 ms after the last rule edit.
+
+- [2026-11-15] **[Verify]**
+  Fifteen new unit tests and two new contract tests failed on the round 1 code; all suites pass at 0e87bc9.
+  - npm test: 1447 passed.
+  - contract: 13 passed.
+  - e2e: 210 passed.
+
+- [2026-11-15] **[Doc]**
+  Documented the settling rule edit, deterministic identifiers, ended series, overwrite rebuilds, and rule value checks in backup-format.md and CHANGELOG.md.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 11.
+  - Lines touched: 1685.
+  - Reopenings: 0.
+
+- [2026-11-15] **[Size]**
+  Size approval requested for 12 files, 1695 lines.
 

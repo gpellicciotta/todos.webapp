@@ -99,3 +99,70 @@ Command: `npm run test:e2e -- --reporter=line` (exit code 0)
 [... 172 progress lines omitted ...]
   210 passed (2.2m)
 ```
+
+## Review Round 1 Rework
+
+### Fixes
+- Rule-edit replay settles on the exported rules with one more `edit-lifecycle-rules` event, at least 1 ms after the last rule edit.
+- Overwrite rebuilds a task whose fields and rules match but whose events or occurrences differ.
+- Events written anew take deterministic UUIDv7 identifiers, so a second import of the same file changes nothing.
+- `checkDetails` validates the `old` and `new` rule values with the rule checks, naming paths such as `events[2].details.timezone.new`.
+- An ended recurring series closes with `end-recurrence`; only a series cancelled before its period end gets a user `cancel`.
+
+### Red phase: new unit tests on the round 1 code (14dde2b sources)
+Command: `npx vitest run tests/unit/backup.test.js` with `src/js/core/backup.js` and `occurrences.js` from 14dde2b (exit code 1)
+
+```text
+     × rejects a version 2 file with a rule edit to a target count of 0 12ms
+     × rejects a version 2 file with a rule edit from an unknown overdue handling 1ms
+     × rejects a version 2 file with a rule edit to an unknown recurrence unit 1ms
+     × rejects a version 2 file with a rule edit to an interval of 100 1ms
+     × rejects a version 2 file with a rule edit to an unknown timezone 1ms
+     × rejects a version 2 file with a rule edit to a due time that is no UTC time 1ms
+     × rejects a version 2 file with a rule edit to an impossible end date 1ms
+     × reaches the exported rules when the rule edits miss a later change, with an edit event at the last update 7ms
+     × never lets older local rule edits override the rules of a newer backup task 3ms
+     × closes a series that ended met, as completed with end-recurrence, never with a user cancel 5ms
+     × closes a series that ended unmet, as cancelled with end-recurrence, never with a user cancel 5ms
+     × cancels a series that the user cancelled before its period ended 3ms
+     × rebuilds a task whose fields and rules match the backup but whose events or occurrences differ 4ms
+     × replays the rules that a partial rule history misses as one more rule edit, so the service reaches them 3ms
+      Tests  14 failed | 88 passed (102)
+```
+
+The re-import stability test passed on the round 1 code, since that overwrite never compared events; it now guards the deterministic identifiers.
+The settle-time test failed on the first rework commit (44f28ce), before the 1 ms rule:
+
+```text
+     × gives the settling rule edit a time after the last logged rule edit, since the service merges rules by edit time 68ms
+-     "2026-11-01T10:00:00.001Z",
++     "2026-11-01T10:00:00.000Z",
+```
+
+### Red phase: new contract tests on the round 1 code
+Command: `TODOS_SERVER_DIR=work/todos-server npx vitest run --config vitest.contract.config.js -t "partial rule history|ended daily"` (exit code 1)
+
+```text
+ × ... replays a partial rule history with one more rule edit, so the server reaches the exported rules 367ms
+ × ... replays ended daily series without a user cancel, and the server closes them with end-recurrence 122ms
+AssertionError: expected 3 to be 5 // Object.is equality
+AssertionError: expected [ [ …(2) ], [ …(2) ] ] to deeply equal [ [ …(2) ] ]
+      Tests  2 failed | 11 skipped (13)
+```
+
+### Green: all suites at 0e87bc9
+Commands: `npm test`, `npm run lint`, `npm run check:sw`, the contract suite, and `npm run test:e2e` (each exit code 0)
+
+```text
+ Test Files  60 passed (60)
+      Tests  1447 passed (1447)
+OK: 128 precached files match VERSION 2026-11-15.15.
+ ✓ replays a format 2 backup imported while connected, so the server rebuilds a target-3 task at 2 of 3 151ms
+ ✓ replays a partial rule history with one more rule edit, so the server reaches the exported rules 119ms
+ ✓ replays ended daily series without a user cancel, and the server closes them with end-recurrence 179ms
+[... 10 other passing contract tests omitted ...]
+      Tests  13 passed (13)
+  210 passed (2.2m)
+```
+
+`npm run lint` printed no findings.
