@@ -14,17 +14,17 @@ protocol: standard
 size_status: approved
 size_estimate: 60 files, 2734 lines
 usage:
-  worker: {turns: 8, duration_s: 7054.0, input: 532, output: 164146, cache_read: 133336186, cache_write: 381874}
+  worker: {turns: 10, duration_s: 7165.2, input: 548, output: 166438, cache_read: 137064774, cache_write: 1583120}
   review: {turns: 2, duration_s: 2025.2, input: 1031372, output: 101440, cache_read: 15292238}
-work_duration: 4764.4
+work_duration: 31064.9
 size_approved: 60 files, 2734 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T07:58:09Z"
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-15T00:19:01Z"
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-15T08:06:48Z"
 review_session: antigravity-20261115-aad8d2
+reviewed_by: "@gemini"
 ---
 # T0224: Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync
 
@@ -141,4 +141,7 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 
 - [2026-11-15] **[Size]**
   Resumed after @giova approved the size for 60 files and 2734 lines; the round 1 rework at 9543de7 stays verified and unchanged.
+
+- [2026-11-15] **[Review]**
+  Round 2 requested (mode: agent).
 
