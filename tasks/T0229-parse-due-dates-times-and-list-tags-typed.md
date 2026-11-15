@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 1928.0, input: 292, output: 111750, cache_read: 16840292, cache_write: 314752}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T01:44:03Z"
 ---
 # T0229: Parse due dates, times, and list tags typed in the add field into the new task
 
@@ -71,4 +76,7 @@ Size estimate: 6 files, 250 lines.
   - Files touched: 13.
   - Lines touched: 276.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
