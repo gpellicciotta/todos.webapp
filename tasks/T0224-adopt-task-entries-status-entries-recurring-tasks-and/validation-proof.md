@@ -163,3 +163,43 @@ Exit code: 0
 [201/201] [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6)
   201 passed (2.0m)
 ```
+
+## Round 3: after the merge of main
+`git fetch origin` showed `main` and `origin/main` at `4e687d7`, already merged into the branch, so no new merge was needed.
+The merge left a stale precache hash for `js/views/task-list.js`, so `npm run check:sw` failed on HEAD `afc6543`:
+
+```text
+ERROR: precached files changed but VERSION is still 2026-11-15.4:
+  js/views/task-list.js
+Bump VERSION in service-worker.js, then run: node scripts/check-sw-version.mjs --update
+```
+
+The service worker `VERSION` became `2026-11-15.5`, followed by `node scripts/check-sw-version.mjs --update`.
+
+### Green: lint, service worker check, and unit suite
+Commands: `npx eslint .` (exit code 0, no output), `npm run check:sw` (exit code 0), and `npm test` (exit code 0)
+
+```text
+OK: 126 precached files match VERSION 2026-11-15.5.
+ Test Files  57 passed (57)
+      Tests  1283 passed (1283)
+```
+
+### Green: contract suite against a local todos.server
+Command: `TODOS_SERVER_DIR=node_modules/.cache/t0224/todos-server npm run test:contract`
+Exit code: 0
+
+```text
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+```
+
+### Green: e2e suite
+Command: `npm run test:e2e -- --reporter=line`
+Exit code: 0
+
+```text
+[204/205] [chromium] › tests\e2e\task-editor.spec.js:181:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5)
+[205/205] [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6)
+  205 passed (2.3m)
+```

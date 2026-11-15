@@ -15,16 +15,15 @@ size_status: approved
 size_estimate: 60 files, 2734 lines
 usage:
   worker: {turns: 14, duration_s: 7320.6, input: 584, output: 171256, cache_read: 148219124, cache_write: 1593504}
-  review: {turns: 2, duration_s: 2025.2, input: 1031372, output: 101440, cache_read: 15292238}
-work_duration: 31144.0
+  review: {turns: 4, duration_s: 2877.2, input: 1654490, output: 139660, cache_read: 21371598}
+work_duration: 31629.9
 size_approved: 60 files, 2734 lines
 size_approved_by: "@giova"
-size_approved_at: "2026-11-15T07:58:09Z"
+size_approved_at: "2026-11-15T08:17:22Z"
 review_status: pending
-review_round: 2
-review_requested_at: "2026-11-15T08:06:48Z"
-review_session: antigravity-20261115-aad8d2
-reviewed_by: "@gemini"
+review_round: 3
+review_requested_at: "2026-11-15T08:28:04Z"
+review_session: antigravity-20261115-4f2fa8
 ---
 # T0224: Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync
 
@@ -144,4 +143,41 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 
 - [2026-11-15] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 2 approved by @gemini: Commit `9543de7` resolves all five Round 1 defects (D1–D5) and both process gaps (P1–P2).
+  - Findings: [review-findings-2.md](T0224-adopt-task-entries-status-entries-recurring-tasks-and/review-findings-2.md).
+
+- [2026-11-15] **[Suspended]**
+  Circuit breaker tripped after 3 consecutive completion refusals.
+
+- [2026-11-15] **[Size]**
+  Size approved by @giova for 60 files, 2734 lines.
+
+- [2026-11-15] **[Implement]**
+  Manager merged main into the branch, resolving conflicts with T0225, T0229, and T0223 on the new task shape.
+  - Lint, sw check, 1283 unit and 205 e2e tests pass.
+
+- [2026-11-15] **[Size]**
+  Size note: the merge fix-ups bring the diff to 60 files, 2773 lines, 39 lines over the approved size.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 60.
+  - Lines touched: 2773.
+  - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 3 requested (mode: agent); the work changed after the round 2 approval of commit 9543de7.
+
+- [2026-11-15] **[Decided]**
+  Manager: next turn, merge main into the branch first if main moved (T0228 may land), rerun tests, then let review round 3 run.
+
+- [2026-11-15] **[Verify]**
+  Main had not moved; refreshed the stale task-list.js precache hash with VERSION 2026-11-15.5, then reran every suite on the merged branch.
+  - Unit: 1283 passed; contract: 9 passed.
+  - E2e: 205 passed; lint and check:sw clean.
+
+- [2026-11-15] **[Size]**
+  Size note: Merge fix-ups and the version bump measure 61 files and 2819 lines, slightly over the approved 60 files and 2734 lines.
 
