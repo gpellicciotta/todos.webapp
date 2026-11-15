@@ -34,7 +34,7 @@ Size note: Review round 1 added edit-time pushes, past-occurrence editing, and l
 Size note: Human size approval for the measured size is still outstanding.
 
 ### Requirements
-Follow the todos.server [Notes and Occurrences](../../../../todos.server/docs/specs/business-logic-spec.md#notes-and-occurrences) rules.
+Follow the todos.server [Notes and Occurrences](../../../../../todos.server/docs/specs/business-logic-spec.md#notes-and-occurrences) rules.
 - Store: `addNote` links a note on a recurring task as the server's `defaultLink` does.
   - It takes the newest occurrence that began by the creation time, while its period still runs.
   - A one-off task, or a time in no period, keeps the note global unless the caller passes an occurrence.

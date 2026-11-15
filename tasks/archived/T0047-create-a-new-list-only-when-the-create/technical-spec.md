@@ -6,16 +6,16 @@
 - **[Decided]** Draft fields lock while creation is pending to prevent lost edits and duplicate submissions.
 
 ### Declared Files
-- [list-editor.js](../../../src/js/views/list-editor.js)
-- [lists.js](../../../src/js/store/lists.js)
-- [db.js](../../../src/js/store/db.js)
-- [version.js](../../../src/js/version.js)
-- [service-worker.js](../../../src/service-worker.js)
-- [list-editor.test.js](../../../tests/unit/list-editor.test.js)
-- [lists.spec.js](../../../tests/e2e/lists.spec.js)
-- [requirements.md](../../../docs/requirements.md)
-- [CHANGELOG.md](../../../CHANGELOG.md)
-- [package.json](../../../package.json)
+- [list-editor.js](../../../../src/js/views/list-editor.js)
+- [lists.js](../../../../src/js/store/lists.js)
+- [db.js](../../../../src/js/store/db.js)
+- [version.js](../../../../src/js/version.js)
+- [service-worker.js](../../../../src/service-worker.js)
+- [list-editor.test.js](../../../../tests/unit/list-editor.test.js)
+- [lists.spec.js](../../../../tests/e2e/lists.spec.js)
+- [requirements.md](../../../../docs/requirements.md)
+- [CHANGELOG.md](../../../../CHANGELOG.md)
+- [package.json](../../../../package.json)
 
 Size estimate: 10 files, 300 lines
 Size note: Shared validation, release metadata, and documentation support one creation flow and remain independently mergeable together.

@@ -15,8 +15,8 @@ session_created_at: 2026-11-15T01:21:35Z
 
 ## Summary
 All round 1 defects and process gaps are resolved, and the task meets every goal and project guideline.
-- [service-worker.js](../../../src/service-worker.js) and [sw-precache-hashes.json](../../../scripts/sw-precache-hashes.json) pass `npm run check:sw`.
-- [visual-style-guide.md](../../../docs/specs/visual-style-guide.md) accurately documents the status button click toggle and menu paths, passing the design check.
+- [service-worker.js](../../../../src/service-worker.js) and [sw-precache-hashes.json](../../../../scripts/sw-precache-hashes.json) pass `npm run check:sw`.
+- [visual-style-guide.md](../../../../docs/specs/visual-style-guide.md) accurately documents the status button click toggle and menu paths, passing the design check.
 - Unit tests, ESLint, wireframe pytest, task validation, and targeted Playwright specs all pass cleanly.
 
 ## Defects

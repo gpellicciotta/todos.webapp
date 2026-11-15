@@ -15,7 +15,7 @@ session_created_at: 2026-11-15T10:35:33Z
 
 ## Summary
 Approved after verifying all round 1 rework items, automated test suites, visual gallery captures, and task validation checks.
-[task-editor.js](../../../src/js/views/task-editor.js) updates the tick icon to its resulting status, and [settings.js](../../../src/js/views/settings.js), specifications, gallery specimens, and [CHANGELOG.md](../../../CHANGELOG.md) match.
+[task-editor.js](../../../../src/js/views/task-editor.js) updates the tick icon to its resulting status, and [settings.js](../../../../src/js/views/settings.js), specifications, gallery specimens, and [CHANGELOG.md](../../../../CHANGELOG.md) match.
 Verification passed 1,317 unit tests, ESLint, the precache check, 70 affected Playwright specs, and task file validation.
 
 ## Defects

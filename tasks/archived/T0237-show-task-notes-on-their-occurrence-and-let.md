@@ -27,7 +27,7 @@ completion-commit: 4a2896e472e24233545b2ca5dc694dd21796d924
 ## Goals
 Show each note of a recurring task on its occurrence in the task history, and global notes on the task.
 Let the note editor keep a note global or tie it to an occurrence, for one-off and recurring tasks.
-Send and merge the note `occurrence` field, following [Notes and Occurrences](../../../todos.server/docs/specs/business-logic-spec.md#notes-and-occurrences) and [Task Notes](../../../todos.server/docs/specs/rest-api-spec.md#task-notes).
+Send and merge the note `occurrence` field, following [Notes and Occurrences](../../../../todos.server/docs/specs/business-logic-spec.md#notes-and-occurrences) and [Task Notes](../../../../todos.server/docs/specs/rest-api-spec.md#task-notes).
 Start after todos.server T0249 adds the link to the REST note routes.
 
 ## Task Execution Steps
