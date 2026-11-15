@@ -1,11 +1,11 @@
 ---
 id: T0225
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0225-complete-a-task-with-one-click-on-its
+worktree: .plan/work/T0225-complete-a-task-with-one-click-on-its
+status: active
+started_at: "2026-11-15T00:47:40Z"
 ended_at: —
 review: agent
 preview: none
