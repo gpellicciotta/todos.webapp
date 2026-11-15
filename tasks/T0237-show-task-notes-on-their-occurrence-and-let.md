@@ -5,20 +5,22 @@ session: claude-20261115-f0814b
 needs: []
 branch: task/T0237-show-task-notes-on-their-occurrence-and-let
 worktree: .plan/work/T0237-show-task-notes-on-their-occurrence-and-let
-status: active
+status: completed
 started_at: "2026-11-15T12:45:42Z"
-ended_at: —
+ended_at: "2026-11-15T13:42:49Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 6, duration_s: 3827.2, input: 732, output: 212224, cache_read: 69398786, cache_write: 670982}
-  review: {turns: 2, duration_s: 2022.2, input: 666458, output: 88392, cache_read: 14179790}
-work_duration: 49931.3
-review_status: pending
+  review: {turns: 4, duration_s: 3069.8, input: 1202466, output: 120346, cache_read: 24135688}
+work_duration: 51185.2
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-15T13:33:59Z"
-review_session: antigravity-20261115-2ddebf
+review_session: antigravity-20261115-d0a6ab
+reviewed_by: "@gemini"
+completion-commit: 4a2896e472e24233545b2ca5dc694dd21796d924
 ---
 # T0237: Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence
 
@@ -35,7 +37,7 @@ Start after todos.server T0249 adds the link to the REST note routes.
 - [x] **[Implement]** Show notes on their occurrence and add the global-or-occurrence choice to the note editor.
 - [x] **[Verify]**    Run the tests and check the views in the browser.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-14] **[Doc]**
@@ -110,4 +112,11 @@ Start after todos.server T0249 adds the link to the REST note routes.
 
 - [2026-11-15] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 2 approved by @gemini: Approved on `f48c929`: all round-1 defects and process gaps are resolved, and unit, contract, Playwright, and lint checks pass.
+  - Findings: [review-findings-2.md](T0237-show-task-notes-on-their-occurrence-and-let/review-findings-2.md).
+
+- [2026-11-15] **[Complete]**
+  Task completed successfully.
 

@@ -6,13 +6,14 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0234 Show event actions, done and target counts, and lifecycle rule editing in the web app task views.
 - [x] T0235 Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history.
 - [!] T0236 [reason: needs human size approval (12 files, 1695 lines)] [owner: @claude] Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable.
-- [~] T0237 [owner: @claude] Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence.
+- [x] T0237 Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence.
 - [x] T0225 Complete a task with one click on its status button, keeping the full status menu one step away.
 - [x] T0228 Let Enter add by default, keep focus in the add field, and open the editor unfocused only on wide screens.
 - [x] T0229 Parse due dates, times, and list tags typed in the add field into the new task.
 - [x] T0223 Improve task group headers with more padding, an 'n of m' count, and collapsible groups.
 
 ## Backlog
+- [ ] T0238 Make the compact layout shell e2e test wait for the action bar, since full parallel runs fail it.
 - [ ] T0227 [needs: T0226] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [ ] T0226 Notify the user when a task comes due while the app is open, with opt-in and a lead time.
 - [ ] T0222 Name the Shared filter in the hidden-task toast and let Show clear it.
