@@ -5,23 +5,26 @@ session: claude-20261115-e8f1bb
 needs: []
 branch: task/T0224-adopt-task-entries-status-entries-recurring-tasks-and
 worktree: .plan/work/T0224-adopt-task-entries-status-entries-recurring-tasks-and
-status: active
+status: suspended
 started_at: "2026-11-14T23:31:33Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
-size_status: approved
-size_estimate: 30 files, 1600 lines
+size_status: requested
+size_estimate: 60 files, 2734 lines
 usage:
   worker: {turns: 6, duration_s: 5732.2, input: 348, output: 89500, cache_read: 79247284, cache_write: 257826}
-work_duration: 2029.8
+  review: {turns: 2, duration_s: 2025.2, input: 1031372, output: 101440, cache_read: 15292238}
+work_duration: 4079.7
 size_approved: 30 files, 1600 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-14T23:30:40Z"
-review_status: pending
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-15T00:19:01Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261115-aad8d2
 ---
 # T0224: Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync
 
@@ -44,6 +47,7 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 - [x] **[Implement]** Point status, due time, and activity readers in core, views, and backup at the new shape.
 - [x] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
 - [x] **[Doc]**       Update local-store.md, the affected requirements, and CHANGELOG.md.
+- [x] **[Implement]** Fix review round 1 defects D1 to D5 and the changelog areas, proving each test fails first.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -104,4 +108,31 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 
 - [2026-11-15] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 1 rejected by @gemini: The v5 store schema, occurrence event folding, status-to-event mapping, sync push/merge, and Java-backed contract harness are well structured.
+  - Findings: [review-findings-1.md](T0224-adopt-task-entries-status-entries-recurring-tasks-and/review-findings-1.md).
+
+- [2026-11-15] **[Implement]**
+  Fixed round 1 findings: note ownership by user, rollback chains, migrated undo data, recurring rule invariants, disconnect events, and changelog areas.
+  - 12 new tests failed with the fixes reverse-applied.
+
+- [2026-11-15] **[Verify]**
+  Reran lint, check:sw, npm test, the contract suite, and the e2e suite after the rework; all passed.
+  - Unit: 1232 passed.
+  - Contract: 9 passed.
+  - E2e: 201 passed.
+
+- [2026-11-15] **[Size]**
+  Size note: Rework raised the measure to 58 counted files and 2594 lines; plan measures 60 files and 2734 lines with mechanical files.
+  - Requesting renewed human size approval, per review finding P1.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 58.
+  - Lines touched: 2594.
+  - Reopenings: 0.
+
+- [2026-11-15] **[Size]**
+  Size approval requested for 60 files, 2734 lines.
 

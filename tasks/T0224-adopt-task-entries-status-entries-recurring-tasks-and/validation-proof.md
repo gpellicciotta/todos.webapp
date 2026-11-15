@@ -99,4 +99,67 @@ Exit code: 0
 ### Mechanical changes
 - `sed -i 's/status-todo/status-ready/g' src/img/icons.svg src/css/app-components.css src/demo/visual-style-gallery.html`
 - `sed -i 's/data-status="todo"/data-status="ready"/g; s/value="todo"/value="ready"/g' src/demo/visual-style-gallery.html`
-- `node scripts/check-sw-version.mjs --update` after the service worker `VERSION` bump.
+- `node scripts/check-sw-version.mjs --update` after each service worker `VERSION` bump, now `2026-11-15.2`.
+
+## Review Round 1 Rework
+
+### Fixes
+- D1: `ownsNote` in `src/js/views/notes.js` compares `owner-id` with the connected user; others show Collaborator or Former member.
+- D1: `planDisconnect` clears the service `owner-id` of kept tasks and notes.
+- D2: rolling back an event or rule edit rewrites `undo.before` of the later queued events of that task.
+- D3: migrated `post-event` entries keep their `undo.before`, and migrated `update-rules` entries their `undo.fields`.
+- D4: `normalizeRules` keeps `due-time` and `overdue-handling` null on recurring rules; format 1 import keeps recurring rules.
+- D5: `planDisconnect` gives kept tasks events that reproduce their occurrence, so a later adoption keeps the status.
+- P2: the changelog uses the FrontEnd and DevEx areas, in four bullets.
+
+### Red phase: the new tests with the source fixes reverse-applied
+Commands: `git diff -- src > r2-src.patch`, `git apply -R r2-src.patch`, the vitest run below, then `git apply r2-src.patch`.
+Command: `npx vitest run tests/unit/occurrences.test.js tests/unit/store-tasks.test.js tests/unit/backup.test.js tests/unit/queue.test.js tests/unit/push.test.js tests/unit/store-db.test.js tests/unit/merge.test.js tests/unit/pull.test.js tests/unit/task-editor.test.js`
+Exit code: 1
+
+```text
+ FAIL  tests/unit/backup.test.js > exportBackup > exports a recurring task to format 1 and imports it back with its recurring rules intact
+ FAIL  tests/unit/merge.test.js > disconnecting > keeps own lists and tasks and removes the rest
+ FAIL  tests/unit/merge.test.js > disconnecting > gives kept tasks local events that reproduce a status set on another device
+ FAIL  tests/unit/merge.test.js > disconnecting > replaces local events that fold to another status than the pulled occurrence
+ FAIL  tests/unit/occurrences.test.js > rules > keeps the due time and overdue handling of a recurring task empty
+ FAIL  tests/unit/pull.test.js > disconnecting > keeps a status set on another device through a disconnect and the next adoption (CON-8, CON-4)
+ FAIL  tests/unit/push.test.js > handling replies > restores the occurrence when the service refuses every queued tick
+ FAIL  tests/unit/queue.test.js > queued events and rule edits > restores the original occurrence when every queued event is rolled back in turn (SYN-9)
+ FAIL  tests/unit/queue.test.js > queued events and rule edits > restores the rules and occurrence when a rule edit and the event after it are both rolled back
+ FAIL  tests/unit/store-db.test.js > the version 5 migration > keeps the undo data of migrated rule edits and events, so a refused one rolls back
+ FAIL  tests/unit/store-tasks.test.js > createTask > creates a recurring task without due time or overdue handling, as the service requires
+ FAIL  tests/unit/task-editor.test.js > mountTaskEditor by role (SHR-4, SHR-5) > offers Edit and Delete on synced own notes only, and names the authors of other notes (NOT-2, NOT-4)
+ Test Files  9 failed (9)
+      Tests  12 failed | 222 passed (234)
+```
+
+### Green: lint, service worker check, and unit suite
+Commands: `npx eslint .` (exit code 0, no output), `npm run check:sw` (exit code 0), and `npm test` (exit code 0)
+
+```text
+OK: 125 precached files match VERSION 2026-11-15.2.
+ Test Files  56 passed (56)
+      Tests  1232 passed (1232)
+```
+
+### Green: contract suite against a local todos.server
+Command: `TODOS_SERVER_DIR=node_modules/.cache/t0224/todos-server npm run test:contract`
+Exit code: 0
+
+```text
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+```
+
+`processes list --cwd node_modules/.cache/t0224/todos-server` printed `(empty)` after the run.
+
+### Green: e2e suite
+Command: `npm run test:e2e -- --reporter=line`
+Exit code: 0
+
+```text
+[200/201] [chromium] › tests\e2e\task-editor.spec.js:181:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5)
+[201/201] [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6)
+  201 passed (2.0m)
+```
