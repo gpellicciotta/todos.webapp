@@ -12,11 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 6, duration_s: 5835.2, input: 676, output: 371536, cache_read: 87975760, cache_write: 1539988}
+  worker: {turns: 8, duration_s: 6878.8, input: 780, output: 421080, cache_read: 110165660, cache_write: 1610262}
   review: {turns: 4, duration_s: 3617.2, input: 1737052, output: 223160, cache_read: 33385588}
-review_status: rejected
-review_round: 2
-review_requested_at: "2026-11-15T14:17:52Z"
+review_status: pending
+review_round: 3
+review_requested_at: "2026-11-15T14:43:21Z"
 review_session: antigravity-20261115-8d9d10
 work_duration: 10039.7
 size_status: approved
@@ -24,7 +24,6 @@ size_estimate: 12 files, 1695 lines
 size_approved: 12 files, 1695 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T14:04:03Z"
-reviewed_by: "@gemini"
 ---
 # T0236: Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable
 
@@ -160,4 +159,7 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
   - Files touched: 11.
   - Lines touched: 1883.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 3 requested (mode: agent).
 
