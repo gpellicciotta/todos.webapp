@@ -5,9 +5,9 @@ session: claude-20261115-e8f1bb
 needs: []
 branch: task/T0224-adopt-task-entries-status-entries-recurring-tasks-and
 worktree: .plan/work/T0224-adopt-task-entries-status-entries-recurring-tasks-and
-status: active
+status: completed
 started_at: "2026-11-15T08:04:34Z"
-ended_at: —
+ended_at: "2026-11-15T09:16:02Z"
 review: agent
 preview: none
 protocol: standard
@@ -15,15 +15,17 @@ size_status: approved
 size_estimate: 60 files, 2734 lines
 usage:
   worker: {turns: 18, duration_s: 8789.0, input: 752, output: 209480, cache_read: 201695658, cache_write: 1658336}
-  review: {turns: 6, duration_s: 4790.6, input: 2659566, output: 206414, cache_read: 38465814}
-work_duration: 34574.2
+  review: {turns: 8, duration_s: 5426.8, input: 3221024, output: 228436, cache_read: 47857686}
+work_duration: 35282.9
 size_approved: 60 files, 2734 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T08:17:22Z"
-review_status: pending
+review_status: approved
 review_round: 4
 review_requested_at: "2026-11-15T09:10:38Z"
-review_session: antigravity-20261115-e981a1
+review_session: antigravity-20261115-97f9db
+reviewed_by: "@gemini"
+completion-commit: 08b7eb88155c9ffd11a3c508542332c8bf438ded
 ---
 # T0224: Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync
 
@@ -48,7 +50,7 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 - [x] **[Doc]**       Update local-store.md, the affected requirements, and CHANGELOG.md.
 - [x] **[Implement]** Fix review round 1 defects D1 to D5 and the changelog areas, proving each test fails first.
 - [x] **[Implement]** Fix review round 3 defects: sync log task links, same-occurrence merge folding, and the style guide icon.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-10] **[Doc]**
@@ -206,4 +208,11 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 
 - [2026-11-15] **[Review]**
   Round 4 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 4 approved by @gemini: Commit `87c7fa3` resolves all Round 3 defects (`D1`, `D2`) and the style-guide gap (`P1`).
+  - Findings: [review-findings-4.md](T0224-adopt-task-entries-status-entries-recurring-tasks-and/review-findings-4.md).
+
+- [2026-11-15] **[Complete]**
+  Task completed successfully.
 
