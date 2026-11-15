@@ -242,6 +242,14 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - Focus: the row draws the ring for its open link, inside its own edge.
 
   Show the drag handle only in manual order; devices without hover hide it anyway.
+- Group header: a `.group-header` row of a grouped `.task-list`, fixed at `--group-header-height` in the sunken surface.
+  Its `h3` holds one `.group-header__toggle` button that spans the row, with `--space-3` of inline padding.
+  The button holds a small chevron, the semibold name, and the count at the end in tabular figures.
+  The count reads "6 of 10" while filters hide tasks of the group, else the plain total.
+  The button's `aria-label` names both, such as "Home, 6 of 10 tasks".
+  `aria-expanded="false"` turns the chevron to point at the inline end; the group's rows leave the list.
+  Hover takes the hover ground and the text color; the focus ring sits inside the row.
+  The name truncates with an ellipsis, and the count never wraps.
 - [Navigation](../../src/demo/visual-style-gallery.html#navigation): the wide `.sidebar` and the compact `.bottom-nav`.
   Both mark the current route with `aria-current="page"`: a signal edge, a signal icon, and semibold text.
   The sidebar edge sits on the inline start; the current item keeps hover and active grounds.

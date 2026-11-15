@@ -15,8 +15,11 @@
  * Rows are kept by key, the task id or, in a grouped list, the group and the task id, since a task of several lists
  * shows in each group: a render builds only the rows whose content changed and moves as few rows as it can,
  * and the clock tick redraws only due chips (`TEC-16`).
- * A grouped list shows a header row before each group, with the group name and count (`VO-10`). Headers are
- * 32 px rows without controls, so they take no focus, selection, or drag; they count as rows of the virtual list.
+ * A grouped list shows a header row before each group, with the group name and count (`VO-10`).
+ * The count reads "6 of 10" while the view's filters hide tasks of the group, else the plain total.
+ * Headers are 32 px rows of the virtual list that take no selection or drag. Their one control, a button with
+ * `aria-expanded`, collapses the group: its rows leave the list until it expands again.
+ * A collapsed group stays collapsed by group key across renders and filter changes, for the life of the task list.
  * A list of more than 200 tasks renders only the rows in view plus a buffer, so 5000 tasks open fast (`TEC-16`).
  * Padding on the list and a margin on a row after a gap stand in for the rows left out, so the scroll height holds;
  * the offsets of the rows add up the row and header heights.
@@ -78,6 +81,8 @@ const STRINGS = Object.freeze({
   tomorrow: 'Tomorrow',
   moreLists: ' more lists',
   notes: ' notes',
+  groupCount: (shown, total) => (shown < total ? `${shown} of ${total}` : String(total)),
+  groupLabel: (label, shown, total) => `${label}, ${shown < total ? `${shown} of ` : ''}${total} ${total === 1 ? 'task' : 'tasks'}`,
 });
 
 /**
@@ -311,15 +316,50 @@ function rowTemplate(doc, handle) {
 }
 
 /**
- * Render the header of a group: its name and its task count.
+ * Render an empty group header: a heading whose toggle button holds a chevron, the group name, and the task count.
  * @param {Document} doc the document
- * @param {{label: string, tasks: object[]}} group the group
- * @returns {HTMLLIElement} the header
+ * @returns {HTMLLIElement} the header, for `fillHeader`
  */
-function renderHeader(doc, group) {
+function renderHeader(doc) {
   const header = make(doc, 'li', 'group-header');
-  header.append(make(doc, 'h3', 'group-header__name', group.label), make(doc, 'span', 'group-header__count', String(group.tasks.length)));
+  const heading = make(doc, 'h3', 'group-header__heading');
+  const toggle = make(doc, 'button', 'group-header__toggle');
+  toggle.type = 'button';
+  toggle.dataset.role = 'toggle';
+  toggle.append(
+    spriteIcon(doc, 'chevron-down', 'icon icon--sm group-header__icon'),
+    make(doc, 'span', 'group-header__name'),
+    make(doc, 'span', 'group-header__count'),
+  );
+  heading.append(toggle);
+  header.append(heading);
   return header;
+}
+
+/**
+ * Return the count of a group: its shown tasks and its total, which is never below the shown tasks.
+ * @param {{tasks: object[], total?: number}} group the group
+ * @returns {{shown: number, total: number}} the count
+ */
+function countOf(group) {
+  const shown = group.tasks.length;
+  return { shown, total: Math.max(group.total ?? shown, shown) };
+}
+
+/**
+ * Fill a group header: the name, the count as "6 of 10" while filters hide tasks of the group, and the toggle state.
+ * @param {HTMLLIElement} header the header of `renderHeader`
+ * @param {{key: string, label: string, tasks: object[], total?: number}} group the group
+ * @param {boolean} collapsed whether the group is collapsed
+ */
+function fillHeader(header, group, collapsed) {
+  const { shown, total } = countOf(group);
+  const toggle = header.querySelector('.group-header__toggle');
+  header.dataset.groupKey = group.key;
+  header.querySelector('.group-header__name').textContent = group.label;
+  header.querySelector('.group-header__count').textContent = STRINGS.groupCount(shown, total);
+  toggle.setAttribute('aria-label', STRINGS.groupLabel(group.label, shown, total));
+  toggle.setAttribute('aria-expanded', String(!collapsed));
 }
 
 /**
@@ -511,6 +551,9 @@ export function createTaskList({
   let justClosed = null;
   // Whether a task shows under the view's filters, as the last render passed it.
   let shows = null;
+  // The keys of the collapsed groups, and the arguments of the last render, which a toggle renders again.
+  const collapsed = new Set();
+  let last = null;
   // A touch resting on a status button: its timer and start point; `pressed` is the button whose long press opened the menu.
   let press = null;
   let pressed = null;
@@ -762,14 +805,14 @@ export function createTaskList({
   }
 
   /**
-   * List the tasks whose rows stay rendered out of view: the focused row, the row of the open menu, the dragged row,
+   * List the items that stay rendered out of view: the focused row or header, the row of the open menu, the dragged row,
    * and the selected row, which gets focus back when its editor closes.
    * @param {Array<string|undefined>} extra more row keys, such as those a render keeps for focus
    * @returns {Set<string>} the row keys
    */
   function pinned(extra) {
     const keys = new Set([...extra, selectedKey()]);
-    const focused = doc.activeElement?.closest?.('.task-row');
+    const focused = doc.activeElement?.closest?.('.task-row, .group-header');
     for (const row of [focused, active?.trigger.closest('.task-row'), list.querySelector('.task-row[data-dragging]')]) {
       if (row && list.contains(row)) {
         keys.add(row.dataset.rowKey);
@@ -939,9 +982,17 @@ export function createTaskList({
       const item = items[index];
       let entry = rows.get(item.key);
       if (item.group) {
-        const key = `${item.group.label}|${item.group.tasks.length}`;
-        if (entry?.key !== key) {
-          entry = { row: renderHeader(doc, item.group), key };
+        const { shown, total } = countOf(item.group);
+        const folded = collapsed.has(item.group.key);
+        const key = `${item.group.label}|${shown}|${total}|${folded}`;
+        if (!entry) {
+          entry = { row: renderHeader(doc), key: null };
+          entry.row.dataset.rowKey = item.key;
+        }
+        // The header changes in place, so its toggle keeps focus when it collapses or expands the group.
+        if (entry.key !== key) {
+          fillHeader(entry.row, item.group, folded);
+          entry.key = key;
         }
       }
       else if (!entry || fresh) {
@@ -1048,7 +1099,7 @@ export function createTaskList({
   }
 
   /**
-   * Remember what has focus in the list or its open menu, before the rows render again.
+   * Remember what has focus in the list or its open menu, before the rows render again: a row control or a header toggle.
    * @returns {{key: string, taskId: string, role: string, index: number, kind?: string, item?: string}|null} the memo
    */
   function remember() {
@@ -1061,7 +1112,7 @@ export function createTaskList({
         kind: active.kind, item: item && menu.contains(item) ? itemKey(item) : undefined,
       };
     }
-    const focused = doc.activeElement?.closest?.('.task-row');
+    const focused = doc.activeElement?.closest?.('.task-row, .group-header');
     return focused && list.contains(focused)
       ? {
         key: focused.dataset.rowKey, taskId: focused.dataset.taskId, role: doc.activeElement.dataset.role ?? 'open',
@@ -1071,7 +1122,7 @@ export function createTaskList({
   }
 
   /**
-   * Find the task row at or after an index, since a header takes no focus.
+   * Find the task row at or after an index, for the focus of a row that left; past the last row, a header takes it.
    * @param {number} index the index, clamped to the items
    * @returns {number} the index of a task item
    */
@@ -1099,7 +1150,7 @@ export function createTaskList({
     }
     const same = rows.get(memo.key)?.row;
     const row = same ?? rows.get(items[taskIndexNear(memo.index)].key)?.row;
-    const trigger = row?.querySelector(`[data-role="${memo.role}"]`);
+    const trigger = row?.querySelector(`[data-role="${memo.role}"]`) ?? row?.querySelector('[data-role="open"], [data-role="toggle"]');
     if (same && memo.kind) {
       const reopen = { status: openStatus, more: openMore, 'add-to-list': openAddToList }[memo.kind];
       reopen(trigger, byId.get(memo.taskId), 'first');
@@ -1161,6 +1212,19 @@ export function createTaskList({
     return ['ArrowDown', 'ArrowUp', 'ContextMenu'].includes(event.key) || (event.key === 'F10' && event.shiftKey);
   }
 
+  /**
+   * Collapse or expand a group, and render the last tasks again without or with its rows.
+   * @param {string} key the group key
+   */
+  function toggleGroup(key) {
+    if (!collapsed.delete(key)) {
+      collapsed.add(key);
+    }
+    if (last) {
+      api.render(...last);
+    }
+  }
+
   /** Stop waiting for a long press. */
   function cancelPress() {
     if (press) {
@@ -1178,6 +1242,11 @@ export function createTaskList({
     }
   }, true);
   list.addEventListener('click', (event) => {
+    const header = event.target.closest?.('[data-role="toggle"]')?.closest('.group-header');
+    if (header) {
+      toggleGroup(header.dataset.groupKey);
+      return;
+    }
     const trigger = menuButton(event);
     if (trigger?.dataset.role === 'status') {
       toggle(taskOf(event));
@@ -1245,22 +1314,25 @@ export function createTaskList({
     watcher.observe(list);
   }
 
-  return {
+  const api = {
     element,
 
     /**
      * Show tasks as rows, in the given order, keeping focus on the same row control and an open menu open.
      * A focused row that left the list passes focus to the row now at its place, or to the fallback control.
-     * With groups, a header row starts each group and the tasks of the groups show instead of `tasks`.
+     * With groups, a header row starts each group and the tasks of the groups show instead of `tasks`;
+     * a collapsed group shows its header only.
      * @param {object[]} tasks the tasks to show
      * @param {{now?: Date, lists?: Map<string, object>, listsByTask?: Map<string, string[]>,
      *   notesByTask?: Map<string, string[]>}} context the time, the live lists in display order,
      *   list identifiers by task, and note texts by task
-     * @param {{groups?: Array<{key: string, label: string, tasks: object[]}>|null, shows?: ((task: object) => boolean)|null}}
-     *   [grouping] the groups of `groupTasks`, and whether a task shows under the view's filters, for the Undo toast
+     * @param {{groups?: Array<{key: string, label: string, tasks: object[], total?: number}>|null,
+     *   shows?: ((task: object) => boolean)|null}} [grouping] the groups of `groupTasks`, and whether a task shows under the view's filters, for the Undo toast
      *   of a status change that hides its row
      */
-    render(tasks, context, { groups = null, shows: filter = null } = {}) {
+    render(tasks, context, grouping = {}) {
+      const { groups = null, shows: filter = null } = grouping;
+      last = [tasks, context, grouping];
       ctx = context;
       shows = filter;
       const memo = remember();
@@ -1270,7 +1342,7 @@ export function createTaskList({
       if (groups) {
         for (const group of groups) {
           items.push({ key: `#${group.key}`, group });
-          for (const task of group.tasks) {
+          for (const task of collapsed.has(group.key) ? [] : group.tasks) {
             items.push({ key: `${group.key}\u0000${task.id}`, task });
           }
         }
@@ -1373,4 +1445,5 @@ export function createTaskList({
       watcher?.disconnect();
     },
   };
+  return api;
 }

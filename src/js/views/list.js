@@ -218,7 +218,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     const byOptions = filterTasks(data.tasks, { ...state.filter, text: undefined }, ctx);
     const filtered = filterTasks(byOptions, state.filter, ctx);
     const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
-    const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx) : null;
+    const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx, data.tasks) : null;
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], state.filter, ctx).length > 0 });
     addBar.setLists([...data.lists.values()]);
     addBar.setKnown(exactMatchIndex(byOptions));

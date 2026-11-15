@@ -377,28 +377,29 @@ describe('mountAllTasks', () => {
 
     it('groups by list, repeating a task of two lists and ending with No list', async () => {
       await mountGrouped('list');
-      expect(entries()).toEqual(['# Home 1', 'Buy paint', '# Work 2', 'Call plumber', 'Buy paint', '# No list 1', 'Book flights']);
+      expect(entries()).toEqual(['# Home 1', 'Buy paint', '# Work 2', 'Call plumber', 'Buy paint', '# No list 1 of 2', 'Book flights']);
       expect(document.querySelectorAll('.task-row')).toHaveLength(4);
       expect(document.querySelector('.info-line__text').textContent).toBe('3 of 4 tasks · Status: open · Grouped by List');
     });
 
     it('groups by due date from the clock', async () => {
       await mountGrouped('due');
-      expect(entries()).toEqual(['# Overdue 1', 'Call plumber', '# Tomorrow 1', 'Buy paint', '# No due date 1', 'Book flights']);
+      expect(entries()).toEqual(['# Overdue 1', 'Call plumber', '# Tomorrow 1', 'Buy paint', '# No due date 1 of 2', 'Book flights']);
     });
 
     it('applies the search text and the sort inside each group', async () => {
       const model = await mountGrouped('status', { order: { field: 'description', direction: 'desc' } });
       expect(entries()).toEqual(['# To do 2', 'Buy paint', 'Book flights', '# In progress 1', 'Call plumber']);
       model.set({ ...model.get(), filter: { ...model.get().filter, text: 'bo' } });
-      expect(entries()).toEqual(['# To do 1', 'Book flights']);
+      expect(entries()).toEqual(['# To do 1 of 2', 'Book flights']);
     });
 
-    it('keeps headers out of the row controls and gives the list its full size', async () => {
+    it('gives each header one toggle and no row controls, and gives the list its full size', async () => {
       await mountGrouped('status');
       const header = document.querySelector('.group-header');
-      expect(header.querySelector('button, a')).toBeNull();
-      expect(header.querySelector('h3').textContent).toBe('To do');
+      expect([...header.querySelectorAll('button, a')].map((control) => control.className)).toEqual(['group-header__toggle']);
+      expect(header.querySelector('h3 .group-header__toggle').getAttribute('aria-label')).toBe('To do, 2 tasks');
+      expect(header.querySelector('.group-header__name').textContent).toBe('To do');
       expect(document.querySelector('.task-list').children).toHaveLength(5);
     });
 

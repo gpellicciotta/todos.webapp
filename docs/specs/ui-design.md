@@ -354,7 +354,17 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 - Both views render again on the minute tick while it is on, so yesterday's tasks leave at midnight.
 
 #### Grouping
-- A group header is a 32 px row: the name at the left, the count at the right (`VO-10`).
+- A group header is a 32 px row: a chevron and the name at the left, the count at the right (`VO-10`).
+  The text sits 12 px clear of the row edges.
+- **[Decided]** The count reads "6 of 10" while search or filters hide tasks of the group, else the plain total.
+  The total counts the group's tasks in the view before its search and filters, as the info line total does.
+  So under the default open statuses, a list with finished tasks shows "n of m".
+- The whole header is one button that collapses or expands its group (`VO-15`).
+  It carries `aria-expanded`, works with Enter and Space, and keeps focus while the rows leave or return.
+  A collapsed group shows its header only; its chevron points to the end.
+- **[Decided]** Collapsed groups stay collapsed across renders, search, and filter changes, while the view is open.
+  They expand again on a reload or on leaving the view; they never persist or sync.
+  Reason: a stored flag per group and view would be one more preference for a short-lived choice.
 - **[Decided]** A task in several lists shows under each list group, so group counts can exceed the task count (`VO-11`).
   The count on the info line counts each task once.
 - Group order (`VO-12`):
@@ -366,7 +376,6 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 - Search, filters, and sort apply inside each group; empty groups are left out.
 - While a list view is grouped, drag handles and move entries are hidden, as for any sort (`LV-8`).
   Each group keeps the sort of the view, so the manual order still applies inside it.
-- Collapsing groups is out of scope for now.
 
 #### Design alternatives
 - **A. Search and add in one field, view options in the side panel (chosen).**

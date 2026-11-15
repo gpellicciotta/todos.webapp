@@ -731,7 +731,7 @@ describe('createTaskList', () => {
     it('renders the first header with the rows in view and a buffer, and keeps the full height', () => {
       const first = other.element.querySelector('.task-list').firstElementChild;
       expect(first.classList.contains('group-header')).toBe(true);
-      expect(first.querySelector('h3').textContent).toBe('Group 0');
+      expect(first.querySelector('.group-header__name').textContent).toBe('Group 0');
       expect(first.querySelector('.group-header__count').textContent).toBe('100');
       expect(first.getAttribute('aria-posinset')).toBe('1');
       expect(first.getAttribute('aria-setsize')).toBe('5050');
@@ -745,8 +745,27 @@ describe('createTaskList', () => {
       const at = items.findIndex((item) => item.getAttribute('aria-posinset') === String(index + 1));
       expect(at).toBeGreaterThan(0);
       expect(items[at].dataset.taskId).toBe('m2002');
-      expect(items.some((item) => item.classList.contains('group-header') && item.querySelector('h3').textContent === 'Group 20')).toBe(true);
+      expect(items.some((item) => item.classList.contains('group-header') && item.querySelector('.group-header__name').textContent === 'Group 20')).toBe(true);
       expect(items.length).toBeLessThan(80);
+      expect(heightOfList()).toBe(TOTAL);
+    });
+
+    it('drops the rows of a collapsed group from the virtual window and the height, and keeps its header focused', () => {
+      const toggle = other.element.querySelector('.group-header__toggle');
+      toggle.focus();
+      toggle.click();
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(toggle);
+      const items = [...other.element.querySelectorAll('.task-list > li')];
+      expect(items[0].getAttribute('aria-setsize')).toBe('4950');
+      expect(items[1].classList.contains('group-header')).toBe(true);
+      expect(items[1].querySelector('.group-header__name').textContent).toBe('Group 1');
+      expect(other.element.querySelector('[data-task-id="m0"]')).toBeNull();
+      expect(heightOfList()).toBe(TOTAL - 100 * ROW);
+      scrollTo(20 * (100 * ROW + HEADER));
+      expect(other.element.querySelector('.task-list').contains(toggle)).toBe(true);
+      toggle.click();
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
       expect(heightOfList()).toBe(TOTAL);
     });
 
@@ -915,6 +934,76 @@ describe('createTaskList', () => {
       expect(midpoints).toHaveLength(5000);
       expect(midpoints[0]).toBe(TALL / 2);
       expect(midpoints[1]).toBe(TALL + ROW / 2);
+    });
+  });
+
+  describe('with groups', () => {
+    const paint = { id: 'g1', description: 'Buy paint', status: 'todo' };
+    const door = { id: 'g2', description: 'Fix the door', status: 'todo' };
+    const plumber = { id: 'g3', description: 'Call the plumber', status: 'in-progress' };
+
+    /**
+     * Read the list as text: each header as `# name count (accessible name, expanded)`, each row as its description.
+     * @returns {string[]} the entries, top to bottom
+     */
+    function entries() {
+      return [...document.querySelectorAll('.task-list > li')].map((item) => (item.classList.contains('group-header')
+        ? `# ${item.querySelector('.group-header__name').textContent} ${item.querySelector('.group-header__count').textContent}`
+          + ` (${item.querySelector('.group-header__toggle').getAttribute('aria-label')}, ${item.querySelector('.group-header__toggle').getAttribute('aria-expanded')})`
+        : item.querySelector('.task-row__description').textContent));
+    }
+
+    it('shows the count as n of m while a filter hides tasks of a group, else the plain total', () => {
+      list.render([], ctx, { groups: [
+        { key: 'todo', label: 'To do', tasks: [paint, door], total: 6 },
+        { key: 'in-progress', label: 'In progress', tasks: [plumber], total: 1 },
+      ] });
+      expect(entries()).toEqual([
+        '# To do 2 of 6 (To do, 2 of 6 tasks, true)', 'Buy paint', 'Fix the door', '# In progress 1 (In progress, 1 task, true)', 'Call the plumber',
+      ]);
+      list.render([], ctx, { groups: [{ key: 'todo', label: 'To do', tasks: [paint, door] }] });
+      expect(entries()).toEqual(['# To do 2 (To do, 2 tasks, true)', 'Buy paint', 'Fix the door']);
+      const header = document.querySelector('.group-header');
+      expect(header.querySelector('h3 > button.group-header__toggle')).not.toBeNull();
+    });
+
+    it('collapses and expands a group from its header, hiding only its rows', () => {
+      const groups = [
+        { key: 'todo', label: 'To do', tasks: [paint, door] },
+        { key: 'in-progress', label: 'In progress', tasks: [plumber] },
+      ];
+      list.render([], ctx, { groups });
+      const toggle = document.querySelector('.group-header__toggle');
+      expect(toggle.type).toBe('button');
+      toggle.click();
+      expect(entries()).toEqual(['# To do 2 (To do, 2 tasks, false)', '# In progress 1 (In progress, 1 task, true)', 'Call the plumber']);
+      expect(document.querySelector('.group-header__toggle')).toBe(toggle);
+      expect([...document.querySelectorAll('.task-list > li')].map((item) => item.getAttribute('aria-setsize'))).toEqual(['3', '3', '3']);
+      toggle.click();
+      expect(entries()).toEqual([
+        '# To do 2 (To do, 2 tasks, true)', 'Buy paint', 'Fix the door', '# In progress 1 (In progress, 1 task, true)', 'Call the plumber',
+      ]);
+    });
+
+    it('keeps a group collapsed across renders, filter changes, and a group that leaves and comes back', () => {
+      list.render([], ctx, { groups: [
+        { key: 'todo', label: 'To do', tasks: [paint, door] },
+        { key: 'in-progress', label: 'In progress', tasks: [plumber] },
+      ] });
+      const toggle = document.querySelector('.group-header__toggle');
+      toggle.focus();
+      toggle.click();
+      list.render([], ctx, { groups: [
+        { key: 'todo', label: 'To do', tasks: [door], total: 2 },
+        { key: 'in-progress', label: 'In progress', tasks: [plumber] },
+      ] });
+      expect(entries()).toEqual(['# To do 1 of 2 (To do, 1 of 2 tasks, false)', '# In progress 1 (In progress, 1 task, true)', 'Call the plumber']);
+      expect(document.activeElement).toBe(toggle);
+      list.render([], ctx, { groups: [{ key: 'in-progress', label: 'In progress', tasks: [plumber] }] });
+      list.render([], ctx, { groups: [{ key: 'todo', label: 'To do', tasks: [paint] }] });
+      expect(entries()).toEqual(['# To do 1 (To do, 1 task, false)']);
+      list.render([paint], ctx);
+      expect(entries()).toEqual(['Buy paint']);
     });
   });
 

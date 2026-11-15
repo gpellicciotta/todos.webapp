@@ -8,8 +8,9 @@
  * A store without tasks shows the first-launch empty state with the add bar, and no sign-in (`LOC-1`).
  * The first added task replaces it, and the app then asks the browser for persistent storage (`TEC-5`).
  * An empty result names the active filters and offers Reset.
- * A grouping splits the shown tasks into groups with a header and a count; filters and sort apply inside each group,
- * and list groups follow the list order of the sidebar (`VO-9` to `VO-12`).
+ * A grouping splits the shown tasks into groups with a header and a count, such as "6 of 10" while filters hide some;
+ * filters and sort apply inside each group, and list groups follow the list order of the sidebar (`VO-9` to `VO-12`).
+ * A header collapses or expands its group (`VO-15`).
  */
 
 import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-order.js';
@@ -288,7 +289,7 @@ export function mountAllTasks(view, {
     const byOptions = filterTasks(data.tasks, { ...filter, text: undefined }, ctx);
     const shown = sortTasks(filterTasks(byOptions, filter, ctx), state.order);
     const groups = state.group && state.group !== 'none'
-      ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) })
+      ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) }, data.tasks)
       : null;
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], filter, ctx).length > 0 });
     addBar.setKnown(exactMatchIndex(byOptions));

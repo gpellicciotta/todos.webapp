@@ -23,6 +23,9 @@ All notable changes to this project are documented here.
 - FrontEnd: Added the `x` shortcut, which toggles completion of the focused row.
 - FrontEnd: Showed an Undo toast when a status change hides the row under the view's filters.
 - FrontEnd: Read due dates, times, and `#list` tags typed in the add field into the new task, with a preview line.
+- FrontEnd: Gave group headers 12 px of inline padding and a chevron, so the name and count sit clear of the edges.
+- FrontEnd: Showed a group's count as "6 of 10" while search or filters hide some of its tasks.
+- FrontEnd: Made each group header a button that collapses or expands its group, by click, Enter, or Space.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

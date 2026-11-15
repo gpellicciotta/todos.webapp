@@ -64,27 +64,70 @@
 }
 
 /*
- * Group header: a 32 px row with the group name at the inline start and the task count at the end (`VO-10`).
+ * Group header: a 32 px row whose toggle button spans it, with a chevron, the group name, and the count (`VO-10`).
+ * The toggle carries the inline padding, so the whole row collapses or expands the group.
  * The list virtualizes by height, so the header keeps a fixed block size.
  */
 .group-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
   block-size: var(--group-header-height);
-  padding-inline: var(--space-1);
   border-block-end: var(--border-width) solid var(--color-border);
   background-color: var(--color-surface-sunken);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
 
-.group-header__name {
+.group-header__heading {
+  display: flex;
+  flex: 1;
   min-inline-size: 0;
   margin: 0;
-  overflow: hidden;
   font-size: inherit;
+  font-weight: inherit;
+}
+
+.group-header__toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding-block: 0;
+  padding-inline: var(--space-3);
+  border: 0;
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.group-header__toggle:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* The ring sits inside the row, which spans the list. */
+.group-header__toggle:focus-visible {
+  outline-offset: var(--focus-ring-offset-inset);
+}
+
+.group-header__icon {
+  transition: rotate var(--duration-fast) var(--ease-standard);
+}
+
+.group-header__toggle[aria-expanded='false'] .group-header__icon {
+  rotate: -90deg;
+}
+
+.group-header__toggle[aria-expanded='false'] .group-header__icon:dir(rtl) {
+  rotate: 90deg;
+}
+
+.group-header__name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
   font-weight: var(--weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -137,6 +137,42 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
+  test('group headers pad their text, count n of m while search hides tasks, and collapse by mouse and keyboard (VO-10, VO-15)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    const options = await openOptions(page);
+    await options.getByRole('radio', { name: 'Status', exact: true }).check();
+    const rows = page.locator('.list-view .task-row');
+    const header = page.locator('.list-view .group-header').first();
+    const toggle = header.getByRole('button', { name: 'To do, 2 tasks', exact: true });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle).toHaveCSS('padding-inline-start', '12px');
+    await expect(toggle).toHaveCSS('padding-inline-end', '12px');
+    expect((await header.boundingBox()).height).toBe(32);
+    await expect(page.getByRole('heading', { name: 'To do, 2 tasks' })).toBeVisible();
+    const field = page.getByLabel('Search or add a task');
+    await field.fill('paint');
+    await expect(header.locator('.group-header__count')).toHaveText('1 of 2');
+    await expect(header.getByRole('button', { name: 'To do, 1 of 2 tasks', exact: true })).toBeVisible();
+    await field.fill('');
+    await expect(header.locator('.group-header__count')).toHaveText('2');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toHaveText(/Fix the door/);
+    await expect(toggle).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(rows).toHaveCount(3);
+    await page.keyboard.press('Space');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(rows).toHaveCount(1);
+    await expect(toggle).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(rows).toHaveCount(3);
+    expect(problems).toEqual([]);
+  });
+
   test('shows the header, the open tasks in manual order, and the info line (LV-1, LV-2, LV-10, VO-2)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);

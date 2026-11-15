@@ -635,7 +635,7 @@ test('Group by shows headers with counts for each option, and the choice survive
   await groupBy(options, 'List');
   await expect(page.locator('.info-line__text')).toContainText('Grouped by List');
   expect(await listEntries(page)).toEqual([
-    '# Home 2', 'Buy paint', 'Call the plumber', '# Work 1', 'Write the report', '# No list 1', 'Book flights',
+    '# Home 2 of 3', 'Buy paint', 'Call the plumber', '# Work 1', 'Write the report', '# No list 1 of 2', 'Book flights',
   ]);
 
   await groupBy(options, 'Status');
@@ -647,7 +647,7 @@ test('Group by shows headers with counts for each option, and the choice survive
   await groupBy(options, 'Due date');
   const byDue = await listEntries(page);
   expect(byDue.slice(0, 2)).toEqual(['# Overdue 1', 'Call the plumber']);
-  expect(byDue.slice(-2)).toEqual(['# No due date 1', 'Book flights']);
+  expect(byDue.slice(-2)).toEqual(['# No due date 1 of 3', 'Book flights']);
   await expect(page.locator('.task-row')).toHaveCount(4);
   await expect(page.locator('.group-header').first().getByRole('heading', { name: 'Overdue' })).toBeVisible();
   const headers = await page.locator('.group-header').count();
@@ -678,12 +678,12 @@ test('search and sort apply inside each group, and a task of two lists shows in 
   await groupBy(options, 'List');
   await expect(page.locator('.task-row')).toHaveCount(5);
   expect(await listEntries(page)).toEqual([
-    '# Home 2', 'Buy paint', 'Call the plumber', '# Work 2', 'Write the report', 'Buy paint', '# No list 1', 'Book flights',
+    '# Home 2 of 3', 'Buy paint', 'Call the plumber', '# Work 2', 'Write the report', 'Buy paint', '# No list 1 of 2', 'Book flights',
   ]);
   await options.locator('select').selectOption('description');
-  expect((await listEntries(page)).slice(0, 3)).toEqual(['# Home 2', 'Buy paint', 'Call the plumber']);
+  expect((await listEntries(page)).slice(0, 3)).toEqual(['# Home 2 of 3', 'Buy paint', 'Call the plumber']);
   await page.getByLabel('Search or add a task').fill('paint');
-  await expect.poll(() => listEntries(page)).toEqual(['# Home 1', 'Buy paint', '# Work 1', 'Buy paint']);
+  await expect.poll(() => listEntries(page)).toEqual(['# Home 1 of 3', 'Buy paint', '# Work 1 of 2', 'Buy paint']);
   await expect(page.locator('.info-line__text')).toContainText('1 of 6 tasks');
 });
 

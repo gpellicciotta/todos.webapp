@@ -511,6 +511,14 @@ describe('groupTasks (VO-9 to VO-12)', () => {
     expect(summary(groupTasks(sorted, 'status', ctx))[0]).toEqual(['todo', ['t6', 't5', 't1']]);
   });
 
+  it('counts each group among all tasks as its total, or among its own tasks without them', () => {
+    const open = filterTasks(tasks, DEFAULT_FILTER, ctx);
+    const lists = [{ id: WORK, name: 'Work' }, { id: HOME, name: 'Home' }];
+    const totals = (groups) => groups.map((group) => [group.key, group.tasks.length, group.total]);
+    expect(totals(groupTasks(open, 'list', { ...ctx, lists }, tasks))).toEqual([[WORK, 1, 2], [HOME, 2, 3], [NO_LIST, 1, 2]]);
+    expect(totals(groupTasks(open, 'list', { ...ctx, lists }))).toEqual([[WORK, 1, 1], [HOME, 2, 2], [NO_LIST, 1, 1]]);
+  });
+
   it('never changes its input and rejects an unknown grouping', () => {
     const copy = structuredClone(tasks);
     groupTasks(tasks, 'status', ctx);

@@ -435,27 +435,32 @@ def more_menu(f, x, y, items):
         f.text(x + 16, top + 25, label, 14)
 
 
-def group_header(f, x, y, width, name, count):
-    """Draw one group header with the group name and its task count; return the y below it."""
+def group_header(f, x, y, width, name, count, collapsed=False):
+    """Draw one group header: chevron, name, and count, such as "3 of 4"; return the y below it."""
     f.rect(x, y, width, 32, "box", radius=0)
-    f.text(x + 12, y + 21, name, 13, "bold")
-    f.text(x + width - 12, y + 21, str(count), 13, "muted", "end")
+    f.text(x + 12, y + 21, "›" if collapsed else "⌄", 13, "muted")
+    f.text(x + 32, y + 21, name, 13, "bold")
+    f.text(x + width - 12, y + 21, count, 13, "muted", "end")
     return y + 32
 
 
 def grouped_rows(f, x, y, width, wide, bottom):
-    """Draw All tasks grouped by list; a task in several lists appears under each of them."""
-    by_name = {
-        "Home": [TASKS[0], TASKS[1], TASKS[3]],
-        "Work": [TASKS[4], TASKS[5]],
-        "Travel": [TASKS[2], TASKS[3]],
-        "No list": [TASKS[6]],
-    }
-    for name, tasks in by_name.items():
+    """Draw All tasks grouped by list; a task in several lists appears under each of them.
+
+    Home counts "3 of 4" since the Status filter hides a finished task; Work is collapsed.
+    """
+    groups = [
+        ("Home", [TASKS[0], TASKS[1], TASKS[3]], "3 of 4", False),
+        ("Work", [TASKS[4], TASKS[5]], "2", True),
+        ("Travel", [TASKS[2], TASKS[3]], "2", False),
+        ("No list", [TASKS[6]], "1", False),
+    ]
+    for name, tasks, count, collapsed in groups:
         if y + 32 + ROW_HEIGHT > bottom:
             break
-        y = group_header(f, x, y, width, name, len(tasks))
-        y = task_rows(f, x, y, width, tasks, wide, bottom)
+        y = group_header(f, x, y, width, name, count, collapsed)
+        if not collapsed:
+            y = task_rows(f, x, y, width, tasks, wide, bottom)
     return y
 
 

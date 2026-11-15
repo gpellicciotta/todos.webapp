@@ -319,6 +319,7 @@ function dueGroupOf(task, now, windows) {
 /**
  * Split tasks into groups for a view (`VO-9` to `VO-12`). Groups come in a fixed order and empty groups are left out;
  * tasks keep their input order inside a group, so a sort applies within each group.
+ * Each group counts its tasks among `all` as its total, so a header can show "6 of 10" while filters hide tasks.
  * - `list`: one group per list in the order of `ctx.lists`, then No list. A task of several lists is in each group.
  * - `due`: Overdue, Earlier, Today, Tomorrow, This week, Later, and No due date.
  * - `status`: To do, In progress, Completed, and Cancelled.
@@ -330,9 +331,12 @@ function dueGroupOf(task, now, windows) {
  * @param {Map<string, string[]>} [ctx.listsByTask] list identifiers by task identifier
  * @param {Iterable<{id: string, name: string}>|Map<string, {id: string, name: string}>} [ctx.lists] the live lists in
  *   display order, as an array or a map
- * @returns {Array<{key: string, label: string, tasks: object[]}>} the non-empty groups
+ * @param {object[]|null} [all] every task of the view before its filters, for each group's total; null counts the
+ *   group's own tasks
+ * @returns {Array<{key: string, label: string, tasks: object[], total: number}>} the non-empty groups, each with the
+ *   number of its tasks among `all` as `total`
  */
-export function groupTasks(tasks, grouping, ctx = {}) {
+export function groupTasks(tasks, grouping, ctx = {}, all = null) {
   let order;
   let place;
   switch (grouping) {
@@ -361,13 +365,19 @@ export function groupTasks(tasks, grouping, ctx = {}) {
     default:
       throw new RangeError(`Unknown grouping: ${grouping}.`);
   }
-  const buckets = new Map(order.map(([key]) => [key, []]));
-  for (const task of tasks) {
-    for (const key of place(task)) {
-      (buckets.get(key) ?? buckets.get(NO_LIST))?.push(task);
+  const fill = (source) => {
+    const buckets = new Map(order.map(([key]) => [key, []]));
+    for (const task of source) {
+      for (const key of place(task)) {
+        (buckets.get(key) ?? buckets.get(NO_LIST))?.push(task);
+      }
     }
-  }
-  return order.filter(([key]) => buckets.get(key).length > 0).map(([key, label]) => ({ key, label, tasks: buckets.get(key) }));
+    return buckets;
+  };
+  const buckets = fill(tasks);
+  const totals = all ? fill(all) : buckets;
+  return order.filter(([key]) => buckets.get(key).length > 0)
+    .map(([key, label]) => ({ key, label, tasks: buckets.get(key), total: totals.get(key).length }));
 }
 
 /**
