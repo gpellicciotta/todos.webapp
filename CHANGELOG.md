@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Kept the account avatar inside its round button, which it overhung by 2 px on each side.
 
 ## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.

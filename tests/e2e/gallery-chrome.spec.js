@@ -124,6 +124,15 @@ test('the account menu button is a circle in every state, holding an avatar face
     expect(parseFloat(shape.radius)).toBeGreaterThanOrEqual(shape.width / 2);
   }
   await expect(page.locator('#user-menu .account-menu__button > .avatar')).toHaveCount(await buttons.count());
+  // The face stays inside its button, so it never overhangs the round target or the section edge.
+  const overhangs = await buttons.evaluateAll((elements) => elements.map((element) => {
+    const box = element.getBoundingClientRect();
+    const face = element.querySelector('.avatar').getBoundingClientRect();
+    return Math.max(box.left - face.left, face.right - box.right, box.top - face.top, face.bottom - box.bottom);
+  }));
+  for (const overhang of overhangs) {
+    expect(overhang).toBeLessThanOrEqual(0);
+  }
   await expect(page.locator('#user-menu .account-menu__panel')).toHaveCount(2);
   await expect(page.locator('#user-menu .account-menu__panel [aria-current="page"]')).toHaveCount(1);
 });

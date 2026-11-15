@@ -406,6 +406,12 @@
   gap: var(--space-2);
 }
 
+/* The package's small avatar (3rem) is wider than its 2.75rem button; a face one ring smaller stays inside the target. */
+.account-menu__button > .avatar--sm {
+  inline-size: calc(var(--target-min) - var(--space-1));
+  block-size: calc(var(--target-min) - var(--space-1));
+}
+
 /* The menu keeps a gutter to the window edges, also for a long name on a narrow screen. */
 .user-menu .account-menu__panel {
   max-inline-size: min(calc(100% - var(--space-4)), var(--width-side-panel));
