@@ -4,9 +4,9 @@ An overview of all tasks and their planning, possibly split by milestone.
 ## Next Milestone
 - [x] T0224 Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync.
 - [x] T0234 Show event actions, done and target counts, and lifecycle rule editing in the web app task views.
-- [~] T0235 [owner: @claude] Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history.
+- [x] T0235 Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history.
 - [ ] T0236 Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable.
-- [!] T0237 [reason: blocked: needs T0224 occurrences in the store and T0235 task history view] [needs: T0235] [owner: @claude] Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence.
+- [!] T0237 [reason: blocked: needs T0224 occurrences in the store and T0235 task history view] [owner: @claude] Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence.
 - [x] T0225 Complete a task with one click on its status button, keeping the full status menu one step away.
 - [x] T0228 Let Enter add by default, keep focus in the add field, and open the editor unfocused only on wide screens.
 - [x] T0229 Parse due dates, times, and list tags typed in the add field into the new task.

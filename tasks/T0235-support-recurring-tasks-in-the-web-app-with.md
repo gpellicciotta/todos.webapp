@@ -5,24 +5,26 @@ session: claude-20261115-2d98ad
 needs: []
 branch: task/T0235-support-recurring-tasks-in-the-web-app-with
 worktree: .plan/work/T0235-support-recurring-tasks-in-the-web-app-with
-status: active
+status: completed
 started_at: "2026-11-15T10:42:24Z"
-ended_at: —
+ended_at: "2026-11-15T11:46:37Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 4806.8, input: 728, output: 305832, cache_read: 95442830, cache_write: 772940}
-  review: {turns: 2, duration_s: 1632.2, input: 988364, output: 73376, cache_read: 10907824}
-review_status: pending
+  review: {turns: 4, duration_s: 2805.4, input: 1720244, output: 112682, cache_read: 16180784}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-15T11:36:43Z"
-review_session: antigravity-20261115-b303ad
-work_duration: 2594.4
+review_session: antigravity-20261115-d83532
+work_duration: 3851.5
 size_status: approved
 size_approved: 25 files, 1433 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T11:32:10Z"
+reviewed_by: "@gemini"
+completion-commit: 4141dfc6dff11ff9675bc87582fcd78a44bb3654
 ---
 # T0235: Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history
 
@@ -46,7 +48,7 @@ Follow the [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurr
 - [x] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
 - [x] **[Visual]**    Capture before and after screenshots of the editor, a recurring row, and the history view.
 - [x] **[Doc]**       Update requirements, local-store.md, ui-design.md, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-13] **[Doc]**
@@ -124,4 +126,11 @@ Follow the [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurr
 
 - [2026-11-15] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 2 approved by @gemini: Commits `febd00d` and `dc6137f` resolve every defect and process gap from Round 1.
+  - Findings: [review-findings-2.md](T0235-support-recurring-tasks-in-the-web-app-with/review-findings-2.md).
+
+- [2026-11-15] **[Complete]**
+  Task completed successfully.
 
