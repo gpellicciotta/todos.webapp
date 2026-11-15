@@ -8,6 +8,15 @@
 - docs/requirements.md
 - docs/specs/ui-design.md
 - New, not counted: src/js/core/quick-add.js and tests/unit/quick-add.test.js.
+- Added during execution: src/js/views/all-tasks.js and src/js/views/list.js, which pass the due time and lists.
+- Added during execution: src/index.html and src/service-worker.js, which preload and precache the new module.
+- Added during execution: src/css/app-components.css, for the preview line.
+- Added during execution: tests/unit/list.test.js and tests/unit/settings.test.js.
+- Generated, not counted: scripts/sw-precache-hashes.json, by `node scripts/check-sw-version.mjs --update`.
+
+Mechanical command: `node scripts/check-sw-version.mjs --update`
+
+Size note: 13 counted files and 276 lines; both views and the worker lists must change for one mergeable feature.
 
 ### Requirements
 - Dates: `today`, `tomorrow`, weekday names meaning the next such day, and `yyyy-mm-dd`.
