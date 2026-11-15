@@ -2,15 +2,18 @@
 id: T0237
 owner: "@claude"
 session: claude-20261115-f0814b
-needs: ['T0224', 'T0235']
+needs: []
 branch: task/T0237-show-task-notes-on-their-occurrence-and-let
 worktree: .plan/work/T0237-show-task-notes-on-their-occurrence-and-let
-status: suspended
-started_at: "2026-11-14T23:29:46Z"
+status: active
+started_at: "2026-11-15T12:45:42Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 130.2, input: 56, output: 6580, cache_read: 1365036, cache_write: 97836}
+work_duration: 92.3
 ---
 # T0237: Show task notes on their occurrence, and let users keep a note global or tie it to an occurrence
 
@@ -38,4 +41,7 @@ Start after todos.server T0249 adds the link to the REST note routes.
   - T0224 adds occurrences, current-occurrence, and note field renames.
   - T0235 adds the task history view notes must show on.
   - todos.server T0249 is complete, so the REST side is ready.
+
+- [2026-11-15] **[Decided]**
+  Manager unblocked the task: T0224 and T0235 are complete; added technical-spec.md with declared files, tests, and a 13-file, 650-line estimate.
 
