@@ -61,6 +61,7 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 - `task-id`, `occurrence`, `start-time`, `due-time`, `target-count`, `completion-count`, `status`, `close-time`.
 - Every stored occurrence of each task, the current one included.
 - Export-only: import rebuilds the occurrences from the rules and events, and stores none of these.
+- Optional on import: a file without the array reads as one with an empty array.
 
 ### `events`
 - `id`, `task-id`, `occurrence`, `creation-time`, `owner-id`, `type`, `details`.
@@ -101,7 +102,7 @@ An import first validates the whole file; any failure changes nothing and names 
 - `format-version` must be 1 or 2; other values fail with code `unsupported-version`.
 - `app-version` must be a non-empty string, and `export-time` a valid time.
 - `lists`, `tasks`, `memberships`, and `notes` must be arrays of objects.
-  Format 2 also needs `lifecycle-rules`, `occurrences`, and `events` arrays.
+  Format 2 also needs `lifecycle-rules` and `events` arrays, and reads `occurrences` when present.
 - Every field follows the store rules:
   - List names hold 1 to 100 characters and are unique per owner, ignoring case.
   - List descriptions hold at most 1000 characters and are kept exactly, like the store keeps them.

@@ -211,6 +211,12 @@ describe('parseBackup', () => {
     expect(parseBackup(FIXTURE_2_TEXT)).toEqual(fixture2());
   });
 
+  it('reads a version 2 file without an occurrences array, as import rebuilds the occurrences', () => {
+    const data = fixture2();
+    delete data.occurrences;
+    expect(parseBackup(JSON.stringify(data)).occurrences).toEqual([]);
+  });
+
   it('gives a version 2 task without rules the default rules', () => {
     const data = fixture2();
     data['lifecycle-rules'] = data['lifecycle-rules'].filter((rules) => rules['task-id'] !== T103);

@@ -475,7 +475,7 @@ export function validateBackup(data) {
     const rules = checkRecords(data, 'lifecycle-rules', (raw, path) => checkRules(raw, path, checkTask), (r) => r['task-id'], 'task-id');
     const ruled = new Set(rules.map((r) => r['task-id']));
     parts['lifecycle-rules'] = [...rules, ...tasks.filter((task) => !ruled.has(task.id)).map((task) => ({ 'task-id': task.id, ...rulesOf({}) }))];
-    parts.occurrences = checkRecords(data, 'occurrences', (raw, path) => ({
+    parts.occurrences = checkRecords(data.occurrences === undefined ? { ...data, occurrences: [] } : data, 'occurrences', (raw, path) => ({
       'task-id': checkTask(raw['task-id'], `${path}.task-id`),
       occurrence: checkInteger(raw.occurrence, `${path}.occurrence`, 1, Number.MAX_SAFE_INTEGER),
       'start-time': checkTime(raw['start-time'], `${path}.start-time`),
