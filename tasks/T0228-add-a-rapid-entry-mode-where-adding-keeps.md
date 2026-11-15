@@ -1,11 +1,11 @@
 ---
 id: T0228
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0228-add-a-rapid-entry-mode-where-adding-keeps
+worktree: .plan/work/T0228-add-a-rapid-entry-mode-where-adding-keeps
+status: active
+started_at: "2026-11-15T01:26:39Z"
 ended_at: —
 review: agent
 preview: none
