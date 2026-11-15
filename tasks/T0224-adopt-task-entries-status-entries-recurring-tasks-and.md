@@ -14,9 +14,9 @@ protocol: standard
 size_status: approved
 size_estimate: 60 files, 2734 lines
 usage:
-  worker: {turns: 10, duration_s: 7165.2, input: 548, output: 166438, cache_read: 137064774, cache_write: 1583120}
+  worker: {turns: 12, duration_s: 7276.0, input: 572, output: 170160, cache_read: 144490858, cache_write: 1590662}
   review: {turns: 2, duration_s: 2025.2, input: 1031372, output: 101440, cache_read: 15292238}
-work_duration: 31064.9
+work_duration: 31144.0
 size_approved: 60 files, 2734 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T07:58:09Z"
