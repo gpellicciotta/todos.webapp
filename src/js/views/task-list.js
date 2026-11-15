@@ -2,8 +2,11 @@
  * Task list: the task rows of All tasks and the list view, with their status and More menus.
  *
  * A row shows the status button, the description, the due chip, up to two list chips, and the note count.
- * The open link fills the row and opens the task editor route; the status button opens the status menu
- * (`TSK-4`), and the More button offers Add to list and Delete, which moves the task to the recycle bin
+ * The open link fills the row and opens the task editor route. A click on the status button completes an open task
+ * and sets a finished one back to To do; `x` does the same on the focused row (`TSK-4`).
+ * A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key on it opens the full status menu.
+ * A status change that hides the row under the view's filters shows an Undo toast, which Ctrl+Z also runs.
+ * The More button offers Add to list and Delete, which moves the task to the recycle bin
  * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu; the status button sets it.
  * In a list view, the More menu adds Remove from this list, and Move up and Move down while moves are on,
  * when rows also show a drag handle (`LV-3`).
@@ -44,6 +47,10 @@ const ROW_PX = 48;
 const HEADER_PX = 32;
 /** The most renders for one change: each measures the rows that showed for the first time, so few are needed. */
 const MAX_PASSES = 4;
+/** How long a touch must rest on a status button to open the status menu instead of toggling. */
+const LONG_PRESS_MS = 500;
+/** How far a touch may move before it no longer counts as a long press, in pixels. */
+const LONG_PRESS_SLOP = 10;
 let instances = 0;
 
 /** Status names, in lifecycle order. */
@@ -54,6 +61,9 @@ export const STATUS_LABELS = Object.freeze({
 /** Row strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   statusOf: 'Status of ',
+  mark: (description, status) => `Mark ${description} ${STATUS_LABELS[status].toLowerCase()}`,
+  statusHint: (status) => `${STATUS_LABELS[status]}. Right-click or press Down for all statuses.`,
+  marked: (status) => `Task marked ${STATUS_LABELS[status].toLowerCase()}.`,
   moreFor: 'More actions for ',
   addToList: 'Add to list',
   addTo: 'Add to a list: ',
@@ -69,6 +79,25 @@ const STRINGS = Object.freeze({
   moreLists: ' more lists',
   notes: ' notes',
 });
+
+/**
+ * Return the status one click on the status button sets: open tasks complete, finished tasks go back to To do.
+ * @param {string} status the current status
+ * @returns {string} the new status
+ */
+export function toggledStatus(status) {
+  return status === 'todo' || status === 'in-progress' ? 'completed' : 'todo';
+}
+
+/**
+ * Tell whether a key event comes from a text field, where letter shortcuts must type instead.
+ * @param {Event} event the key event
+ * @returns {boolean} whether the target takes text
+ */
+function inTextField(event) {
+  const target = event.target;
+  return Boolean(target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable="true"]'));
+}
 
 /**
  * Create a sprite icon element.
@@ -268,7 +297,6 @@ function rowTemplate(doc, handle) {
   const status = make(doc, 'button', 'icon-button status-button');
   status.type = 'button';
   status.dataset.role = 'status';
-  status.setAttribute('aria-haspopup', 'menu');
   status.append(spriteIcon(doc, 'status-todo'));
   const open = make(doc, 'a', 'task-row__open');
   open.dataset.role = 'open';
@@ -310,7 +338,8 @@ function renderRow(doc, task, view, template, selected) {
   const more = row.lastElementChild;
   const open = more.previousElementSibling;
   const status = open.previousElementSibling;
-  status.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}: ${STATUS_LABELS[task.status]}`);
+  status.setAttribute('aria-label', STRINGS.mark(task.description, toggledStatus(task.status)));
+  status.title = STRINGS.statusHint(task.status);
   status.dataset.status = task.status;
   status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${task.status}`);
   open.href = view.href;
@@ -480,6 +509,11 @@ export function createTaskList({
   let ctx = {};
   let active = null;
   let justClosed = null;
+  // Whether a task shows under the view's filters, as the last render passed it.
+  let shows = null;
+  // A touch resting on a status button: its timer and start point; `pressed` is the button whose long press opened the menu.
+  let press = null;
+  let pressed = null;
 
   /**
    * Report a change that failed, in the console and in a toast.
@@ -496,7 +530,42 @@ export function createTaskList({
       const { trigger, controller } = active;
       active = null;
       controller.destroy();
-      trigger.setAttribute('aria-haspopup', 'menu');
+      // The status button opens its menu only by right-click, long press, or keys, so a click never announces a popup.
+      if (trigger.dataset.role === 'more') {
+        trigger.setAttribute('aria-haspopup', 'menu');
+      }
+    }
+  }
+
+  /**
+   * Set the status of a task; when the change hides its row under the view's filters, show an Undo toast.
+   * The row is judged with the change applied, so a task finished now counts as finished today.
+   * @param {object} task the task
+   * @param {string} status the new status
+   */
+  function setStatus(task, status) {
+    if (status === task.status) {
+      return;
+    }
+    const changed = { ...task, status, 'last-update-time': new Date(ctx.now ?? Date.now()).toISOString() };
+    const hides = shows !== null && !shows(changed);
+    store.updateTask(task.id, { status }).then(() => {
+      if (hides) {
+        toaster.show(STRINGS.marked(status), {
+          undo: true,
+          onAction: () => store.updateTask(task.id, { status: task.status }).catch(fail),
+        });
+      }
+    }, fail);
+  }
+
+  /**
+   * Complete an open task, or set a finished task back to To do, unless the user's role locks its status (`SHR-4`).
+   * @param {object|undefined} task the task
+   */
+  function toggle(task) {
+    if (task && !accessOf(task, ctx, listId).locked) {
+      setStatus(task, toggledStatus(task.status));
     }
   }
 
@@ -541,11 +610,8 @@ export function createTaskList({
     statusMenu.setAttribute('aria-label', `${STRINGS.statusOf}${task.description}`);
     statusMenu.replaceChildren(...STATUSES.map((status) => menuItem(doc, 'menuitemradio', STATUS_LABELS[status], { status },
       { icon: `status-${status}`, checked: status === task.status })));
-    openMenu(trigger, statusMenu, (item) => {
-      if (item.dataset.status !== task.status) {
-        store.updateTask(task.id, { status: item.dataset.status }).catch(fail);
-      }
-    }, () => statusMenu.querySelector('[aria-checked="true"]'), 'status');
+    openMenu(trigger, statusMenu, (item) => setStatus(task, item.dataset.status),
+      () => statusMenu.querySelector('[aria-checked="true"]'), 'status');
   }
 
   /**
@@ -1073,9 +1139,50 @@ export function createTaskList({
     return trigger && active?.trigger !== trigger && justClosed !== trigger ? trigger : null;
   }
 
+  /**
+   * Find the task of the row an event happened in.
+   * @param {Event} event the event
+   * @returns {object|undefined} the task
+   */
+  function taskOf(event) {
+    return byId.get(event.target.closest?.('.task-row')?.dataset.taskId);
+  }
+
+  /**
+   * Tell whether a key opens the status menu on the status button: Down, Up, Shift+F10, or the Menu key.
+   * Alt+Up and Alt+Down move the row in a list view, so they never open a menu.
+   * @param {KeyboardEvent} event the keydown event
+   * @returns {boolean} whether the key opens the menu
+   */
+  function opensStatusMenu(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return false;
+    }
+    return ['ArrowDown', 'ArrowUp', 'ContextMenu'].includes(event.key) || (event.key === 'F10' && event.shiftKey);
+  }
+
+  /** Stop waiting for a long press. */
+  function cancelPress() {
+    if (press) {
+      clearTimeout(press.timer);
+      press = null;
+    }
+  }
+
+  // The click that ends a long press must neither toggle the status nor reach the popover, which would close the menu.
+  list.addEventListener('click', (event) => {
+    if (pressed && event.target.closest?.('[data-role="status"]') === pressed) {
+      pressed = null;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, true);
   list.addEventListener('click', (event) => {
     const trigger = menuButton(event);
-    if (trigger) {
+    if (trigger?.dataset.role === 'status') {
+      toggle(taskOf(event));
+    }
+    else if (trigger) {
       // The menu makes the button its popover invoker during this click, whose default toggle would close it again.
       event.preventDefault();
       openFor(trigger, 'first');
@@ -1083,12 +1190,54 @@ export function createTaskList({
   });
   list.addEventListener('keydown', (event) => {
     const trigger = menuButton(event);
-    // Alt+Up and Alt+Down move the row in a list view, so they never open a menu.
-    if (trigger && !event.altKey && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+    if (trigger?.dataset.role === 'status' && opensStatusMenu(event)) {
+      event.preventDefault();
+      openFor(trigger, 'first');
+    }
+    else if (trigger?.dataset.role === 'more' && !event.altKey && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
       event.preventDefault();
       openFor(trigger, event.key === 'ArrowUp' ? 'last' : 'first');
     }
+    else if (event.key === 'x' && !event.altKey && !event.ctrlKey && !event.metaKey && !inTextField(event) && taskOf(event)) {
+      event.preventDefault();
+      toggle(taskOf(event));
+    }
   });
+  list.addEventListener('contextmenu', (event) => {
+    const trigger = event.target.closest?.('[data-role="status"]');
+    if (!trigger) {
+      return;
+    }
+    event.preventDefault();
+    // A long press already opened the menu, and some browsers follow it with this event.
+    if (active?.trigger !== trigger || !active.controller.isOpen()) {
+      openFor(trigger, 'first');
+    }
+  });
+  list.addEventListener('pointerdown', (event) => {
+    cancelPress();
+    pressed = null;
+    const trigger = event.target.closest?.('[data-role="status"]');
+    if (!trigger || trigger.disabled || event.pointerType === 'mouse') {
+      return;
+    }
+    press = {
+      x: event.clientX, y: event.clientY,
+      timer: setTimeout(() => {
+        press = null;
+        pressed = trigger;
+        openFor(trigger, 'first');
+      }, LONG_PRESS_MS),
+    };
+  });
+  list.addEventListener('pointermove', (event) => {
+    if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > LONG_PRESS_SLOP) {
+      cancelPress();
+    }
+  });
+  for (const type of ['pointerup', 'pointercancel']) {
+    list.addEventListener(type, cancelPress);
+  }
   doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
   doc.defaultView?.addEventListener('resize', onScroll);
   if (typeof doc.defaultView?.ResizeObserver === 'function') {
@@ -1107,10 +1256,13 @@ export function createTaskList({
      * @param {{now?: Date, lists?: Map<string, object>, listsByTask?: Map<string, string[]>,
      *   notesByTask?: Map<string, string[]>}} context the time, the live lists in display order,
      *   list identifiers by task, and note texts by task
-     * @param {{groups?: Array<{key: string, label: string, tasks: object[]}>|null}} [grouping] the groups of `groupTasks`
+     * @param {{groups?: Array<{key: string, label: string, tasks: object[]}>|null, shows?: ((task: object) => boolean)|null}}
+     *   [grouping] the groups of `groupTasks`, and whether a task shows under the view's filters, for the Undo toast
+     *   of a status change that hides its row
      */
-    render(tasks, context, { groups = null } = {}) {
+    render(tasks, context, { groups = null, shows: filter = null } = {}) {
       ctx = context;
+      shows = filter;
       const memo = remember();
       detach();
       cancelFill();
@@ -1214,6 +1366,7 @@ export function createTaskList({
     /** Close any open menu, and stop adding rows and following scrolls. */
     destroy() {
       cancelFill();
+      cancelPress();
       detach();
       doc.removeEventListener('scroll', onScroll, { capture: true });
       doc.defaultView?.removeEventListener('resize', onScroll);

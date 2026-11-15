@@ -288,7 +288,7 @@ export function mountAllTasks(view, {
     const groups = state.group && state.group !== 'none'
       ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) })
       : null;
-    taskList.render(shown, ctx, { groups });
+    taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], filter, ctx).length > 0 });
     addBar.setKnown(exactMatchIndex(byOptions));
     const nothingMatches = addHint.update({ text: filter.text ?? '', shown: shown.length, viewer: false });
     empty.hidden = shown.length > 0 || nothingMatches;

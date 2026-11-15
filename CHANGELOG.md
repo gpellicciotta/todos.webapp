@@ -18,6 +18,10 @@ All notable changes to this project are documented here.
 - FrontEnd: Showed an update activated in another tab as a lasting Reload toast instead of a banner.
 - FrontEnd: Gave list chip remove buttons the package skeleton, with chip corners and a visible hover in light mode.
 - DevOps: Gave the task row and chrome gallery focus ring tests 90 seconds, since full parallel runs pushed them near 30.
+- FrontEnd: Made one click on a task's status button complete it, or set a finished task back to To do.
+- FrontEnd: Opened the full status menu by right-click, long press, Down, Up, Shift+F10, or the Menu key.
+- FrontEnd: Added the `x` shortcut, which toggles completion of the focused row.
+- FrontEnd: Showed an Undo toast when a status change hides the row under the view's filters.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

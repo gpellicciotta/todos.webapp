@@ -197,6 +197,44 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
+  test('one click completes a task with an Undo toast, and the status menu cancels a task (TSK-4)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    const paint = page.locator('.list-view .task-row', { hasText: 'Buy paint' });
+    await paint.getByRole('button', { name: 'Mark Buy paint completed' }).click();
+    await expect(paint).toHaveCount(0);
+    const done = page.locator('.toast', { hasText: 'Task marked completed.' });
+    await done.getByRole('button', { name: 'Undo' }).click();
+    await expect(paint).toHaveAttribute('data-status', 'todo');
+
+    const gutters = page.locator('.list-view .task-row', { hasText: 'Clean the gutters' });
+    await gutters.locator('.status-button').click({ button: 'right' });
+    const menu = page.getByRole('menu', { name: 'Status of Clean the gutters' });
+    await expect(menu).toBeVisible();
+    await menu.getByRole('menuitemradio', { name: 'Cancelled' }).click();
+    await expect(gutters).toHaveCount(0);
+    await expect(page.locator('.toast', { hasText: 'Task marked cancelled.' })).toBeVisible();
+
+    // A long press by touch opens the menu too, and its release keeps the status.
+    const door = page.locator('.list-view .task-row', { hasText: 'Fix the door' }).locator('.status-button');
+    await door.dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true, clientX: 5, clientY: 5 });
+    await expect(page.getByRole('menu', { name: 'Status of Fix the door' })).toBeVisible();
+    await door.dispatchEvent('pointerup', { pointerType: 'touch', isPrimary: true });
+    await door.dispatchEvent('click');
+    await expect(page.getByRole('menu', { name: 'Status of Fix the door' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    const statuses = await page.evaluate(async () => {
+      const { openStore } = await import('/js/store/db.js');
+      const store = await openStore();
+      const tasks = await store.listTasks();
+      store.close();
+      return Object.fromEntries(tasks.map((task) => [task.description, task.status]));
+    });
+    expect(statuses).toMatchObject({ 'Buy paint': 'todo', 'Clean the gutters': 'cancelled', 'Fix the door': 'in-progress' });
+    expect(problems).toEqual([]);
+  });
+
   test('the More menu holds Edit list, Edit view options, Share list, and Delete list (VO-4)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);

@@ -199,8 +199,16 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 | [status] Description text, truncated...  [due] [list] [list] [+1] [notes] [more] |
 ```
 - The row is 48 px high and shows one line; the whole row opens the task editor.
-- The status button opens a status menu listing the four statuses; picking one sets it (`TSK-4`).
-- The menu marks the current status and opens on Enter or Space, with arrow keys to choose.
+- A click on the status button toggles completion, the most frequent change (`TSK-4`):
+  `todo` and `in-progress` become `completed`, and `completed` and `cancelled` become `todo`.
+  Enter and Space on the button, and `x` on any control of the focused row, do the same.
+- Its accessible name states the action, such as "Mark Buy paint completed".
+  Its tooltip names the current status and how to reach the others.
+- The full status menu lists the four statuses; picking one sets it.
+  It opens on a right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key.
+  **[Decided]** The task editor's status control is its visible alternative, so rows need no chevron button.
+- A status change that hides the row under the view's filters shows an Undo toast, such as "Task marked completed.".
+  Undo, or Ctrl+Z, sets the old status back.
 - The status icons differ in shape, not only in color:
   - `todo`: an empty circle, in the muted text color.
   - `in-progress`: a circle with a filled bottom half, in blue.
@@ -217,7 +225,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
   - Move up and Move down, in a list view with manual order only (`LV-3`).
   - Delete, which moves the task to the recycle bin and shows an Undo toast (`TSK-11`).
 - Menu entries the user's role does not allow are left out (`SHR-4`):
-  a viewer has a disabled status button and no More button; a task editor has Add to list (only to lists they may add to)
+  a viewer has a disabled status button, no `x`, no status menu, and no More button; a task editor has Add to list (only to lists they may add to)
   and Remove from this list, and only the task owner or the owner of a list holding the task sees Delete.
 - [task-list.js](../../src/js/views/task-list.js) renders the rows and their menus for All tasks and the list view.
   The status menu opens with focus on the current status; after a change, focus stays on that row's button.
@@ -785,6 +793,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` and `/` focus the add and search field, and Escape closes the editor or a dialog.
+- `x` completes the task of the focused row, or sets a finished one back to To do.
 - Shift+Enter or Alt+Enter in the add and search field adds the typed task, like the Add button.
 - On the Lists screen `/` focuses the find field; `l` focuses the sidebar's find field, or opens Lists where there is none.
 - Alt+Up, Alt+Down, Alt+Shift+Up, and Alt+Shift+Down move a focused list by one place or to an end.

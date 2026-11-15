@@ -748,7 +748,7 @@ def all_tasks():
     wide_all_tasks(wide, typed="paint", info="1 of 24 tasks · Status: open")
     return (
         "All tasks",
-        "Quiet by default (compact, with a status menu); typing in the add bar filters the rows (wide).",
+        "Quiet by default (compact, with the status menu a long press opens); typing in the add bar filters the rows (wide).",
         compact,
         wide,
     )

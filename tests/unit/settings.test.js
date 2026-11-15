@@ -249,6 +249,7 @@ describe('Keyboard shortcuts in About', () => {
     [['Shift+Enter', 'Alt+Enter'], 'Add the task or list, in the search and add field.'],
     [['Escape'], 'Clear the search and add field, or close the editor or a dialog.'],
     [['Alt+Up', 'Alt+Down'], "Move the focused list, or the focused task in a list's manual order."],
+    [['x'], 'Complete the focused task, or set a finished one back to To do.'],
     [['Ctrl+Z', 'Cmd+Z'], 'Undo the newest change shown in a toast.'],
   ];
 
@@ -260,7 +261,7 @@ describe('Keyboard shortcuts in About', () => {
     return view.querySelector('section[aria-labelledby="settings-about"]');
   }
 
-  it('lists the five shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd', () => {
+  it('lists the six shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd', () => {
     const about = mountAbout();
     const heading = about.querySelector('h3');
     expect(heading.textContent).toBe('Keyboard shortcuts');
@@ -274,7 +275,7 @@ describe('Keyboard shortcuts in About', () => {
 
   it('joins alternative keys with "or", so a screen reader reads each term as text', () => {
     const terms = [...mountAbout().querySelectorAll('.settings__shortcuts dt')].map((term) => term.textContent);
-    expect(terms).toEqual(['n or /', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'Ctrl+Z or Cmd+Z']);
+    expect(terms).toEqual(['n or /', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'x', 'Ctrl+Z or Cmd+Z']);
   });
 
   it('sits after the version line and before the source link', () => {

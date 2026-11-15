@@ -25,7 +25,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">All tasks</text>
-  <text x="40" y="72" font-size="16" class="muted">Quiet by default (compact, with a status menu); typing in the add bar filters the rows (wide).</text>
+  <text x="40" y="72" font-size="16" class="muted">Quiet by default (compact, with the status menu a long press opens); typing in the add bar filters the rows (wide).</text>
   <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
   <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
   <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">

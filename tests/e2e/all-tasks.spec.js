@@ -157,13 +157,45 @@ test('Add adds a task, opens it, keeps focus in the add bar, and asks for persis
   expect(problems).toEqual([]);
 });
 
-test('the status menu changes a status by mouse and by keyboard (TSK-4)', async ({ page }) => {
+test('one click completes a task, x toggles the focused row, and Undo or Ctrl+Z sets it back (TSK-4)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await openApp(page);
+  await seed(page);
+  const flights = page.locator('.task-row', { hasText: 'Book flights' });
+  await flights.getByRole('button', { name: 'Mark Book flights completed' }).click();
+  await expect(flights).toHaveCount(0);
+  const toast = page.locator('.toast', { hasText: 'Task marked completed.' });
+  await toast.getByRole('button', { name: 'Undo' }).click();
+  await expect(flights).toHaveAttribute('data-status', 'todo');
+
+  const paint = page.locator('.task-row', { hasText: 'Buy paint' });
+  await paint.locator('.task-row__open').focus();
+  await page.keyboard.press('x');
+  await expect(paint).toHaveCount(0);
+  await page.locator('main').focus();
+  await page.keyboard.press('Control+z');
+  await expect(paint).toHaveAttribute('data-status', 'todo');
+
+  const statuses = async () => page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const tasks = await store.listTasks();
+    store.close();
+    return Object.fromEntries(tasks.map((task) => [task.description, task.status]));
+  });
+  expect((await statuses())['Book flights']).toBe('todo');
+  expect((await statuses())['Buy paint']).toBe('todo');
+  expect(problems).toEqual([]);
+});
+
+test('the status menu changes a status by right-click and by keyboard (TSK-4)', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
   await openApp(page);
   await seed(page);
   const row = page.locator('.task-row', { hasText: 'Book flights' });
-  await row.locator('.status-button').click();
+  await row.locator('.status-button').click({ button: 'right' });
   const menu = page.getByRole('menu', { name: 'Status of Book flights' });
   await expect(menu).toBeVisible();
   await expect(menu.getByRole('menuitemradio', { name: 'To do' })).toHaveAttribute('aria-checked', 'true');
@@ -173,7 +205,7 @@ test('the status menu changes a status by mouse and by keyboard (TSK-4)', async 
 
   const paint = page.locator('.task-row', { hasText: 'Buy paint' });
   await paint.locator('.status-button').focus();
-  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menu', { name: 'Status of Buy paint' })).toBeVisible();
   await expect(page.getByRole('menuitemradio', { name: 'To do' })).toBeFocused();
   await page.keyboard.press('ArrowDown');
@@ -386,7 +418,7 @@ test('a store change while the status menu is open keeps the menu open and focus
   await openApp(page);
   await seed(page);
   await page.locator('.task-row', { hasText: 'Book flights' }).locator('.status-button').focus();
-  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'Status of Book flights' });
   await expect(menu.getByRole('menuitemradio', { name: 'In progress' })).toBeFocused();

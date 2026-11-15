@@ -215,7 +215,10 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
 Defined in [app-components.css](../../src/css/app-components.css) and [app-chrome.css](../../src/css/app-chrome.css), on top of the controls.
 App states use attributes the app sets, such as `data-status` and `aria-current`, never gallery classes.
 
-- [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` opening the status menu.
+- [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` that toggles completion on click.
+  A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key opens the status menu instead.
+  It sets no text selection and no touch callout, so a long press reaches the menu.
+  Its `aria-label` names the click action, such as "Mark Buy paint completed".
   The icon shapes differ, so status never relies on color. The app sets `data-status` on the button, which colors the icon:
   - `todo`: an empty circle, in the muted text color.
   - `in-progress`: a circle with a filled bottom half, in blue.

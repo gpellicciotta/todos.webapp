@@ -70,6 +70,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-2: A new task has status `todo` and overdue behavior `keep` unless the user picks otherwise.
 - TSK-3: A task status is one of `todo`, `in-progress`, `completed`, or `cancelled`.
 - TSK-4: Users change a task status from any status to any other status.
+  One click on a task's status button completes an open task, or sets a finished task back to `todo`.
 - TSK-5: Users set, change, or clear an optional due time.
 - TSK-6: A due date without a time of day means 23:59 local time on that date.
 - TSK-7: Users set the overdue behavior to `keep` or `cancel` on a task with a due time.

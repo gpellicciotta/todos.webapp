@@ -84,7 +84,7 @@ describe('mountAllTasks', () => {
       });
       await screen.idle();
       const row = document.querySelector('.task-row');
-      row.querySelector('.status-button').click();
+      row.querySelector('.status-button').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
       const focused = document.activeElement;
       time = new Date(2026, 10, 4, 10, 1);
       vi.advanceTimersByTime(60_000);
