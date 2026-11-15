@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 2295.4, input: 340, output: 110026, cache_read: 22404276, cache_write: 341724}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T02:09:30Z"
 ---
 # T0223: Improve task group headers with more padding, an 'n of m' count, and collapsible groups
 
@@ -71,4 +76,7 @@ Combined task: all three changes edit the same header element and one render fun
   - Files touched: 15.
   - Lines touched: 427.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
