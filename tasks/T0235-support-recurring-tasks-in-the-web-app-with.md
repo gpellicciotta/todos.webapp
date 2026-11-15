@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 3526.2, input: 584, output: 244618, cache_read: 68740592, cache_write: 663792}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T11:11:58Z"
 ---
 # T0235: Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history
 
@@ -84,4 +89,7 @@ Follow the [T0215 design](../../../todos.server/.plan/tasks/T0215-specify-recurr
 
 - [2026-11-15] **[Doc]**
   Updated requirements with TSK-16 and TSK-17, local-store.md Recurrence, ui-design.md rows and editor, and CHANGELOG.md.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
