@@ -13,10 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 6, duration_s: 3784.2, input: 624, output: 148742, cache_read: 44566734, cache_write: 504924}
-work_duration: 26088.5
-review_status: pending
+  review: {turns: 2, duration_s: 1493.8, input: 476944, output: 63972, cache_read: 9177308}
+work_duration: 29248.0
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-15T09:21:35Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261115-d40cd3
 ---
 # T0228: Let Enter add by default, keep focus in the add field, and open the editor unfocused only on wide screens.
 
@@ -96,4 +99,19 @@ Size note: Enter's new default touched existing specs, Settings, docs, the galle
 
 - [2026-11-15] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 1 rejected by @gemini: Core rapid-entry behavior, Settings switch, unit tests (1299 passed), and E2E tests (70 affected passed) work well.
+  - Findings: [review-findings-1.md](T0228-add-a-rapid-entry-mode-where-adding-keeps/review-findings-1.md).
+
+- [2026-11-15] **[Implement]**
+  Addressed review round 1: long-list rows render, scroll, and highlight through markAdded; added rows keep hover feedback; viewers get no aria-keyshortcuts; docs sentences trimmed.
+
+- [2026-11-15] **[Verify]**
+  Round 1 rework verified; size note: 22 counted files and 626 lines, still above the large line for the same reason.
+  - npm test: 1301 passed.
+  - playwright: 207 passed.
+  - Files touched: 22.
+  - Lines touched: 626.
+  - Reopenings: 0.
 

@@ -209,3 +209,81 @@ Running 206 tests using 4 workers
 ```text
 84 passed in 0.46s
 ```
+
+### Review round 1 rework
+Findings addressed:
+- Long lists: `createTaskList().markAdded(taskId)` renders a virtualized row first, scrolls to it, and keeps the class across renders.
+- Hover: `.task-row--added` rows keep hover and press feedback, like selected rows.
+- Viewer: a read-only field drops `aria-keyshortcuts`, also after `setViewer()`.
+- Prose: the new CHANGELOG, requirements, and ui-design sentences are at most 20 words; `T0228` is gone from the docs.
+- The service worker VERSION is now `2026-11-15.8`, with regenerated hashes.
+
+Red phase: `npx vitest run tests/unit/task-list.test.js tests/unit/add-bar.test.js` (exit code 1)
+
+```text
+[... 44 lines omitted ...]
+       × names no adding keys for a viewer, whose field only searches (VO-14) 16ms
+       × renders, scrolls to, and highlights a new task past the rendered rows for two seconds, across renders 83ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected true to be false // Object.is equality
+TypeError: other.markAdded is not a function
+ Test Files  2 failed (2)
+      Tests  2 failed | 93 passed (95)
+```
+
+Red phase: `npx playwright test tests/e2e/all-tasks.spec.js -g "hover feedback" --reporter=line` (exit code 1)
+
+```text
+[... 28 lines omitted ...]
+  1) [chromium] › tests\e2e\all-tasks.spec.js:572:1 › a just added row keeps the hover feedback of other rows while it is highlighted 
+    Error: expect(received).toBe(expected) // Object.is equality
+    Expected: "rgb(238, 238, 242)"
+    Received: "rgb(238, 242, 251)"
+  1 failed
+```
+
+Green: `npm test` (exit code 0)
+
+```text
+
+> todos-webapp@0.4.1-pre test
+> vitest run
+
+
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0228-add-a-rapid-entry-mode-where-adding-keeps
+
+
+ Test Files  57 passed (57)
+      Tests  1301 passed (1301)
+   Start at  10:37:43
+   Duration  12.66s (environment 52%, tests 34%, import 9%, transform 2%, worker 1%, setup 1%)
+
+    Isolate  57 workers spawned · ~941ms startup each (spawn + environment, per file)
+             at least ~6.72s faster with isolate: false — reuses workers across files instead of one per file
+```
+
+`npx eslint .` (exit code 0, no output)
+
+```text
+(no output)
+```
+
+Green: `npx playwright test --reporter=line` (exit code 0)
+
+```text
+
+Running 207 tests using 4 workers
+
+[... 206 lines omitted ...]
+[207/207] [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6)
+  207 passed (2.3m)
+```
+
+`node scripts/check-sw-version.mjs` (exit code 0)
+
+```text
+OK: 126 precached files match VERSION 2026-11-15.8.
+```
+
+Visual note: no screenshot pair for the hover fix, since the round 1 build is not served anywhere.
+The e2e test "a just added row keeps the hover feedback of other rows while it is highlighted" compares computed backgrounds instead.

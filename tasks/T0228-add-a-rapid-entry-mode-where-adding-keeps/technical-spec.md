@@ -4,6 +4,7 @@
 - src/js/views/add-bar.js
 - src/js/views/all-tasks.js
 - src/js/views/list.js
+- src/js/views/task-list.js
 - src/js/core/preferences.js
 - src/js/views/settings.js
 - src/css/app-components.css
@@ -13,6 +14,7 @@
 - tests/unit/add-bar.test.js
 - tests/unit/all-tasks.test.js
 - tests/unit/list.test.js
+- tests/unit/task-list.test.js
 - tests/unit/preferences.test.js
 - tests/unit/settings.test.js
 - tests/e2e/all-tasks.spec.js
@@ -44,6 +46,9 @@ Mechanical command: `node scripts/check-sw-version.mjs --update` regenerates `sc
 - Unit: Enter adds by default, searches when the switch is off, for a viewer, or without a description.
 - Unit: the choice survives a reload through preferences, and the Settings switch stores it.
 - Unit: a compact add opens no editor, keeps the focus, highlights the row, and announces it.
+- Unit: a new task past the rendered rows of a 5000-row list renders, scrolls into view, and highlights.
+- Unit: a viewer's field names no adding keys.
+- Integration: e2e confirms a just added row keeps hover feedback.
 - Integration: e2e at 390 px types five tasks with Enter and finds them in order without the editor.
 - Integration: e2e turns the switch off in Settings and confirms Enter then only searches.
 
