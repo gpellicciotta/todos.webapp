@@ -15,15 +15,16 @@ size_status: approved
 size_estimate: 60 files, 2734 lines
 usage:
   worker: {turns: 16, duration_s: 8068.2, input: 664, output: 187426, cache_read: 173321966, cache_write: 1617256}
-  review: {turns: 4, duration_s: 2877.2, input: 1654490, output: 139660, cache_read: 21371598}
-work_duration: 31629.9
+  review: {turns: 6, duration_s: 4790.6, input: 2659566, output: 206414, cache_read: 38465814}
+work_duration: 34574.2
 size_approved: 60 files, 2734 lines
 size_approved_by: "@giova"
 size_approved_at: "2026-11-15T08:17:22Z"
-review_status: pending
+review_status: rejected
 review_round: 3
 review_requested_at: "2026-11-15T08:28:04Z"
-review_session: antigravity-20261115-4f2fa8
+review_session: antigravity-20261115-e981a1
+reviewed_by: "@gemini"
 ---
 # T0224: Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync
 
@@ -47,6 +48,7 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 - [x] **[Verify]**    Run npm test, the contract suite against a local server, and the e2e suite.
 - [x] **[Doc]**       Update local-store.md, the affected requirements, and CHANGELOG.md.
 - [x] **[Implement]** Fix review round 1 defects D1 to D5 and the changelog areas, proving each test fails first.
+- [x] **[Implement]** Fix review round 3 defects: sync log task links, same-occurrence merge folding, and the style guide icon.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -180,4 +182,26 @@ T0234 (task views), T0235 (recurrence), and T0236 (backup format 2) build on thi
 
 - [2026-11-15] **[Size]**
   Size note: Merge fix-ups and the version bump measure 61 files and 2819 lines, slightly over the approved 60 files and 2734 lines.
+
+- [2026-11-15] **[Review]**
+  Round 3 rejected by @gemini: The `main` merge (`4e687d7` -> `6bd3d3c`) integrates cleanly with one-click completion, quick-add parsing, and collapsible group headers.
+  - Findings: [review-findings-3.md](T0224-adopt-task-entries-status-entries-recurring-tasks-and/review-findings-3.md).
+
+- [2026-11-15] **[Implement]**
+  Fixed round 3 findings: sync log links for rule edits and refused adopted events, same-occurrence merge folding, and the style guide icon name.
+  - 3 new tests failed before their fixes.
+
+- [2026-11-15] **[Verify]**
+  Reran lint, check:sw, npm test, the contract suite, and the e2e suite after the round 3 rework; all passed.
+  - Unit: 1286 passed; contract: 9 passed.
+  - E2e: 205 passed; VERSION 2026-11-15.6.
+
+- [2026-11-15] **[Size]**
+  Size note: Round 3 rework measures 65 files and 2879 lines, within 1.1 times the approved 60 files and 2734 lines.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 65.
+  - Lines touched: 2879.
+  - Reopenings: 0.
 

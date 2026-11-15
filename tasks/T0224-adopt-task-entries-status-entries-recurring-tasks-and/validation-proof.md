@@ -203,3 +203,56 @@ Exit code: 0
 [205/205] [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6)
   205 passed (2.3m)
 ```
+
+## Review Round 3 Rework
+
+### Fixes
+- D1: the sync log resolves `rules` targets to their task, and adoption logs refused events and notes with their `task-id`.
+- D2: the merge folds only queued events of the pulled occurrence onto it.
+- P1: `docs/specs/visual-style-guide.md` names the `status-ready` icon.
+- The service worker `VERSION` became `2026-11-15.6`, followed by `node scripts/check-sw-version.mjs --update`.
+
+### Red phase: each new test before its fix
+Commands: `npx vitest run tests/unit/sync-log-view.test.js -t "rule edit and of an adopted"` before the `findItem` change,
+`npx vitest run tests/unit/adopt.test.js -t "logs a refused event"` with the adopt.js fix reverse-applied,
+and `npx vitest run tests/unit/merge.test.js -t "folds only the queued events"` before the merge change. Each exit code: 1.
+
+```text
+ FAIL  tests/unit/sync-log-view.test.js > the Sync log screen > names and links the task of a rule edit and of an adopted event (SYN-8, SYN-9)
+AssertionError: expected [ [ 'Water the plants', …(1) ], …(1) ] to deeply equal [ [ 'Water the plants', …(1) ], …(1) ]
+      Tests  1 failed | 9 skipped (10)
+ FAIL  tests/unit/adopt.test.js > adopting local data on first connect > logs a refused event with its task, so the sync log can name and link it
+AssertionError: expected [ { type: 'event', …(1) } ] to deeply equal [ { type: 'event', …(2) } ]
+      Tests  1 failed | 8 skipped (9)
+ FAIL  tests/unit/merge.test.js > merging a pulled row > folds only the queued events of the pulled occurrence, not those of an occurrence the service closed
+AssertionError: expected { occurrence: 2, …(6) } to match object { occurrence: 2, …(2) }
+      Tests  1 failed | 27 skipped (28)
+```
+
+### Green: lint, service worker check, and unit suite
+Commands: `npx eslint .` (exit code 0, no output), `npm run check:sw` (exit code 0), and `npm test` (exit code 0)
+
+```text
+OK: 126 precached files match VERSION 2026-11-15.6.
+ Test Files  57 passed (57)
+      Tests  1286 passed (1286)
+```
+
+### Green: contract suite against a local todos.server
+Command: `TODOS_SERVER_DIR=node_modules/.cache/t0224/todos-server npm run test:contract`
+Exit code: 0
+
+```text
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+```
+
+### Green: e2e suite
+Command: `npm run test:e2e -- --reporter=line`
+Exit code: 0
+
+```text
+[204/205] [chromium] › tests\e2e\task-editor.spec.js:181:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5)
+[205/205] [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6)
+  205 passed (2.3m)
+```
