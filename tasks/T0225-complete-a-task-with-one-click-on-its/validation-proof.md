@@ -147,3 +147,81 @@ Screenshots:
 - After, one click completes and shows Undo: [light 390](screenshots/after-light-390-undo-toast.png), [dark 1440](screenshots/after-dark-1440-undo-toast.png).
 - After, a long press opens the menu: [light 390](screenshots/after-light-390-long-press-menu.png), [dark 1440](screenshots/after-dark-1440-long-press-menu.png).
 - Rows, hover, and focus are unchanged: [before rows](screenshots/before-dark-390-rows.png), [after rows](screenshots/after-dark-390-rows.png), [after focus](screenshots/after-dark-390-focus.png).
+
+### Review Round 1 Rework
+VERSION in src/service-worker.js went from `2026-11-13.6` to `2026-11-15.1`.
+`node scripts/check-sw-version.mjs --update` then rewrote the precache manifest.
+The visual style guide's Status button entry now describes the click toggle and the menu paths.
+
+`npm run check:sw` before the bump (exit code 1)
+```text
+ERROR: precached files changed but VERSION is still 2026-11-13.6:
+  css/app-components.css
+  js/views/all-tasks.js
+  js/views/list.js
+  js/views/settings.js
+  js/views/task-list.js
+Bump VERSION in service-worker.js, then run: node scripts/check-sw-version.mjs --update
+```
+`node scripts/check-sw-version.mjs --update` (exit code 0)
+```text
+OK: wrote 123 hashes for VERSION 2026-11-15.1 to {{worktree}}\scripts\sw-precache-hashes.json
+```
+`node scripts/check-sw-version.mjs` (exit code 0)
+```text
+OK: 123 precached files match VERSION 2026-11-15.1.
+```
+`node src/vendor/design/bin/check.mjs` (exit code 0)
+```text
+integrity: PASS
+conformance: PASS
+```
+`npm test` (exit code 0)
+```text
+ Test Files  55 passed (55)
+      Tests  1196 passed (1196)
+   Start at  02:12:47
+   Duration  12.51s (environment 54%, tests 32%, import 9%, transform 3%, worker 1%, setup 1%)
+```
+`npm run lint` (exit code 0)
+```text
+> todos-webapp@0.4.1-pre lint
+> eslint .
+```
+`python -m pytest -q tests` (exit code 0)
+```text
+........................................................................ [ 92%]
+............                                                             [100%]
+156 passed in 123.09s (0:02:03)
+```
+Ruff is not installed on this machine, so the Ruff steps of `devops.py check` did not run.
+The only Python change is one caption string in scripts/draw-wireframes.py.
+
+`E2E_PORT=8925 npx playwright test` first run (exit code 1)
+```text
+  1) [chromium] › tests\e2e\connect.spec.js:141:1 › disconnecting deletes the token and shows Local only 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: 'Disconnect from your account?' }).getByRole('button', { name: 'Disconnect' })
+[... 21 lines omitted ...]
+  1 failed
+    [chromium] › tests\e2e\connect.spec.js:141:1 › disconnecting deletes the token and shows Local only
+  202 passed (2.3m)
+```
+The connect spec does not touch task rows, and it passed in the round 0 full run.
+`E2E_PORT=8925 npx playwright test tests/e2e/connect.spec.js --repeat-each 3` (exit code 0)
+```text
+  ✓  20 [chromium] › tests\e2e\connect.spec.js:141:1 › disconnecting deletes the token and shows Local only (1.8s)
+
+  21 passed (18.5s)
+```
+`E2E_PORT=8925 npx playwright test` second run (exit code 0)
+```text
+  ✓  202 [chromium] › tests\e2e\task-editor.spec.js:181:1 › a new note appears at the top, editing marks it edited, and deleting asks in place (NOT-1 to NOT-5) (4.2s)
+  ✓  203 [chromium] › tests\e2e\task-editor.spec.js:213:1 › Delete task moves it to the recycle bin with an Undo toast, and a deleted task opens read-only (TSK-11, BIN-6) (2.1s)
+
+  203 passed (2.3m)
+```

@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1967.6, input: 336, output: 119024, cache_read: 23399060, cache_write: 375054}
-review_status: pending
+  review: {turns: 2, duration_s: 864.8, input: 400968, output: 42604, cache_read: 7035968}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-15T01:04:19Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261115-b62b32
+work_duration: 1437.5
 ---
 # T0225: Complete a task with one click on its status button, keeping the full status menu one step away
 
@@ -78,4 +82,22 @@ Size estimate: 8 files, 300 lines.
 
 - [2026-11-15] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-15] **[Review]**
+  Round 1 rejected by @gemini: One-click completion, status menu paths, the `x` shortcut, Undo toasts, and tests work well (`npm test` and Playwright pass).
+  - Findings: [review-findings-1.md](T0225-complete-a-task-with-one-click-on-its/review-findings-1.md).
+
+- [2026-11-15] **[Implement]**
+  Addressed review round 1: bumped the service worker VERSION, regenerated the precache manifest, and updated the visual style guide Status button entry.
+  - Size note: 17 counted files, 622 lines; manifest is mechanical.
+
+- [2026-11-15] **[Verify]**
+  check:sw, design check, unit, lint, pytest, and the full e2e suite passed; one unrelated connect flake passed on rerun.
+  - Evidence in validation-proof.md, Review Round 1 Rework.
+
+- [2026-11-15] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 17.
+  - Lines touched: 622.
+  - Reopenings: 0.
 

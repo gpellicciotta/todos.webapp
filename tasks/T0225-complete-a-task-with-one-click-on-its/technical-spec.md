@@ -17,7 +17,12 @@
 - tests/unit/all-tasks.test.js (added during execution: opens the menu by right-click)
 - tests/e2e/bin-settings.spec.js (added during execution: the `x` shortcut row)
 
-Size note: 15 counted files and 615 lines; tests hold 333 of them, and the rest are fix-ups the behavior change requires.
+- docs/specs/visual-style-guide.md (added in review round 1: Status button entry)
+- src/service-worker.js (added in review round 1: VERSION bump for the changed precached files)
+
+Mechanical command: `node scripts/check-sw-version.mjs --update` rewrites scripts/sw-precache-hashes.json, left out of the count.
+
+Size note: 17 counted files and 622 lines; tests hold 333 of them, and the rest are fix-ups the behavior change requires.
 
 ### Requirements
 - Toggle mapping: `todo` and `in-progress` go to `completed`; `completed` and `cancelled` go to `todo`.
