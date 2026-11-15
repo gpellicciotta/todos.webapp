@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 2, duration_s: 2820.2, input: 472, output: 157472, cache_read: 42733338, cache_write: 519924}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-15T10:12:57Z"
 ---
 # T0234: Show event actions, done and target counts, and lifecycle rule editing in the web app task views
 
@@ -77,4 +82,7 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 
 - [2026-11-15] **[Implement]**
   Decided the tick reopens a cancelled task and the editor shows actions as buttons; recorded both in technical-spec.md.
+
+- [2026-11-15] **[Review]**
+  Round 1 requested (mode: agent).
 
