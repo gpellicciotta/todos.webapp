@@ -142,3 +142,99 @@ no console errors, page errors, failed requests, or HTTP errors
 | Rows, compact, dark        | [before](before-row-compact-dark.png)                          | [after](after-row-compact-dark.png)                          |
 | Status menu, compact, dark | [before](before-status-menu-compact-dark.png)                  | [after](after-status-menu-compact-dark.png)                  |
 | Editor, compact, dark      | [before](before-editor-compact-dark.png)                       | [after](after-editor-compact-dark.png)                       |
+
+## Review Round 1 Rework
+
+### Changes
+- The editor tick now shows the icon of the status it leads to: In progress for "Untick, 3 of 3", To do for "Undo completion".
+- The Settings shortcut list describes `x` as a tick.
+- `TSK-4`, `ui-design.md`, `visual-style-guide.md`, the gallery, and stale CSS comments and selectors match the tick and event menu.
+- `CHANGELOG.md` folds the superseded T0225 status bullets into net bullets, with every sentence at 20 words or fewer.
+- The contract suite was not rerun: the rework changed views, styles, and docs only, never sync or store code.
+
+### Red phase: editor icon and shortcut tests before the fix
+Command: `npx vitest run tests/unit/task-editor.test.js tests/unit/settings.test.js`
+Exit code: 1
+
+```text
+     × lists the seven shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd 14ms
+       × names the status, the count above target 1, and the tick action 167ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected [ [ [ 'n', '/' ], …(1) ], …(6) ] to deeply equal [ [ [ 'n', '/' ], …(1) ], …(6) ]
+AssertionError: expected [ 'completed', …(1) ] to deeply equal [ 'in-progress', …(1) ]
+      Tests  2 failed | 58 passed (60)
+```
+
+### Green phase: unit suite
+Command: `npm test`
+Exit code: 0
+
+```text
+ Test Files  57 passed (57)
+      Tests  1317 passed (1317)
+```
+
+### Lint
+Command: `npm run lint`
+Exit code: 0
+
+```text
+> todos-webapp@0.4.1-pre lint
+> eslint .
+```
+
+### Service worker version check
+Command: `npm run check:sw` (after `node scripts/check-sw-version.mjs --update` for VERSION `2026-11-15.10`)
+Exit code: 0
+
+```text
+OK: 126 precached files match VERSION 2026-11-15.10.
+```
+
+### Python tests
+Command: `python -m pytest -q tests`
+Exit code: 0
+
+```text
+............                                                             [100%]
+156 passed in 86.84s (0:01:26)
+```
+
+### End-to-end suite
+Command: `npx playwright test`
+Exit code: 0
+
+```text
+  ✓    5 [chromium] › tests\e2e\all-tasks.spec.js:189:1 › the status menu posts start and cancel by right-click and by keyboard (TSK-4) (2.2s)
+  ✓   62 [chromium] › tests\e2e\connect.spec.js:165:1 › an expired session asks to sign in again and keeps local work going (1.7s)
+  ✓  204 [chromium] › tests\e2e\task-editor.spec.js:131:1 › ticks a target-3 task to 3/3 and edits its deadline through the lifecycle rules in local mode (3.1s)
+[... 205 passing lines omitted ...]
+  208 passed (2.1m)
+```
+
+The last gallery text edits followed that run, so the gallery specs ran again.
+
+Command: `npx playwright test tests/e2e/gallery-app.spec.js tests/e2e/gallery-controls.spec.js tests/e2e/gallery-chrome.spec.js`
+Exit code: 0
+
+```text
+  52 passed (35.9s)
+```
+
+### Gallery visual verification
+Command: `node capture-gallery.mjs {{worktree}} {{companion-dir}}` (a temporary Playwright script)
+Exit code: 0
+
+```text
+started: node scripts/serve.mjs --port 8763 --root C:\Dev-Projects\todos.webapp\.plan\work\T0234-show-event-actions-done-and-target-counts-and\src (PID 52464)
+HTTP 200 from /demo/visual-style-gallery.html
+stopping: processes kill --yes --force 52464
+Killed PID 52464
+no console errors, page errors, failed requests, or HTTP errors
+```
+
+| Section       | 390 px light                                       | 390 px dark                                      | 1440 px light                                       | 1440 px dark                                      |
+| :------------ | :------------------------------------------------- | :----------------------------------------------- | :-------------------------------------------------- | :------------------------------------------------ |
+| Status button | [light](gallery-status-button-390-light.png)       | [dark](gallery-status-button-390-dark.png)       | [light](gallery-status-button-1440-light.png)       | [dark](gallery-status-button-1440-dark.png)       |
+| Task row      | [light](gallery-task-row-390-light.png)            | [dark](gallery-task-row-390-dark.png)            | [light](gallery-task-row-1440-light.png)            | [dark](gallery-task-row-1440-dark.png)            |
+| Task editor   | [light](gallery-task-editor-390-light.png)         | [dark](gallery-task-editor-390-dark.png)         | [light](gallery-task-editor-1440-light.png)         | [dark](gallery-task-editor-1440-dark.png)         |
