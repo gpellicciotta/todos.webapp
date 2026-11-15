@@ -166,3 +166,36 @@ OK: 128 precached files match VERSION 2026-11-15.15.
 ```
 
 `npm run lint` printed no findings.
+
+### Merge of main after T0237
+The manager merged main into the task branch before review round 2, since T0237 landed meanwhile.
+- `CHANGELOG.md` keeps both sides; T0237's bullet comes first.
+- Both sides set VERSION `2026-11-15.15` with different files, so VERSION became `2026-11-15.16`.
+- Mechanical command: `node scripts/check-sw-version.mjs --update` regenerated `scripts/sw-precache-hashes.json`.
+
+Commands: `npx eslint .` (exit code 0, no output) and `node scripts/check-sw-version.mjs` (exit code 0)
+```text
+OK: 128 precached files match VERSION 2026-11-15.16.
+```
+
+Command: `npx vitest run` (exit code 0)
+```text
+ Test Files  60 passed (60)
+      Tests  1472 passed (1472)
+```
+
+Command: `E2E_PORT=8795 npx playwright test` (exit code 0)
+```text
+  ok 211 [chromium] › tests\e2e\task-editor.spec.js:326:3 › note links in local mode › a note on a daily task shows on its occurrence in the history, and can be made global (4.1s)
+
+  211 passed (2.3m)
+```
+
+Command: `TODOS_SERVER_DIR=work/todos-server npx vitest run --config vitest.contract.config.js --reporter=verbose` (exit code 0)
+```text
+ ✓ tests/contract/sync.contract.test.js > the sync client against a real todos server > posts a note linked to its occurrence, then makes it global and links it again 227ms
+ ✓ tests/contract/sync.contract.test.js > the sync client against a real todos server > replays a partial rule history with one more rule edit, so the server reaches the exported rules 121ms
+ ✓ tests/contract/sync.contract.test.js > the sync client against a real todos server > replays ended daily series without a user cancel, and the server closes them with end-recurrence 175ms
+[... 12 more passing tests omitted ...]
+      Tests  15 passed (15)
+```

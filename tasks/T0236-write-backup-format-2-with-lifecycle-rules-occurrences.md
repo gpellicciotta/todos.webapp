@@ -5,23 +5,26 @@ session: claude-20261115-81474f
 needs: []
 branch: task/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
 worktree: .plan/work/T0236-write-backup-format-2-with-lifecycle-rules-occurrences
-status: suspended
-started_at: "2026-11-15T11:46:57Z"
+status: active
+started_at: "2026-11-15T14:13:06Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 3548.8, input: 440, output: 261176, cache_read: 45706692, cache_write: 592124}
+  worker: {turns: 4, duration_s: 5283.4, input: 652, output: 367618, cache_read: 83889846, cache_write: 761856}
   review: {turns: 2, duration_s: 1660.0, input: 882562, output: 103670, cache_read: 16594072}
 review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-15T12:16:43Z"
 reviewed_by: "@gemini"
 review_session: antigravity-20261115-1916b3
-work_duration: 2620.6
-size_status: requested
+work_duration: 3510.0
+size_status: approved
 size_estimate: 12 files, 1695 lines
+size_approved: 12 files, 1695 lines
+size_approved_by: "@giova"
+size_approved_at: "2026-11-15T14:04:03Z"
 ---
 # T0236: Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable
 
@@ -117,4 +120,11 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
 
 - [2026-11-15] **[Size]**
   Size approval requested for 12 files, 1695 lines.
+
+- [2026-11-15] **[Size]**
+  Size approved by @giova for 12 files, 1695 lines.
+
+- [2026-11-15] **[Implement]**
+  Manager merged main after T0237 landed, resolving CHANGELOG and precache manifest conflicts; VERSION is now 2026-11-15.16.
+  - Lint, sw check, 1472 unit, 211 e2e, 15 contract tests pass.
 
