@@ -19,24 +19,26 @@ work_duration: 51.7
 
 ## Goals
 Let users type many tasks in a row, such as a grocery list, without extra steps per task.
-- A Rapid entry mode makes Enter add the typed task and keep focus in the add field.
-- In this mode an add does not open the task editor, also on compact layouts.
-- Search while typing keeps working; only Enter's meaning changes.
-- The device remembers the mode; it is off by default.
+- Enter in the add field adds the typed task by default; Shift+Enter and Alt+Enter keep adding.
+- A Make Enter add switch in Settings turns Enter adding off; the device remembers it.
+- Every add keeps the focus in the add field.
+- Wide screens open the new task's editor unfocused; compact screens open no editor.
+- Search while typing keeps working.
 - Motivation: [comparing-with-google-products.md](https://github.com/gpellicciotta/todos.server/blob/main/docs/comparing-with-google-products.md), section Capture.
 
-Completion check: `npm run test:unit` and the all-tasks and list e2e specs pass.
+Completion check: `npm test` and the all-tasks and list e2e specs pass.
 Size estimate: 8 files, 250 lines.
+Size note: Enter's new default touched existing specs, Settings, docs, the gallery, and wireframes; splitting would leave docs or tests out of date.
 
 ## Task Execution Steps
 - [x] **[Read]**      Read the add bar code and the decided add rules in ui-design.md, requirements VO-3 and TSK-13.
-- [ ] **[Decide]**    Ask the user where the mode toggle lives, add bar or Settings, since it revises decided rules.
-- [ ] **[Implement]** Author failing unit and e2e tests for Enter adding, kept focus, and no editor in the mode.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
-- [ ] **[Implement]** Implement the mode, its toggle, and its stored preference.
-- [ ] **[Verify]**    Run the unit and e2e suites and confirm they pass.
-- [ ] **[Visual]**    Inspect the add bar in both modes at 390 px and 1440 px, in both themes.
-- [ ] **[Doc]**       Update VO-3, TSK-13, the Add Bar and Search and Add designs, wireframes, and CHANGELOG.md.
+- [x] **[Decide]**    Ask the user where the mode toggle lives, add bar or Settings, since it revises decided rules.
+- [x] **[Implement]** Author failing unit and e2e tests for Enter adding, kept focus, and no editor in the mode.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
+- [x] **[Implement]** Implement the mode, its toggle, and its stored preference.
+- [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
+- [x] **[Visual]**    Inspect the add bar in both modes at 390 px and 1440 px, in both themes.
+- [x] **[Doc]**       Update VO-3, TSK-13, the Add Bar and Search and Add designs, wireframes, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -56,4 +58,31 @@ Size estimate: 8 files, 250 lines.
 
 - [2026-11-15] **[Decided]**
   User made Enter add by default with a Make Enter add Settings switch; compact adds skip the editor, wide adds open it unfocused.
+
+- [2026-11-15] **[Verify]**
+  Red phase: new tests fail because Enter does not add and the preference, switch, and compact rule are missing.
+  - Unit: 13 failed, 98 passed.
+  - E2E all-tasks and list: 4 failed, 36 passed.
+
+- [2026-11-15] **[Verify]**
+  Unit suite and full e2e suite pass; lint is clean. One serve.test.js pid-file timing failure passed on rerun, unrelated to this task.
+  - npm test: 1246 passed.
+  - playwright: 206 passed.
+
+- [2026-11-15] **[Implement]**
+  Enter adds by default via todos.enter-adds; Settings gained an Adding tasks section with the Make Enter add switch. Compact adds skip the editor; each new row is highlighted and announced.
+
+- [2026-11-15] **[Visual]**
+  Before and after screenshots at 390 and 1440 px in light and dark show the highlighted new row, no compact editor, and the Settings switch.
+  - Screenshots: screenshots/ linked from validation-proof.md.
+  - No console errors or failed requests.
+
+- [2026-11-15] **[Doc]**
+  Updated VO-3, TSK-13, the Add Bar, Search and Add, and Settings designs, the settings wireframe, gallery, style guide, and CHANGELOG.md.
+
+- [2026-11-15] **[Verify]**
+  Size note: 20 counted files and 529 lines exceed the typical and large lines; Enter's new default touched existing specs, Settings, docs, and wireframes.
+  - Files touched: 20.
+  - Lines touched: 529.
+  - Reopenings: 0.
 
