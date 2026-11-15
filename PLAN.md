@@ -10,7 +10,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0225 Complete a task with one click on its status button, keeping the full status menu one step away.
 - [!] T0228 [reason: needs review: choose Rapid entry toggle location, add bar or Settings (recommended Settings)] [owner: @claude] Add a rapid entry mode where adding keeps focus in the field and skips the task editor.
 - [x] T0229 Parse due dates, times, and list tags typed in the add field into the new task.
-- [~] T0223 [owner: @claude] Improve task group headers with more padding, an 'n of m' count, and collapsible groups.
+- [x] T0223 Improve task group headers with more padding, an 'n of m' count, and collapsible groups.
 
 ## Backlog
 - [ ] T0227 [needs: T0226] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
