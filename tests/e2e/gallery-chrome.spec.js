@@ -70,9 +70,23 @@ for (const viewport of VIEWPORTS) {
         await expect(section, name).toBeVisible();
       }
 
+      // Each overflowing section names its descendants that end past its content box, so a CI-only failure explains itself.
       const overflowing = await page.locator(SECTIONS).evaluateAll((sections) => sections
         .filter((section) => section.scrollWidth > section.clientWidth)
-        .map((section) => section.id));
+        .map((section) => {
+          const box = section.getBoundingClientRect();
+          const limit = box.right - parseFloat(getComputedStyle(section).paddingRight);
+          const wide = [...section.querySelectorAll('*')]
+            .filter((el) => el.getBoundingClientRect().right > limit + 0.5)
+            .slice(0, 6)
+            .map((el) => {
+              const rect = el.getBoundingClientRect();
+              const style = getComputedStyle(el);
+              const name = `${el.tagName.toLowerCase()}.${el.className?.baseVal ?? el.className}`;
+              return `${name} right=${rect.right.toFixed(1)} width=${rect.width.toFixed(1)} min=${style.minWidth} font=${style.fontFamily}`;
+            });
+          return `${section.id} scroll=${section.scrollWidth} client=${section.clientWidth} limit=${limit.toFixed(1)}: ${wide.join(' | ')}`;
+        }));
       expect(overflowing).toEqual([]);
 
       const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
