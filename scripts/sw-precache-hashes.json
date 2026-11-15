@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-15.18",
+  "version": "2026-11-15.19",
   "files": {
     "index.html": "b9c7b352f9a46da63896de6681858e3e701ed087651f7c192db0eb1ca74a767f",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -128,6 +128,6 @@
     "vendor/design/looks/neutral/index.css": "5d03430b57b15dd9fc4f7d0ebe786764469756d755b8721be4f655bfc6b939aa",
     "vendor/design/looks/neutral/look.css": "8e4598d66df08bbfaab0c8c101898610fa9238f72a3fdf2c83dd27612bc0b76f",
     "vendor/design/looks/neutral/primitives.css": "038487eab56a078574757239ae901ae7a1ff3417aed253dadc8bf876ba02dcfa",
-    "js/version.js": "9cf9700981e4c35564ea8befc9b78b1404afaab4c6fdba3013b906e13668edf7"
+    "js/version.js": "1149b795ecd07df6e8f1ab14c99ff87d4c527d62a76800c1c7b6bca67c8a2cde"
   }
 }
