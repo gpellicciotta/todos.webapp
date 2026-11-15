@@ -1,11 +1,11 @@
 ---
 id: T0235
-owner: ~
-needs: [T0224]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0235-support-recurring-tasks-in-the-web-app-with
+worktree: .plan/work/T0235-support-recurring-tasks-in-the-web-app-with
+status: active
+started_at: "2026-11-15T10:42:24Z"
 ended_at: —
 review: agent
 preview: none
