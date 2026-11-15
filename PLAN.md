@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [!] T0224 [reason: needs human size approval (60 files, 2734 lines)] [owner: @claude] Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync.
+- [~] T0224 [owner: @claude] Adopt the todos.server lifecycle rules, occurrences, and events in the web app store and sync.
 - [ ] T0234 [needs: T0224] Show event actions, done and target counts, and lifecycle rule editing in the web app task views.
 - [ ] T0235 [needs: T0224] Support recurring tasks in the web app, with local period math, a rule editor, grace completion, and history.
 - [ ] T0236 [needs: T0224] Write backup format 2 with lifecycle rules, occurrences, and events, keeping format 1 importable.
