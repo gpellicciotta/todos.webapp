@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 2820.2, input: 472, output: 157472, cache_read: 42733338, cache_write: 519924}
+  worker: {turns: 4, duration_s: 4081.0, input: 628, output: 196048, cache_read: 66370416, cache_write: 603030}
   review: {turns: 2, duration_s: 1395.4, input: 540260, output: 62674, cache_read: 10926168}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-15T10:12:57Z"
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-15T10:35:32Z"
 review_session: antigravity-20261115-62b39c
 work_duration: 2122.7
 ---
@@ -111,4 +110,7 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
   - Files touched: 20.
   - Lines touched: 924.
   - Reopenings: 0.
+
+- [2026-11-15] **[Review]**
+  Round 2 requested (mode: agent).
 
