@@ -1,11 +1,11 @@
 ---
 id: T0223
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0223-improve-task-group-headers-with-more-padding-an
+worktree: .plan/work/T0223-improve-task-group-headers-with-more-padding-an
+status: active
+started_at: "2026-11-15T01:50:06Z"
 ended_at: —
 review: agent
 preview: none
