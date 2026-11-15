@@ -71,6 +71,8 @@ const STRINGS = Object.freeze({
   version: (version, built) => `Version ${version} · Built ${built}`,
   source: 'Requirements and source code',
   shortcuts: 'Keyboard shortcuts',
+  syntax: 'In the add field, today, tomorrow, a weekday, or 2026-12-24 sets the due date, '
+    + '18:00 or 6 pm the time, and #home a list. A backslash keeps a word as text, such as \\tomorrow.',
   or: ' or ',
 });
 
@@ -538,7 +540,8 @@ function shortcutList(doc) {
 }
 
 /**
- * Create the About section: the app version, the build date, the keyboard shortcuts, and the source link.
+ * Create the About section: the app version, the build date, the keyboard shortcuts, the add field syntax
+ * (`TSK-14`), and the source link.
  * @param {Document} doc the document
  * @returns {HTMLElement} the section
  */
@@ -549,7 +552,8 @@ function aboutSection(doc) {
   link.href = SOURCE_URL;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  element.append(make(doc, 'p', 'settings__hint', STRINGS.version(VERSION, formatBuildDate(BUILD_DATE))), ...shortcutList(doc), link);
+  element.append(make(doc, 'p', 'settings__hint', STRINGS.version(VERSION, formatBuildDate(BUILD_DATE))), ...shortcutList(doc),
+    make(doc, 'p', 'settings__hint settings__syntax', STRINGS.syntax), link);
   return element;
 }
 

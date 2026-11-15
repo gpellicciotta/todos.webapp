@@ -216,6 +216,26 @@ describe('mountList', () => {
     await vi.waitFor(() => expect(document.activeElement).toBe(field));
   });
 
+  it('keeps this list for a task added with typed syntax, and joins the tagged lists too', async () => {
+    const view = await mount();
+    const work = await store.createList({ name: 'Work' });
+    const field = view.querySelector('[data-shortcut~="add"]');
+    field.value = 'Paint the door 2099-12-24 #work #home';
+    // The preview names Work once the screen has read the new list.
+    await vi.waitFor(() => {
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(view.querySelector('.add-bar__preview').textContent).toBe('Due Dec 24, 2099 · Lists: Work, Home');
+    });
+    view.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
+    const snapshot = await store.snapshot();
+    const [task] = snapshot.tasks;
+    expect(task.description).toBe('Paint the door');
+    expect(task['due-time']).toBe(new Date(2099, 11, 24, 23, 59).toISOString());
+    const joined = snapshot.memberships.filter((membership) => membership['task-id'] === task.id).map((membership) => membership['list-id']);
+    expect(joined.sort()).toEqual([view.dataset.listId, work.id].sort());
+  });
+
   it('opens no editor when adding fails', async () => {
     const view = await mount();
     vi.spyOn(console, 'error').mockImplementation(() => {});

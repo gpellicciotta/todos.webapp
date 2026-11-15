@@ -112,8 +112,8 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   header.append(description, owner, more, menu);
 
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
-  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText });
-  const addHint = createAddHint({ document: doc });
+  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, now });
+  const addHint = createAddHint({ document: doc, describe: (text) => addBar.descriptionOf(text) });
   const moves = { enabled: () => can(listRole(data?.list), 'reorder-task') && model.get().order.field === 'manual' && (model.get().group ?? 'none') === 'none', step: (taskId, step) => reorder.step(taskId, step) };
   const taskList = createTaskList({
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
@@ -131,14 +131,16 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   let menuRole = null;
 
   /**
-   * Store a new task at the end of this list (`LV-5`) and open its editor.
+   * Store a new task at the end of this list (`LV-5`), and of each tagged list, and open its editor.
    * @param {string} text the trimmed description
+   * @param {{due?: string|null, listIds?: string[]}} [extra] the typed due time and the tagged lists (`TSK-14`)
    * @returns {Promise<void>} resolves once stored; rejects when the task could not be stored
    */
-  async function add(text) {
+  async function add(text, { due = null, listIds = [] } = {}) {
+    const joined = [listId, ...listIds.filter((id) => id !== listId)];
     let task;
     try {
-      task = await store.createTask({ description: text }, { lists: [listId] });
+      task = await store.createTask({ description: text, ...(due ? { 'due-time': due } : {}) }, { lists: joined });
     }
     catch (error) {
       console.error('Adding the task failed:', error);
@@ -146,7 +148,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
       throw error;
     }
     notifyIfHidden({
-      task, listIds: [listId], filter: model.get().filter, lists: [...(data?.lists.values() ?? [])], now: now(), toaster,
+      task, listIds: joined, filter: model.get().filter, lists: [...(data?.lists.values() ?? [])], now: now(), toaster,
       onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
     });
     navigate(formatRoute('list-task', { listId, taskId: task.id }));
@@ -218,6 +220,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     const shown = state.order.field === 'manual' ? filtered : sortTasks(filtered, state.order);
     const groups = state.group && state.group !== 'none' ? groupTasks(shown, state.group, ctx) : null;
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], state.filter, ctx).length > 0 });
+    addBar.setLists([...data.lists.values()]);
     addBar.setKnown(exactMatchIndex(byOptions));
     const viewer = !can(role, 'create-task');
     addBar.setViewer(viewer);

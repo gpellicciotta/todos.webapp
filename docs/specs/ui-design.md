@@ -240,8 +240,8 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 - **[Decided]** Wide layouts keep the focus in the add field, beside the editor, so tasks can be added in a row.
   Compact layouts give the focus to the editor's Description, since the editor covers the add field.
 - The field also searches the view; [Search and Add](#search-and-add) describes this.
-- In a list view, the new task joins that list at its end (`TSK-9`, `LV-5`).
-- **[Decided]** In All tasks, the new task joins no list, even while the Lists filter selects lists.
+- In a list view, the new task joins that list at its end, and its tagged lists (`TSK-9`, `LV-5`, `TSK-14`).
+- **[Decided]** In All tasks, the new task joins only its tagged lists (`TSK-14`), even while the Lists filter selects lists.
   A Lists filter that hides it brings the "Task added" toast with Show.
 - **[Decided]** The add bar sits in the shell's action bar under the rows: above the bottom navigation when compact,
   at the bottom of the main column when wide. Before T0231, wide layouts placed it above the rows.
@@ -287,6 +287,19 @@ Home                                                              3
 - **[Decided]** The typed text lasts for the session only, so a reload never hides tasks behind forgotten text.
   A field with text is visible, so the filter is never hidden.
 - A viewer of a shared list sees "Search tasks" and no Add button (`VO-14`).
+- **[Decided]** Typed syntax sets the new task (`TSK-14`), such as `Buy paint tomorrow 18:00 #home`.
+  - Dates: `today`, `tomorrow`, a full weekday name for the next such day, or `yyyy-mm-dd`.
+    Short names such as `sun` stay text, so words like "sun cream" never set a date.
+  - Times: `hh:mm` in 24-hour form, or `6 pm`, `6pm`, and `6:30 am`.
+    A time alone means today, or tomorrow once it passed; a weekday rolls a week once its time passed.
+  - A date alone keeps the 23:59 rule (`TSK-6`). The first date and the first time count; later ones stay text.
+  - `#name` names a list, ignoring case, accents, spaces, dashes, and underscores (`LST-10`).
+    Only lists the user may add tasks to match (`SHR-4`); other tags stay in the description.
+  - A backslash keeps a token as text and leaves the description, such as `\tomorrow` or `\#home`.
+  - Recognized tokens leave the description; text with nothing else left adds as typed and sets nothing.
+  - A muted preview line under the field names what Add sets, such as "Due tomorrow 18:00 · List: Home".
+    The field names the line in `aria-describedby`; Add anyway and the add hint use the parsed description.
+  - Search keeps the raw typed text. In a list view, the task keeps that list, and tags add more lists.
 
 ### View Options
 Wireframe: [view-options.svg](../img/ui/view-options.svg).

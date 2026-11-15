@@ -80,6 +80,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-11: Deleting a task moves it to the recycle bin and hides it from every list and view.
 - TSK-12: Every task records its creation time, last update time, and last activity time.
 - TSK-13: A task created from the add field opens in the task editor.
+- TSK-14: A due date, a time, and list tags typed in the add field set the new task's due time and lists.
+  A preview line under the field names what the add will set; the parser works offline, in US English.
 
 ### Notes
 - NOT-1: Users add notes to a task; each note holds 1 to 2000 characters of plain text.

@@ -8,9 +8,12 @@
  * A viewer, who cannot add tasks, sees "Search tasks" and no Add button (`VO-14`).
  * The field holds at most 500 characters; a counter appears from 450.
  * The field carries `data-shortcut="add search"`, so the `n` and `/` shortcuts both focus it.
+ * A due date, a time, and `#list` tags typed in the field set the new task (`TSK-14`); a preview line under the
+ * field names what they set, and the search keeps the raw text.
  */
 
 import { hidingFilters, normalizeDescription } from '../core/query.js';
+import { describeQuickAdd, parseQuickAdd } from '../core/quick-add.js';
 import { DESCRIPTION_MAX } from '../store/tasks.js';
 import { spriteIcon } from './task-list.js';
 import { describeFilters } from './view-controls.js';
@@ -36,16 +39,20 @@ const STRINGS = Object.freeze({
  * Create an add bar.
  * @param {object} options add bar options
  * @param {Document} [options.document] the document
- * @param {(description: string) => Promise<void>} options.onAdd stores a task with the trimmed description
- *   and reports its own failures; the field clears once it resolves and keeps its text when it rejects
+ * @param {(description: string, extra: {due: string|null, listIds: string[]}) => Promise<void>} options.onAdd stores
+ *   a task with the trimmed description, the typed due time, and the tagged lists, and reports its own failures;
+ *   the field clears once it resolves and keeps its text when it rejects
  * @param {(text: string) => void} [options.onSearch] receives the search text once typing pauses, on Enter, and when
  *   the field clears
  * @param {string} [options.text] the starting text
  * @param {boolean} [options.viewer] whether the user cannot add tasks (`VO-14`)
+ * @param {() => Date} [options.now] the clock, for typed dates and times
  * @returns {{element: HTMLFormElement, input: HTMLInputElement, setText: Function, setKnown: Function,
- *   setViewer: Function, destroy: Function}} the add bar
+ *   setViewer: Function, setLists: Function, descriptionOf: Function, destroy: Function}} the add bar
  */
-export function createAddBar({ document: doc = globalThis.document, onAdd, onSearch = () => {}, text = '', viewer = false }) {
+export function createAddBar({
+  document: doc = globalThis.document, onAdd, onSearch = () => {}, text = '', viewer = false, now = () => new Date(),
+}) {
   const id = `add-bar-${(instances += 1)}`;
   const element = doc.createElement('form');
   element.className = 'add-bar';
@@ -53,15 +60,17 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
   element.innerHTML = `<div class="field add-bar__field">
       <label class="field__label visually-hidden" for="${id}"></label>
       <input class="field__control" id="${id}" type="text" maxlength="${DESCRIPTION_MAX}"
-        autocomplete="off" enterkeyhint="done" data-shortcut="add search" aria-describedby="${id}-counter"
+        autocomplete="off" enterkeyhint="done" data-shortcut="add search" aria-describedby="${id}-counter ${id}-preview"
         aria-keyshortcuts="Shift+Enter Alt+Enter">
       <p class="field__counter add-bar__counter" id="${id}-counter" hidden></p>
     </div>
-    <button class="button" type="submit"></button>`;
+    <button class="button" type="submit"></button>
+    <p class="add-bar__preview" id="${id}-preview" hidden></p>`;
   const input = element.querySelector('input');
   const label = element.querySelector('label');
   const counter = element.querySelector('.field__counter');
   const button = element.querySelector('button');
+  const preview = element.querySelector('.add-bar__preview');
   const buttonText = doc.createTextNode(STRINGS.add);
   button.append(spriteIcon(doc, 'plus'), buttonText);
   button.title = STRINGS.addHint;
@@ -70,6 +79,16 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
   let timer = null;
   let known = new Set();
   let readOnly = viewer;
+  let lists = [];
+
+  /**
+   * Parse typed text against the current lists and time.
+   * @param {string} value the text
+   * @returns {object} the result of `parseQuickAdd`
+   */
+  function parse(value) {
+    return parseQuickAdd(value, { now: now(), lists });
+  }
 
   /** Show the counter from 450 characters. */
   function updateCounter() {
@@ -78,13 +97,16 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
     counter.textContent = counter.hidden ? '' : `${length} / ${DESCRIPTION_MAX}`;
   }
 
-  /** Name the field and the button for the typed text and the role. */
+  /** Name the field and the button for the typed text and the role, and preview what the typed syntax sets. */
   function updateLabels() {
     const name = readOnly ? STRINGS.viewerLabel : STRINGS.label;
     label.textContent = name;
     input.placeholder = name;
     button.hidden = readOnly;
-    buttonText.data = input.value.trim() && known.has(normalizeDescription(input.value)) ? STRINGS.addAnyway : STRINGS.add;
+    const parsed = parse(input.value);
+    buttonText.data = parsed.description && known.has(normalizeDescription(parsed.description)) ? STRINGS.addAnyway : STRINGS.add;
+    preview.textContent = readOnly ? '' : describeQuickAdd(parsed, now());
+    preview.hidden = preview.textContent === '';
   }
 
   /** Report the text now, and drop a report still waiting. */
@@ -102,15 +124,15 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
     emit();
   }
 
-  /** Create the task from the trimmed text, once at a time; the Add button and its shortcuts share this path. */
+  /** Create the task from the parsed text, once at a time; the Add button and its shortcuts share this path. */
   async function add() {
-    const description = input.value.trim();
+    const { description, due, lists: tagged } = parse(input.value);
     if (!description || busy || readOnly) {
       return;
     }
     busy = true;
     try {
-      await onAdd(description);
+      await onAdd(description, { due, listIds: tagged.map((list) => list.id) });
       clear();
     }
     catch {
@@ -192,6 +214,24 @@ export function createAddBar({ document: doc = globalThis.document, onAdd, onSea
       updateLabels();
     },
 
+    /**
+     * Set the lists that `#name` tags can name.
+     * @param {object[]} next the live lists
+     */
+    setLists(next) {
+      lists = next;
+      updateLabels();
+    },
+
+    /**
+     * Read the description that Add would create from a text, without its typed syntax.
+     * @param {string} value the text
+     * @returns {string} the description
+     */
+    descriptionOf(value) {
+      return parse(value).description;
+    },
+
     /** Report text still waiting, so the session keeps it. */
     destroy() {
       if (timer !== null) {
@@ -225,10 +265,11 @@ export function notifyIfHidden({ task, listIds, filter, lists, now, toaster, onS
  * Create the muted line under the rows that says what Add creates (`VO-3`).
  * @param {object} options line options
  * @param {Document} [options.document] the document
+ * @param {(text: string) => string} [options.describe] reads the description Add creates from the typed text
  * @returns {{element: HTMLElement, update: (view: {text: string, shown: number, viewer: boolean}) => boolean}} the line;
  *   `update` returns true when nothing matches and the line replaces the rows' empty state
  */
-export function createAddHint({ document: doc = globalThis.document }) {
+export function createAddHint({ document: doc = globalThis.document, describe = (text) => text }) {
   const element = doc.createElement('p');
   element.className = 'add-hint';
   element.hidden = true;
@@ -238,7 +279,7 @@ export function createAddHint({ document: doc = globalThis.document }) {
     update({ text, shown, viewer }) {
       const typed = text.trim();
       element.hidden = !typed || viewer;
-      element.textContent = element.hidden ? '' : (shown === 0 ? STRINGS.noMatch : STRINGS.creates(typed));
+      element.textContent = element.hidden ? '' : (shown === 0 ? STRINGS.noMatch : STRINGS.creates(describe(typed)));
       return !element.hidden && shown === 0;
     },
   };

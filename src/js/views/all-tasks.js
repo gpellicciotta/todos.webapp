@@ -135,8 +135,8 @@ export function mountAllTasks(view, {
   header.append(more, menu);
   const menuBehavior = attachMenu(more, menu, { onSelect: () => navigate(formatRoute('view-options')) });
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
-  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, text: model.get().filter.text ?? '' });
-  const addHint = createAddHint({ document: doc });
+  const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, text: model.get().filter.text ?? '', now });
+  const addHint = createAddHint({ document: doc, describe: (text) => addBar.descriptionOf(text) });
   const addBlock = make(doc, 'div', 'add-block');
   addBlock.append(addBar.element);
   const taskList = createTaskList({
@@ -150,16 +150,17 @@ export function mountAllTasks(view, {
   view.replaceChildren(root);
 
   /**
-   * Store a new task in no list, whatever the Lists filter selects, and open its editor.
+   * Store a new task in the tagged lists only, whatever the Lists filter selects, and open its editor.
    * When the Lists filter hides the task, the toast offers Show.
    * @param {string} description the trimmed description
+   * @param {{due?: string|null, listIds?: string[]}} [extra] the typed due time and the tagged lists (`TSK-14`)
    * @returns {Promise<void>} resolves once stored; rejects when the task could not be stored
    */
-  async function add(description) {
+  async function add(description, { due = null, listIds = [] } = {}) {
     const first = data?.tasks.length === 0;
     let task;
     try {
-      task = await store.createTask({ description }, { lists: [] });
+      task = await store.createTask({ description, ...(due ? { 'due-time': due } : {}) }, { lists: listIds });
     }
     catch (error) {
       console.error('Adding the task failed:', error);
@@ -167,7 +168,7 @@ export function mountAllTasks(view, {
       throw error;
     }
     notifyIfHidden({
-      task, listIds: [], filter: model.get().filter, lists: data?.lists ?? [], now: now(), toaster,
+      task, listIds, filter: model.get().filter, lists: data?.lists ?? [], now: now(), toaster,
       onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
     });
     if (first && !asked) {
@@ -254,6 +255,7 @@ export function mountAllTasks(view, {
       return;
     }
     const firstLaunch = data.tasks.length === 0;
+    addBar.setLists(data.lists);
     root.dataset.state = firstLaunch ? 'first-launch' : 'tasks';
     taskList.element.hidden = firstLaunch;
     if (firstLaunch) {

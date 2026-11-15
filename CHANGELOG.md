@@ -22,6 +22,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Opened the full status menu by right-click, long press, Down, Up, Shift+F10, or the Menu key.
 - FrontEnd: Added the `x` shortcut, which toggles completion of the focused row.
 - FrontEnd: Showed an Undo toast when a status change hides the row under the view's filters.
+- FrontEnd: Read due dates, times, and `#list` tags typed in the add field into the new task, with a preview line.
 
 ## v0.4.0 [released: 2026-11-10]
 - FrontEnd: Made a task added in All tasks join no list, instead of every list the Lists filter selects.

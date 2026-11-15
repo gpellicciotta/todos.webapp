@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createAddBar } from '../../src/js/views/add-bar.js';
+import { createAddBar, createAddHint } from '../../src/js/views/add-bar.js';
 
 describe('createAddBar', () => {
   let onAdd;
@@ -29,7 +29,7 @@ describe('createAddBar', () => {
     input.value = '  Buy paint  ';
     bar.element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await vi.waitFor(() => expect(input.value).toBe(''));
-    expect(onAdd).toHaveBeenCalledWith('Buy paint');
+    expect(onAdd).toHaveBeenCalledWith('Buy paint', { due: null, listIds: [] });
     expect(document.activeElement).toBe(input);
   });
 
@@ -187,7 +187,7 @@ describe('createAddBar', () => {
         expect(event.defaultPrevented).toBe(true);
         await vi.waitFor(() => expect(input.value).toBe(''));
         expect(onAdd).toHaveBeenCalledTimes(1);
-        expect(onAdd).toHaveBeenCalledWith('Buy paint');
+        expect(onAdd).toHaveBeenCalledWith('Buy paint', { due: null, listIds: [] });
         expect(onSearch).toHaveBeenLastCalledWith('');
         expect(document.activeElement).toBe(input);
       });
@@ -249,7 +249,65 @@ describe('createAddBar', () => {
       bar.setKnown(new Set(['buy paint']));
       type('Buy paint');
       bar.element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-      await vi.waitFor(() => expect(onAdd).toHaveBeenCalledWith('Buy paint'));
+      await vi.waitFor(() => expect(onAdd).toHaveBeenCalledWith('Buy paint', { due: null, listIds: [] }));
+    });
+  });
+
+  describe('typed syntax', () => {
+    // Monday, November 16, 2026, at 10:00 local time.
+    const NOW = new Date(2026, 10, 16, 10, 0);
+    const HOME = { id: 'home', name: 'Home' };
+    const preview = () => bar.element.querySelector('.add-bar__preview');
+
+    beforeEach(() => {
+      document.body.innerHTML = '';
+      bar = createAddBar({ document, onAdd, onSearch, now: () => NOW });
+      bar.setLists([HOME, { id: 'work', name: 'Work' }]);
+      document.body.append(bar.element);
+      input = bar.input;
+    });
+
+    it('previews the due time and lists under the field, which describes the field', () => {
+      expect(preview().hidden).toBe(true);
+      expect(input.getAttribute('aria-describedby').split(' ')).toContain(preview().id);
+      type('Buy paint tomorrow 18:00 #home');
+      expect(preview().hidden).toBe(false);
+      expect(preview().textContent).toBe('Due tomorrow 18:00 · List: Home');
+      type('Buy paint');
+      expect(preview().hidden).toBe(true);
+      expect(preview().textContent).toBe('');
+    });
+
+    it('updates the preview when the lists change, and hides it for a viewer', () => {
+      type('Dust #garage');
+      expect(preview().hidden).toBe(true);
+      bar.setLists([{ id: 'garage', name: 'Garage' }]);
+      expect(preview().textContent).toBe('List: Garage');
+      bar.setViewer(true);
+      expect(preview().hidden).toBe(true);
+    });
+
+    it('adds the parsed description, due time, and lists, while search keeps the raw text', async () => {
+      vi.useFakeTimers();
+      type('Buy paint tomorrow 18:00 #home');
+      vi.advanceTimersByTime(150);
+      vi.useRealTimers();
+      expect(onSearch).toHaveBeenLastCalledWith('Buy paint tomorrow 18:00 #home');
+      bar.element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await vi.waitFor(() => expect(input.value).toBe(''));
+      expect(onAdd).toHaveBeenCalledWith('Buy paint', { due: new Date(2026, 10, 17, 18, 0).toISOString(), listIds: ['home'] });
+      expect(preview().hidden).toBe(true);
+    });
+
+    it('reads Add anyway when the parsed description is a known task', () => {
+      bar.setKnown(new Set(['buy paint']));
+      type('Buy paint tomorrow #home');
+      expect(bar.element.querySelector('button[type="submit"]').textContent.trim()).toBe('Add anyway');
+    });
+
+    it('shows text set from outside in the preview', () => {
+      bar.setText('Call 6 pm');
+      expect(preview().textContent).toBe('Due today 18:00');
     });
   });
 
@@ -272,5 +330,13 @@ describe('createAddBar', () => {
       const viewer = createAddBar({ document, onAdd, onSearch, viewer: true });
       expect(viewer.input.placeholder).toBe('Search tasks');
     });
+  });
+});
+
+describe('createAddHint', () => {
+  it('names the description that Add creates, without the typed syntax', () => {
+    const hint = createAddHint({ document, describe: (text) => text.replace(' tomorrow', '') });
+    expect(hint.update({ text: 'Buy paint tomorrow', shown: 2, viewer: false })).toBe(false);
+    expect(hint.element.textContent).toBe('Add creates a new task “Buy paint”.');
   });
 });

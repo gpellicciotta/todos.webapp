@@ -486,6 +486,39 @@ test('typing in the add field searches, Enter never adds, and Add creates the ta
   expect(problems).toEqual([]);
 });
 
+test('a due day, a time, and a list tag typed in the add field set the new task, with a preview first', async ({ page }) => {
+  const problems = watch(page);
+  await openApp(page);
+  await seed(page);
+  const field = page.getByLabel('Search or add a task');
+  const preview = page.locator('.add-bar__preview');
+  await expect(preview).toBeHidden();
+  await field.fill('Buy paint tomorrow 18:00 #home');
+  await expect(preview).toHaveText('Due tomorrow 18:00 · List: Home');
+  await expect(field).toHaveAccessibleDescription(/Due tomorrow 18:00 · List: Home/);
+  // The seeded Buy paint task makes the parsed description a known one.
+  await page.getByRole('button', { name: 'Add anyway' }).click();
+  await expect(field).toHaveValue('');
+  await expect(preview).toBeHidden();
+  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Buy paint');
+  const added = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const snapshot = await store.snapshot();
+    store.close();
+    const id = location.hash.split('/').pop();
+    const task = snapshot.tasks.find((candidate) => candidate.id === id);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(18, 0, 0, 0);
+    const lists = snapshot.memberships.filter((membership) => membership['task-id'] === id)
+      .map((membership) => snapshot.lists.find((list) => list.id === membership['list-id']).name);
+    return { description: task.description, due: task['due-time'], expected: tomorrow.toISOString(), lists };
+  });
+  expect(added).toEqual({ description: 'Buy paint', due: added.expected, expected: added.expected, lists: ['Home'] });
+  expect(problems).toEqual([]);
+});
+
 for (const shortcut of ['Shift+Enter', 'Alt+Enter']) {
   test(`${shortcut} in the add field adds tasks in a row, each opening in the editor (TSK-1, TSK-13)`, async ({ page }) => {
     const problems = watch(page);

@@ -288,4 +288,14 @@ describe('Keyboard shortcuts in About', () => {
     expect(version).toBeGreaterThan(-1);
     expect([version < heading, heading < list, list < link]).toEqual([true, true, true]);
   });
+
+  it('explains the add field syntax after the shortcuts and before the source link', () => {
+    const about = mountAbout();
+    const syntax = about.querySelector('.settings__syntax');
+    expect(syntax.textContent).toBe('In the add field, today, tomorrow, a weekday, or 2026-12-24 sets the due date, '
+      + '18:00 or 6 pm the time, and #home a list. A backslash keeps a word as text, such as \\tomorrow.');
+    const order = [...about.children];
+    expect(order.indexOf(syntax)).toBeGreaterThan(order.indexOf(about.querySelector('.settings__shortcuts')));
+    expect(order.indexOf(syntax)).toBeLessThan(order.indexOf(about.querySelector('.settings__link')));
+  });
 });
