@@ -128,3 +128,9 @@ Start after T0224 and todos.server T0241; follow the [T0215 design](../../../tod
   Manager merged main after T0237 landed, resolving CHANGELOG and precache manifest conflicts; VERSION is now 2026-11-15.16.
   - Lint, sw check, 1472 unit, 211 e2e, 15 contract tests pass.
 
+- [2026-11-15] **[Verify]**
+  Reverified after the main merge 2ea366d and size approval: all suites pass.
+  - npm test: 1472 passed.
+  - contract: 15 passed.
+  - e2e: 211 passed.
+

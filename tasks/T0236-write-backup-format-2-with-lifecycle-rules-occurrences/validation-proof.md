@@ -199,3 +199,18 @@ Command: `TODOS_SERVER_DIR=work/todos-server npx vitest run --config vitest.cont
 [... 12 more passing tests omitted ...]
       Tests  15 passed (15)
 ```
+
+## Post-Merge Verification
+The orchestrator merged main (T0237) into the branch as 2ea366d; the size of 12 files and 1695 lines was approved by giova.
+
+Commands: `npm test`, `npm run lint`, `npm run check:sw`, `TODOS_SERVER_DIR=work/todos-server npx vitest run --config vitest.contract.config.js`, and `npm run test:e2e` (each exit code 0)
+
+```text
+ Test Files  60 passed (60)
+      Tests  1472 passed (1472)
+OK: 128 precached files match VERSION 2026-11-15.16.
+      Tests  15 passed (15)
+  211 passed (3.2m)
+```
+
+`npm run lint` printed no findings.
