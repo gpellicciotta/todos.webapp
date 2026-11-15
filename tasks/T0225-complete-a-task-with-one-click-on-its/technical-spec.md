@@ -9,6 +9,15 @@
 - tests/e2e/all-tasks.spec.js
 - docs/requirements.md
 - docs/specs/ui-design.md
+- src/js/views/list.js (added during execution: passes the filter check for the Undo toast)
+- src/js/views/all-tasks.js (added during execution: passes the filter check for the Undo toast)
+- src/css/app-components.css (added during execution: no text selection or callout on long press)
+- src/demo/visual-style-gallery.html (added during execution: status button labels)
+- scripts/draw-wireframes.py (added during execution: All tasks caption; regenerates docs/img/ui/all-tasks.svg)
+- tests/unit/all-tasks.test.js (added during execution: opens the menu by right-click)
+- tests/e2e/bin-settings.spec.js (added during execution: the `x` shortcut row)
+
+Size note: 15 counted files and 615 lines; tests hold 333 of them, and the rest are fix-ups the behavior change requires.
 
 ### Requirements
 - Toggle mapping: `todo` and `in-progress` go to `completed`; `completed` and `cancelled` go to `todo`.
