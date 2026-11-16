@@ -1,11 +1,11 @@
 ---
 id: T0256
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0256-let-users-resize-the-task-editor-panel-and
+worktree: .plan/work/T0256-let-users-resize-the-task-editor-panel-and
+status: active
+started_at: "2026-11-16T23:17:37Z"
 ended_at: —
 review: agent
 preview: none
