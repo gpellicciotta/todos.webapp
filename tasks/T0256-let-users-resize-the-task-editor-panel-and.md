@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 665.8, input: 82, output: 24104, cache_read: 3665461, cache_write: 99681}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-16T23:28:59Z"
 ---
 # T0256: Let users resize the task editor panel and the lists sidebar by dragging on desktop, remembered per device
 
@@ -65,4 +70,7 @@ Let users drag the edges of the lists sidebar and the task editor panel to set t
 
 - [2026-11-17] **[Visual]**
   Before: [no separators](T0256-let-users-resize-the-task-editor-panel-and/before-no-separators.png), the shell without the added elements. After: [separators at rest](T0256-let-users-resize-the-task-editor-panel-and/after-separators.png).
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
