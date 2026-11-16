@@ -4,9 +4,9 @@ owner: ~
 needs: []
 branch: —
 worktree: —
-status: ready
+status: cancelled
 started_at: —
-ended_at: —
+ended_at: "2026-11-16T07:50:49Z"
 review: agent
 preview: none
 protocol: standard
@@ -25,3 +25,13 @@ Make throttled scrolling smoother by cutting the work per entering row in long l
 ## Execution Log
 - [2026-11-07] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-16] **[Decided]**
+  Cancelled before starting: the vague goal predates the v0.5.0 row changes, so its baseline is stale.
+  - Files touched: 0.
+  - Lines touched: 0.
+  - Reopenings: 0.
+
+- [2026-11-16] **[Cancelled]**
+  Vague goal with a stale baseline from before the v0.5.0 row changes; re-measure in a new task if needed.
+
