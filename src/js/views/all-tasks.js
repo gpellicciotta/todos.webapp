@@ -150,6 +150,7 @@ export function mountAllTasks(view, {
   addBlock.append(addBar.element);
   const taskList = createTaskList({
     document: doc, store, toaster, label: STRINGS.label, hrefOf: (task) => formatRoute('task', { taskId: task.id }),
+    closeHref: formatRoute('tasks'),
     fallbackFocus: () => addBar.input,
   });
   const empty = doc.createElement('div');

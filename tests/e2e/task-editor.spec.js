@@ -84,6 +84,19 @@ for (const viewport of [COMPACT, WIDE]) {
   });
 }
 
+test('a click on the row of the open task closes the editor, and another row switches it', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await seed(page);
+  const panel = await openEditor(page);
+  await page.locator('.task-row__open', { hasText: 'Book flights' }).click();
+  await expect(panel.getByLabel('Description')).toHaveValue('Book flights');
+  await page.locator('.task-row__open', { hasText: 'Book flights' }).click();
+  await expect(page).toHaveURL(/#\/tasks$/);
+  await expect(page.locator('[data-editor-slot] .editor-panel')).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
 test('every field saves on change without a Save button, and the changes survive a reload (TSK-1 to TSK-7)', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);

@@ -587,6 +587,7 @@ function menuItem(doc, role, text, data, { icon, checked, danger } = {}) {
  * @param {{show: Function}} options.toaster shows the Undo toast
  * @param {string} options.label the accessible name of the list
  * @param {(task: object) => string} options.hrefOf the editor route of a task
+ * @param {string|null} [options.closeHref] the route without an editor, which a click on the selected row opens
  * @param {string|null} [options.listId] the list a list view shows, left out of the list chips
  * @param {(error: unknown) => void} [options.onError] reports a failed change
  * @param {() => HTMLElement|null} [options.fallbackFocus] the control that gets focus when the last row leaves
@@ -597,8 +598,8 @@ function menuItem(doc, role, text, data, { icon, checked, danger } = {}) {
  *   destroy: Function}} the list
  */
 export function createTaskList({
-  document: doc = globalThis.document, store, toaster, label, hrefOf, listId = null, onError, fallbackFocus, moves = null,
-  scroller = null,
+  document: doc = globalThis.document, store, toaster, label, hrefOf, closeHref = null, listId = null, onError, fallbackFocus,
+  moves = null, scroller = null,
 }) {
   const id = `task-list-${(instances += 1)}`;
   const element = make(doc, 'div', 'task-list-frame');
@@ -1350,6 +1351,15 @@ export function createTaskList({
       event.stopPropagation();
     }
   }, true);
+  // A click on the row of the task whose editor is open closes the editor.
+  list.addEventListener('click', (event) => {
+    const open = event.target.closest?.('.task-row__open');
+    if (open?.getAttribute('aria-current') === 'page' && closeHref && !event.defaultPrevented
+      && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) {
+      event.preventDefault();
+      doc.defaultView.location.hash = closeHref;
+    }
+  });
   list.addEventListener('click', (event) => {
     const header = event.target.closest?.('[data-role="toggle"]')?.closest('.group-header');
     if (header) {
