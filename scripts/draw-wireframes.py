@@ -494,7 +494,9 @@ def view_options_fields(f, x, y, width, compact=False):
         f.line(x, y, x + width, y)
     y += 12
     f.text(x, y + 14, "Group by", 12, "muted")
-    segmented(f, x, y + 22, width, ["None", "List", "Due date", "Status"], 1, 12, 36)
+    f.rect(x, y + 22, width, 36, "control")
+    f.text(x + 12, y + 45, "List", 14)
+    f.text(x + width - 16, y + 45, "⌄", 14, "", "middle")
     y += 74
     f.text(x, y + 14, "Sort by", 12, "muted")
     f.rect(x, y + 22, width - 158, 36, "control")

@@ -341,14 +341,18 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - Filter: an accordion of Lists, Status, Due, and Created, plus Shared when connected (`TV-2` to `TV-5`, `TV-7`).
     Shared is a row of All tasks only, with the radios Any, Shared, and Not shared; local mode ignores a stored value.
     Each row shows its value at the right; opening one row closes the other.
+    A row value starts with an uppercase letter, such as "Open"; list names stay as typed.
     Due keeps its quick options and a From and To range; Created has From and To.
     Status ends with a "Finished today only" checkbox (`TV-14`); see [Finished today only](#finished-today-only).
-  - Group by: a segmented control with None, List, Due date, and Status (`VO-9`).
-  - Sort by: a field menu and an Ascending or Descending toggle (`TV-9`).
+  - Group by: a select with None, List, Due date, and Status (`VO-9`).
+  - Sort by: a field select and an Ascending or Descending toggle (`TV-9`).
+    Grouped by List, All tasks adds Manual order first; each list group then keeps its list's manual order.
+    Tasks in no list then come oldest first. Leaving the List grouping also leaves Manual order for the default sort.
   - Reset at the top: restores every option to its default (`VO-8`).
 - Defaults: open statuses, creation time descending (manual order in a list view), no grouping, no other filter.
 - A stored Lists filter whose lists were all deleted filters nothing, so the info line leaves it out.
-- The panel uses native inputs: checkboxes, radios, a select, and date fields.
+- The panel uses native inputs: checkboxes, radios, selects, and date fields.
+- The scrolling options keep 8 px of inline padding, so the focus rings of full-width controls stay visible.
 - A polite live region announces the count after each change, such as "12 tasks" (`VO-13`).
 - **[Decided]** The options persist per device: one entry for All tasks, and one entry per list, such as `todos.view.list.{{list-id}}`.
   A list without an entry shows the list defaults. Reset restores the defaults and removes the entry of that list only.
@@ -360,7 +364,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 | More menu   | Edit view options            | Edit list, Edit view options, Share list, Delete list |
 | Lists       | filter row                   | not offered                                    |
 | Group by    | None, List, Due date, Status | None, Due date, Status (`LV-11`)               |
-| Sort by     | five fields                  | adds Manual order, the default (`LV-6`)        |
+| Sort by     | five; Manual order by List   | adds Manual order, the default (`LV-6`)        |
 | Defaults    | open, created newest first   | open, manual order                             |
 | Persistence | one entry for All tasks      | one entry per list (`TV-12`)                   |
 
@@ -463,6 +467,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - The Lists filter offers every list plus "In no list"; the Due filter offers Overdue, Today, This week, a range, and No due time.
 - **[Decided]** The default status filter is "open", `todo` and `in-progress`, matching the list view (`LV-10`).
 - Sort fields: Due time, Created, Last update, Status, and Description (`TV-9`).
+  Grouped by List, Manual order comes first and orders each list group as its list does.
   Status and due time come from the task's current occurrence; Last update sorts on `last-update-time`.
 - **[Decided]** The default sort is Created, newest first, so a new task comes first (`TV-13`).
   Sorting by Due time still puts tasks without a due time last (`TV-10`).

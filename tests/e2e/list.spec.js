@@ -137,9 +137,9 @@ test.describe('List screen', () => {
     await openList(page);
     await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
     const options = await openOptions(page);
-    await expect(options.getByRole('radio')).toHaveCount(5);
-    await expect(options.getByRole('radio', { name: 'List', exact: true })).toHaveCount(0);
-    await options.getByRole('radio', { name: 'Status', exact: true }).check();
+    const group = options.getByRole('combobox', { name: 'Group by' });
+    await expect(group.locator('option')).toHaveText(['None', 'Due date', 'Status']);
+    await group.selectOption({ label: 'Status' });
     await expect(page.locator(INFO)).toHaveText('3 of 4 tasks · Status: open · Grouped by Status');
     expect(await page.locator('.list-view .task-list > li').evaluateAll((items) => items.map((item) => (item.classList.contains('group-header')
       ? `# ${item.querySelector('.group-header__name').textContent} ${item.querySelector('.group-header__count').textContent}`
@@ -159,7 +159,7 @@ test.describe('List screen', () => {
     const problems = watch(page);
     await openList(page);
     const options = await openOptions(page);
-    await options.getByRole('radio', { name: 'Status', exact: true }).check();
+    await options.getByRole('combobox', { name: 'Group by' }).selectOption({ label: 'Status' });
     const rows = page.locator('.list-view .task-row');
     const header = page.locator('.list-view .group-header').first();
     const toggle = header.getByRole('button', { name: 'To do, 2 tasks', exact: true });

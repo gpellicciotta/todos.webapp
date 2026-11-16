@@ -656,7 +656,7 @@ function listEntries(page) {
  * @param {string} name the option name, such as `Status`
  */
 async function groupBy(options, name) {
-  await options.getByRole('radio', { name, exact: true }).check();
+  await options.getByRole('combobox', { name: 'Group by' }).selectOption({ label: name });
 }
 
 test('Group by shows headers with counts for each option, and the choice survives a reload (VO-9 to VO-12, TV-12)', async ({ page }) => {
@@ -664,7 +664,7 @@ test('Group by shows headers with counts for each option, and the choice survive
   await openApp(page);
   await seed(page);
   const options = await openOptions(page);
-  await expect(options.getByRole('radio', { name: 'None', exact: true })).toBeChecked();
+  await expect(options.getByRole('combobox', { name: 'Group by' })).toHaveValue('none');
   await expect(page.locator('.group-header')).toHaveCount(0);
 
   await groupBy(options, 'List');
@@ -715,12 +715,61 @@ test('search and sort apply inside each group, and a task of two lists shows in 
   expect(await listEntries(page)).toEqual([
     '# Home 2 of 3', 'Buy paint', 'Call the plumber', '# Work 2', 'Write the report', 'Buy paint', '# No list 1 of 2', 'Book flights',
   ]);
-  await options.locator('select').selectOption('description');
+  await options.getByRole('combobox', { name: 'Sort by' }).selectOption('description');
   expect((await listEntries(page)).slice(0, 3)).toEqual(['# Home 2 of 3', 'Buy paint', 'Call the plumber']);
   await page.getByLabel('Search or add a task').fill('paint');
   await expect.poll(() => listEntries(page)).toEqual(['# Home 1 of 3', 'Buy paint', '# Work 1 of 2', 'Buy paint']);
   await expect(page.locator('.info-line__text')).toContainText('1 of 6 tasks');
 });
+
+test('grouped by List, Manual order shows each list in its own order, survives a reload, and leaves with the grouping', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await openApp(page);
+  await seed(page);
+  const options = await openOptions(page);
+  const sort = options.getByRole('combobox', { name: 'Sort by' });
+  await expect(sort.locator('option')).toHaveText(['Due time', 'Created', 'Last update', 'Status', 'Description']);
+  await groupBy(options, 'List');
+  await expect(sort.locator('option')).toHaveText(['Manual order', 'Due time', 'Created', 'Last update', 'Status', 'Description']);
+  await sort.selectOption({ label: 'Manual order' });
+  await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open · Grouped by List · Sorted by Manual order');
+  // The seed added Call the plumber to Home before Buy paint, so Home's manual order puts it first.
+  const manual = ['# Home 2 of 3', 'Call the plumber', 'Buy paint', '# Work 1', 'Write the report', '# No list 1 of 2', 'Book flights'];
+  await expect.poll(() => listEntries(page)).toEqual(manual);
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await expect.poll(() => listEntries(page)).toEqual(manual);
+  const reopened = await openOptions(page);
+  await expect(reopened.getByRole('combobox', { name: 'Sort by' })).toHaveValue('manual');
+  await groupBy(reopened, 'Status');
+  await expect(reopened.getByRole('combobox', { name: 'Sort by' })).toHaveValue('creation-time');
+  await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open · Grouped by Status');
+  expect(problems).toEqual([]);
+});
+
+for (const viewport of [COMPACT, WIDE]) {
+  test(`the view options pad their controls, so focus rings stay inside the scroll box at ${viewport.width} px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await openApp(page);
+    await seed(page);
+    const options = await openOptions(page);
+    const content = options.locator('.view-options__content');
+    await expect(content).toHaveCSS('padding-inline-start', '8px');
+    await expect(content).toHaveCSS('padding-inline-end', '8px');
+    const box = await content.boundingBox();
+    for (const control of [options.getByRole('button', { name: /^Status/ }), options.getByRole('combobox', { name: 'Group by' }), options.getByRole('combobox', { name: 'Sort by' })]) {
+      await control.focus();
+      const ring = await control.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return Number.parseFloat(style.outlineWidth) + Number.parseFloat(style.outlineOffset);
+      });
+      const edges = await control.boundingBox();
+      expect(edges.x - ring).toBeGreaterThanOrEqual(box.x);
+      expect(edges.x + edges.width + ring).toBeLessThanOrEqual(box.x + box.width);
+    }
+  });
+}
 
 test('Finished today only shows open tasks and the tasks finished today, survives a reload, and Reset clears it (TV-14)', async ({ page }) => {
   const problems = watch(page);

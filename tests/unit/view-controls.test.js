@@ -77,12 +77,16 @@ describe('view state per device (TV-12)', () => {
     }
   });
 
-  it('accepts manual order in a list view only', () => {
+  it('accepts manual order in a list view, and in All tasks only while grouped by list', () => {
     const storage = memoryStorage();
     storage.setItem('todos.view.tasks', JSON.stringify({ order: { field: 'manual', direction: 'asc' } }));
     storage.setItem('todos.view.list', JSON.stringify({ order: { field: 'manual', direction: 'desc' } }));
     expect(loadViewState('tasks', () => storage).order).toEqual({ field: 'creation-time', direction: 'desc' });
     expect(loadViewState('list', () => storage).order).toEqual({ field: 'manual', direction: 'asc' });
+    storage.setItem('todos.view.tasks', JSON.stringify({ order: { field: 'manual', direction: 'desc' }, group: 'status' }));
+    expect(loadViewState('tasks', () => storage).order).toEqual({ field: 'creation-time', direction: 'desc' });
+    storage.setItem('todos.view.tasks', JSON.stringify({ order: { field: 'manual', direction: 'desc' }, group: 'list' }));
+    expect(loadViewState('tasks', () => storage).order).toEqual({ field: 'manual', direction: 'asc' });
   });
 
   it('reads the order and status filter that the old list screen stored', () => {
@@ -436,48 +440,86 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(panel.body.querySelector('.view-options__reset').textContent).toBe('Reset');
     const rows = [...panel.body.querySelectorAll('.view-options__row')].filter((row) => !row.hidden);
     expect(rows.map((row) => row.dataset.row)).toEqual(['lists', 'statuses', 'due', 'created']);
-    expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'open', 'Any', 'Any']);
+    expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'Open', 'Any', 'Any']);
   });
 
-  it('offers Group by with None, List, Due date, and Status in All tasks, and changes the grouping (VO-9)', async () => {
+  it('starts each row value with an uppercase letter, but keeps list names as typed', async () => {
+    await mount('tasks', [{ id: 'l-ipad', name: 'iPad apps' }]);
+    const value = (key) => panel.body.querySelector(`[data-row="${key}"] .view-options__value`).textContent;
+    models.tasks.set({ ...models.tasks.get(), filter: { statuses: ['completed'], due: ['today'], created: { from: '2026-11-01', to: null }, lists: [NO_LIST] } });
+    expect([value('statuses'), value('due'), value('created'), value('lists')]).toEqual(['Completed', 'Today', 'From 2026-11-01', 'In no list']);
+    models.tasks.set({ ...models.tasks.get(), filter: { statuses: ['ready', 'in-progress'], finishedToday: true, lists: ['l-ipad'] } });
+    expect([value('statuses'), value('lists')]).toEqual(['Open, finished today', 'iPad apps']);
+  });
+
+  /**
+   * Choose a value of a select and fire its change event.
+   * @param {HTMLSelectElement} select the select
+   * @param {string} value the value
+   */
+  function choose(select, value) {
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  it('offers Group by as a select with None, List, Due date, and Status in All tasks, and changes the grouping (VO-9)', async () => {
     await mount('tasks');
-    const radios = [...panel.body.querySelectorAll('input[name$="group"]')];
-    expect(radios.map((radio) => radio.parentElement.textContent)).toEqual(['None', 'List', 'Due date', 'Status']);
-    expect(radios.find((radio) => radio.checked).value).toBe('none');
-    toggle(radios.find((radio) => radio.value === 'list'), true);
+    const select = panel.body.querySelector('select.view-options__group');
+    expect(panel.body.querySelectorAll('input[name$="group"]')).toHaveLength(0);
+    expect(document.getElementById(select.getAttribute('aria-labelledby')).textContent).toBe('Group by');
+    expect([...select.options].map((option) => option.textContent)).toEqual(['None', 'List', 'Due date', 'Status']);
+    expect(select.value).toBe('none');
+    choose(select, 'list');
     expect(models.tasks.get().group).toBe('list');
     models.tasks.set({ ...models.tasks.get(), group: 'status' });
-    expect(radios.find((radio) => radio.checked).value).toBe('status');
+    expect(select.value).toBe('status');
     panel.body.querySelector('.view-options__reset').click();
     expect(models.tasks.get().group).toBe('none');
-    expect(radios.find((radio) => radio.checked).value).toBe('none');
+    expect(select.value).toBe('none');
   });
 
-  it('offers Group by with None, Due date, and Status in a list view, but not List (LV-11)', async () => {
+  it('offers Group by as a select with None, Due date, and Status in a list view, but not List (LV-11)', async () => {
     await mount('list');
-    const radios = [...panel.body.querySelectorAll('input[name$="group"]')];
-    expect(radios.map((radio) => radio.parentElement.textContent)).toEqual(['None', 'Due date', 'Status']);
+    const select = panel.body.querySelector('select.view-options__group');
+    expect([...select.options].map((option) => option.textContent)).toEqual(['None', 'Due date', 'Status']);
     expect([...panel.body.querySelectorAll('.view-options__heading')].map((heading) => heading.textContent)).toEqual(['Filter', 'Group by', 'Sort by']);
-    toggle(radios.find((radio) => radio.value === 'status'), true);
+    choose(select, 'status');
     expect(models.list.get().group).toBe('status');
     panel.body.querySelector('.view-options__reset').click();
     expect(models.list.get().group).toBe('none');
-    expect(radios.find((radio) => radio.checked).value).toBe('none');
+    expect(select.value).toBe('none');
+  });
+
+  it('offers Manual order first in All tasks while grouped by List, and leaves it with the List grouping', async () => {
+    await mount('tasks');
+    const group = panel.body.querySelector('.view-options__group');
+    const sort = panel.body.querySelector('.view-options__sort');
+    const fields = () => [...sort.options].map((option) => option.textContent);
+    choose(group, 'list');
+    expect(fields()).toEqual(['Manual order', 'Due time', 'Created', 'Last update', 'Status', 'Description']);
+    expect(sort.value).toBe('creation-time');
+    choose(sort, 'manual');
+    expect(models.tasks.get().order).toEqual({ field: 'manual', direction: 'asc' });
+    expect([...panel.body.querySelectorAll('input[name$="direction"]')].every((radio) => radio.disabled)).toBe(true);
+    choose(group, 'due');
+    expect(fields()).toEqual(['Due time', 'Created', 'Last update', 'Status', 'Description']);
+    expect(models.tasks.get()).toMatchObject({ group: 'due', order: { field: 'creation-time', direction: 'desc' } });
+    expect(sort.value).toBe('creation-time');
   });
 
   it('offers no Lists row in a list view, and Manual order as the first sort choice (LV-6)', async () => {
     await mount('list');
     expect([...panel.body.querySelectorAll('.view-options__row')].map((row) => row.dataset.row)).toEqual(['statuses', 'due', 'created']);
-    const options = [...panel.body.querySelectorAll('select option')].map((option) => option.textContent);
+    const options = [...panel.body.querySelectorAll('.view-options__sort option')].map((option) => option.textContent);
     expect(options).toEqual(['Manual order', 'Due time', 'Created', 'Last update', 'Status', 'Description']);
-    expect(panel.body.querySelector('select').value).toBe('manual');
+    expect(panel.body.querySelector('.view-options__sort').value).toBe('manual');
   });
 
   it('offers five sort fields in All tasks, starting at Created descending', async () => {
     await mount('tasks');
-    expect([...panel.body.querySelectorAll('select option')].map((option) => option.textContent))
+    expect([...panel.body.querySelectorAll('.view-options__sort option')].map((option) => option.textContent))
       .toEqual(['Due time', 'Created', 'Last update', 'Status', 'Description']);
-    expect(panel.body.querySelector('select').value).toBe('creation-time');
+    expect(panel.body.querySelector('.view-options__sort').value).toBe('creation-time');
     expect(panel.body.querySelector('input[name$="direction"]:checked').value).toBe('desc');
   });
 
@@ -587,7 +629,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('list');
     const choice = panel.body.querySelector('[data-region="statuses"] input[data-toggle="finishedToday"]');
     expect(choice.checked).toBe(true);
-    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('all, finished today');
+    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('All, finished today');
     panel.body.querySelector('.view-options__reset').click();
     expect(choice.checked).toBe(false);
     expect(models.list.get().filter.finishedToday).toBeUndefined();
@@ -605,12 +647,12 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     to.value = '2026-11-30';
     to.dispatchEvent(new Event('change', { bubbles: true }));
     expect(models.tasks.get().filter.created).toEqual({ from: null, to: '2026-11-30' });
-    expect(panel.body.querySelector('[data-row="created"] .view-options__value').textContent).toBe('until 2026-11-30');
+    expect(panel.body.querySelector('[data-row="created"] .view-options__value').textContent).toBe('Until 2026-11-30');
   });
 
   it('sorts by the chosen field with its natural direction, and by the direction toggle', async () => {
     await mount('tasks');
-    const select = panel.body.querySelector('select');
+    const select = panel.body.querySelector('.view-options__sort');
     select.value = 'creation-time';
     select.dispatchEvent(new Event('change', { bubbles: true }));
     expect(models.tasks.get().order).toEqual({ field: 'creation-time', direction: 'desc' });
@@ -626,7 +668,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('list');
     const radios = [...panel.body.querySelectorAll('input[name$="direction"]')];
     expect(radios.every((radio) => radio.disabled)).toBe(true);
-    const select = panel.body.querySelector('select');
+    const select = panel.body.querySelector('.view-options__sort');
     select.value = 'status';
     select.dispatchEvent(new Event('change', { bubbles: true }));
     expect(radios.every((radio) => !radio.disabled)).toBe(true);
@@ -636,12 +678,12 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
   it('resets every option, and follows a state set from outside', async () => {
     await mount('tasks');
     models.tasks.set({ filter: { statuses: [], due: ['today'], text: 'paint' }, order: { field: 'status', direction: 'desc' } });
-    expect(panel.body.querySelector('select').value).toBe('status');
+    expect(panel.body.querySelector('.view-options__sort').value).toBe('status');
     expect(panel.body.querySelector('[data-region="statuses"] input[value="ready"]').checked).toBe(false);
     expect(panel.body.querySelector('[data-region="due"] input[value="today"]').checked).toBe(true);
     panel.body.querySelector('.view-options__reset').click();
     expect(models.tasks.get()).toEqual(defaultViewState());
-    expect(panel.body.querySelector('select').value).toBe('creation-time');
+    expect(panel.body.querySelector('.view-options__sort').value).toBe('creation-time');
     expect(panel.body.querySelector('[data-region="statuses"] input[value="ready"]').checked).toBe(true);
   });
 

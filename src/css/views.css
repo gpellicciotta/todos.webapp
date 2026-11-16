@@ -188,6 +188,8 @@
   gap: var(--space-3);
   min-block-size: 0;
   overflow-y: auto;
+  /* The scroll box clips at its edges, so the inline padding keeps the focus rings of full-width controls visible. */
+  padding-inline: var(--space-2);
 }
 
 .view-options__top {
@@ -244,6 +246,7 @@
 /* The compact Show button ends the screen, below the scrolling options. */
 .view-options__done {
   flex: none;
+  margin-inline: var(--space-2);
 }
 
 @media (width >= 64rem) {

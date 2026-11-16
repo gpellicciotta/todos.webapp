@@ -6,6 +6,7 @@
  * changes; the search text from the add field stays out of storage, so a reload never hides tasks behind forgotten text.
  * The info line under the add bar names the count and every active option (`VO-7`) and offers Reset (`VO-8`).
  * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, Group by, and Sort by.
+ * Manual order is a sort of the list view, and of All tasks while it groups by list, where each list group keeps its own order.
  */
 
 import { STATUSES } from '../core/occurrences.js';
@@ -76,6 +77,16 @@ export const NATURAL_DIRECTION = Object.freeze({
 
 /** The groupings with a control, by kind of view; a list view cannot group by list (`LV-11`). */
 const GROUPINGS_OF = Object.freeze({ tasks: GROUPINGS, list: Object.freeze(GROUPINGS.filter((group) => group !== 'list')) });
+
+/**
+ * Name the sort fields a view offers: Manual order comes first in a list view, and in All tasks while it groups by list.
+ * @param {'tasks'|'list'} kind the kind of view
+ * @param {string} [group] the grouping
+ * @returns {string[]} the sort fields
+ */
+function sortFieldsOf(kind, group) {
+  return kind === 'list' || group === 'list' ? [MANUAL, ...SORT_FIELDS] : SORT_FIELDS;
+}
 
 /** Grouping names, for the Group by control and the info line (`VO-9`, `VO-7`). */
 export const GROUP_LABELS = Object.freeze({ [NONE]: 'None', list: 'List', due: 'Due date', status: 'Status' });
@@ -161,12 +172,11 @@ export function sanitizeViewState(raw, kind = 'tasks') {
       state.filter.shared = stored.shared;
     }
   }
-  const fields = kind === 'list' ? [MANUAL, ...SORT_FIELDS] : SORT_FIELDS;
-  if (order && fields.includes(order.field) && ['asc', 'desc'].includes(order.direction)) {
-    state.order = { field: order.field, direction: order.field === MANUAL ? 'asc' : order.direction };
-  }
   if (GROUPINGS_OF[kind].includes(raw.group)) {
     state.group = raw.group;
+  }
+  if (order && sortFieldsOf(kind, state.group).includes(order.field) && ['asc', 'desc'].includes(order.direction)) {
+    state.order = { field: order.field, direction: order.field === MANUAL ? 'asc' : order.direction };
   }
   return state;
 }
@@ -259,9 +269,23 @@ function statusValue(filter) {
  * @param {string} key the filter key
  * @param {object} filter the filter
  * @param {object[]} lists the live lists
+ * @param {boolean} [capital] start the text with an uppercase letter, as a panel row does; list names stay as typed
  * @returns {string|null} the value text
  */
-function filterValue(key, filter, lists) {
+function filterValue(key, filter, lists, capital = false) {
+  const value = valueText(key, filter, lists, capital);
+  return capital && value && key !== 'lists' ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
+}
+
+/**
+ * Return the value text of one filter in lowercase, apart from list names, or null when the filter is off.
+ * @param {string} key the filter key
+ * @param {object} filter the filter
+ * @param {object[]} lists the live lists
+ * @param {boolean} capital name In no list with its uppercase letter
+ * @returns {string|null} the value text
+ */
+function valueText(key, filter, lists, capital) {
   if (key === 'statuses') {
     return statusValue(filter);
   }
@@ -276,7 +300,8 @@ function filterValue(key, filter, lists) {
     return null;
   }
   if (key === 'lists') {
-    const names = values.map((id) => (id === NO_LIST ? STRINGS.noList.toLowerCase() : lists.find((list) => list.id === id)?.name))
+    const noList = capital ? STRINGS.noList : STRINGS.noList.toLowerCase();
+    const names = values.map((id) => (id === NO_LIST ? noList : lists.find((list) => list.id === id)?.name))
       .filter(Boolean);
     // A stored filter of deleted lists filters nothing, so it shows no value.
     if (names.length === 0) {
@@ -531,6 +556,8 @@ export function createInfoLine({ document: doc = globalThis.document, onReset })
  * Mount the View options into the editor panel (`VO-5`, `VO-6`).
  * Changes apply at once. The panel holds Reset, the Filter rows with one open at a time, Group by, and Sort by;
  * the list view groups by due date or status, not by list (`LV-11`). A polite live region announces the count after each change (`VO-13`).
+ * Group by and Sort by are selects; Sort by offers Manual order while the view allows it, and leaving the List grouping
+ * of All tasks also leaves Manual order for the default sort.
  * @param {object} panel the editor panel
  * @param {HTMLElement} panel.element the panel element
  * @param {HTMLElement} panel.body the body to fill
@@ -649,31 +676,35 @@ export function mountViewOptions(panel, route, context) {
     rows.set(key, { row, region, label });
   }
 
+  /**
+   * Fill a select with options, unless it already holds them.
+   * @param {HTMLSelectElement} target the select
+   * @param {string[]} values the option values, in order
+   * @param {Record<string, string>} labels the option labels by value
+   */
+  function fillSelect(target, values, labels) {
+    if ([...target.options].map((option) => option.value).join() === values.join()) {
+      return;
+    }
+    target.replaceChildren(...values.map((value) => {
+      const option = doc.createElement('option');
+      option.value = value;
+      option.textContent = labels[value];
+      return option;
+    }));
+  }
+
   const groupings = GROUPINGS_OF[kind];
   const groupHeading = make(doc, 'h3', 'view-options__heading', STRINGS.groupBy);
-  const groupSet = make(doc, 'fieldset', 'segmented view-options__group');
-  const groupOptions = make(doc, 'div', 'segmented__options');
-  for (const value of groupings) {
-    const label = make(doc, 'label', 'segmented__option');
-    const input = doc.createElement('input');
-    input.type = 'radio';
-    input.name = `${id}-group`;
-    input.value = value;
-    label.append(input, GROUP_LABELS[value]);
-    groupOptions.append(label);
-  }
-  groupSet.append(make(doc, 'legend', 'visually-hidden', STRINGS.groupBy), groupOptions);
+  groupHeading.id = `${id}-group`;
+  const groupSelect = make(doc, 'select', 'field__control view-options__group');
+  groupSelect.setAttribute('aria-labelledby', groupHeading.id);
+  fillSelect(groupSelect, groupings, GROUP_LABELS);
 
   const sortHeading = make(doc, 'h3', 'view-options__heading', STRINGS.sortBy);
   sortHeading.id = `${id}-sort`;
   const select = make(doc, 'select', 'field__control view-options__sort');
   select.setAttribute('aria-labelledby', sortHeading.id);
-  for (const field of kind === 'list' ? [MANUAL, ...SORT_FIELDS] : SORT_FIELDS) {
-    const option = doc.createElement('option');
-    option.value = field;
-    option.textContent = FIELD_LABELS[field];
-    select.append(option);
-  }
   const directions = make(doc, 'fieldset', 'segmented view-options__direction');
   const segments = make(doc, 'div', 'segmented__options');
   for (const value of ['asc', 'desc']) {
@@ -690,7 +721,7 @@ export function mountViewOptions(panel, route, context) {
   const done = button(doc, 'button view-options__done');
   content.append(make(doc, 'h3', 'view-options__heading', STRINGS.filter), accordion);
   if (groupings.length > 1) {
-    content.append(groupHeading, groupSet);
+    content.append(groupHeading, groupSelect);
   }
   content.append(sortHeading, select, directions);
   root.append(content, done);
@@ -721,7 +752,7 @@ export function mountViewOptions(panel, route, context) {
         region.hidden = region.hidden || !connected();
       }
       const shared = typeof state.filter.shared === 'boolean' ? (state.filter.shared ? STRINGS.shared : STRINGS.notShared) : null;
-      const value = (key === 'shared' ? shared : filterValue(key, state.filter, lists)) ?? (key === 'lists' || key === 'statuses' ? STRINGS.all : STRINGS.any);
+      const value = (key === 'shared' ? shared : filterValue(key, state.filter, lists, true)) ?? (key === 'lists' || key === 'statuses' ? STRINGS.all : STRINGS.any);
       row.replaceChildren(make(doc, 'span', 'view-options__label', label), make(doc, 'span', 'view-options__value', value),
         spriteIcon(doc, 'chevron-down'));
     }
@@ -742,9 +773,8 @@ export function mountViewOptions(panel, route, context) {
         input.value = (filterKey === 'due' ? dueRange[end] : state.filter.created?.[end]) ?? '';
       }
     }
-    for (const input of groupSet.querySelectorAll('input')) {
-      input.checked = input.value === (state.group ?? NONE);
-    }
+    groupSelect.value = state.group ?? NONE;
+    fillSelect(select, sortFieldsOf(kind, state.group), FIELD_LABELS);
     select.value = state.order.field;
     for (const input of directions.querySelectorAll('input')) {
       input.checked = input.value === state.order.direction;
@@ -830,9 +860,12 @@ export function mountViewOptions(panel, route, context) {
         state.order = { field: select.value, direction: NATURAL_DIRECTION[select.value] };
       });
     }
-    else if (input.name === `${id}-group`) {
+    else if (input === groupSelect) {
       apply((state) => {
-        state.group = input.value;
+        state.group = groupSelect.value;
+        if (!sortFieldsOf(kind, state.group).includes(state.order.field)) {
+          state.order = defaultViewState(kind).order;
+        }
       });
     }
     else if (input.name === `${id}-direction`) {

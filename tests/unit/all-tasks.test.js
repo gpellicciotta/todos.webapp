@@ -74,6 +74,36 @@ describe('mountAllTasks', () => {
     expect(memory.text).toBe('paint');
   });
 
+  it('shows each list group in the manual order of its list while grouped by list and sorted by manual order', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const task = (id, description, day) => shapeTask({
+      id, description, status: 'ready', 'creation-time': `2026-11-0${day}T09:00:00.000Z`, 'last-update-time': `2026-11-0${day}T09:00:00.000Z`,
+    });
+    const tasks = [task('t1', 'Buy paint', 1), task('t2', 'Call the plumber', 2), task('t3', 'Write the report', 3), task('t4', 'Book flights', 4)];
+    const member = (listId, taskId, position) => ({ 'list-id': listId, 'task-id': taskId, position, 'added-time': '2026-11-01T09:00:00.000Z' });
+    const store = {
+      snapshot: async () => ({
+        lists: [{ id: 'l-home', name: 'Home' }, { id: 'l-work', name: 'Work' }],
+        tasks,
+        memberships: [member('l-home', 't2', 'a1'), member('l-home', 't1', 'a0'), member('l-work', 't3', 'a0'), member('l-work', 't2', 'Zz')],
+        notes: [],
+      }),
+      subscribe: () => () => {},
+    };
+    const storage = { getItem: () => null, setItem: vi.fn() };
+    const viewModels = { tasks: createViewModel('tasks', () => storage) };
+    screen = mountAllTasks(document.querySelector('[data-view]'), { store, toaster: { show: vi.fn() }, viewModels, getStorage: () => storage });
+    await screen.idle();
+    const entries = () => [...document.querySelectorAll('.task-list > li')].map((item) => (item.classList.contains('group-header')
+      ? `# ${item.querySelector('.group-header__name').textContent}`
+      : item.querySelector('.task-row__description').textContent));
+    viewModels.tasks.set({ ...defaultViewState(), group: 'list' });
+    expect(entries()).toEqual(['# Home', 'Call the plumber', 'Buy paint', '# Work', 'Write the report', 'Call the plumber', '# No list', 'Book flights']);
+    viewModels.tasks.set({ ...defaultViewState(), group: 'list', order: { field: 'manual', direction: 'asc' } });
+    expect(entries()).toEqual(['# Home', 'Buy paint', 'Call the plumber', '# Work', 'Call the plumber', 'Write the report', '# No list', 'Book flights']);
+    expect(document.querySelector('.info-line__text').textContent).toBe('4 tasks · Status: open · Grouped by List · Sorted by Manual order');
+  });
+
   it('updates the due chip on the minute tick and keeps the row and an open status menu (OVD-2)', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     try {

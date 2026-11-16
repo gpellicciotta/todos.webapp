@@ -10,13 +10,16 @@
  * An empty result names the active filters and offers Reset.
  * A grouping splits the shown tasks into groups with a header and a count, such as "6 of 10" while filters hide some;
  * filters and sort apply inside each group, and list groups follow the list order of the sidebar (`VO-9` to `VO-12`).
+ * Grouped by list, Manual order shows each list group in the manual order of its list.
  * A header collapses or expands its group (`VO-15`).
  */
 
 import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-order.js';
 import { isSharedList } from '../core/permissions.js';
 import { becameStale, displayTasks } from '../core/occurrences.js';
-import { clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, sortTasks } from '../core/query.js';
+import {
+  clearFilters, DEFAULT_ORDER, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, positionsOfList, sortByPosition, sortTasks,
+} from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 import { formatRoute } from '../ui/router.js';
@@ -69,7 +72,7 @@ function joinParts(parts) {
 /**
  * Read the store into the shape the screen renders.
  * @param {object} store the store facade
- * @returns {Promise<{tasks: object[], lists: object[], listsByTask: Map, notesByTask: Map}>} the data
+ * @returns {Promise<{tasks: object[], lists: object[], listsByTask: Map, notesByTask: Map, memberships: object[]}>} the data
  */
 async function readData(store) {
   const snapshot = await store.snapshot();
@@ -84,6 +87,7 @@ async function readData(store) {
     tasks: snapshot.tasks.filter((task) => !task['deletion-time']),
     lists,
     listsByTask: indexMemberships(snapshot.memberships, lists.map((list) => list.id)),
+    memberships: snapshot.memberships,
     notesByTask,
     sharedListIds: new Set(lists.filter(isSharedList).map((list) => list.id)),
     userId,
@@ -310,10 +314,20 @@ export function mountAllTasks(view, {
     // The display rule comes first, so a recurring task past its period end filters, sorts, and groups as to do.
     const tasks = displayTasks(data.tasks, ctx.now);
     const byOptions = filterTasks(tasks, { ...filter, text: undefined }, ctx);
-    const shown = sortTasks(filterTasks(byOptions, filter, ctx), state.order);
-    const groups = state.group && state.group !== 'none'
+    // Manual order needs the List grouping; each list group then follows its list, and No list goes oldest first.
+    const manual = state.order.field === 'manual';
+    const shown = sortTasks(filterTasks(byOptions, filter, ctx), manual ? DEFAULT_ORDER : state.order);
+    let groups = state.group && state.group !== 'none'
       ? groupTasks(shown, state.group, { ...ctx, lists: applyListOrder(data.lists, readListOrder(getStorage)) }, tasks)
       : null;
+    if (groups && manual && state.group === 'list') {
+      groups = groups.map((group) => ({
+        ...group,
+        tasks: group.key === NO_LIST
+          ? sortTasks(group.tasks, { field: 'creation-time', direction: 'asc' })
+          : sortByPosition(group.tasks, positionsOfList(data.memberships, group.key)),
+      }));
+    }
     taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], filter, ctx).length > 0 });
     showAdded();
     addBar.setKnown(exactMatchIndex(byOptions));

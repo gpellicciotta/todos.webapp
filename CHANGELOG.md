@@ -7,6 +7,10 @@ All notable changes to this project are documented here.
 ## v0.5.1-pre
 - FrontEnd: Kept the account avatar inside its round button, which it overhung by 2 px on each side.
 - FrontEnd: Made the `occurrences` array optional when importing a format 2 backup.
+- FrontEnd: Started View options row values with an uppercase letter, such as `Open`, keeping list names as typed.
+- FrontEnd: Turned the Group by choice of the View options into a select.
+- FrontEnd: Offered Manual order in All tasks while grouped by List, ordering each list group as its list does.
+- FrontEnd: Padded the View options so the focus rings of full-width controls no longer clip at the edges.
 
 ## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.

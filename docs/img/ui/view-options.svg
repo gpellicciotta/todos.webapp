@@ -69,11 +69,8 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <line x1="16" y1="404" x2="374" y2="404" class="rule"/>
     <text x="16" y="430" font-size="12" class="muted">Group by</text>
     <rect x="16" y="438" width="358" height="36" rx="6" class="control"/>
-    <text x="60.75" y="460.2" font-size="12" text-anchor="middle">None</text>
-    <rect x="107.5" y="440" width="85.5" height="32" rx="4" class="selected"/>
-    <text x="150.25" y="460.2" font-size="12" class="bold" text-anchor="middle">List</text>
-    <text x="239.75" y="460.2" font-size="12" text-anchor="middle">Due date</text>
-    <text x="329.25" y="460.2" font-size="12" text-anchor="middle">Status</text>
+    <text x="28" y="461" font-size="14">List</text>
+    <text x="358" y="461" font-size="14" text-anchor="middle">⌄</text>
     <text x="16" y="504" font-size="12" class="muted">Sort by</text>
     <rect x="16" y="512" width="200" height="36" rx="6" class="control"/>
     <text x="28" y="535" font-size="14">Created</text>
@@ -240,11 +237,8 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <line x1="1044" y1="404" x2="1416" y2="404" class="rule"/>
     <text x="1044" y="430" font-size="12" class="muted">Group by</text>
     <rect x="1044" y="438" width="372" height="36" rx="6" class="control"/>
-    <text x="1090.5" y="460.2" font-size="12" text-anchor="middle">None</text>
-    <rect x="1139" y="440" width="89" height="32" rx="4" class="selected"/>
-    <text x="1183.5" y="460.2" font-size="12" class="bold" text-anchor="middle">List</text>
-    <text x="1276.5" y="460.2" font-size="12" text-anchor="middle">Due date</text>
-    <text x="1369.5" y="460.2" font-size="12" text-anchor="middle">Status</text>
+    <text x="1056" y="461" font-size="14">List</text>
+    <text x="1400" y="461" font-size="14" text-anchor="middle">⌄</text>
     <text x="1044" y="504" font-size="12" class="muted">Sort by</text>
     <rect x="1044" y="512" width="214" height="36" rx="6" class="control"/>
     <text x="1056" y="535" font-size="14">Created</text>

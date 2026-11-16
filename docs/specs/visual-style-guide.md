@@ -312,9 +312,11 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - Search and add: one field with an Add button, and under it a 12 px muted info line of the task count and active options.
   Leave at least 32 px between this block and the rows; the options themselves live in the view options panel.
   The `.info-line` wraps to two lines, then truncates; its quiet Reset button shows only while an option differs from its default.
-- View options: the editor panel with Reset at the top, a `.view-options__row` accordion of filters, and Sort by.
+- View options: the editor panel with Reset at the top, a `.view-options__row` accordion of filters, Group by, and Sort by.
   Each row shows its value at the end, and opening one row closes the other.
-  Sort by is a native select with a segmented Ascending and Descending toggle; the compact screen ends with a sticky Show N tasks button.
+  Group by is a native select; Sort by is a native select with a segmented Ascending and Descending toggle.
+  The compact screen ends with a sticky Show N tasks button.
+  The scrolling options keep `--space-2` of inline padding, so focus rings never clip at their edges.
 - [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
   Compact layouts show the panel alone, as a full screen.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.
