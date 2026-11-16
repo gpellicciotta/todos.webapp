@@ -228,7 +228,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - SYN-12: Several open tabs sync as one: a single tab uploads changes and polls the service.
 - SYN-13: While connected, the user's settings follow the account to every device, and the latest change wins.
   They cover the view options (`TV-12`), the list order (`LST-8`), the Lists screen sort (`LST-12`), and Enter adding (`VO-3`).
-  The server URL and the theme stay on the device; in local mode, every setting stays on the device.
+  The server URL, the theme, and panel widths stay on the device; in local mode, every setting stays on the device.
   The manual order of tasks in a list is list data, shared with collaborators and synced like other changes (`LV-4`).
 
 ### Notifications
