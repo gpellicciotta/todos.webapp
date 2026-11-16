@@ -31,6 +31,8 @@ The other phases render in the same section:
 - Signing in: "Signing in…", with no actions.
 - Signed in: the connected state as today, with name and email, server, sync state, Sync log, and Disconnect.
   No Done button and no "later version" hint.
+  This folds in T0244: the stale "Syncing your data arrives in a later version" text in connect.js goes away.
+  The sync state line and Sync log describe the current sync behavior instead.
 - Not invited and error: the status line, the hint, and Sign in to try again; Back to Settings goes away.
 - Expired: today's expired text, with Sign in again that signs in directly instead of opening another screen.
 
@@ -46,11 +48,11 @@ After Signing in, focus moves to the first action of the new phase.
 
 ### Out of Scope
 - Upload progress and merge messages on first connect (Connecting flow, steps 5 to 7) stay as specified, unbuilt.
-- T0244 fixes the stale hint on the connect screen; if it has not run yet, this task makes it moot.
 
 ### Tests
 - Unit: in local mode the Connection section shows the intro and Sign in; Sign in starts Auth.
 - Unit: finishing a sign-in shows Signing in, then the connected state, and focuses its first action.
+- Unit: no phase of the Connection section shows the "later version" sync text (T0244).
 - Unit: not invited, error, and expired render in the section with their texts and actions.
 - Unit: the router maps `#/connect` to the settings view.
 - Integration: the connect e2e spec signs in from Settings, returns through `#/connect`, and lands in Settings, connected.

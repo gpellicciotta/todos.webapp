@@ -38,3 +38,7 @@ Make the Settings Connection section the only place to connect, removing the sep
 
 - [2026-11-16] **[Doc]**
   Wrote goals, steps, and technical-spec.md from the user's request for a single Connect card.
+
+- [2026-11-16] **[Decided]**
+  Folded in T0244: the Connection section drops the stale later-version sync hint, with a unit test.
+
