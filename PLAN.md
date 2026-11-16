@@ -2,6 +2,11 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
+- [ ] T0262 [needs: T0258] Split the task editor into Content, Status, and History tabs, with Delete in a header More menu.
+- [ ] T0261 [needs: T0260] Turn the row's count chip into a button opening a minus, count, plus popover for targets above 1.
+- [ ] T0260 [needs: T0259] Remove the task row's status menu, now that the task editor holds every status action.
+- [ ] T0259 [needs: T0258] Make the task row's status button tick by target, never untick, and offer Undo after every tick.
+- [ ] T0258 [needs: T0257] Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257.
 - [ ] T0257 Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
 - [ ] T0256 Let users resize the task editor panel and the lists sidebar by dragging on desktop, remembered per device.
 - [ ] T0255 [protocol: adhoc] Close the task editor when the row of the task it shows is clicked again.
