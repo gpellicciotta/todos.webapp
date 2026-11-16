@@ -2,6 +2,9 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
+- [ ] T0257 Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
+- [ ] T0256 Let users resize the task editor panel and the lists sidebar by dragging on desktop, remembered per device.
+- [ ] T0255 [protocol: adhoc] Close the task editor when the row of the task it shows is clicked again.
 - [ ] T0254 [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.
 - [ ] T0253 [protocol: adhoc] Add at least 0.5rem of space above the Search or add a task bar.
 - [ ] T0252 [protocol: adhoc] Give Keyboard shortcuts its own Settings section, keeping About as the last section.
