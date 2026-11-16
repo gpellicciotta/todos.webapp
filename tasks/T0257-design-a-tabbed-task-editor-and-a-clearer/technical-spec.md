@@ -35,11 +35,35 @@ Agreed with the user on 2026-11-16. The status still derives from the count, as 
 - The status menu goes: no right-click, long press, Down, Up, Shift+F10, or Menu key menu.
 - Its actions move to the task editor, including Complete for previous period.
 - Every tick shows an Undo toast, which Ctrl+Z also runs, since a target 1 row cannot untick.
-- Above target 1, the row shows the status icon and the counts, such as 0/3.
-- The count chip becomes a button beside the open link, not inside it, and opens a popover: `[−] 2 of 3 [+]`.
+- Above target 1, the meta line leads with the counts, such as "2 of 3 done", in the status color.
+- The counts become a button outside the open link and open a popover: `[−] 2 of 3 [+]`.
 - The popover is read-only while cancelled; minus is disabled at 0; plus always applies.
 - Minus from 1 posts `uncomplete` then `start`, so the task stays In progress at 0.
-- The row redesign discussion may change the row layout above; record its decisions here.
+
+#### Task Row Layout
+Agreed with the user on 2026-11-16 as variant C of the card canvas:
+https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
+- Line 1: the status button, then the description, wrapping to at most 2 lines on every width.
+- Line 2, the meta line, in small muted text, only when it has content:
+  - the counts above target 1;
+  - a clock icon and the due text, or a repeat icon and the interval, such as Daily;
+  - the lists: plain text joined by " · " on phones, small pills on wide layouts.
+- Overdue due text and its clock use `--color-danger` (orange); in-time ones stay muted.
+- The due text always shows, so overdue never relies on color alone.
+- The row drops the note count, the people icon, the More button, and the drag handle.
+- The lists overview keeps its shared marks on list cards.
+- The More menu goes; Add to list and Remove from this list live in the editor's Lists, Delete in its header menu.
+- OVD-2's "Overdue" chip in the signal color becomes the orange due text.
+
+#### Task Reordering
+- Desktop: press and drag the row; a drag starts after the pointer moves past a small threshold.
+- A plain click still opens the editor; buttons inside the row do not start drags.
+- Desktop: a drag handle shows outside the row, in the gutter before it, on the focused or hovered row.
+- Touch: a long hold on the row, about 400 ms without movement, starts the drag; scrolling still works.
+- Keyboard on a focused row: Alt+Up and Alt+Down move one place; Alt+Home and Alt+End move to the top or bottom.
+- Moves apply only under manual order without grouping or search, as today (`LV-8`).
+- Open: lists use Alt+Shift+Up and Alt+Shift+Down for the ends today; align both on one pair.
+- Open: the design principle "every drag, hover, or shortcut has a visible button alternative" loses Move up and Move down.
 
 #### Task Editor Status
 - Four icon state buttons in a group: Ready, In progress, Completed, and Cancelled.
@@ -73,11 +97,14 @@ Agreed with the user on 2026-11-16. The status still derives from the count, as 
 - T0260: removal of the row status menu.
 - T0261: the count chip popover.
 - T0262: the tabs, Details in History, and Delete in the header More menu.
+- T0263: row reordering by press-and-drag, long hold, Alt keys, and the outside handle.
+- T0264: the row layout of variant C, with overdue due text in orange.
+- T0265: removal of the row More button and menu.
 - Each needs this task, directly or through its chain, so none starts before sign-off.
 
 ### Sign-Off
 - The user approves the wireframes and the design text through `plan tasks review --approve`.
-- After approval, revise T0258 to T0262 to the signed-off design, split along the size lines.
+- After approval, revise T0258 to T0265 to the signed-off design, split along the size lines.
 
 ### Tests
 - Unit test: none (design and documentation only).

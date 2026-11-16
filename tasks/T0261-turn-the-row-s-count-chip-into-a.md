@@ -1,7 +1,7 @@
 ---
 id: T0261
 owner: ~
-needs: [T0260]
+needs: ['T0265']
 branch: —
 worktree: —
 status: ready
@@ -15,7 +15,7 @@ protocol: standard
 
 ## Goals
 Let users correct a count from the row: above target 1, the count chip opens a minus, count, plus popover.
-- The chip moves out of the row's open link to a sibling button, since a link may not hold a button.
+- The counts of T0264's meta line become a button outside the open link, since a link may not hold one.
 - The popover reuses the count stepper of T0258, with the same rules.
 - It is read-only while cancelled; viewers see the chip as plain text.
 - Rules and tests: [technical-spec.md](T0261-turn-the-row-s-count-chip-into-a/technical-spec.md).
@@ -36,4 +36,7 @@ Let users correct a count from the row: above target 1, the count chip opens a m
 
 - [2026-11-16] **[Doc]**
   Wrote goals, steps, and technical-spec.md from the status, count, and tab model agreed in T0257.
+
+- [2026-11-16] **[Doc]**
+  Moved the count button into T0264's meta line and set its need to T0265.
 

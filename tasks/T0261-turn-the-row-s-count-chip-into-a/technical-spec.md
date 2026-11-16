@@ -14,11 +14,12 @@ Size estimate: 8 files, 380 lines.
 
 ### Design Source
 - The Task Row section of T0257's brief governs; revise this spec if sign-off changed it.
-- The row redesign discussed in T0257 may move the chip; follow the signed-off row layout.
+- The counts sit in the meta line of T0264; follow the signed-off row layout.
 - Brief: ../T0257-design-a-tabbed-task-editor-and-a-clearer/technical-spec.md.
 
 ### Chip Button
-- Above target 1, the counts render as a button beside the open link, such as "2/3", also on compact layouts.
+- Above target 1, the meta line's counts, such as "2 of 3 done", render as a button outside the open link.
+- The open link keeps the rest of the row; the button sits above it in the stacking order, on every width.
 - Its name reads "Change count, 2 of 3 done"; it has `aria-haspopup="dialog"` and `aria-expanded`.
 - Viewers and closed recurring series show the counts as plain text.
 
