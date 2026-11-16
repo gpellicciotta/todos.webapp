@@ -17,8 +17,9 @@ Completion check: `npm test` and `npx playwright test tests/e2e/lists.spec.js`
 ### Tests
 - Unit: Move to top and Move to bottom produce the first and last position and the message "Garden moved to position 1 of 124.".
 - Unit: The entries are absent while a sort or find text is active, and on the List screen menu.
-- Unit: Alt+Shift+Up and Alt+Shift+Down move a focused row or sidebar link to an end without opening a menu.
+- Unit: Alt+Home and Alt+End move a focused row or sidebar link to an end without opening a menu.
 - Integration: Playwright with 124 lists: Move to bottom on the first list moves it last, scrolls it into view, and the sidebar shows the same order after a reload.
 
 ### Notes
 - The stored order stays device-only in `todos.lists.order`; nothing syncs.
+- reorder.js gains an optional `jump(id, end)` callback; whichever of T0263 and this task lands first adds it.

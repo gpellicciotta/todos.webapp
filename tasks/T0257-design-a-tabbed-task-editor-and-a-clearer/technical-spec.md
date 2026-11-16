@@ -62,8 +62,12 @@ https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
 - Touch: a long hold on the row, about 400 ms without movement, starts the drag; scrolling still works.
 - Keyboard on a focused row: Alt+Up and Alt+Down move one place; Alt+Home and Alt+End move to the top or bottom.
 - Moves apply only under manual order without grouping or search, as today (`LV-8`).
-- Open: lists use Alt+Shift+Up and Alt+Shift+Down for the ends today; align both on one pair.
-- Open: the design principle "every drag, hover, or shortcut has a visible button alternative" loses Move up and Move down.
+- Lists use the same Alt+Home and Alt+End for the ends, replacing the planned Alt+Shift+Up and Alt+Shift+Down.
+- T0076, not yet built, implements the list keys; no list shortcut changes for users.
+- The count stays in the meta line, as variant C draws it.
+- The principle "every drag, hover, or shortcut has a visible button alternative" relaxes:
+  every drag keeps a keyboard alternative, but needs no visible button.
+- The Accessibility section's "Move up and Move down for tasks" becomes the Alt keys.
 
 #### Task Editor Status
 - Four icon state buttons in a group: Ready, In progress, Completed, and Cancelled.

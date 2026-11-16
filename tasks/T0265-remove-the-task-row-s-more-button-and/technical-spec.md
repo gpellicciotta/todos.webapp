@@ -21,6 +21,8 @@ Size estimate: 8 files, 350 lines, mostly deletions.
 - Remove the Delete Undo toast path only if the editor's delete does not reuse it.
 - Rows keep no trailing control; the meta line or description takes the room.
 - TSK-8, TSK-11, and LV-3 name the editor and the move keys instead of the row menu.
+- Relax the design principle in ui-design.md: every drag keeps a keyboard alternative, with no visible button required.
+- The Accessibility section names the Alt keys, not Move up and Move down, as the tasks' drag alternative.
 
 ### Tests
 - Unit: rows render no More button, and no key opens a row menu.

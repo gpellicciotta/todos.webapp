@@ -36,6 +36,9 @@ Size estimate: 8 files, 400 lines.
 ### Keys
 - Alt+Up and Alt+Down move the focused row one place, as today.
 - Alt+Home and Alt+End move it to the top or bottom of the list.
+- reorder.js serves both the task list and the Lists screen; give it an optional `jump(id, end)` callback.
+- Alt+Home and Alt+End call it when given; the task list passes one here.
+- Whichever of this task and T0076 lands first adds the callback; the other reuses it.
 - Focus stays on the moved row; the live region announces its new place.
 
 ### Tests

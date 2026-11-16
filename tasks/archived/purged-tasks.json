@@ -1,0 +1,10 @@
+{
+  "T0244": {
+    "description": "Replace the stale 'Syncing your data arrives in a later version' hint on the connect screen with the current sync behavior.",
+    "purged_at": "2026-11-16"
+  },
+  "T0239": {
+    "description": "Made occurrences optional when validating format 2 backups on import.",
+    "purged_at": "2026-11-16"
+  }
+}
