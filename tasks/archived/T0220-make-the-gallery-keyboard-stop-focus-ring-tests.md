@@ -4,9 +4,9 @@ owner: ~
 needs: []
 branch: —
 worktree: —
-status: ready
+status: cancelled
 started_at: —
-ended_at: —
+ended_at: "2026-11-16T07:50:48Z"
 review: agent
 preview: none
 protocol: standard
@@ -33,3 +33,13 @@ Technical specifications: [technical-spec.md](T0220-make-the-gallery-keyboard-st
 ## Execution Log
 - [2026-11-10] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-16] **[Decided]**
+  Cancelled before starting: T0232's 90-second timeouts already fixed the load failures.
+  - Files touched: 0.
+  - Lines touched: 0.
+  - Reopenings: 0.
+
+- [2026-11-16] **[Cancelled]**
+  Superseded by T0232's 90-second timeouts on the gallery tab-through tests.
+
