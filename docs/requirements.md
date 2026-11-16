@@ -139,9 +139,11 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-7: When connected, users filter by shared or not shared.
 - TV-8: Filters combine with AND; each filter with several values matches any of them.
 - TV-9: Users order by due time, creation time, last update time, status, or description, ascending or descending.
+  Grouped by list, users also order each list group by the manual order of its list.
 - TV-10: Tasks without a due time sort last in both directions when ordering by due time.
 - TV-11: Users create, edit, change status of, and delete tasks directly in the task view.
-- TV-12: The app remembers the last used filters, grouping, and order per device, for All tasks and for each list on its own.
+- TV-12: The app remembers the last used filters, grouping, and order, for All tasks and for each list on its own.
+  While connected, they follow the account to every device, and the latest change wins; in local mode, they stay on the device.
 - TV-13: The task view orders by creation time, newest first, until the user picks another order.
 - TV-14: Users limit the completed and cancelled tasks they see to those finished today.
   A task finished when its current occurrence closed.
