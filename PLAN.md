@@ -42,4 +42,5 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0078 [needs: T0074] Add the Shared only filter to the Lists screen sort menu while connected.
 
 ## Backlog
+- [ ] T0266 Sync the view options of All tasks and each list through the account while connected, keeping them per device otherwise.
 - [ ] T0227 [needs: T0226] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
