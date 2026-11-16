@@ -11,20 +11,26 @@ review: agent
 preview: none
 protocol: standard
 ---
-# T0218: Evaluate adopting DevopsCli from the released support-python v2.0.0, keeping project-specific actions through add_action
+# T0218: Evaluate adopting DevopsCli from support-python v3.3.0, modeled on support.webapp's devops script.
 
 ## Goals
-Needs the released support-python v2.0.0; see `docs/migration-v2.md` in support-python for the full mapping.
-Evaluate replacing `scripts/devops.py` with `DevopsCli` over the matching `PythonProject`, `GradleProject`, or `NodeProject` adapter.
-Keep project-specific actions through `DevopsCli.add_action`.
-Record the decision in the Execution Log, and adopt it in a follow-up task when it fits.
+Investigation only: decide whether `scripts/devops.py` should move onto support-python's `DevopsCli`.
+Evaluate against the latest support-python release, v3.3.0, not v2.0.0; read its migration-v2.md and migration-v3.md.
+Use support.webapp's `scripts/devops.py` as the model: a `NodeProject` subclass plus `DevopsCli.add_action`.
+Map each current action (lint, test, e2e, check, server, release) to a built-in or an added action.
+Name what the release flow loses or gains, including the todos server backend handling and GitHub releases.
+Record the decision in the Execution Log, and create a follow-up adoption task when it fits.
+Completion check: review of the recorded decision.
 
 ## Task Execution Steps
-- [ ] **[Implement]** Implement required changes for T0218.
-- [ ] **[Verify]**    Verify implementation with automated test suites.
-- [ ] **[Doc]**       Update documentation and CHANGELOG.md.
+- [ ] **[Read]**      Read scripts/devops.py, docs/devops.md, support.webapp's devops.py, and support-python's DevopsCli docs.
+- [ ] **[Decide]**    Map every action and option to DevopsCli and decide whether to adopt it.
+- [ ] **[Doc]**       Record the decision and the mapping in the Execution Log, and file the follow-up task.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-10] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-16] **[Doc]**
+  Retargeted to support-python v3.3.0, now released, with support.webapp's adopted DevopsCli as the model.

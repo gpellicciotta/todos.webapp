@@ -18,10 +18,10 @@ Deliver due reminders while every tab is closed, using Web Push in connected mod
 - With reminders on and connected, subscribe through `PushManager` and register the subscription with the service.
 - The service worker shows pushed reminders, deduplicated with local ones by the same notification tag.
 - Unsubscribe and unregister on disconnect, sign-out, or turning reminders off.
-- Blocked until todos.server specifies and serves push subscription routes and a reminder sender.
+- Blocked until todos.server completes T0260 (subscription and VAPID key routes) and T0261 (reminder sender).
 - Motivation: [comparing-with-google-products.md](https://github.com/gpellicciotta/todos.server/blob/main/docs/comparing-with-google-products.md), section Reminders, Dates, and Calendar.
 
-Completion check: `npm run test:unit`, the reminders e2e spec, and `npm run test:contract` pass.
+Completion check: `npm test`, the reminders e2e spec, and `npm run test:contract` pass.
 Size estimate: 6 files, 300 lines.
 
 ## Task Execution Steps
@@ -40,3 +40,9 @@ Size estimate: 6 files, 300 lines.
 
 - [2026-11-12] **[Doc]**
   Wrote goals, steps, and technical-spec.md from the Google products comparison in todos.server.
+
+- [2026-11-16] **[Doc]**
+  Kept in Backlog: todos.server still has no push routes or sender. Replaced the missing test:unit script with npm test.
+
+- [2026-11-16] **[Doc]**
+  Named todos.server T0260 and T0261 as the blocking service work, with their planned routes, payload, and tag.

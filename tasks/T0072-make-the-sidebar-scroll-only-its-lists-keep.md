@@ -1,7 +1,7 @@
 ---
 id: T0072
 owner: ~
-needs: [T0071]
+needs: []
 branch: —
 worktree: —
 status: ready

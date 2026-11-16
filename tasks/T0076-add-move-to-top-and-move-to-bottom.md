@@ -1,7 +1,7 @@
 ---
 id: T0076
 owner: ~
-needs: ['T0072', 'T0074']
+needs: ['T0072', 'T0074', 'T0263']
 branch: —
 worktree: —
 status: ready
@@ -18,6 +18,7 @@ Add Move to top and Move to bottom to the Lists screen row menu, and Alt+Home an
 T0257 replaced the planned Alt+Shift+Up and Alt+Shift+Down with Alt+Home and Alt+End, matching task rows.
 Follow ui-design.md, Many Lists: reordering at scale (`LST-13`).
 Announce each move and keep focus on the row, scrolled into view.
+The Lists screen reorders through reorder.js, which T0263 rewrites; reuse its Alt+Home and Alt+End instead of duplicating them.
 
 ## Task Execution Steps
 - [ ] **[Implement]** Author unit and e2e tests for the menu entries, the keys, the announcement, and the reorder lock.
@@ -38,3 +39,6 @@ Announce each move and keep focus on the row, scrolled into view.
 - [2026-11-16] **[Doc]**
   Replaced the Alt+Shift end keys with Alt+Home and Alt+End, as decided in T0257.
 
+
+- [2026-11-16] **[Decided]**
+  Made T0076 wait for T0263, which adds Alt+Home and Alt+End to the shared reorder.js.

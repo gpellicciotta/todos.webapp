@@ -22,7 +22,7 @@ Alert the user when an open task comes due, in both modes, while the app is open
 - Reminders with the app closed follow in T0227.
 - Motivation: [comparing-with-google-products.md](https://github.com/gpellicciotta/todos.server/blob/main/docs/comparing-with-google-products.md), section Reminders, Dates, and Calendar.
 
-Completion check: `npm run test:unit` and the new reminders e2e spec pass.
+Completion check: `npm test` and the new reminders e2e spec pass.
 Size estimate: 8 files, 350 lines.
 
 ## Task Execution Steps
@@ -42,3 +42,6 @@ Size estimate: 8 files, 350 lines.
 
 - [2026-11-12] **[Doc]**
   Wrote goals, steps, and technical-spec.md from the Google products comparison in todos.server.
+
+- [2026-11-16] **[Doc]**
+  Added occurrence-aware due times and recurring reminders from T0224 and T0235; replaced the missing test:unit script with npm test.

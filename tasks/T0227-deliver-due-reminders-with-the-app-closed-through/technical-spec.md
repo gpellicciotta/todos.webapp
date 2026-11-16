@@ -10,9 +10,14 @@
 - New, not counted: src/js/sync/push-subscription.js and its unit test.
 
 ### Service Dependency
-- todos.server has no push support yet; a todos.server task must add it first.
-- Expected service parts: a public VAPID key route, subscription create and delete routes, and a scheduled sender.
-- The service spec defines the route names and payload; this task follows it (`TEC-10`).
+- todos.server has no push support yet. Two Backlog tasks there add it; these cross-project needs cannot go in `needs`.
+  - T0260: `GET /api/push/vapid-public-key` and `GET`, `POST`, `PATCH`, `DELETE` on `/api/push-subscriptions`.
+  - T0261 (needs T0260): a dispatch route on a frequent scheduler trigger that sends the pushes.
+- Start this task only after both are completed and deployed.
+- Planned subscription body: `endpoint`, `keys.p256dh`, `keys.auth`, `lead-minutes` (0, 5, 15, 30, or 60), and `device-name`.
+- Planned payload: `type` `task-due` or `tasks-due`, `tag`, `task-id`, `occurrence`, `description`, `due-time`, `action-url`.
+- Planned tag: `task-due:{{task-id}}:{{due-time}}`; T0226 uses the same tag for local reminders.
+- The service spec defines the final route names and payload; this task follows it (`TEC-10`).
 
 ### Requirements
 - Subscribe only while connected, with reminders on and permission granted.
@@ -29,4 +34,4 @@
 - Unit: a push with a tag already shown replaces the notification.
 - Integration: the contract suite registers a subscription against a real todos server and receives a test push payload.
 
-Completion check: `npm run test:unit`, the reminders e2e spec, and `npm run test:contract` pass.
+Completion check: `npm test`, the reminders e2e spec, and `npm run test:contract` pass.
