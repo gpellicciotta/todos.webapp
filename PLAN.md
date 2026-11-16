@@ -2,6 +2,9 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
+- [ ] T0242 Add Delete account to Settings, marking the connected account for deletion on the service.
+- [ ] T0241 [needs: T0240] Erase the last account's lists and tasks on the next connect after Delete all data in local mode.
+- [ ] T0240 Make Delete all data also erase the account's lists and tasks while connected, queued while offline.
 - [x] T0239 [owner: @claude-code] [protocol: adhoc] Made occurrences optional when validating format 2 backups on import.
 
 ## Backlog
