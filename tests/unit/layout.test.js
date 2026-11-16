@@ -174,9 +174,10 @@ describe('renderShell areas (ADR-0004)', () => {
   it('renders the shell areas in skeleton order on a root in the main scroll mode', () => {
     const { root } = render();
     expect([...root.classList]).toEqual(expect.arrayContaining(['app', 'app--scroll-main']));
-    expect([...root.children].map((child) => child.className.split(' ').find((name) => name.startsWith('app__') || name === 'skip-link'))).toEqual([
+    expect([...root.children].filter((child) => !child.classList.contains('panel-resize')).map((child) => child.className.split(' ').find((name) => name.startsWith('app__') || name === 'skip-link'))).toEqual([
       'skip-link', 'app__top-bar', 'app__sidebar', 'app__banners', 'app__main', 'app__side-panel', 'app__bottom-nav', 'app__overlays',
     ]);
+    expect([...root.querySelectorAll(':scope > .panel-resize')].map((separator) => separator.dataset.panel)).toEqual(['sidebar', 'editor']);
     expect(root.querySelector('.app__top-bar > .app__top-actions[data-user-menu]')).not.toBeNull();
     expect(root.querySelector('aside.app__side-panel[data-editor-slot]').hidden).toBe(true);
     expect(root.querySelector('.app__main > .app__banners')).toBeNull();

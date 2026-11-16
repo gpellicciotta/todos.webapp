@@ -108,6 +108,35 @@ export function writeEnterAdds(value, getStorage) {
   return writePreference('enter-adds', value === true, getStorage);
 }
 
+/** Default, minimum, and maximum widths of the side panels in rem; panel-resize.js holds the same limits. */
+const PANEL_DEFAULTS = { sidebar: { fallback: 16, min: 12, max: 24 }, editor: { fallback: 25, min: 20, max: 40 } };
+
+/**
+ * Read the widths of the lists sidebar and the task editor panel on this device, in rem.
+ * A missing, unreadable, or out of range value falls back to its default.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {{sidebar: number, editor: number}} the widths
+ */
+export function readPanelWidths(getStorage) {
+  const stored = readPreference('view.panels', null, getStorage);
+  const read = (kind) => {
+    const { fallback, min, max } = PANEL_DEFAULTS[kind];
+    const value = stored !== null && typeof stored === 'object' ? stored[kind] : undefined;
+    return typeof value === 'number' && value >= min && value <= max ? value : fallback;
+  };
+  return { sidebar: read('sidebar'), editor: read('editor') };
+}
+
+/**
+ * Store the panel widths of this device (`SYN-13` keeps them out of the account sync).
+ * @param {{sidebar: number, editor: number}} widths the widths in rem
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when stored
+ */
+export function writePanelWidths(widths, getStorage) {
+  return writePreference('view.panels', { sidebar: widths.sidebar, editor: widths.editor }, getStorage);
+}
+
 /** Hosts that may use plain `http:`, since their traffic never leaves this machine. */
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 

@@ -87,6 +87,11 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 
 ---
 
+## Device Preferences
+- `todos.view.panels` holds `{sidebar, editor}`, the widths of the lists sidebar and the task editor panel in rem.
+- Values outside 12 to 24 for the sidebar and 20 to 40 for the editor, or unreadable entries, fall back to 16 and 25.
+- The entry stays on the device and never syncs (`SYN-13`).
+
 ## Rules
 - List names are unique per owner, ignoring case and surrounding spaces, including lists in the recycle bin (`LST-3`).
 - List names hold 1 to 100 characters, descriptions at most 1000 (`LST-1`, `LST-2`).

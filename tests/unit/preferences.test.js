@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readPreference, readServerUrl, readTheme, writeEnterAdds, writePreference,
+  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readPanelWidths, readPreference, readServerUrl, readTheme, writeEnterAdds, writePanelWidths, writePreference,
   writeServerUrl, writeTheme,
 } from '../../src/js/core/preferences.js';
 import { BUILD_DATE, VERSION } from '../../src/js/version.js';
@@ -138,6 +138,24 @@ describe('server URL preference', () => {
   it('keeps only the origin and the path, dropping the query and the fragment', () => {
     expect(parseServerUrl('https://todos.example.com/base/?token=1#/x')).toBe('https://todos.example.com/base');
     expect(parseServerUrl('http://localhost:8080/?a=b')).toBe('http://localhost:8080');
+  });
+});
+
+describe('panel widths preference', () => {
+  it('defaults to 16rem and 25rem', () => {
+    expect(readPanelWidths(() => memoryStorage())).toEqual({ sidebar: 16, editor: 25 });
+    expect(readPanelWidths(() => throwing)).toEqual({ sidebar: 16, editor: 25 });
+  });
+  it('round-trips widths and falls back per value when one is bad', () => {
+    const storage = memoryStorage();
+    expect(writePanelWidths({ sidebar: 14, editor: 30 }, () => storage)).toBe(true);
+    expect(storage.data.get('todos.view.panels')).toBe('{"sidebar":14,"editor":30}');
+    expect(readPanelWidths(() => storage)).toEqual({ sidebar: 14, editor: 30 });
+    storage.setItem('todos.view.panels', '{"sidebar":99,"editor":30}');
+    expect(readPanelWidths(() => storage)).toEqual({ sidebar: 16, editor: 30 });
+  });
+  it('reports a failed write', () => {
+    expect(writePanelWidths({ sidebar: 14, editor: 30 }, () => throwing)).toBe(false);
   });
 });
 

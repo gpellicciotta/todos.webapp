@@ -15,6 +15,7 @@
  * A session banner above the views offers Sign in while the session expired.
  * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it (`LST-8`).
  * Each list shows its open task count from core/list-counts.js, the pass shared with the Lists screen.
+ * From 64rem, separators resize the sidebar and the editor panel and the widths stay on the device (see panel-resize.js).
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
@@ -24,6 +25,7 @@ import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { attachSyncIndicator } from '../views/sync-indicator.js';
 import { attachInbox } from './inbox.js';
+import { attachPanelResize } from './panel-resize.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachUserMenu } from './user-menu.js';
 
@@ -163,6 +165,7 @@ export function renderShell(root, { session = createSession() } = {}) {
   const listNav = root.querySelector('[data-nav-lists]');
   const menuSlot = root.querySelector('[data-user-menu]');
   attachUserMenu(menuSlot, { session });
+  attachPanelResize(root);
   let viewKey = null;
   let route = null;
   let view = null;

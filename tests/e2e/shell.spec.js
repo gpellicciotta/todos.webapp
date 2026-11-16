@@ -19,6 +19,44 @@ test('list creation stays in the main Lists view', async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
+test('dragging the separators resizes the sidebar and the editor, and the widths survive a reload', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/lists/new');
+  await ready(page);
+  const sidebar = page.getByRole('separator', { name: 'Resize lists sidebar' });
+  const editor = page.getByRole('separator', { name: 'Resize task editor' });
+  const widthOf = (selector) => page.locator(selector).evaluate((element) => Math.round(element.getBoundingClientRect().width));
+  await expect(editor).toBeVisible();
+  const grab = async (separator, dx) => {
+    const box = await separator.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + 100);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + dx, box.y + 100, { steps: 4 });
+    await page.mouse.up();
+  };
+  await grab(sidebar, 64);
+  await grab(editor, -80);
+  expect(await widthOf('.app__sidebar')).toBe(320);
+  expect(await widthOf('[data-editor-slot]')).toBe(480);
+  await page.reload();
+  await ready(page);
+  expect(await widthOf('.app__sidebar')).toBe(320);
+  expect(await widthOf('[data-editor-slot]')).toBe(480);
+  await sidebar.dblclick();
+  expect(await widthOf('.app__sidebar')).toBe(256);
+  expect(problems).toEqual([]);
+});
+
+test('the separators stay hidden in the compact layout', async ({ page }) => {
+  await page.setViewportSize(COMPACT);
+  await page.goto('/#/lists/new');
+  await ready(page);
+  await expect(page.locator('.panel-resize')).toHaveCount(2);
+  await expect(page.locator('.panel-resize').first()).toBeHidden();
+  await expect(page.locator('.panel-resize').last()).toBeHidden();
+});
+
 /**
  * Collect console errors, page errors, failed requests, and HTTP errors of a page.
  * @param {import('@playwright/test').Page} page the page to watch

@@ -56,6 +56,20 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 +--------------+-------------------------------+---------------------+
 ```
 
+### Resizable Side Columns
+- From 64rem, a separator sits on the sidebar's right edge and on the editor panel's left edge; compact layouts have none.
+- Each is `role="separator"` with `aria-orientation="vertical"` and pixel `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`.
+- The names are "Resize lists sidebar" and "Resize task editor"; the hit area is 8 px with the resize cursor.
+- A 2 px line in the focus color shows on hover, focus, and drag.
+- Limits: sidebar 12rem to 24rem, editor 20rem to 40rem, and the main column keeps at least 24rem.
+- A window resize or an opening editor clamps the shown widths; the sidebar yields first.
+- The chosen widths stay as they are, so widening the window or closing the editor restores them; only a drag or key step changes them.
+- Below 64rem the width tokens are cleared on the app root, so the compact layout and the popovers keep their defaults.
+- Pointer drag updates every animation frame; arrow keys step 1rem; Home and End jump to the limits.
+- Double-click or Enter restores the default of 16rem or 25rem.
+- The widths apply as `--width-sidebar` and `--width-side-panel` on the app root, so the vendored shell.css stays unchanged.
+- They persist per device in `todos.view.panels` as `{sidebar, editor}` in rem, saved when a drag or key step ends (`SYN-13` keeps them local).
+
 ### Navigation Rules
 - Destinations: All tasks, Lists, each single list, Recycle bin, and Settings.
 - The compact bottom bar holds Tasks and Lists; the wide sidebar holds the same plus every list.

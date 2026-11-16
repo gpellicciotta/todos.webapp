@@ -12,6 +12,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Offered Manual order in All tasks while grouped by List, ordering each list group as its list does.
 - FrontEnd: Padded the View options so the focus rings of full-width controls no longer clip at the edges.
 - FrontEnd: Checked every status of the View options by default, leaving that default out of the info line.
+- FrontEnd: Added separators to resize the lists sidebar and the task editor panel by drag or keys from 64rem, kept per device.
 
 ## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.

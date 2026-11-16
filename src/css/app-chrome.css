@@ -791,3 +791,57 @@
   justify-content: center;
   gap: var(--space-2);
 }
+
+/*
+ * Panel separators (panel-resize.js): an 8 px hit area on the inner edge of the sidebar and of the editor panel,
+ * with a 2 px line in the focus color on hover, focus, and drag. They show from 64rem only, where the side columns exist.
+ * The shell tracks equal the width tokens, so the separators sit at those offsets inside the positioned app root.
+ */
+.panel-resize {
+  display: none;
+}
+
+@media (width >= 64rem) {
+  .app {
+    position: relative;
+  }
+
+  .panel-resize {
+    position: absolute;
+    inset-block: 0;
+    z-index: var(--layer-sticky);
+    display: block;
+    inline-size: 8px;
+    cursor: col-resize;
+    touch-action: none;
+    background: transparent;
+    outline: none;
+  }
+
+  .panel-resize--sidebar {
+    inset-inline-start: calc(var(--width-sidebar) - 4px);
+  }
+
+  .panel-resize--editor {
+    inset-inline-end: calc(var(--width-side-panel) - 4px);
+  }
+
+  .app:not(:has(> .app__side-panel:not([hidden]))) > .panel-resize--editor {
+    display: none;
+  }
+
+  .panel-resize::after {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 3px;
+    inline-size: 2px;
+    background-color: transparent;
+    content: '';
+  }
+
+  .panel-resize:hover::after,
+  .panel-resize:focus-visible::after,
+  .panel-resize--dragging::after {
+    background-color: var(--color-focus);
+  }
+}
