@@ -11,18 +11,18 @@ review: agent
 preview: none
 protocol: standard
 ---
-# T0266: Sync the view options of All tasks and each list through the account while connected, keeping them per device otherwise
+# T0266: Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
 
 ## Goals
-Make the view options of All tasks and of each list follow the account across devices while connected (`TV-12`).
-- Sync `view.tasks` and every `view.list.{{list-id}}` through the service's user settings routes.
-- Merge each option by edit time, so the latest change wins, also after an offline period.
-- Keep local mode, theme, Enter adds, server URL, and list order per device.
+Make the user's settings follow the account across devices while connected (`SYN-13`).
+- Sync view options, list order, the Lists screen sort, and Enter adding through the service's user settings routes.
+- Merge each setting by edit time, so the latest change wins, also after an offline period.
+- Keep the server URL, the theme, and everything in local mode on the device.
 - Blocked until todos.server completes T0262, the user settings routes.
 Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-tasks-and/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the user settings routes in the service's REST API spec, preferences.js, view-controls.js, and engine.js.
+- [ ] **[Read]**      Read the service's settings routes, preferences.js, view-controls.js, list-order.js, settings.js, and engine.js.
 - [ ] **[Implement]** Author failing unit tests for edit times, the merge, the upload queue, and the view refresh.
 - [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
 - [ ] **[Implement]** Add the settings sync module, record edit times on writes, and run it in each sync run.
@@ -37,3 +37,6 @@ Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-t
 
 - [2026-11-16] **[Doc]**
   Wrote goals, steps, and technical-spec.md; changed TV-12 to sync view options while connected.
+
+- [2026-11-17] **[Doc]**
+  Widened to list order, Lists screen sort, and Enter adding per the user; added SYN-13 and updated LST-8, LST-12, VO-3.
