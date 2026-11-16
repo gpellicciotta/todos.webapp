@@ -24,7 +24,7 @@ The setting name is the preference key without `todos.`.
 | `enter-adds`             | `VO-3`      | settings.js      | boolean                              |
 
 - `view.lists` does not exist until T0074 adds the Lists screen sort; sync it once it does.
-- **[Decided]** Keep per device: `theme` and `server-url`, as the user asked.
+- **[Decided]** Keep per device: `theme`, `server-url`, and the panel widths of T0256, as the user asked.
 - **[Decided]** Also keep per device: `sync-log.seen` and the session records; they describe this device, not a preference.
   The sync log itself is per device, so its seen time is too.
 - Keep the names in one list, so a later setting joins the sync without changes to the sync code.
