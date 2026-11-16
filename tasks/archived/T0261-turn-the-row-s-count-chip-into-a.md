@@ -4,9 +4,9 @@ owner: ~
 needs: ['T0265']
 branch: —
 worktree: —
-status: ready
+status: cancelled
 started_at: —
-ended_at: —
+ended_at: "2026-11-16T22:24:43Z"
 review: agent
 preview: none
 protocol: standard
@@ -39,4 +39,13 @@ Let users correct a count from the row: above target 1, the count chip opens a m
 
 - [2026-11-16] **[Doc]**
   Moved the count button into T0264's meta line and set its need to T0265.
+
+- [2026-11-16] **[Verify]**
+  Recorded the task outcomes before cancelling.
+  - Files touched: 0.
+  - Lines touched: 0.
+  - Reopenings: 0.
+
+- [2026-11-16] **[Cancelled]**
+  The count moved into a badge on the status button, so the row needs no count popover.
 

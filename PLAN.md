@@ -6,7 +6,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0264 [needs: T0263] Redesign the task row as a description line plus a meta line, with overdue due text in orange.
 - [ ] T0263 [needs: T0260] Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle.
 - [ ] T0262 [needs: T0258] Split the task editor into Content, Status, and History tabs, with Delete in a header More menu.
-- [ ] T0261 [needs: T0265] Turn the row's count chip into a button opening a minus, count, plus popover for targets above 1.
+- [-] T0261 [reason: The count moved into a badge on the status button, so the row needs no count popover.] Turn the row's count chip into a button opening a minus, count, plus popover for targets above 1.
 - [ ] T0260 [needs: T0259] Remove the task row's status menu, now that the task editor holds every status action.
 - [ ] T0259 [needs: T0258] Make the task row's status button tick by target, never untick, and offer Undo after every tick.
 - [ ] T0258 [needs: T0257] Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257.
