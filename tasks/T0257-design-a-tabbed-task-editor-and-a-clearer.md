@@ -1,11 +1,11 @@
 ---
 id: T0257
-owner: ~
+owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: ready
-started_at: —
+status: active
+started_at: "2026-11-16T22:35:29Z"
 ended_at: —
 review: human
 preview: none
@@ -24,13 +24,13 @@ Produce a signed-off design for a tabbed task editor, the task row, and a clear 
 - Brief: [technical-spec.md](T0257-design-a-tabbed-task-editor-and-a-clearer/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the Task Row and Task Editor designs, task-list.js, task-editor.js, and occurrences.js.
+- [x] **[Read]**      Read the Task Row and Task Editor designs, task-list.js, task-editor.js, and occurrences.js.
 - [ ] **[Read]**      Confirm in the app that the editor tick button's completed icon at 2 of 3 caused the report.
 - [ ] **[Decide]**    Discuss the task row redesign with the user and record the decisions in the brief.
 - [ ] **[Doc]**       Wireframe the tabbed editor and the row in draw-wireframes.py, at desktop panel and phone widths.
 - [ ] **[Doc]**       Update the Task Row and Task Editor sections of the UI design and the affected requirements.
-- [ ] **[Review]**    Obtain the user's sign-off on the wireframes and the design text.
 - [ ] **[Doc]**       Revise T0258 to T0265 to the signed-off design, keeping each within the size lines.
+- [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -53,4 +53,11 @@ Produce a signed-off design for a tabbed task editor, the task row, and a clear 
 
 - [2026-11-16] **[Decided]**
   Moved the row count into a corner badge on the status icon and dropped the row count popover, cancelling T0261.
+
+- [2026-11-16] **[Read]**
+  Read the Task Row and Task Editor designs, the tick and status code, and the current task editor wireframe.
+
+- [2026-11-16] **[Doc]**
+  Drew three task editor Status tab options on the design canvas for the user to choose from.
+  - Options: underline tabs, compact stepper, summary card.
 

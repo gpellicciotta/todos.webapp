@@ -5,10 +5,5 @@
     "claude",
     "agy",
     "codex"
-  ],
-  "work-agent-max-usage": {
-    "claude-code": "week=50%",
-    "antigravity": "week=95%",
-    "codex": "week=50%"
-  }
+  ]
 }

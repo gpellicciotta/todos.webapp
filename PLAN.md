@@ -10,7 +10,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0260 [needs: T0259] Remove the task row's status menu, now that the task editor holds every status action.
 - [ ] T0259 [needs: T0258] Make the task row's status button tick by target, never untick, and offer Undo after every tick.
 - [ ] T0258 [needs: T0257] Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257.
-- [ ] T0257 Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
+- [~] T0257 [owner: @claude-code] Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
 - [ ] T0256 Let users resize the task editor panel and the lists sidebar by dragging on desktop, remembered per device.
 - [ ] T0255 [protocol: adhoc] Close the task editor when the row of the task it shows is clicked again.
 - [ ] T0254 [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.
