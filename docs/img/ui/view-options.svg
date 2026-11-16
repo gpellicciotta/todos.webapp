@@ -46,7 +46,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="368" y="138" font-size="14" text-anchor="middle">›</text>
     <line x1="16" y1="152" x2="374" y2="152" class="rule"/>
     <text x="16" y="178" font-size="14" class="bold">Status</text>
-    <text x="350" y="178" font-size="13" class="muted" text-anchor="end">Open</text>
+    <text x="350" y="178" font-size="13" class="muted" text-anchor="end">All</text>
     <text x="368" y="178" font-size="14" text-anchor="middle">⌄</text>
     <rect x="28" y="200" width="16" height="16" rx="3" class="control"/>
     <text x="36" y="213" font-size="13" class="bold" text-anchor="middle">✓</text>
@@ -55,8 +55,10 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="36" y="245" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="56" y="245" font-size="14">In progress</text>
     <rect x="28" y="264" width="16" height="16" rx="3" class="control"/>
+    <text x="36" y="277" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="56" y="277" font-size="14">Completed</text>
     <rect x="28" y="296" width="16" height="16" rx="3" class="control"/>
+    <text x="36" y="309" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="56" y="309" font-size="14">Cancelled</text>
     <line x1="16" y1="324" x2="374" y2="324" class="rule"/>
     <text x="16" y="350" font-size="14">Due</text>
@@ -114,7 +116,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="324" y="127" font-size="14" class="muted">Search or add a task</text>
     <text x="992" y="174" font-size="12" class="bold" text-anchor="end">Reset</text>
     <line x1="964.4" y1="177" x2="992" y2="177" class="icon-line"/>
-    <text x="312" y="174" font-size="12" class="muted">24 tasks · Status: open · Grouped by List · Sorted by Created, newest</text>
+    <text x="312" y="174" font-size="12" class="muted">24 tasks · Grouped by List · Sorted by Created, newest</text>
     <rect x="304" y="222" width="696" height="32" rx="0" class="box"/>
     <text x="316" y="243" font-size="13" class="muted">⌄</text>
     <text x="336" y="243" font-size="13" class="bold">Home</text>
@@ -214,7 +216,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1410" y="138" font-size="14" text-anchor="middle">›</text>
     <line x1="1044" y1="152" x2="1416" y2="152" class="rule"/>
     <text x="1044" y="178" font-size="14" class="bold">Status</text>
-    <text x="1392" y="178" font-size="13" class="muted" text-anchor="end">Open</text>
+    <text x="1392" y="178" font-size="13" class="muted" text-anchor="end">All</text>
     <text x="1410" y="178" font-size="14" text-anchor="middle">⌄</text>
     <rect x="1056" y="200" width="16" height="16" rx="3" class="control"/>
     <text x="1064" y="213" font-size="13" class="bold" text-anchor="middle">✓</text>
@@ -223,8 +225,10 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1064" y="245" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="1084" y="245" font-size="14">In progress</text>
     <rect x="1056" y="264" width="16" height="16" rx="3" class="control"/>
+    <text x="1064" y="277" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="1084" y="277" font-size="14">Completed</text>
     <rect x="1056" y="296" width="16" height="16" rx="3" class="control"/>
+    <text x="1064" y="309" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="1084" y="309" font-size="14">Cancelled</text>
     <line x1="1044" y1="324" x2="1416" y2="324" class="rule"/>
     <text x="1044" y="350" font-size="14">Due</text>

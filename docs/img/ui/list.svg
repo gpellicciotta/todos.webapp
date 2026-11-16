@@ -79,9 +79,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="354.24" y="726.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
     <rect x="8" y="700" width="310.48" height="44" rx="6" class="control"/>
     <text x="20" y="727" font-size="14" class="muted">Search or add a task</text>
-    <text x="374" y="766" font-size="12" class="bold" text-anchor="end">Reset</text>
-    <line x1="346.4" y1="769" x2="374" y2="769" class="icon-line"/>
-    <text x="16" y="766" font-size="12" class="muted">8 tasks · Status: all</text>
+    <text x="16" y="766" font-size="12" class="muted">8 tasks</text>
     <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
     <rect x="88.5" y="794" width="18" height="18" rx="3" class="icon"/>
     <text x="97.5" y="828" font-size="12" text-anchor="middle">Tasks</text>
@@ -125,9 +123,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1068.24" y="146.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
     <rect x="312" y="120" width="720.48" height="44" rx="6" class="control"/>
     <text x="324" y="147" font-size="14" class="muted">Search or add a task</text>
-    <text x="1096" y="194" font-size="12" class="bold" text-anchor="end">Reset</text>
-    <line x1="1068.4" y1="197" x2="1096" y2="197" class="icon-line"/>
-    <text x="312" y="194" font-size="12" class="muted">8 tasks · Status: all</text>
+    <text x="312" y="194" font-size="12" class="muted">8 tasks</text>
     <line x1="304" y1="290" x2="1104" y2="290" class="rule"/>
     <text x="316" y="272" font-size="14" class="muted">⋮⋮</text>
     <circle cx="354" cy="266" r="9" class="icon"/>

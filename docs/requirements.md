@@ -126,7 +126,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LV-7: A sort other than manual order affects the current view only and never changes the stored manual order.
 - LV-8: Choosing manual order restores it; manual reordering is unavailable while another sort or a grouping is active.
 - LV-9: Users create, edit, change status of, and delete tasks directly in the list view.
-- LV-10: The list view filters by status, hiding `completed` and `cancelled` tasks by default.
+- LV-10: The list view filters by status, showing tasks of every status by default.
 - LV-11: The list view uses the view controls and offers every filter except list, and grouping by due date or status.
 
 ### Task View

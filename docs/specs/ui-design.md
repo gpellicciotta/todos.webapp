@@ -35,7 +35,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 |                                      |
 +--------------------------------------+
 | [Search or add a task..........] [+] |  add bar
-| 24 tasks · Status: open              |  info line
+| 24 tasks                             |  info line
 +--------------------------------------+
 | Tasks                    Lists       |  bottom navigation
 +--------------------------------------+
@@ -52,7 +52,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 |  Work    12  |                               | Notes               |
 |              +-------------------------------+                     |
 |              | [Search or add a task...] [+] |                     |
-|              | 24 tasks · Status: open       |                     |
+|              | 24 tasks                      |                     |
 +--------------+-------------------------------+---------------------+
 ```
 
@@ -294,7 +294,8 @@ Home                                                              3
   Keyboard users can also Tab to Add and press Enter or Space.
 - **[Decided]** The info line sits right under the field (`VO-7`):
   - It starts with the count, such as "24 tasks", or "12 of 24 tasks" while filters or text narrow the view.
-  - It names each active filter, including the default "Status: open", so hidden tasks never surprise.
+  - It names each active filter, such as "Status: open", so hidden tasks never surprise.
+  - A Status filter of every status, the default, hides nothing, so the line leaves it out.
   - It adds "Grouped by ..." and "Sorted by ..." only when they differ from the defaults.
   - It is 12 px muted text on one line; it wraps to two lines, then truncates, and the view options show the rest.
   - **[Decided]** A quiet Reset link ends the line while any option differs from its default (`VO-8`).
@@ -349,7 +350,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
     Grouped by List, All tasks adds Manual order first; each list group then keeps its list's manual order.
     Tasks in no list then come oldest first. Leaving the List grouping also leaves Manual order for the default sort.
   - Reset at the top: restores every option to its default (`VO-8`).
-- Defaults: open statuses, creation time descending (manual order in a list view), no grouping, no other filter.
+- Defaults: every status checked, creation time descending (manual order in a list view), no grouping, no other filter.
 - A stored Lists filter whose lists were all deleted filters nothing, so the info line leaves it out.
 - The panel uses native inputs: checkboxes, radios, selects, and date fields.
 - The scrolling options keep 8 px of inline padding, so the focus rings of full-width controls stay visible.
@@ -365,7 +366,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 | Lists       | filter row                   | not offered                                    |
 | Group by    | None, List, Due date, Status | None, Due date, Status (`LV-11`)               |
 | Sort by     | five; Manual order by List   | adds Manual order, the default (`LV-6`)        |
-| Defaults    | open, created newest first   | open, manual order                             |
+| Defaults    | all, created newest first    | all, manual order                              |
 | Persistence | one entry for All tasks      | one entry per list (`TV-12`)                   |
 
 #### Finished today only
@@ -376,8 +377,8 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - With only open statuses checked, it changes nothing.
 - **[Decided]** A finished task counts as finished today when its current occurrence's `close-time` falls on the current local day.
   A completed recurring occurrence stays open until its period ends, so it falls back to `last-update-time`.
-- The info line and the row value add ", finished today", such as "Status: 4 statuses, finished today".
-  An empty status filter reads "Status: all, finished today".
+- The info line and the row value add ", finished today", such as "Status: 3 statuses, finished today".
+  A filter of every status, all four checked or none, reads "Status: all, finished today".
 - It persists with the other options and counts as a change, so Reset shows and clears it (`TV-12`, `VO-8`).
 - Show in the hidden-task toast resets the Status filter, the choice included.
 - Both views render again on the minute tick while it is on, so yesterday's tasks leave at midnight.
@@ -387,7 +388,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   The text sits 12 px clear of the row edges.
 - **[Decided]** The count reads "6 of 10" while search or filters hide tasks of the group, else the plain total.
   The total counts the group's tasks in the view before its search and filters, as the info line total does.
-  So under the default open statuses, a list with finished tasks shows "n of m".
+  So under a filter of the open statuses, a list with finished tasks shows "n of m".
 - The whole header is one button that collapses or expands its group (`VO-15`).
   It carries `aria-expanded`, works with Enter and Space, and keeps focus while the rows leave or return.
   A collapsed group shows its header only; its chevron points to the end.
@@ -465,7 +466,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Shows every non-deleted task, in any list or none (`TV-1`).
 - Filters sit in the view options: Lists, Status, Due, Created, and Shared when connected (`TV-2` to `TV-7`).
 - The Lists filter offers every list plus "In no list"; the Due filter offers Overdue, Today, This week, a range, and No due time.
-- **[Decided]** The default status filter is "open", `todo` and `in-progress`, matching the list view (`LV-10`).
+- **[Decided]** The default status filter checks every status, matching the list view (`LV-10`).
 - Sort fields: Due time, Created, Last update, Status, and Description (`TV-9`).
   Grouped by List, Manual order comes first and orders each list group as its list does.
   Status and due time come from the task's current occurrence; Last update sorts on `last-update-time`.
@@ -531,7 +532,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - **[Decided]** Compact rows keep the More button in the list view, since touch screens show no drag handle.
 - Another sort affects the view only; the info line reads "Sorted by Due time" and the manual order is kept (`LV-7`).
 - While sorted or grouped, drag handles and move entries are hidden; Manual order restores the stored order (`LV-8`).
-- The status filter defaults to "open" (`LV-10`); the info line then reads "Status: all".
+- The status filter checks every status by default (`LV-10`), so the info line names no status.
 - A deleted or unknown list redirects to All tasks with a toast.
 - Leaving the screen, such as with Back, closes an open Delete list dialog as Keep.
 - [list.js](../../src/js/views/list.js) builds the screen; [reorder.js](../../src/js/views/reorder.js) turns moves into neighbors.

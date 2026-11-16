@@ -101,7 +101,7 @@ describe('mountAllTasks', () => {
     expect(entries()).toEqual(['# Home', 'Call the plumber', 'Buy paint', '# Work', 'Write the report', 'Call the plumber', '# No list', 'Book flights']);
     viewModels.tasks.set({ ...defaultViewState(), group: 'list', order: { field: 'manual', direction: 'asc' } });
     expect(entries()).toEqual(['# Home', 'Buy paint', 'Call the plumber', '# Work', 'Call the plumber', 'Write the report', '# No list', 'Book flights']);
-    expect(document.querySelector('.info-line__text').textContent).toBe('4 tasks · Status: open · Grouped by List · Sorted by Manual order');
+    expect(document.querySelector('.info-line__text').textContent).toBe('4 tasks · Grouped by List · Sorted by Manual order');
   });
 
   it('updates the due chip on the minute tick and keeps the row and an open status menu (OVD-2)', async () => {
@@ -168,7 +168,7 @@ describe('mountAllTasks', () => {
     await screen.idle();
     const line = document.querySelector('.info-line');
     expect(line.previousElementSibling).toBe(document.querySelector('.add-bar'));
-    expect(line.querySelector('.info-line__text').textContent).toBe('1 task · Status: open');
+    expect(line.querySelector('.info-line__text').textContent).toBe('1 task');
     expect(line.querySelector('.info-line__reset').hidden).toBe(true);
     const items = [...document.querySelectorAll('.view-header .menu__item')];
     expect(items.map((item) => item.textContent)).toEqual(['Edit view options']);
@@ -192,7 +192,7 @@ describe('mountAllTasks', () => {
     expect(viewModels.tasks.counts()).toEqual({ shown: 0, total: 1 });
     document.querySelector('.info-line__reset').click();
     expect(viewModels.tasks.get()).toEqual(defaultViewState());
-    expect(document.querySelector('.info-line__text').textContent).toBe('1 task · Status: open');
+    expect(document.querySelector('.info-line__text').textContent).toBe('1 task');
   });
 
   it('clears the search field when Reset runs', async () => {
@@ -203,7 +203,7 @@ describe('mountAllTasks', () => {
     await screen.idle();
     const search = document.querySelector('[data-shortcut~="search"]');
     expect(search.value).toBe('paint');
-    expect(document.querySelector('.info-line__text').textContent).toBe('1 task · Search: paint · Status: open');
+    expect(document.querySelector('.info-line__text').textContent).toBe('1 task · Search: paint');
     document.querySelector('.info-line__reset').click();
     expect(search.value).toBe('');
   });
@@ -259,7 +259,7 @@ describe('mountAllTasks', () => {
     expect(show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
     expect(show.mock.calls[0][1].actionLabel).toBe('Show');
     show.mock.calls[0][1].onAction();
-    expect(viewModels.tasks.get().filter.statuses).toEqual(['ready', 'in-progress']);
+    expect(viewModels.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed', 'cancelled']);
   });
 
   it('adds the task to no list while the Lists filter selects lists, and toasts that the filter hides it', async () => {
@@ -390,7 +390,7 @@ describe('mountAllTasks', () => {
     }
 
     /**
-     * Mount All tasks grouped, with a fixed clock of 2026-11-04 12:00.
+     * Mount All tasks grouped under the open statuses, with a fixed clock of 2026-11-04 12:00.
      * @param {string} group the grouping
      * @param {object} [extra] more view state, such as a filter
      * @param {object} [storage] the per-device storage
@@ -399,7 +399,7 @@ describe('mountAllTasks', () => {
     async function mountGrouped(group, extra = {}, storage = { getItem: () => null, setItem: vi.fn() }) {
       document.body.innerHTML = '<div data-view="tasks"></div>';
       const viewModels = { tasks: createViewModel('tasks', () => storage) };
-      viewModels.tasks.set({ ...defaultViewState(), group, ...extra });
+      viewModels.tasks.set({ ...defaultViewState(), filter: { statuses: ['ready', 'in-progress'] }, group, ...extra });
       screen = mountAllTasks(document.querySelector('[data-view]'), {
         store: groupedStore(), toaster: { show: vi.fn() }, viewModels, getStorage: () => storage, now: () => new Date(2026, 10, 4, 12),
       });

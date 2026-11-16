@@ -58,6 +58,20 @@ async function seed(page) {
     await store.createTask({ description: 'Renew the gym membership', status: 'cancelled' });
     store.close();
   });
+  await expect(page.locator('.task-row')).toHaveCount(6);
+}
+
+/**
+ * Store a view option of All tasks that shows only the open statuses, and reload to apply it.
+ * @param {import('@playwright/test').Page} page a page of the app
+ * @returns {Promise<void>}
+ */
+async function showOpenOnly(page) {
+  await page.evaluate(() => localStorage.setItem('todos.view.tasks', JSON.stringify({
+    filter: { statuses: ['ready', 'in-progress'] }, order: { field: 'creation-time', direction: 'desc' }, group: 'none',
+  })));
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
   await expect(page.locator('.task-row')).toHaveCount(4);
 }
 
@@ -159,6 +173,7 @@ test('one click completes a task, x toggles the focused row, and Undo or Ctrl+Z 
   await page.setViewportSize(WIDE);
   await openApp(page);
   await seed(page);
+  await showOpenOnly(page);
   const flights = page.locator('.task-row', { hasText: 'Book flights' });
   await flights.getByRole('button', { name: 'Mark Book flights completed' }).click();
   await expect(flights).toHaveCount(0);
@@ -191,6 +206,7 @@ test('the status menu posts start and cancel by right-click and by keyboard (TSK
   await page.setViewportSize(WIDE);
   await openApp(page);
   await seed(page);
+  await showOpenOnly(page);
   const row = page.locator('.task-row', { hasText: 'Book flights' });
   await row.locator('.status-button').click({ button: 'right' });
   const menu = page.getByRole('menu', { name: 'Status of Book flights' });
@@ -227,10 +243,10 @@ for (const viewport of [COMPACT, WIDE]) {
     await page.setViewportSize(viewport);
     await openApp(page);
     await seed(page);
-    // Default: open tasks, created newest first.
-    expect(await rows(page)).toEqual(['Book flights', 'Write the report', 'Buy paint', 'Call the plumber']);
+    // Default: every status, created newest first.
+    expect(await rows(page)).toEqual(['Renew the gym membership', 'Water the plants', 'Book flights', 'Write the report', 'Buy paint', 'Call the plumber']);
     await expect(page.locator('.task-row', { hasText: 'Call the plumber' }).locator('.chip--overdue')).toHaveText('Overdue');
-    await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open');
+    await expect(page.locator(INFO)).toHaveText('6 tasks');
     await expect(page.locator('.info-line__reset')).toBeHidden();
     await expect(page.locator('.filter-chip, .view-controls__sort, .view-controls__filters')).toHaveCount(0);
 
@@ -238,14 +254,19 @@ for (const viewport of [COMPACT, WIDE]) {
     await search.fill('dana');
     await expect(page.locator('.task-row')).toHaveCount(1);
     expect(await rows(page)).toEqual(['Write the report']);
-    await expect(page.locator(INFO)).toHaveText('1 of 6 tasks · Search: dana · Status: open');
+    await expect(page.locator(INFO)).toHaveText('1 of 6 tasks · Search: dana');
     await search.fill('');
-    await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open');
+    await expect(page.locator(INFO)).toHaveText('6 tasks');
 
     const options = await openOptions(page);
     const statusRow = options.getByRole('button', { name: /^Status/ });
     let region = await openRow(options, 'Status');
-    await region.getByLabel('Completed').check();
+    await expect(statusRow.locator('.view-options__value')).toHaveText('All');
+    for (const status of ['To do', 'In progress', 'Completed', 'Cancelled']) {
+      await expect(region.getByLabel(status)).toBeChecked();
+    }
+    await expect(region.getByLabel('Finished today only')).not.toBeChecked();
+    await region.getByLabel('Cancelled').uncheck();
     await expect(page.locator('.task-row')).toHaveCount(5);
     await expect(page.locator(INFO)).toHaveText('5 of 6 tasks · Status: 3 statuses');
     await expect(page.locator('[data-live-region="polite"]').filter({ hasText: '5 tasks' })).toHaveCount(1);
@@ -285,13 +306,13 @@ for (const viewport of [COMPACT, WIDE]) {
 
     // Reset on the info line restores every option.
     await page.locator('.info-line__reset').click();
-    await expect(page.locator('.task-row')).toHaveCount(4);
-    await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open');
+    await expect(page.locator('.task-row')).toHaveCount(6);
+    await expect(page.locator(INFO)).toHaveText('6 tasks');
     await search.fill('nothing like this');
     await expect(page.locator('.add-hint')).toHaveText('No task matches. Add creates it.');
     await expect(page.locator('.task-row')).toHaveCount(0);
     await page.locator('.info-line__reset').click();
-    await expect(page.locator('.task-row')).toHaveCount(4);
+    await expect(page.locator('.task-row')).toHaveCount(6);
     await expect(search).toHaveValue('');
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(scrollWidth).toBeLessThanOrEqual(viewport.width);
@@ -335,12 +356,12 @@ test('the view options fill the screen on a compact layout, end with Show N task
   const options = await openOptions(page);
   expect(await page.locator('[data-editor-slot] .editor-panel').evaluate((element) => element.getBoundingClientRect().width))
     .toBeGreaterThanOrEqual(COMPACT.width - 2);
-  await expect(options.getByRole('button', { name: 'Show 4 tasks' })).toBeVisible();
+  await expect(options.getByRole('button', { name: 'Show 6 tasks' })).toBeVisible();
   // With a filter row open, the last control scrolls into view above the Show button and is never covered by it.
   await options.getByRole('button', { name: /^Status/ }).click();
   await options.getByLabel('Descending').scrollIntoViewIfNeeded();
   const direction = await options.locator('.view-options__direction').boundingBox();
-  const show = await options.getByRole('button', { name: 'Show 4 tasks' }).boundingBox();
+  const show = await options.getByRole('button', { name: 'Show 6 tasks' }).boundingBox();
   expect(direction.y + direction.height).toBeLessThanOrEqual(show.y + 1);
   await options.getByRole('button', { name: /^Status/ }).click();
   const status = options.getByRole('button', { name: /^Status/ });
@@ -349,7 +370,7 @@ test('the view options fill the screen on a compact layout, end with Show N task
   await expect(status).toHaveAttribute('aria-expanded', 'true');
   await options.getByLabel('Completed').focus();
   await page.keyboard.press('Space');
-  await expect(options.getByLabel('Completed')).toBeChecked();
+  await expect(options.getByLabel('Completed')).not.toBeChecked();
   await expect(options.getByRole('button', { name: 'Show 5 tasks' })).toBeVisible();
   await expect(page.locator('[data-live-region="polite"]').filter({ hasText: '5 tasks' })).toHaveCount(1);
   await options.getByRole('button', { name: 'Show 5 tasks' }).click();
@@ -365,14 +386,14 @@ test('the view options open from their route after a reload, and Reset in the pa
   await seed(page);
   const options = await openOptions(page);
   await options.getByLabel('Sort by').selectOption({ label: 'Status' });
-  await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open · Sorted by Status');
+  await expect(page.locator(INFO)).toHaveText('6 tasks · Sorted by Status');
   await page.reload();
   await expect(page).toHaveURL(/#\/tasks\/view-options$/);
   const reopened = page.locator('.view-options');
   await expect(reopened).toBeVisible();
   await expect(reopened.getByLabel('Sort by')).toHaveValue('status');
   await reopened.getByRole('button', { name: 'Reset' }).click();
-  await expect(page.locator(INFO)).toHaveText('4 of 6 tasks · Status: open');
+  await expect(page.locator(INFO)).toHaveText('6 tasks');
   await expect(reopened.getByLabel('Sort by')).toHaveValue('creation-time');
   expect(problems).toEqual([]);
 });
@@ -423,7 +444,7 @@ test('a store change while the status menu is open keeps the menu open and focus
     await store.createTask({ description: 'Added in another tab' });
     store.close();
   });
-  await expect(page.locator('.task-row')).toHaveCount(5);
+  await expect(page.locator('.task-row')).toHaveCount(7);
   await expect(menu).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Start' })).toBeFocused();
   await page.keyboard.press('Enter');
@@ -463,7 +484,7 @@ test('typing in the add field searches, Enter never adds once Make Enter add is 
   const field = page.getByLabel('Search or add a task');
   await field.fill('paint');
   await expect(page.locator('.task-row')).toHaveCount(1);
-  await expect(page.locator(INFO)).toHaveText('1 of 6 tasks · Search: paint · Status: open');
+  await expect(page.locator(INFO)).toHaveText('1 of 6 tasks · Search: paint');
   await expect(page.locator('.add-hint')).toHaveText('Add creates a new task “paint”.');
   await field.press('Enter');
   expect(await page.evaluate(async () => {
@@ -482,8 +503,8 @@ test('typing in the add field searches, Enter never adds once Make Enter add is 
   await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
   await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('paint');
   await expect(field).toBeFocused();
-  await expect(page.locator('.task-row')).toHaveCount(5);
-  await expect(page.locator(INFO)).toHaveText('5 of 7 tasks · Status: open');
+  await expect(page.locator('.task-row')).toHaveCount(7);
+  await expect(page.locator(INFO)).toHaveText('7 tasks');
   expect(problems).toEqual([]);
 });
 
@@ -598,9 +619,9 @@ test('adding a task that the view options hide shows a toast whose Show resets t
   await seed(page);
   const options = await openOptions(page);
   const region = await openRow(options, 'Status');
-  await region.getByLabel('Completed').check();
   await region.getByLabel('To do').uncheck();
   await region.getByLabel('In progress').uncheck();
+  await region.getByLabel('Cancelled').uncheck();
   await expect(page.locator(INFO)).toContainText('Status: completed');
   const field = page.getByLabel('Search or add a task');
   await field.fill('Paint the door');
@@ -663,6 +684,7 @@ test('Group by shows headers with counts for each option, and the choice survive
   const problems = watch(page);
   await openApp(page);
   await seed(page);
+  await showOpenOnly(page);
   const options = await openOptions(page);
   await expect(options.getByRole('combobox', { name: 'Group by' })).toHaveValue('none');
   await expect(page.locator('.group-header')).toHaveCount(0);
@@ -701,6 +723,7 @@ test('Group by shows headers with counts for each option, and the choice survive
 test('search and sort apply inside each group, and a task of two lists shows in both (VO-10, VO-11)', async ({ page }) => {
   await openApp(page);
   await seed(page);
+  await showOpenOnly(page);
   await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore({ broadcast: true });
@@ -727,6 +750,7 @@ test('grouped by List, Manual order shows each list in its own order, survives a
   await page.setViewportSize(WIDE);
   await openApp(page);
   await seed(page);
+  await showOpenOnly(page);
   const options = await openOptions(page);
   const sort = options.getByRole('combobox', { name: 'Sort by' });
   await expect(sort.locator('option')).toHaveText(['Due time', 'Created', 'Last update', 'Status', 'Description']);
@@ -784,26 +808,24 @@ test('Finished today only shows open tasks and the tasks finished today, survive
     await earlier.createTask({ description: 'Return the drill', status: 'cancelled' });
     earlier.close();
   });
-  await expect(page.locator(INFO)).toHaveText('4 of 8 tasks · Status: open');
+  await expect(page.locator(INFO)).toHaveText('8 tasks');
+  await expect(page.locator('.task-row')).toHaveCount(8);
   const options = await openOptions(page);
   const status = await openRow(options, 'Status');
-  await status.getByLabel('Completed').check();
-  await status.getByLabel('Cancelled').check();
-  await expect(page.locator('.task-row')).toHaveCount(8);
   await status.getByLabel('Finished today only').check();
-  await expect(page.locator(INFO)).toHaveText('6 of 8 tasks · Status: 4 statuses, finished today');
-  await expect(options.getByRole('button', { name: /^Status/ })).toContainText('4 statuses, finished today');
+  await expect(page.locator(INFO)).toHaveText('6 of 8 tasks · Status: all, finished today');
+  await expect(options.getByRole('button', { name: /^Status/ })).toContainText('All, finished today');
   expect((await rows(page)).sort()).toEqual([
     'Book flights', 'Buy paint', 'Call the plumber', 'Renew the gym membership', 'Water the plants', 'Write the report',
   ]);
 
   await page.reload();
   await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
-  await expect(page.locator(INFO)).toHaveText('6 of 8 tasks · Status: 4 statuses, finished today');
+  await expect(page.locator(INFO)).toHaveText('6 of 8 tasks · Status: all, finished today');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('todos.view.tasks')).filter.finishedToday)).toBe(true);
 
   await page.locator('.info-line__reset').click();
-  await expect(page.locator(INFO)).toHaveText('4 of 8 tasks · Status: open');
+  await expect(page.locator(INFO)).toHaveText('8 tasks');
   const reopened = await openRow(page.locator('.view-options'), 'Status');
   await expect(reopened.getByLabel('Finished today only')).not.toBeChecked();
   expect(problems).toEqual([]);

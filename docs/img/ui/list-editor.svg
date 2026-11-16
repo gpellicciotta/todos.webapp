@@ -102,9 +102,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="964.24" y="146.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
     <rect x="312" y="120" width="616.48" height="44" rx="6" class="control"/>
     <text x="324" y="147" font-size="14" class="muted">Search or add a task</text>
-    <text x="992" y="194" font-size="12" class="bold" text-anchor="end">Reset</text>
-    <line x1="964.4" y1="197" x2="992" y2="197" class="icon-line"/>
-    <text x="312" y="194" font-size="12" class="muted">8 tasks · Status: all</text>
+    <text x="312" y="194" font-size="12" class="muted">8 tasks</text>
     <line x1="304" y1="290" x2="1000" y2="290" class="rule"/>
     <text x="316" y="272" font-size="14" class="muted">⋮⋮</text>
     <circle cx="354" cy="266" r="9" class="icon"/>

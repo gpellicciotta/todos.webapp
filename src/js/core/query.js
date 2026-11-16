@@ -13,8 +13,8 @@ import { isOverdue } from './overdue.js';
 /** The value of the Lists filter that selects tasks in no list. */
 export const NO_LIST = 'no-list';
 
-/** The default filter of All tasks and the list view: open tasks only (`LV-10`). */
-export const DEFAULT_FILTER = Object.freeze({ statuses: Object.freeze(['ready', 'in-progress']) });
+/** The default filter of All tasks and the list view: every status checked (`LV-10`). */
+export const DEFAULT_FILTER = Object.freeze({ statuses: STATUSES });
 
 /** The default order of All tasks: creation time descending, so a new task comes first (`TV-13`). */
 export const DEFAULT_ORDER = Object.freeze({ field: 'creation-time', direction: 'desc' });
@@ -268,7 +268,7 @@ export function hidingFilters(task, filter, ctx = {}) {
 }
 
 /**
- * Copy a filter with some filters back at their defaults: open statuses, and no other filter.
+ * Copy a filter with some filters back at their defaults: every status, and no other filter.
  * Clearing the statuses also clears Finished today only, which belongs to the Status filter.
  * @param {object} filter the filter
  * @param {string[]} keys the filter keys to reset

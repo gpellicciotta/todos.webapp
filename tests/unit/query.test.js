@@ -78,9 +78,9 @@ describe('filterTasks', () => {
     expect(ids(filterTasks(tasks, { statuses: ['completed', 'cancelled'] }, ctx))).toEqual(['t3', 't4']);
   });
 
-  it('defaults to the open statuses', () => {
-    expect(DEFAULT_FILTER).toEqual({ statuses: ['ready', 'in-progress'] });
-    expect(ids(filterTasks(tasks, DEFAULT_FILTER, ctx))).toEqual(['t1', 't2', 't5', 't6']);
+  it('defaults to every status', () => {
+    expect(DEFAULT_FILTER).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'] });
+    expect(ids(filterTasks(tasks, DEFAULT_FILTER, ctx))).toEqual(['t1', 't2', 't3', 't4', 't5', 't6']);
   });
 
   it('filters by any of several lists', () => {
@@ -248,7 +248,7 @@ describe('the Finished today only choice (TV-14)', () => {
     const fresh = task('n', { 'creation-time': '2026-11-04T12:00:00.000Z' });
     expect(hidingFilters(fresh, { statuses: [], finishedToday: true }, { now: NOW })).toEqual([]);
     const filter = { statuses: ['completed'], finishedToday: true, due: ['today'] };
-    expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['ready', 'in-progress'], due: ['today'] });
+    expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'], due: ['today'] });
     expect(clearFilters(filter, ['due'])).toEqual({ statuses: ['completed'], finishedToday: true });
   });
 });
@@ -485,7 +485,7 @@ describe('exact match and hidden task helpers', () => {
 
   it('clears the named filters, restoring the default statuses', () => {
     const filter = { statuses: ['completed'], due: ['today'], lists: [HOME] };
-    expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['ready', 'in-progress'], lists: [HOME] });
+    expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'], lists: [HOME] });
     expect(filter.due).toEqual(['today']);
   });
 });
@@ -497,7 +497,7 @@ describe('groupTasks (VO-9 to VO-12)', () => {
     const groups = groupTasks(tasks, 'status', ctx);
     expect(summary(groups)).toEqual([['ready', ['t1', 't5', 't6']], ['in-progress', ['t2']], ['completed', ['t3']], ['cancelled', ['t4']]]);
     expect(groups.map((group) => group.label)).toEqual(['To do', 'In progress', 'Completed', 'Cancelled']);
-    expect(summary(groupTasks(filterTasks(tasks, DEFAULT_FILTER, ctx), 'status', ctx))).toEqual([['ready', ['t1', 't5', 't6']], ['in-progress', ['t2']]]);
+    expect(summary(groupTasks(filterTasks(tasks, { statuses: ['ready', 'in-progress'] }, ctx), 'status', ctx))).toEqual([['ready', ['t1', 't5', 't6']], ['in-progress', ['t2']]]);
   });
 
   it('groups by due date from a fixed clock: Overdue, Today, Tomorrow, This week, Later, No due date', () => {
@@ -551,7 +551,7 @@ describe('groupTasks (VO-9 to VO-12)', () => {
   });
 
   it('counts each group among all tasks as its total, or among its own tasks without them', () => {
-    const open = filterTasks(tasks, DEFAULT_FILTER, ctx);
+    const open = filterTasks(tasks, { statuses: ['ready', 'in-progress'] }, ctx);
     const lists = [{ id: WORK, name: 'Work' }, { id: HOME, name: 'Home' }];
     const totals = (groups) => groups.map((group) => [group.key, group.tasks.length, group.total]);
     expect(totals(groupTasks(open, 'list', { ...ctx, lists }, tasks))).toEqual([[WORK, 1, 2], [HOME, 2, 3], [NO_LIST, 1, 2]]);

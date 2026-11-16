@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-16.1",
+  "version": "2026-11-17.1",
   "files": {
     "index.html": "b9c7b352f9a46da63896de6681858e3e701ed087651f7c192db0eb1ca74a767f",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -23,7 +23,7 @@
     "js/core/overdue.js": "3e54094a6bd825939f63b02aea254bd00da1b738eed814f22f75d8ecb21494f9",
     "js/core/permissions.js": "4fc3031d3f9e5087019360c035c093affab254915ea68e82adc6ec2862856018",
     "js/core/preferences.js": "560332ae9f0028a9e80bf1701cd1e0e19203defe25c4316d2a18ddcb6d7d4c2a",
-    "js/core/query.js": "f3b5313ab81ecc2f05ce1ab1be19ec16b9e20fc4b19e80a7a9ff4fdf621c908b",
+    "js/core/query.js": "56f0fda77e1c293b48a1943461df6ba271cdee1ed9ce6313f3c8951b2985d28b",
     "js/core/quick-add.js": "533229270c5535d3b137aa22b5b6186c62d5d2dfdca71f3527fd6e8adedab016",
     "js/lib/fractional-index.js": "e39a5ed6180057968b422dd56afff61094024e7c70e1854accb5b381efb64cbe",
     "js/lib/uuid7.js": "322ecbe38746791eceef7c0803004be2affc47eb342efa33009fccfc0c40813c",
@@ -69,7 +69,7 @@
     "js/views/task-editor.js": "a02320dce5586a80a600820c91cd5130c42701dae815c622767c62412352d98d",
     "js/views/task-history.js": "1fd7b62087e312c9f7997265e3f832d5815ef6a086aa1de041c2a9dae12b81d6",
     "js/views/task-list.js": "bdda8afb3641585804386d200ccb4570569a61ec4e82991e2a35fa346cc3c266",
-    "js/views/view-controls.js": "8cb4255614af4e857fe5a0adc8d9d472c23f886333c081d7d55739efc8a88b89",
+    "js/views/view-controls.js": "02bb6e3123bd64986e987ef3d9351c12e8894318b75c0c250a81343c47270075",
     "vendor/design/css/base.css": "c8874d834646476f750d748630d71ab674e6a6b3acbd02c8ac23f4c6f0a25463",
     "vendor/design/css/components/account-menu.css": "4364ebb3309be78c506df778dfd0ef7947fc2d722a4f7b31f5d053a943b7f21a",
     "vendor/design/css/components/avatar.css": "65f06c81623ffeaacfde86b19d77e9f478b44ddccbdee3e4355e9a3fc5c65cf6",

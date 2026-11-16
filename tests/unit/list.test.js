@@ -64,7 +64,7 @@ describe('mountList', () => {
     const view = await mount();
     const line = view.querySelector('.info-line');
     expect(line.previousElementSibling).toBe(view.querySelector('.add-bar'));
-    expect(line.querySelector('.info-line__text').textContent).toBe('0 tasks · Status: open');
+    expect(line.querySelector('.info-line__text').textContent).toBe('0 tasks');
     expect(line.querySelector('.info-line__reset').hidden).toBe(true);
     for (const gone of ['.list-view__orders', '.list-view__status', '.list-view__note', '.filter-chip']) {
       expect(view.querySelector(gone)).toBeNull();
@@ -74,10 +74,10 @@ describe('mountList', () => {
   it('reads the sort on the info line and offers Reset, which restores manual order (LV-7, VO-8)', async () => {
     const view = await mount();
     models.list.set({ filter: { statuses: [] }, order: { field: 'due-time', direction: 'asc' } });
-    expect(view.querySelector('.info-line__text').textContent).toBe('0 tasks · Status: all · Sorted by Due time');
+    expect(view.querySelector('.info-line__text').textContent).toBe('0 tasks · Sorted by Due time');
     view.querySelector('.info-line__reset').click();
     expect(models.list.get()).toEqual(defaultViewState('list'));
-    expect(view.querySelector('.info-line__text').textContent).toBe('0 tasks · Status: open');
+    expect(view.querySelector('.info-line__text').textContent).toBe('0 tasks');
   });
 
   it('remembers the view options of each list on its own, and Reset restores the defaults of this list only', async () => {
@@ -139,7 +139,7 @@ describe('mountList', () => {
     field.dispatchEvent(new Event('input', { bubbles: true }));
     field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
-    expect(view.querySelector('.info-line__text').textContent).toBe('1 of 2 tasks · Search: PAINT · Status: open');
+    expect(view.querySelector('.info-line__text').textContent).toBe('1 of 2 tasks · Search: PAINT');
     expect((await store.snapshot()).tasks).toHaveLength(2);
     expect(view.querySelector('.add-hint').textContent).toBe('Add creates a new task “PAINT”.');
   });
@@ -154,7 +154,7 @@ describe('mountList', () => {
     expect(field.value).toBe('');
     expect(toaster.show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
     toaster.show.mock.calls[0][1].onAction();
-    expect(models.list.get().filter.statuses).toEqual(['ready', 'in-progress']);
+    expect(models.list.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed', 'cancelled']);
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
   });
 
@@ -222,7 +222,7 @@ describe('mountList', () => {
     const entries = [...view.querySelectorAll('.group-header, .task-row .task-row__description')].map((node) => node.textContent);
     expect(entries).toEqual(['To do2', 'First open', 'Second open', 'In progress1', 'Doing it']);
     expect(view.querySelector('.task-row__handle')).toBeNull();
-    expect(view.querySelector('.info-line__text').textContent).toBe('3 tasks · Status: open · Grouped by Status');
+    expect(view.querySelector('.info-line__text').textContent).toBe('3 tasks · Grouped by Status');
     models.list.set({ ...models.list.get(), group: 'none' });
     expect(view.querySelector('.group-header')).toBeNull();
     expect(view.querySelector('.task-row__handle')).not.toBeNull();

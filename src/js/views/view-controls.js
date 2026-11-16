@@ -9,14 +9,13 @@
  * Manual order is a sort of the list view, and of All tasks while it groups by list, where each list group keeps its own order.
  */
 
-import { STATUSES } from '../core/occurrences.js';
+import { OPEN_STATUSES, STATUSES } from '../core/occurrences.js';
 import { readPreference, removePreference, writePreference } from '../core/preferences.js';
 import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, GROUPINGS, NO_LIST, SORT_FIELDS } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { spriteIcon, STATUS_LABELS } from './task-list.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const OPEN = DEFAULT_FILTER.statuses;
 const MANUAL = 'manual';
 const NONE = 'none';
 let instances = 0;
@@ -46,7 +45,6 @@ const STRINGS = Object.freeze({
   lists: (count) => `${count} lists`,
   statuses: (count) => `${count} statuses`,
   options: (count) => `${count} options`,
-  statusAll: 'Status: all',
   finishedToday: 'Finished today only',
   finishedTodayValue: (value) => `${value}, finished today`,
   sortedBy: (field) => `Sorted by ${field}`,
@@ -103,13 +101,13 @@ function kindOf(view) {
 }
 
 /**
- * Return the default view state: open tasks, due time ascending, or manual order in a list view (`LV-10`, `TV-10`).
+ * Return the default view state: every status, created newest first, or manual order in a list view (`LV-10`, `TV-13`).
  * @param {'tasks'|'list'} [kind] the kind of view
  * @returns {{filter: object, order: {field: string, direction: string}, group: string}} a new state, ungrouped
  */
 export function defaultViewState(kind = 'tasks') {
   return {
-    filter: { statuses: [...OPEN] }, order: kind === 'list' ? { field: MANUAL, direction: 'asc' } : { ...DEFAULT_ORDER }, group: NONE,
+    filter: { statuses: [...DEFAULT_FILTER.statuses] }, order: kind === 'list' ? { field: MANUAL, direction: 'asc' } : { ...DEFAULT_ORDER }, group: NONE,
   };
 }
 
@@ -225,10 +223,20 @@ export function isDefaultViewState(state, kind = 'tasks') {
   const fallback = defaultViewState(kind).order;
   const statuses = filter.statuses ?? [];
   return !(typeof filter.text === 'string' && filter.text.trim())
-    && statuses.length === OPEN.length && OPEN.every((status) => statuses.includes(status)) && filter.finishedToday !== true
+    && hasExactly(statuses, DEFAULT_FILTER.statuses) && filter.finishedToday !== true
     && !filter.lists?.length && !filter.due?.length && !filter.created && typeof filter.shared !== 'boolean'
     && (state.group ?? NONE) === NONE
     && order.field === fallback.field && (order.field === MANUAL || order.direction === fallback.direction);
+}
+
+/**
+ * Tell whether a list of statuses holds exactly the given ones, in any order.
+ * @param {string[]} values the statuses
+ * @param {readonly string[]} expected the statuses to match
+ * @returns {boolean} true when both hold the same statuses
+ */
+function hasExactly(values, expected) {
+  return values.length === expected.length && expected.every((status) => values.includes(status));
 }
 
 /**
@@ -244,18 +252,18 @@ function rangeText({ from, to }) {
 }
 
 /**
- * Return the value text of the Status filter, or null when it shows every status.
- * Finished today only adds `, finished today`, also to an empty filter, which then reads `all` (`TV-14`).
+ * Return the value text of the Status filter, or null when it shows every status: all four checked, or none.
+ * Finished today only adds `, finished today`, also to a filter of every status, which then reads `all` (`TV-14`).
  * @param {object} filter the filter
  * @returns {string|null} the value text, such as `open` or `3 statuses, finished today`
  */
 function statusValue(filter) {
   const values = Array.isArray(filter.statuses) ? filter.statuses : [];
   let value = null;
-  if (values.length === OPEN.length && OPEN.every((status) => values.includes(status))) {
+  if (hasExactly(values, OPEN_STATUSES)) {
     value = STRINGS.open;
   }
-  else if (values.length > 0) {
+  else if (values.length > 0 && !hasExactly(values, STATUSES)) {
     value = values.length === 1 ? STATUS_LABELS[values[0]].toLowerCase() : STRINGS.statuses(values.length);
   }
   if (filter.finishedToday === true) {
@@ -317,22 +325,18 @@ function valueText(key, filter, lists, capital) {
 
 /**
  * Name the active filters, such as `Status: open`, for the info line and empty results.
+ * A status filter of every status hides nothing, so it goes unnamed unless Finished today only narrows it.
  * @param {object} filter the filter, with optional search text
  * @param {object[]} lists the live lists
- * @param {object} [options] naming options
- * @param {boolean} [options.allStatuses] also name an empty status filter, as `Status: all`
  * @returns {string[]} the descriptions: search first, then the filters in display order
  */
-export function describeFilters(filter, lists, { allStatuses = false } = {}) {
+export function describeFilters(filter, lists) {
   const text = typeof filter.text === 'string' ? filter.text.trim() : '';
   const parts = text ? [`${STRINGS.searchValue}: ${text}`] : [];
   for (const { key, label } of FILTERS) {
     const value = filterValue(key, filter, lists);
     if (value) {
       parts.push(`${label}: ${value}`);
-    }
-    else if (allStatuses && key === 'statuses') {
-      parts.push(STRINGS.statusAll);
     }
   }
   return parts;
@@ -366,7 +370,7 @@ function describeSort(order, kind) {
  */
 export function describeInfoLine({ shown, total, state, lists, kind = 'tasks' }) {
   const parts = [shown === total ? STRINGS.tasks(total) : STRINGS.tasksOf(shown, total)];
-  parts.push(...describeFilters(state.filter, lists, { allStatuses: true }));
+  parts.push(...describeFilters(state.filter, lists));
   if (state.group && state.group !== NONE) {
     parts.push(STRINGS.groupedBy(GROUP_LABELS[state.group]));
   }

@@ -481,15 +481,15 @@ def view_options_fields(f, x, y, width, compact=False):
     f.text(x, y + 22, "Filter", 12, "muted")
     button_right(f, x + width, y, "Reset", "control", 13, 32)
     y += 36
-    for label, value in [("Lists", "All lists"), ("Status", "Open"), ("Due", "Any"), ("Created", "Any")]:
+    for label, value in [("Lists", "All lists"), ("Status", "All"), ("Due", "Any"), ("Created", "Any")]:
         expanded = label == "Status"
         f.text(x, y + 26, label, 14, "bold" if expanded else "")
         f.text(x + width - 24, y + 26, value, 13, "muted", "end")
         f.text(x + width - 6, y + 26, "⌄" if expanded else "›", 14, "", "middle")
         y += 40
         if expanded:
-            for status, name in STATUSES:
-                y = check_row(f, x + 12, y, name, status in ("todo", "in-progress"))
+            for _, name in STATUSES:
+                y = check_row(f, x + 12, y, name, True)
             y += 4
         f.line(x, y, x + width, y)
     y += 12
@@ -596,7 +596,7 @@ def compact_task_screen(
     back=False,
     nav="Tasks",
     grouped=False,
-    info="24 tasks · Status: open",
+    info="24 tasks",
     reset=False,
 ):
     """Draw a compact task list screen with rows, the pinned add bar and info line, and bottom navigation."""
@@ -645,7 +645,7 @@ def wide_all_tasks(
     right=MAIN_RIGHT,
     grouped=False,
     typed=None,
-    info="24 tasks · Status: open",
+    info="24 tasks",
     reset=False,
     more=True,
 ):
@@ -685,7 +685,7 @@ def wide_list(f, account="connected", right=MAIN_RIGHT):
         account,
     )
     width = right - MAIN_LEFT
-    add_bar(f, MAIN_LEFT, 112, width, info="8 tasks · Status: all", reset=True)
+    add_bar(f, MAIN_LEFT, 112, width, info="8 tasks")
     y = 112 + 60 + 30 + 40
     for index, task in enumerate(HOME_TASKS):
         if index == 3:
@@ -747,12 +747,12 @@ def user_menu():
 
 
 def all_tasks():
-    """All tasks with the default open filter."""
+    """All tasks with the default filter of every status."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     compact_task_screen(compact, "All tasks", TASKS)
     status_menu(compact, 12, 190, "todo")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
-    wide_all_tasks(wide, typed="paint", info="1 of 24 tasks · Status: open")
+    wide_all_tasks(wide, typed="paint", info="1 of 24 tasks")
     return (
         "All tasks",
         "Quiet by default (compact, with the status menu a long press opens); typing in the add bar filters the rows (wide).",
@@ -772,7 +772,7 @@ def view_options():
         right=EDITOR_LEFT - 20,
         grouped=True,
         reset=True,
-        info="24 tasks · Status: open · Grouped by List · Sorted by Created, newest",
+        info="24 tasks · Grouped by List · Sorted by Created, newest",
     )
     left, width = editor_panel(wide, "View options")
     view_options_fields(wide, left, 76, width)
@@ -792,7 +792,7 @@ def list_view():
     compact.text(16, 110, "Shared with 2 people · You own this list", 13, "muted")
     top = compact.height - 64 - 88
     task_rows(compact, 0, 124, compact.width, HOME_TASKS, False, top)
-    add_bar(compact, 0, top, compact.width, info="8 tasks · Status: all", reset=True)
+    add_bar(compact, 0, top, compact.width, info="8 tasks")
     bottom_nav(compact, "Lists")
     more_menu(compact, compact.width - 208, 56, LIST_MENU)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)

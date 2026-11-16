@@ -22,10 +22,13 @@ function watch(page) {
 
 /**
  * Open the app, store a list with tasks of every status, and open that list.
+ * Most tests store a status filter of the open statuses for the list, so its completed task stays hidden.
  * @param {import('@playwright/test').Page} page the page
+ * @param {object} [options] what to store
+ * @param {string[]|null} [options.statuses] the stored status filter, or null to keep the default of every status
  * @returns {Promise<string>} the list identifier
  */
-async function openList(page) {
+async function openList(page, { statuses = ['ready', 'in-progress'] } = {}) {
   await page.setViewportSize(WIDE);
   await page.goto('/#/tasks');
   await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
@@ -41,8 +44,13 @@ async function openList(page) {
     store.close();
     return home.id;
   });
+  if (statuses) {
+    await page.evaluate(([id, filter]) => localStorage.setItem(`todos.view.list.${id}`, JSON.stringify({
+      filter: { statuses: filter }, order: { field: 'manual', direction: 'asc' }, group: 'none',
+    })), [listId, statuses]);
+  }
   await page.goto(`/#/lists/${listId}`);
-  await expect(page.locator('.list-view .task-row')).toHaveCount(3);
+  await expect(page.locator('.list-view .task-row')).toHaveCount(statuses ? 3 : 4);
   return listId;
 }
 
@@ -151,7 +159,7 @@ test.describe('List screen', () => {
     await expect(page.locator('.list-view .group-header')).toHaveCount(2);
     await page.locator('.app__action-bar .info-line__reset').click();
     await expect(page.locator('.list-view .group-header')).toHaveCount(0);
-    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(4);
     expect(problems).toEqual([]);
   });
 
@@ -191,16 +199,16 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
-  test('shows the header, the open tasks in manual order, and the info line (LV-1, LV-2, LV-10, VO-2)', async ({ page }) => {
+  test('shows the header, every task in manual order, and the info line (LV-1, LV-2, LV-10, VO-2)', async ({ page }) => {
     const problems = watch(page);
-    await openList(page);
+    await openList(page, { statuses: null });
     await expect(page.locator('#app-title')).toHaveText('Home');
     await expect(page.locator('.list-view__description')).toHaveText('Chores and repairs around the house');
-    expect(await rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);
-    await expect(page.locator(INFO)).toHaveText('3 of 4 tasks · Status: open');
+    expect(await rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Water the plants', 'Fix the door']);
+    await expect(page.locator(INFO)).toHaveText('4 tasks');
     await expect(page.locator('.info-line__reset')).toBeHidden();
     await expect(page.locator('.list-view .filter-chip, .list-view__orders, .list-view__note')).toHaveCount(0);
-    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(3);
+    await expect(page.locator('.list-view .task-row__handle')).toHaveCount(4);
     expect(problems).toEqual([]);
   });
 
@@ -335,13 +343,14 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
-  test('the status, due, and created filters apply, persist, and Reset restores manual order and open tasks (TV-12, VO-8)', async ({ page }) => {
+  test('the status, due, and created filters apply, persist, and Reset restores manual order and every status (TV-12, VO-8)', async ({ page }) => {
     const problems = watch(page);
-    await openList(page);
+    await openList(page, { statuses: null });
     const options = await openOptions(page);
     await options.getByRole('button', { name: /^Status/ }).click();
-    await options.getByLabel('Completed').check();
-    await expect(page.locator('.list-view .task-row')).toHaveCount(4);
+    await expect(options.getByLabel('Completed')).toBeChecked();
+    await options.getByLabel('To do').uncheck();
+    await expect(page.locator('.list-view .task-row')).toHaveCount(2);
     await options.getByRole('button', { name: /^Due/ }).click();
     await options.getByLabel('No due time').check();
     expect(await rows(page)).toEqual(['Water the plants']);
@@ -349,8 +358,8 @@ test.describe('List screen', () => {
     await page.reload();
     await expect(page.locator('.list-view .task-row')).toHaveCount(1);
     await page.locator('.info-line__reset').click();
-    await expect(page.locator(INFO)).toHaveText('3 of 4 tasks · Status: open');
-    expect(await rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);
+    await expect(page.locator(INFO)).toHaveText('4 tasks');
+    expect(await rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Water the plants', 'Fix the door']);
     expect(problems).toEqual([]);
   });
 

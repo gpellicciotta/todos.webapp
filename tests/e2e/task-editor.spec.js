@@ -145,10 +145,9 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   }
   await expect(row).toHaveAttribute('data-status', 'in-progress');
   await expect(panel.locator('.task-editor__status')).toHaveText('In progress, 2 of 3 done');
-  // The third tick reaches the target, so the default open filter hides the row behind an Undo toast.
+  // The third tick reaches the target; the default filter of every status keeps the row, now completed.
   await row.getByRole('button', { name: 'Tick Buy paint, 2 of 3 done' }).click();
-  await expect(row).toHaveCount(0);
-  await expect(page.locator('.toast', { hasText: 'Task marked completed.' })).toBeVisible();
+  await expect(row).toHaveAttribute('data-status', 'completed');
   await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
   await expect(panel.getByRole('button', { name: 'Untick, 3 of 3' })).toBeVisible();
 
@@ -301,9 +300,9 @@ test.describe('recurring tasks in local mode', () => {
     await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Weekly');
     await panel.locator('[data-section="status"] button[data-event="complete"]').click();
     await expect(panel.locator('.task-editor__status')).toHaveText('Completed');
-    // Completed this week, the task leaves the default open filter until its next period.
+    // Completed this week, the task stays completed until its next period.
     const row = page.locator('.task-row', { hasText: 'Buy paint' });
-    await expect(row).toHaveCount(0);
+    await expect(row).toHaveAttribute('data-status', 'completed');
     await page.keyboard.press('Escape');
     await expect(panel).toHaveCount(0);
     // Into Monday 9 November, 09:00 in Brussels: the minute timer rolls the task over.

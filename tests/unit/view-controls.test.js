@@ -23,15 +23,15 @@ function memoryStorage() {
 const LISTS = [{ id: 'l-home', name: 'Home' }, { id: 'l-work', name: 'Work' }];
 
 describe('view state per device (TV-12)', () => {
-  it('starts with the open status filter and created newest first, or manual order in a list view', () => {
+  it('starts with every status checked and created newest first, or manual order in a list view', () => {
     expect(loadViewState('tasks', () => memoryStorage())).toEqual({
-      filter: { statuses: ['ready', 'in-progress'] },
+      filter: { statuses: ['ready', 'in-progress', 'completed', 'cancelled'] },
       order: { field: 'creation-time', direction: 'desc' },
       group: 'none',
     });
     expect(defaultViewState()).toEqual(loadViewState('tasks', () => memoryStorage()));
     expect(loadViewState('list', () => memoryStorage())).toEqual({
-      filter: { statuses: ['ready', 'in-progress'] },
+      filter: { statuses: ['ready', 'in-progress', 'completed', 'cancelled'] },
       order: { field: 'manual', direction: 'asc' },
       group: 'none',
     });
@@ -121,6 +121,7 @@ describe('view state per device (TV-12)', () => {
 describe('describeFilters', () => {
   it('names each active filter with its value', () => {
     expect(describeFilters({ statuses: ['ready', 'in-progress'] }, LISTS)).toEqual(['Status: open']);
+    expect(describeFilters({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'] }, LISTS)).toEqual([]);
     expect(describeFilters({
       statuses: ['completed'], lists: ['l-home'], due: ['this-week'], created: { from: '2026-11-01' }, text: 'paint',
     }, LISTS)).toEqual(['Search: paint', 'Lists: Home', 'Status: completed', 'Due: this week', 'Created: from 2026-11-01']);
@@ -132,14 +133,14 @@ describe('describeFilters', () => {
 describe('describeInfoLine (VO-7)', () => {
   const open = defaultViewState();
 
-  it('reads the count and the default open status for the defaults', () => {
-    expect(describeInfoLine({ shown: 24, total: 24, state: open, lists: LISTS })).toEqual(['24 tasks', 'Status: open']);
-    expect(describeInfoLine({ shown: 1, total: 1, state: open, lists: LISTS })).toEqual(['1 task', 'Status: open']);
-    expect(describeInfoLine({ shown: 0, total: 0, state: open, lists: LISTS })).toEqual(['0 tasks', 'Status: open']);
+  it('reads only the count for the defaults, since every status shows', () => {
+    expect(describeInfoLine({ shown: 24, total: 24, state: open, lists: LISTS })).toEqual(['24 tasks']);
+    expect(describeInfoLine({ shown: 1, total: 1, state: open, lists: LISTS })).toEqual(['1 task']);
+    expect(describeInfoLine({ shown: 0, total: 0, state: open, lists: LISTS })).toEqual(['0 tasks']);
   });
 
   it('reads "12 of 24 tasks" when the view is narrowed', () => {
-    expect(describeInfoLine({ shown: 12, total: 24, state: open, lists: LISTS })).toEqual(['12 of 24 tasks', 'Status: open']);
+    expect(describeInfoLine({ shown: 12, total: 24, state: open, lists: LISTS })).toEqual(['12 of 24 tasks']);
   });
 
   it('names each active filter and the search text', () => {
@@ -152,22 +153,22 @@ describe('describeInfoLine (VO-7)', () => {
     ]);
   });
 
-  it('reads "Status: all" for an empty status filter, and leaves out a Lists filter of deleted lists', () => {
+  it('leaves out an empty status filter, which shows every status, and a Lists filter of deleted lists', () => {
     const state = { filter: { statuses: [], lists: ['l-gone'] }, order: open.order };
-    expect(describeInfoLine({ shown: 9, total: 9, state, lists: LISTS })).toEqual(['9 tasks', 'Status: all']);
+    expect(describeInfoLine({ shown: 9, total: 9, state, lists: LISTS })).toEqual(['9 tasks']);
   });
 
   it('adds the sort only when it differs from the default', () => {
     const sorted = (field, direction, kind) => describeInfoLine({
       shown: 3, total: 3, state: { filter: open.filter, order: { field, direction } }, lists: LISTS, kind,
     });
-    expect(sorted('creation-time', 'desc')).toEqual(['3 tasks', 'Status: open']);
-    expect(sorted('due-time', 'asc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Due time']);
-    expect(sorted('description', 'asc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Description']);
-    expect(sorted('description', 'desc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Description, descending']);
-    expect(sorted('creation-time', 'asc')).toEqual(['3 tasks', 'Status: open', 'Sorted by Created, ascending']);
-    expect(sorted('manual', 'asc', 'list')).toEqual(['3 tasks', 'Status: open']);
-    expect(sorted('due-time', 'asc', 'list')).toEqual(['3 tasks', 'Status: open', 'Sorted by Due time']);
+    expect(sorted('creation-time', 'desc')).toEqual(['3 tasks']);
+    expect(sorted('due-time', 'asc')).toEqual(['3 tasks', 'Sorted by Due time']);
+    expect(sorted('description', 'asc')).toEqual(['3 tasks', 'Sorted by Description']);
+    expect(sorted('description', 'desc')).toEqual(['3 tasks', 'Sorted by Description, descending']);
+    expect(sorted('creation-time', 'asc')).toEqual(['3 tasks', 'Sorted by Created, ascending']);
+    expect(sorted('manual', 'asc', 'list')).toEqual(['3 tasks']);
+    expect(sorted('due-time', 'asc', 'list')).toEqual(['3 tasks', 'Sorted by Due time']);
   });
 });
 
@@ -175,9 +176,9 @@ describe('grouping in the info line (VO-7)', () => {
   it('names a grouping other than none, before the sort', () => {
     const state = { ...defaultViewState(), group: 'due', order: { field: 'description', direction: 'asc' } };
     expect(describeInfoLine({ shown: 3, total: 3, state, lists: LISTS }))
-      .toEqual(['3 tasks', 'Status: open', 'Grouped by Due date', 'Sorted by Description']);
-    expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'list' }, lists: LISTS })[2]).toBe('Grouped by List');
-    expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'status' }, lists: LISTS })[2]).toBe('Grouped by Status');
+      .toEqual(['3 tasks', 'Grouped by Due date', 'Sorted by Description']);
+    expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'list' }, lists: LISTS })[1]).toBe('Grouped by List');
+    expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'status' }, lists: LISTS })[1]).toBe('Grouped by Status');
     expect(describeInfoLine({ shown: 3, total: 3, state: { ...state, group: 'none' }, lists: LISTS })).not.toContain('Grouped by None');
   });
 });
@@ -205,7 +206,7 @@ describe('the Finished today only choice (TV-14)', () => {
 
   it('names the choice after the status value, in the info line and in empty results', () => {
     const line = (filter) => describeInfoLine({ shown: 3, total: 9, state: { filter, order: defaultViewState().order }, lists: LISTS });
-    expect(line({ statuses: all, finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: 4 statuses, finished today']);
+    expect(line({ statuses: all, finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: all, finished today']);
     expect(line({ statuses: ['completed'], finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: completed, finished today']);
     expect(line({ statuses: [], finishedToday: true })).toEqual(['3 of 9 tasks', 'Status: all, finished today']);
     expect(describeFilters({ statuses: [], finishedToday: true }, LISTS)).toEqual(['Status: all, finished today']);
@@ -238,6 +239,8 @@ describe('isDefaultViewState (VO-8)', () => {
     const state = defaultViewState();
     expect(isDefaultViewState({ ...state, filter: { ...state.filter, text: 'paint' } })).toBe(false);
     expect(isDefaultViewState({ ...state, filter: { statuses: [] } })).toBe(false);
+    expect(isDefaultViewState({ ...state, filter: { statuses: ['ready', 'in-progress'] } })).toBe(false);
+    expect(isDefaultViewState({ ...state, filter: { statuses: ['cancelled', 'completed', 'in-progress', 'ready'] } })).toBe(true);
     expect(isDefaultViewState({ ...state, filter: { ...state.filter, due: ['today'] } })).toBe(false);
     expect(isDefaultViewState({ ...state, order: { field: 'status', direction: 'asc' } })).toBe(false);
     expect(isDefaultViewState({ ...state, group: 'status' })).toBe(false);
@@ -363,10 +366,10 @@ describe('createInfoLine (VO-7, VO-8)', () => {
     const line = createInfoLine({ document, onReset });
     document.body.append(line.element);
     line.update({ shown: 12, total: 24, state: defaultViewState(), lists: LISTS });
-    expect(line.element.querySelector('.info-line__text').textContent).toBe('12 of 24 tasks · Status: open');
+    expect(line.element.querySelector('.info-line__text').textContent).toBe('12 of 24 tasks');
     expect(line.element.querySelector('.info-line__reset').hidden).toBe(true);
     line.update({ shown: 3, total: 24, state: { filter: { statuses: [] }, order: defaultViewState().order }, lists: LISTS });
-    expect(line.element.querySelector('.info-line__text').textContent).toBe('3 of 24 tasks · Status: all');
+    expect(line.element.querySelector('.info-line__text').textContent).toBe('3 of 24 tasks');
     const reset = line.element.querySelector('.info-line__reset');
     expect(reset.hidden).toBe(false);
     reset.click();
@@ -380,7 +383,7 @@ describe('createInfoLine (VO-7, VO-8)', () => {
     expect(line.element.querySelector('.info-line__reset').hidden).toBe(true);
     line.update({ shown: 1, total: 1, state: defaultViewState('tasks'), lists: [], kind: 'list' });
     expect(line.element.querySelector('.info-line__reset').hidden).toBe(false);
-    expect(line.element.querySelector('.info-line__text').textContent).toBe('1 task · Status: open · Sorted by Created');
+    expect(line.element.querySelector('.info-line__text').textContent).toBe('1 task · Sorted by Created');
   });
 });
 
@@ -440,7 +443,11 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(panel.body.querySelector('.view-options__reset').textContent).toBe('Reset');
     const rows = [...panel.body.querySelectorAll('.view-options__row')].filter((row) => !row.hidden);
     expect(rows.map((row) => row.dataset.row)).toEqual(['lists', 'statuses', 'due', 'created']);
-    expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'Open', 'Any', 'Any']);
+    expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'All', 'Any', 'Any']);
+    const statuses = [...panel.body.querySelectorAll('[data-region="statuses"] input')];
+    expect(statuses.map((input) => [input.value, input.checked])).toEqual([
+      ['ready', true], ['in-progress', true], ['completed', true], ['cancelled', true], ['true', false],
+    ]);
   });
 
   it('starts each row value with an uppercase letter, but keeps list names as typed', async () => {
@@ -596,10 +603,12 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
   it('changes the status filter, and keeps an empty one as every status', async () => {
     await mount('tasks');
     const region = panel.body.querySelector('[data-region="statuses"]');
-    toggle(region.querySelector('input[value="completed"]'), true);
-    expect(models.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed']);
+    toggle(region.querySelector('input[value="completed"]'), false);
+    expect(models.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'cancelled']);
     expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses');
-    for (const status of ['ready', 'in-progress', 'completed']) {
+    toggle(region.querySelector('input[value="cancelled"]'), false);
+    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('Open');
+    for (const status of ['ready', 'in-progress']) {
       toggle(region.querySelector(`input[value="${status}"]`), false);
     }
     expect(models.tasks.get().filter.statuses).toEqual([]);
@@ -614,7 +623,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     const choice = region.querySelector('input[data-toggle="finishedToday"]');
     expect(choice.type).toBe('checkbox');
     expect(choice.checked).toBe(false);
-    toggle(region.querySelector('input[value="completed"]'), true);
+    toggle(region.querySelector('input[value="cancelled"]'), false);
     toggle(choice, true);
     expect(models.tasks.get().filter).toEqual({ statuses: ['ready', 'in-progress', 'completed'], finishedToday: true });
     expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses, finished today');
@@ -685,6 +694,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(models.tasks.get()).toEqual(defaultViewState());
     expect(panel.body.querySelector('.view-options__sort').value).toBe('creation-time');
     expect(panel.body.querySelector('[data-region="statuses"] input[value="ready"]').checked).toBe(true);
+    expect(panel.body.querySelector('[data-region="statuses"] input[value="completed"]').checked).toBe(true);
   });
 
   it('labels the Show button with the shown count, and closes the panel on click', async () => {
@@ -706,7 +716,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(live()).toBe('');
     models.tasks.subscribe(() => models.tasks.setCounts({ shown: 2, total: 9 }));
-    toggle(panel.body.querySelector('[data-region="statuses"] input[value="completed"]'), true);
+    toggle(panel.body.querySelector('[data-region="statuses"] input[value="completed"]'), false);
     await vi.waitFor(() => expect(live()).toBe('2 tasks'));
   });
 

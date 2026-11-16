@@ -13,6 +13,8 @@ const WEEKLY = normalizeRules({ 'recurrence-unit': 'week', 'recurrence-interval'
 // The store clock starts on Wednesday 4 November 2026, 09:00 UTC; its Brussels week runs from 1 November 23:00 UTC.
 const WEEK_ENDS = ['2026-11-08T23:00:00.000Z', '2026-11-15T23:00:00.000Z'];
 const DAY_MS = 86_400_000;
+// A stored All tasks view state that shows only the open statuses.
+const OPEN_VIEW = JSON.stringify({ filter: { statuses: ['ready', 'in-progress'] }, order: { field: 'creation-time', direction: 'desc' } });
 
 /**
  * Build a weekly task completed in the week ending on 8 November, 23:00 UTC.
@@ -48,7 +50,7 @@ describe('the display rule before filters and counts', () => {
     expect(becameStale([task], '2026-11-08T23:00:00Z', '2026-11-08T23:01:00Z')).toBe(false);
   });
 
-  it('shows a recurring task completed last period under the default open filter once its period ended', async () => {
+  it('shows a recurring task completed last period under an open filter once its period ended', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     let clock = new Date('2026-11-08T22:00:00Z');
     const intervals = [];
@@ -58,7 +60,7 @@ describe('the display rule before filters and counts', () => {
     });
     const store = { snapshot: async () => ({ lists: [], tasks: [completedWeekly()], memberships: [], notes: [] }), subscribe: () => () => {} };
     screen = mountAllTasks(document.querySelector('[data-view]'), {
-      store, toaster: { show: vi.fn() }, now: () => clock, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+      store, toaster: { show: vi.fn() }, now: () => clock, getStorage: () => ({ getItem: (key) => (key === 'todos.view.tasks' ? OPEN_VIEW : null), setItem: vi.fn() }),
     });
     await screen.idle();
     expect(document.querySelector('.task-row[data-task-id="r1"]')).toBeNull();
