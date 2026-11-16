@@ -52,14 +52,15 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - LST-5: Users see all lists with their task count, their open task count, and, when connected, their sharing state.
 - LST-6: Deleting a list moves it to the recycle bin and never deletes its tasks.
 - LST-7: A deleted list's tasks stay in their other lists, or end up in no list.
-- LST-8: Users reorder lists by drag or keyboard, in the sidebar and the Lists screen; the order stays on the device.
-  New lists append at the end; the store and the sync feed never hold the order.
+- LST-8: Users reorder lists by drag or keyboard, in the sidebar and the Lists screen.
+  New lists append at the end. The order is the user's own setting and syncs as `SYN-13` describes.
+  Collaborators keep their own order; the store and the sync feed never hold it.
 - LST-9: Each row of the Lists screen has a More button with the actions of the list view: edit, view options, share, and delete.
 - LST-10: From 12 lists, the sidebar and the Lists screen offer a find field that filters lists by typed text.
   It ignores case and accents, matches names (the Lists screen also descriptions), and states how many lists match.
 - LST-11: A find with no match on the Lists screen offers to create a list with the typed name.
 - LST-12: Users sort the Lists screen by manual order, name, open task count, or last update.
-  The device remembers the choice.
+  The app remembers the choice, which syncs as `SYN-13` describes.
   Sorting and finding never change the stored order, and reordering is available only in manual order without find text.
 - LST-13: Users move a list to the top or bottom, besides moving it by one place, by menu entry or keyboard.
 - LST-14: The wide sidebar keeps All tasks, Lists, and the find field in view, and scrolls only the lists.
@@ -143,7 +144,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-10: Tasks without a due time sort last in both directions when ordering by due time.
 - TV-11: Users create, edit, change status of, and delete tasks directly in the task view.
 - TV-12: The app remembers the last used filters, grouping, and order, for All tasks and for each list on its own.
-  While connected, they follow the account to every device, and the latest change wins; in local mode, they stay on the device.
+  They sync as `SYN-13` describes.
 - TV-13: The task view orders by creation time, newest first, until the user picks another order.
 - TV-14: Users limit the completed and cancelled tasks they see to those finished today.
   A task finished when its current occurrence closed.
@@ -152,7 +153,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.
 - VO-2: At rest the view shows only the search and add field and a subtle line of active filters and task count.
 - VO-3: Typing in the field filters the view to matching tasks; Add, its shortcuts, or Enter create a task.
-  A per-device setting turns Enter adding off, so Enter only searches.
+  A setting turns Enter adding off, so Enter only searches; it syncs as `SYN-13` describes.
 - VO-4: The More menu of the task view and of each list view offers "Edit view options".
 - VO-5: View options open in the side panel on wide layouts and as a full screen on compact layouts.
 - VO-6: View options hold every filter, the grouping choice, the sort choice, and a Reset button.
@@ -225,6 +226,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - SYN-10: Repeating a sync after an interruption creates no duplicate lists, tasks, or notes.
 - SYN-11: When the service refuses the app's version or speaks a newer sync protocol, syncing stops and the app asks for an update.
 - SYN-12: Several open tabs sync as one: a single tab uploads changes and polls the service.
+- SYN-13: While connected, the user's settings follow the account to every device, and the latest change wins.
+  They cover the view options (`TV-12`), the list order (`LST-8`), the Lists screen sort (`LST-12`), and Enter adding (`VO-3`).
+  The server URL and the theme stay on the device; in local mode, every setting stays on the device.
+  The manual order of tasks in a list is list data, shared with collaborators and synced like other changes (`LV-4`).
 
 ### Notifications
 - NTF-1: While connected, a bell button opens an inbox of the account's notifications and service broadcasts, most recent first.
