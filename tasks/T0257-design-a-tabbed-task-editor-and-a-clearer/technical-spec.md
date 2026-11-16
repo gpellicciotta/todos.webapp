@@ -35,17 +35,16 @@ Agreed with the user on 2026-11-16. The status still derives from the count, as 
 - The status menu goes: no right-click, long press, Down, Up, Shift+F10, or Menu key menu.
 - Its actions move to the task editor, including Complete for previous period.
 - Every tick shows an Undo toast, which Ctrl+Z also runs, since a target 1 row cannot untick.
-- Above target 1, the meta line leads with the counts, such as "2 of 3 done", in the status color.
-- The counts become a button outside the open link and open a popover: `[−] 2 of 3 [+]`.
-- The popover is read-only while cancelled; minus is disabled at 0; plus always applies.
-- Minus from 1 posts `uncomplete` then `start`, so the task stays In progress at 0.
+- Above target 1, a corner badge on the status icon shows the counts, such as "2/3" (canvas variant D).
+- The badge is part of the status button, so a tap on it ticks; the button's name includes the counts.
+- The row has no count popover; counts are corrected in the editor's stepper, and the Undo toast covers mis-taps.
 
 #### Task Row Layout
-Agreed with the user on 2026-11-16 as variant C of the card canvas:
+Agreed with the user on 2026-11-16 as variant C of the card canvas, with variant D's count badge:
 https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
-- Line 1: the status button, then the description, wrapping to at most 2 lines on every width.
+- Line 1: the status button with its count badge, then the description, wrapping to at most 2 lines.
+- The badge is a small pill on the icon's bottom-right corner, tinted by status, with dark text on a light tint.
 - Line 2, the meta line, in small muted text, only when it has content:
-  - the counts above target 1;
   - a clock icon and the due text, or a repeat icon and the interval, such as Daily;
   - the lists: plain text joined by " · " on phones, small pills on wide layouts.
 - Overdue due text and its clock use `--color-danger` (orange); in-time ones stay muted.
@@ -64,7 +63,6 @@ https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
 - Moves apply only under manual order without grouping or search, as today (`LV-8`).
 - Lists use the same Alt+Home and Alt+End for the ends, replacing the planned Alt+Shift+Up and Alt+Shift+Down.
 - T0076, not yet built, implements the list keys; no list shortcut changes for users.
-- The count stays in the meta line, as variant C draws it.
 - The principle "every drag, hover, or shortcut has a visible button alternative" relaxes:
   every drag keeps a keyboard alternative, but needs no visible button.
 - The Accessibility section's "Move up and Move down for tasks" becomes the Alt keys.
@@ -81,7 +79,9 @@ https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
 - Above target 1, In progress is disabled at or above target; the stepper moves between the two.
 - At target 1, every state button applies; Completed to In progress posts `uncomplete` then `start`.
 - Above target 1 and outside Ready, a second line shows the stepper: `[−] 2 of 3 [+]`.
-- The stepper follows the popover rules and never previews a status icon.
+- The stepper is read-only while cancelled; minus is disabled at 0; plus always applies.
+- Minus from 1 posts `uncomplete` then `start`, so the task stays In progress at 0.
+- The stepper never previews a status icon.
 - A closed recurring series enables only Ready, which posts `reopen` and opens a fresh period.
 - For 24 hours after a period ends, a Complete for previous period button names that occurrence.
 - A viewer sees every control disabled (`SHR-4`).
@@ -99,10 +99,10 @@ https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
 - T0258: editor state buttons, stepper, and Complete for previous period.
 - T0259: row tick rules and the Undo toast after every tick.
 - T0260: removal of the row status menu.
-- T0261: the count chip popover.
+- T0261: cancelled; the row has no count popover.
 - T0262: the tabs, Details in History, and Delete in the header More menu.
 - T0263: row reordering by press-and-drag, long hold, Alt keys, and the outside handle.
-- T0264: the row layout of variant C, with overdue due text in orange.
+- T0264: the row layout of variant C with the count badge, and overdue due text in orange.
 - T0265: removal of the row More button and menu.
 - Each needs this task, directly or through its chain, so none starts before sign-off.
 

@@ -39,3 +39,6 @@ Replace the editor's status action buttons with four state buttons and, above ta
 - [2026-11-16] **[Doc]**
   Wrote goals, steps, and technical-spec.md from the status, count, and tab model agreed in T0257.
 
+- [2026-11-16] **[Doc]**
+  Kept the stepper inside the editor, since T0261's row popover was cancelled.
+

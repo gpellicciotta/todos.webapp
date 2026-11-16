@@ -16,7 +16,8 @@ protocol: standard
 ## Goals
 Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signed-off brief.
 - Line 1 holds the status button and the description, wrapping to at most 2 lines.
-- Line 2 holds the counts, the due or repeat icon with its text, and the lists, only when it has content.
+- Above target 1, a corner badge on the status icon shows the counts, such as 2/3.
+- Line 2 holds the due or repeat icon with its text, and the lists, only when it has content.
 - Overdue due text and its clock show in orange; in-time ones stay muted.
 - The row drops the note count and the people icon.
 - The More button stays until T0265.
@@ -24,9 +25,9 @@ Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signe
 
 ## Task Execution Steps
 - [ ] **[Read]**      Read T0257's signed-off brief and canvas variant C, metaOf in task-list.js, and the row styles.
-- [ ] **[Implement]** Author failing unit and e2e tests for the two lines, the meta line content, and overdue color.
+- [ ] **[Implement]** Author failing unit and e2e tests for the two lines, the count badge, the meta line, and overdue color.
 - [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
-- [ ] **[Implement]** Implement the description line, the meta line, and the overdue style.
+- [ ] **[Implement]** Implement the description line, the count badge, the meta line, and the overdue style.
 - [ ] **[Verify]**    Run the unit suite and the All tasks and gallery e2e specs and confirm they pass.
 - [ ] **[Visual]**    Capture rows at 360, 768, and 1440 px, with overdue and recurring rows, in both themes.
 - [ ] **[Doc]**       Update the Task Row section, the gallery, the style guide, and CHANGELOG.md.
@@ -38,4 +39,7 @@ Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signe
 
 - [2026-11-16] **[Doc]**
   Wrote goals, steps, and technical-spec.md from the row layout and reordering agreed in T0257.
+
+- [2026-11-16] **[Doc]**
+  Added the corner count badge from T0257 and took the counts out of the meta line.
 

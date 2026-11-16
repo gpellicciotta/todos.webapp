@@ -51,3 +51,6 @@ Produce a signed-off design for a tabbed task editor, the task row, and a clear 
 - [2026-11-16] **[Decided]**
   Settled Alt+Home and Alt+End for tasks and lists, the meta line count, and a relaxed visible-alternative principle.
 
+- [2026-11-16] **[Decided]**
+  Moved the row count into a corner badge on the status icon and dropped the row count popover, cancelling T0261.
+

@@ -9,7 +9,6 @@
 - docs/requirements.md
 - docs/specs/visual-style-guide.md
 - src/demo/visual-style-gallery.html
-- New, not counted: src/js/views/count-stepper.js and tests/unit/count-stepper.test.js.
 
 Size estimate: 8 files, 400 lines.
 
@@ -33,7 +32,6 @@ Size estimate: 8 files, 400 lines.
 - Minus from 1 posts `uncomplete` then `start`, so the task stays In progress at 0.
 - While cancelled, both buttons are disabled; the count stays visible.
 - The count is a polite live region, so screen readers hear each change.
-- Build it in src/js/views/count-stepper.js, so the row popover of T0261 reuses it.
 
 ### Previous Period
 - While `graceOccurrence(task, now)` names an occurrence, show a Complete for previous period button.
