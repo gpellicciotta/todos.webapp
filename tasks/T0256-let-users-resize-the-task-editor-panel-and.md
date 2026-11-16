@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 665.8, input: 82, output: 24104, cache_read: 3665461, cache_write: 99681}
-review_status: pending
+  review: {turns: 1, duration_s: 1012.4, input: 212543, output: 38495, cache_read: 3591312}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-16T23:28:59Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261117-cb123c
+work_duration: 1703.4
 ---
 # T0256: Let users resize the task editor panel and the lists sidebar by dragging on desktop, remembered per device
 
@@ -73,4 +77,14 @@ Let users drag the edges of the lists sidebar and the task editor panel to set t
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @gemini: Desktop separator rendering, pointer and keyboard controls, ARIA values, and `localStorage` persistence work and pass current suites.
+  - Findings: [review-findings-1.md](T0256-let-users-resize-the-task-editor-panel-and/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Reworked review round 1: tests failed first, then kept chosen widths apart from shown ones and cleared tokens below 64rem.
+
+- [2026-11-17] **[Verify]**
+  Size note: touched files exceed 8 because the new module needs index.html, service worker, and manifest entries.
 

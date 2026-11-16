@@ -40,3 +40,14 @@ Light and dark, at rest, hovered, focused, and dragged:
 [hover light](separators-hover-light.png), [hover dark](separators-hover-dark.png),
 [focus light](separators-focus-light.png), [focus dark](separators-focus-dark.png),
 [drag light](separators-drag-light.png), [drag dark](separators-drag-dark.png).
+
+### Review round 1 rework
+Three of the four new tests (compact tokens, shrink and expand, editor close and reopen) failed before the fix.
+Commands: `npx vitest run`, `npx eslint .`, `node scripts/check-sw-version.mjs`, and `npx playwright test tests/e2e/shell.spec.js`. Exit code: 0 for each.
+
+```text
+ Test Files  61 passed (61)
+      Tests  1509 passed (1509)
+OK: 129 precached files match VERSION 2026-11-17.3.
+  24 passed (18.1s)
+```
