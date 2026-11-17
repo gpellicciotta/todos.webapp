@@ -5,17 +5,22 @@ session: claude-20261117-795fb0
 needs: []
 branch: task/T0076-add-move-to-top-and-move-to-bottom
 worktree: .plan/work/T0076-add-move-to-top-and-move-to-bottom
-status: active
+status: completed
 started_at: "2026-11-17T15:09:28Z"
-ended_at: —
+ended_at: "2026-11-17T15:28:02Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 858.1, input: 162, output: 46277, cache_read: 12216896, cache_write: 180423}
-review_status: pending
+  review: {turns: 1, duration_s: 231.1, input: 34, output: 6012, cache_read: 1049112, cache_write: 55801}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T15:23:59Z"
+reviewed_by: "@claude"
+review_session: claude-20261117-52b3fe
+work_duration: 1113.0
+completion-commit: 6503ee0d63fb703d638280150a8f661324837134
 ---
 # T0076: Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
 
@@ -33,7 +38,7 @@ The Lists screen reorders through reorder.js, which T0263 rewrites; reuse its Al
 - [x] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [x] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
 - [x] **[Implement]** Add Alt+Home and Alt+End to the About shortcut list in settings.js, with its unit test.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
@@ -78,4 +83,11 @@ The Lists screen reorders through reorder.js, which T0263 rewrites; reuse its Al
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @claude: Approved.
+  - Findings: [review-findings-1.md](T0076-add-move-to-top-and-move-to-bottom/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 

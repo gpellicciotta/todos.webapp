@@ -4,10 +4,13 @@ round: 1
 verdict: approved
 blocking: 0
 reviewer: "@claude"
-reviewed_at: 2026-11-17T15:24:00Z
+reviewed_at: 2026-11-17T15:28:00Z
 reviewed_commit: "ab269f8"
 base_commit: "f2da857"
 branch: task/T0076-add-move-to-top-and-move-to-bottom
+session: claude-20261117-52b3fe
+session_agent: claude-code
+session_created_at: 2026-11-17T15:24:00Z
 ---
 # Review Findings: Task T0076 (Round 1)
 
