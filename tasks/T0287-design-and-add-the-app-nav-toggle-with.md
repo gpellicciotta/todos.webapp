@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1767.1, input: 196, output: 65244, cache_read: 17017178, cache_write: 216300}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T22:05:13Z"
 ---
 # T0287: Design and add the app nav toggle with a sidebar icon rail that shows list items
 
@@ -48,4 +53,7 @@ Design and add the app nav toggle with a sidebar icon rail that shows list items
   - Files touched: 16.
   - Lines touched: 418.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
