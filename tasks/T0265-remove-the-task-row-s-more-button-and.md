@@ -5,17 +5,22 @@ session: claude-20261117-7af215
 needs: []
 branch: task/T0265-remove-the-task-row-s-more-button-and
 worktree: .plan/work/T0265-remove-the-task-row-s-more-button-and
-status: active
+status: completed
 started_at: "2026-11-17T16:10:37Z"
-ended_at: —
+ended_at: "2026-11-17T16:40:31Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1518.2, input: 226, output: 64542, cache_read: 21036557, cache_write: 231881}
-review_status: pending
+  review: {turns: 1, duration_s: 249.2, input: 28, output: 5025, cache_read: 932423, cache_write: 59561}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T16:36:14Z"
+reviewed_by: "@claude"
+review_session: claude-20261117-2e5e3c
+work_duration: 1793.4
+completion-commit: 1ee04e229eefbc1d1fe9810648a44bf45e68cb39
 ---
 # T0265: Remove the task row's More button and menu, now that the editor and the move keys cover them
 
@@ -34,7 +39,7 @@ Remove the row's More button and menu, by the Task Row Layout rules in T0257's s
 - [x] **[Verify]**    Run the unit suite and the All tasks and list e2e specs and confirm they pass.
 - [x] **[Visual]**    Capture rows without the More button at 360 and 1440 px, in both themes.
 - [x] **[Doc]**       Update the Task Row and List sections, the requirements, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -67,4 +72,11 @@ Remove the row's More button and menu, by the Task Row Layout rules in T0257's s
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @claude: The work meets every goal and technical-spec rule.
+  - Findings: [review-findings-1.md](T0265-remove-the-task-row-s-more-button-and/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
