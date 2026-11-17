@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [ ] T0269 Make the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x CPU throttling.
+- [~] T0269 [owner: @claude] Make the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x CPU throttling.
 - [ ] T0265 [needs: T0264] Remove the task row's More button and menu, now that the editor and the move keys cover them.
 - [ ] T0264 [needs: T0263] Redesign the task row as a description line plus a meta line, with overdue due text in orange.
 - [ ] T0263 [needs: T0260] Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle.

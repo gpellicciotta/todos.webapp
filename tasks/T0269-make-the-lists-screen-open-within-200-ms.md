@@ -1,11 +1,11 @@
 ---
 id: T0269
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0269-make-the-lists-screen-open-within-200-ms
+worktree: .plan/work/T0269-make-the-lists-screen-open-within-200-ms
+status: active
+started_at: "2026-11-17T05:12:03Z"
 ended_at: —
 review: agent
 preview: none
