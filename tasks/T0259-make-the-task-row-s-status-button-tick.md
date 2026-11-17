@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1684.7, input: 170, output: 48449, cache_read: 11624354, cache_write: 161818}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T13:22:53Z"
 ---
 # T0259: Make the task row's status button tick by target, never untick, and offer Undo after every tick
 
@@ -68,4 +73,7 @@ Make a click on the row's status button only ever tick, by the Task Row rules in
   - Files touched: 12.
   - Lines touched: 296.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
