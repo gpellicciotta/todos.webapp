@@ -13,12 +13,12 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 782.5, input: 70, output: 16128, cache_read: 2348430, cache_write: 60217}
-  review: {turns: 1, duration_s: 517.2, input: 186810, output: 21590, cache_read: 2442978}
+  review: {turns: 2, duration_s: 522.0, input: 186810, output: 21590, cache_read: 2442978}
 review_status: pending
 review_round: 2
 review_requested_at: "2026-11-17T01:30:32Z"
 review_session: antigravity-20261117-735877
-work_duration: 928.2
+work_duration: 1374.4
 ---
 # T0250: Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column
 
