@@ -5,17 +5,22 @@ session: claude-20261117-04bb44
 needs: []
 branch: task/T0260-remove-the-task-row-s-status-menu-now
 worktree: .plan/work/T0260-remove-the-task-row-s-status-menu-now
-status: active
+status: completed
 started_at: "2026-11-17T13:26:57Z"
-ended_at: —
+ended_at: "2026-11-17T13:48:05Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1135.8, input: 166, output: 61553, cache_read: 12680367, cache_write: 186463}
-review_status: pending
+  review: {turns: 1, duration_s: 104.5, input: 37412, output: 1506, cache_read: 233856, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T13:46:16Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-88b625
+work_duration: 1269.1
+completion-commit: 23563c4f70e7820465d53f25a5ebf6662dd0561e
 ---
 # T0260: Remove the task row's status menu, now that the task editor holds every status action
 
@@ -35,7 +40,7 @@ Remove the row status menu, since the task editor of T0258 now offers every stat
 - [x] **[Verify]**    Run the unit suite and the list and gallery e2e specs and confirm they pass.
 - [x] **[Visual]**    Capture a row's status button before and after, with its tooltip, in both themes.
 - [x] **[Doc]**       Update the Task Row section, the style guide, the requirements, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -82,4 +87,11 @@ Remove the row status menu, since the task editor of T0258 now offers every stat
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: Approved.
+  - Findings: [review-findings-1.md](T0260-remove-the-task-row-s-status-menu-now/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
