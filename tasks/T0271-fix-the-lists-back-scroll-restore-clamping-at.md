@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 601.1, input: 62, output: 13053, cache_read: 2255388, cache_write: 91321}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T08:45:17Z"
 ---
 # T0271: Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e
 
@@ -38,4 +43,7 @@ Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibili
 
 - [2026-11-17] **[Doc]**
   Updated CHANGELOG.md and the Lists rendering decision in ui-design.md.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
