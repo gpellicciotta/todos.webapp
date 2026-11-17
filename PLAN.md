@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [~] T0269 [owner: @claude] Make the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x CPU throttling.
+- [x] T0269 Make the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x CPU throttling.
 - [ ] T0265 [needs: T0264] Remove the task row's More button and menu, now that the editor and the move keys cover them.
 - [ ] T0264 [needs: T0263] Redesign the task row as a description line plus a meta line, with overdue due text in orange.
 - [ ] T0263 [needs: T0260] Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle.
@@ -39,7 +39,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0074 Add the find bar, sort menu, info line, and Create list offer to the Lists screen.
 - [x] T0075 Render long Lists screens with content-visibility and lazy row menus, with roving focus between rows.
 - [ ] T0076 [needs: T0263] Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
-- [!] T0077 [reason: blocked: 150 lists open in 386 ms, over the 200 ms budget; T0269 optimizes Lists first] [needs: T0269] [owner: @claude] Add a 150-list render check to the performance spec, and record 500 lists.
+- [!] T0077 [reason: blocked: 150 lists open in 386 ms, over the 200 ms budget; T0269 optimizes Lists first] [owner: @claude] Add a 150-list render check to the performance spec, and record 500 lists.
 - [ ] T0078 Add the Shared only filter to the Lists screen sort menu while connected.
 
 ## Backlog
