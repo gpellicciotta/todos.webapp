@@ -5,17 +5,22 @@ session: claude-20261117-ddbf42
 needs: []
 branch: task/T0222-name-the-shared-filter-in-the-hidden-task
 worktree: .plan/work/T0222-name-the-shared-filter-in-the-hidden-task
-status: active
+status: completed
 started_at: "2026-11-17T03:49:10Z"
-ended_at: —
+ended_at: "2026-11-17T03:53:34Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 191.5, input: 56, output: 12287, cache_read: 2237734, cache_write: 70668}
-review_status: pending
+  review: {turns: 1, duration_s: 62.5, input: 30997, output: 1449, cache_read: 267392, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T03:52:30Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-98b2cc
+work_duration: 263.9
+completion-commit: bdd5df631330ab9294b9ed2f56f6c92aa55182f5
 ---
 # T0222: Name the Shared filter in the hidden-task toast and let Show clear it
 
@@ -33,7 +38,7 @@ Rules and tests: [technical-spec.md](T0222-name-the-shared-filter-in-the-hidden-
 - [x] **[Implement]** Count `shared` as a hiding filter and pass the shared list ids to the toast.
 - [x] **[Verify]**    Run `npm test`, `npm run lint`, and the affected e2e specs; record the passing output.
 - [x] **[Doc]**       Update the Search and Add section of ui-design.md and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-10] **[Doc]**
@@ -59,4 +64,11 @@ Rules and tests: [technical-spec.md](T0222-name-the-shared-filter-in-the-hidden-
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-1.md](T0222-name-the-shared-filter-in-the-hidden-task/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
