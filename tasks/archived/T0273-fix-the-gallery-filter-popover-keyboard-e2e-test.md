@@ -5,12 +5,15 @@ session: claude-20261117-51c3e3
 needs: []
 branch: task/T0273-fix-the-gallery-filter-popover-keyboard-e2e-test
 worktree: .plan/work/T0273-fix-the-gallery-filter-popover-keyboard-e2e-test
-status: suspended
+status: cancelled
 started_at: "2026-11-17T18:15:12Z"
-ended_at: —
+ended_at: "2026-11-17T19:06:41Z"
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 363.9, input: 40, output: 5664, cache_read: 1288839, cache_write: 53998}
+work_duration: 375.5
 ---
 # T0273: Fix the gallery filter popover keyboard e2e test, failing on main ba41de1: four Tabs no longer reach Clear.
 
@@ -34,4 +37,7 @@ Fix the gallery filter popover keyboard e2e test, failing on main ba41de1 at the
 
 - [2026-11-17] **[Review]**
   Duplicate of T0274; recommend cancelling T0273. Open question: cancel as duplicate, or keep with another scope?.
+
+- [2026-11-17] **[Cancelled]**
+  Duplicate of T0274, which already fixed the test on main.
 
