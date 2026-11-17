@@ -12,14 +12,13 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 768.4, input: 156, output: 52137, cache_read: 12003484, cache_write: 189260}
+  worker: {turns: 3, duration_s: 822.4, input: 172, output: 55269, cache_read: 13576715, cache_write: 199651}
   review: {turns: 2, duration_s: 285.8, input: 143317, output: 6195, cache_read: 985472, cache_write: 0}
-review_status: rejected
-review_round: 2
-review_requested_at: "2026-11-17T01:49:23Z"
+review_status: pending
+review_round: 3
+review_requested_at: "2026-11-17T01:52:12Z"
 review_session: codex-20261117-f5402b
 work_duration: 1103.7
-reviewed_by: "@codex"
 ---
 # T0249: Sync Delete permanently and Empty recycle bin to the account while connected, queued while offline
 
@@ -98,4 +97,7 @@ Make permanent deletes from the Recycle Bin reach the account, not just this dev
 
 - [2026-11-17] **[Decided]**
   Prerequisite met by version and route evidence; authenticated production purge not run, to protect user data.
+
+- [2026-11-17] **[Review]**
+  Round 3 requested (mode: agent).
 
