@@ -2,10 +2,10 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [ ] T0274 Fix the popover keyboard e2e test in behaviors.spec.js failing on main: Tab never reaches the Clear button.
+- [~] T0274 [owner: @claude] Fix the popover keyboard e2e test in behaviors.spec.js failing on main: Tab never reaches the Clear button.
 - [!] T0257 [reason: needs review: round 1 rework done; sign off wireframes and design text, then T0258 to T0265 get revised] [owner: @claude] Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
 - [x] T0240 Make Delete all data also erase the account's lists and tasks while connected, queued while offline.
-- [~] T0267 [owner: @claude] Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
+- [!] T0267 [reason: blocked: needs T0274; the completion check fails on behaviors.spec.js:109, failing on main too] [needs: T0274] [owner: @claude] Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
 - [ ] T0258 [needs: T0257] Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257.
 - [ ] T0259 [needs: T0258] Make the task row's status button tick by target, never untick, and offer Undo after every tick.
 - [!] T0254 [reason: blocked: support.webapp has no release with T0049 yet; its checkout is 0.1.1-pre, latest tag v0.1.0. Release 0.1.1 there, then vendor it here.] [owner: @claude, session: claude-20261117-fc9300] [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.

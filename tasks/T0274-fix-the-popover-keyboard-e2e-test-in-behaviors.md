@@ -1,11 +1,11 @@
 ---
 id: T0274
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0274-fix-the-popover-keyboard-e2e-test-in-behaviors
+worktree: .plan/work/T0274-fix-the-popover-keyboard-e2e-test-in-behaviors
+status: active
+started_at: "2026-11-17T10:36:40Z"
 ended_at: —
 review: agent
 preview: none
