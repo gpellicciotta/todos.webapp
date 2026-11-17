@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 191.5, input: 56, output: 12287, cache_read: 2237734, cache_write: 70668}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:52:30Z"
 ---
 # T0222: Name the Shared filter in the hidden-task toast and let Show clear it
 
@@ -51,4 +56,7 @@ Rules and tests: [technical-spec.md](T0222-name-the-shared-filter-in-the-hidden-
   - Files touched: 8.
   - Lines touched: 90.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
