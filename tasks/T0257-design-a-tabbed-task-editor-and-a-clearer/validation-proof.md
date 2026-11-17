@@ -10,3 +10,12 @@ Command: python -m pytest tests/test_draw_wireframes.py -q (exit code 0)
 
 Wireframes regenerated with python scripts/draw-wireframes.py docs/img/ui; checked task-editor-status.svg and all-tasks.svg by rendering in a browser.
 
+
+## Round 1 rework
+
+Command: python -m pytest tests/test_draw_wireframes.py -q (exit code 0)
+
+```text
+101 passed in 23.68s
+```
+

@@ -5,15 +5,15 @@ session: claude-20261117-2c6785
 needs: []
 branch: task/T0257-design-a-tabbed-task-editor-and-a-clearer
 worktree: .plan/work/T0257-design-a-tabbed-task-editor-and-a-clearer
-status: active
+status: suspended
 started_at: "2026-11-17T01:01:48Z"
 ended_at: —
 review: human
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 8, duration_s: 318.9, input: 76, output: 30342, cache_read: 3798783, cache_write: 138932}
-work_duration: 338.9
+  worker: {turns: 9, duration_s: 343.6, input: 84, output: 31220, cache_read: 4111375, cache_write: 256305}
+work_duration: 33597.6
 review_status: rejected
 review_round: 1
 reviewed_by: "@giovanni"
@@ -80,4 +80,8 @@ Produce a signed-off design for a tabbed task editor, the task row, and a clear 
 
 - [2026-11-17] **[Review]**
   Round 1 rejected by @giovanni: Rejected; feedback in review-feedback-1.md: Content tab only description and notes, lists and Delete move to Status, separate Status sections, right-align row list chips, fix all-tasks.svg Add text.
+
+- [2026-11-17] **[Doc]**
+  Reworked per round 1: Content has description and notes; Status has lists, groups, Delete; row lists right-aligned.
+  - Fixed the all-tasks filter note; 101 wireframe tests pass.
 
