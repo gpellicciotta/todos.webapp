@@ -1,11 +1,11 @@
 ---
 id: T0077
-owner: ~
-needs: [T0073, T0075]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0077-add-a-150-list-render-check-to-the
+worktree: .plan/work/T0077-add-a-150-list-render-check-to-the
+status: active
+started_at: "2026-11-17T05:08:32Z"
 ended_at: —
 review: agent
 preview: none
