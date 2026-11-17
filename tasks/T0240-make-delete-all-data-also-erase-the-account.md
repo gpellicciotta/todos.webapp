@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 640.6, input: 136, output: 42037, cache_read: 10566245, cache_write: 183916}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:32:57Z"
 ---
 # T0240: Make Delete all data also erase the account's lists and tasks while connected, queued while offline
 
@@ -68,4 +73,7 @@ Make Delete all data erase the account's lists, tasks, and notes too, not only t
 
 - [2026-11-17] **[Decided]**
   Bumped the service worker VERSION to 2026-11-17.12 and refreshed the precache hashes.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
