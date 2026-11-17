@@ -1,11 +1,11 @@
 ---
 id: T0263
-owner: ~
-needs: [T0260]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0263-reorder-task-rows-by-press-and-drag-on
+worktree: .plan/work/T0263-reorder-task-rows-by-press-and-drag-on
+status: active
+started_at: "2026-11-17T13:48:25Z"
 ended_at: —
 review: agent
 preview: none
