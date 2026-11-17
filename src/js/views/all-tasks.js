@@ -74,10 +74,11 @@ function joinParts(parts) {
 /**
  * Read the store into the shape the screen renders.
  * @param {object} store the store facade
+ * @param {() => Promise<object>} [readRecords] reads the lists, tasks, memberships, and notes; the store's own read by default
  * @returns {Promise<{tasks: object[], lists: object[], listsByTask: Map, notesByTask: Map, memberships: object[]}>} the data
  */
-async function readData(store) {
-  const snapshot = await store.snapshot();
+async function readData(store, readRecords = () => store.snapshot(['lists', 'tasks', 'memberships', 'notes'])) {
+  const snapshot = await readRecords();
   const userId = (await store.queue?.getState?.('user-id')) ?? null;
   const lists = snapshot.lists.filter((list) => !list['deletion-time'])
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
@@ -111,11 +112,12 @@ async function readData(store) {
  * @param {{state: () => string}} [options.session] the session; the Shared filter applies while it is connected (`TV-7`)
  * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
  * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu on wide layouts; the view header by default
+ * @param {() => Promise<object>} [options.readRecords] reads the records to show; the app shares one read between screens (`TEC-16`)
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountAllTasks(view, {
   store, toaster, memory = {}, viewModels, navigate = () => {}, getStorage, now = () => new Date(), persist = requestPersistence, session,
-  actionBar = null, actionsSlot = null,
+  actionBar = null, actionsSlot = null, readRecords = undefined,
 }) {
   const doc = view.ownerDocument;
   const model = viewModels?.tasks ?? createViewModel(VIEW, getStorage);
@@ -365,7 +367,7 @@ export function mountAllTasks(view, {
   function refresh() {
     pending ??= Promise.resolve().then(async () => {
       pending = null;
-      data = await readData(store);
+      data = await readData(store, readRecords);
       render();
     }).catch((error) => console.error('All tasks failed to render:', error));
     return pending;

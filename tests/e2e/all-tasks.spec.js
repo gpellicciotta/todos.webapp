@@ -671,11 +671,12 @@ test('a Lists filter of a deleted list hides nothing, so adding a task shows no 
   await expect(page.locator(INFO)).toContainText('Lists:');
   await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
-    const store = await openStore();
+    // Broadcasting tells the app, as a write from another tab does, so its shared read of the records drops.
+    const store = await openStore({ broadcast: true });
     const data = await store.snapshot();
     await store.deleteList(data.lists.find((list) => list.name === 'Home').id);
   });
-  // The out-of-band delete reaches the view when it mounts again; the view options keep the Lists filter.
+  // The delete reaches the view when it mounts again; the view options keep the Lists filter.
   await page.evaluate(() => {
     location.hash = '#/settings'; 
   });

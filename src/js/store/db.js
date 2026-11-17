@@ -188,7 +188,7 @@ export async function openStore({
     deleteAllData: () => bin.deleteAllData(ctx),
     listBin: () => bin.listBin(ctx),
     purgeExpired: (now) => bin.purgeExpired(ctx, now),
-    snapshot: () => bulk.snapshot(ctx),
+    snapshot: (names) => bulk.snapshot(ctx, names),
     applyChanges: (planner, options) => bulk.applyChanges(ctx, planner, options),
   };
   for (const operation of WRITES) {

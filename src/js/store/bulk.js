@@ -28,10 +28,17 @@ async function readAll(tx) {
 /**
  * Return every record of the store, in key order.
  * @param {{db: IDBDatabase}} ctx store context
+ * @param {string[]} [names] the stores to read, all of them by default; the result holds only these
  * @returns {Promise<{lists: object[], tasks: object[], memberships: object[], notes: object[], occurrences: object[], events: object[]}>} the records
  */
-export function snapshot(ctx) {
-  return transact(ctx.db, ALL_STORES, 'readonly', readAll);
+export function snapshot(ctx, names = ALL_STORES) {
+  if (names === ALL_STORES) {
+    return transact(ctx.db, ALL_STORES, 'readonly', readAll);
+  }
+  return transact(ctx.db, names, 'readonly', async (tx) => {
+    const records = await Promise.all(names.map((name) => request(tx.objectStore(name).getAll())));
+    return Object.fromEntries(names.map((name, index) => [name, records[index]]));
+  });
 }
 
 /**

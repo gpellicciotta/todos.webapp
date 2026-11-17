@@ -13,15 +13,18 @@ import { countLists } from './list-counts.js';
  * Create the shared snapshot of a store.
  * Create it before any screen subscribes to the store, so it drops the snapshot before a screen reads again.
  * @param {object} store the store facade
- * @returns {{read: () => Promise<{lists: object[], counts: object}>, invalidate: () => void, destroy: () => void}}
- *   `read` resolves the lists and the result of `countLists`; every reader between two writes gets the same object
+ * @returns {{read: () => Promise<{lists: object[], counts: object}>, readData: () => Promise<object>, invalidate: () => void,
+ *   destroy: () => void}} `read` resolves the lists and the result of `countLists`; `readData` resolves the records of All tasks;
+ *   every reader between two writes gets the same object
  */
 export function createListSnapshot(store) {
   let current = null;
+  let currentData = null;
 
-  /** Forget the snapshot, so the next read goes to the store. */
+  /** Forget the snapshots, so the next read goes to the store. */
   const invalidate = () => {
     current = null;
+    currentData = null;
   };
   const unsubscribe = store.subscribe(invalidate);
 
@@ -45,5 +48,23 @@ export function createListSnapshot(store) {
     return current;
   }
 
-  return { read, invalidate, destroy: unsubscribe };
+  /**
+   * Read the records that All tasks shows, or share the read in flight or the last result.
+   * Readers must not change the records.
+   * @returns {Promise<{lists: object[], tasks: object[], memberships: object[], notes: object[]}>} the records
+   */
+  function readData() {
+    if (!currentData) {
+      const reading = store.snapshot(['lists', 'tasks', 'memberships', 'notes']).catch((error) => {
+        if (currentData === reading) {
+          currentData = null;
+        }
+        throw error;
+      });
+      currentData = reading;
+    }
+    return currentData;
+  }
+
+  return { read, readData, invalidate, destroy: unsubscribe };
 }

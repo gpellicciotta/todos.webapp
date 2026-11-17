@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createListSnapshot } from '../../src/js/core/list-snapshot.js';
+import { mountAllTasks } from '../../src/js/views/all-tasks.js';
 import { mountLists } from '../../src/js/views/lists.js';
 import { freshStore } from './store-helpers.js';
 
@@ -63,6 +64,30 @@ describe('createListSnapshot (TEC-16)', () => {
     await expect(snapshot.read()).rejects.toThrow('offline');
     expect((await snapshot.read()).lists).toHaveLength(2);
     expect(reads).toHaveBeenCalledTimes(2);
+  });
+
+  it('reads the records of All tasks once until a write, and only the stores it shows', async () => {
+    await setup();
+    const reads = vi.spyOn(store, 'snapshot');
+    const first = await snapshot.readData();
+    expect(await snapshot.readData()).toBe(first);
+    expect(reads).toHaveBeenCalledTimes(1);
+    expect(Object.keys(first).sort()).toEqual(['lists', 'memberships', 'notes', 'tasks']);
+    await store.createTask({ description: 'Laundry' });
+    const after = await snapshot.readData();
+    expect(after).not.toBe(first);
+    expect(after.tasks).toHaveLength(2);
+  });
+
+  it('lets All tasks render from the shared records without reading the store again', async () => {
+    await setup();
+    await snapshot.readData();
+    const reads = vi.spyOn(store, 'snapshot');
+    const view = document.body.appendChild(document.createElement('div'));
+    screen = mountAllTasks(view, { store, toaster: { show() {} }, readRecords: snapshot.readData });
+    await screen.idle();
+    expect(reads).not.toHaveBeenCalled();
+    expect(view.querySelectorAll('.task-row')).toHaveLength(1);
   });
 
   it('lets the Lists screen render from the snapshot without reading the tasks again', async () => {
