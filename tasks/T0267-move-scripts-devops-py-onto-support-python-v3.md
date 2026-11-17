@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1638.4, input: 142, output: 58823, cache_read: 10253869, cache_write: 177358}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T10:12:29Z"
 ---
 # T0267: Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override
 
@@ -73,4 +78,7 @@ Mechanical files: scripts/draw-wireframes.py
 
 - [2026-11-17] **[Doc]**
   Updated docs/devops.md for DevopsCli, the .venv setup, and the renamed option, and appended two CHANGELOG bullets.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
