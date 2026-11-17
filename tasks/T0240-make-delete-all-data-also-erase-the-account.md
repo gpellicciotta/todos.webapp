@@ -12,14 +12,14 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 640.6, input: 136, output: 42037, cache_read: 10566245, cache_write: 183916}
+  worker: {turns: 2, duration_s: 662.0, input: 148, output: 43264, cache_read: 11655824, cache_write: 191691}
   review: {turns: 1, duration_s: 98.2, input: 49490, output: 2339, cache_read: 419712, cache_write: 0}
 review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T03:32:57Z"
 reviewed_by: "@codex"
 review_session: codex-20261117-32aee0
-work_duration: 748.4
+work_duration: 794.2
 ---
 # T0240: Make Delete all data also erase the account's lists and tasks while connected, queued while offline
 

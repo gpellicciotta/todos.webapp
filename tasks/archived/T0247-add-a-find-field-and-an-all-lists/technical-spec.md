@@ -23,7 +23,7 @@ Size estimate: 7 files, 350 lines.
 
 ### Matching
 - Text matches list names and task descriptions, ignoring case and accents, anywhere in the text.
-  Reuse `foldText` from [list-find.js](../../../src/js/core/list-find.js).
+  Reuse `foldText` from [list-find.js](../../../../src/js/core/list-find.js).
 - Matches keep the bin's order, with no ranking.
 - The rows filter once typing pauses for 150 ms (`TEC-16`); the type choice applies at once.
 

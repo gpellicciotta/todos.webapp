@@ -6,5 +6,21 @@
   "T0239": {
     "description": "Made occurrences optional when validating format 2 backups on import.",
     "purged_at": "2026-11-16"
+  },
+  "T0255": {
+    "description": "Close the task editor when the row of the task it shows is clicked again.",
+    "purged_at": "2026-11-17"
+  },
+  "T0253": {
+    "description": "Add at least 0.5rem of space above the Search or add a task bar.",
+    "purged_at": "2026-11-17"
+  },
+  "T0252": {
+    "description": "Give Keyboard shortcuts its own Settings section, keeping About as the last section.",
+    "purged_at": "2026-11-17"
+  },
+  "T0246": {
+    "description": "Keep the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.",
+    "purged_at": "2026-11-17"
   }
 }

@@ -12,8 +12,8 @@ review: human
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 7, duration_s: 0.0}
-work_duration: 85.4
+  worker: {turns: 8, duration_s: 318.9, input: 76, output: 30342, cache_read: 3798783, cache_write: 138932}
+work_duration: 338.9
 ---
 # T0257: Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off
 
