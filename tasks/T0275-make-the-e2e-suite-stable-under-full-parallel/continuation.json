@@ -1,0 +1,16 @@
+{"schema": 1,
+ "completed": [
+  {"item": "Fix all-tasks just added row flake (2 s highlight timer, lost second add)", "evidence": "bc7f7ae; stress 80/80 passed, was 75/80 failing 3"},
+  {"item": "Fix sidebar-find:43 flake (150 ms find debounce raced End)", "evidence": "bc7f7ae; same stress run, 2 failures before, 0 after"},
+  {"item": "Bump stale service worker VERSION left by T0278 so check passes", "evidence": "bc7f7ae; check-sw-version.mjs exit 0"},
+  {"item": "Fix serve.test.js pid file flake found in check run 3", "evidence": "b5a2a17; 10/10 repeated runs passed"},
+  {"item": "CHANGELOG bullets under v0.5.1-pre", "evidence": "bc7f7ae, b5a2a17"}
+ ],
+ "remaining": [
+  "Three consecutive python scripts/devops.py check passes on b5a2a17 (two passed on bc7f7ae; restart interrupted)",
+  "validation-proof.md with verbatim output",
+  "Task file steps checked, log entries, outcomes, plan tasks validate --completion"
+ ],
+ "next_action": "Run python scripts/devops.py check three times on b5a2a17 with E2E_PORT=8771 and the worktree .venv, then record proof.",
+ "blocker": null,
+ "scope": null}
