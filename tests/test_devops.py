@@ -604,6 +604,21 @@ def test_the_release_action_keeps_no_github_release_as_an_alias(monkeypatch):
     assert calls[0][1].skip_github_release is True
 
 
+def test_the_release_action_keeps_every_option_when_devops_cli_forwards_only_some(monkeypatch, tmp_path):
+    def forward_dry_run_and_yes(self, args, logger):
+        """Forward only dry_run and yes, as support-python 3.1.0 does."""
+        self.project.logger = logger
+        return 0 if self.project.release(dry_run=args.dry_run, assume_yes=args.yes) else 1
+
+    monkeypatch.setattr(devops.DevopsCli, "_release", forward_dry_run_and_yes)
+    calls = capture_release(monkeypatch)
+    argv = ["release", "0.2.0", "--dry-run", "--skip-checks", "--skip-github-release", "--yes"]
+    assert devops.main([*argv, "--backend-dir", str(tmp_path)]) == 0
+    [(_, opts)] = calls
+    assert (opts.skip_checks, opts.skip_github_release) == (True, True)
+    assert (opts.release_version, opts.backend_dir) == ("0.2.0", str(tmp_path))
+
+
 def test_the_release_override_reports_a_failed_step_and_exits_1(monkeypatch, capsys):
     def fail(root, opts):
         raise devops.ReleaseError("main is 2 commit(s) behind origin/main; pull first.")

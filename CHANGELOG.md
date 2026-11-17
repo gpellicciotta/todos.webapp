@@ -75,6 +75,7 @@ All notable changes to this project are documented here.
 - Sync: Synced the view options, the list order, the Lists screen sort, and Make Enter add through the account's user settings routes while connected, merging each by edit time; the theme, the server URL, the panel widths, and local mode stay on the device (SYN-13).
 - FrontEnd: Redrew the screens when a synced setting arrives, applying view options once their panel closes and a list order once a drag ends.
 - Tests: Added a two-device settings sync e2e spec and a user settings contract test against a real todos server.
+- Tooling: Made `devops.py release` pass `--skip-checks` and `--skip-github-release` to the todos release itself, since support-python before 3.3.0 dropped them, which also broke the dry run.
 
 ## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.

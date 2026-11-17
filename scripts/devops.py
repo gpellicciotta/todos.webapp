@@ -828,10 +828,17 @@ def build_cli(root: Path = REPO_ROOT) -> DevopsCli:
             return 1
 
     def release(args, logger) -> int:
-        """Hand the todos release options to the project, then run DevopsCli's release action."""
+        """Run the todos release with every option; support-python before 3.3.0 forwards only some of them."""
+        project.logger = logger
         project.release_target = args.release_version
         project.backend_dir = args.backend_dir
-        return cli._release(args, logger)
+        released = project.release(
+            dry_run=args.dry_run,
+            assume_yes=args.yes,
+            skip_checks=args.skip_checks,
+            skip_github_release=args.skip_github_release,
+        )
+        return 0 if released else 1
 
     cli.add_action("e2e", "run the Playwright end-to-end tests, like test --slow", e2e, usage_suffix="")
     cli.add_action(
