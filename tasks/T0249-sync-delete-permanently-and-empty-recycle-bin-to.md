@@ -1,11 +1,11 @@
 ---
 id: T0249
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0249-sync-delete-permanently-and-empty-recycle-bin-to
+worktree: .plan/work/T0249-sync-delete-permanently-and-empty-recycle-bin-to
+status: active
+started_at: "2026-11-17T01:32:26Z"
 ended_at: —
 review: agent
 preview: none
