@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 199.6, input: 34, output: 6660, cache_read: 1047912, cache_write: 119121}
+  worker: {turns: 3, duration_s: 301.8, input: 54, output: 9073, cache_read: 1927724, cache_write: 128817}
 work_duration: 4355.9
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T06:23:15Z"
 ---
 # T0077: Add a 150-list render check to the performance spec, and record 500 lists
 
@@ -47,4 +50,7 @@ Update the measured numbers in ui-design.md.
   - Files touched: 0.
   - Lines touched: 0.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
