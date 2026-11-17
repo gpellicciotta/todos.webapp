@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 386.8, input: 42, output: 9937, cache_read: 1267401, cache_write: 43675}
+  worker: {turns: 2, duration_s: 782.5, input: 70, output: 16128, cache_read: 2348430, cache_write: 60217}
   review: {turns: 1, duration_s: 517.2, input: 186810, output: 21590, cache_read: 2442978}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T01:14:32Z"
-reviewed_by: "@gemini"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T01:30:32Z"
 review_session: antigravity-20261117-735877
 work_duration: 928.2
 ---
@@ -82,4 +81,7 @@ Stop cutting off task descriptions and list names while the screen has room to s
 
 - [2026-11-17] **[Verify]**
   Review round 1 rework: bumped service worker VERSION and hashes, fixed lint comma, seeded long task and binned rows and asserted row widths, shortened doc sentences. Screenshots were captured in the first pass.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
