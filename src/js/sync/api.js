@@ -105,6 +105,16 @@ export function createApi({ session, fetch = (...args) => globalThis.fetch(...ar
     },
 
     /**
+     * Mark an account for deletion; the service purges marked accounts later, with their lists and tasks.
+     * @param {number|string} userId the account's user ID
+     * @returns {Promise<{status: number, ok: boolean, headers: object, body: any}>} the reply
+     * @throws {SyncStop} without a token (`auth`) or a connection (`retry`)
+     */
+    markAccountDeleted(userId) {
+      return api.send('PUT', `/api/users/${encodeURIComponent(userId)}`, { body: { delete: true, reason: 'Requested by the user' } });
+    },
+
+    /**
      * Read every list the account can see, trashed ones included, from the snapshot of the change feed.
      * @returns {Promise<object[]>} the `List` objects
      * @throws {SyncStop} when the service answers with another sync protocol than 1 (`upgrade`)

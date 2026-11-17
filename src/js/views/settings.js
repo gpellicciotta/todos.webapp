@@ -80,6 +80,13 @@ const STRINGS = Object.freeze({
   syncAndDisconnect: 'Sync and disconnect',
   disconnectAnyway: 'Disconnect anyway',
   cancel: 'Cancel',
+  deleteAccount: 'Delete account',
+  deleteAccountTitle: 'Delete your account?',
+  deleteAccountText: (email) => `This marks ${email} for deletion. The service erases the account later, with all its lists and tasks. This cannot be undone from the app.`,
+  deleteAccountKeep: 'You stay signed out afterwards, and your own lists and tasks stay on this device.',
+  deleteAccountLabel: 'Type the account email to confirm',
+  deleteAccountMarked: 'Account marked for deletion. You are disconnected, and your data stays on this device.',
+  deleteAccountFailed: 'The account could not be marked for deletion, so you are still connected. Try again.',
   disconnected: 'Disconnected. Your data stays on this device.',
   syncFailed: 'The changes could not sync, so you are still connected. Try again.',
   countFailed: 'The pending changes could not be counted, so you are still connected. Try again.',
@@ -488,12 +495,81 @@ async function askDisconnect(doc, parent, opener, pending) {
 }
 
 /**
+ * Ask before marking the account for deletion; the confirm button needs the account email typed.
+ * The dialog stays open when the request fails, so the user can try again.
+ * @param {Document} doc the document
+ * @param {HTMLElement} parent the element that holds the dialog while open
+ * @param {HTMLElement} opener the Delete account button
+ * @param {string} email the account email
+ * @param {() => Promise<void>} mark marks the account and disconnects; rejects when that fails
+ * @param {{show: (message: string) => void}} [toaster] shows the problems
+ * @returns {Promise<void>}
+ */
+async function askDeleteAccount(doc, parent, opener, email, mark, toaster) {
+  const dialog = make(doc, 'dialog', 'dialog');
+  dialog.setAttribute('aria-labelledby', 'settings-delete-account-title');
+  const header = make(doc, 'div', 'dialog__header');
+  const title = make(doc, 'h2', 'dialog__title', STRINGS.deleteAccountTitle);
+  title.id = 'settings-delete-account-title';
+  header.append(title);
+  const body = make(doc, 'div', 'dialog__body settings__delete-all');
+  const field = make(doc, 'div', 'field');
+  const label = make(doc, 'label', 'field__label', STRINGS.deleteAccountLabel);
+  label.htmlFor = 'settings-delete-account-email';
+  const input = make(doc, 'input', 'field__control');
+  Object.assign(input, { id: label.htmlFor, type: 'text', autocomplete: 'off', spellcheck: false });
+  field.append(label, input);
+  body.append(make(doc, 'p', '', STRINGS.deleteAccountText(email)), make(doc, 'p', 'settings__hint', STRINGS.deleteAccountKeep), field);
+  const actions = make(doc, 'div', 'dialog__actions');
+  const cancel = button(doc, 'button button--secondary', STRINGS.cancel);
+  cancel.dataset.dialogClose = 'cancel';
+  const confirm = button(doc, 'button button--danger', STRINGS.deleteAccount);
+  confirm.disabled = true;
+  let busy = false;
+  const typed = () => input.value === email;
+  input.addEventListener('input', () => {
+    confirm.disabled = busy || !typed();
+  });
+  actions.append(cancel, confirm);
+  dialog.append(header, body, actions);
+  parent.append(dialog);
+  const closed = confirmDialog(dialog, { opener, initialFocus: input });
+  confirm.addEventListener('click', async () => {
+    if (busy || !typed()) {
+      return;
+    }
+    busy = true;
+    for (const control of [confirm, input, cancel]) {
+      control.disabled = true;
+    }
+    try {
+      await mark();
+    }
+    catch (error) {
+      console.error('Marking the account for deletion failed:', error);
+      toaster?.show(STRINGS.deleteAccountFailed);
+      busy = false;
+      for (const control of [input, cancel]) {
+        control.disabled = false;
+      }
+      confirm.disabled = !typed();
+      (confirm.disabled ? input : confirm).focus();
+      return;
+    }
+    toaster?.show(STRINGS.deleteAccountMarked);
+    dialog.close('delete');
+  });
+  await closed;
+  dialog.remove();
+}
+
+/**
  * Fill the Connection section for the session state, and refill it when the state changes.
  * @param {Document} doc the document
  * @param {object} options the session, the sync hook, the preference storage, the toaster, and `navigate`
  * @returns {{element: HTMLElement, destroy: () => void}} the section
  */
-function connectionSection(doc, { getStorage, session, sync, toaster, assign }) {
+function connectionSection(doc, { getStorage, session, sync, toaster, assign, store, api }) {
   const element = section(doc, 'connection', STRINGS.connection);
   const heading = element.firstChild;
   heading.tabIndex = -1;
@@ -561,6 +637,26 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign }) 
   }
 
   /**
+   * Ask, mark the account for deletion on the service, then disconnect as Disconnect does.
+   * @param {HTMLElement} opener the Delete account button
+   * @returns {Promise<void>}
+   */
+  async function deleteAccount(opener) {
+    const email = session.account()?.email ?? '';
+    await askDeleteAccount(doc, element, opener, email, async () => {
+      const userId = await store.queue.getState('user-id');
+      if (userId === null || userId === undefined) {
+        throw new Error('The user ID is not known yet');
+      }
+      const reply = await api.markAccountDeleted(userId);
+      if (!reply.ok) {
+        throw new Error(`The service answered ${reply.status}`);
+      }
+      await session.disconnect();
+    }, toaster);
+  }
+
+  /**
    * Create the status line and hint of a failed sign-in.
    * @returns {HTMLElement[]} the lines
    */
@@ -619,6 +715,9 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign }) 
     const log = make(doc, 'a', 'button button--secondary', STRINGS.syncLog);
     log.href = '#/settings/sync-log';
     actions.append(log, leave);
+    if (state === 'connected' && store && api) {
+      actions.append(button(doc, 'button button--danger', STRINGS.deleteAccount, (event) => deleteAccount(event.currentTarget)));
+    }
     body.replaceChildren(...parts, actions);
     if (justFinished) {
       actions.firstElementChild.focus();
@@ -716,11 +815,12 @@ function aboutSection(doc) {
  * @param {object} [options.session] the session, for the Connection section
  * @param {{pendingCount: () => Promise<number>, syncNow: () => Promise<void>, state: () => object, subscribe: Function}} [options.sync] the sync engine
  * @param {(hash: string, settings?: {replace?: boolean}) => void} [options.navigate] opens a route, setting the location hash by default
+ * @param {{markAccountDeleted: (userId: number|string) => Promise<{ok: boolean, status: number}>}} [options.api] the API client, for Delete account
  * @param {(url: string) => void} [options.assign] opens the Auth URL, `location.assign` by default
  * @returns {{update: (route?: object) => void, destroy: () => void}} the screen
  */
 export function mountSettings(view, {
-  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, navigate = (hash, { replace = false } = {}) => {
+  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, api, navigate = (hash, { replace = false } = {}) => {
     const { location } = view.ownerDocument.defaultView;
     if (replace) {
       location.replace(hash);
@@ -732,7 +832,7 @@ export function mountSettings(view, {
 } = {}) {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
-  const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign });
+  const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign, store, api });
   const data = dataSection(doc, store, toaster, { session, sync });
   root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
   view.replaceChildren(root);

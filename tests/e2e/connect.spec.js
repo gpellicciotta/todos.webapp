@@ -168,6 +168,30 @@ test('disconnecting deletes the token and shows Local only', async ({ page }) =>
   expect(calls.at(-1)).toMatchObject({ method: 'DELETE', url: `${SERVER}/api/auth-token`, authorization: 'Bearer session-1' });
 });
 
+test('Delete account marks the account on the service, disconnects, and keeps the local data', async ({ page }) => {
+  const calls = await mockServices(page);
+  await page.addInitScript((record) => {
+    if (!sessionStorage.getItem('seeded')) {
+      sessionStorage.setItem('seeded', '1');
+      localStorage.setItem('todos.session', JSON.stringify(record));
+    }
+  }, SESSION);
+  await open(page, '#/settings');
+  const card = page.locator('section[aria-labelledby="settings-connection"]');
+  await expect(card).toContainText('Signed in as Jane Doe (jane@example.com)');
+  await card.getByRole('button', { name: 'Delete account' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete your account?' });
+  await expect(dialog).toContainText('jane@example.com');
+  const confirm = dialog.getByRole('button', { name: 'Delete account' });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByRole('textbox').fill('jane@example.com');
+  await confirm.click();
+  await expect(card).toContainText('Not connected. Your data stays on this device.');
+  expect(await storedSession(page)).toBeNull();
+  const marked = calls.find((call) => call.method === 'PUT');
+  expect(marked).toMatchObject({ url: `${SERVER}/api/users/3`, authorization: 'Bearer session-1' });
+});
+
 test('an expired session asks to sign in again and keeps local work going', async ({ page }) => {
   await page.addInitScript((record) => localStorage.setItem('todos.session', JSON.stringify(record)), { ...SESSION, expiry: '2000-01-01T00:00:00Z' });
   await open(page, '#/settings');

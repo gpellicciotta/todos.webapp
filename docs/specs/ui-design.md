@@ -805,6 +805,11 @@ Settings is one page with these sections:
 - Connected, the section also shows the sync state and a Sync log link.
 - An expired session adds "Your session expired." with Sign in again, which signs in directly.
 - Disconnect opens a dialog; without pending changes it offers Cancel and Disconnect, and a toast confirms.
+- Delete account (`CON-14`) is a danger button after Disconnect, shown only while connected; Delete all data never touches the account.
+  Its dialog names the account email and says the service erases the account later, with all its lists and tasks.
+  Delete account enables only after the user types the account email, exact.
+  It sends `PUT /api/users/{{user-id}}` with `{ "delete": true }`; a 2xx reply disconnects as Disconnect does, keeps the local data, and shows a toast.
+  A failure keeps the dialog open and the session, with an error toast.
 - The server URL defaults to `https://todos.pellicciotta.com`; an invalid address shows an error, and empty restores it.
 - It takes https, or http on `localhost`, `127.0.0.1`, or `[::1]`; the query and fragment are dropped.
 

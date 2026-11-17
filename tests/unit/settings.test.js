@@ -41,6 +41,88 @@ describe('Disconnect in Settings', () => {
   });
 });
 
+describe('Delete account in Settings', () => {
+  /**
+   * Mount Settings with a session, a user id, and an API stand-in.
+   * @param {{state?: string, reply?: object|Error}} [options] the session state and the service reply
+   * @returns {{view: HTMLElement, session: object, toaster: {show: Function}, api: object}} the parts
+   */
+  function mountDeleting({ state = 'connected', reply = { ok: true, status: 200 } } = {}) {
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = {
+      state: () => state,
+      account: () => ({ name: 'Jane Doe', email: 'jane@example.com', server: 'https://todos.example.com' }),
+      subscribe: () => () => {},
+      serverUrl: () => 'https://todos.example.com',
+      disconnect: vi.fn(async () => {}),
+    };
+    const api = { markAccountDeleted: vi.fn(async () => {
+      if (reply instanceof Error) {
+        throw reply;
+      }
+      return reply;
+    }) };
+    const store = { queue: { getState: async () => 7 }, snapshot: async () => ({ lists: [], tasks: [] }) };
+    const toaster = { show: vi.fn() };
+    mountSettings(view, { session, sync: { pendingCount: async () => 0 }, toaster, store, api, getStorage: () => null });
+    return { view, session, toaster, api };
+  }
+
+  const find = (root, text) => [...root.querySelectorAll('button')].find((button) => button.textContent === text);
+
+  it('is absent in local mode', () => {
+    const { view } = mountDeleting({ state: 'local' });
+    expect(find(view, 'Delete account')).toBeUndefined();
+  });
+
+  it('needs the account email typed before it enables', async () => {
+    const { view } = mountDeleting();
+    find(view, 'Delete account').click();
+    await settle();
+    const dialog = document.querySelector('dialog');
+    expect(dialog.textContent).toContain('jane@example.com');
+    const confirm = find(dialog, 'Delete account');
+    const input = dialog.querySelector('input');
+    expect(confirm.disabled).toBe(true);
+    input.value = 'jane@example.co';
+    input.dispatchEvent(new Event('input'));
+    expect(confirm.disabled).toBe(true);
+    input.value = 'jane@example.com';
+    input.dispatchEvent(new Event('input'));
+    expect(confirm.disabled).toBe(false);
+  });
+
+  it('marks the account and disconnects after a 2xx reply', async () => {
+    const { view, session, api, toaster } = mountDeleting();
+    find(view, 'Delete account').click();
+    await settle();
+    const dialog = document.querySelector('dialog');
+    const input = dialog.querySelector('input');
+    input.value = 'jane@example.com';
+    input.dispatchEvent(new Event('input'));
+    find(dialog, 'Delete account').click();
+    await settle();
+    expect(api.markAccountDeleted).toHaveBeenCalledWith(7);
+    expect(session.disconnect).toHaveBeenCalled();
+    expect(toaster.show).toHaveBeenCalledWith(expect.stringContaining('marked for deletion'));
+  });
+
+  it('keeps the session and shows a toast when the service refuses', async () => {
+    const { view, session, toaster } = mountDeleting({ reply: { ok: false, status: 403 } });
+    find(view, 'Delete account').click();
+    await settle();
+    const dialog = document.querySelector('dialog');
+    const input = dialog.querySelector('input');
+    input.value = 'jane@example.com';
+    input.dispatchEvent(new Event('input'));
+    find(dialog, 'Delete account').click();
+    await settle();
+    expect(session.disconnect).not.toHaveBeenCalled();
+    expect(toaster.show).toHaveBeenCalledWith(expect.stringContaining('could not be marked'));
+    expect(document.querySelector('dialog')).not.toBeNull();
+  });
+});
+
 describe('Connection in Settings while connected', () => {
   it('shows the sync state and a Sync log link', () => {
     const { view } = mountConnected({ pendingCount: async () => 0, state: () => ({ status: 'offline', pending: 2 }), subscribe: () => () => {} });

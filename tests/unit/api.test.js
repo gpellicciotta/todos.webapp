@@ -31,6 +31,20 @@ describe('the API client', () => {
     await expect(api.send('GET', '/api/lists')).rejects.toMatchObject({ kind: 'auth' });
   });
 
+  it('marks an account for deletion with PUT /api/users/{id}', async () => {
+    const calls = [];
+    const fetch = async (url, init) => {
+      calls.push({ url, init });
+      return { status: 200, ok: true, headers: { get: () => null }, json: async () => ({ id: 7 }) };
+    };
+    const api = createApi({ session: { token: () => 'token-1', serverUrl: () => 'https://todos.example.com' }, fetch });
+    const reply = await api.markAccountDeleted(7);
+    expect(reply.ok).toBe(true);
+    expect(calls[0].url).toBe('https://todos.example.com/api/users/7');
+    expect(calls[0].init.method).toBe('PUT');
+    expect(JSON.parse(calls[0].init.body)).toEqual({ delete: true, reason: 'Requested by the user' });
+  });
+
   it('judges replies', () => {
     const reply = (status, headers = {}) => ({ status, ok: status < 300, headers: { get: (name) => headers[name.toLowerCase()] ?? null } });
     expect(judge(reply(200))).toBe('done');

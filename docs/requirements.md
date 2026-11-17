@@ -214,6 +214,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - CON-11: Version 1.0.0 connects to one account and one server at a time.
 - CON-12: The server URL defaults to the production service and can be changed in the settings.
 - CON-13: An expired session keeps the app usable, queues changes, and asks the user to sign in again.
+- CON-14: While connected, Delete account marks the account for deletion on the service, then disconnects and keeps the local data.
 
 ### Sync
 - SYN-1: While connected, every change applies locally first and syncs to the service in the background.
