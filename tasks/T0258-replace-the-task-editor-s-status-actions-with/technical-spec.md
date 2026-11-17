@@ -9,8 +9,13 @@
 - docs/requirements.md
 - docs/specs/visual-style-guide.md
 - src/demo/visual-style-gallery.html
+- Added during execution: src/css/views.css, src/img/icons.svg (a minus icon), src/service-worker.js (VERSION bump).
+- Unchanged: docs/requirements.md, since T0257 already worded TSK-4, TSK-15, and TSK-16 for this design.
 
 Size estimate: 8 files, 400 lines.
+Size note: measured 10 counted files and 583 lines; unit tests are 252 of them, and the UI change cannot merge without its tests and styles.
+Mechanical command: `node scripts/check-sw-version.mjs --update`.
+Mechanical files: scripts/sw-precache-hashes.json
 
 ### Design Source
 - The Task Editor Status section of T0257's brief governs; revise this spec if sign-off changed it.
