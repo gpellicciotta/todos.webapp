@@ -1,6 +1,7 @@
 ---
 id: T0262
 owner: "@claude"
+session: claude-20261117-321641
 needs: []
 branch: task/T0262-split-the-task-editor-into-content-status-and
 worktree: .plan/work/T0262-split-the-task-editor-into-content-status-and
@@ -24,9 +25,9 @@ Split the long task editor into three tabs, by the Tabs rules in T0257's signed-
 - Rules and tests: [technical-spec.md](T0262-split-the-task-editor-into-content-status-and/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read T0257's signed-off brief, task-editor.js, editor-panel.js, and the vendored tabs.js.
-- [ ] **[Implement]** Author failing unit and e2e tests for the tabs, their keys, the opening tab, and the Status layout.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
+- [x] **[Read]**      Read T0257's signed-off brief, task-editor.js, editor-panel.js, and the vendored tabs.js.
+- [x] **[Implement]** Author failing unit and e2e tests for the tabs, their keys, the opening tab, and the Status layout.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
 - [ ] **[Implement]** Implement the tabs with the vendored tabs.js, the Status rules, and Delete at the Status bottom.
 - [ ] **[Verify]**    Run the unit suite and the task editor e2e spec and confirm they pass.
 - [ ] **[Visual]**    Capture each tab at desktop panel and phone widths, in both themes.
@@ -42,3 +43,9 @@ Split the long task editor into three tabs, by the Tabs rules in T0257's signed-
 
 - [2026-11-17] **[Doc]**
   Revised to the signed-off design: Lists and Delete move to Status; no header More menu.
+
+- [2026-11-17] **[Verify]**
+  New unit and e2e tab tests fail as expected: no tablist exists and the notes field lacks search.
+  - Unit: 10 failed, 59 passed.
+  - E2E: 2 failed, no tablist found.
+
