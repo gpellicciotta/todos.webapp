@@ -1,11 +1,11 @@
 ---
 id: T0076
-owner: ~
-needs: ['T0072', 'T0074', 'T0263']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0076-add-move-to-top-and-move-to-bottom
+worktree: .plan/work/T0076-add-move-to-top-and-move-to-bottom
+status: active
+started_at: "2026-11-17T15:09:28Z"
 ended_at: —
 review: agent
 preview: none
