@@ -22,9 +22,10 @@ Size estimate: 7 files, 300 lines.
 - It needs the account email typed, exact, before Delete account enables.
 - After a 2xx reply, the app disconnects as Disconnect does and keeps the user's own data locally.
 
-### Open Points
-- Should the dialog offer undo during the grace period, or just name the purge delay?
-- May a marked account still sign in during the grace period, and what does the app show then?
+### Decisions
+- **[Decided]** The dialog offers no undo and names no delay: the service sets the delay, and the specs expose no endpoint for it.
+- **[Decided]** Sign-in during the grace period stays unchanged: the service specs do not say it is blocked, so the app adds no special state.
+- The user ID comes from the sync queue state `user-id`; the dialog fails with a toast while it is unknown.
 
 ### Tests
 - Unit: the button shows only while connected and needs the email typed.
