@@ -5,17 +5,22 @@ session: claude-20261117-6c364e
 needs: []
 branch: task/T0259-make-the-task-row-s-status-button-tick
 worktree: .plan/work/T0259-make-the-task-row-s-status-button-tick
-status: active
+status: completed
 started_at: "2026-11-17T12:54:07Z"
-ended_at: —
+ended_at: "2026-11-17T13:26:23Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1684.7, input: 170, output: 48449, cache_read: 11624354, cache_write: 161818}
-review_status: pending
+  review: {turns: 1, duration_s: 184.6, input: 45315, output: 2246, cache_read: 619264, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T13:22:53Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-4196ac
+work_duration: 1926.4
+completion-commit: 3871f9994d45df0d556786cfb1adc764c410bcc2
 ---
 # T0259: Make the task row's status button tick by target, never untick, and offer Undo after every tick
 
@@ -36,7 +41,7 @@ Make a click on the row's status button only ever tick, by the Task Row rules in
 - [x] **[Verify]**    Run the unit suite and the All tasks and list e2e specs and confirm they pass.
 - [x] **[Visual]**    Capture rows at targets 1 and 3 in each status, and the Undo toast, in both themes.
 - [x] **[Doc]**       Update the Task Row section, TSK-4 in the requirements, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -76,4 +81,11 @@ Make a click on the row's status button only ever tick, by the Task Row rules in
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-1.md](T0259-make-the-task-row-s-status-button-tick/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
