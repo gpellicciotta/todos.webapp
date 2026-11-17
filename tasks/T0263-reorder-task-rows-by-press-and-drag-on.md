@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1832.0, input: 10, output: 1841, cache_read: 650499, cache_write: 6427}
+  worker: {turns: 3, duration_s: 1898.1, input: 22, output: 3277, cache_read: 1771201, cache_write: 11649}
 work_duration: 1920.3
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T14:22:01Z"
 ---
 # T0263: Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle
 
@@ -63,4 +66,7 @@ Replace the always-visible task row drag handles with direct reordering, by the 
   - Files touched: 11.
   - Lines touched: 619.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
