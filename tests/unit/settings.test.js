@@ -27,6 +27,80 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+describe('Reminders in Settings', () => {
+  /**
+   * Mount Settings in local mode over in-memory storage and a Notification stand-in.
+   * @param {object|null} notification the stand-in: `{permission, requestPermission}`, or null for no support
+   * @returns {{view: HTMLElement, data: Map, toaster: {show: Function}}} the parts
+   */
+  function mountReminders(notification) {
+    const view = document.body.appendChild(document.createElement('div'));
+    const data = new Map();
+    const storage = { getItem: (key) => data.get(key) ?? null, setItem: (key, value) => data.set(key, value), removeItem: (key) => data.delete(key) };
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
+    const toaster = { show: vi.fn() };
+    mountSettings(view, { session, toaster, getStorage: () => storage, notification, now: () => 1_000 });
+    return { view, data, toaster };
+  }
+
+  const switchOf = (view) => view.querySelector('[data-reminders="switch"]');
+  const leadOf = (view) => view.querySelector('[data-reminders="lead"]');
+
+  it('is off by default, with the lead time off the table until reminders are on', () => {
+    const { view } = mountReminders({ permission: 'default', requestPermission: vi.fn() });
+    expect(switchOf(view).checked).toBe(false);
+    expect(leadOf(view).disabled).toBe(true);
+    expect([...leadOf(view).options].map((option) => option.value)).toEqual(['0', '5', '15', '30', '60']);
+  });
+
+  it('requests permission from the click, then turns on and remembers when it opted in', async () => {
+    const requestPermission = vi.fn(async () => 'granted');
+    const { view, data } = mountReminders({ permission: 'default', requestPermission });
+    switchOf(view).click();
+    await settle();
+    expect(requestPermission).toHaveBeenCalledTimes(1);
+    expect(switchOf(view).checked).toBe(true);
+    expect(leadOf(view).disabled).toBe(false);
+    expect(data.get('todos.reminders')).toBe('true');
+    expect(data.get('todos.reminders-since')).toBe('1000');
+  });
+
+  it('stays off and says why when permission is denied', async () => {
+    const { view, data } = mountReminders({ permission: 'default', requestPermission: vi.fn(async () => 'denied') });
+    switchOf(view).click();
+    await settle();
+    expect(switchOf(view).checked).toBe(false);
+    expect(data.has('todos.reminders')).toBe(false);
+    expect(view.querySelector('[data-reminders="problem"]').textContent).toContain('blocked');
+  });
+
+  it('stays off and says why when notifications are unsupported', () => {
+    const { view } = mountReminders(null);
+    expect(switchOf(view).disabled).toBe(true);
+    expect(view.querySelector('[data-reminders="problem"]').textContent).toContain('does not support');
+  });
+
+  it('remembers the lead time', async () => {
+    const { view, data } = mountReminders({ permission: 'granted', requestPermission: vi.fn(async () => 'granted') });
+    switchOf(view).click();
+    await settle();
+    leadOf(view).value = '15';
+    leadOf(view).dispatchEvent(new Event('change'));
+    expect(data.get('todos.reminder-lead')).toBe('15');
+  });
+
+  it('turns off without asking again', async () => {
+    const requestPermission = vi.fn(async () => 'granted');
+    const { view, data } = mountReminders({ permission: 'default', requestPermission });
+    switchOf(view).click();
+    await settle();
+    switchOf(view).click();
+    await settle();
+    expect(requestPermission).toHaveBeenCalledTimes(1);
+    expect(data.get('todos.reminders')).toBe('false');
+  });
+});
+
 describe('Disconnect in Settings', () => {
   it('says so when the pending changes cannot be counted, and stays connected', async () => {
     const { view, session, toaster } = mountConnected({ pendingCount: () => Promise.reject(new Error('queue closed')) });

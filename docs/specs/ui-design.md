@@ -785,6 +785,9 @@ Settings is one page with these sections:
 - Adding tasks: the Make Enter add switch, on by default, with a hint that names the other adding keys.
   The hint reads "Shift+Enter and Alt+Enter always add. When this is off, Enter only searches."
   It applies at once; a choice the browser cannot store shows a toast and the switch turns back.
+- Reminders: the Remind me when tasks come due switch, off by default, and a Remind me list of lead times (`REM-1` to `REM-3`).
+  The list is off until the switch is on. Turning the switch on asks for notification permission; a denial or a browser without support leaves it off,
+  with a status line that names the reason. The hint says reminders work while ToDo's is open, and that a date-only task reminds at 9:00.
 - Data: Export backup, Import backup, and Delete all data (`BAK-1`, `BAK-5`, `BAK-15`).
 - Delete all data is a danger button, last in Data; connected, it is disabled with the hint "Disconnect first. Deleting here never removes data from your account."
 - Its dialog names the counts, offers Export backup, and enables Delete everything only after the user types DELETE, exact and case-sensitive.

@@ -8,6 +8,7 @@
  * path with the start page and status 200, and caching that as a stylesheet leaves the app unstyled until the next VERSION.
  * Same-origin GET requests are served cache first, except that cached HTML never answers a non-navigation request
  * for any file but the start page; page navigations fall back to the cached start page.
+ * A clicked reminder notification focuses an open window and posts `{type: 'open-task', taskId}` to it, or opens one at the task.
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
  * a navigation to `/admin` reaches the server and never falls back to the app shell.
  * Bump VERSION with every change to a precached file, and keep PRECACHE complete:
@@ -15,7 +16,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-17.12';
+const VERSION = '2026-11-17.15';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -46,6 +47,7 @@ const PRECACHE = [
   'js/core/preferences.js',
   'js/core/query.js',
   'js/core/quick-add.js',
+  'js/core/reminders.js',
   'js/lib/fractional-index.js',
   'js/lib/uuid7.js',
   'js/store/bin.js',
@@ -218,6 +220,31 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'skip-waiting') {
     self.skipWaiting();
   }
+});
+
+/**
+ * Bring the app forward for a clicked notification: focus an open window and tell it which task to open,
+ * or open a window at the task (`REM-6`). A notification without a task, the summary, only opens the app.
+ * @param {string|null} taskId the task of the notification, if any
+ * @returns {Promise<void>} resolves once the window is handled
+ */
+async function openApp(taskId) {
+  const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  if (windows.length > 0) {
+    const [client] = windows;
+    await client.focus();
+    if (taskId) {
+      client.postMessage({ type: 'open-task', taskId });
+    }
+    return;
+  }
+  const path = taskId ? `./#/tasks/${encodeURIComponent(taskId)}` : './';
+  await self.clients.openWindow(new URL(path, self.location.href).href);
+}
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(openApp(event.notification.data?.taskId ?? null));
 });
 
 self.addEventListener('activate', (event) => {

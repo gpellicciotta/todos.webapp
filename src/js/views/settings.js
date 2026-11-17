@@ -1,8 +1,10 @@
 /**
- * Settings screen: Appearance, Adding tasks, Data, Connection, Keyboard shortcuts, and About sections on one page.
+ * Settings screen: Appearance, Adding tasks, Reminders, Data, Connection, Keyboard shortcuts, and About sections on one page.
  *
  * The theme choice applies at once and persists on this device (`todos.theme`).
  * The Make Enter add switch, on by default, sets whether Enter in the add field adds; it persists as `todos.enter-adds`.
+ * The Reminders switch is off by default; turning it on asks for notification permission, and a denial or missing
+ * support leaves it off with the reason. The lead time persists as `todos.reminder-lead` (`REM-1` to `REM-3`).
  * Export backup saves the backup file at once and names it in a toast (`BAK-1`, `BAK-4`); Import backup opens its dialog.
  * In local mode the Connection section explains connected mode, and Connect opens the connect screen.
  * The server URL is kept per device and checked on change (`CON-12`); an empty field restores the default.
@@ -14,7 +16,8 @@
 
 import { backupFileName, exportBackup } from '../core/backup.js';
 import {
-  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readServerUrl, readTheme, writeEnterAdds, writeServerUrl, writeTheme,
+  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readReminderLead, readReminders, readServerUrl, readTheme,
+  writeEnterAdds, writeReminderLead, writeReminders, writeServerUrl, writeTheme,
 } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { confirmDialog } from '../../vendor/design/js/dialog.js';
@@ -23,6 +26,9 @@ import { BUILD_DATE, VERSION } from '../version.js';
 import { openImportDialog, plural } from './import-dialog.js';
 import { SYNC_STRINGS } from './sync-indicator.js';
 import { spriteIcon } from './task-list.js';
+
+/** Event on the window that tells the reminders of this tab that a Reminders choice changed. */
+export const REMINDERS_EVENT = 'todos-reminders-changed';
 
 const SOURCE_URL = 'https://github.com/gpellicciotta/todos.webapp';
 
@@ -36,6 +42,14 @@ const STRINGS = Object.freeze({
   enterAdds: 'Make Enter add',
   enterAddsHint: 'Shift+Enter and Alt+Enter always add. When this is off, Enter only searches.',
   enterAddsNotSaved: 'Make Enter add could not be saved on this device, so it stays as it was.',
+  reminders: 'Reminders',
+  remindersSwitch: 'Remind me when tasks come due',
+  remindersHint: 'Notifies while ToDo\'s is open in a browser tab. A task with a date only reminds at 9:00 on that day.',
+  remindWhen: 'Remind me',
+  leadTime: (minutes) => (minutes === 0 ? 'When the task comes due' : `${minutes} minutes before`),
+  remindersBlocked: 'Notifications are blocked for this site. Allow them in the browser settings, then turn reminders on again.',
+  remindersUnsupported: 'This browser does not support notifications, so reminders cannot work.',
+  remindersNotSaved: 'The reminder choice could not be saved on this device, so it stays as it was.',
   data: 'Data',
   exportBackup: 'Export backup',
   importBackup: 'Import backup',
@@ -234,6 +248,109 @@ function addingSection(doc, getStorage, toaster) {
   });
   label.append(control, doc.createTextNode(STRINGS.enterAdds));
   element.append(label, hint);
+  return element;
+}
+
+/**
+ * Create the Reminders section: an opt-in switch that asks for notification permission, and the lead time.
+ * @param {Document} doc the document
+ * @param {() => Storage} [getStorage] returns the storage of the preferences
+ * @param {{show: (message: string) => void}} [toaster] reports a choice that could not be saved
+ * @param {{permission: string, requestPermission: () => Promise<string>}|null} notification the Notification API, or null
+ * @param {() => number} now the clock in Unix milliseconds
+ * @returns {HTMLElement} the section
+ */
+function remindersSection(doc, getStorage, toaster, notification, now) {
+  const element = section(doc, 'reminders', STRINGS.reminders);
+  const label = make(doc, 'label', 'switch');
+  const control = doc.createElement('input');
+  control.className = 'switch__control';
+  control.type = 'checkbox';
+  control.setAttribute('role', 'switch');
+  control.dataset.reminders = 'switch';
+  const hint = make(doc, 'p', 'settings__hint', STRINGS.remindersHint);
+  hint.id = 'settings-reminders-hint';
+  control.setAttribute('aria-describedby', hint.id);
+  label.append(control, doc.createTextNode(STRINGS.remindersSwitch));
+
+  const lead = doc.createElement('select');
+  lead.className = 'field__control';
+  lead.dataset.reminders = 'lead';
+  lead.id = 'settings-reminder-lead';
+  for (const minutes of [0, 5, 15, 30, 60]) {
+    const option = doc.createElement('option');
+    option.value = String(minutes);
+    option.textContent = STRINGS.leadTime(minutes);
+    lead.append(option);
+  }
+  lead.value = String(readReminderLead(getStorage));
+  const leadLabel = make(doc, 'label', 'field__label', STRINGS.remindWhen);
+  leadLabel.htmlFor = lead.id;
+  const problem = make(doc, 'p', 'settings__hint');
+  problem.dataset.reminders = 'problem';
+  problem.setAttribute('role', 'status');
+  problem.hidden = true;
+
+  const showProblem = (text) => {
+    problem.textContent = text ?? '';
+    problem.hidden = !text;
+  };
+  const sync = () => {
+    lead.disabled = !control.checked;
+    doc.defaultView?.dispatchEvent(new Event(REMINDERS_EVENT));
+  };
+  control.checked = Boolean(notification) && notification.permission === 'granted' && readReminders(getStorage);
+  if (!notification) {
+    control.disabled = true;
+    showProblem(STRINGS.remindersUnsupported);
+  }
+  else if (notification.permission === 'denied') {
+    showProblem(STRINGS.remindersBlocked);
+  }
+  sync();
+
+  control.addEventListener('change', async () => {
+    showProblem(null);
+    if (!control.checked) {
+      if (!writeReminders(false, getStorage)) {
+        control.checked = true;
+        toaster?.show(STRINGS.remindersNotSaved);
+      }
+      sync();
+      return;
+    }
+    control.checked = false;
+    let permission = notification.permission;
+    if (permission !== 'granted') {
+      try {
+        permission = await notification.requestPermission();
+      }
+      catch {
+        permission = 'denied';
+      }
+    }
+    if (permission !== 'granted') {
+      showProblem(STRINGS.remindersBlocked);
+      sync();
+      return;
+    }
+    if (writeReminders(true, getStorage, now())) {
+      control.checked = true;
+    }
+    else {
+      toaster?.show(STRINGS.remindersNotSaved);
+    }
+    sync();
+  });
+  lead.addEventListener('change', () => {
+    if (!writeReminderLead(Number(lead.value), getStorage)) {
+      lead.value = String(readReminderLead(getStorage));
+      toaster?.show(STRINGS.remindersNotSaved);
+    }
+  });
+  const field = make(doc, 'div', 'field');
+  field.append(leadLabel, lead);
+  element.append(label, hint, field, problem);
   return element;
 }
 
@@ -817,10 +934,13 @@ function aboutSection(doc) {
  * @param {(hash: string, settings?: {replace?: boolean}) => void} [options.navigate] opens a route, setting the location hash by default
  * @param {{markAccountDeleted: (userId: number|string) => Promise<{ok: boolean, status: number}>}} [options.api] the API client, for Delete account
  * @param {(url: string) => void} [options.assign] opens the Auth URL, `location.assign` by default
+ * @param {{permission: string, requestPermission: () => Promise<string>}|null} [options.notification] the Notification API, which `globalThis.Notification` supplies by default
+ * @param {() => number} [options.now] the clock in Unix milliseconds
  * @returns {{update: (route?: object) => void, destroy: () => void}} the screen
  */
 export function mountSettings(view, {
-  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, api, navigate = (hash, { replace = false } = {}) => {
+  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, api,
+  notification = globalThis.Notification ?? null, now = Date.now, navigate = (hash, { replace = false } = {}) => {
     const { location } = view.ownerDocument.defaultView;
     if (replace) {
       location.replace(hash);
@@ -834,7 +954,7 @@ export function mountSettings(view, {
   const root = make(doc, 'div', 'settings');
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign, store, api });
   const data = dataSection(doc, store, toaster, { session, sync });
-  root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
+  root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), remindersSection(doc, getStorage, toaster, notification, now), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
   view.replaceChildren(root);
   return {
     /**

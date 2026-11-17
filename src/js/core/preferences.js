@@ -108,6 +108,62 @@ export function writeEnterAdds(value, getStorage) {
   return writePreference('enter-adds', value === true, getStorage);
 }
 
+/** Lead times of reminders in minutes before the due time; core/reminders.js holds the same list. */
+const REMINDER_LEADS = [0, 5, 15, 30, 60];
+
+/**
+ * Read whether reminders are on for this device; they are off unless stored on.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when reminders are on
+ */
+export function readReminders(getStorage = () => globalThis.localStorage) {
+  return readPreference('reminders', false, getStorage) === true;
+}
+
+/**
+ * Store whether reminders are on, and the time they turned on, so older due times never notify.
+ * @param {boolean} value true when reminders are on
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @param {number} [now] the current time in Unix milliseconds
+ * @returns {boolean} true when stored
+ */
+export function writeReminders(value, getStorage, now = Date.now()) {
+  if (value === true && !writePreference('reminders-since', now, getStorage)) {
+    return false;
+  }
+  return writePreference('reminders', value === true, getStorage);
+}
+
+/**
+ * Read when reminders turned on, in Unix milliseconds.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {number} the time, or 0 when never
+ */
+export function readRemindersSince(getStorage = () => globalThis.localStorage) {
+  const value = readPreference('reminders-since', 0, getStorage);
+  return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * Read the reminder lead time in minutes; an unknown value falls back to 0, at the due time.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {number} 0, 5, 15, 30, or 60
+ */
+export function readReminderLead(getStorage = () => globalThis.localStorage) {
+  const value = readPreference('reminder-lead', 0, getStorage);
+  return REMINDER_LEADS.includes(value) ? value : 0;
+}
+
+/**
+ * Store the reminder lead time.
+ * @param {number} minutes 0, 5, 15, 30, or 60
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when stored
+ */
+export function writeReminderLead(minutes, getStorage) {
+  return REMINDER_LEADS.includes(minutes) && writePreference('reminder-lead', minutes, getStorage);
+}
+
 /** Default, minimum, and maximum widths of the side panels in rem; panel-resize.js holds the same limits. */
 const PANEL_DEFAULTS = { sidebar: { fallback: 16, min: 12, max: 24 }, editor: { fallback: 25, min: 20, max: 40 } };
 

@@ -117,6 +117,18 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - OVD-5: On start, the app expires every task that became overdue with behavior `cancel` while it was closed.
 - OVD-6: Overdue handling never changes deleted, `completed`, or `cancelled` tasks.
 
+### Reminders
+- REM-1: Reminders are off by default; Settings turns them on, which asks the browser for notification permission from the click.
+- REM-2: A denied or unsupported permission leaves reminders off and tells the user why.
+- REM-3: The lead time is at the due time, or 5, 15, 30, or 60 minutes before; the device remembers the choice.
+- REM-4: While the app is open in any tab, an open, undeleted task notifies once when its reminder time arrives; a task due on a date only (23:59) notifies at 09:00 that day.
+- REM-5: The notification shows the task description and its due time in the device timezone, and a repeat replaces it instead of stacking.
+- REM-6: Clicking a notification focuses an open app window, or opens one, and opens the task editor.
+- REM-7: A due time notifies once, also after a reload; a changed due time arms again, and completing, cancelling, or deleting the task, or clearing its due time, cancels it.
+- REM-8: A recurring task reminds once per occurrence; the roll-over arms the next occurrence.
+- REM-9: Only one tab schedules (`SYN-12`), and in local mode reminders send no network request (`LOC-3`).
+- REM-10: On start, reminders that came due while the app was closed, since reminders turned on, show as one summary notification.
+
 ### List View
 - LV-1: The list view shows all tasks of one list, with the list name and description.
 - LV-2: The list view shows tasks in the list's manual order by default.

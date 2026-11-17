@@ -12,6 +12,7 @@
  * `[data-shortcut~="search"]` element, each a no-op while the view has none; Escape closes an open editor.
  * The sync indicator shows the sync state beside the user button (see views/sync-indicator.js).
  * While connected, the inbox shows a bell and the broadcast banners of the service (see sync/inbox.js).
+ * With Reminders on in Settings, one tab notifies when a task comes due; a click opens its editor (core/reminders.js).
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
  */
 
@@ -20,6 +21,8 @@ import { watchWorkerUpdates } from '../vendor/design/js/sw-update.js';
 import { createToast } from '../vendor/design/js/toast.js';
 import { countLists } from './core/list-counts.js';
 import { startOverdueTimer } from './core/overdue.js';
+import { readPreference, readReminderLead, readReminders, readRemindersSince, writePreference } from './core/preferences.js';
+import { createReminders } from './core/reminders.js';
 import { openStore } from './store/db.js';
 import { createApi } from './sync/api.js';
 import { createEngine } from './sync/engine.js';
@@ -33,7 +36,7 @@ import { mountList } from './views/list.js';
 import { mountListEditor } from './views/list-editor.js';
 import { mountLists } from './views/lists.js';
 import { mountRecycleBin } from './views/recycle-bin.js';
-import { mountSettings } from './views/settings.js';
+import { mountSettings, REMINDERS_EVENT } from './views/settings.js';
 import { createSeenMarker, mountSyncLog } from './views/sync-log.js';
 import { mountTaskEditor } from './views/task-editor.js';
 import { createViewModel, mountViewOptions } from './views/view-controls.js';
@@ -57,6 +60,77 @@ const SCREENS = {
 const EDITORS = { task: mountTaskEditor, list: mountListEditor, 'view-options': mountViewOptions };
 
 let shell = null;
+
+const LEDGER_KEY = 'reminders-notified';
+
+/**
+ * The tags of notified reminders, kept on this device so a due time notifies once across reloads and tabs.
+ * It has no size cap: the reminders prune the tags of tasks whose due time changed or that left the store.
+ * @returns {{read: () => Set<string>, add: (tags: string[]) => void, prune: (keep: Set<string>) => void}} the ledger
+ */
+function createLedger() {
+  const read = () => new Set(readPreference(LEDGER_KEY, []));
+  return {
+    read,
+    add: (tags) => writePreference(LEDGER_KEY, [...new Set([...read(), ...tags])]),
+    prune: (keep) => writePreference(LEDGER_KEY, [...read()].filter((tag) => keep.has(tag))),
+  };
+}
+
+/**
+ * Show a reminder through the service worker, so a click reaches its `notificationclick` handler.
+ * @param {{title: string, body: string, tag: string, taskId?: string}} reminder the reminder
+ * @returns {Promise<void>} resolves once shown
+ */
+async function showReminder({ title, body, tag, taskId }) {
+  const registration = await navigator.serviceWorker.ready;
+  await registration.showNotification(title, { body, tag, data: taskId ? { taskId } : {}, icon: 'img/app-icon-192.png' });
+}
+
+/**
+ * Run reminders while the preference is on and notifications are allowed; follow changes of the choice in any tab.
+ * @param {object} store the store facade
+ * @param {(hash: string) => void} navigate opens a route
+ */
+function startReminders(store, navigate) {
+  if (!('Notification' in window) || !navigator.serviceWorker) {
+    return;
+  }
+  const reminders = createReminders({
+    store,
+    notify: showReminder,
+    lead: () => readReminderLead(),
+    since: () => readRemindersSince(),
+    ledger: createLedger(),
+    locks: navigator.locks ?? null,
+    win: window,
+    doc: document,
+  });
+  let on = false;
+  const follow = () => {
+    const wanted = readReminders() && Notification.permission === 'granted';
+    if (wanted && !on) {
+      on = true;
+      reminders.start().catch((error) => console.error('Reminders failed:', error));
+    }
+    else if (!wanted && on) {
+      on = false;
+      reminders.stop();
+    }
+    else if (wanted) {
+      reminders.tick();
+    }
+  };
+  window.addEventListener(REMINDERS_EVENT, follow);
+  window.addEventListener('storage', follow);
+  // A click on a notification reaches the page as a message from the worker (see service-worker.js).
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'open-task' && event.data.taskId) {
+      navigate(`#/tasks/${encodeURIComponent(event.data.taskId)}`);
+    }
+  });
+  follow();
+}
 
 /**
  * Show the lasting banner that another tab updated the app, with Reload.
@@ -233,6 +307,8 @@ async function start() {
     await store.purgeExpired();
     // In local mode the same timer rolls recurring tasks over; while connected the service does (`LOC-2`).
     await startOverdueTimer({ store, rollOver: () => session.state() === 'local' }).idle();
+    // After the overdue run, so a task it expires never reminds; scheduling runs off the first paint (`TEC-16`).
+    startReminders(store, (hash) => router.navigate(hash));
   }
   catch (error) {
     console.error('Store failed:', error);

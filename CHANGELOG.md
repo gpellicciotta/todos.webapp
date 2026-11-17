@@ -9,6 +9,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Fixed the All tasks hidden-task toast reading "Task added. hides it." when the Lists filter names only deleted lists, by using the pruned filter for rows and toast.
 - Tests: Made the shell areas e2e test wait for the action bar, main area, and bottom bar, and poll their geometry, so full parallel runs no longer read a null box.
 - FrontEnd: Added Delete account to Settings, which marks the connected account for deletion on the service, then disconnects and keeps the local data (CON-14).
+- FrontEnd: Added Reminders to Settings, an opt-in switch with a lead time that notifies through the service worker when an open task comes due while the app is open, once per due time; a click opens the task editor (REM-1 to REM-10).
 - Sync: Fixed first connect losing live local lists whose identifiers match trashed account lists, by restoring them on the account before upload.
 - Sync: Queued the memberships of a restored list or task, so moves after a restore no longer fail on the account.
 - FrontEnd: Merged the connect screen into the Settings Connection section, which now shows every sign-in phase and keeps `#/connect` as an alias for the Auth return.
