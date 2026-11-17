@@ -5,17 +5,22 @@ session: claude-20261117-6e5e07
 needs: []
 branch: task/T0238-make-the-compact-layout-shell-e2e-test-wait
 worktree: .plan/work/T0238-make-the-compact-layout-shell-e2e-test-wait
-status: active
+status: completed
 started_at: "2026-11-17T03:35:42Z"
-ended_at: —
+ended_at: "2026-11-17T03:42:35Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 341.9, input: 24, output: 3886, cache_read: 702395, cache_write: 38477}
-review_status: pending
+  review: {turns: 1, duration_s: 61.4, input: 25413, output: 1436, cache_read: 209280, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T03:41:31Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-2c1aec
+work_duration: 412.9
+completion-commit: 1e17e8035636d61aa12bbc818bab4d65d8a8f62e
 ---
 # T0238: Make the compact layout shell e2e test wait for the action bar, since full parallel runs fail it
 
@@ -37,7 +42,7 @@ Size estimate: 1 files, 20 lines.
 - [x] **[Implement]** Wait for each measured element and poll the geometry instead of reading it once.
 - [x] **[Verify]**    Run the shell spec ten times and the full e2e suite; record the passing output.
 - [x] **[Doc]**       Add a CHANGELOG.md entry if the project logs test fixes.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-15] **[Doc]**
@@ -60,4 +65,11 @@ Size estimate: 1 files, 20 lines.
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: Approved.
+  - Findings: [review-findings-1.md](T0238-make-the-compact-layout-shell-e2e-test-wait/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
