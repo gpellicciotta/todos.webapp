@@ -5,17 +5,22 @@ session: claude-20261117-0ff5fa
 needs: []
 branch: task/T0078-add-the-shared-only-filter-to-the-lists
 worktree: .plan/work/T0078-add-the-shared-only-filter-to-the-lists
-status: active
+status: completed
 started_at: "2026-11-17T05:45:10Z"
-ended_at: —
+ended_at: "2026-11-17T05:50:14Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 234.7, input: 58, output: 22102, cache_read: 2706761, cache_write: 94864}
-review_status: pending
+  review: {turns: 1, duration_s: 58.8, input: 52781, output: 1478, cache_read: 247296, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T05:49:13Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-513e2c
+work_duration: 303.9
+completion-commit: cf9fec7e56b03ef3263f667b10a93b954a917323
 ---
 # T0078: Add the Shared only filter to the Lists screen sort menu while connected
 
@@ -30,7 +35,7 @@ Follow ui-design.md, Many Lists: sort.
 - [x] **[Implement]** Add the Shared only item to the sort menu and filter lists by sharing state with the SHR-3 data.
 - [x] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [x] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
@@ -56,4 +61,11 @@ Follow ui-design.md, Many Lists: sort.
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: Approved.
+  - Findings: [review-findings-1.md](T0078-add-the-shared-only-filter-to-the-lists/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 

@@ -4,10 +4,13 @@ round: 1
 verdict: approved
 blocking: 0
 reviewer: "@codex"
-reviewed_at: 2026-11-17T05:49:13Z
+reviewed_at: 2026-11-17T05:50:13Z
 reviewed_commit: "141ee28"
 base_commit: "6bc1d06"
 branch: task/T0078-add-the-shared-only-filter-to-the-lists
+session: codex-20261117-513e2c
+session_agent: codex
+session_created_at: 2026-11-17T05:49:13Z
 ---
 # Review Findings: Task T0078 (Round 1)
 
