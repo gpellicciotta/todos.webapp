@@ -24,7 +24,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0246 [owner: @claude, session: claude-20261117-0ac0f4] [protocol: adhoc] Keep the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.
 - [x] T0245 Merge the connect screen into the Settings Connection section, keeping #/connect as an alias for the Auth return.
 - [x] T0243 Fix first-connect upload losing lists whose IDs match trashed server lists, and make restore re-send memberships.
-- [ ] T0242 Add Delete account to Settings, marking the connected account for deletion on the service.
+- [~] T0242 [owner: @claude] Add Delete account to Settings, marking the connected account for deletion on the service.
 - [ ] T0241 [needs: T0240] Erase the last account's lists and tasks on the next connect after Delete all data in local mode.
 - [ ] T0240 Make Delete all data also erase the account's lists and tasks while connected, queued while offline.
 - [ ] T0238 Make the compact layout shell e2e test wait for the action bar, since full parallel runs fail it.

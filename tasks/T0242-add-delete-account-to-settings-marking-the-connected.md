@@ -1,11 +1,11 @@
 ---
 id: T0242
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0242-add-delete-account-to-settings-marking-the-connected
+worktree: .plan/work/T0242-add-delete-account-to-settings-marking-the-connected
+status: active
+started_at: "2026-11-17T03:12:56Z"
 ended_at: —
 review: agent
 preview: none
