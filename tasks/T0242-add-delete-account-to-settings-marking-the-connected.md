@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 438.9, input: 74, output: 23647, cache_read: 3560223, cache_write: 100431}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:20:22Z"
 ---
 # T0242: Add Delete account to Settings, marking the connected account for deletion on the service
 
@@ -68,4 +73,7 @@ Add Delete account to Settings, separate from Delete all data, which never touch
 
 - [2026-11-17] **[Doc]**
   Added the CHANGELOG.md bullet under v0.5.1-pre.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
