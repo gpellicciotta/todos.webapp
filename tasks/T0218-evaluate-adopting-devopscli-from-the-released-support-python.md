@@ -1,11 +1,11 @@
 ---
 id: T0218
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0218-evaluate-adopting-devopscli-from-the-released-support-python
+worktree: .plan/work/T0218-evaluate-adopting-devopscli-from-the-released-support-python
+status: active
+started_at: "2026-11-17T03:57:55Z"
 ended_at: —
 review: agent
 preview: none
