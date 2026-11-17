@@ -1,0 +1,11 @@
+{"schema": 1,
+ "completed": [
+  {"item": "Window Lists rows past 200 shown lists in lists.js (uncommitted)", "evidence": "tests/unit/lists-many-rows.test.js 15/15 and lists.test.js pass (45 tests)"},
+  {"item": "500 lists open within twice the 150-list time", "evidence": "npm run test:perf 5 passed: 150 lists median 169 ms, 500 lists median 195 ms (was 393 ms)"},
+  {"item": "Windowed e2e: keys, tab stop, drag, Back scroll", "evidence": "tests/e2e/lists-many-rows.spec.js 48/48 with --repeat-each 8"},
+  {"item": "Full e2e suite", "evidence": "245 passed, 1 failed: behaviors.spec.js popover test, also fails on base ba41de1; follow-up T0273 created"},
+  {"item": "Docs, CHANGELOG, service worker VERSION and hashes", "evidence": "ui-design.md, CHANGELOG.md, check-sw-version.mjs OK"}
+ ],
+ "remaining": ["Rerun final unit, lint, and perf (last run interrupted)", "Write validation-proof.md and technical-spec.md, log steps and size note in task file", "Commit to task branch"],
+ "next_action": "Rerun npm test, npm run lint, and npm run test:perf, then record proof and commit.",
+ "blocker": null, "scope": null}

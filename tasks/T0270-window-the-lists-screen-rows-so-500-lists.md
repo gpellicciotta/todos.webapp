@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1800.4, input: 2, output: 4}
+work_duration: 1808.5
 ---
 # T0270: Window the Lists screen rows so 500 lists open within twice the 150-list time
 
