@@ -1,6 +1,7 @@
 ---
 id: T0266
 owner: "@claude"
+session: claude-20261117-c62e8f
 needs: []
 branch: task/T0266-sync-the-view-options-of-all-tasks-and
 worktree: .plan/work/T0266-sync-the-view-options-of-all-tasks-and
@@ -22,11 +23,11 @@ Make the user's settings follow the account across devices while connected (`SYN
 Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-tasks-and/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the service's settings routes, preferences.js, view-controls.js, list-order.js, settings.js, and engine.js.
-- [ ] **[Implement]** Author failing unit tests for edit times, the merge, the upload queue, and the view refresh.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
-- [ ] **[Implement]** Add the settings sync module, record edit times on writes, and run it in each sync run.
-- [ ] **[Implement]** Author the two-device e2e scenario and the settings contract test.
+- [x] **[Read]**      Read the service's settings routes, preferences.js, view-controls.js, list-order.js, settings.js, and engine.js.
+- [x] **[Implement]** Author failing unit tests for edit times, the merge, the upload queue, and the view refresh.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
+- [x] **[Implement]** Add the settings sync module, record edit times on writes, and run it in each sync run.
+- [x] **[Implement]** Author the two-device e2e scenario and the settings contract test.
 - [ ] **[Verify]**    Run `npm test`, the e2e suite, and `npm run test:contract`, and record the passing output.
 - [ ] **[Doc]**       Update ui-design.md, devops.md if the contract setup changes, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
