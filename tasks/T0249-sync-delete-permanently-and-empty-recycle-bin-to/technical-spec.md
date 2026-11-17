@@ -19,7 +19,7 @@ Size note: the queue entries, their push, and the spec change cannot merge apart
 
 ### Service Routes (todos.server T0257)
 - `DELETE /api/recycle-bin/lists/{{list-id}}` and `DELETE /api/recycle-bin/tasks/{{task-id}}` purge one entry.
-- `DELETE /api/recycle-bin?before={{time}}` purges every entry the user may restore, deleted before `time`.
+- `DELETE /api/recycle-bin` purges every entry the user may restore. The app sends no `before`: the service stamps `deletion-time` with its receive time, so a client time could miss queued trashes. [Decided] after review round 1.
 
 ### Queue Entries
 Connected or expired, the store queues purges; local mode queues nothing, as today.
@@ -27,7 +27,7 @@ Connected or expired, the store queues purges; local mode queues nothing, as tod
 - `emptyBin()` queues one `{operation: 'empty-bin', time}`.
 - T0248's `purgeEntries`, when present, queues one `purge` per entry.
 - Earlier entries of a purged row stay and push first, so a queued trash reaches the service before its purge.
-- A row whose `create` is still queued never reached the service: its entries are dropped and no purge is queued.
+- No entry is dropped: a queued `create` may be uploading or have lost its reply. A purge of a row the service never got answers `404`, which is done. [Decided] after review round 1.
 
 ### Push
 - 2xx and `404`: done.
@@ -42,8 +42,8 @@ Connected or expired, the store queues purges; local mode queues nothing, as tod
 
 ### Tests
 - Unit: connected `purgeForever` and `emptyBin` queue their entries; local mode queues nothing.
-- Unit: a purge of a row with a queued `create` drops its entries and queues no purge.
-- Unit: push sends the purge routes, with `before` for `empty-bin`, and treats `404` as done.
+- Unit: a purge of a row with a queued, in-flight, or reply-lost `create` keeps its entries and still purges at the service.
+- Unit: push sends the purge routes and the empty route, and treats `404` as done; a failing recovery read keeps the purge queued.
 - Unit: a `409` reads the row back, restores it locally, and logs it.
 - Integration: the contract suite trashes a task, purges it, and sees a `purged` tombstone in the feed of a second session.
 - Integration: the sync e2e spec empties the bin while connected; after a fresh snapshot the bin stays empty.

@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 534.9, input: 116, output: 38604, cache_read: 8070121, cache_write: 164182}
-review_status: pending
+  review: {turns: 1, duration_s: 202.0, input: 94644, output: 4431, cache_read: 713984, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T01:41:34Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-71f7cc
+work_duration: 754.0
 ---
 # T0249: Sync Delete permanently and Empty recycle bin to the account while connected, queued while offline
 
@@ -68,4 +72,17 @@ Make permanent deletes from the Recycle Bin reach the account, not just this dev
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected for two reproduced behavior defects and incomplete required contract verification.
+  - Findings: [review-findings-1.md](T0249-sync-delete-permanently-and-empty-recycle-bin-to/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Rework: kept all entries of purged rows, made 409 recovery durable, dropped the client before time.
+
+- [2026-11-17] **[Verify]**
+  Contract suite passes 20 of 20 against a post-T0257 server build; production deployment unverified.
+
+- [2026-11-17] **[Doc]**
+  Updated the local store spec and technical spec for no dropped entries and no before.
 
