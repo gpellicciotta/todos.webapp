@@ -732,11 +732,16 @@ test('a just added row keeps the hover feedback of other rows while it is highli
   const problems = watch(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize(COMPACT);
+  // The highlight lasts two seconds; a paused clock keeps it on however slowly a loaded machine runs the steps.
+  await page.clock.install({ time: new Date('2026-11-04T10:00:00Z') });
   await openApp(page);
+  await page.clock.pauseAt(new Date('2026-11-04T10:01:00Z'));
   const field = page.getByLabel('Search or add a task');
   for (const item of ['Milk', 'Eggs']) {
     await field.fill(item);
     await field.press('Enter');
+    // The add clears the field when it ends; typing the next item earlier would lose it.
+    await expect(field).toHaveValue('');
   }
   const background = (locator) => locator.evaluate((row) => getComputedStyle(row).backgroundColor);
   const milk = page.locator('.task-row', { hasText: 'Milk' });
@@ -749,6 +754,8 @@ test('a just added row keeps the hover feedback of other rows while it is highli
   await eggs.hover();
   await expect(eggs).toHaveClass(/task-row--added/);
   expect(await background(eggs)).toBe(hovered);
+  await page.clock.runFor(2_000);
+  await expect(eggs).not.toHaveClass(/task-row--added/);
   expect(problems).toEqual([]);
 });
 

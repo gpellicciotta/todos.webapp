@@ -127,7 +127,8 @@ test('an owner invites an email with a role, changes a role, and removes a perso
 test('Share list opens the list editor at its Sharing section (SHR-1)', async ({ page }) => {
   await connect(page, OWNED);
   await open(page, `#/lists/${FAMILY}`);
-  await page.getByRole('button', { name: /^[^:]+ actions$/ }).click();
+  // Name the list: until the route renders, the All tasks view's "All tasks actions" button would match a pattern.
+  await page.getByRole('button', { name: 'Family actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Share list' }).click();
   await expect(page).toHaveURL(new RegExp(`#/lists/${FAMILY}/share$`));
   await expect(page.locator('[data-section="sharing"]').getByRole('button', { name: 'Invite' })).toBeVisible();

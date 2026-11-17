@@ -114,10 +114,12 @@ describe('the pid file and the stop file', () => {
       stdio: 'ignore',
     });
     const exited = new Promise((resolve) => child.once('exit', resolve));
-    for (let tries = 0; tries < 100 && !existsSync(pidFile); tries += 1) {
+    // The file exists, empty, before the pid lands in it; wait for the content, not just the file.
+    const readPid = async () => (existsSync(pidFile) ? (await readFile(pidFile, 'utf8')).trim() : '');
+    for (let tries = 0; tries < 100 && (await readPid()) === ''; tries += 1) {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
-    expect(Number((await readFile(pidFile, 'utf8')).trim())).toBe(child.pid);
+    expect(Number(await readPid())).toBe(child.pid);
     await writeFile(stopFile, 'stop');
     expect(await exited).toBe(0);
     expect(existsSync(pidFile)).toBe(false);

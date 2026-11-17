@@ -28,6 +28,10 @@ All notable changes to this project are documented here.
 - Tests: Fixed the gallery popover keyboard e2e test tabbing onto the Finished today only choice instead of Clear, and made it toggle that choice.
 - Scripts: Applied Ruff formatting to the wireframe drawing script so `python scripts/devops.py check` passes again.
 - FrontEnd: Dropped the task list's check of whether a change hides its row under the view's filters, since only ticks post from rows and each shows an Undo toast (TSK-4).
+- Tests: Made two e2e tests stable under full parallel load: the just added row test pauses the clock and waits for each add, and the sidebar find test waits for the filter.
+- Tests: Made the serve pid file unit test wait for the pid itself, not just the file, which exists empty first.
+- Tests: Made the Share list e2e test open the Family list's menu by name, not the All tasks menu that shows until the route renders.
+- FrontEnd: Bumped the service worker VERSION for the dropped filter-hide check, so `check-sw-version.mjs` passes again.
 - FrontEnd: Made Delete all data available while connected, also erasing the account's lists, tasks, and notes through one queued `erase` entry that waits out offline time and no pull precedes (BAK-15).
 - FrontEnd: Windowed the Lists screen rows past 200 shown lists, rendering the rows in view plus 10 each side, so 500 lists with 5000 tasks open in about 195 ms instead of 393 ms under 4x CPU throttling, while the tab stop, focus, keys, drag, and Back scroll keep working (LST-15, TEC-16).
 - Tests: Made the performance spec assert that 500 lists open within twice the 150-list time of the same run (TEC-16).

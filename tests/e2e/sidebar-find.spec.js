@@ -45,6 +45,8 @@ test('Down moves into the rows, which are one tab stop, and Escape clears the fi
   const sidebar = page.locator('.app__sidebar');
   const field = sidebar.getByRole('searchbox', { name: 'Find a list' });
   await field.fill('list 1');
+  // The filter applies after a pause in typing and once every seeded list has arrived; wait for both.
+  await expect(sidebar.locator('.sidebar__find-count')).toHaveText('11 of 20');
   await field.press('ArrowDown');
   await expect(sidebar.locator('[data-nav-lists] li:not([hidden]) a').first()).toBeFocused();
   await page.keyboard.press('End');
