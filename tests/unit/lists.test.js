@@ -196,3 +196,178 @@ describe('mountLists', () => {
     expect([...view.querySelectorAll('.list-item')].filter((item) => !item.querySelector('.list-row__sharing'))).toHaveLength(1);
   });
 });
+
+describe('mountLists find, sort, and the reorder lock (LST-10, LST-11, LST-12)', () => {
+  let store;
+  let screen;
+  let navigate;
+
+  afterEach(() => {
+    screen?.destroy();
+    store?.close();
+    document.body.replaceChildren();
+    localStorage.clear();
+  });
+
+  /**
+   * Mount the screen over lists named "List 1" to "List n", with an action bar and the router memory.
+   * @param {number} total how many lists
+   * @param {object} [extra] more mount options
+   * @returns {Promise<{view: HTMLElement, bar: HTMLElement, memory: object}>} the parts
+   */
+  async function mountMany(total, extra = {}) {
+    ({ store } = await freshStore());
+    for (let index = 1; index <= total; index += 1) {
+      await store.createList({ name: `List ${index}`, description: index === 3 ? 'Ürgent garden work' : '' });
+    }
+    const view = document.body.appendChild(document.createElement('div'));
+    const bar = document.body.appendChild(document.createElement('div'));
+    const memory = {};
+    navigate = vi.fn();
+    screen = mountLists(view, { store, navigate, actionBar: bar, memory, ...extra });
+    await screen.idle();
+    return { view, bar, memory };
+  }
+
+  const field = (bar) => bar.querySelector('input[type="search"]');
+  const rowNames = (view) => [...view.querySelectorAll('.list-row__name')].map((name) => name.textContent);
+  const infoText = (bar) => bar.querySelector('.info-line__text').textContent;
+  const type = async (input, text) => {
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  it('shows the find bar from 12 lists, and not before', async () => {
+    const few = await mountMany(11);
+    expect(few.bar.querySelector('.lists-find')?.hidden ?? true).toBe(true);
+    screen.destroy();
+    store.close();
+    document.body.replaceChildren();
+    const many = await mountMany(12);
+    expect(many.bar.querySelector('.lists-find').hidden).toBe(false);
+    expect(field(many.bar).getAttribute('aria-label')).toBe('Find a list');
+    expect(field(many.bar).maxLength).toBe(100);
+    expect(field(many.bar).dataset.shortcut).toContain('search');
+    expect(infoText(many.bar)).toBe('12 lists');
+    expect(many.bar.querySelector('.info-line__reset').hidden).toBe(true);
+  });
+
+  it('filters names and descriptions after a 150 ms pause and shows the count', async () => {
+    const { view, bar, memory } = await mountMany(13);
+    await type(field(bar), 'list 1');
+    expect(rowNames(view)).toHaveLength(13);
+    await vi.waitFor(() => expect(rowNames(view)).toEqual(['List 1', 'List 10', 'List 11', 'List 12', 'List 13']));
+    expect(infoText(bar)).toBe('5 of 13 lists');
+    expect(memory.text).toBe('list 1');
+    await type(field(bar), 'urgent');
+    await vi.waitFor(() => expect(rowNames(view)).toEqual(['List 3']));
+  });
+
+  it('announces the matches politely', async () => {
+    const { bar } = await mountMany(13);
+    await type(field(bar), 'list 1');
+    await vi.waitFor(() => expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('5 of 13 lists'));
+  });
+
+  it('opens the first match on Enter, clears on Escape, and enters the rows on Down', async () => {
+    const { view, bar } = await mountMany(13);
+    const lists = await store.listLists();
+    await type(field(bar), 'list 13');
+    await vi.waitFor(() => expect(rowNames(view)).toEqual(['List 13']));
+    field(bar).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(view.querySelector('.list-row'));
+    field(bar).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(navigate).toHaveBeenCalledWith(`#/lists/${lists.find((list) => list.name === 'List 13').id}`);
+    field(bar).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(field(bar).value).toBe('');
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(13));
+  });
+
+  it('restores the text of the session memory, and keeps the bar while text is typed below 12 lists', async () => {
+    const { view, bar } = await mountMany(3, { memory: { text: 'list 2' } });
+    expect(field(bar).value).toBe('list 2');
+    expect(bar.querySelector('.lists-find').hidden).toBe(false);
+    expect(rowNames(view)).toEqual(['List 2']);
+  });
+
+  it('sorts from the menu, names the sort on the button and info line, and persists it', async () => {
+    const { view, bar } = await mountMany(13);
+    const sort = bar.querySelector('.lists-find__sort');
+    expect(sort.textContent).toContain('Sort: Manual order');
+    sort.click();
+    const items = [...bar.querySelectorAll('.menu [role="menuitemradio"]')];
+    expect(items.map((item) => item.textContent)).toEqual(['Manual order', 'Name (A to Z)', 'Open tasks (most first)', 'Last update (newest first)']);
+    items[1].click();
+    await vi.waitFor(() => expect(rowNames(view)[1]).toBe('List 10'));
+    expect(JSON.parse(localStorage.getItem('todos.view.lists'))).toEqual({ sort: 'name' });
+    expect(sort.textContent).toContain('Sort: Name');
+    expect(infoText(bar)).toBe('13 lists · Sorted by Name');
+    await vi.waitFor(() => expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('Sorted by Name'));
+    expect(await store.listLists()).toHaveLength(13);
+    expect(localStorage.getItem('todos.lists.order')).toBeNull();
+  });
+
+  it('starts with the stored sort, and Reset clears the sort and the text', async () => {
+    localStorage.setItem('todos.view.lists', JSON.stringify({ sort: 'name' }));
+    const { view, bar } = await mountMany(13);
+    await type(field(bar), 'list 1');
+    await vi.waitFor(() => expect(infoText(bar)).toBe('5 of 13 lists · Sorted by Name'));
+    bar.querySelector('.info-line__reset').click();
+    expect(field(bar).value).toBe('');
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(13));
+    expect(bar.querySelector('.lists-find__sort').textContent).toContain('Sort: Manual order');
+    expect(localStorage.getItem('todos.view.lists')).toBeNull();
+    expect(infoText(bar)).toBe('13 lists');
+    expect(bar.querySelector('.info-line__reset').hidden).toBe(true);
+  });
+
+  it('hides reordering while sorted or searching, and announces why on Alt+Up', async () => {
+    const { view, bar } = await mountMany(13);
+    expect(view.querySelector('.list-item__handle').hidden).toBe(false);
+    await type(field(bar), 'list 1');
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(5));
+    expect(view.querySelector('.list-item__handle').hidden).toBe(true);
+    view.querySelectorAll('.list-row')[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }));
+    await vi.waitFor(() => expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('Reordering needs Manual order and no search.'));
+    expect(localStorage.getItem('todos.lists.order')).toBeNull();
+    expect(rowNames(view)[1]).toBe('List 10');
+    field(bar).value = '';
+    field(bar).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await vi.waitFor(() => expect(view.querySelector('.list-item__handle').hidden).toBe(false));
+  });
+
+  it('keeps the handles hidden under another sort', async () => {
+    localStorage.setItem('todos.view.lists', JSON.stringify({ sort: 'open' }));
+    const { view } = await mountMany(13);
+    expect(view.querySelector('.list-item__handle').hidden).toBe(true);
+  });
+
+  it('offers Create list for a no-match text, opens its editor, and hides the offer for a taken or empty name', async () => {
+    const { view, bar } = await mountMany(13);
+    await type(field(bar), 'Orchard');
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(0));
+    expect(view.querySelector('.empty-state__text').textContent).toBe('No list matches "Orchard".');
+    expect(infoText(bar)).toBe('0 of 13 lists');
+    const create = view.querySelector('.lists-view__create');
+    await vi.waitFor(() => expect(create.hidden).toBe(false));
+    expect(create.textContent).toBe('Create list "Orchard"');
+    create.click();
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalled());
+    const made = (await store.listLists()).find((list) => list.name === 'Orchard');
+    expect(made).toBeDefined();
+    expect(navigate).toHaveBeenCalledWith(`#/lists/${made.id}/edit`);
+    await vi.waitFor(() => expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('No list matches "Orchard".'));
+  });
+
+  it('hides Create list when the name is taken by a list in the recycle bin', async () => {
+    const { view, bar } = await mountMany(13);
+    const banked = await store.createList({ name: 'Banked', description: '' });
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(14));
+    await store.deleteList(banked.id);
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(13));
+    await type(field(bar), 'banked');
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(0));
+    await vi.waitFor(() => expect(view.querySelector('.lists-view__create').hidden).toBe(true));
+    expect(view.querySelector('.empty-state__text').textContent).toBe('No list matches "banked".');
+  });
+});

@@ -3,9 +3,11 @@
  *
  * The input is in manual order, and every sort keeps it among ties, since the array sort is stable.
  * A sort never changes the stored order; it returns a new array.
+ * The choice persists per device in `todos.view.lists` as `{sort}` (`TV-12`); manual order stores nothing.
  */
 
 import { countOf } from './list-counts.js';
+import { readPreference, removePreference, writePreference } from './preferences.js';
 
 /** The sort identifiers, in menu order: the default first. */
 export const LIST_SORTS = Object.freeze(['manual', 'name', 'open', 'activity']);
@@ -27,4 +29,35 @@ const COMPARES = {
 export function sortLists(lists, sort, counts) {
   const compare = Object.hasOwn(COMPARES, sort) ? COMPARES[sort] : null;
   return compare ? [...lists].sort((a, b) => compare(a, b, counts)) : [...lists];
+}
+
+/** The key of the stored choice, under the `todos.` prefix. */
+export const LIST_SORT_KEY = 'view.lists';
+
+/** Sort names: the menu entry and the short name of the button and info line. */
+export const SORT_LABELS = Object.freeze({
+  manual: Object.freeze({ menu: 'Manual order', short: 'Manual order' }),
+  name: Object.freeze({ menu: 'Name (A to Z)', short: 'Name' }),
+  open: Object.freeze({ menu: 'Open tasks (most first)', short: 'Open tasks' }),
+  activity: Object.freeze({ menu: 'Last update (newest first)', short: 'Last update' }),
+});
+
+/**
+ * Read the stored sort.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {string} one of {@link LIST_SORTS}; manual order for a missing, unknown, or corrupt entry
+ */
+export function readListSort(getStorage) {
+  const stored = readPreference(LIST_SORT_KEY, null, getStorage);
+  return typeof stored?.sort === 'string' && LIST_SORTS.includes(stored.sort) ? stored.sort : 'manual';
+}
+
+/**
+ * Store the sort; manual order forgets the entry.
+ * @param {string} sort one of {@link LIST_SORTS}
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when stored or removed
+ */
+export function writeListSort(sort, getStorage) {
+  return sort === 'manual' ? removePreference(LIST_SORT_KEY, getStorage) : writePreference(LIST_SORT_KEY, { sort }, getStorage);
 }

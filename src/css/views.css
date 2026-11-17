@@ -797,6 +797,41 @@
   list-style: none;
 }
 
+/* The find block of the Lists screen (`LST-10`, `LST-12`): the field, the sort button, and the info line, pinned in the action bar. */
+.lists-find[hidden],
+.list-item__handle[hidden] {
+  display: none;
+}
+
+.lists-find__bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lists-find__field {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.lists-find__sort {
+  flex: none;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+/* Compact layouts show the sort button as an icon; its accessible name keeps the text. */
+@media (width < 64rem) {
+  .lists-find__sort-label {
+    display: none;
+  }
+}
+
+.lists-view__create {
+  margin-block-start: var(--space-2);
+}
+
 /* A list item holds the drag handle, the row link, and the Move up and Move down buttons (`LST-8`). */
 .list-item {
   position: relative;

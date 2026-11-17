@@ -629,6 +629,11 @@ The sidebar and this screen share the rules below.
   Each move announces "{{list}} moved to position 1 of 124."; focus stays on the row, which scrolls into view.
   Reason: a drag across 100 rows is slow, and the two ends cover pinning and parking a list.
   A drag keeps its edge auto-scroll, and a new list still appends at the end.
+- **[Decided]** The find block shows from 12 lists, and stays while the field holds text or a sort is chosen.
+  Below 12 lists it leaves the action bar, so the plus button keeps its place.
+  The text lives in the router memory for the session; Reset clears the sort and the text, and the info line hides it at the defaults.
+  Create list checks the name with the store's validation, so a name held by a list in the Recycle bin offers nothing.
+  [lists.js](../../src/js/views/lists.js) builds the block and the screen.
 - **[Decided]** Rows stay 64 px high, and there is no density option; find and sort carry the scale.
 - **[Decided]** Rendering: the sidebar renders every row, since 500 plain links are cheap.
   This screen renders every row too, each with `content-visibility: auto` and `contain-intrinsic-size: auto 64px`.
