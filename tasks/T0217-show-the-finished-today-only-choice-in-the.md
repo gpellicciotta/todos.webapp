@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 144.7, input: 54, output: 10037, cache_read: 1927293, cache_write: 58605}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:56:26Z"
 ---
 # T0217: Show the Finished today only choice in the view options wireframe and the gallery's Status popover samples.
 
@@ -57,4 +62,6 @@ Mechanical files: docs/img/ui/view-options.svg
 - [2026-11-17] **[Doc]**
   Added a CHANGELOG.md entry under v0.5.1-pre.
 
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
