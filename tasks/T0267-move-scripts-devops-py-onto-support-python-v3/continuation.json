@@ -1,0 +1,18 @@
+{"schema": 1,
+ "completed": [
+  {"item": "devops.py rebuilt on DevopsCli with TodosProject(NodeProject)", "evidence": "commit fc7b690; tests/test_devops.py 88 passed (reviewer round 1)"},
+  {"item": "Release kept as a Project.release override with VERSION and --backend-dir", "evidence": "commit fc7b690; test_the_release_action_runs_the_project_release_override_with_every_option"},
+  {"item": "scripts/requirements.txt pins support-python v3.3.0", "evidence": "commit fc7b690"},
+  {"item": "docs/devops.md and CHANGELOG.md updated", "evidence": "commit 91bf930"},
+  {"item": "Review round 1 process gap: CLI server test isolated in tmp_path", "evidence": "commit 73c61df; server and cli tests 25 passed"},
+  {"item": "Prerequisite fix of behaviors.spec.js:109", "evidence": "T0274 integrated on main as 30be458"}
+ ],
+ "remaining": [
+  "Bring the T0274 fix into the task branch",
+  "Pass python scripts/devops.py check without --skip-checks",
+  "Pass python scripts/devops.py release --dry-run --skip-github-release in a main clone",
+  "Record both runs in validation-proof.md and re-check step 4"
+ ],
+ "next_action": "Rebase the task branch onto main 30be458, then run check and the full release dry run.",
+ "blocker": null,
+ "scope": null}

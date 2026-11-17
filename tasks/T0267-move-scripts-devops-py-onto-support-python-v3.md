@@ -2,24 +2,24 @@
 id: T0267
 owner: "@claude"
 session: claude-20261117-e1c0a9
-needs: ['T0274']
+needs: []
 branch: task/T0267-move-scripts-devops-py-onto-support-python-v3
 worktree: .plan/work/T0267-move-scripts-devops-py-onto-support-python-v3
-status: suspended
+status: active
 started_at: "2026-11-17T09:44:52Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1638.4, input: 142, output: 58823, cache_read: 10253869, cache_write: 177358}
+  worker: {turns: 2, duration_s: 1764.1, input: 162, output: 64754, cache_read: 12421183, cache_write: 192571}
   review: {turns: 1, duration_s: 486.0, input: 73584, output: 4557, cache_read: 2208512, cache_write: 0}
 review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T10:12:29Z"
 reviewed_by: "@codex"
 review_session: codex-20261117-fc96c2
-work_duration: 2150.3
+work_duration: 3091.3
 ---
 # T0267: Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override
 
