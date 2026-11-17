@@ -5,7 +5,7 @@ session: claude-20261117-2c6785
 needs: []
 branch: task/T0257-design-a-tabbed-task-editor-and-a-clearer
 worktree: .plan/work/T0257-design-a-tabbed-task-editor-and-a-clearer
-status: suspended
+status: active
 started_at: "2026-11-17T01:01:48Z"
 ended_at: —
 review: human
@@ -14,6 +14,9 @@ protocol: standard
 usage:
   worker: {turns: 8, duration_s: 318.9, input: 76, output: 30342, cache_read: 3798783, cache_write: 138932}
 work_duration: 338.9
+review_status: rejected
+review_round: 1
+reviewed_by: "@giovanni"
 ---
 # T0257: Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off
 
@@ -74,4 +77,7 @@ Produce a signed-off design for a tabbed task editor, the task row, and a clear 
 
 - [2026-11-17] **[Doc]**
   Left T0258 to T0265 unrevised, since the brief revises them only after sign-off.
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @giovanni: Rejected; feedback in review-feedback-1.md: Content tab only description and notes, lists and Delete move to Status, separate Status sections, right-align row list chips, fix all-tasks.svg Add text.
 

@@ -1,0 +1,17 @@
+{"schema": 1,
+ "completed": [
+  {"item": "Row wireframes: variant C with count badge, meta line, gutter handle", "evidence": "commit 2261b8b; tests/test_draw_wireframes.py 97 passed"},
+  {"item": "Tabbed editor wireframes: Content, Status, History", "evidence": "commit 2261b8b; task-editor*.svg"},
+  {"item": "ui-design.md Task Row and Task Editor sections, requirements TSK-18 and TSK-19", "evidence": "commit 2261b8b"}
+ ],
+ "remaining": [
+  "Content tab holds only Description and Notes; move Lists and Delete task to the Status tab",
+  "Split the Status tab into separate sections",
+  "Right-align the list chips on wide rows",
+  "Fix the Add text in all-tasks.svg",
+  "Update ui-design.md and requirements for the rework, regenerate SVGs, rerun tests",
+  "Revise T0258 to T0265 after sign-off"
+ ],
+ "next_action": "Read review-findings-1.md, then rework draw-wireframes.py tabs and row chips, regenerate SVGs, update docs and tests",
+ "blocker": null,
+ "scope": null}
