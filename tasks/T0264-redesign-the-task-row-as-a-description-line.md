@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1801.8, input: 2, output: 8}
+work_duration: 1830.9
 ---
 # T0264: Redesign the task row as a description line plus a meta line, with overdue due text in orange
 
