@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 719.3, input: 132, output: 45925, cache_read: 8353273, cache_write: 135020}
-review_status: pending
+  review: {turns: 1, duration_s: 115.6, input: 49218, output: 3307, cache_read: 550912, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T04:13:03Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-ce8721
+work_duration: 844.5
 ---
 # T0226: Notify the user when a task comes due while the app is open, with opt-in and a lead time
 
@@ -81,4 +85,11 @@ Size estimate: 8 files, 350 lines.
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected for two reminder delivery defects.
+  - Findings: [review-findings-1.md](T0226-notify-the-user-when-a-task-comes-due/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Round 1 rework: ledger pruned by eligibility instead of capped, delivery recorded after success, timer re-armed after failures; 6 regression tests added.
 

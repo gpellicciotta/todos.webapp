@@ -4,10 +4,13 @@ round: 1
 verdict: rejected
 blocking: 2
 reviewer: "@codex"
-reviewed_at: 2026-11-17T04:13:03Z
+reviewed_at: 2026-11-17T04:15:00Z
 reviewed_commit: "233ea83"
 base_commit: "050f27c"
 branch: task/T0226-notify-the-user-when-a-task-comes-due
+session: codex-20261117-ce8721
+session_agent: codex
+session_created_at: 2026-11-17T04:13:03Z
 ---
 # Review Findings: Task T0226 (Round 1)
 

@@ -42,3 +42,33 @@ Commands `npx eslint .` and `npm run check:sw` exit 0 (`OK: 130 precached files 
 ### Visual
 [light](after-settings-reminders-light.png), [dark](after-settings-reminders-dark.png): Chromium, Settings Reminders section with the switch on.
 Not done: Firefox, and a real operating system notification. The unattended run has no desktop to observe them; the e2e mocks `showNotification`.
+
+### Review round 1 rework
+Fixes: the ledger no longer caps at 500 tags (the scheduler prunes tags of tasks that left the store or changed due time), and a tag is recorded only after its notification succeeded. A failed notification retries at the next check, and the timer re-arms after every check.
+
+Command: `npx vitest run tests/unit/reminders.test.js`, exit code 0.
+
+```text
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
+```
+
+Command: `npm test`, exit code 0.
+
+```text
+ Test Files  62 passed (62)
+      Tests  1623 passed (1623)
+```
+
+Command: `npx playwright test tests/e2e/reminders.spec.js tests/e2e/service-worker.spec.js tests/e2e/bin-settings.spec.js`, exit code 0.
+
+```text
+[... 4 lines of Node warnings omitted ...]
+  16 passed (15.2s)
+```
+
+Command: `npx eslint .` exit code 0, no output. Command: `npm run check:sw` exit code 0.
+
+```text
+OK: 130 precached files match VERSION 2026-11-17.15.
+```
