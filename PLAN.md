@@ -43,6 +43,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0078 Add the Shared only filter to the Lists screen sort menu while connected.
 
 ## Backlog
+- [ ] T0271 Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e.
 - [ ] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
 - [ ] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [ ] T0267 Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
