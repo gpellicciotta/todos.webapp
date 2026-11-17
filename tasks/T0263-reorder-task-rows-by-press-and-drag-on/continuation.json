@@ -1,0 +1,18 @@
+{"schema": 1,
+ "completed": [
+  {"item": "Read the brief, reorder.js, and task-list.js", "evidence": "step 1 checked"},
+  {"item": "Failing unit and e2e tests for press drag, touch hold, outside grip, Alt+Home/End", "evidence": "commit 36ae3cb; red output in validation-proof.md"},
+  {"item": "Row press drag, touch hold, outside grip, Alt+Home/End implemented", "evidence": "uncommitted worktree diff: reorder.js, list.js, app-components.css"},
+  {"item": "Unit suite and list e2e pass", "evidence": "npm test 1734 passed; list, gallery, lists e2e 51 passed"},
+  {"item": "Before and after captures in both themes", "evidence": "8 PNGs in the companion directory, linked in validation-proof.md"},
+  {"item": "Docs and CHANGELOG updated", "evidence": "uncommitted: ui-design.md, visual-style-guide.md, CHANGELOG.md"}
+ ],
+ "remaining": [
+  "Check steps 4 to 7 in the task file",
+  "Log decisions, size note (11 files, 619 lines), and outcomes",
+  "Run plan tasks validate --completion",
+  "Commit the implementation, docs, and service worker bump"
+ ],
+ "next_action": "Commit the worktree changes, check steps 4-7, log the size note and outcomes, then validate.",
+ "blocker": null,
+ "scope": null}

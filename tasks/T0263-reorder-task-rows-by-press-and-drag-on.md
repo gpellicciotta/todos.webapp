@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1801.0, input: 2, output: 3}
+work_duration: 1843.6
 ---
 # T0263: Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle
 
