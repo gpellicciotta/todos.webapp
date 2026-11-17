@@ -1,11 +1,11 @@
 ---
 id: T0259
-owner: ~
-needs: [T0258]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0259-make-the-task-row-s-status-button-tick
+worktree: .plan/work/T0259-make-the-task-row-s-status-button-tick
+status: active
+started_at: "2026-11-17T12:54:07Z"
 ended_at: —
 review: agent
 preview: none
