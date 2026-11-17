@@ -1,6 +1,7 @@
 ---
 id: T0270
 owner: "@claude"
+session: claude-20261117-9c5d75
 needs: []
 branch: task/T0270-window-the-lists-screen-rows-so-500-lists
 worktree: .plan/work/T0270-window-the-lists-screen-rows-so-500-lists
