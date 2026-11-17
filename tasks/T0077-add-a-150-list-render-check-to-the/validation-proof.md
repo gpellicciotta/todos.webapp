@@ -2,12 +2,10 @@
 
 ## Walkthrough & Validation
 
-Command: `npx playwright test --config playwright.perf.config.js --grep "Lists opens"` (exit 1)
+Command: `npx playwright test --config playwright.perf.config.js --grep "Lists opens"` (exit 0), on the branch equal to main after T0269.
 
 ```text
-4x CPU throttling, 150 lists: Lists open 386, 376, 438 ms (median 386 ms)
-4x CPU throttling, 500 lists: Lists open 680, 720, 699 ms (median 699 ms)
-Expected: < 200
-Received:   393.80000001192093 (first run)
-1 failed, 2 passed
+4x CPU throttling, 150 lists: Lists open 179, 161, 163 ms (median 163 ms)
+4x CPU throttling, 500 lists: Lists open 378, 340, 340 ms (median 340 ms)
+3 passed (52.2s)
 ```
