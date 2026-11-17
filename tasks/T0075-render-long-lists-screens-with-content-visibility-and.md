@@ -5,20 +5,22 @@ session: claude-20261117-17e9e3
 needs: []
 branch: task/T0075-render-long-lists-screens-with-content-visibility-and
 worktree: .plan/work/T0075-render-long-lists-screens-with-content-visibility-and
-status: active
+status: completed
 started_at: "2026-11-17T04:51:56Z"
-ended_at: —
+ended_at: "2026-11-17T05:08:12Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 777.9, input: 118, output: 33634, cache_read: 5837489, cache_write: 102265}
-  review: {turns: 1, duration_s: 78.1, input: 48039, output: 2395, cache_read: 281600, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 161.3, input: 91402, output: 4288, cache_read: 586112, cache_write: 0}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-17T05:06:47Z"
-review_session: codex-20261117-3cb8b3
-work_duration: 735.6
+review_session: codex-20261117-276740
+work_duration: 975.8
+reviewed_by: "@codex"
+completion-commit: e173243d695df1e998ee85d9c793aeefde6348e2
 ---
 # T0075: Render long Lists screens with content-visibility and lazy row menus, with roving focus between rows
 
@@ -33,7 +35,7 @@ Keep find in page, the tab order, and the restored scroll position true.
 - [x] **[Implement]** Add `content-visibility` rows, build each row menu on first open, and add roving tabindex over rows.
 - [x] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [x] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
@@ -69,4 +71,11 @@ Keep find in page, the tab order, and the restored scroll position true.
 
 - [2026-11-17] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 2 approved by @codex: [Decided]** Approved: both previous blocking findings are resolved, with no blocking regression found in the rework.
+  - Findings: [review-findings-2.md](T0075-render-long-lists-screens-with-content-visibility-and/review-findings-2.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
