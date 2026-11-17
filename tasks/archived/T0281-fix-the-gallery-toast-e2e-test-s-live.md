@@ -4,9 +4,9 @@ owner: ~
 needs: []
 branch: —
 worktree: —
-status: ready
+status: cancelled
 started_at: —
-ended_at: —
+ended_at: "2026-11-17T18:18:45Z"
 review: agent
 preview: none
 protocol: standard
@@ -37,3 +37,7 @@ Size estimate: 2 files, 20 lines.
 ## Execution Log
 - [2026-11-17] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-17] **[Cancelled]**
+  Duplicate of T0282, which fixes the same gallery toast and Settings shortcuts e2e tests.
+
