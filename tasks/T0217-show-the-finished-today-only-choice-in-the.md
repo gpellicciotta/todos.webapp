@@ -5,17 +5,22 @@ session: claude-20261117-0b9d79
 needs: []
 branch: task/T0217-show-the-finished-today-only-choice-in-the
 worktree: .plan/work/T0217-show-the-finished-today-only-choice-in-the
-status: active
+status: completed
 started_at: "2026-11-17T03:53:54Z"
-ended_at: —
+ended_at: "2026-11-17T03:57:35Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 144.7, input: 54, output: 10037, cache_read: 1927293, cache_write: 58605}
-review_status: pending
+  review: {turns: 1, duration_s: 65.9, input: 37068, output: 1637, cache_read: 245888, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T03:56:26Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-a12062
+work_duration: 220.2
+completion-commit: 050f27cc88aa67e07762444060ea1fc59098e750
 ---
 # T0217: Show the Finished today only choice in the view options wireframe and the gallery's Status popover samples.
 
@@ -38,7 +43,7 @@ Mechanical files: docs/img/ui/view-options.svg
 - [x] **[Verify]**    Run the gallery controls spec and `npm run check:sw`; record the passing output.
 - [x] **[Visual]**    Inspect the wireframe and the gallery popover in both themes.
 - [x] **[Doc]**       Add a CHANGELOG.md entry.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-10] **[Doc]**
@@ -64,4 +69,11 @@ Mechanical files: docs/img/ui/view-options.svg
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: [Decided]** Approved with no blocking findings.
+  - Findings: [review-findings-1.md](T0217-show-the-finished-today-only-choice-in-the/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 

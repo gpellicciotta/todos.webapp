@@ -30,7 +30,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0238 Make the compact layout shell e2e test wait for the action bar, since full parallel runs fail it.
 - [x] T0221 Prune Lists filter ids of deleted lists before the All tasks hidden-task toast, which now reads 'Task added. hides it.'
 - [x] T0222 Name the Shared filter in the hidden-task toast and let Show clear it.
-- [~] T0217 [owner: @claude] Show the Finished today only choice in the view options wireframe and the gallery's Status popover samples.
+- [x] T0217 Show the Finished today only choice in the view options wireframe and the gallery's Status popover samples.
 - [ ] T0218 Evaluate adopting DevopsCli from support-python v3.3.0, modeled on support.webapp's devops script.
 - [ ] T0226 Notify the user when a task comes due while the app is open, with opt-in and a lead time.
 - [ ] T0072 Make the sidebar scroll only its lists, keep the current list in view, and patch rows in place.
