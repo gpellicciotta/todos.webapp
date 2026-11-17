@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- Tests: Made the shell areas e2e test wait for the action bar, main area, and bottom bar, and poll their geometry, so full parallel runs no longer read a null box.
 - FrontEnd: Added Delete account to Settings, which marks the connected account for deletion on the service, then disconnects and keeps the local data (CON-14).
 - Sync: Fixed first connect losing live local lists whose identifiers match trashed account lists, by restoring them on the account before upload.
 - Sync: Queued the memberships of a restored list or task, so moves after a restore no longer fail on the account.

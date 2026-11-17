@@ -491,15 +491,21 @@ for (const [viewport, compact] of [[COMPACT, true], [WIDE, false]]) {
     const actionBar = page.locator('.app > .app__action-bar');
     await expect(actionBar.locator('.add-block').getByRole('textbox', { name: 'Search or add a task' })).toBeVisible();
     // The action bar ends the main column, under the rows and above the bottom bar when compact.
-    const bar = await actionBar.boundingBox();
-    const main = await page.locator('.app__main').boundingBox();
-    expect(Math.abs(main.y + main.height - bar.y)).toBeLessThanOrEqual(1);
+    await expect(actionBar).toBeVisible();
+    await expect(page.locator('.app__main')).toBeVisible();
+    await expect(page.locator('.app__bottom-nav')).toBeVisible({ visible: compact });
+    // Poll the geometry: a box is null or still moving until the layout settles under load.
+    const gap = async (above, below) => {
+      const [first, second] = await Promise.all([above(), below()]);
+      return first && second ? Math.abs(first.y + first.height - second.y) : Number.POSITIVE_INFINITY;
+    };
+    const barBox = () => actionBar.boundingBox();
+    await expect.poll(() => gap(() => page.locator('.app__main').boundingBox(), barBox)).toBeLessThanOrEqual(1);
     if (compact) {
-      const nav = await page.locator('.app__bottom-nav').boundingBox();
-      expect(Math.abs(bar.y + bar.height - nav.y)).toBeLessThanOrEqual(1);
+      await expect.poll(() => gap(barBox, () => page.locator('.app__bottom-nav').boundingBox())).toBeLessThanOrEqual(1);
     }
     else {
-      expect(Math.abs(bar.y + bar.height - viewport.height)).toBeLessThanOrEqual(1);
+      await expect.poll(() => gap(barBox, async () => ({ y: viewport.height, height: 0 }))).toBeLessThanOrEqual(1);
     }
     await page.getByRole('link', { name: 'Buy paint' }).click();
     const panel = page.locator('.app > aside.app__side-panel');
