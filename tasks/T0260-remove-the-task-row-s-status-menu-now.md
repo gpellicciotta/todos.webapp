@@ -1,11 +1,11 @@
 ---
 id: T0260
-owner: ~
-needs: [T0259]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0260-remove-the-task-row-s-status-menu-now
+worktree: .plan/work/T0260-remove-the-task-row-s-status-menu-now
+status: active
+started_at: "2026-11-17T13:26:57Z"
 ended_at: —
 review: agent
 preview: none
