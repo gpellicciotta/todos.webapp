@@ -1,11 +1,11 @@
 ---
 id: T0271
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0271-fix-the-lists-back-scroll-restore-clamping-at
+worktree: .plan/work/T0271-fix-the-lists-back-scroll-restore-clamping-at
+status: active
+started_at: "2026-11-17T08:35:07Z"
 ended_at: —
 review: agent
 preview: none
