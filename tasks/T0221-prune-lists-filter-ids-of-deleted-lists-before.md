@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 263.7, input: 52, output: 11171, cache_read: 1680781, cache_write: 47181}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:47:26Z"
 ---
 # T0221: Prune Lists filter ids of deleted lists before the All tasks hidden-task toast, which now reads 'Task added. hides it.'
 
@@ -48,4 +53,7 @@ Rules and tests: [technical-spec.md](T0221-prune-lists-filter-ids-of-deleted-lis
 
 - [2026-11-17] **[Doc]**
   Added the CHANGELOG.md entry under v0.5.1-pre.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
