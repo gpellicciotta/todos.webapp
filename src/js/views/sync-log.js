@@ -20,7 +20,7 @@ export const LOG_STRINGS = Object.freeze({
   empty: 'Nothing to show. Sync overwrote or undid nothing in the last 30 days.',
   retention: 'Entries stay for 30 days.',
   kinds: Object.freeze({
-    overwritten: 'Overwritten value', rejected: 'Rejected change', 'lost-access': 'Lost access', error: 'Sync error',
+    overwritten: 'Overwritten value', rejected: 'Rejected change', 'lost-access': 'Lost access', error: 'Sync error', erased: 'Account data erased',
   }),
   lost: 'Lost',
   kept: 'Kept',
@@ -194,6 +194,8 @@ function describeEntry(entry, item) {
     }
     case 'lost-access':
       return { item: item.name, detail: LOG_STRINGS.undoneChanges(entry.undone ?? 0) };
+    case 'erased':
+      return { item: entry.message ?? '', detail: `${entry.lists ?? 0} lists, ${entry.tasks ?? 0} tasks, ${entry.notes ?? 0} notes` };
     default:
       return { item: entry.message ?? '', detail: entry.detail ?? '' };
   }

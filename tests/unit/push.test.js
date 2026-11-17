@@ -296,6 +296,57 @@ describe('one tab syncs', () => {
   });
 });
 
+describe('erasing the account data', () => {
+  /**
+   * Queue an erase on a store holding synced rows.
+   * @returns {Promise<object>} the pieces
+   */
+  async function erased() {
+    const parts = await setup();
+    const list = await parts.store.createList({ name: 'Home' });
+    await parts.store.createTask({ description: 'Paint' }, { lists: [list.id] });
+    await parts.push.drainOnce();
+    parts.clock.tick(5000);
+    await parts.store.deleteAllData();
+    parts.service.calls.length = 0;
+    return parts;
+  }
+
+  it('sends the erase route with before, then logs the counts as one record', async () => {
+    const { store, clock, service, push } = await erased();
+    expect(await push.drainOnce()).toBe('synced');
+    expect(service.calls.map((call) => `${call.method} ${call.path}`)).toEqual(['GET /api/users/me', 'DELETE /api/users/7/data']);
+    expect(service.calls.at(-1).query).toEqual({ before: new Date(clock.now).toISOString() });
+    expect([service.lists.size, service.tasks.size]).toEqual([0, 0]);
+    expect(await store.queue.count()).toBe(0);
+    expect(await store.queue.log()).toMatchObject([{ kind: 'erased', lists: 1, tasks: 1, notes: 0 }]);
+  });
+
+  it('keeps the entry and pauses on 401', async () => {
+    const { store, service, push, session } = await erased();
+    service.fail = () => 401;
+    expect(await push.drainOnce()).toBe('paused');
+    expect(session.expired).toBe(1);
+    expect(await store.queue.count()).toBe(1);
+  });
+
+  it('keeps the entry while offline', async () => {
+    const { store, service, push } = await erased();
+    service.fail = () => 'network';
+    expect(await push.drainOnce()).toBe('retry');
+    expect(await store.queue.count()).toBe(1);
+  });
+
+  it('drops the entry, logs an error, and reports the refusal on another 4xx', async () => {
+    const { store, service, push, rejected } = await erased();
+    service.fail = (call) => (call.method === 'DELETE' ? 400 : null);
+    expect(await push.drainOnce()).toBe('synced');
+    expect(await store.queue.count()).toBe(0);
+    expect(await store.queue.log()).toMatchObject([{ kind: 'error', detail: 'HTTP 400' }]);
+    expect(rejected).toMatchObject([{ status: 400, entry: { operation: 'erase' } }]);
+  });
+});
+
 describe('purging from the recycle bin', () => {
   it('sends the purge routes and the empty route without a time, in order', async () => {
     const { store, clock, service, push } = await setup();

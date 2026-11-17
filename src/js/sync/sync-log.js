@@ -5,6 +5,7 @@
  * - `overwritten`: a value the merge replaced; `target`, `field`, `sent`, `kept`, `kept-edit-time`.
  * - `rejected`: a change the service refused and the app undid; `operation`, `target`, `fields`, `status`, `message`.
  * - `lost-access`: a list the user can no longer see; `target`, `name`, `undone`, `message`.
+ * - `erased`: the account data an erase removed; `lists`, `tasks`, `notes`, `message`.
  * - `error`: a failure that stopped a sync run; `message`, `detail`.
  * See docs/specs/local-store.md, Stores.
  */

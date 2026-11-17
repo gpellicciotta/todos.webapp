@@ -491,6 +491,34 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(await other.store.listBin()).toEqual([]);
   });
 
+  it('erases the account data from a queued erase, so another device gets tombstones', async () => {
+    const ada = await device('code-ada');
+    const other = await device('code-ada');
+    const list = await ada.store.createList({ name: 'Erase list' });
+    const task = await ada.store.createTask({ description: 'Erase task' }, { lists: [list.id] });
+    await ada.engine.syncNow();
+    await other.engine.syncNow();
+    expect(await other.store.getTask(task.id)).toMatchObject({ description: 'Erase task' });
+    const before = (await other.store.queue.getState('cursor')).value;
+
+    ada.clock.tick(60_000);
+    await ada.store.deleteAllData();
+    expect(await ada.store.queue.count()).toBe(1);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect(await ada.store.queue.count()).toBe(0);
+    expect(await ada.store.queue.log()).toMatchObject([{ kind: 'erased' }]);
+    const state = await serverState(ada);
+    expect(state.lists).toEqual([]);
+    expect(state.tasks).toEqual([]);
+    const feed = await (await other.raw('GET', `/api/changes?cursor=${before}`, { Accept: 'application/json' })).json();
+    expect(feed.tombstones).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'list', id: list.id }), expect.objectContaining({ type: 'task', id: task.id }),
+    ]));
+    expect(await other.engine.syncNow()).toBe('synced');
+    expect(await other.store.getTask(task.id)).toBeUndefined();
+    expect(await other.store.getList(list.id)).toBeUndefined();
+  });
+
   it('brings a purged task back when it was restored on another device', async () => {
     const ada = await device('code-ada');
     const other = await device('code-ada');

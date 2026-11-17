@@ -22,7 +22,7 @@ const NOTE_FIELDS = ['text', 'occurrence'];
 const OPERATIONS = new Set([
   'createList', 'updateList', 'deleteList', 'restoreList', 'createTask', 'updateTask', 'deleteTask', 'restoreTask',
   'postEvent', 'updateRules', 'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
-  'purgeForever', 'restoreEntries', 'purgeEntries', 'emptyBin',
+  'purgeForever', 'restoreEntries', 'purgeEntries', 'emptyBin', 'deleteAllData',
 ]);
 
 /**
@@ -503,6 +503,12 @@ export async function trackChange(ctx, queue, operation, args) {
   const before = await readBefore(ctx, operation, args);
   return async (result) => {
     const created = ctx.now().toISOString();
+    if (operation === 'deleteAllData') {
+      // The erase covers every queued change, so they never upload; later changes queue after it.
+      await queue.clear();
+      await queue.add([{ target: { type: 'account' }, operation: 'erase', fields: { time: created }, 'edit-times': {}, undo: { kind: 'none' }, created }]);
+      return;
+    }
     if (operation === 'restoreEntries') {
       const restores = result.restored.flatMap(({ type, record, from }) => binEntry(type, `restore-${type}`, record, from));
       const adds = await membershipsOfRestored(ctx, result.restored);

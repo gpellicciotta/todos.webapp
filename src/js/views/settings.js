@@ -9,7 +9,7 @@
  * In local mode the Connection section explains connected mode, and Connect opens the connect screen.
  * The server URL is kept per device and checked on change (`CON-12`); an empty field restores the default.
  * Connected, the section names the account, its server, the sync state, and a Sync log link; the URL cannot change (`CON-11`).
- * Delete all data erases this device after an offer to export first and a typed DELETE; it is off while connected (`BAK-15`).
+ * Delete all data erases this device after an offer to export first and a typed DELETE; connected, it also erases the account's data (`BAK-15`).
  * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
  * Keyboard shortcuts lists the shortcuts that work today, from `SHORTCUTS`.
  */
@@ -56,7 +56,9 @@ const STRINGS = Object.freeze({
   exported: (name, lists, tasks) => `Saved ${name} with ${plural(lists, 'list')} and ${plural(tasks, 'task')}.`,
   exportFailed: 'The backup could not be saved. Try again.',
   deleteAll: 'Delete all data',
-  deleteAllConnected: 'Disconnect first. Deleting here never removes data from your account.',
+  deleteAllConnectedText: (lists, tasks) => `This permanently erases ${plural(lists, 'list')}, ${plural(tasks, 'task')}, including any in the recycle bin, and their notes. It cannot be undone.`,
+  deleteAllAccountText: 'This also erases them from your account on every device. People you share lists with lose those lists. You leave lists others share with you.',
+  deleteAllSharedWithYou: (count) => `${plural(count, 'list')} shared with you stay with their owners.`,
   deleteAllTitle: 'Delete all data?',
   deleteAllText: (lists, tasks) => `This permanently erases ${plural(lists, 'list')}, ${plural(tasks, 'task')}, including any in the recycle bin, and their notes on this device. It cannot be undone.`,
   deleteAllExportHint: 'Export a backup first if you may want this data again.',
@@ -391,7 +393,16 @@ async function saveBackup(doc, store, toaster) {
  */
 async function askDeleteAll(doc, parent, opener, store, toaster, session) {
   const isLocal = () => (session?.state() ?? 'local') === 'local';
-  const { lists, tasks } = await store.snapshot();
+  const startedLocal = isLocal();
+  const snapshot = await store.snapshot();
+  const userId = startedLocal ? null : await store.queue?.getState?.('user-id') ?? null;
+  // Connected, the erase takes only what the user owns; lists and tasks of others stay with them.
+  const lists = startedLocal ? snapshot.lists : snapshot.lists.filter((list) => (list.role ?? 'owner') === 'owner');
+  const tasks = startedLocal ? snapshot.tasks : snapshot.tasks.filter((task) => {
+    const owner = task['owner-id'];
+    return userId === null || owner === null || owner === undefined || String(owner) === String(userId);
+  });
+  const sharedWithUser = snapshot.lists.length - lists.length;
   const dialog = make(doc, 'dialog', 'dialog');
   dialog.setAttribute('aria-labelledby', 'settings-delete-all-title');
   const header = make(doc, 'div', 'dialog__header');
@@ -418,8 +429,13 @@ async function askDeleteAll(doc, parent, opener, store, toaster, session) {
   const input = make(doc, 'input', 'field__control');
   Object.assign(input, { id: label.htmlFor, type: 'text', autocomplete: 'off', spellcheck: false });
   field.append(label, input);
-  body.append(make(doc, 'p', '', STRINGS.deleteAllText(lists.length, tasks.length)),
-    make(doc, 'p', 'settings__hint', STRINGS.deleteAllExportHint), exportButton, field);
+  body.append(make(doc, 'p', '', startedLocal
+    ? STRINGS.deleteAllText(lists.length, tasks.length)
+    : `${STRINGS.deleteAllConnectedText(lists.length, tasks.length)} ${STRINGS.deleteAllAccountText}`));
+  if (sharedWithUser > 0) {
+    body.append(make(doc, 'p', '', STRINGS.deleteAllSharedWithYou(sharedWithUser)));
+  }
+  body.append(make(doc, 'p', 'settings__hint', STRINGS.deleteAllExportHint), exportButton, field);
   const actions = make(doc, 'div', 'dialog__actions');
   const cancel = button(doc, 'button button--secondary', STRINGS.cancel);
   cancel.dataset.dialogClose = 'cancel';
@@ -434,14 +450,14 @@ async function askDeleteAll(doc, parent, opener, store, toaster, session) {
   dialog.append(header, body, actions);
   parent.append(dialog);
   const closed = confirmDialog(dialog, { opener, initialFocus: input });
-  // Connecting while the dialog is open ends the offer: an erase would never reach the account.
+  // Connecting or disconnecting while the dialog is open ends the offer: its text and counts no longer match what an erase does.
   const stop = session?.subscribe?.(() => {
-    if (!isLocal() && !busy) {
+    if (isLocal() !== startedLocal && !busy) {
       dialog.close('cancel');
     }
   });
   confirm.addEventListener('click', async () => {
-    if (busy || !typedWord() || !isLocal()) {
+    if (busy || !typedWord() || isLocal() !== startedLocal) {
       return;
     }
     busy = true;
@@ -472,7 +488,7 @@ async function askDeleteAll(doc, parent, opener, store, toaster, session) {
 
 /**
  * Create the Data section: Export backup, Import backup, and Delete all data.
- * Delete all data is off while connected, and follows the session.
+ * Delete all data is on in every mode; connected, it also erases the account's data through the queue.
  * @param {Document} doc the document
  * @param {object} store the store facade
  * @param {{show: (message: string) => void}} [toaster] shows the confirmations
@@ -517,27 +533,9 @@ function dataSection(doc, store, toaster, connection = {}) {
       opening = false;
     }
   });
-  const hint = make(doc, 'p', 'settings__hint', STRINGS.deleteAllConnected);
-  hint.id = 'settings-delete-all-hint';
   actions.append(exportButton, importButton, deleteButton);
-  element.append(actions, hint);
-
-  /** Turn Delete all data off, with its hint, while an account is connected. */
-  function follow() {
-    const connected = (connection.session?.state() ?? 'local') !== 'local';
-    deleteButton.disabled = connected;
-    hint.hidden = !connected;
-    if (connected) {
-      deleteButton.setAttribute('aria-describedby', hint.id);
-    }
-    else {
-      deleteButton.removeAttribute('aria-describedby');
-    }
-  }
-
-  follow();
-  const stop = connection.session?.subscribe?.(follow);
-  return { element, destroy: () => stop?.() };
+  element.append(actions);
+  return { element, destroy: () => {} };
 }
 
 /**

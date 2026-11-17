@@ -213,6 +213,55 @@ test('Delete all data needs DELETE typed, erases everything including the bin, a
   expect(problems).toEqual([]);
 });
 
+test('connected, Delete all data also erases the account through the service, then the app syncs empty', async ({ page }) => {
+  const server = `http://127.0.0.1:${process.env.E2E_PORT ?? 8754}`;
+  const session = { token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server };
+  const calls = [];
+  await page.addInitScript(([url, record]) => {
+    if (!sessionStorage.getItem('seeded')) {
+      sessionStorage.setItem('seeded', '1');
+      localStorage.setItem('todos.server-url', JSON.stringify(url));
+      localStorage.setItem('todos.session', JSON.stringify(record));
+    }
+  }, [server, session]);
+  await page.route(`${server}/api/**`, (route) => {
+    const { pathname, search } = new URL(route.request().url());
+    calls.push(`${route.request().method()} ${pathname}${search.startsWith('?before=') ? '?before' : ''}`);
+    const json = (body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    if (pathname === '/api/users/me') {
+      return json({ id: 7, email: 'jane@example.com', name: 'Jane Doe' });
+    }
+    if (pathname === '/api/users/7/data') {
+      return json({ lists: 1, tasks: 1, notes: 0 });
+    }
+    if (pathname === '/api/notifications') {
+      return json([]);
+    }
+    if (pathname === '/api/changes') {
+      return json({ cursor: 'c1', 'has-more': false, lists: [], tasks: [], memberships: [], notes: [], tombstones: [], protocol: 1 });
+    }
+    return json({});
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, '#/settings');
+  await seed(page, { deleteList: false });
+  const button = page.getByRole('button', { name: 'Delete all data' });
+  await expect(button).toBeEnabled();
+  await expect(page.locator('.settings')).not.toContainText('Disconnect first');
+  await button.click();
+  const dialog = page.getByRole('dialog', { name: 'Delete all data?' });
+  await expect(dialog).toContainText('This also erases them from your account on every device.');
+  await expect(dialog).toContainText('People you share lists with lose those lists.');
+  await page.screenshot({ path: test.info().outputPath('delete-all-connected-dialog.png') });
+  await dialog.getByLabel('Type DELETE to confirm').fill('DELETE');
+  await dialog.getByRole('button', { name: 'Delete everything' }).click();
+  await expect(page.locator('.toast')).toContainText('All data deleted.');
+  await expect.poll(() => calls.filter((call) => call.startsWith('DELETE /api/users/7/data?before'))).toHaveLength(1);
+  await expect.poll(() => calls.slice(calls.indexOf('DELETE /api/users/7/data?before')).some((call) => call === 'GET /api/changes')).toBe(true);
+  await page.goto('/#/lists');
+  await expect(page.locator('.empty-state')).toContainText('No lists yet.');
+});
+
 test('choosing Dark sets data-theme at once and keeps it after a reload', async ({ page }) => {
   const problems = watch(page);
   await open(page, '#/settings');

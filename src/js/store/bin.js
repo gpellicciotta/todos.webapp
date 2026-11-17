@@ -264,8 +264,8 @@ export function emptyBin(ctx) {
 
 /**
  * Permanently erase every list, task, membership, note, and recycle bin entry in one transaction (`BAK-15`).
- * The caller asks for confirmation first and offers a backup. It leaves the sync stores alone and queues nothing,
- * so the app only offers it while not connected.
+ * The caller asks for confirmation first and offers a backup. It leaves the sync stores alone.
+ * While connected, the store facade replaces the change queue with one `erase` entry (see sync/queue.js).
  * @param {{db: IDBDatabase}} ctx store context
  * @returns {Promise<{lists: number, tasks: number}>} how many lists and tasks it erased
  */

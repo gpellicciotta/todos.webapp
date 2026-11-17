@@ -415,12 +415,46 @@ describe('Delete all data in Settings', () => {
     expect(buttons.at(-1).disabled).toBe(false);
   });
 
-  it('is disabled with a hint while connected', () => {
-    const { view } = mountWithStore('connected');
-    const button = find(view, 'Delete all data');
-    expect(button.disabled).toBe(true);
-    const hint = document.getElementById(button.getAttribute('aria-describedby'));
-    expect(hint.textContent).toBe('Disconnect first. Deleting here never removes data from your account.');
+  it('is enabled while connected, with no Disconnect first hint', () => {
+    for (const state of ['connected', 'sign-in-needed']) {
+      document.body.replaceChildren();
+      const { view } = mountWithStore(state);
+      const button = find(view, 'Delete all data');
+      expect(button.disabled).toBe(false);
+      expect(button.hasAttribute('aria-describedby')).toBe(false);
+      expect(view.textContent).not.toContain('Disconnect first');
+    }
+  });
+
+  it('says what leaves the account when connected, and counts only what the user owns', async () => {
+    const { view, store } = mountWithStore('connected');
+    store.snapshot.mockResolvedValue({
+      lists: [{ role: 'owner' }, { role: 'viewer' }, { role: 'editor' }],
+      tasks: [{ 'owner-id': 7 }, { 'owner-id': 9 }, { 'owner-id': 7 }],
+      memberships: [],
+      notes: [],
+    });
+    store.queue = { getState: vi.fn(async () => 7) };
+    find(view, 'Delete all data').click();
+    await settle();
+    const text = document.querySelector('dialog').textContent;
+    expect(text).toContain('1 list, 2 tasks');
+    expect(text).toContain('This also erases them from your account on every device.');
+    expect(text).toContain('People you share lists with lose those lists. You leave lists others share with you.');
+    expect(text).toContain('2 lists shared with you');
+    typed(document.querySelector('dialog input'), 'DELETE');
+    find(document.querySelector('dialog'), 'Delete everything').click();
+    await settle();
+    expect(store.deleteAllData).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the local text and counts in local mode', async () => {
+    const { view } = mountWithStore();
+    find(view, 'Delete all data').click();
+    await settle();
+    const text = document.querySelector('dialog').textContent;
+    expect(text).toContain('2 lists, 3 tasks');
+    expect(text).not.toContain('your account');
   });
 
   it('keeps Delete everything disabled until DELETE is typed exactly', async () => {

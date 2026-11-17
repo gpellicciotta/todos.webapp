@@ -136,8 +136,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   It skips expired, missing, and not deleted entries, and returns `{restored, skipped}`.
 - `purgeEntries(entries)` permanently removes the given entries as `purgeForever` does, in one transaction, skipping missing or not deleted ones, and returns the purged `{type, id}` entries (`BIN-9`).
 - Restoring or purging an entry outside the bin throws code `not-deleted`.
-- `deleteAllData()` clears lists, tasks, memberships, and notes, including bin entries, in one transaction and returns `{lists, tasks}` counts (`BAK-15`).
-  It leaves the sync stores alone and queues nothing; the app offers it only while not connected.
+- `deleteAllData()` clears lists, tasks, memberships, and notes, including bin entries, in one transaction and returns `{lists, tasks}` counts (`BAK-15`). While connected it also queues an account erase, see Sync Queue.
+  It leaves the sync stores alone; the app offers it in every mode.
 
 ---
 
@@ -308,7 +308,9 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `openStore({tracking})` queues every committed write while `tracking()` is true, that is, while an account is connected or expired (`SYN-1`, `SYN-2`).
   - Local mode queues nothing.
   - The entry joins the queue right after the write commits, in a second transaction.
-  - `deleteAllData`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
+  - `purgeExpired` and `applyChanges` queue nothing. A backup import queues in its own task.
+  - `deleteAllData()` replaces the whole queue with one `erase` entry whose `fields.time` is the erase time (`BAK-15`).
+    The erase covers every earlier entry, so none uploads; entries queued after it upload after it.
   - `purgeForever(type, id)` queues one `purge` entry and `emptyBin()` one `empty-bin` entry with `fields.time`, the emptying time (`BIN-4`, `BIN-7`).
   - `restoreEntries(entries)` queues one `restore-list` or `restore-task` entry per restored entry, and `purgeEntries(entries)` one `purge` entry per purged entry (`BIN-9`).
     Earlier entries of a purged row stay and upload first, so a queued trash reaches the service before its purge.
@@ -323,6 +325,11 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
     `empty-bin` is sent as `DELETE /api/recycle-bin` and purges every entry the user may restore at the service's receive time.
     It sends no `before`: the service stamps `deletion-time` with its receive time, so a client time, or a skewed clock, could miss entries trashed from the queue.
     The entry keeps `fields.time`, the emptying time, for the record.
+  - Erase: `erase`, sent as `DELETE /api/users/{{user-id}}/data?before={{time}}`; the service erases what the account owned before `time`.
+    The user ID comes from the `user-id` sync state, or `GET /api/users/me`.
+    A 2xx logs one `erased` record with the counts; `401` pauses the queue, and offline or a 5xx keeps the entry.
+    Any other 4xx drops the entry, logs an `error` record, and shows the rejection toast; nothing rolls back.
+    No pull runs while an `erase` entry is queued, since the pull follows an empty queue; it runs right after the erase and applies the tombstones.
   - Notes: `create-note`, `edit-note`, and `delete-note`.
     A create sends `occurrence` when linked or explicitly global; otherwise the service places the note.
     An edit sends the changed `text` and `occurrence` with their `edit-times`; undo restores both.

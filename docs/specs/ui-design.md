@@ -823,7 +823,10 @@ Settings is one page with these sections:
   The list is off until the switch is on. Turning the switch on asks for notification permission; a denial or a browser without support leaves it off,
   with a status line that names the reason. The hint says reminders work while ToDo's is open, and that a date-only task reminds at 9:00.
 - Data: Export backup, Import backup, and Delete all data (`BAK-1`, `BAK-5`, `BAK-15`).
-- Delete all data is a danger button, last in Data; connected, it is disabled with the hint "Disconnect first. Deleting here never removes data from your account."
+- Delete all data is a danger button, last in Data; it is enabled in every mode.
+- Connected or expired, the dialog counts only the lists and tasks the user owns, adds a line for lists shared with the user,
+  and says "This also erases them from your account on every device. People you share lists with lose those lists. You leave lists others share with you."
+  Connecting or disconnecting while it is open closes it.
 - Its dialog names the counts, offers Export backup, and enables Delete everything only after the user types DELETE, exact and case-sensitive.
   Cancel and Escape change nothing; a toast says "All data deleted."; a failure keeps the dialog open with an error toast. The theme and server URL stay.
 - Connection, when local: the explanation of connected mode (the gains, the loss of anonymity, invitation-only access), the server, and Sign in.

@@ -7,6 +7,7 @@
  * - 2xx: the entry is done; fields the merge overwrote go to the sync log, and the value the service kept applies locally.
  * - 400, 403, 404, 409, 412: the change is rolled back locally and logged, except a 404 on a delete, remove, or purge.
  * - A refused purge rolls nothing back: a 409 reads the row back and stores it, any other refusal is logged and dropped.
+ * - An `erase` entry sends `DELETE /api/users/{{user-id}}/data?before={{time}}`; a refusal is logged and dropped, like a purge.
  * - 401: pause and report Sign in needed; the queue keeps its entries.
  * - 426: stop all syncing and report Update required.
  * - No network or 5xx: try the same entry again with backoff.
@@ -28,7 +29,7 @@ const LABELS = {
   'post-event': 'a status change', 'update-rules': 'a deadline change',
   'add-membership': 'adding a task to a list', 'move-membership': 'a task move', 'remove-membership': 'removing a task from a list',
   'create-note': 'a new note', 'edit-note': 'a note change', 'delete-note': 'a note deletion',
-  purge: 'a permanent deletion', 'empty-bin': 'emptying the recycle bin',
+  purge: 'a permanent deletion', 'empty-bin': 'emptying the recycle bin', erase: 'erasing the account data',
 };
 
 /**
@@ -214,11 +215,55 @@ export function createPush({
   }
 
   /**
+   * Find the connected user: remembered, then asked from the service.
+   * @returns {Promise<number|string>} the user identifier
+   * @throws {SyncStop} when the service cannot name the user, so the entry is tried again later
+   */
+  async function findUser() {
+    const saved = await queue.getState('user-id');
+    if (saved !== null) {
+      return saved;
+    }
+    const response = await api.send('GET', '/api/users/me');
+    const id = judge(response) === 'done' ? response.body?.id ?? null : null;
+    if (id === null) {
+      throw new SyncStop('retry');
+    }
+    await queue.setState('user-id', id);
+    return id;
+  }
+
+  /**
+   * Upload an erase entry: the service erases what the account owned before the entry's time.
+   * A refusal drops the entry and logs a sync error; nothing rolls back, since the data is already gone locally.
+   * @param {object} entry the erase entry
+   */
+  async function uploadErase(entry) {
+    const userId = await findUser();
+    const before = encodeURIComponent(entry.fields.time);
+    const response = await api.send('DELETE', `/api/users/${encodeURIComponent(userId)}/data?before=${before}`);
+    const outcome = judge(response);
+    await queue.remove([entry.seq]);
+    if (outcome === 'done') {
+      const { lists = 0, tasks = 0, notes = 0 } = response.body ?? {};
+      await queue.appendLog([{ kind: 'erased', lists, tasks, notes, message: 'Erased the data of your account.' }]);
+      return;
+    }
+    const message = `The service refused ${describeEntry(entry)}, so it was dropped.`;
+    await queue.appendLog([{ kind: 'error', target: entry.target, message, detail: `HTTP ${response.status}` }]);
+    onRejected({ entry, status: response.status, message });
+  }
+
+  /**
    * Upload the first entry.
    * @param {object} entry the entry
    * @param {Record<string, string>} listMap the local-to-account list ids
    */
   async function upload(entry, listMap) {
+    if (entry.operation === 'erase') {
+      await uploadErase(entry);
+      return;
+    }
     const [method, path, options] = toRequest(entry, (id) => listMap[id] ?? id);
     const response = await api.send(method, path, options);
     if (judge(response) === 'done') {

@@ -175,6 +175,29 @@ describe('polling', () => {
   });
 });
 
+describe('erasing the account data', () => {
+  it('does not pull while the erase waits, and pulls right after it succeeds', async () => {
+    const service = fakeFeed();
+    const { engine, store } = await device(service);
+    await store.createTask({ description: 'Paint' });
+    expect(await engine.syncNow()).toBe('synced');
+    await store.deleteAllData();
+    service.calls.length = 0;
+    service.fail = (call) => (call.method === 'DELETE' ? 'network' : null);
+    expect(await engine.syncNow()).toBe('retry');
+    expect(changesCalls(service)).toEqual([]);
+    expect(await store.queue.count()).toBe(1);
+    service.fail = () => null;
+    service.calls.length = 0;
+    expect(await engine.syncNow()).toBe('synced');
+    expect(service.calls.map((call) => `${call.method} ${call.path.split('?')[0]}`)).toEqual([
+      'DELETE /api/users/7/data', 'GET /api/changes',
+    ]);
+    expect(await store.listTasks()).toEqual([]);
+  });
+
+});
+
 describe('disconnecting', () => {
   it('removes data of others and drops the cursor once the session turns local', async () => {
     const service = fakeFeed();

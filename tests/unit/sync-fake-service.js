@@ -43,6 +43,16 @@ export function fakeService({ lists = [] } = {}) {
     if (kind === 'changes') {
       return { status: 200, body: { cursor: 'c1', 'has-more': false, lists: [...service.lists.values()], tasks: [], memberships: [], notes: [], tombstones: [], protocol: 1 } };
     }
+    if (kind === 'users' && id === 'me') {
+      return { status: 200, body: { id: 7 } };
+    }
+    if (kind === 'users' && sub === 'data' && method === 'DELETE') {
+      const erased = { lists: service.lists.size, tasks: service.tasks.size, notes: service.notes.size };
+      for (const rows of [service.lists, service.tasks, service.memberships, service.notes, service.events]) {
+        rows.clear();
+      }
+      return { status: 200, body: erased };
+    }
     if (kind === 'recycle-bin') {
       return recycleBin(id, sub);
     }

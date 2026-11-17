@@ -411,6 +411,27 @@ describe('deleteAllData', () => {
     expect(await store.queue.getState('user-id')).toBe(7);
   });
 
+  it('queues nothing in local mode', async () => {
+    await store.deleteAllData();
+    expect(await store.queue.count()).toBe(0);
+  });
+
+  it('drops the earlier entries and queues one erase entry with the time while tracking', async () => {
+    const tracked = await freshStore({ tracking: () => true });
+    const list = await tracked.store.createList({ name: 'A' });
+    await tracked.store.createTask({ description: 'B' }, { lists: [list.id] });
+    await tracked.store.deleteList(list.id);
+    tracked.clock.tick(5000);
+    await tracked.store.deleteAllData();
+    const entries = await tracked.store.queue.all();
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ operation: 'erase', target: { type: 'account' }, fields: { time: new Date(tracked.clock.now).toISOString() } });
+    tracked.clock.tick(1000);
+    await tracked.store.createList({ name: 'C' });
+    expect((await tracked.store.queue.all()).map((entry) => entry.operation)).toEqual(['erase', 'create-list']);
+    tracked.store.close();
+  });
+
   it('returns zero counts on a fresh store and tells subscribers once', async () => {
     const fresh = await freshStore();
     const heard = [];

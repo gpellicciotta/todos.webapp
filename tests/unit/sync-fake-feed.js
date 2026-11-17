@@ -143,6 +143,17 @@ export function fakeFeed({ protocol = 1 } = {}) {
     if (kind === 'users' && id === 'me') {
       return { status: 200, body: USER };
     }
+    if (kind === 'users' && sub === 'data' && method === 'DELETE') {
+      const erased = { lists: service.lists.size, tasks: service.tasks.size, notes: service.notes.size };
+      for (const [type, rows] of [['list', service.lists], ['task', service.tasks], ['note', service.notes]]) {
+        for (const rowId of [...rows.keys()]) {
+          rows.delete(rowId);
+          service.tombstones.push({ type, id: rowId, 'list-id': null, reason: 'purged', revision: next(), time: new Date().toISOString() });
+        }
+      }
+      service.memberships.clear();
+      return { status: 200, body: erased };
+    }
     if (kind === 'lists' && !id) {
       return create(service.lists, body, { owner: USER, role: 'owner', description: '', 'deletion-time': null, sharing: [], 'last-update-time': body['creation-time'] });
     }
