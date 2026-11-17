@@ -12,14 +12,14 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1764.1, input: 162, output: 64754, cache_read: 12421183, cache_write: 192571}
+  worker: {turns: 3, duration_s: 1799.3, input: 170, output: 65952, cache_read: 13324098, cache_write: 199497}
   review: {turns: 1, duration_s: 486.0, input: 73584, output: 4557, cache_read: 2208512, cache_write: 0}
 review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T10:12:29Z"
 reviewed_by: "@codex"
 review_session: codex-20261117-fc96c2
-work_duration: 3091.3
+work_duration: 6093.8
 ---
 # T0267: Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override
 
@@ -30,8 +30,6 @@ Keep the release flow as a `Project.release` override: version.js, service worke
 Add `scripts/requirements.txt` pinning support-python v3.3.0, and update docs/devops.md and CHANGELOG.md.
 Completion check: `python scripts/devops.py check` and `python scripts/devops.py release --dry-run --skip-github-release` pass.
 Size estimate: 4 files, 500 lines.
-Mechanical command: ruff format scripts tests
-Mechanical files: scripts/draw-wireframes.py
 
 ### Declared Files
 - scripts/devops.py
@@ -47,7 +45,7 @@ Mechanical files: scripts/draw-wireframes.py
 - [x] **[Implement]** Author tests for the mapped actions and the release override.
 - [x] **[Verify]**    Run the new tests and confirm they fail.
 - [x] **[Implement]** Rebuild scripts/devops.py on DevopsCli and NodeProject.
-- [ ] **[Verify]**    Run the tests, check, and the release dry run.
+- [x] **[Verify]**    Run the tests, check, and the release dry run.
 - [x] **[Doc]**       Update docs/devops.md and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
@@ -98,4 +96,10 @@ Mechanical files: scripts/draw-wireframes.py
   Blocked on T0274: both completion commands stop at behaviors.spec.js:109, still failing on main at 59a5c83.
   - Rerun check and release --dry-run --skip-github-release after T0274 integrates.
   - Step 4 unchecked until both pass.
+
+- [2026-11-17] **[Verify]**
+  Rebased onto main 30be458 with T0274; check and the full release dry run, without --skip-checks, each exit 0.
+  - First runs each hit one load-sensitive e2e test, passing 5/5 alone.
+  - Filed T0275 for that e2e flakiness.
+  - Files touched: 5; Lines touched: 733; Reopenings: 0.
 

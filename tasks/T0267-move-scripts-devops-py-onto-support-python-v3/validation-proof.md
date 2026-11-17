@@ -132,6 +132,84 @@ Command: `npx playwright test tests/e2e/behaviors.spec.js:109 --reporter=line`. 
 
 Blocked: both completion commands need T0274 first; rerun them without `--skip-checks` once it lands.
 
+### Completion check after T0274, branch rebased onto main 30be458
+The rebase kept both CHANGELOG entries; T0274 had already formatted `scripts/draw-wireframes.py`, so it left this diff.
+
+Command: `python scripts/devops.py check`. First run exit code: 1, from one load-sensitive e2e test.
+
+```text
+  1) [chromium] › tests\e2e\all-tasks.spec.js:591:1 › a just added row keeps the hover feedback of other rows while it is highlighted 
+    Error: expect(locator).toHaveClass(expected) failed
+  1 failed
+  246 passed (4.6m)
+**[ERROR]** Finished devops check in 321.1s with status: failed
+```
+
+That test alone, `npx playwright test tests/e2e/all-tasks.spec.js:591 --repeat-each 5 --reporter=line`, exit code 0:
+
+```text
+  5 passed (10.0s)
+```
+
+Command: `python scripts/devops.py check`, rerun. Exit code: 0.
+
+```text
+OK: 131 precached files match VERSION 2026-11-17.22.
+ Test Files  65 passed (65)
+      Tests  1700 passed (1700)
+  247 passed (3.5m)
+All checks passed!
+4 files already formatted
+172 passed in 118.72s (0:01:58)
+```
+
+Command, in a fresh scratch clone of the task branch renamed to main:
+`{{worktree}}/.venv/Scripts/python.exe scripts/devops.py release --dry-run --skip-github-release`.
+First run exit code: 1, from another load-sensitive e2e test; nothing changed.
+
+```text
+  1) [chromium] › tests\e2e\sidebar-find.spec.js:43:1 › Down moves into the rows, which are one tab stop, and Escape clears the field 
+  1 failed
+  246 passed (3.7m)
+**[ERROR]** The checks failed; nothing was changed.
+```
+
+That test alone, `npx playwright test tests/e2e/sidebar-find.spec.js:43 --repeat-each 5 --reporter=line`, exit code 0:
+
+```text
+  5 passed (7.9s)
+```
+
+Same release dry run, rerun. Exit code: 0.
+
+```text
+OK: 131 precached files match VERSION 2026-11-17.22.
+      Tests  1700 passed (1700)
+  247 passed (3.3m)
+All checks passed!
+4 files already formatted
+172 passed in 145.40s (0:02:25)
+Release         : v0.5.1, dated 2026-11-17
+Next version    : v0.5.2-pre
+Files           : CHANGELOG.md, package.json, package-lock.json, src/js/version.js, src/service-worker.js, scripts/sw-precache-hashes.json
+Checks          : ran: service worker, unit, lint, e2e, Ruff, pytest
+Local commands, after the question:
+  git commit -m "Released v0.5.1."
+  git tag -a v0.5.1 -m "Released v0.5.1."
+  git commit -m "Opened v0.5.2-pre development after releasing v0.5.1."
+Commands that publish:
+  git push --atomic origin main v0.5.1
+  (no GitHub release)
+Also published  : 3 commit(s) not yet on origin/main
+  76ffa26 Moved the CLI server test into a scratch copy so its server state never touches the repository's work folder.
+  8d24f01 Documented the DevopsCli-based devops.py, its .venv setup, and the renamed GitHub release option.
+  bec0dfb Rebuilt scripts/devops.py on support-python 3.3.0 DevopsCli with a todos release override and a pinned .venv.
+
+Dry run: nothing was changed.
+```
+
+Afterward the clone printed `status=[] head=76ffa26 tags=[]`: a clean tree, the same HEAD, and no v0.5.1 tag.
+
 ### Markdown
 Command: `.venv/Scripts/lint-markdown.exe check CHANGELOG.md --offline`. Exit code: 0.
 
