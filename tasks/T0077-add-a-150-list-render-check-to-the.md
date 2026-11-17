@@ -12,13 +12,12 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 4, duration_s: 484.8, input: 70, output: 11360, cache_read: 2680830, cache_write: 138946}
+  worker: {turns: 5, duration_s: 601.3, input: 82, output: 12857, cache_read: 3260842, cache_write: 146351}
   review: {turns: 1, duration_s: 163.7, input: 37232, output: 2330, cache_read: 650368, cache_write: 0}
 work_duration: 4855.9
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T06:23:15Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T07:17:10Z"
 review_session: codex-20261117-3fb6e9
 ---
 # T0077: Add a 150-list render check to the performance spec, and record 500 lists
@@ -70,4 +69,7 @@ Update the measured numbers in ui-design.md.
   Full npm run test:perf passes after T0272: 150 lists open in 161 ms, 500 lists in 375 ms.
   - 500 lists is 2.3x the 150-list time.
   - Files touched: 0; lines touched: 0; reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
