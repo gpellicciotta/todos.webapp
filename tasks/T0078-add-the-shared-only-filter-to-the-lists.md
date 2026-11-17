@@ -1,11 +1,11 @@
 ---
 id: T0078
-owner: ~
-needs: ['T0074']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0078-add-the-shared-only-filter-to-the-lists
+worktree: .plan/work/T0078-add-the-shared-only-filter-to-the-lists
+status: active
+started_at: "2026-11-17T05:45:10Z"
 ended_at: —
 review: agent
 preview: none
