@@ -9,7 +9,8 @@
  * and Delete list (`VO-4`).
  * Rows follow the order of this device (`LST-8`): drag a row by its handle, or press Alt+Up or Alt+Down on a row.
  * The order stays on the device and new lists come last.
- * The counts come from core/list-counts.js, shared with the sidebar; core/list-find.js and core/list-sort.js hold the
+ * The counts come from core/list-counts.js, shared with the sidebar, and the app passes the sidebar's own read of them
+ * (core/list-snapshot.js) so the screen opens without counting 5000 tasks again (`TEC-16`); core/list-find.js and core/list-sort.js hold the
  * find and sort rules of the Many Lists design (`LST-10`, `LST-12`).
  * From 12 lists, or while it holds text, a find block joins the shell's action bar, pinned under the rows: a find field,
  * a sort button with its menu, and an info line with Reset. The field searches names and descriptions once typing pauses
@@ -182,10 +183,12 @@ function createFindBlock(doc) {
  * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the find block; the view by default
  * @param {object} [options.memory] the router's memory object of the view, which keeps the find text for the session
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device sort
+ * @param {() => Promise<{lists: object[], counts: object}>} [options.readSnapshot] reads the lists and their counts shared
+ *   with the sidebar, so opening the screen does not read every task again (`TEC-16`); the store is read when absent
  * @returns {{update: () => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountLists(view, {
-  store, toaster = { show() {} }, navigate = () => {}, overlays = null, actionBar = null, memory = {}, getStorage,
+  store, toaster = { show() {} }, navigate = () => {}, overlays = null, actionBar = null, memory = {}, getStorage, readSnapshot = null,
 }) {
   const doc = view.ownerDocument;
   let pending = null;
@@ -268,17 +271,26 @@ export function mountLists(view, {
   }
 
   /**
+   * Read the lists, the tasks, and the memberships from the store and count them, when no shared snapshot is given.
+   * @returns {Promise<{lists: object[], counts: object}>} the lists and their counts
+   */
+  async function readStore() {
+    const [lists, tasks, memberships] = await Promise.all([store.listLists(), store.listTasks(), store.listMemberships()]);
+    return { lists, counts: countLists(tasks, memberships) };
+  }
+
+  /**
    * Read the lists and their counts, then render them, once per burst of store changes.
    * @returns {Promise<void>} resolves once rendered
    */
   function refresh() {
     pending ??= Promise.resolve().then(async () => {
       pending = null;
-      const [lists, tasks, memberships] = await Promise.all([store.listLists(), store.listTasks(), store.listMemberships()]);
+      const next = await (readSnapshot ? readSnapshot() : readStore());
       if (destroyed) {
         return;
       }
-      data = { lists, counts: countLists(tasks, memberships) };
+      data = next;
       render();
     }).catch((error) => console.error('The lists failed to render:', error));
     return pending;

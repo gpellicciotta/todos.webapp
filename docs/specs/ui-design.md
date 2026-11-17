@@ -524,7 +524,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Rows carry `aria-setsize` and `aria-posinset`, so screen readers count every task, rendered or not.
 - Move up, Move down, Alt+Up, Alt+Down, and drag targets cover the whole list; a moved row scrolls into view.
 - `TEC-16` is met for opening a view under 4x CPU throttling, the stand-in for a mid-range phone.
-  The 150 lists it now names are unmeasured until the Lists render check lands; see Many Lists.
+  The 150 lists it now names are measured under Many Lists: Lists opens in about 165 ms.
   With 5000 tasks, All tasks paints its first rows about 175 ms after the route change, down from about 265 ms.
   Desktop Chromium without throttling takes about 55 ms.
   [performance.spec.js](../../tests/e2e/performance.spec.js) asserts 200 ms, and the Pages workflow runs it.
@@ -646,6 +646,11 @@ The sidebar and this screen share the rules below.
   The check runs under 4x CPU throttling.
   [performance.spec.js](../../tests/e2e/performance.spec.js) asserts it; with 500 lists the time is recorded, not asserted.
   If the 500-list time passes twice the 150-list time, a new task adds windowing as for task rows.
+- **[Decided]** Opening reads no tasks of its own: the sidebar and this screen share one read of the lists and counts,
+  which lasts until the next store write or the minute timer (`TEC-16`).
+  [list-snapshot.js](../../src/js/core/list-snapshot.js) holds it. Before it, counting 5000 tasks and their memberships
+  made Lists open in about 389 ms; with it, 150 lists open in about 165 ms and 500 lists in about 360 ms, under 4x throttling.
+  The 500-list time is over twice the 150-list time, so a windowing task follows.
 - **[Decided]** Counts: one shared pass builds the open and total count of every list from the tasks and memberships.
   It marks open task identifiers once, then walks the memberships once.
   The cost is tasks plus memberships, never lists times tasks.

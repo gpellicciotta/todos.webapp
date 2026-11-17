@@ -19,7 +19,7 @@
 import { setSpriteUrl } from '../vendor/design/js/icon.js';
 import { watchWorkerUpdates } from '../vendor/design/js/sw-update.js';
 import { createToast } from '../vendor/design/js/toast.js';
-import { countLists } from './core/list-counts.js';
+import { createListSnapshot } from './core/list-snapshot.js';
 import { startOverdueTimer } from './core/overdue.js';
 import { readPreference, readReminderLead, readReminders, readRemindersSince, writePreference } from './core/preferences.js';
 import { createReminders } from './core/reminders.js';
@@ -205,6 +205,8 @@ async function start() {
   shell.showSync({ engine, readLog: () => store.queue.log(), seen, checkForUpdate });
   let screen = null;
   let shownViewKey = null;
+  // The sidebar and the Lists screen share one read of the lists and counts; made before any screen subscribes (`TEC-16`).
+  const listSnapshot = createListSnapshot(store);
   // The screens and the View options panel share these, so the rows, the info line, and the panel follow one state.
   const viewModels = { tasks: createViewModel('tasks'), list: createViewModel('list') };
   const editorPanel = createEditorPanel({
@@ -219,8 +221,8 @@ async function start() {
    * @returns {Promise<void>}
    */
   async function refreshNav() {
-    const [lists, tasks, memberships] = await Promise.all([store.listLists(), store.listTasks(), store.listMemberships()]);
-    shell.setLists(lists, countLists(tasks, memberships));
+    const { lists, counts } = await listSnapshot.read();
+    shell.setLists(lists, counts);
     const current = router.current();
     const list = current?.params.listId && lists.find((candidate) => candidate.id === current.params.listId);
     if (list) {
@@ -250,7 +252,7 @@ async function start() {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
       const options = {
-        store, toaster, session, api: createApi({ session }), sync: engine, seen, viewModels, memory: router.memory(), actionBar: shell.actionBar, actionsSlot: shell.actionsSlot, overlays: shell.overlays,
+        store, toaster, session, api: createApi({ session }), sync: engine, seen, viewModels, memory: router.memory(), readSnapshot: listSnapshot.read, actionBar: shell.actionBar, actionsSlot: shell.actionsSlot, overlays: shell.overlays,
         navigate: (hash, settings) => router.navigate(hash, settings),
       };
       screen = { element, controller: mount ? mount(element, options) : null };
@@ -281,7 +283,10 @@ async function start() {
   });
 
   // The open counts follow the clock too: a recurring task past its period end counts as open (the display rule).
-  setInterval(() => refreshNav().catch((error) => console.error('Navigation refresh failed:', error)), 60_000);
+  setInterval(() => {
+    listSnapshot.invalidate();
+    return refreshNav().catch((error) => console.error('Navigation refresh failed:', error));
+  }, 60_000);
 
   document.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || inTextField(event)

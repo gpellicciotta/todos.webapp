@@ -265,6 +265,95 @@ test('All tasks grouped by due date opens with 5000 tasks within 200 ms under 4x
   expect(median(opens)).toBeLessThan(OPEN_BUDGET_MS);
 });
 
+/**
+ * Store lists and put every task in one of them, so each list holds about the same number of tasks.
+ * @param {import('@playwright/test').Page} page the page, with the tasks stored
+ * @param {number} count the number of lists
+ * @returns {Promise<void>}
+ */
+function seedLists(page, count) {
+  return page.evaluate(async (total) => {
+    const { openStore } = await import('/js/store/db.js');
+    const { uuid7 } = await import('/js/lib/uuid7.js');
+    const store = await openStore({ broadcast: true });
+    const time = new Date().toISOString();
+    const lists = Array.from({ length: total }, (_, index) => ({
+      id: uuid7(), name: `List ${String(index).padStart(3, '0')}`, description: index % 2 === 0 ? `About list ${index}` : '',
+      owner: null, 'creation-time': time, 'last-update-time': time, 'deletion-time': null,
+    }));
+    const tasks = await store.listTasks();
+    const memberships = tasks.map((task, index) => ({
+      'list-id': lists[index % total].id, 'task-id': task.id, position: 'a', 'added-time': time,
+    }));
+    await store.applyChanges(() => ({ changes: { put: { lists, memberships } }, result: null }));
+    store.close();
+  }, count);
+}
+
+/**
+ * Open the Lists screen from All tasks under CPU throttling, four times, and return the three last opening times.
+ * An opening ends once the first list rows have painted.
+ * @param {import('@playwright/test').Page} page the page, with the app started on All tasks
+ * @param {import('@playwright/test').CDPSession} cdp the throttling session
+ * @returns {Promise<number[]>} the times in milliseconds
+ */
+async function opensLists(page, cdp) {
+  await page.goto('about:blank');
+  await page.goto('/#/tasks');
+  await page.waitForFunction(() => window.firstRowsPainted, null, { timeout: 30_000 });
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU_RATE });
+  const opens = [];
+  for (let run = 0; run < 4; run += 1) {
+    await page.evaluate(() => {
+      location.hash = '#/tasks';
+    });
+    await expect(page.locator('.task-row').first()).toBeVisible();
+    await expect(page.locator('.list-item')).toHaveCount(0);
+    opens.push(await page.evaluate(async () => {
+      const start = performance.now();
+      location.hash = '#/lists';
+      while (!document.querySelector('.list-item')) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+      await new Promise((resolve) => setTimeout(resolve));
+      return performance.now() - start;
+    }));
+  }
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  return opens.slice(1);
+}
+
+test('Lists opens with 150 lists and 5000 tasks within 200 ms under 4x CPU throttling (TEC-16, LST-15)', async ({ page }, info) => {
+  test.setTimeout(240_000);
+  await page.goto('/#/tasks');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await seed(page, COUNT);
+  await seedLists(page, 150);
+  await page.addInitScript(watchRows);
+  const cdp = await page.context().newCDPSession(page);
+  const opens = await opensLists(page, cdp);
+  const numbers = `${CPU_RATE}x CPU throttling, 150 lists: Lists open ${opens.map(Math.round).join(', ')} ms (median ${Math.round(median(opens))} ms)`;
+  console.log(numbers);
+  info.annotations.push({ type: 'performance', description: numbers });
+  expect(median(opens)).toBeLessThan(OPEN_BUDGET_MS);
+});
+
+// 500 lists are recorded, not asserted: the design adds windowing only if they pass twice the 150-list time.
+test('Lists opens with 500 lists and 5000 tasks, recorded under 4x CPU throttling (TEC-16, LST-15)', async ({ page }, info) => {
+  test.setTimeout(240_000);
+  await page.goto('/#/tasks');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await seed(page, COUNT);
+  await seedLists(page, 500);
+  await page.addInitScript(watchRows);
+  const cdp = await page.context().newCDPSession(page);
+  const opens = await opensLists(page, cdp);
+  const numbers = `${CPU_RATE}x CPU throttling, 500 lists: Lists open ${opens.map(Math.round).join(', ')} ms (median ${Math.round(median(opens))} ms)`;
+  console.log(numbers);
+  info.annotations.push({ type: 'performance', description: numbers });
+  expect(opens).toHaveLength(3);
+});
+
 // The lists and their memberships add store reads that no grouping causes, so this test compares the two openings
 // on the same data instead of judging the 200 ms budget, which the test above covers for the standard data.
 test('grouping 5000 tasks by list in 12 lists opens as fast as showing them ungrouped (TEC-16, VO-9)', async ({ page }, info) => {

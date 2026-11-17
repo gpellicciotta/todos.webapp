@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Made the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x CPU throttling, from about 389 ms to about 165 ms, by sharing one cached read of the lists and counts between the sidebar and the screen instead of counting every task again (TEC-16, LST-15).
+- Tests: Added the 150-list render check, asserted at 200 ms, and a 500-list recording to the performance spec (TEC-16).
 - FrontEnd: Rendered long Lists screens with `content-visibility: auto` rows, built each row menu on first open, added one roving tab stop with Up, Down, Home, End, PageUp, PageDown, Right, and Left between rows and More buttons, kept collapsed menu semantics on unopened More buttons, and made the router wait for a new screen's first render before restoring the scroll (LST-15, TEC-16).
 - FrontEnd: Added the find bar, sort menu, info line, and Create list offer to the Lists screen from 12 lists, persisted the sort in `todos.view.lists`, hid reordering while a sort or text is active with a spoken reason, and listed the `/` shortcut in Settings (LST-10, LST-11, LST-12).
 - FrontEnd: Added the sidebar find field from 12 lists, with name matching, a "4 of 124" count, Enter, Escape, and Down keys, one roving tab stop for the rows, the `l` shortcut, and a polite match announcement after a 150 ms pause (LST-10, LST-15).
