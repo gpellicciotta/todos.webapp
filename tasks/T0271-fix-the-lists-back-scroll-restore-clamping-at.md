@@ -5,20 +5,22 @@ session: claude-20261117-15ecf0
 needs: []
 branch: task/T0271-fix-the-lists-back-scroll-restore-clamping-at
 worktree: .plan/work/T0271-fix-the-lists-back-scroll-restore-clamping-at
-status: active
+status: completed
 started_at: "2026-11-17T08:35:07Z"
-ended_at: —
+ended_at: "2026-11-17T08:59:49Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 930.2, input: 90, output: 20085, cache_read: 3567892, cache_write: 108207}
-  review: {turns: 1, duration_s: 245.5, input: 65239, output: 2984, cache_read: 586496, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 513.5, input: 114371, output: 5119, cache_read: 1386112, cache_write: 0}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-17T08:55:18Z"
-review_session: codex-20261117-904760
-work_duration: 858.4
+review_session: codex-20261117-6ab368
+work_duration: 1482.4
+reviewed_by: "@codex"
+completion-commit: ba41de12f225502928de176ec24f8172c5a4a848
 ---
 # T0271: Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e
 
@@ -29,7 +31,7 @@ Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibili
 - [x] **[Implement]** Implement required changes for T0271.
 - [x] **[Verify]**    Verify implementation with automated test suites.
 - [x] **[Doc]**       Update documentation and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-17] **[Doc]**
@@ -65,4 +67,11 @@ Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibili
 
 - [2026-11-17] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 2 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-2.md](T0271-fix-the-lists-back-scroll-restore-clamping-at/review-findings-2.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
