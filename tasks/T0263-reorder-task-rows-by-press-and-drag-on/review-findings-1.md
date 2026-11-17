@@ -4,10 +4,13 @@ round: 1
 verdict: approved
 blocking: 0
 reviewer: "@claude"
-reviewed_at: 2026-11-17T14:25:14Z
+reviewed_at: 2026-11-17T14:29:46Z
 reviewed_commit: "26d9f41"
 base_commit: "23563c4"
 branch: task/T0263-reorder-task-rows-by-press-and-drag-on
+session: claude-20261117-ae6b3f
+session_agent: claude-code
+session_created_at: 2026-11-17T14:25:14Z
 ---
 # Review Findings: Task T0263 (Round 1)
 

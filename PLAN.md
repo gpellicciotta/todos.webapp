@@ -11,15 +11,16 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [!] T0254 [reason: blocked: support.webapp has no release with T0049 yet; its checkout is 0.1.1-pre, latest tag v0.1.0. Release 0.1.1 there, then vendor it here.] [owner: @claude, session: claude-20261117-fc9300] [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.
 - [x] T0241 Erase the last account's lists and tasks on the next connect after Delete all data in local mode.
 - [x] T0260 Remove the task row's status menu, now that the task editor holds every status action.
-- [~] T0263 [owner: @claude] Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle.
-- [ ] T0264 [needs: T0263] Redesign the task row as a description line plus a meta line, with overdue due text in orange.
-- [ ] T0076 [needs: T0263] Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
+- [x] T0263 Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle.
+- [ ] T0264 Redesign the task row as a description line plus a meta line, with overdue due text in orange.
+- [ ] T0076 Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
 - [ ] T0262 Split the task editor into Content, Status, and History tabs, with Delete in a header More menu.
 - [ ] T0265 [needs: T0264] Remove the task row's More button and menu, now that the editor and the move keys cover them.
 - [x] T0271 Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e.
 - [x] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
 
 ## Backlog
+- [ ] T0279 [protocol: adhoc] Scope the toast test's polite live region locator, which also matches the task editor's count since T0258.
 - [ ] T0278 [protocol: adhoc] Drop the task list's filter-hide toast logic, since only ticks post from rows and always show Undo.
 - [ ] T0277 Replace the todos icons, favicon, and manifest icons with the shared support.webapp hexagon icon set.
 - [ ] T0276 Fix the gallery toast e2e test, whose aria-live locator also matches the task editor count region added in T0258.

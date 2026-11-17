@@ -5,19 +5,22 @@ session: claude-20261117-41471b
 needs: []
 branch: task/T0263-reorder-task-rows-by-press-and-drag-on
 worktree: .plan/work/T0263-reorder-task-rows-by-press-and-drag-on
-status: active
+status: completed
 started_at: "2026-11-17T13:48:25Z"
-ended_at: —
+ended_at: "2026-11-17T14:29:51Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 1898.1, input: 22, output: 3277, cache_read: 1771201, cache_write: 11649}
-  review: {turns: 1, duration_s: 167.1, input: 54576, output: 2731, cache_read: 502144, cache_write: 0}
-work_duration: 2189.4
-review_status: pending
+  review: {turns: 2, duration_s: 433.2, input: 54612, output: 10676, cache_read: 1661077, cache_write: 57345}
+work_duration: 2482.2
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T14:22:01Z"
+reviewed_by: "@claude"
+review_session: claude-20261117-ae6b3f
+completion-commit: fa3d9b423e55d154c71f71ee9690cf6ad6e04956
 ---
 # T0263: Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle
 
@@ -38,7 +41,7 @@ Replace the always-visible task row drag handles with direct reordering, by the 
 - [x] **[Verify]**    Run the unit suite and the list e2e spec and confirm they pass.
 - [x] **[Visual]**    Capture the focused row's outside handle and a drag in progress, in both themes.
 - [x] **[Doc]**       Update the List screen and Accessibility sections, LV-3, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -70,4 +73,11 @@ Replace the always-visible task row drag handles with direct reordering, by the 
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @claude: Approved.
+  - Findings: [review-findings-1.md](T0263-reorder-task-rows-by-press-and-drag-on/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
