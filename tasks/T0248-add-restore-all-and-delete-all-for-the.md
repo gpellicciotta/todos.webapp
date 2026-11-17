@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1140.6, input: 100, output: 33000, cache_read: 5981792, cache_write: 122434}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T02:37:37Z"
 ---
 # T0248: Add Restore all and Delete all for the entries matching the Recycle Bin filter
 
@@ -66,6 +71,9 @@ Let users act on every entry that matches the Recycle Bin filter at once.
 
 - [2026-11-17] **[Doc]**
   Added the CHANGELOG entry and bumped the service worker VERSION with its hash manifest.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
 ## Screenshots
 - Before: [filtered-toolbar-before-light.png](T0248-add-restore-all-and-delete-all-for-the/filtered-toolbar-before-light.png)
