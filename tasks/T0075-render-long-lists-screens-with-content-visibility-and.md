@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 647.5, input: 98, output: 27100, cache_read: 4592557, cache_write: 86638}
+  worker: {turns: 2, duration_s: 777.9, input: 118, output: 33634, cache_read: 5837489, cache_write: 102265}
   review: {turns: 1, duration_s: 78.1, input: 48039, output: 2395, cache_read: 281600, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T05:02:52Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T05:06:47Z"
 review_session: codex-20261117-3cb8b3
 work_duration: 735.6
 ---
@@ -67,4 +66,7 @@ Keep find in page, the tab order, and the restored scroll position true.
 
 - [2026-11-17] **[Verify]**
   Rework verified: vitest 1672 passed, lint clean, 20 e2e passed; see validation-proof.md.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
