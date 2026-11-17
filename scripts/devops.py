@@ -1,75 +1,64 @@
 #!/usr/bin/env python3
-"""Runs the typical operations of this project: lint, test, e2e, check, server, and release.
+"""Runs the typical operations of this project through support-python's DevopsCli.
 
 The app has no build step, so a release finalizes the version files and the changelog, tags, and publishes.
-Install the tools once, as docs/devops.md describes: Node.js with npm, Python with pytest, and Ruff.
+Install the tools once, as docs/devops.md describes: Node.js with npm, and a .venv from scripts/requirements.txt.
 
 Usage:
-  python scripts/devops.py lint
-  python scripts/devops.py test
+  python scripts/devops.py lint | format | check | build | clean
+  python scripts/devops.py test [--slow] [SELECTION...]
   python scripts/devops.py e2e
-  python scripts/devops.py check
-  python scripts/devops.py server start [--background] [--port {{port}}]
-  python scripts/devops.py server stop [--port {{port}}]
-  python scripts/devops.py release [{{version}}] [--dry-run] [--skip-checks] [--yes]
-                                   [--no-github-release] [--backend-dir {{path}}]
-  python scripts/devops.py --version
+  python scripts/devops.py versions [VERSION] [--dry-run]
+  python scripts/devops.py server start [--background] [--port PORT]
+  python scripts/devops.py server stop [--port PORT]
+  python scripts/devops.py release [VERSION] [--dry-run] [--skip-checks] [--skip-github-release] [--yes]
+                                   [--backend-dir PATH]
+  python scripts/devops.py help [--verbose] | version
 
-`release` follows docs/devops.md, Release Procedure. It never pushes the todos server repository.
-`server` serves src/ with scripts/serve.mjs; it is the dev server of the web app, not the todos backend.
+`release` follows docs/devops.md, Release Procedure, as a Project.release override. It never pushes the todos
+server repository. `server` serves src/ with scripts/serve.mjs; it is the dev server of the web app, not the backend.
 """
 
 from __future__ import annotations
 
+import argparse
 import re
 import shutil
 import socket
 import subprocess
 import sys
 import time
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
-from _cli_common import build_action_parser, get_project_version, print_help, print_version
-
-PROG = "devops"
-DESCRIPTION = "Runs the lint, test, e2e, check, server, and release operations of this project."
-ACTIONS = ["lint", "test", "e2e", "check", "server", "release", "version", "help"]
-EXIT_CODES = [
-    (0, "Success"),
-    (1, "An operation, check, precondition, or release step failed, or the release was not confirmed"),
-    (2, "Invalid arguments"),
-]
-ACTION_DOCS = {
-    "lint": "Run ESLint, then Ruff check and format check on scripts and tests.",
-    "test": "Run the Vitest unit tests, then the pytest tests.",
-    "e2e": "Run the Playwright end-to-end tests.",
-    "check": "Run what the Pages test job runs, plus the Python checks: service worker, unit, lint, e2e, Ruff, pytest.",
-    "server": (
-        "Serve the app from src/ at http://127.0.0.1:8080/ with scripts/serve.mjs.\n"
-        "      --port {{port}}              port for start and stop, 1 to 65535; default 8080\n"
-        "      server start               run in the foreground until Ctrl+C or server stop\n"
-        "      server start --background  run detached; print the PID; log in work/server.log\n"
-        "      server stop                stop it through its stop file, never by killing it"
-    ),
-    "release": (
-        "Cut a release from main. With {{version}}, rename the single -pre changelog heading to it.\n"
-        "      --dry-run              run the checks, check the preconditions, print the plan, and change nothing\n"
-        "      --skip-checks          skip the check run and the unit tests of the release commit\n"
-        "      --yes                  skip the confirmation question; never skips the preconditions\n"
-        "      --no-github-release    do not create the GitHub release\n"
-        "      --backend-dir {{path}}  commit the todosWebappVersion pin in the todos repository; never pushed"
-    ),
-    "version": "Print the project version.",
-    "help": "Print this help; with --verbose, describe every action.",
-}
 REPO_ROOT = Path(__file__).resolve().parent.parent
+VENV_DIR = REPO_ROOT / ".venv"
+VENV_PYTHON = VENV_DIR / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+
+if __name__ == "__main__" and VENV_PYTHON.is_file() and Path(sys.prefix).resolve() != VENV_DIR.resolve():
+    sys.exit(subprocess.run([str(VENV_PYTHON), str(Path(__file__).resolve()), *sys.argv[1:]], check=False).returncode)
+
+try:
+    from support_python.devops import DevopsCli, NodeProject
+except ImportError:
+    print(
+        "[ERROR] support-python is not installed. Create .venv and install scripts/requirements.txt into it,\n"
+        "        as docs/devops.md, Prerequisites, describes.",
+        file=sys.stderr,
+    )
+    raise SystemExit(1) from None
+
+DESCRIPTION = (
+    "Runs the lint, format, test, e2e, build, check, clean, versions, server, and release operations of this project."
+)
+COPYRIGHT = "Copyright (c) Giovanni Pellicciotta"
 SERVE_SCRIPT = "scripts/serve.mjs"
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 8080
 SERVER_STATE_DIR = "work"
 SERVER_WAIT_SECONDS = 10.0
-SERVER_OPERANDS = ["start", "stop"]
+SERVER_OPERATIONS = ["start", "stop"]
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
 HEADING = re.compile(r"^## v(\d+\.\d+\.\d+)(-pre)?(?=[ \t\r\n]|$)([^\r\n]*)", re.MULTILINE)
 VERSION_JS = "src/js/version.js"
@@ -77,6 +66,7 @@ SERVICE_WORKER = "src/service-worker.js"
 SW_MANIFEST = "scripts/sw-precache-hashes.json"
 SW_CHECK = "scripts/check-sw-version.mjs"
 DESIGN_CHECK = "src/vendor/design/bin/check.mjs"
+PYTHON_DIRS = ["scripts", "tests"]
 VERSION_FILES = ["CHANGELOG.md", "package.json", "package-lock.json", VERSION_JS, SERVICE_WORKER, SW_MANIFEST]
 # The text each release rewrite replaces; check_rewritable proves they match before anything is written.
 PACKAGE_PATTERN = r'^(  "version":\s*")[^"]+(")'
@@ -85,10 +75,13 @@ VERSION_PATTERN = r"(export const VERSION = ')[^']*(';)"
 BUILD_DATE_PATTERN = r"(export const BUILD_DATE = ')[^']*(';)"
 WORKER_PATTERN = r"(const VERSION = ')[^']+(';)"
 PIN_PATTERN = r"^todosWebappVersion=[^\r\n]*"
+INTERRUPTED = (
+    "Interrupted. Check git status and git ls-remote origin: if the tag is on origin, the release is published."
+)
 
 
 class ReleaseError(Exception):
-    """A release precondition or step failed."""
+    """A release precondition or step, or a server operation, failed."""
 
 
 def today_iso() -> str:
@@ -120,7 +113,7 @@ def git(root: Path, *args: str) -> str:
 
 
 def run(command: list[str], root: Path) -> bool:
-    """Run one command in a folder, echoing it first. Return whether it succeeded."""
+    """Run one release command in a folder, echoing it first. Return whether it succeeded."""
     print(f"[*] {' '.join(command)}", flush=True)
     return subprocess.run(command, cwd=root, check=False).returncode == 0
 
@@ -133,32 +126,14 @@ def tool(name: str) -> str:
     return path
 
 
-def ruff() -> list[str]:
-    """Return the command that starts Ruff."""
-    path = shutil.which("ruff")
-    return [path] if path else [sys.executable, "-m", "ruff"]
+def ruff(*args: str) -> list[str]:
+    """Return a Ruff command on the scripts and the tests, run by this Python."""
+    return [sys.executable, "-m", "ruff", *args, *PYTHON_DIRS]
 
 
-# --- Check actions -----------------------------------------------------------------------------
-
-
-def lint_commands() -> list[list[str]]:
-    """Return the lint commands: ESLint and Ruff."""
-    return [
-        [tool("npm"), "run", "lint"],
-        [*ruff(), "check", "scripts", "tests"],
-        [*ruff(), "format", "--check", "scripts", "tests"],
-    ]
-
-
-def test_commands() -> list[list[str]]:
-    """Return the unit test commands: Vitest and pytest."""
-    return [[tool("npm"), "test"], [sys.executable, "-m", "pytest", "-q", "tests"]]
-
-
-def e2e_commands() -> list[list[str]]:
-    """Return the end-to-end test command."""
-    return [[tool("npm"), "run", "test:e2e"]]
+def pytest_command(*selection: str) -> list[str]:
+    """Return the pytest command, on every test or on a selection."""
+    return [sys.executable, "-m", "pytest", "-q", *(selection or ["tests"])]
 
 
 def check_commands() -> list[list[str]]:
@@ -170,15 +145,116 @@ def check_commands() -> list[list[str]]:
         [npm, "test"],
         [npm, "run", "lint"],
         [npm, "run", "test:e2e"],
-        [*ruff(), "check", "scripts", "tests"],
-        [*ruff(), "format", "--check", "scripts", "tests"],
-        [sys.executable, "-m", "pytest", "-q", "tests"],
+        ruff("check"),
+        ruff("format", "--check"),
+        pytest_command(),
     ]
 
 
 def run_all(commands: list[list[str]], root: Path) -> bool:
-    """Run the commands in order and stop at the first failure."""
+    """Run the release quality checks in order and stop at the first failure."""
     return all(run(command, root) for command in commands)
+
+
+def is_python_selection(selection: Sequence[str]) -> bool:
+    """Return whether a test selection names a Python test file, so it belongs to pytest."""
+    return any(item.endswith(".py") or ".py::" in item for item in selection)
+
+
+# --- Project -----------------------------------------------------------------------------------
+
+
+class TodosProject(NodeProject):
+    """The web app: npm scripts for JavaScript, Ruff and pytest for the Python scripts, and its own release."""
+
+    test_selection_example = "tests/test_devops.py -k lint"
+
+    def __init__(self, root: Path, **kwargs) -> None:
+        """Bind the project to its root; release_target and backend_dir carry the extra release options."""
+        super().__init__(root, **kwargs)
+        self.release_target: str | None = None
+        self.backend_dir: str | None = None
+
+    def lint(self) -> bool:
+        """Run ESLint, then Ruff check and Ruff format check."""
+        return (
+            self._npm_script("lint") and self.run_command(ruff("check")) and self.run_command(ruff("format", "--check"))
+        )
+
+    def format(self) -> bool:
+        """Fix Ruff findings, format the Python sources, then let ESLint fix what it can."""
+        return (
+            self.run_command(ruff("check", "--fix"))
+            and self.run_command(ruff("format"))
+            and self._npm("run", "lint", "--", "--fix")
+        )
+
+    def test(self, selection: Sequence[str] = ()) -> bool:
+        """Run Vitest, then pytest; a selection goes to pytest when it names a .py file, else to Vitest."""
+        if not selection:
+            return self._npm("test") and self.run_command(pytest_command())
+        if is_python_selection(selection):
+            return self.run_command(pytest_command(*selection))
+        return self._npm("test", "--", *selection)
+
+    def test_slow(self, selection: Sequence[str] = ()) -> bool:
+        """Run the Playwright end-to-end tests, or a selection of them."""
+        return self._npm("run", "test:e2e", *(["--", *selection] if selection else []))
+
+    def build(self) -> bool:
+        """Do nothing: src/ is the web root and the deployed folder."""
+        self.logger.info("The app has no build step; src/ is deployed as it is.")
+        return True
+
+    def release_assets(self) -> list[Path]:
+        """Return no assets: a release attaches nothing."""
+        return []
+
+    def check(self) -> bool:
+        """Run what the Pages test job runs, then the Python checks, stopping at the first failure."""
+        try:
+            commands = check_commands()
+        except ReleaseError as error:
+            self.logger.error(str(error))
+            return False
+        return all(self.run_command(command) for command in commands)
+
+    def action_summaries(self) -> dict[str, str]:
+        """Describe the actions as this project runs them."""
+        return {
+            "lint": "run ESLint, then Ruff check and Ruff format check",
+            "format": "fix Ruff findings, format the Python sources, and run ESLint --fix",
+            "test": "run Vitest, then pytest; --slow runs the Playwright tests",
+            "build": "do nothing: the app has no build step",
+            "check": "run the Pages test job checks, then Ruff and pytest",
+            "release": "cut a release: version files, service worker, tag, atomic push, plan push, GitHub release",
+        }
+
+    def release(
+        self,
+        *,
+        dry_run: bool = False,
+        assume_yes: bool = False,
+        skip_checks: bool = False,
+        skip_github_release: bool = False,
+    ) -> bool:
+        """Cut the release with the todos release flow instead of ReleasePipeline; return whether it succeeded."""
+        opts = argparse.Namespace(
+            release_version=self.release_target,
+            dry_run=dry_run,
+            skip_checks=skip_checks,
+            yes=assume_yes,
+            skip_github_release=skip_github_release,
+            backend_dir=self.backend_dir,
+        )
+        try:
+            return cut_release(self.root, opts) == 0
+        except (ReleaseError, OSError) as error:
+            self.logger.error(str(error))
+            return False
+        except KeyboardInterrupt:
+            self.logger.error(INTERRUPTED)
+            return False
 
 
 # --- Dev server --------------------------------------------------------------------------------
@@ -271,7 +347,7 @@ def server_stop(root: Path, port: int = SERVER_PORT, state_dir: Path | None = No
         stop_file.unlink(missing_ok=True)
         raise ReleaseError(
             f"the server (PID {pid}) did not stop within {SERVER_WAIT_SECONDS:.0f} s; "
-            "end it with kill-processes.py from the dev guidelines"
+            "end it with processes kill from support.python"
         )
     print(f"Server stopped (PID {pid}).")
     return 0
@@ -546,7 +622,7 @@ def describe_plan(root: Path, version: str, next_version: str, opts) -> list[str
     notes = '"<the changelog entry of ' + tag + '>"'
     lines.append(
         "  (no GitHub release)"
-        if opts.no_github_release
+        if opts.skip_github_release
         else f"  gh release create {tag} --title {tag} --notes {notes}"
     )
     if unpublished:
@@ -578,7 +654,7 @@ def publish(root: Path, opts, version: str, notes: str, start_sha: str) -> int:
             print("[OK] Pushed plan.")
         except ReleaseError as error:
             left.append((f"The plan push failed: {error}", "git push origin plan"))
-    if not opts.no_github_release:
+    if not opts.skip_github_release:
         command = f'gh release create {tag} --title {tag} --notes "<the changelog entry of {tag}>"'
         if shutil.which("gh") is None:
             left.append(("The gh CLI is missing.", command))
@@ -611,7 +687,7 @@ def publish(root: Path, opts, version: str, notes: str, start_sha: str) -> int:
     return 0
 
 
-def release(root: Path, opts) -> int:
+def cut_release(root: Path, opts) -> int:
     """Cut a release; raise ReleaseError when a precondition or a step fails. Return the exit code."""
     changelog_path = root / "CHANGELOG.md"
     version = opts.release_version or top_pre_version(read_text(changelog_path))
@@ -620,8 +696,8 @@ def release(root: Path, opts) -> int:
     next_version = next_patch(version)
 
     tool("node")
-    if not opts.no_github_release and shutil.which("gh") is None:
-        raise ReleaseError("The gh CLI is missing; install it, or pass --no-github-release.")
+    if not opts.skip_github_release and shutil.which("gh") is None:
+        raise ReleaseError("The gh CLI is missing; install it, or pass --skip-github-release.")
     preflight(root, version)
     finalize_changelog(read_text(changelog_path), version, today)
     check_rewritable(root)
@@ -673,80 +749,121 @@ def release(root: Path, opts) -> int:
     return publish(root, opts, version, notes, start_sha)
 
 
-# --- Entry point -------------------------------------------------------------------------------
+# --- Command line ------------------------------------------------------------------------------
 
 
-def print_verbose_help() -> None:
-    """Describe every action."""
-    print("\nActions:")
-    for name in ACTIONS:
-        print(f"  {name:<8} {ACTION_DOCS[name]}")
+def release_version_argument(text: str) -> str:
+    """Accept a plain MAJOR.MINOR.PATCH release version."""
+    if not SEMVER.fullmatch(text):
+        raise argparse.ArgumentTypeError(f"'{text}' is not a version like 1.2.3, without a v prefix or suffix")
+    return text
+
+
+def port_argument(text: str) -> int:
+    """Accept a TCP port from 1 to 65535."""
+    try:
+        port = int(text)
+    except ValueError:
+        port = 0
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError(f"'{text}' is not a port from 1 to 65535")
+    return port
+
+
+def configure_release(parser: argparse.ArgumentParser) -> None:
+    """Add the DevopsCli release options, plus the todos version operand and backend pin."""
+    parser.add_argument(
+        "release_version",
+        nargs="?",
+        metavar="VERSION",
+        type=release_version_argument,
+        help="version to release, such as 0.6.0; default: the -pre heading without -pre",
+    )
+    parser.add_argument("--dry-run", action="store_true", help="run the checks, print the plan, change nothing")
+    parser.add_argument("--skip-checks", action="store_true", help="skip the check run and the release unit tests")
+    parser.add_argument(
+        "--skip-github-release",
+        "--no-github-release",
+        dest="skip_github_release",
+        action="store_true",
+        help="do not create the GitHub release",
+    )
+    parser.add_argument("--yes", action="store_true", help="skip the y/N question; never skips the preconditions")
+    parser.add_argument(
+        "--backend-dir", metavar="PATH", help="commit the todosWebappVersion pin in this todos checkout; never pushed"
+    )
+
+
+def configure_server(parser: argparse.ArgumentParser) -> None:
+    """Add the server operation, port, and background options."""
+    parser.add_argument("operation", choices=SERVER_OPERATIONS, help="start or stop the dev server")
+    parser.add_argument(
+        "--port", type=port_argument, default=SERVER_PORT, help=f"port to serve on or stop; default {SERVER_PORT}"
+    )
+    parser.add_argument("--background", action="store_true", help="server start: run detached and print the PID")
+
+
+def build_cli(root: Path = REPO_ROOT) -> DevopsCli:
+    """Create the DevopsCli of this project, with the e2e, server, and todos release actions."""
+    project = TodosProject(root)
+    cli = DevopsCli(project, description=DESCRIPTION, copyright=COPYRIGHT)
+
+    def e2e(args, logger) -> int:
+        """Run the Playwright end-to-end tests."""
+        project.logger = logger
+        return 0 if project.test_slow(()) else 1
+
+    def server(args, logger) -> int:
+        """Start or stop the dev server."""
+        project.logger = logger
+        if args.background and args.operation != "start":
+            logger.error("--background needs 'server start'")
+            return 2
+        try:
+            if args.operation == "start":
+                return server_start(project.root, args.background, args.port)
+            return server_stop(project.root, args.port)
+        except (ReleaseError, OSError) as error:
+            logger.error(str(error))
+            return 1
+
+    def release(args, logger) -> int:
+        """Hand the todos release options to the project, then run DevopsCli's release action."""
+        project.release_target = args.release_version
+        project.backend_dir = args.backend_dir
+        return cli._release(args, logger)
+
+    cli.add_action("e2e", "run the Playwright end-to-end tests, like test --slow", e2e, usage_suffix="")
+    cli.add_action(
+        "server",
+        "start or stop the dev server of src/ at http://127.0.0.1:8080/",
+        server,
+        detail=(
+            "server start runs scripts/serve.mjs in the foreground until Ctrl+C or server stop.\n"
+            "server start --background runs it detached, prints the PID, and logs to work/server.log.\n"
+            "server stop asks it to exit through work/server.stop and never kills it."
+        ),
+        usage_suffix="start|stop [--port PORT] [--background]",
+        configure_parser=configure_server,
+    )
+    cli.add_action(
+        "release",
+        project.action_summaries()["release"],
+        release,
+        detail=(
+            "Cut a release from main, following docs/devops.md, Release Procedure: preconditions, checks, the plan,\n"
+            "a y/N question, the release and next -pre commits, git push --atomic origin main TAG, git push origin plan,\n"
+            "the GitHub release, and with --backend-dir the todosWebappVersion pin, committed locally only."
+        ),
+        usage_suffix="[VERSION] [--dry-run] [--skip-checks] [--skip-github-release] [--yes] [--backend-dir PATH]",
+        configure_parser=configure_release,
+    )
+    return cli
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Parse the command line and run the action. Return the exit code."""
-    parser = build_action_parser(PROG, DESCRIPTION, ACTIONS, "help")
-    parser.allow_abbrev = False
-    parser.add_argument(
-        "operand", nargs="?", help="release: the version to release, such as 0.2.0; server: start or stop"
-    )
-    parser.add_argument("--verbose", action="store_true", help="help: describe every action")
-    parser.add_argument(
-        "--dry-run", action="store_true", help="release: run the checks, print the plan, change nothing"
-    )
-    parser.add_argument("--skip-checks", action="store_true", help="release: skip the check run and the unit tests")
-    parser.add_argument("--yes", action="store_true", help="release: do not ask for confirmation")
-    parser.add_argument("--no-github-release", action="store_true", help="release: do not create a GitHub release")
-    parser.add_argument("--port", type=int, help="server: the port to serve on or stop, default 8080")
-    parser.add_argument("--background", action="store_true", help="server start: run detached and print the PID")
-    parser.add_argument("--backend-dir", help="release: commit the todosWebappVersion pin in this todos checkout")
-    args = parser.parse_args(argv)
-    version = get_project_version()
-    args.release_version = args.operand if args.action == "release" else None
-
-    if args.operand and args.action not in ("release", "server"):
-        parser.error("an operand needs 'release' (a version) or 'server' (start or stop)")
-    if args.action == "server" and args.operand not in SERVER_OPERANDS:
-        parser.error("'server' needs start or stop")
-    if args.port is not None and args.action != "server":
-        parser.error("--port needs 'server'")
-    if args.port is not None and not 1 <= args.port <= 65535:
-        parser.error("--port must be between 1 and 65535")
-    if args.background and not (args.action == "server" and args.operand == "start"):
-        parser.error("--background needs 'server start'")
-    release_only = args.release_version or args.dry_run or args.skip_checks or args.yes
-    release_only = release_only or args.no_github_release or args.backend_dir
-    if release_only and args.action != "release":
-        parser.error("the options --dry-run, --skip-checks, --yes, --no-github-release, --backend-dir need 'release'")
-    if args.release_version and not SEMVER.fullmatch(args.release_version):
-        parser.error(f"'{args.release_version}' is not a version like 1.2.3, without a v prefix or suffix")
-    if args.version or args.action == "version":
-        print_version(PROG, version)
-        return 0
-    if args.help or args.action == "help":
-        print_help(PROG, version, DESCRIPTION, parser, EXIT_CODES)
-        if args.verbose:
-            print_verbose_help()
-        return 0
-
-    try:
-        if args.action == "release":
-            return release(REPO_ROOT, args)
-        if args.action == "server":
-            if args.operand == "start":
-                return server_start(REPO_ROOT, args.background, args.port or SERVER_PORT)
-            return server_stop(REPO_ROOT, args.port or SERVER_PORT)
-        commands = {"lint": lint_commands, "test": test_commands, "e2e": e2e_commands, "check": check_commands}
-        return 0 if run_all(commands[args.action](), REPO_ROOT) else 1
-    except (ReleaseError, OSError) as error:
-        print(f"[ERROR] {error}", file=sys.stderr)
-        return 1
-    except KeyboardInterrupt:
-        print(
-            "[ERROR] Interrupted. Check git status and git ls-remote origin: if the tag is on origin, the release is published.",
-            file=sys.stderr,
-        )
-        return 1
+    """Run the command line and return the exit code."""
+    return build_cli().run(argv)
 
 
 if __name__ == "__main__":

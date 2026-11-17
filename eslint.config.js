@@ -5,7 +5,7 @@ import globals from 'globals';
 export default [
   {
     // The vendored design system follows its own package's lint rules; its check.mjs guards the bytes.
-    ignores: ['node_modules/', 'test-results/', 'playwright-report/', '.plan/', 'work/', 'src/vendor/'],
+    ignores: ['node_modules/', 'test-results/', 'playwright-report/', '.plan/', 'work/', 'src/vendor/', '.venv/'],
   },
   js.configs.recommended,
   {

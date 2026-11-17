@@ -1,0 +1,4 @@
+# Python tools of scripts/devops.py; install into .venv with: .venv/bin/python -m pip install -r scripts/requirements.txt
+support-python @ git+https://github.com/gpellicciotta/support.python.git@v3.3.0
+pytest>=9.1,<10
+ruff>=0.17,<0.18

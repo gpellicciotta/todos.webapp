@@ -11,6 +11,9 @@ work/
 # Ignore env files
 **/*.env
 
+# Ignore the Python virtual environment of scripts/devops.py
+.venv/
+
 # Ignore Python caches
 __pycache__/
 .pytest_cache/

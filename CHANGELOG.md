@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- Tooling: Rebuilt [devops.py](scripts/devops.py) on support-python 3.3.0 `DevopsCli` with a `NodeProject` subclass, adding `format`, `build`, `clean`, `versions`, `test --slow`, and shared help and logging; the release flow stays a `Project.release` override.
+- Tooling: Renamed the release option `--no-github-release` to `--skip-github-release`, keeping the old name as an alias, and pinned support-python, pytest, and Ruff in [requirements.txt](scripts/requirements.txt) for a `.venv` that `devops.py` runs itself in.
 - Tests: Fixed the gallery popover keyboard e2e test tabbing onto the Finished today only choice instead of Clear, and made it toggle that choice.
 - Scripts: Applied Ruff formatting to the wireframe drawing script so `python scripts/devops.py check` passes again.
 - FrontEnd: Made Delete all data available while connected, also erasing the account's lists, tasks, and notes through one queued `erase` entry that waits out offline time and no pull precedes (BAK-15).

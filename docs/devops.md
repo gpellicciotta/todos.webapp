@@ -7,8 +7,15 @@ Development environment, planning workflow, and operational procedures for `todo
 - Git, with access to the `gpellicciotta/todos.webapp` GitHub repository.
 - The [plan](https://github.com/gpellicciotta/plan) CLI.
 - Node.js 22.13 or later, with npm.
-- Python 3.10 or later, with pytest and Ruff 0.17, for the documentation scripts and `scripts/devops.py`.
-- The GitHub CLI `gh`, logged in, for the GitHub release of `devops.py release`; pass `--no-github-release` to go without.
+- Python 3.10 or later, with a `.venv` holding [requirements.txt](../scripts/requirements.txt): support-python 3.3.0, pytest, and Ruff 0.17.
+- The GitHub CLI `gh`, logged in, for the GitHub release of `devops.py release`; pass `--skip-github-release` to go without.
+
+Create the `.venv` once; `devops.py` then runs itself with that Python, from any Python:
+
+```bash
+python -m venv .venv
+.venv/bin/python -m pip install -r scripts/requirements.txt          # Windows: .venv\Scripts\python.exe
+```
 
 ---
 
@@ -32,17 +39,25 @@ npm run test:e2e     # Playwright end-to-end tests, from tests/e2e/
 npm run test:perf    # Playwright performance spec with 5000 tasks, alone
 ```
 
-[devops.py](../scripts/devops.py) wraps the same checks, and adds the release:
+[devops.py](../scripts/devops.py) wraps the same checks, and adds the release.
+It is a support-python `DevopsCli` over a `NodeProject` subclass, so help, logging, and exit codes are the shared ones:
 
 ```bash
 python scripts/devops.py lint      # ESLint, Ruff check, and Ruff format check
+python scripts/devops.py format    # Ruff fixes and format, then ESLint --fix
 python scripts/devops.py test      # Vitest, then pytest
-python scripts/devops.py e2e       # Playwright end-to-end tests
+python scripts/devops.py test tests/test_devops.py -k lint   # a .py selection runs pytest; any other runs Vitest
+python scripts/devops.py e2e       # Playwright end-to-end tests; same as test --slow
 python scripts/devops.py check     # everything the Pages test job runs, plus Ruff and pytest
+python scripts/devops.py versions  # compare the package.json version with the CHANGELOG.md heading
 python scripts/devops.py server start [--background] [--port 8080]  # serve src/
 python scripts/devops.py server stop [--port 8080]                  # stop the server that start began
 python scripts/devops.py release   # see Release Procedure
+python scripts/devops.py help --verbose   # every action and option
 ```
+
+- `build` does nothing, since the app has no build step; `clean` removes a stray `dist/`.
+- `versions VERSION` sets only `package.json` and the `-pre` heading; a release sets every version file.
 
 - [serve.mjs](../scripts/serve.mjs) uses Node.js built-ins only and disables caching; pass `--port` or `--root` to change them.
 - `server start` runs serve.mjs in the foreground until Ctrl+C; with `--background` it detaches and prints the PID.
@@ -50,7 +65,7 @@ python scripts/devops.py release   # see Release Procedure
   It refuses to start when something already answers on the port; `--port` (1 to 65535, default 8080) picks another.
 - `server stop --port {{port}}` stops a server that `server start --port {{port}}` began.
 - `server stop` creates `work/server.stop`, which serve.mjs polls, and waits up to 10 s for the port to close.
-  It never kills a process; when the server stays up, it names the PID so you can end it with `kill-processes.py`.
+  It never kills a process; when the server stays up, it names the PID so you can end it with `processes kill`.
 - This `server` is the dev server of the web app; the todos backend has its own devops.py.
 - Playwright starts and stops its own server on port 8754; set `E2E_PORT` to use another port.
 - `test:e2e` leaves out [performance.spec.js](../tests/e2e/performance.spec.js), since parallel tests skew its timings.
@@ -227,6 +242,8 @@ Keep it limited to `main`.
 
 ### Release Procedure
 [devops.py](../scripts/devops.py) cuts a release from `main`; the sections above describe what it automates.
+The flow is a `Project.release` override, not support-python's `ReleasePipeline`.
+That pipeline has no hook for version.js, the service worker, or the lock file, no backend pin, and no atomic push.
 
 ```bash
 python scripts/devops.py release 0.2.0 --dry-run --backend-dir ../todos   # run the checks, print the plan, change nothing
@@ -255,7 +272,8 @@ python scripts/devops.py release 0.2.0 --backend-dir ../todos             # the 
    One push carries both commits, so the live site reports the next `-pre` version under Settings, About; the tag marks the release commit.
 
 - Options: `--skip-checks` skips the check run and the unit tests of the release commit, `--yes` skips only the question,
-  and `--no-github-release` skips the GitHub release.
+  and `--skip-github-release` skips the GitHub release; `--no-github-release` remains as an alias.
+- Without `VERSION`, the release takes the `-pre` heading without `-pre`.
 - If editing or verifying fails, the script restores the edited files and prints the local state and how to undo it:
   `git tag -d v0.2.0` and `git reset --hard {{sha}}`. A rejected push leaves `origin` unchanged.
 - If a step after the push fails, such as the `plan` push, the GitHub release, or the pin, the script finishes the others,
@@ -282,9 +300,8 @@ Regenerate them after changing a screen, then check the script and its output:
 
 ```bash
 python scripts/draw-wireframes.py docs/img/ui
-python -m pytest tests
-ruff check scripts tests
-ruff format --check scripts tests
+python scripts/devops.py test tests/test_draw_wireframes.py
+python scripts/devops.py lint
 ```
 
 The tests fail when a shape leaves its frame, so overflow at 390 px shows up before review.

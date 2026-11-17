@@ -62,14 +62,10 @@ GRADLE = "org.gradle.jvmargs=-Xmx2g\ntodosWebappVersion=0.1.0\nother=1\n"
 
 
 def load_script():
-    """Import scripts/devops.py as a module, with scripts/ on the import path for _cli_common."""
-    sys.path.insert(0, str(SCRIPTS))
-    try:
-        spec = importlib.util.spec_from_file_location("devops", SCRIPTS / "devops.py")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-    finally:
-        sys.path.remove(str(SCRIPTS))
+    """Import scripts/devops.py as a module."""
+    spec = importlib.util.spec_from_file_location("devops", SCRIPTS / "devops.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
     return module
 
 
@@ -108,7 +104,7 @@ def options(**overrides):
         "dry_run": False,
         "skip_checks": True,
         "yes": True,
-        "no_github_release": True,
+        "skip_github_release": True,
         "backend_dir": None,
     }
     values.update(overrides)
@@ -144,7 +140,7 @@ def project(tmp_path):
         newline="\n",
     )
     (root / "scripts").mkdir(exist_ok=True)
-    for name in ("check-sw-version.mjs", "sw-precache-hashes.json", "devops.py", "_cli_common.py"):
+    for name in ("check-sw-version.mjs", "sw-precache-hashes.json", "devops.py"):
         shutil.copy(SCRIPTS / name, root / "scripts" / name)
     git(root, "add", "-A")
     git(root, "commit", "-q", "-m", "Copied the sources.")
@@ -318,7 +314,7 @@ def test_release_without_confirmation_changes_and_pushes_nothing(project, monkey
     monkeypatch.setattr("builtins.input", lambda _prompt: "n")
     before = snapshot(project)
     origin_before = git(project, "ls-remote", "origin")
-    code = devops.release(project, options(release_version="0.2.0", yes=False))
+    code = devops.cut_release(project, options(release_version="0.2.0", yes=False))
     assert code == 1
     assert snapshot(project) == before
     assert git(project, "ls-remote", "origin") == origin_before
@@ -329,7 +325,7 @@ def test_release_without_confirmation_changes_and_pushes_nothing(project, monkey
 def test_release_dry_run_changes_nothing_and_asks_nothing(project, monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda _prompt: pytest.fail("a dry run must not ask"))
     before = snapshot(project)
-    code = devops.release(project, options(release_version="0.2.0", dry_run=True, yes=False))
+    code = devops.cut_release(project, options(release_version="0.2.0", dry_run=True, yes=False))
     assert code == 0
     assert snapshot(project) == before
     assert "dry run" in capsys.readouterr().out.lower()
@@ -337,7 +333,7 @@ def test_release_dry_run_changes_nothing_and_asks_nothing(project, monkeypatch, 
 
 def test_release_rejects_a_version_not_above_the_last_release(project):
     with pytest.raises(devops.ReleaseError, match="not above"):
-        devops.release(project, options(release_version="0.1.0"))
+        devops.cut_release(project, options(release_version="0.1.0"))
 
 
 @needs_node
@@ -347,7 +343,7 @@ def test_release_cuts_the_release_end_to_end(project, backend, tmp_path):
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "Added a plan note.")
     git(project, "checkout", "-q", "main")
-    code = devops.release(project, options(release_version="0.2.0", backend_dir=backend))
+    code = devops.cut_release(project, options(release_version="0.2.0", backend_dir=backend))
     assert code == 0
 
     # Two commits on top of the copied sources: the release, then the next development version.
@@ -395,18 +391,16 @@ def test_release_failing_verification_restores_the_files(project, monkeypatch):
     monkeypatch.setattr(devops, "verify_release_files", lambda root, skip_checks: False)
     before = snapshot(project)
     with pytest.raises(devops.ReleaseError, match="verification"):
-        devops.release(project, options(release_version="0.2.0"))
+        devops.cut_release(project, options(release_version="0.2.0"))
     assert snapshot(project) == before
 
 
 # --- Command line ------------------------------------------------------------------------------
 
 
-def run_cli(*args, cwd=ROOT):
-    """Run the real entry point."""
-    return subprocess.run(
-        [sys.executable, str(SCRIPTS / "devops.py"), *args], cwd=cwd, capture_output=True, text=True, check=False
-    )
+def run_cli(*args, cwd=ROOT, script=SCRIPTS / "devops.py"):
+    """Run the real entry point, or the one of a scratch copy."""
+    return subprocess.run([sys.executable, str(script), *args], cwd=cwd, capture_output=True, text=True, check=False)
 
 
 def test_cli_version_prints_one_line_in_the_standard_format():
@@ -420,7 +414,7 @@ def test_cli_help_lists_every_action_and_the_exit_codes():
     for flag in ("help", "--help", "-h"):
         result = run_cli(flag)
         assert result.returncode == 0
-        for action in ("lint", "test", "e2e", "check", "release", "version", "help"):
+        for action in ("lint", "format", "test", "e2e", "check", "versions", "release", "server", "version", "help"):
             assert action in result.stdout
         assert "Exit codes:" in result.stdout
 
@@ -434,7 +428,15 @@ def test_cli_rejects_an_unknown_action_with_exit_code_2():
 def test_cli_release_dry_run_in_a_scratch_project_changes_nothing(project):
     before = snapshot(project)
     result = subprocess.run(
-        [sys.executable, str(project / "scripts/devops.py"), "release", "0.2.0", "--dry-run", "--skip-checks"],
+        [
+            sys.executable,
+            str(project / "scripts/devops.py"),
+            "release",
+            "0.2.0",
+            "--dry-run",
+            "--skip-checks",
+            "--skip-github-release",
+        ],
         cwd=project,
         capture_output=True,
         text=True,
@@ -442,7 +444,205 @@ def test_cli_release_dry_run_in_a_scratch_project_changes_nothing(project):
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "git push --atomic origin main v0.2.0" in result.stdout
+    assert "(no GitHub release)" in result.stdout
     assert snapshot(project) == before
+
+
+# --- Actions on DevopsCli ----------------------------------------------------------------------
+
+
+def recorder():
+    """Return a step runner that records each command and succeeds, and the list it records into."""
+    calls = []
+
+    def runner(argv, cwd, logger):
+        calls.append(list(argv))
+        return 0
+
+    return runner, calls
+
+
+def short(calls):
+    """Name each command by its program stem, so npm.cmd and the venv Python compare equal everywhere."""
+    names = []
+    for argv in calls:
+        program = "python" if argv[0] == sys.executable else Path(argv[0]).stem.lower()
+        names.append([program, *argv[1:]])
+    return names
+
+
+def todos_project(root=ROOT):
+    """Return the project of the devops script with a recording runner."""
+    runner, calls = recorder()
+    return devops.TodosProject(root, runner=runner), calls
+
+
+RUFF_CHECK = ["python", "-m", "ruff", "check", "scripts", "tests"]
+RUFF_FORMAT_CHECK = ["python", "-m", "ruff", "format", "--check", "scripts", "tests"]
+PYTEST = ["python", "-m", "pytest", "-q", "tests"]
+
+
+def test_lint_runs_eslint_then_the_ruff_checks():
+    project, calls = todos_project()
+    assert project.lint()
+    assert short(calls) == [["npm", "run", "lint"], RUFF_CHECK, RUFF_FORMAT_CHECK]
+
+
+def test_format_fixes_ruff_findings_formats_and_runs_eslint_fix():
+    project, calls = todos_project()
+    assert project.format()
+    assert short(calls) == [
+        ["python", "-m", "ruff", "check", "--fix", "scripts", "tests"],
+        ["python", "-m", "ruff", "format", "scripts", "tests"],
+        ["npm", "run", "lint", "--", "--fix"],
+    ]
+
+
+def test_test_runs_vitest_then_pytest():
+    project, calls = todos_project()
+    assert project.test()
+    assert short(calls) == [["npm", "test"], PYTEST]
+
+
+def test_test_sends_a_python_selection_to_pytest_and_any_other_to_vitest():
+    project, calls = todos_project()
+    assert project.test(["tests/test_devops.py", "-k", "lint"])
+    assert project.test(["tests/unit/precache.test.js"])
+    assert short(calls) == [
+        ["python", "-m", "pytest", "-q", "tests/test_devops.py", "-k", "lint"],
+        ["npm", "test", "--", "tests/unit/precache.test.js"],
+    ]
+
+
+def test_test_slow_and_e2e_run_the_playwright_tests():
+    project, calls = todos_project()
+    assert project.test_slow()
+    assert project.test_slow(["tests/e2e/pwa.spec.js"])
+    assert short(calls) == [["npm", "run", "test:e2e"], ["npm", "run", "test:e2e", "--", "tests/e2e/pwa.spec.js"]]
+
+
+def test_check_runs_the_pages_test_job_then_the_python_checks_in_order():
+    project, calls = todos_project()
+    assert project.check()
+    assert short(calls) == [
+        ["node", devops.SW_CHECK],
+        ["node", devops.DESIGN_CHECK],
+        ["npm", "test"],
+        ["npm", "run", "lint"],
+        ["npm", "run", "test:e2e"],
+        RUFF_CHECK,
+        RUFF_FORMAT_CHECK,
+        PYTEST,
+    ]
+
+
+def test_check_stops_at_the_first_failure():
+    calls = []
+
+    def runner(argv, cwd, logger):
+        calls.append(argv)
+        return 1
+
+    assert not devops.TodosProject(ROOT, runner=runner).check()
+    assert len(calls) == 1
+
+
+def test_build_runs_nothing_and_succeeds_since_the_app_has_no_build_step():
+    project, calls = todos_project()
+    assert project.build()
+    assert project.release_assets() == []
+    assert calls == []
+
+
+def test_the_cli_is_a_devops_cli_with_the_todos_actions():
+    cli = devops.build_cli()
+    assert isinstance(cli, devops.DevopsCli)
+    assert isinstance(cli.project, devops.NodeProject)
+    for action in ("lint", "format", "test", "e2e", "build", "check", "clean", "versions", "release", "server"):
+        assert action in cli.harness._actions
+
+
+def test_the_e2e_and_test_slow_actions_reach_test_slow(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        devops.TodosProject, "test_slow", lambda self, selection=(): calls.append(list(selection)) or True
+    )
+    assert devops.main(["e2e"]) == 0
+    assert devops.main(["test", "--slow", "tests/e2e/pwa.spec.js"]) == 0
+    assert calls == [[], ["tests/e2e/pwa.spec.js"]]
+
+
+def capture_release(monkeypatch, result=0):
+    """Replace cut_release with a recorder of its root and options."""
+    calls = []
+    monkeypatch.setattr(devops, "cut_release", lambda root, opts: calls.append((root, opts)) or result)
+    return calls
+
+
+def test_the_release_action_runs_the_project_release_override_with_every_option(monkeypatch, tmp_path):
+    calls = capture_release(monkeypatch)
+    argv = ["release", "0.2.0", "--dry-run", "--skip-checks", "--skip-github-release", "--yes"]
+    assert devops.main([*argv, "--backend-dir", str(tmp_path)]) == 0
+    [(root, opts)] = calls
+    assert root == ROOT
+    assert (opts.release_version, opts.dry_run, opts.skip_checks, opts.yes) == ("0.2.0", True, True, True)
+    assert opts.skip_github_release is True
+    assert opts.backend_dir == str(tmp_path)
+
+
+def test_the_release_action_defaults_leave_every_option_off(monkeypatch):
+    calls = capture_release(monkeypatch)
+    assert devops.main(["release"]) == 0
+    [(_, opts)] = calls
+    assert opts.release_version is None and opts.backend_dir is None
+    assert not (opts.dry_run or opts.skip_checks or opts.yes or opts.skip_github_release)
+
+
+def test_the_release_action_keeps_no_github_release_as_an_alias(monkeypatch):
+    calls = capture_release(monkeypatch)
+    assert devops.main(["release", "--no-github-release"]) == 0
+    assert calls[0][1].skip_github_release is True
+
+
+def test_the_release_override_reports_a_failed_step_and_exits_1(monkeypatch, capsys):
+    def fail(root, opts):
+        raise devops.ReleaseError("main is 2 commit(s) behind origin/main; pull first.")
+
+    monkeypatch.setattr(devops, "cut_release", fail)
+    assert devops.main(["release", "--dry-run"]) == 1
+    assert "behind origin/main" in capsys.readouterr().err
+
+
+def test_the_release_override_returns_false_for_a_declined_release(monkeypatch):
+    capture_release(monkeypatch, result=1)
+    assert devops.main(["release"]) == 1
+
+
+@needs_node
+def test_cli_server_start_and_stop_run_through_devops_cli(tmp_path):
+    # A scratch copy keeps the server state in its own work/ folder, never in the repository's.
+    (tmp_path / "scripts").mkdir()
+    for name in ("devops.py", "serve.mjs"):
+        shutil.copy(SCRIPTS / name, tmp_path / "scripts" / name)
+    shutil.copy(ROOT / "package.json", tmp_path / "package.json")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/index.html").write_text("<!doctype html><title>Scratch</title>\n", encoding="utf-8")
+    port = free_port()
+
+    def cli(*args):
+        return run_cli(*args, cwd=tmp_path, script=tmp_path / "scripts/devops.py")
+
+    started = cli("server", "start", "--background", "--port", str(port))
+    try:
+        assert started.returncode == 0, started.stdout + started.stderr
+        assert fetch_status(port) == 200
+        assert (tmp_path / "work/server.pid").exists()
+    finally:
+        stopped = cli("server", "stop", "--port", str(port))
+    assert stopped.returncode == 0, stopped.stdout + stopped.stderr
+    assert "Server stopped" in stopped.stdout
+    assert not devops.server_listening(port)
+    assert not (tmp_path / "work/server.pid").exists()
 
 
 # --- Failure paths -----------------------------------------------------------------------------
@@ -462,7 +662,7 @@ def test_release_refuses_a_rewrite_that_cannot_match_before_changing_anything(pr
     git(project, "commit", "-q", "-am", "Indented package.json by four spaces.")
     before = snapshot(project)
     with pytest.raises(devops.ReleaseError, match="package.json"):
-        devops.release(project, options(release_version="0.2.0"))
+        devops.cut_release(project, options(release_version="0.2.0"))
     assert snapshot(project) == before
 
 
@@ -473,7 +673,7 @@ def test_release_restores_the_files_when_a_rewrite_fails_midway(project, monkeyp
     monkeypatch.setattr(devops, "bump_service_worker", fail)
     before = snapshot(project)
     with pytest.raises(devops.ReleaseError, match="restored"):
-        devops.release(project, options(release_version="0.2.0"))
+        devops.cut_release(project, options(release_version="0.2.0"))
     assert snapshot(project) == before
 
 
@@ -490,7 +690,7 @@ def test_second_phase_failure_names_the_local_commits_and_pushes_nothing(project
     origin_before = git(project, "ls-remote", "origin")
     start = git(project, "rev-parse", "HEAD")
     with pytest.raises(devops.ReleaseError) as caught:
-        devops.release(project, options(release_version="0.2.0"))
+        devops.cut_release(project, options(release_version="0.2.0"))
     assert "git tag -d v0.2.0" in str(caught.value)
     assert f"git reset --hard {start}" in str(caught.value)
     assert git(project, "status", "--porcelain") == ""
@@ -505,7 +705,7 @@ def test_a_rejected_push_is_atomic_and_leaves_the_tag_off_origin(project, tmp_pa
     hook.chmod(0o755)
     origin_before = git(project, "ls-remote", "origin")
     with pytest.raises(devops.ReleaseError, match="nothing reached origin") as caught:
-        devops.release(project, options(release_version="0.2.0"))
+        devops.cut_release(project, options(release_version="0.2.0"))
     assert "git tag -d v0.2.0" in str(caught.value)
     assert git(project, "ls-remote", "origin") == origin_before
 
@@ -526,8 +726,8 @@ def test_release_refuses_a_missing_gh_before_changing_anything(project, monkeypa
     real_which = shutil.which
     monkeypatch.setattr(devops.shutil, "which", lambda name: None if name == "gh" else real_which(name))
     before = snapshot(project)
-    with pytest.raises(devops.ReleaseError, match="no-github-release"):
-        devops.release(project, options(release_version="0.2.0", no_github_release=False))
+    with pytest.raises(devops.ReleaseError, match="skip-github-release"):
+        devops.cut_release(project, options(release_version="0.2.0", skip_github_release=False))
     assert snapshot(project) == before
 
 
@@ -544,7 +744,7 @@ def fake_gh(monkeypatch, succeeds):
 @needs_node
 def test_a_failed_github_release_is_listed_after_the_push(project, monkeypatch, capsys):
     fake_gh(monkeypatch, succeeds=False)
-    code = devops.release(project, options(release_version="0.2.0", no_github_release=False))
+    code = devops.cut_release(project, options(release_version="0.2.0", skip_github_release=False))
     assert code == 1
     assert "gh release create v0.2.0" in capsys.readouterr().err
     assert "refs/tags/v0.2.0" in git(project, "ls-remote", "origin")
@@ -560,7 +760,7 @@ def test_a_rejected_plan_push_is_listed_and_the_other_steps_still_run(project, b
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "Added a plan note.")
     git(project, "checkout", "-q", "main")
-    code = devops.release(project, options(release_version="0.2.0", backend_dir=backend))
+    code = devops.cut_release(project, options(release_version="0.2.0", backend_dir=backend))
     assert code == 1
     assert "git push origin plan" in capsys.readouterr().err
     assert "refs/tags/v0.2.0" in git(project, "ls-remote", "origin")
@@ -572,7 +772,7 @@ def test_a_failed_pin_is_listed_after_the_push(project, backend, capsys):
     hook = backend / ".git" / "hooks" / "pre-commit"
     hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8", newline="\n")
     hook.chmod(0o755)
-    code = devops.release(project, options(release_version="0.2.0", backend_dir=backend))
+    code = devops.cut_release(project, options(release_version="0.2.0", backend_dir=backend))
     assert code == 1
     assert "todosWebappVersion=0.2.0" in capsys.readouterr().err
     assert "refs/tags/v0.2.0" in git(project, "ls-remote", "origin")
@@ -583,7 +783,7 @@ def test_a_dirty_backend_is_refused_before_any_local_change(project, backend):
     (backend / "stray.txt").write_text("x", encoding="utf-8")
     before = snapshot(project)
     with pytest.raises(devops.ReleaseError, match="uncommitted"):
-        devops.release(project, options(release_version="0.2.0", backend_dir=backend))
+        devops.cut_release(project, options(release_version="0.2.0", backend_dir=backend))
     assert snapshot(project) == before
 
 
@@ -598,7 +798,7 @@ def test_the_plan_lists_commits_that_the_push_publishes_too(project, capsys):
     (project / "extra.txt").write_text("x", encoding="utf-8")
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "Added an unpublished file.")
-    devops.release(project, options(release_version="0.2.0", dry_run=True))
+    devops.cut_release(project, options(release_version="0.2.0", dry_run=True))
     out = capsys.readouterr().out
     assert "1 commit(s) not yet on origin/main" in out
     assert "Added an unpublished file." in out
@@ -617,7 +817,7 @@ def test_a_failing_check_run_changes_nothing(project, monkeypatch):
     monkeypatch.setattr(devops, "check_commands", lambda: [[sys.executable, "-c", "raise SystemExit(1)"]])
     before = snapshot(project)
     with pytest.raises(devops.ReleaseError, match="checks failed"):
-        devops.release(project, options(release_version="0.2.0", skip_checks=False))
+        devops.cut_release(project, options(release_version="0.2.0", skip_checks=False))
     assert snapshot(project) == before
 
 
@@ -625,9 +825,9 @@ def test_a_failing_check_run_changes_nothing(project, monkeypatch):
 def test_a_dry_run_runs_the_checks_unless_they_are_skipped(project, monkeypatch):
     ran = []
     monkeypatch.setattr(devops, "run_all", lambda commands, root: ran.append(commands) or True)
-    devops.release(project, options(release_version="0.2.0", dry_run=True, skip_checks=False))
+    devops.cut_release(project, options(release_version="0.2.0", dry_run=True, skip_checks=False))
     assert len(ran) == 1
-    devops.release(project, options(release_version="0.2.0", dry_run=True, skip_checks=True))
+    devops.cut_release(project, options(release_version="0.2.0", dry_run=True, skip_checks=True))
     assert len(ran) == 1
 
 
@@ -639,7 +839,7 @@ def test_release_refuses_when_the_tree_changes_during_the_checks(project, monkey
     monkeypatch.setattr(devops, "run_all", dirty)
     head = git(project, "rev-parse", "HEAD")
     with pytest.raises(devops.ReleaseError, match="changed while"):
-        devops.release(project, options(release_version="0.2.0", skip_checks=False))
+        devops.cut_release(project, options(release_version="0.2.0", skip_checks=False))
     assert git(project, "tag") == ""
     assert git(project, "rev-parse", "HEAD") == head
     assert git(project, "status", "--porcelain") == "?? stray.txt"
@@ -651,7 +851,7 @@ def test_release_treats_a_closed_input_as_not_confirmed(project, monkeypatch):
 
     monkeypatch.setattr("builtins.input", closed)
     before = snapshot(project)
-    assert devops.release(project, options(release_version="0.2.0", yes=False)) == 1
+    assert devops.cut_release(project, options(release_version="0.2.0", yes=False)) == 1
     assert snapshot(project) == before
 
 
@@ -662,7 +862,7 @@ def test_release_keeps_crlf_line_endings(project):
         path = project / name
         path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
     git(project, "commit", "-q", "-am", "Switched to CRLF line endings.")
-    assert devops.release(project, options(release_version="0.2.0")) == 0
+    assert devops.cut_release(project, options(release_version="0.2.0")) == 0
     for name in names:
         data = (project / name).read_bytes()
         assert data.count(b"\n") == data.count(b"\r\n"), name
@@ -701,7 +901,7 @@ def test_release_keeps_a_crlf_working_tree_with_lf_in_the_repository(project):
     git(project, "checkout", "--", *names)
     assert b"\r\n" in (project / "CHANGELOG.md").read_bytes()
     assert git(project, "status", "--porcelain") == ""
-    assert devops.release(project, options(release_version="0.2.0")) == 0
+    assert devops.cut_release(project, options(release_version="0.2.0")) == 0
     for name in names:
         data = (project / name).read_bytes()
         assert data.count(b"\n") == data.count(b"\r\n"), name
@@ -716,7 +916,7 @@ def test_an_interrupt_while_editing_restores_the_files_and_names_the_state(proje
     monkeypatch.setattr(devops, "bump_service_worker", interrupt)
     before = snapshot(project)
     with pytest.raises(devops.ReleaseError, match="KeyboardInterrupt") as caught:
-        devops.release(project, options(release_version="0.2.0"))
+        devops.cut_release(project, options(release_version="0.2.0"))
     assert "restored" in str(caught.value)
     assert snapshot(project) == before
 
