@@ -14,7 +14,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0263 Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle.
 - [x] T0264 Redesign the task row as a description line plus a meta line, with overdue due text in orange.
 - [x] T0076 Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
-- [ ] T0262 Split the task editor into Content, Status, and History tabs, with Delete in a header More menu.
+- [~] T0262 [owner: @claude] Split the task editor into Content, Status, and History tabs, with Delete in a header More menu.
 - [ ] T0265 Remove the task row's More button and menu, now that the editor and the move keys cover them.
 - [x] T0271 Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e.
 - [x] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
