@@ -1,11 +1,11 @@
 ---
 id: T0251
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0251-move-the-view-s-more-menu-to-a
+worktree: .plan/work/T0251-move-the-view-s-more-menu-to-a
+status: active
+started_at: "2026-11-17T00:03:41Z"
 ended_at: —
 review: agent
 preview: none
