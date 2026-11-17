@@ -42,6 +42,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0078 [needs: T0074] Add the Shared only filter to the Lists screen sort menu while connected.
 
 ## Backlog
+- [ ] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [ ] T0267 Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
 - [ ] T0266 Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
 - [ ] T0227 [needs: T0226] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
