@@ -26,7 +26,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0243 Fix first-connect upload losing lists whose IDs match trashed server lists, and make restore re-send memberships.
 - [x] T0242 Add Delete account to Settings, marking the connected account for deletion on the service.
 - [ ] T0241 [needs: T0240] Erase the last account's lists and tasks on the next connect after Delete all data in local mode.
-- [ ] T0240 Make Delete all data also erase the account's lists and tasks while connected, queued while offline.
+- [~] T0240 [owner: @claude] Make Delete all data also erase the account's lists and tasks while connected, queued while offline.
 - [ ] T0238 Make the compact layout shell e2e test wait for the action bar, since full parallel runs fail it.
 - [ ] T0221 Prune Lists filter ids of deleted lists before the All tasks hidden-task toast, which now reads 'Task added. hides it.'
 - [ ] T0222 [needs: T0221] Name the Shared filter in the hidden-task toast and let Show clear it.

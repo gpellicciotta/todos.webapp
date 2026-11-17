@@ -1,11 +1,11 @@
 ---
 id: T0240
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0240-make-delete-all-data-also-erase-the-account
+worktree: .plan/work/T0240-make-delete-all-data-also-erase-the-account
+status: active
+started_at: "2026-11-17T03:22:09Z"
 ended_at: —
 review: agent
 preview: none
