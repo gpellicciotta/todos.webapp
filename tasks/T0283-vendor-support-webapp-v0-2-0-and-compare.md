@@ -12,13 +12,12 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 3536.3, input: 82, output: 19500, cache_read: 10824120, cache_write: 38565}
+  worker: {turns: 4, duration_s: 4272.8, input: 130, output: 31183, cache_read: 18094472, cache_write: 62380}
   review: {turns: 1, duration_s: 464.0, input: 38, output: 10658, cache_read: 1112456, cache_write: 51942}
 work_duration: 4082.9
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T19:39:57Z"
-reviewed_by: "@claude"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T20:00:40Z"
 review_session: claude-20261117-f773dc
 ---
 # T0283: Vendor support.webapp v0.2.1 and compare the screenshots.
@@ -90,4 +89,7 @@ Completion check: python scripts/devops.py check
   - Files touched: 13.
   - Lines touched: 179.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
