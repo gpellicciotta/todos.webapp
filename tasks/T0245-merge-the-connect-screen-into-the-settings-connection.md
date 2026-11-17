@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 895.2, input: 116, output: 46681, cache_read: 7561178, cache_write: 146770}
-review_status: pending
+  review: {turns: 1, duration_s: 114.1, input: 46932, output: 2501, cache_read: 343040, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T02:58:13Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-47dec8
+work_duration: 1025.3
 ---
 # T0245: Merge the connect screen into the Settings Connection section, keeping #/connect as an alias for the Auth return
 
@@ -80,4 +84,11 @@ Make the Settings Connection section the only place to connect, removing the sep
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: Rejected for one blocking sign-in lifecycle defect.
+  - Findings: [review-findings-1.md](T0245-merge-the-connect-screen-into-the-settings-connection/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Review D1 fixed: sign-in phase now lasts until its promise settles; added notification-order and expired-return tests. Unit 1574, e2e 223 pass.
 

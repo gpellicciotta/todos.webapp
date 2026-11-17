@@ -37,3 +37,18 @@ Full e2e suite (exit code 0):
 
 Screenshots: [before intro](screenshots/before-intro-light-desktop.png), [after intro](screenshots/intro-light-desktop.png),
 [after not invited](screenshots/not-invited-dark-desktop.png), [after expired](screenshots/expired-light-phone.png).
+
+## Review round 1 rework (D1)
+
+Added regression tests for the real notification sequence and expired-session returns; the sign-in phase now lasts until its promise settles.
+
+```text
+> npx vitest run
+ Test Files  60 passed (60)
+      Tests  1574 passed (1574)
+> npx eslint .            (exit code 0, no output)
+> node scripts/check-sw-version.mjs
+OK: 129 precached files match VERSION 2026-11-17.11.
+> npx playwright test --reporter=line
+  223 passed (3.6m)
+```
