@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1833.6, input: 10, output: 1997, cache_read: 796752, cache_write: 6463}
+  worker: {turns: 3, duration_s: 3536.3, input: 82, output: 19500, cache_read: 10824120, cache_write: 38565}
 work_duration: 1873.0
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T19:39:57Z"
 ---
 # T0283: Vendor support.webapp v0.2.1 and compare the screenshots.
 
@@ -63,4 +66,7 @@ Completion check: python scripts/devops.py check
   - Files touched: 13.
   - Lines touched: 171.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
