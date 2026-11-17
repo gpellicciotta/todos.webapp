@@ -10,6 +10,19 @@
 
 Size estimate: 6 files, 260 lines.
 
+Mechanical command: `node scripts/check-sw-version.mjs --update`.
+Mechanical files: scripts/sw-precache-hashes.json
+
+### Undeclared Files
+- src/js/views/settings.js and tests/unit/settings.test.js: the `x` shortcut text described the old untick.
+- tests/unit/recurrence-review.test.js: it expected `reopen` from `tickEvent` on an ended series.
+- src/css/app-components.css: the inert button drops the hover ground and pointer.
+- src/service-worker.js: precached files changed, so VERSION moved to 2026-11-17.26.
+- docs/specs/visual-style-guide.md: its status button entry described the old untick.
+
+Size note: 12 counted files and 296 lines cross the 8-file typical line.
+The extra files are one-line text and test fixes the click rules force; a split piece could not merge alone.
+
 ### Design Source
 - The Task Row section of T0257's brief governs; revise this spec if sign-off changed it.
 - Brief: ../T0257-design-a-tabbed-task-editor-and-a-clearer/technical-spec.md.
