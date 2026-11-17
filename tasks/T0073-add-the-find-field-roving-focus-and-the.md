@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 442.6, input: 80, output: 28760, cache_read: 4099093, cache_write: 104319}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T04:33:21Z"
 ---
 # T0073: Add the find field, roving focus, and the l shortcut to the sidebar lists
 
@@ -51,4 +56,7 @@ Announce the match count through the polite live region after typing pauses for 
 
 - [2026-11-17] **[Doc]**
   Updated ui-design.md, the changelog, and the layout and list-find comments.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
