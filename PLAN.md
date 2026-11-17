@@ -10,7 +10,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0282 Fix the stale e2e tests for the Settings shortcuts list and the gallery toast live region.
 - [ ] T0279 [protocol: adhoc] Scope the toast test's polite live region locator, which also matches the task editor's count since T0258.
 - [ ] T0278 [protocol: adhoc] Drop the task list's filter-hide toast logic, since only ticks post from rows and always show Undo.
-- [ ] T0276 Fix the gallery toast e2e test, whose aria-live locator also matches the task editor count region added in T0258.
+- [-] T0276 [reason: Duplicate of T0282, which fixes the same gallery toast and Settings shortcuts e2e tests.] Fix the gallery toast e2e test, whose aria-live locator also matches the task editor count region added in T0258.
 - [ ] T0275 Make the e2e suite stable under full parallel load: all-tasks.spec.js:591 and sidebar-find.spec.js:43 each failed once.
 - [x] T0274 Fix the popover keyboard e2e test in behaviors.spec.js failing on main: Tab never reaches the Clear button.
 - [x] T0257 Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
