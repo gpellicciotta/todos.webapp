@@ -15,7 +15,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [!] T0240 [reason: needs review: contract suite needs rebuilt todos-server jar (sibling write) and human confirmation that T0257 is deployed to production] [owner: @claude] Make Delete all data also erase the account's lists and tasks while connected, queued while offline.
 - [ ] T0076 [needs: T0263] Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
 - [x] T0271 Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e.
-- [~] T0270 [owner: @claude] Window the Lists screen rows so 500 lists open within twice the 150-list time.
+- [x] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
 - [ ] T0267 Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
 
 ## Backlog
