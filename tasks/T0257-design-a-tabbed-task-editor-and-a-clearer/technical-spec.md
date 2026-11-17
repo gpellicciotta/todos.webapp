@@ -46,12 +46,12 @@ https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
 - The badge is a small pill on the icon's bottom-right corner, tinted by status, with dark text on a light tint.
 - Line 2, the meta line, in small muted text, only when it has content:
   - a clock icon and the due text, or a repeat icon and the interval, such as Daily;
-  - the lists: plain text joined by " · " on phones, small pills on wide layouts.
+  - the lists, right-aligned on the same line: plain text joined by " · " on phones, small pills on wide layouts; the due or repeat text stays left-aligned.
 - Overdue due text and its clock use `--color-danger` (orange); in-time ones stay muted.
 - The due text always shows, so overdue never relies on color alone.
 - The row drops the note count, the people icon, the More button, and the drag handle.
 - The lists overview keeps its shared marks on list cards.
-- The More menu goes; Add to list and Remove from this list live in the editor's Lists, Delete in its header menu.
+- The More menu goes; Add to list and Remove from this list live in the editor's Lists, Delete at the bottom of its Status tab.
 - OVD-2's "Overdue" chip in the signal color becomes the orange due text.
 
 #### Task Reordering
@@ -87,12 +87,12 @@ https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
 - A viewer sees every control disabled (`SHR-4`).
 
 #### Tabs
-- Content: Description, Lists, and Notes.
-- Status: Status, Target count, Due, Overdue behavior, and Repeat.
+- Content: Description and Notes only; the add field also searches the notes.
+- Status, with a horizontal rule between parts: the active status, Lists, then Target count, Due with Overdue behavior, and Repeat, then Delete task after a last rule.
 - History: History, then Details.
 - The editor always opens on Content, keeping the description focus rule (`TSK-13`).
 - Tabs follow the WAI-ARIA tabs pattern with the vendored src/vendor/design/js/tabs.js.
-- Delete task moves to a More menu in the editor header, away from the notes.
+- The tab strip and editor header have no More button; Delete task sits at the Status tab bottom.
 - Escape still closes the editor, and the phone sheet keeps working.
 
 ### Implementation Tasks
@@ -100,7 +100,7 @@ https://claude.ai/artifact/ExTBoszeATNfsteguSM9e9 (private to the user).
 - T0259: row tick rules and the Undo toast after every tick.
 - T0260: removal of the row status menu.
 - T0261: cancelled; the row has no count popover.
-- T0262: the tabs, Details in History, and Delete in the header More menu.
+- T0262: the tabs, Details in History, Lists and Delete on Status.
 - T0263: row reordering by press-and-drag, long hold, Alt keys, and the outside handle.
 - T0264: the row layout of variant C with the count badge, and overdue due text in orange.
 - T0265: removal of the row More button and menu.
