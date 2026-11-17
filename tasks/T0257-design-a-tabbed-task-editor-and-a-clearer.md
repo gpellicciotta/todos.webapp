@@ -5,7 +5,7 @@ session: claude-20261117-2c6785
 needs: []
 branch: task/T0257-design-a-tabbed-task-editor-and-a-clearer
 worktree: .plan/work/T0257-design-a-tabbed-task-editor-and-a-clearer
-status: active
+status: suspended
 started_at: "2026-11-17T01:01:48Z"
 ended_at: —
 review: human
@@ -29,10 +29,10 @@ Produce a signed-off design for a tabbed task editor, the task row, and a clear 
 
 ## Task Execution Steps
 - [x] **[Read]**      Read the Task Row and Task Editor designs, task-list.js, task-editor.js, and occurrences.js.
-- [ ] **[Read]**      Confirm in the app that the editor tick button's completed icon at 2 of 3 caused the report.
-- [ ] **[Decide]**    Discuss the task row redesign with the user and record the decisions in the brief.
-- [ ] **[Doc]**       Wireframe the tabbed editor and the row in draw-wireframes.py, at desktop panel and phone widths.
-- [ ] **[Doc]**       Update the Task Row and Task Editor sections of the UI design and the affected requirements.
+- [x] **[Read]**      Confirm in the app that the editor tick button's completed icon at 2 of 3 caused the report.
+- [x] **[Decide]**    Discuss the task row redesign with the user and record the decisions in the brief.
+- [x] **[Doc]**       Wireframe the tabbed editor and the row in draw-wireframes.py, at desktop panel and phone widths.
+- [x] **[Doc]**       Update the Task Row and Task Editor sections of the UI design and the affected requirements.
 - [ ] **[Doc]**       Revise T0258 to T0265 to the signed-off design, keeping each within the size lines.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
@@ -64,4 +64,14 @@ Produce a signed-off design for a tabbed task editor, the task row, and a clear 
 - [2026-11-16] **[Doc]**
   Drew three task editor Status tab options on the design canvas for the user to choose from.
   - Options: underline tabs, compact stepper, summary card.
+
+- [2026-11-17] **[Decided]**
+  Chose underline tabs for the editor, with the More button ending the tab strip, also on phones.
+
+- [2026-11-17] **[Doc]**
+  Redrew rows and editor tabs; updated ui-design.md and requirements.md; wireframe tests pass.
+  - Added TSK-18 and TSK-19.
+
+- [2026-11-17] **[Doc]**
+  Left T0258 to T0265 unrevised, since the brief revises them only after sign-off.
 
