@@ -286,7 +286,7 @@ test('a target-3 task with two completions shows 2/3 after an export and an impo
   await expect(dialog).toHaveCount(0);
   await page.goto(`/#/lists/${listId}`);
   const row = page.locator('.task-row', { hasText: 'Buy paint' });
-  await expect(row.locator('.task-row__count')).toHaveText('2/3 done');
+  await expect(row.locator('.task-row__count')).toHaveText('2/3');
   await expect(row).toHaveAttribute('data-status', 'in-progress');
   const stored = await snapshot(page);
   expect(stored.events.map((event) => event.type)).toEqual(types);

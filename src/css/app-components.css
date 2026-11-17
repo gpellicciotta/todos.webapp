@@ -11,13 +11,6 @@
  */
 
 /*
- * Overdue chip: the signal color, as ui-design.md defines it (`OVD-2`), not the package's danger tone.
- */
-.chip--overdue {
-  color: var(--color-primary);
-}
-
-/*
  * Disabled chip remove button, such as for a viewer of a shared list: the package defines no disabled state.
  * It stays quiet, without the hover and active grounds or the pointer cursor.
  */
@@ -189,7 +182,8 @@
 
 /*
  * Task list: a <ul> of task rows, and the size container the rows respond to.
- * Below 36rem of list width, rows show only the status, the description, and the due chip.
+ * Below 36rem of list width, rows drop the More button and the drag handle.
+ * Below 48rem, the meta line shows lists as plain text joined by " · "; from 48rem, as small pills.
  */
 .task-list {
   container: task-list / inline-size;
@@ -199,22 +193,25 @@
 }
 
 /*
- * Task row: status button, description with chips, and a More button, on one 48 px line,
- * with the drag handle in the gutter before it.
+ * Task row: the status button, the open link, and a More button, with the drag handle in the gutter before it.
+ * The open link holds the description line, clamped to 2 lines, and the meta line below it when it has content.
+ * A row is at least 48 px and grows with its content; the buttons stay on the first line.
+ * The row ground lives in `--row-ground`, so the count badge ring can match it in every state.
  * States: default, hover, focus-visible (on the row), active, selected (aria-current on the open link),
  * which adds a signal edge on the inline start and keeps hover and press feedback,
  * dragging (data-dragging="true"), drop target (data-drop="before" or "after"),
  * done (data-status="completed" or "cancelled"), and read-only (data-readonly="true").
  */
 .task-row {
+  --row-ground: var(--color-surface);
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-1);
   min-block-size: var(--row-height);
   padding-inline: var(--space-1);
   border-block-end: var(--border-width) solid var(--color-border);
-  background-color: var(--color-surface);
+  background-color: var(--row-ground);
   transition-property: background-color, box-shadow;
   transition-duration: var(--duration-fast);
   transition-timing-function: var(--ease-standard);
@@ -222,12 +219,12 @@
 
 .task-row:hover,
 .task-row.is-hover {
-  background-color: var(--color-surface-hover);
+  --row-ground: var(--color-surface-hover);
 }
 
 .task-row:has(.task-row__open:active),
 .task-row.is-active {
-  background-color: var(--color-surface-active);
+  --row-ground: var(--color-surface-active);
 }
 
 /* The open link fills the row, so the row draws its focus ring, inside its own edge. */
@@ -238,21 +235,21 @@
 }
 
 .task-row:has(.task-row__open[aria-current='page']) {
-  background-color: var(--color-surface-selected);
+  --row-ground: var(--color-surface-selected);
 }
 
 /* Just added: the row of the newest add, for two seconds, so a run of adds shows where each task went.
  * Like a selected row, it keeps hover and press feedback. */
 .task-row.task-row--added {
-  background-color: var(--color-surface-selected);
+  --row-ground: var(--color-surface-selected);
 }
 
 .task-row.task-row--added:is(:hover, .is-hover) {
-  background-color: var(--color-surface-hover);
+  --row-ground: var(--color-surface-hover);
 }
 
 .task-row.task-row--added:is(:has(.task-row__open:active), .is-active) {
-  background-color: var(--color-surface-active);
+  --row-ground: var(--color-surface-active);
 }
 
 .task-row:has(.task-row__open[aria-current='page'])::after,
@@ -267,11 +264,11 @@
 }
 
 .task-row:has(.task-row__open[aria-current='page']):hover {
-  background-color: var(--color-surface-hover);
+  --row-ground: var(--color-surface-hover);
 }
 
 .task-row:has(.task-row__open[aria-current='page']):has(.task-row__open:active) {
-  background-color: var(--color-surface-active);
+  --row-ground: var(--color-surface-active);
 }
 
 /*
@@ -287,7 +284,7 @@
   z-index: var(--layer-sticky);
   border-block-end-color: transparent;
   border-radius: var(--radius-card);
-  background-color: var(--color-surface);
+  --row-ground: var(--color-surface);
   box-shadow: var(--elevation-2);
   cursor: grabbing;
 }
@@ -315,9 +312,10 @@
   translate: 0 calc(50% + var(--border-width));
 }
 
-/* Icon buttons beside the shrinking description keep their full target size. */
+/* Icon buttons beside the shrinking description keep their full target size, centered on the first row height. */
 .task-row > .icon-button {
   flex: none;
+  margin-block-start: calc((var(--row-height) - var(--border-width) - var(--target-min)) / 2);
 }
 
 /*
@@ -326,8 +324,9 @@
  */
 .task-row__handle {
   position: absolute;
-  inset-block: 0;
+  inset-block-start: 0;
   inset-inline-end: 100%;
+  block-size: var(--row-height);
   display: grid;
   place-items: center;
   inline-size: var(--space-5);
@@ -345,13 +344,19 @@
   -webkit-touch-callout: none;
 }
 
+/*
+ * The open link stacks the description line over the meta line and stretches to the row height,
+ * so a short row centers its text; the larger top padding lines the first line up with the status icon.
+ */
 .task-row__open {
   display: flex;
   flex: 1 1 auto;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
   align-self: stretch;
-  gap: var(--space-2);
+  gap: var(--space-1);
   min-inline-size: 0;
+  padding-block: var(--space-3) var(--space-2);
   padding-inline: var(--space-1) var(--space-2);
   color: inherit;
   text-decoration: none;
@@ -362,14 +367,16 @@
   outline: none;
 }
 
+/* Description line: wraps to at most 2 lines on every width, then ends in an ellipsis. */
 .task-row__description {
-  flex: 1 1 auto;
-  min-inline-size: 0;
+  display: -webkit-box;
   overflow: hidden;
   font-weight: var(--weight-medium);
   line-height: var(--leading-tight);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .task-row[data-status='completed'] .task-row__description,
@@ -379,43 +386,51 @@
   text-decoration-line: line-through;
 }
 
+/*
+ * Meta line: small muted text under the description, aligned with its start.
+ * The due or repeat item stays at the start; the lists fill the rest, right-aligned, ending in an ellipsis.
+ */
 .task-row__meta {
   display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+}
+
+.task-row__due,
+.task-row__repeat {
+  display: inline-flex;
   flex: none;
   align-items: center;
   gap: var(--space-1);
+  white-space: nowrap;
 }
 
-/* Chips on a hovered row move to the surface ground, so they stay distinct from the row. */
-.task-row:is(:hover, .is-hover) .chip {
-  background-color: var(--color-surface);
+/* Overdue: the due text and its clock take the danger color at regular weight; the text stays (`OVD-2`). */
+.task-row__due--overdue {
+  color: var(--color-danger);
 }
 
-/* Done and target counts keep their width while a tick changes them. */
-.task-row__count {
-  font-variant-numeric: tabular-nums;
-}
-
-/* List chips cap their width and truncate long list names. */
-.task-row__list {
-  max-inline-size: var(--width-chip-max);
-}
-
-.task-row__chip-text {
+.task-row__lists {
+  flex: 1 1 auto;
   min-inline-size: 0;
+  margin-inline-start: auto;
   overflow: hidden;
+  text-align: end;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.task-row__shared {
-  display: inline-grid;
-  place-items: center;
-  color: var(--color-text-muted);
+.task-row__list + .task-row__list::before {
+  content: ' · ';
 }
 
-.task-row__shared .icon {
-  inline-size: var(--text-base);
-  block-size: var(--text-base);
+.task-row__more-lists {
+  margin-inline-start: var(--space-1);
+  font-variant-numeric: tabular-nums;
 }
 
 .task-row[data-readonly='true'] .status-button {
@@ -430,13 +445,87 @@
 
 @container task-list (width < 36rem) {
   .task-row__handle,
-  .task-row__list,
-  .task-row__more-lists,
-  .task-row__notes,
-  .task-row__shared,
   .task-row__more {
     display: none;
   }
+}
+
+/* From 48rem, lists show as small pills that cap their width and truncate long names. */
+@container task-list (width >= 48rem) {
+  .task-row__lists {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-1);
+  }
+
+  .task-row__list,
+  .task-row__more-lists {
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    max-inline-size: var(--width-chip-max);
+    margin-inline-start: 0;
+    padding-inline: var(--space-2);
+    overflow: hidden;
+    border-radius: var(--radius-chip);
+    background-color: var(--color-surface-sunken);
+    text-overflow: ellipsis;
+  }
+
+  .task-row__more-lists {
+    flex: none;
+  }
+
+  .task-row__list + .task-row__list::before {
+    content: none;
+  }
+}
+
+/*
+ * Count badge: above target 1, a pill on the status icon's bottom-right corner shows the counts, such as 2/3.
+ * It sits inside the status button, so a tap on it ticks. A light tint of the status color carries dark text
+ * in both themes; a ring in the row ground separates it from the icon.
+ */
+.status-button:has(> .task-row__count) {
+  position: relative;
+}
+
+.task-row__count {
+  --badge-ground: var(--color-surface);
+  --badge-ink: var(--color-text);
+  --badge-tone: var(--color-text-muted);
+  position: absolute;
+  inset-block-end: var(--space-1);
+  inset-inline-end: 0;
+  padding-inline: 0.1875rem;
+  border-radius: var(--radius-chip);
+  background-color: color-mix(in srgb, var(--badge-tone) 22%, var(--badge-ground));
+  box-shadow: 0 0 0 1.5px var(--row-ground, var(--color-surface));
+  color: var(--badge-ink);
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  line-height: 0.875rem;
+  pointer-events: none;
+}
+
+/* In the dark theme the ground and ink swap, so the tint stays light and the text dark. */
+@supports (color: light-dark(currentcolor, currentcolor)) {
+  .task-row__count {
+    --badge-ground: light-dark(var(--color-surface), var(--color-text));
+    --badge-ink: light-dark(var(--color-text), var(--color-surface));
+  }
+}
+
+.status-button[data-status='in-progress'] > .task-row__count {
+  --badge-tone: var(--color-status-in-progress);
+}
+
+.status-button[data-status='completed'] > .task-row__count {
+  --badge-tone: var(--color-status-completed);
+}
+
+.status-button[data-status='cancelled'] > .task-row__count {
+  --badge-tone: var(--color-status-cancelled);
 }
 
 /*

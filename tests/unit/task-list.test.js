@@ -38,9 +38,12 @@ function openMoreMenu(row) {
 }
 
 describe('formatDue', () => {
-  it('shows a relative time, and Overdue for open tasks past their due time (OVD-2)', () => {
+  it('shows a relative time, and marks open tasks past their due time overdue while keeping the time (OVD-2)', () => {
     expect(formatDue(shapeTask({ 'due-time': null, status: 'ready' }), NOW, 'en-GB')).toBeNull();
-    expect(formatDue(shapeTask({ 'due-time': at(4, 8), status: 'ready' }), NOW, 'en-GB')).toEqual({ text: 'Overdue', overdue: true });
+    expect(formatDue(shapeTask({ 'due-time': at(4, 8), status: 'ready' }), NOW, 'en-GB')).toEqual({ text: 'Today 08:00', overdue: true });
+    expect(formatDue(shapeTask({ 'due-time': at(3, 10), status: 'in-progress' }), NOW, 'en-GB')).toEqual({ text: 'Yesterday 10:00', overdue: true });
+    expect(formatDue(shapeTask({ 'due-time': at(3, 23, 59), status: 'ready' }), NOW, 'en-GB')).toEqual({ text: 'Yesterday', overdue: true });
+    expect(formatDue(shapeTask({ 'due-time': at(1, 9), status: 'ready' }), NOW, 'en-GB')).toEqual({ text: '1 Nov', overdue: true });
     expect(formatDue(shapeTask({ 'due-time': at(4, 8), status: 'completed' }), NOW, 'en-GB')).toEqual({ text: 'Today 08:00', overdue: false });
     expect(formatDue(shapeTask({ 'due-time': at(4, 18), status: 'ready' }), NOW, 'en-GB')).toEqual({ text: 'Today 18:00', overdue: false });
     expect(formatDue(shapeTask({ 'due-time': at(5, 18), status: 'ready' }), NOW, 'en-GB').text).toBe('Tomorrow 18:00');
@@ -116,19 +119,45 @@ describe('createTaskList', () => {
     list.destroy();
   });
 
-  it('renders one row per task with its status, link, due chip, list chips, and note count', () => {
+  it('renders one row per task: the description line, then a meta line with the due text and the lists', () => {
     const rows = [...document.querySelectorAll('.task-row')];
     expect(rows.map((row) => row.dataset.status)).toEqual(['in-progress', 'ready', 'completed']);
     const first = rows[0];
     expect(first.querySelector('.status-button').getAttribute('aria-label')).toBe('Mark Call the plumber completed');
     expect(first.querySelector('.status-button use').getAttribute('href')).toBe('img/icons.svg#status-in-progress');
-    expect(first.querySelector('.task-row__open').getAttribute('href')).toBe('#/tasks/t1');
-    expect(first.querySelector('.chip--overdue').textContent).toBe('Overdue');
-    expect([...first.querySelectorAll('.task-row__list')].map((chip) => chip.textContent)).toEqual(['Home', 'Errands']);
-    expect(first.querySelector('.task-row__more-lists').textContent).toBe('+1 more lists');
-    expect(first.querySelector('.task-row__notes').textContent).toBe('2 notes');
-    expect(rows[2].querySelector('.chip')).toBeNull();
+    const open = first.querySelector('.task-row__open');
+    expect(open.getAttribute('href')).toBe('#/tasks/t1');
+    expect([...open.children].map((child) => child.className)).toEqual(['task-row__description', 'task-row__meta']);
+    const meta = open.querySelector('.task-row__meta');
+    expect([...meta.children].map((child) => child.className)).toEqual(['task-row__due task-row__due--overdue', 'task-row__lists']);
+    expect(meta.querySelector('.task-row__due').textContent).toBe('Yesterday 10:00');
+    expect(meta.querySelector('.task-row__due use').getAttribute('href')).toBe('img/icons.svg#clock');
+    expect([...meta.querySelectorAll('.task-row__list')].map((name) => name.textContent)).toEqual(['Home', 'Errands']);
+    expect(meta.querySelector('.task-row__more-lists').textContent).toBe('+1 more lists');
+    expect([...rows[1].querySelector('.task-row__meta').children].map((child) => child.className)).toEqual(['task-row__lists']);
+    expect(rows[2].querySelector('.task-row__meta')).toBeNull();
     expect(document.querySelector('.task-list').getAttribute('aria-label')).toBe('All tasks');
+  });
+
+  it('marks only overdue due text for the danger color, and renders no Overdue chip (OVD-2)', () => {
+    list.render([
+      shapeTask({ id: 'late', description: 'Pay the rent', status: 'ready', 'due-time': at(4, 8) }),
+      shapeTask({ id: 'soon', description: 'Buy bread', status: 'ready', 'due-time': at(4, 18) }),
+      shapeTask({ id: 'done', description: 'Post the letter', status: 'completed', 'due-time': at(4, 8) }),
+    ], ctx);
+    const dueOf = (id) => document.querySelector(`.task-row[data-task-id="${id}"] .task-row__due`);
+    expect(dueOf('late').classList.contains('task-row__due--overdue')).toBe(true);
+    expect(dueOf('late').textContent).toBe('Today 08:00');
+    expect(dueOf('soon').classList.contains('task-row__due--overdue')).toBe(false);
+    expect(dueOf('soon').textContent).toBe('Today 18:00');
+    expect(dueOf('done').classList.contains('task-row__due--overdue')).toBe(false);
+    expect(document.querySelector('.chip--overdue')).toBeNull();
+    expect(document.querySelector('.task-list').textContent).not.toContain('Overdue');
+  });
+
+  it('renders no note count, no people icon, and no chips on any row', () => {
+    expect(document.querySelector('.task-row__notes, .task-row__shared, .task-row .chip')).toBeNull();
+    expect(document.querySelector('.task-row use[href$="#note"], .task-row use[href$="#people"]')).toBeNull();
   });
 
   it('marks the selected task with aria-current', () => {
@@ -147,15 +176,22 @@ describe('createTaskList', () => {
     }
   });
 
-  it('shows done and target counts on a row whose target is above 1, and none at target 1', () => {
+  it('shows done and target counts as a badge on the status icon above target 1, and none at target 1', () => {
     list.render([
       shapeTask({ id: 'f', description: 'French exercises', status: 'in-progress', 'target-count': 3, 'completion-count': 2 }),
       shapeTask({ id: 'g', description: 'Gym', status: 'completed', 'target-count': 3, 'completion-count': 4 }),
       ...tasks,
     ], ctx);
     const rows = [...document.querySelectorAll('.task-row')];
-    expect(rows[0].querySelector('.task-row__count').textContent).toBe('2/3 done');
-    expect(rows[1].querySelector('.task-row__count').textContent).toBe('4/3 done');
+    const badge = rows[0].querySelector('.status-button > .task-row__count');
+    expect(badge.textContent).toBe('2/3');
+    expect(badge.getAttribute('aria-hidden')).toBe('true');
+    expect(badge.previousElementSibling.matches('svg.icon')).toBe(true);
+    expect(rows[0].querySelector('.status-button').dataset.status).toBe('in-progress');
+    expect(rows[1].querySelector('.status-button > .task-row__count').textContent).toBe('4/3');
+    expect(rows[1].querySelector('.status-button').dataset.status).toBe('completed');
+    expect(document.querySelector('.task-row__meta .task-row__count')).toBeNull();
+    expect(rows[0].querySelector('.task-row__meta')).toBeNull();
     expect(rows.slice(2).map((row) => row.querySelector('.task-row__count'))).toEqual([null, null, null]);
     expect(rows[0].querySelector('.status-button').getAttribute('aria-label')).toBe('Tick French exercises, 2 of 3 done');
     expect(rows[1].querySelector('.status-button').getAttribute('aria-label')).toBe('Tick Gym, 4 of 3 done');
@@ -171,7 +207,7 @@ describe('createTaskList', () => {
     list.render([french(2)], ctx);
     document.querySelector('.status-button').click();
     list.render([french(3)], ctx);
-    expect(document.querySelector('.task-row__count').textContent).toBe('3/3 done');
+    expect(document.querySelector('.task-row__count').textContent).toBe('3/3');
     document.querySelector('.status-button').click();
     expect(store.postEvent.mock.calls).toEqual([['f', 'complete'], ['f', 'complete']]);
   });
@@ -182,7 +218,7 @@ describe('createTaskList', () => {
     const before = document.querySelector('.task-row');
     list.render([french(2)], ctx);
     expect(document.querySelector('.task-row')).not.toBe(before);
-    expect(document.querySelector('.task-row__count').textContent).toBe('2/3 done');
+    expect(document.querySelector('.task-row__count').textContent).toBe('2/3');
   });
 
   it('offers Add to list and Delete in the More menu, without Set status', async () => {
@@ -579,12 +615,13 @@ describe('createTaskList', () => {
     const due = shapeTask({ id: 't4', description: 'Pay the rent', status: 'ready', 'due-time': at(4, 10) });
     list.render([...tasks, due], ctx);
     const before = [...document.querySelectorAll('.task-row')];
-    expect(before[3].querySelector('.chip').textContent).toMatch(/^Today /);
+    expect(before[3].querySelector('.task-row__due').textContent).toBe('Today 10:00');
+    expect(before[3].querySelector('.task-row__due--overdue')).toBeNull();
     const menu = openMoreMenu(before[3]);
     const focused = document.activeElement;
     list.tick(new Date(2026, 10, 4, 10, 1));
     [...document.querySelectorAll('.task-row')].forEach((row, index) => expect(row).toBe(before[index]));
-    expect(before[3].querySelector('.chip--overdue').textContent).toBe('Overdue');
+    expect(before[3].querySelector('.task-row__due--overdue').textContent).toBe('Today 10:00');
     expect(isShowing(menu)).toBe(true);
     expect(document.activeElement).toBe(focused);
   });
@@ -1159,23 +1196,24 @@ describe('createTaskList', () => {
     };
     const rowOf = () => document.querySelector('.task-row[data-task-id="r1"]');
 
-    it('shows a connected recurring task past its period end as ready 0/3, with a repeat chip instead of a due chip', () => {
+    it('shows a connected recurring task past its period end as ready 0/3, with a repeat icon and interval instead of a due time', () => {
       list.render([recurring()], { ...ctx, now: new Date('2026-11-01T22:00:00Z') });
       expect(rowOf().dataset.status).toBe('in-progress');
-      expect(rowOf().querySelector('.task-row__count').textContent).toBe('2/3 done');
-      expect(rowOf().querySelector('.task-row__repeat').textContent).toBe('Weekly');
-      expect(rowOf().querySelector('.chip--overdue')).toBeNull();
+      expect(rowOf().querySelector('.task-row__count').textContent).toBe('2/3');
+      expect(rowOf().querySelector('.task-row__meta > .task-row__repeat').textContent).toBe('Weekly');
+      expect(rowOf().querySelector('.task-row__repeat use').getAttribute('href')).toBe('img/icons.svg#repeat');
+      expect(rowOf().querySelector('.task-row__due')).toBeNull();
       list.render([recurring()], { ...ctx, now: new Date('2026-11-02T08:00:00Z') });
       expect(rowOf().dataset.status).toBe('ready');
-      expect(rowOf().querySelector('.task-row__count').textContent).toBe('0/3 done');
-      expect(rowOf().querySelector('.chip--overdue')).toBeNull();
+      expect(rowOf().querySelector('.task-row__count').textContent).toBe('0/3');
+      expect(rowOf().querySelector('.task-row__due')).toBeNull();
     });
 
     it('turns a row ready 0/3 on the minute tick once its period ends', () => {
       list.render([recurring()], { ...ctx, now: new Date('2026-11-01T22:59:00Z') });
       list.tick(new Date('2026-11-01T23:00:00Z'));
       expect(rowOf().dataset.status).toBe('ready');
-      expect(rowOf().querySelector('.task-row__count').textContent).toBe('0/3 done');
+      expect(rowOf().querySelector('.task-row__count').textContent).toBe('0/3');
     });
 
     it('leaves grace completion of the previous period to the task editor, with no row menu offering it', () => {

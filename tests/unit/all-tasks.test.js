@@ -124,7 +124,7 @@ describe('mountAllTasks', () => {
       time = new Date(2026, 10, 4, 10, 1);
       vi.advanceTimersByTime(60_000);
       expect(document.querySelector('.task-row')).toBe(row);
-      expect(row.querySelector('.chip--overdue').textContent).toBe('Overdue');
+      expect(row.querySelector('.task-row__due--overdue').textContent).toBe('Today 10:00');
       expect(menu.hidden).toBe(false);
       expect(document.querySelector('.status-menu')).toBeNull();
       expect(document.activeElement).toBe(focused);

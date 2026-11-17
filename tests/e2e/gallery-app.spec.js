@@ -100,36 +100,37 @@ for (const viewport of VIEWPORTS) {
     });
   }
 
-  test(`task rows keep one line at 48 px and truncate long text at ${viewport.width} px`, async ({ page }) => {
+  test(`task rows are at least 48 px, with a description of at most 2 lines over the meta line, at ${viewport.width} px`, async ({ page }) => {
     await openGallery(page, viewport, THEMES[0]);
 
     const rows = await page.locator('#task-row .task-row, #task-list .task-row').evaluateAll((elements) => elements
       .filter((row) => row.checkVisibility())
       .map((row) => {
         const description = row.querySelector('.task-row__description');
+        const meta = row.querySelector('.task-row__meta');
         const style = getComputedStyle(description);
         return {
           text: description.textContent.trim(),
           height: row.getBoundingClientRect().height,
           lines: Math.round(description.getBoundingClientRect().height / parseFloat(style.lineHeight)),
-          truncated: description.scrollWidth > description.clientWidth,
-          ellipsis: style.textOverflow,
-          wrap: style.whiteSpace,
+          clamped: description.scrollHeight > description.clientHeight + 1,
+          clamp: style.webkitLineClamp,
+          below: meta ? meta.getBoundingClientRect().top >= description.getBoundingClientRect().bottom - 1 : true,
+          start: meta ? Math.abs(meta.getBoundingClientRect().left - description.getBoundingClientRect().left) <= 1 : true,
         };
       }));
 
     expect(rows.length).toBeGreaterThanOrEqual(10);
     for (const row of rows) {
-      expect(row.height, row.text).toBe(ROW_HEIGHT);
-      expect(row.lines, row.text).toBe(1);
-      expect(row.ellipsis, row.text).toBe('ellipsis');
-      expect(row.wrap, row.text).toBe('nowrap');
+      expect(row.height, row.text).toBeGreaterThanOrEqual(ROW_HEIGHT);
+      expect(row.lines, row.text).toBeLessThanOrEqual(2);
+      expect(row.clamp, row.text).toBe('2');
+      expect(row.below, row.text).toBe(true);
+      expect(row.start, row.text).toBe(true);
     }
-    const long = rows.filter((row) => row.text.length > 60);
+    const long = rows.filter((row) => row.text.length > 80);
     expect(long.length).toBeGreaterThanOrEqual(1);
-    if (viewport.width === 390) {
-      expect(long.every((row) => row.truncated), JSON.stringify(long)).toBe(true);
-    }
+    expect(long.every((row) => row.lines === 2 && row.clamped), JSON.stringify(long)).toBe(true);
   });
 }
 
@@ -281,14 +282,92 @@ test('task row specimens cover every documented state', async ({ page }) => {
     '.task-row[data-drop="before"]',
     '.task-row[data-drop="after"]',
     '.task-row[data-readonly="true"]',
-    '.task-row .chip--overdue',
+    '.task-row .task-row__due--overdue',
+    '.task-row .task-row__due:not(.task-row__due--overdue)',
+    '.task-row .task-row__repeat',
+    '.task-row .task-row__lists',
+    '.task-row .status-button > .task-row__count',
     '.task-row .task-row__handle',
     '.task-row .task-row__more',
-    '.task-row .task-row__shared',
   ]) {
     await expect(page.locator(`#task-row ${selector}`).first(), selector).toBeVisible();
   }
+  await expect(page.locator('#task-row, #task-list').locator('.task-row__notes, .task-row__shared, .chip--overdue, .task-row .chip')).toHaveCount(0);
 });
+
+/**
+ * Read the contrast of an element's text on a ground, flattening each color through a canvas pixel.
+ * @param {import('@playwright/test').Locator} locator the text element
+ * @param {'self'|'row'} ground whose background is the ground: the element's own, or its row's
+ * @returns {Promise<{ratio: number, size: number, color: string}>} the contrast ratio, the font size, and the text color
+ */
+function contrastOf(locator, ground) {
+  return locator.evaluate((element, which) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const pixel = (color, under = 'rgb(255, 255, 255)') => {
+      context.fillStyle = under;
+      context.fillRect(0, 0, 1, 1);
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+    const luminance = (rgb) => {
+      const [r, g, b] = rgb.match(/\d+/g).map((value) => {
+        const channel = Number(value) / 255;
+        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const style = getComputedStyle(element);
+    const host = which === 'self' ? element : element.closest('.task-row');
+    const back = pixel(getComputedStyle(host).backgroundColor, pixel(getComputedStyle(document.body).backgroundColor));
+    const fore = pixel(style.color, back);
+    const [light, dark] = [luminance(fore), luminance(back)].sort((a, b) => b - a);
+    return { ratio: (light + 0.05) / (dark + 0.05), size: parseFloat(style.fontSize), color: fore };
+  }, ground);
+}
+
+for (const theme of THEMES) {
+  test(`overdue due text is orange at 4.5:1, in-time due text stays muted, in the ${theme.name} theme (OVD-2)`, async ({ page }) => {
+    await openGallery(page, VIEWPORTS[1], theme);
+    await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; }' });
+    const danger = await tokenColor(page, '--color-danger');
+    const muted = await tokenColor(page, '--color-text-muted');
+    const overdue = page.locator('#task-row .task-row:not(.is-hover, .is-focus, .is-active) .task-row__due--overdue').first();
+    await expect(overdue).toHaveText(/\S/);
+    expect(await overdue.evaluate((element) => getComputedStyle(element).color)).toBe(danger);
+    expect(await overdue.locator('.icon').evaluate((element) => getComputedStyle(element).color)).toBe(danger);
+    expect(await overdue.evaluate((element) => getComputedStyle(element).fontWeight)).toBe('400');
+    expect((await contrastOf(overdue, 'row')).ratio).toBeGreaterThanOrEqual(4.5);
+    const inTime = page.locator('#task-row .task-row__due:not(.task-row__due--overdue)').first();
+    expect(await inTime.evaluate((element) => getComputedStyle(element).color)).toBe(muted);
+  });
+
+  test(`count badges take the status tint with dark text at 4.5:1 and at least 10 px, in the ${theme.name} theme`, async ({ page }) => {
+    await openGallery(page, VIEWPORTS[1], theme);
+    const badges = page.locator('#task-row, #task-list').locator('.status-button > .task-row__count');
+    const count = await badges.count();
+    expect(count).toBeGreaterThanOrEqual(3);
+    const grounds = new Map();
+    for (let index = 0; index < count; index++) {
+      const badge = badges.nth(index);
+      const status = await badge.evaluate((element) => element.closest('.status-button').dataset.status);
+      const { ratio, size, color } = await contrastOf(badge, 'self');
+      expect(ratio, status).toBeGreaterThanOrEqual(4.5);
+      expect(size, status).toBeGreaterThanOrEqual(10);
+      expect(await badge.getAttribute('aria-hidden'), status).toBe('true');
+      const [r, g, b] = color.match(/\d+/g).map(Number);
+      expect(r + g + b, `${status} text is dark`).toBeLessThan(200);
+      grounds.set(status, await badge.evaluate((element) => getComputedStyle(element).backgroundColor));
+    }
+    expect(grounds.size, 'specimens cover several statuses').toBeGreaterThanOrEqual(3);
+    expect(new Set(grounds.values()).size, 'each status has its own tint').toBe(grounds.size);
+  });
+}
 
 test('a read-only row keeps its disabled status button flat on hover, and a selected row shows press feedback', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);

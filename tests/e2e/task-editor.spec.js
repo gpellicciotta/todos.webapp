@@ -151,10 +151,10 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   await target.fill('3');
   await target.press('Tab');
   const row = page.locator('.task-row', { hasText: 'Buy paint' });
-  await expect(row.locator('.task-row__count')).toHaveText('0/3 done');
+  await expect(row.locator('.task-row__count')).toHaveText('0/3');
   for (const done of [1, 2]) {
     await row.getByRole('button', { name: `Tick Buy paint, ${done - 1} of 3 done` }).click();
-    await expect(row.locator('.task-row__count')).toHaveText(`${done}/3 done`);
+    await expect(row.locator('.task-row__count')).toHaveText(`${done}/3`);
   }
   await expect(row).toHaveAttribute('data-status', 'in-progress');
   await expect(panel.locator('.task-editor__status')).toHaveText('In progress, 2 of 3 done');

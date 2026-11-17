@@ -12,7 +12,7 @@ The tokens, the font, the controls, the app components, and their gallery sectio
   It imports only the public [looks/neutral/index.css](../../src/vendor/design/looks/neutral/index.css) of the package, which loads every package component.
 - [tokens.css](../../src/css/tokens.css): the app-local size tokens only.
 - [app-components.css](../../src/css/app-components.css): the app-local controls the package lacks, then the task list, task row, and status button.
-  The app-local controls: the overdue chip color, choices, the filter chip, the in-view dialog, and the error banner.
+  The app-local controls: the disabled chip remove button, choices, the filter chip, the in-view dialog, and the error banner.
 - [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
 - [shell.css](../../src/vendor/design/css/shell.css): the vendored app shell, which places every area of the page.
 - [views.css](../../src/css/views.css): how the views fill the shell areas, full width for row views, at the `--width-main` column for reading views.
@@ -40,7 +40,7 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
 - **[Decided]** The palette is monochrome with one signal color: navy.
   Rejected: cool neutrals with a bright blue, and warm paper with ink.
   Rejected signal colors after a gallery comparison: violet, bright blue, deep yellow, and red.
-- **[Decided]** Errors and dangers use deep orange on borders, error text, alert icons, and Delete controls.
+- **[Decided]** Errors and dangers use deep orange on borders, error text, alert icons, overdue due text, and Delete controls.
   Replaces the earlier decision that errors use the signal color. Every error still keeps its alert icon and text.
   Rejected: red, which could not pair with a red signal and reads as harsher in a calm tool.
 - **[Decided]** Status icons add color to their shapes: blue for In progress, green for Completed, the danger color for Cancelled.
@@ -49,7 +49,7 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
 - **[Decided]** Inter, self-hosted as one variable font, sets all text.
   Rejected: the system font stack, which renders differently on every platform.
 - **[Decided]** The service worker caches the font, so offline pages look the same as online ones.
-- **[Decided]** Task rows are compact: one 48 px line per task, with details in the task editor.
+- **[Decided]** Task rows are compact: a description line of at most 2 lines and a small meta line, with details in the task editor.
   Rejected: comfortable cards, and a user density setting that would double the states to test.
 - **[Decided]** Themes use `light-dark()` on semantic tokens, so each color is defined once for both themes.
   Browsers without `light-dark()` get the light theme from an `@supports` fallback block.
@@ -96,8 +96,8 @@ Definitions live in the vendored [look.css](../../src/vendor/design/looks/neutra
 - Pressed: `--color-surface-active` for gray controls while pressed; only text and link colors sit on it.
 - Text: `--color-text`, `--color-text-muted` for secondary lines and done tasks, `--color-text-disabled` for disabled controls only.
 - Borders: `--color-border` for dividers, `--color-border-strong` for controls that need 3:1 contrast.
-- Signal: `--color-primary` for the main action and overdue chips, `--color-on-primary` for text on it.
-- Danger: `--color-danger` for error borders, error text, alert icons, Delete outlines and menu items, filled Delete buttons, and the focus ring of those controls.
+- Signal: `--color-primary` for the main action, `--color-on-primary` for text on it.
+- Danger: `--color-danger` for error borders, error text, alert icons, overdue due text, Delete outlines and menu items, filled Delete buttons, and the focus ring of those controls.
 - Danger states: `--color-danger-hover` and `--color-danger-active` for the filled Delete button, `--color-on-danger` for its text.
 - Status: `--color-status-in-progress` (sky blue), `--color-status-completed` (green), and `--color-status-cancelled` (the danger color) for status icons; each reaches 3:1 on every ground.
 - Signal states: `--color-primary-hover` and `--color-primary-active` for the hovered and pressed main action.
@@ -119,7 +119,7 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 
 ### Typography
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
-- Text scale: `--text-xs` to `--text-xl`; task rows use `--text-base`, chips use `--text-sm`.
+- Text scale: `--text-xs` to `--text-xl`; task rows use `--text-base` for the description and `--text-sm` for the meta line, as chips do.
 - Weights: regular for body, medium for task descriptions and labels, semibold for headings.
 - Weight tokens: `--weight-regular`, `--weight-medium`, and `--weight-semibold`.
 - Line heights: `--leading-tight` for headings and single lines, `--leading-normal` for body text.
@@ -179,7 +179,7 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
   Invalid controls set `aria-invalid="true"` and `aria-describedby`; the error line adds an alert icon and text.
 - [Checkbox and radio](../../src/demo/visual-style-gallery.html#checkbox-radio): native inputs in the signal accent, inside a label row of `--target-min`.
   Group them in a `fieldset` with a `legend`.
-- [Chip](../../src/demo/visual-style-gallery.html#chip): a small sunken label for due times, lists, and note counts; the overdue chip uses the signal color and an icon.
+- [Chip](../../src/demo/visual-style-gallery.html#chip): a small sunken label, such as the lists of the task editor; task rows use the meta line instead.
   Chips are not buttons; a removable chip holds a separate remove icon button.
 - [Filter chip](../../src/demo/visual-style-gallery.html#filter-chip): a chip that opens a popover and shows its active value.
   It carries `aria-expanded`, never `aria-pressed`; `data-active="true"` adds the signal outline of a set filter.
@@ -231,13 +231,22 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - `cancelled`: a filled circle with a dash, in the danger color, with struck-through muted text.
 
   Read-only rows disable the button but keep its icon at full icon contrast.
-- [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, one line at `--row-height`.
+- [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, at least `--row-height`.
   It holds the status button, the open link, and the More button; the drag handle sits in the gutter before it.
-  The open link holds the description, a count chip, the due chip, and two list chips.
-  A "+n" chip, the note count, and the shared marker follow.
-  The `.task-row__count` chip, such as "2/3", shows the done and target counts above target 1, in tabular figures.
-  The description truncates with an ellipsis; list chips truncate at `--width-chip-max`.
-  Below 36rem of list width, rows show only the status, the description, the count chip, and the due chip.
+  The buttons and the handle stay on the first row height; the row grows with its content.
+  The open link stacks the description line over the `.task-row__meta` line, which shows only with content.
+  The description wraps and clamps to 2 lines with an ellipsis on every width.
+  The meta line is `--text-sm` muted text, aligned with the description start:
+  - `.task-row__due`, a small clock and the due text, or `.task-row__repeat`, a small repeat icon and the interval.
+  - `.task-row__due--overdue` draws the due text and clock in `--color-danger` at regular weight.
+  - `.task-row__lists`, right-aligned: two names and a "+n" count, joined by " · " below 48rem of list width.
+    From 48rem they are small sunken pills that truncate at `--width-chip-max`; narrow text ends in an ellipsis.
+
+  The `.task-row__count` badge sits inside the status button on the icon's bottom-right corner, such as "2/3".
+  It is `aria-hidden`, since the button's name holds the counts, in 10 px semibold tabular figures.
+  Its ground is a 22 % tint of the status color over a light ground, with dark text, in both themes.
+  A 1.5 px ring in `--row-ground`, the row's current ground, separates it from the icon.
+  Below 36rem of list width, rows drop the More button and the handle.
   States use attributes the app sets:
   - Status: `data-status` mutes and strikes through completed and cancelled text.
   - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.

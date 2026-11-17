@@ -1,14 +1,17 @@
 /**
  * Task list: the task rows of All tasks and the list view, with their status buttons and More menus.
  *
- * A row shows the status button, the description, the done and target counts above target 1, the due chip,
- * up to two list chips, and the note count. The open link fills the row and opens the task editor route.
+ * A row shows the status button and the description, clamped to two lines by app-components.css.
+ * Above target 1, a badge on the status icon shows the done and target counts, such as 2/3.
+ * Under the description, a meta line shows the due time or the repeat interval, then up to two lists;
+ * a row without either has no meta line. Overdue due text keeps its time and takes the danger color (`OVD-2`).
+ * The open link fills the row and opens the task editor route.
  * A click on the status button only ever ticks, posting `complete`: at target 1 while open, and above target 1
  * unless cancelled, also past the target; `x` does the same on the focused row (`TSK-4`).
  * A row whose click would post nothing marks the button `aria-disabled`, which keeps it focusable for the row keys.
  * Every tick shows an Undo toast, which posts `uncomplete` and which Ctrl+Z also runs.
  * The status button opens no menu: every other status action, and Complete for previous period, live in the task editor.
- * A recurring row shows a repeat chip, such as Weekly, instead of a due chip, and is never overdue.
+ * A recurring row shows its repeat interval, such as Weekly, instead of a due time, and is never overdue.
  * Past its period end it shows as `ready` with count 0 until the roll-over (the display rule), also on the minute tick.
  * The More button offers Add to list and Delete, which moves the task to the recycle bin
  * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu.
@@ -18,7 +21,7 @@
  * Rendering again keeps an open menu open on the same row and item, and keeps focus on the same row control.
  * Rows are kept by key, the task id or, in a grouped list, the group and the task id, since a task of several lists
  * shows in each group: a render builds only the rows whose content changed and moves as few rows as it can,
- * and the clock tick redraws only due chips (`TEC-16`).
+ * and the clock tick redraws only meta lines whose due text changed (`TEC-16`).
  * A grouped list shows a header row before each group, with the group name and count (`VO-10`).
  * The count reads "6 of 10" while the view's filters hide tasks of the group, else the plain total.
  * Headers are 32 px rows of the virtual list that take no selection or drag. Their one control, a button with
@@ -96,7 +99,6 @@ const STRINGS = Object.freeze({
   inertHint: 'Open the task to change its status.',
   marked: (status) => `Task marked ${STATUS_LABELS[status].toLowerCase()}.`,
   ticked: (occurrence) => `Ticked, ${countWords(occurrence)}.`,
-  done: ' done',
   moreFor: 'More actions for ',
   addToList: 'Add to list',
   addTo: 'Add to a list: ',
@@ -106,11 +108,10 @@ const STRINGS = Object.freeze({
   delete: 'Delete',
   deleted: 'Task moved to the recycle bin.',
   failed: 'That change could not be saved.',
-  overdue: 'Overdue',
+  yesterday: 'Yesterday',
   today: 'Today',
   tomorrow: 'Tomorrow',
   moreLists: ' more lists',
-  notes: ' notes',
   groupCount: (shown, total) => (shown < total ? `${shown} of ${total}` : String(total)),
   groupLabel: (label, shown, total) => `${label}, ${shown < total ? `${shown} of ` : ''}${total} ${total === 1 ? 'task' : 'tasks'}`,
 });
@@ -203,74 +204,67 @@ function dateFormat(locale, settings) {
 }
 
 /**
- * Format a task's due time for its chip: Overdue, Today or Tomorrow, a weekday within the week, or a date.
+ * Format a task's due time for its meta line: Yesterday, Today, or Tomorrow, a weekday within the next week, or a date.
  * A due time of 23:59 is a date-only due time (`TSK-6`), so it shows no time of day.
- * A recurring task shows its repeat chip instead, since its due times only end periods.
+ * An open task past its due time is overdue, and keeps its text, so overdue never relies on color alone (`OVD-2`).
+ * A recurring task shows its repeat interval instead, since its due times only end periods.
  * @param {object} task the task
  * @param {Date|number} [now] the current time
  * @param {string} [locale] the locale of the date and time formats, the user's by default
- * @returns {{text: string, overdue: boolean}|null} the chip, or null without a due time
+ * @returns {{text: string, overdue: boolean}|null} the due text, or null without a due time
  */
 export function formatDue(task, now = new Date(), locale = undefined) {
   if (!dueTimeOf(task) || recurrenceLabel(task['lifecycle-rules'])) {
     return null;
   }
-  if (isOverdue(task, now)) {
-    return { text: STRINGS.overdue, overdue: true };
-  }
+  const overdue = isOverdue(task, now);
   const due = new Date(dueTimeOf(task));
   const current = new Date(now);
   const days = Math.round((startOfDay(due) - startOfDay(current)) / DAY_MS);
   const time = due.getHours() === 23 && due.getMinutes() === 59
     ? '' : ` ${dateFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(due)}`;
-  if (days === 0 || days === 1) {
-    return { text: `${days === 0 ? STRINGS.today : STRINGS.tomorrow}${time}`, overdue: false };
+  const near = { [-1]: STRINGS.yesterday, 0: STRINGS.today, 1: STRINGS.tomorrow };
+  if (near[days]) {
+    return { text: `${near[days]}${time}`, overdue };
   }
   if (days > 1 && days < 7) {
-    return { text: `${dateFormat(locale, { weekday: 'short' }).format(due)}${time}`, overdue: false };
+    return { text: `${dateFormat(locale, { weekday: 'short' }).format(due)}${time}`, overdue };
   }
   const format = { day: 'numeric', month: 'short' };
   if (due.getFullYear() !== current.getFullYear()) {
     format.year = 'numeric';
   }
-  return { text: dateFormat(locale, format).format(due), overdue: false };
+  return { text: dateFormat(locale, format).format(due), overdue };
 }
 
 /**
- * Create a chip with an optional icon and visually hidden meaning.
+ * Create a meta line item: an icon and its text.
  * @param {Document} doc the document
  * @param {string} className the classes
- * @param {string} text the visible text
- * @param {{icon?: string, hidden?: string}} [extra] an icon and a visually hidden suffix
- * @returns {HTMLElement} the chip
+ * @param {string} icon the sprite symbol
+ * @param {string} text the text
+ * @returns {HTMLElement} the item
  */
-function chip(doc, className, text, { icon, hidden } = {}) {
+function metaItem(doc, className, icon, text) {
   const element = make(doc, 'span', className);
-  if (icon) {
-    element.append(spriteIcon(doc, icon));
-  }
-  element.append(text);
-  if (hidden) {
-    element.append(make(doc, 'span', 'visually-hidden', hidden));
-  }
+  element.append(spriteIcon(doc, icon, 'icon icon--sm'), text);
   return element;
 }
 
 /**
  * Compute what the row of a task shows, with a key that changes whenever the row must be built again.
- * The due chip has a key of its own, since the clock changes it without any change to the task.
+ * The due text has a key of its own, since the clock changes it without any change to the task.
  * @param {object} task the task
  * @param {object} ctx the render context of `render`
  * @param {object} options the list options
  * @returns {{key: string, dueKey: string, due: object|null, count: string|null, repeat: string|null, href: string,
- *   handle: boolean, names: string[], notes: number, locked: boolean, menu: boolean}} the row content
+ *   handle: boolean, names: string[], locked: boolean, menu: boolean}} the row content
  */
 function viewOf(task, ctx, options) {
   const ids = ctx.listsByTask?.get(task.id) ?? [];
   const access = accessOf(task, ctx, options.listId);
   const names = ids.length === 0 ? [] : [...(ctx.lists?.values() ?? [])]
     .filter((list) => list.id !== options.listId && ids.includes(list.id)).map((list) => list.name);
-  const notes = ctx.notesByTask?.get(task.id)?.length ?? 0;
   const href = options.hrefOf(task);
   const handle = Boolean(options.moves?.enabled());
   const due = formatDue(task, ctx.now);
@@ -280,8 +274,8 @@ function viewOf(task, ctx, options) {
   // An ended series keeps its status and count but turns inert, so the key holds the tick too.
   const tick = tickEvent(occurrence, task['lifecycle-rules']);
   return {
-    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, notes, access.locked, access.menu, tick]),
-    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, repeat, href, handle, names, notes, locked: access.locked, menu: access.menu,
+    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, access.locked, access.menu, tick]),
+    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, repeat, href, handle, names, locked: access.locked, menu: access.menu,
   };
 }
 
@@ -305,32 +299,29 @@ function accessOf(task, ctx, listId) {
 }
 
 /**
- * Create the chips of a row: the done and target counts, the repeat or due chip, up to two list chips, and the note count.
+ * Create the meta line of a row: the repeat interval or the due text, then up to two lists and a count of the rest.
+ * Overdue due text carries `task-row__due--overdue`, which app-components.css draws in the danger color.
  * @param {Document} doc the document
- * @param {{count: string|null, repeat: string|null, due: object|null, names: string[], notes: number}} view the row content of `viewOf`
- * @returns {HTMLElement|null} the chips, or null without any
+ * @param {{repeat: string|null, due: object|null, names: string[]}} view the row content of `viewOf`
+ * @returns {HTMLElement|null} the meta line, or null without content
  */
-function metaOf(doc, { count, repeat, due, names, notes }) {
+function metaOf(doc, { repeat, due, names }) {
   const meta = make(doc, 'span', 'task-row__meta');
-  if (count) {
-    meta.append(chip(doc, 'chip task-row__count', count, { hidden: STRINGS.done }));
-  }
   if (repeat) {
-    meta.append(chip(doc, 'chip task-row__repeat', repeat, { icon: 'clock' }));
+    meta.append(metaItem(doc, 'task-row__repeat', 'repeat', repeat));
   }
-  if (due) {
-    meta.append(chip(doc, due.overdue ? 'chip chip--overdue' : 'chip', due.text, { icon: due.overdue ? 'alert' : 'clock' }));
+  else if (due) {
+    meta.append(metaItem(doc, due.overdue ? 'task-row__due task-row__due--overdue' : 'task-row__due', 'clock', due.text));
   }
-  for (const name of names.slice(0, MAX_LIST_CHIPS)) {
-    const listChip = make(doc, 'span', 'chip task-row__list');
-    listChip.append(make(doc, 'span', 'task-row__chip-text', name));
-    meta.append(listChip);
-  }
-  if (names.length > MAX_LIST_CHIPS) {
-    meta.append(chip(doc, 'chip task-row__more-lists', `+${names.length - MAX_LIST_CHIPS}`, { hidden: STRINGS.moreLists }));
-  }
-  if (notes > 0) {
-    meta.append(chip(doc, 'chip task-row__notes', String(notes), { icon: 'note', hidden: STRINGS.notes }));
+  if (names.length > 0) {
+    const lists = make(doc, 'span', 'task-row__lists');
+    lists.append(...names.slice(0, MAX_LIST_CHIPS).map((name) => make(doc, 'span', 'task-row__list', name)));
+    if (names.length > MAX_LIST_CHIPS) {
+      const rest = make(doc, 'span', 'task-row__more-lists', `+${names.length - MAX_LIST_CHIPS}`);
+      rest.append(make(doc, 'span', 'visually-hidden', STRINGS.moreLists));
+      lists.append(rest);
+    }
+    meta.append(lists);
   }
   return meta.childElementCount > 0 ? meta : null;
 }
@@ -438,6 +429,12 @@ function renderRow(doc, task, view, template, selected) {
   }
   status.dataset.status = statusOf(task);
   status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${statusOf(task)}`);
+  // The badge sits inside the button, so a tap on it ticks; the button's name already names the counts.
+  if (view.count) {
+    const badge = make(doc, 'span', 'task-row__count', view.count);
+    badge.setAttribute('aria-hidden', 'true');
+    status.append(badge);
+  }
   open.href = view.href;
   if (task.id === selected) {
     open.setAttribute('aria-current', 'page');
@@ -1309,9 +1306,8 @@ export function createTaskList({
      * With groups, a header row starts each group and the tasks of the groups show instead of `tasks`;
      * a collapsed group shows its header only.
      * @param {object[]} tasks the tasks to show
-     * @param {{now?: Date, lists?: Map<string, object>, listsByTask?: Map<string, string[]>,
-     *   notesByTask?: Map<string, string[]>}} context the time, the live lists in display order,
-     *   list identifiers by task, and note texts by task
+     * @param {{now?: Date, lists?: Map<string, object>, listsByTask?: Map<string, string[]>}} context the time,
+     *   the live lists in display order, and list identifiers by task
      * @param {{groups?: Array<{key: string, label: string, tasks: object[], total?: number}>|null,
      *   shows?: ((task: object) => boolean)|null}} [grouping] the groups of `groupTasks`, and whether a task shows under the view's filters, for the Undo toast
      *   of a status change that hides its row

@@ -237,12 +237,15 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
 - Line 1 holds the status button with its count badge, then the description, which wraps to at most 2 lines.
 - Line 2, the meta line, shows only with content, in small muted text:
   - a clock icon and the due text, or a repeat icon and the interval, such as Daily;
-  - the lists, right-aligned on the same line: plain text joined by " · " on compact layouts, small pills on wide layouts.
-  - The due or repeat text stays left-aligned.
-- A row is 48 px high without a meta line; the whole row opens the task editor.
-- Overdue due text and its clock use the danger color (orange); in-time ones stay muted (`OVD-2`).
-  The due text always shows, so overdue never relies on color alone.
-- The row has no note count, people icon, More button, or status menu; those actions live in the editor.
+  - the lists, right-aligned on the same line: plain text joined by " · " below 48rem of list width, small pills from 48rem.
+  - The due or repeat text stays left-aligned; list text that does not fit ends in an ellipsis.
+- The description clamps to 2 lines with an ellipsis on every width.
+- A row is 48 px high without a meta line and grows with its content; the whole row opens the task editor.
+  The status and More buttons stay on the first line.
+- Overdue due text and its clock use the danger color (orange) at regular weight; in-time ones stay muted (`OVD-2`).
+  The due text always shows, such as "Yesterday 16:00", so overdue never relies on color alone.
+- The row has no note count, people icon, or status menu; those live in the editor.
+  The More button stays until T0265 removes it; below 36rem it hides, except in the list view.
 - A click on the status button ticks, the most frequent change (`TSK-4`); `x` on the focused row does the same:
 
   | Status      | Click at target 1 | Click above target 1               |
@@ -258,6 +261,8 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
   It reads "Task marked completed." when the status changes, and "Ticked, 2 of 3 done." when only the count does.
 - Above target 1, a corner badge on the status icon shows the counts, such as "2/3" (`TSK-15`).
   The badge is part of the status button, so a tap on it ticks.
+  It is a pill on the icon's bottom-right corner: a light tint of the status color with dark text in both themes.
+  A ring in the row ground separates it from the icon; the row shows no other count.
 - The status button's name states the action and the counts, such as "Tick French exercises, 2 of 3 done".
 - The tooltip names the status and the counts above target 1.
 - A row whose click does nothing marks its status button `aria-disabled="true"`.
@@ -274,7 +279,7 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
 - A recurring task shows its repeat text instead of a due text (`TSK-16`); it is never overdue.
 - Past its period end, until it rolls over, a recurring row shows Ready with count 0, such as "0/3".
   The minute tick redraws such a row when its period ends.
-- List pills show at most two list names and a "+n" count; the list view leaves out its own list.
+- The meta line shows at most two list names and a "+n" count; the list view leaves out its own list.
 - A viewer has a disabled status button and no `x` (`SHR-4`).
 - **[Decided]** Add to list, Remove from this list, and Complete for previous period move to the editor.
   Delete task moves to the editor's Status tab.
@@ -527,12 +532,12 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
 - A new task joins no list; a Lists filter that hides it brings the "Task added" toast with Show.
   While connected, Shared: yes hides it too and the toast names it; Show clears it. Local mode ignores the Shared filter.
-- Overdue chips refresh every minute, also for tasks that keep their status.
-  The minute tick redraws only due chips; a Due filter also updates which tasks show.
+- Overdue due text refreshes every minute, also for tasks that keep their status.
+  The minute tick redraws only the meta lines whose due text changed; a Due filter also updates which tasks show.
 - **[Decided]** Lists of up to 200 tasks render every row; longer lists render only the rows in view (`TEC-16`).
   Rows past the view, 20 on each side, follow once the first rows painted, and scrolling renders rows as they enter.
   Padding and row margins stand in for the rows left out, so the scroll height and scrollbar stay true.
-  Rows are 48 px high at least; a taller row, such as one with a larger text size, is measured once it shows.
+  Rows are 48 px high at least; a taller row, such as one with a meta line or 2 description lines, is measured once it shows.
   The offsets of the rows add up the measured heights and the base height of the rows not yet seen.
   A resize of the window or of the list measures the rows again; rows that come in with another height than expected
   move the scroller by the difference, so the rows in view stay where they are.

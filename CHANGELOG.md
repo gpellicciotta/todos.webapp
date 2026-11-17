@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Rebuilt the task row as a description line of at most 2 lines over a meta line with the due time or repeat interval and the lists, showed the counts as a status-tinted badge on the status icon, turned overdue due text orange while keeping its time, and dropped the note count, people icon, and Overdue chip (OVD-2, TSK-15).
 - FrontEnd: Let list view rows reorder by pressing and dragging past 6 px, by a 400 ms touch hold, and by Alt+Home and Alt+End, and moved the drag handle into the gutter of the hovered or focused row (LV-3).
 - FrontEnd: Removed the task row's status menu, so right-click, long press, Down, Up, Shift+F10, and the Menu key open nothing on the status button, whose tooltip now names only the status and counts; the task editor holds every other status action and Complete for previous period (TSK-4, TSK-16).
 - FrontEnd: Made the task row's status button and `x` only ever tick: completed rows at target 1 and cancelled rows turn inert with `aria-disabled`, a completed row above target 1 ticks past its target, and every tick shows an Undo toast, such as "Ticked, 4 of 3 done." (TSK-4).

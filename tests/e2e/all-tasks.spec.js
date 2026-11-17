@@ -217,13 +217,13 @@ test('a click ticks a completed target-3 task to 4 of 3, and one Undo sets it ba
     return gym.id;
   });
   const gym = page.locator('.task-row', { hasText: 'Gym' });
-  await expect(gym.locator('.task-row__count')).toHaveText('3/3 done');
+  await expect(gym.locator('.task-row__count')).toHaveText('3/3');
   await gym.getByRole('button', { name: 'Tick Gym, 3 of 3 done', exact: true }).click();
-  await expect(gym.locator('.task-row__count')).toHaveText('4/3 done');
+  await expect(gym.locator('.task-row__count')).toHaveText('4/3');
   await expect(gym).toHaveAttribute('data-status', 'completed');
   const toast = page.locator('.toast', { hasText: 'Ticked, 4 of 3 done.' });
   await toast.getByRole('button', { name: 'Undo' }).click();
-  await expect(gym.locator('.task-row__count')).toHaveText('3/3 done');
+  await expect(gym.locator('.task-row__count')).toHaveText('3/3');
   await expect(gym).toHaveAttribute('data-status', 'completed');
   const occurrence = await page.evaluate(async (taskId) => {
     const { openStore } = await import('/js/store/db.js');
@@ -235,6 +235,98 @@ test('a click ticks a completed target-3 task to 4 of 3, and one Undo sets it ba
   expect(occurrence).toMatchObject({ 'completion-count': 3, status: 'completed' });
   expect(problems).toEqual([]);
 });
+
+for (const width of [360, 1440]) {
+  test(`a row shows a description of at most 2 lines and a meta line with orange overdue text at ${width} px (OVD-2)`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize({ width, height: 900 });
+    await openApp(page);
+    await page.evaluate(async () => {
+      const { openStore } = await import('/js/store/db.js');
+      const store = await openStore({ broadcast: true });
+      const home = await store.createList({ name: 'Home' });
+      const errands = await store.createList({ name: 'Errands' });
+      const hours = (count) => new Date(Date.now() + count * 3_600_000).toISOString();
+      const long = 'Prepare the slides for the quarterly team review and send them to everyone before the Friday meeting starts, '
+        + 'with the budget figures, the hiring plan, and the open questions from last time, '
+        + 'then book the large meeting room, order lunch for the whole team, and print the handouts for the guests';
+      const longer = `${long}, and finally write up the minutes and share them with the board on Monday morning`;
+      await store.createTask({ description: longer, 'due-time': hours(-2) }, { lists: [home.id, errands.id] });
+      await store.createTask({ description: 'Buy paint', 'due-time': hours(30) });
+      const gym = await store.createTask({ description: 'Gym' });
+      await store.updateRules(gym.id, { 'target-count': 3 });
+      await store.postEvent(gym.id, 'complete');
+      await store.createTask({ description: 'Book flights' });
+      store.close();
+    });
+    await expect(page.locator('.task-row')).toHaveCount(4);
+    const danger = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--color-danger)';
+      document.body.append(probe);
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    });
+    const shape = (row) => row.evaluate((element) => {
+      const box = (selector) => element.querySelector(selector)?.getBoundingClientRect() ?? null;
+      const description = element.querySelector('.task-row__description');
+      const due = element.querySelector('.task-row__due');
+      const list = element.querySelector('.task-row__list');
+      return {
+        height: element.getBoundingClientRect().height,
+        lines: Math.round(description.getBoundingClientRect().height / parseFloat(getComputedStyle(description).lineHeight)),
+        clamped: description.scrollHeight > description.clientHeight + 1,
+        open: box('.task-row__open'),
+        text: box('.task-row__description'),
+        meta: box('.task-row__meta'),
+        due: box('.task-row__due'),
+        lists: box('.task-row__lists'),
+        dueColor: due && getComputedStyle(due).color,
+        dueIconColor: due && getComputedStyle(due.querySelector('.icon')).color,
+        dueWeight: due && getComputedStyle(due).fontWeight,
+        listGround: list && getComputedStyle(list).backgroundColor,
+        separator: list?.nextElementSibling ? getComputedStyle(list.nextElementSibling, '::before').content : null,
+      };
+    });
+
+    const long = await shape(page.locator('.task-row', { hasText: 'Prepare the slides' }));
+    expect(long.lines).toBe(2);
+    expect(long.clamped).toBe(true);
+    expect(long.meta.top).toBeGreaterThanOrEqual(long.text.bottom - 1);
+    expect(Math.abs(long.due.left - long.text.left)).toBeLessThanOrEqual(1);
+    expect(long.dueColor).toBe(danger);
+    expect(long.dueIconColor).toBe(danger);
+    expect(long.dueWeight).toBe('400');
+    expect(Math.abs(long.lists.right - long.meta.right)).toBeLessThanOrEqual(1);
+    expect(long.lists.left).toBeGreaterThan(long.due.right);
+    if (width < 768) {
+      expect(long.listGround).toBe('rgba(0, 0, 0, 0)');
+    }
+    else {
+      expect(long.listGround).not.toBe('rgba(0, 0, 0, 0)');
+    }
+    expect(long.separator).toBe(width < 768 ? '" · "' : 'none');
+
+    const paint = await shape(page.locator('.task-row', { hasText: 'Buy paint' }));
+    expect(paint.lines).toBe(1);
+    expect(paint.dueColor).not.toBe(danger);
+    expect(paint.lists).toBeNull();
+
+    const flights = await shape(page.locator('.task-row', { hasText: 'Book flights' }));
+    expect(flights.meta).toBeNull();
+    expect(flights.height).toBeGreaterThanOrEqual(48);
+    expect(long.height).toBeGreaterThan(flights.height);
+
+    const gym = page.locator('.task-row', { hasText: 'Gym' });
+    await expect(gym.locator('.status-button .task-row__count')).toHaveText('1/3');
+    await expect(gym.locator('.task-row__meta')).toHaveCount(0);
+    await expect(page.locator('.task-row__notes, .task-row__shared, .chip--overdue')).toHaveCount(0);
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(width);
+    expect(problems).toEqual([]);
+  });
+}
 
 test('the status button opens no menu, and the task editor posts start and cancel (TSK-4)', async ({ page }) => {
   const problems = watch(page);
@@ -282,7 +374,7 @@ for (const viewport of [COMPACT, WIDE]) {
     await seed(page);
     // Default: every status, created newest first.
     expect(await rows(page)).toEqual(['Renew the gym membership', 'Water the plants', 'Book flights', 'Write the report', 'Buy paint', 'Call the plumber']);
-    await expect(page.locator('.task-row', { hasText: 'Call the plumber' }).locator('.chip--overdue')).toHaveText('Overdue');
+    await expect(page.locator('.task-row', { hasText: 'Call the plumber' }).locator('.task-row__due--overdue')).toHaveText(/^(Today|Yesterday) \d\d:\d\d( [AP]M)?$/);
     await expect(page.locator(INFO)).toHaveText('6 tasks');
     await expect(page.locator('.info-line__reset')).toBeHidden();
     await expect(page.locator('.filter-chip, .view-controls__sort, .view-controls__filters')).toHaveCount(0);
