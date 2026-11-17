@@ -1,11 +1,11 @@
 ---
 id: T0282
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0282-fix-the-stale-e2e-tests-for-the-settings
+worktree: .plan/work/T0282-fix-the-stale-e2e-tests-for-the-settings
+status: active
+started_at: "2026-11-17T20:08:55Z"
 ended_at: —
 review: agent
 preview: none
