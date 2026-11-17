@@ -5,17 +5,22 @@ session: claude-20261117-f14a01
 needs: []
 branch: task/T0242-add-delete-account-to-settings-marking-the-connected
 worktree: .plan/work/T0242-add-delete-account-to-settings-marking-the-connected
-status: active
+status: completed
 started_at: "2026-11-17T03:12:56Z"
-ended_at: —
+ended_at: "2026-11-17T03:21:48Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 438.9, input: 74, output: 23647, cache_read: 3560223, cache_write: 100431}
-review_status: pending
+  review: {turns: 1, duration_s: 83.0, input: 60071, output: 1772, cache_read: 436480, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T03:20:22Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-48a7c2
+work_duration: 532.8
+completion-commit: 756bc33ae2ea37c035287b10c9a9fb4ce477f700
 ---
 # T0242: Add Delete account to Settings, marking the connected account for deletion on the service
 
@@ -36,7 +41,7 @@ Add Delete account to Settings, separate from Delete all data, which never touch
 - [x] **[Verify]**    Run the unit, e2e, and contract suites and confirm they pass.
 - [x] **[Visual]**    Capture the dialog in light and dark themes.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -76,4 +81,11 @@ Add Delete account to Settings, separate from Delete all data, which never touch
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: Approved after inspecting the commit, full diff, service contract, disconnect flow, and recorded validation evidence.
+  - Findings: [review-findings-1.md](T0242-add-delete-account-to-settings-marking-the-connected/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
