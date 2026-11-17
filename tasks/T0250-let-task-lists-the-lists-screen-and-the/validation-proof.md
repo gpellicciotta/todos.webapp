@@ -4,10 +4,13 @@
 - npm test -> Test Files 61 passed (61), Tests 1515 passed (1515).
 - npx playwright test -> 219 passed.
 ```text
-shell e2e (new check, before change): Expected: > 720  Received: 720
-shell e2e (after change): 26 passed
-npm test: Test Files 61 passed (61), Tests 1515 passed (1515)
-npx playwright test: 219 passed
+Round 2 (exit 0 each):
+node scripts/check-sw-version.mjs --update -> OK: wrote 130 hashes for VERSION 2026-11-17.5
+npm run check:sw -> OK: 130 precached files match VERSION 2026-11-17.5.
+npm run lint -> eslint . (no output)
+npm test -> Test Files 61 passed (61), Tests 1515 passed (1515)
+npx playwright test -> 219 passed
+Round 1 failing-first: Expected: > 720  Received: 720
 ```
 
 ## Screenshots

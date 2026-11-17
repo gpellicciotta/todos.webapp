@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 386.8, input: 42, output: 9937, cache_read: 1267401, cache_write: 43675}
-review_status: pending
+  review: {turns: 1, duration_s: 517.2, input: 186810, output: 21590, cache_read: 2442978}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T01:14:32Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261117-735877
+work_duration: 928.2
 ---
 # T0250: Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column
 
@@ -71,4 +75,11 @@ Stop cutting off task descriptions and list names while the screen has room to s
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @gemini: The CSS width rules in views.css and documentation updates work as intended across row and reading views.
+  - Findings: [review-findings-1.md](T0250-let-task-lists-the-lists-screen-and-the/review-findings-1.md).
+
+- [2026-11-17] **[Verify]**
+  Review round 1 rework: bumped service worker VERSION and hashes, fixed lint comma, seeded long task and binned rows and asserted row widths, shortened doc sentences. Screenshots were captured in the first pass.
 
