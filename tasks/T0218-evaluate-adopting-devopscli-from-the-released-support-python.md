@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 97.5, input: 32, output: 8264, cache_read: 1231506, cache_write: 76971}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:59:40Z"
 ---
 # T0218: Evaluate adopting DevopsCli from support-python v3.3.0, modeled on support.webapp's devops script.
 
@@ -70,4 +75,7 @@ Completion check: review of the recorded decision.
   - Files touched: 0.
   - Lines touched: 0.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
