@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1800.3, input: 2, output: 3}
+work_duration: 1810.0
 ---
 # T0266: Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
 
