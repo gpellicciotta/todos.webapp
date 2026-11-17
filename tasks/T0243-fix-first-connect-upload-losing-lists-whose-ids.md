@@ -1,11 +1,11 @@
 ---
 id: T0243
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0243-fix-first-connect-upload-losing-lists-whose-ids
+worktree: .plan/work/T0243-fix-first-connect-upload-losing-lists-whose-ids
+status: active
+started_at: "2026-11-17T03:08:31Z"
 ended_at: —
 review: agent
 preview: none
