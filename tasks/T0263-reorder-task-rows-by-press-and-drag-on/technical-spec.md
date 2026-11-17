@@ -10,6 +10,13 @@
 - docs/specs/ui-design.md
 - docs/requirements.md
 
+Undeclared files touched: src/js/views/list.js (passes `press` and `ends`), docs/specs/visual-style-guide.md,
+src/demo/visual-style-gallery.html (handle specimens), src/service-worker.js and scripts/sw-precache-hashes.json.
+docs/requirements.md needed no change: LV-3 already named the new gestures.
+
+Mechanical command: node scripts/check-sw-version.mjs --update
+Mechanical files: scripts/sw-precache-hashes.json
+
 Size estimate: 8 files, 400 lines.
 
 ### Design Source
@@ -25,8 +32,10 @@ Size estimate: 8 files, 400 lines.
 
 ### Outside Handle
 - On pointer devices, the focused or hovered row shows a grip handle in the gutter before the row, outside its box.
-- The handle is a drag start too; it is hidden while sorted, grouped, or searching.
+- The handle is a drag start too; it is hidden while sorted or grouped.
 - Rows no longer reserve room for a handle.
+- **[Decided]** Search keeps moves on, as today: `LV-8` and the list view's `moves.enabled` name sort and grouping only.
+  The brief's "as today" wording governs; ui-design.md now matches.
 
 ### Long Hold
 - On touch, a hold of 400 ms that moves less than 10 px starts the drag, with a short vibration where supported.
@@ -36,16 +45,19 @@ Size estimate: 8 files, 400 lines.
 ### Keys
 - Alt+Up and Alt+Down move the focused row one place, as today.
 - Alt+Home and Alt+End move it to the top or bottom of the list.
-- reorder.js serves both the task list and the Lists screen; give it an optional `jump(id, end)` callback.
-- Alt+Home and Alt+End call it when given; the task list passes one here.
-- Whichever of this task and T0076 lands first adds the callback; the other reuses it.
+- reorder.js serves both the task list and the Lists screen.
+- **[Decided]** Instead of a `jump` callback, an `ends` option turns on Alt+Home and Alt+End.
+  The controller gains `jump(id, end)`, which computes the move itself, so callers pass no callback.
+  The list view passes `ends: true`; the Lists screen leaves it off until T0076, which can reuse it.
+- **[Decided]** A `press` option likewise turns on row presses and the touch hold; the Lists screen keeps handle drags.
 - Focus stays on the moved row; the live region announces its new place.
 
 ### Tests
 - Unit: a press moving under 6 px opens the editor; past 6 px it drags and opens nothing.
 - Unit: a 400 ms touch hold starts a drag; an earlier 10 px move cancels it.
 - Unit: Alt+Home and Alt+End move the focused row to the ends and keep focus on it.
-- Unit: the outside handle shows only on the focused or hovered row under manual order.
+- Unit: rows carry a handle only under manual order (existing list.test.js); jsdom has no layout for the rest.
+- Integration: the list e2e spec checks the grip shows outside the hovered or focused row only.
 - Integration: the list e2e spec drags a row by press-and-drag at 1440 px and reloads to find the order kept.
 - Integration: the list e2e spec moves a row with Alt+End and Alt+Home.
 

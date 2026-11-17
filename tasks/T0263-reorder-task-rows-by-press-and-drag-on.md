@@ -1,6 +1,7 @@
 ---
 id: T0263
 owner: "@claude"
+session: claude-20261117-41471b
 needs: []
 branch: task/T0263-reorder-task-rows-by-press-and-drag-on
 worktree: .plan/work/T0263-reorder-task-rows-by-press-and-drag-on
@@ -23,9 +24,9 @@ Replace the always-visible task row drag handles with direct reordering, by the 
 - Rules and tests: [technical-spec.md](T0263-reorder-task-rows-by-press-and-drag-on/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read T0257's signed-off brief, reorder.js, and the row handle and Alt key code in task-list.js.
-- [ ] **[Implement]** Author failing unit and e2e tests for press-and-drag, long hold, the outside handle, and Alt keys.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
+- [x] **[Read]**      Read T0257's signed-off brief, reorder.js, and the row handle and Alt key code in task-list.js.
+- [x] **[Implement]** Author failing unit and e2e tests for press-and-drag, long hold, the outside handle, and Alt keys.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
 - [ ] **[Implement]** Implement row drags, the long hold, the outside handle, and Alt+Home and Alt+End.
 - [ ] **[Verify]**    Run the unit suite and the list e2e spec and confirm they pass.
 - [ ] **[Visual]**    Capture the focused row's outside handle and a drag in progress, in both themes.
