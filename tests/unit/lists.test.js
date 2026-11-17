@@ -120,6 +120,7 @@ describe('mountLists', () => {
 
   it('holds Edit list, Edit view options, Share list, and Delete list in the More menu of a row (VO-4)', async () => {
     const view = await mountThree();
+    button(view, 'List actions: Home').click();
     const menu = button(view, 'List actions: Home').closest('.list-item').querySelector('.menu');
     expect([...menu.querySelectorAll('.menu__item')].map((item) => item.textContent))
       .toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
@@ -186,7 +187,10 @@ describe('mountLists', () => {
       await setListFields(store, ids[name], fields);
     }
     await vi.waitFor(() => expect(view.querySelector(`[data-list-id="${ids.Mine}"] .list-row__sharing`)).not.toBeNull());
-    const actions = (name) => [...view.querySelector(`[data-list-id="${ids[name]}"]`).querySelectorAll('.menu__item')].map((item) => item.textContent);
+    const actions = (name) => {
+      view.querySelector(`[data-list-id="${ids[name]}"] .list-item__more`).click();
+      return [...view.querySelector(`[data-list-id="${ids[name]}"]`).querySelectorAll('.menu__item')].map((item) => item.textContent);
+    };
     expect(actions('Mine')).toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
     expect(actions('Editing')).toEqual(['Edit list', 'Edit view options']);
     expect(actions('Reading')).toEqual(['List details', 'Edit view options']);

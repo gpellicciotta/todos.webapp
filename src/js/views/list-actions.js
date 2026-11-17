@@ -59,17 +59,38 @@ export function fillListMenu(menu, role) {
  * @returns {{more: HTMLButtonElement, menu: HTMLElement}} the button and the menu
  */
 export function createListMenu({ document: doc, id, name = '', className = '', list = null }) {
-  const label = name ? `${STRINGS.actions}: ${name}` : STRINGS.actions;
   const more = make(doc, 'button', `icon-button ${className}`.trim());
   more.type = 'button';
-  more.setAttribute('aria-label', label);
+  more.setAttribute('aria-label', actionsLabel(name));
   more.append(spriteIcon(doc, 'more'));
+  return { more, menu: createListMenuElement({ document: doc, id, name, list }) };
+}
+
+/**
+ * Create only the hidden menu of a list, for a caller that builds menus on first open.
+ * @param {object} options menu options
+ * @param {Document} options.document the document
+ * @param {string} options.id the identifier of the menu element
+ * @param {string} [options.name] the list name, which tells the menus of several lists apart
+ * @param {object|null} [options.list] the list, whose role decides the entries; a local list offers all
+ * @returns {HTMLElement} the hidden menu
+ */
+export function createListMenuElement({ document: doc, id, name = '', list = null }) {
   const menu = make(doc, 'div', 'menu');
   menu.id = id;
-  menu.setAttribute('aria-label', label);
+  menu.setAttribute('aria-label', actionsLabel(name));
   menu.hidden = true;
   fillListMenu(menu, listRole(list));
-  return { more, menu };
+  return menu;
+}
+
+/**
+ * Name the actions of a list for assistive technology.
+ * @param {string} name the list name, if known
+ * @returns {string} "List actions: {{name}}", or "List actions"
+ */
+export function actionsLabel(name) {
+  return name ? `${STRINGS.actions}: ${name}` : STRINGS.actions;
 }
 
 /**

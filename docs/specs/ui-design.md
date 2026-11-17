@@ -638,6 +638,9 @@ The sidebar and this screen share the rules below.
 - **[Decided]** Rendering: the sidebar renders every row, since 500 plain links are cheap.
   This screen renders every row too, each with `content-visibility: auto` and `contain-intrinsic-size: auto 64px`.
   Row menus build on first open, so 500 rows hold no 500 menus.
+  A click, Enter, Space, or Up or Down on a More button builds its menu just before the menu opens; a render drops the built menus.
+  A dragged row and a drop target use `content-visibility: visible`, so their indicators are not clipped.
+  The router waits for the first render of a newly mounted screen before it restores the scroll, so a Back lands on the same row.
   Reason: unlike windowing, this keeps find in page, the tab order, and the restored scroll position true.
 - **[Decided]** Budget: opening Lists takes at most 200 ms with 150 lists and 5000 tasks (`TEC-16`).
   The check runs under 4x CPU throttling.
@@ -650,8 +653,10 @@ The sidebar and this screen share the rules below.
   [list-find.js](../../src/js/core/list-find.js) and [list-sort.js](../../src/js/core/list-sort.js) hold finding and sorting.
   A burst of store changes recounts once per animation frame, and both surfaces patch rows by list identifier.
 - **[Decided]** Keyboard: the sidebar rows are one tab stop; Up, Down, Home, End, PageUp, and PageDown move between them.
-  On this screen the rows are one tab stop too: Up and Down move between rows, Right moves to the row's More button, Left back.
+  On this screen the rows are one tab stop too: Up, Down, Home, End, PageUp, and PageDown move between rows, Right moves to the row's More button, Left back.
+  An unopened More button already reports `aria-haspopup="menu"` and `aria-expanded="false"`; only its menu is lazy.
   Tab and Shift+Tab leave the list; no ARIA grid role is used.
+  The tab stop is the row last focused, else the first shown row, and survives renders; the More buttons stay out of the Tab order.
   `/` focuses this screen's field, and `l` focuses the sidebar's field, or opens this screen where there is none.
 - **[Decided]** Announcements: a polite live region reads "4 of 124 lists" or "No list matches" after the rows filter,
   and "Sorted by Name" after a sort; the fields are `type="search"` and named "Find a list" (`TEC-15`).

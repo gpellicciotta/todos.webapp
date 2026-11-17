@@ -17,6 +17,8 @@
  * The text lasts for the session in the router memory; the sort persists per device in `todos.view.lists` (`LST-12`).
  * A text with no match offers Create list for a valid new name, which opens the new list's editor (`LST-11`).
  * Reordering needs Manual order and an empty field; otherwise the handles hide and Alt+Up or Alt+Down says why.
+ * Long lists stay cheap: rows use `content-visibility: auto`, a row's menu builds on its first open, and the rows are one
+ * roving tab stop with Up and Down between rows and Right and Left between a row and its More button (`LST-15`, `TEC-16`).
  * Sharing state and the owner of others' lists join the rows once sharing lands (`SHR-3`).
  */
 
@@ -27,12 +29,26 @@ import { LIST_SORTS, readListSort, SORT_LABELS, sortLists, writeListSort } from 
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 import { formatRoute } from '../ui/router.js';
-import { createListMenu, runListAction } from './list-actions.js';
+import { actionsLabel, createListMenuElement, runListAction } from './list-actions.js';
 import { attachReorder } from './reorder.js';
 import { make, spriteIcon } from './task-list.js';
 
 /** From this many lists the find block shows (`LST-10`). */
 const FIND_FROM = 12;
+
+/** Row height in pixels when none is measured, and the rows a page key moves when the screen has no height. */
+const ROW_HEIGHT = 64;
+const PAGE_ROWS = 10;
+
+/** The row a navigation key moves to, from the focused index, the row count, and the rows per page (`LST-15`). */
+const ROW_STEPS = Object.freeze({
+  ArrowUp: (at) => at - 1,
+  ArrowDown: (at) => at + 1,
+  Home: () => 0,
+  End: (at, count) => count - 1,
+  PageUp: (at, count, page) => at - page,
+  PageDown: (at, count, page) => at + page,
+});
 
 /** The pause after typing before the rows filter (`TEC-16`). */
 const FIND_PAUSE_MS = 150;
@@ -72,12 +88,13 @@ function sharingText(list) {
 }
 
 /**
- * Create the row of one list: a drag handle, a link to its List screen, and a More button with its menu.
+ * Create the row of one list: a drag handle, a link to its List screen, and a More button.
+ * Both start out of the Tab order, and the menu builds on first open (`TEC-16`).
  * @param {Document} doc the document
  * @param {object} list the list
  * @param {{open: number, total: number}} count its task counts
  * @param {boolean} reorderable whether the drag handle shows
- * @returns {{item: HTMLLIElement, more: HTMLButtonElement, menu: HTMLElement}} the row, its button, and its menu
+ * @returns {{item: HTMLLIElement, more: HTMLButtonElement}} the row and its More button
  */
 function row(doc, list, count, reorderable) {
   const item = make(doc, 'li', 'list-item');
@@ -98,10 +115,17 @@ function row(doc, list, count, reorderable) {
   if (sharing) {
     link.append(make(doc, 'span', 'list-row__sharing', sharing));
   }
-  const { more, menu } = createListMenu({ document: doc, id: `list-actions-${list.id}`, name: list.name, className: 'list-item__more', list });
+  const more = make(doc, 'button', 'icon-button list-item__more');
+  more.type = 'button';
+  more.tabIndex = -1;
+  // The menu behavior sets the same state on first open; the closed button announces it before then.
+  more.setAttribute('aria-haspopup', 'menu');
+  more.setAttribute('aria-expanded', 'false');
+  more.setAttribute('aria-label', actionsLabel(list.name));
+  more.append(spriteIcon(doc, 'more'));
   more.dataset.role = 'more';
-  item.append(grip, link, more, menu);
-  return { item, more, menu };
+  item.append(grip, link, more);
+  return { item, more };
 }
 
 /**
@@ -193,7 +217,8 @@ export function mountLists(view, {
   const announcer = createLiveRegion({ document: doc, parent: root });
   let shown = [];
   let refocus = null;
-  let menus = [];
+  let tabStopId = null;
+  const menus = new Map();
 
   /** @returns {boolean} true while reordering is on: Manual order and an empty field (`LV-8`) */
   const reorderable = () => sort === 'manual' && text.trim() === '';
@@ -202,6 +227,45 @@ export function mountLists(view, {
     onSelect: (item) => chooseSort(item.dataset.sort),
     align: 'end',
   });
+
+  /** Destroy the behaviors of the row menus built so far; the menus leave with their rows. */
+  function destroyMenus() {
+    for (const behavior of menus.values()) {
+      behavior.destroy();
+    }
+    menus.clear();
+  }
+
+  /**
+   * Build the menu of a row's More button on first use, so a long screen holds only the menus that were opened (`TEC-16`).
+   * @param {HTMLButtonElement} more the More button
+   */
+  function ensureMenu(more) {
+    const item = more.closest('.list-item');
+    const id = item?.dataset.listId;
+    if (!id || menus.has(id)) {
+      return;
+    }
+    const list = shown.find((candidate) => candidate.id === id);
+    if (!list) {
+      return;
+    }
+    const menu = createListMenuElement({ document: doc, id: `list-actions-${id}`, name: list.name, list });
+    item.append(menu);
+    menus.set(id, attachMenu(more, menu, {
+      onSelect: (picked) => runListAction(picked, { listId: id, list, parent: root, opener: more, store, toaster, navigate }),
+    }));
+  }
+
+  /** Make exactly one row link the tab stop: the last focused row, else the first shown row (`LST-15`). */
+  function syncTabStop() {
+    const links = [...rows.querySelectorAll('.list-row')];
+    const wanted = links.find((link) => link.closest('.list-item').dataset.listId === tabStopId) ?? links[0];
+    tabStopId = wanted?.closest('.list-item').dataset.listId ?? null;
+    for (const link of links) {
+      link.tabIndex = link === wanted ? 0 : -1;
+    }
+  }
 
   /**
    * Read the lists and their counts, then render them, once per burst of store changes.
@@ -227,15 +291,10 @@ export function mountLists(view, {
     const query = text.trim();
     const ordered = applyListOrder(lists, readListOrder());
     shown = findLists(sort === 'manual' ? ordered : sortLists(ordered, sort, counts), query, { descriptions: true });
-    for (const behavior of menus) {
-      behavior.destroy();
-    }
+    destroyMenus();
     const handles = reorderable();
-    const built = shown.map((list) => ({ list, ...row(doc, list, countOf(counts, list.id), handles) }));
-    menus = built.map(({ list, more, menu }) => attachMenu(more, menu, {
-      onSelect: (picked) => runListAction(picked, { listId: list.id, list, parent: root, opener: more, store, toaster, navigate }),
-    }));
-    rows.replaceChildren(...built.map(({ item }) => item));
+    rows.replaceChildren(...shown.map((list) => row(doc, list, countOf(counts, list.id), handles).item));
+    syncTabStop();
     rows.hidden = shown.length === 0;
     empty.hidden = shown.length > 0;
     emptyText.textContent = lists.length === 0 ? STRINGS.empty : STRINGS.noMatch(query);
@@ -434,6 +493,66 @@ export function mountLists(view, {
       && event.target.closest?.('.list-item') && !reorderable()) {
       event.preventDefault();
       announcer.announce(STRINGS.locked);
+      return;
+    }
+    roveRows(event);
+  }
+
+  /**
+   * Move focus between rows with Up, Down, Home, End, PageUp, and PageDown, and between a row and its More button with Right and Left (`LST-15`).
+   * Keys inside an open menu and the More button's own Up and Down stay with the menu.
+   * @param {KeyboardEvent} event the key event
+   */
+  function roveRows(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.defaultPrevented) {
+      return;
+    }
+    const target = event.target;
+    const item = target.closest?.('.list-item');
+    if (!item || target.closest('.menu')) {
+      return;
+    }
+    const onLink = target.matches('.list-row');
+    const onMore = target.matches('.list-item__more');
+    if (onLink && event.key in ROW_STEPS) {
+      event.preventDefault();
+      const items = [...rows.children].filter((candidate) => !candidate.hidden);
+      const at = items.indexOf(item);
+      const height = item.offsetHeight || ROW_HEIGHT;
+      const page = Math.max(1, Math.floor((view.closest('main')?.clientHeight || height * PAGE_ROWS) / height));
+      const index = ROW_STEPS[event.key](at, items.length, page);
+      items[Math.min(items.length - 1, Math.max(0, index))]?.querySelector('.list-row').focus();
+    }
+    else if (onLink && event.key === 'ArrowRight') {
+      event.preventDefault();
+      item.querySelector('.list-item__more').focus();
+    }
+    else if (onMore && event.key === 'ArrowLeft') {
+      event.preventDefault();
+      item.querySelector('.list-row').focus();
+    }
+  }
+
+  /**
+   * Follow focus with the roving tab stop, which stays on the row last used.
+   * @param {FocusEvent} event the focus event
+   */
+  function onRowsFocusin(event) {
+    const id = event.target.closest?.('.list-item')?.dataset.listId;
+    if (id && id !== tabStopId) {
+      tabStopId = id;
+      syncTabStop();
+    }
+  }
+
+  /**
+   * Build a row's menu just before its More button handles the opening click or key.
+   * @param {Event} event the click or keydown event, seen in the capture phase
+   */
+  function onRowsCapture(event) {
+    const more = event.target.closest?.('.list-item__more');
+    if (more && (event.type === 'click' || ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key))) {
+      ensureMenu(more);
     }
   }
 
@@ -445,6 +564,9 @@ export function mountLists(view, {
   find.reset.addEventListener('click', reset);
   create.addEventListener('click', createFromText);
   rows.addEventListener('keydown', onRowsKeydown);
+  rows.addEventListener('keydown', onRowsCapture, true);
+  rows.addEventListener('click', onRowsCapture, true);
+  rows.addEventListener('focusin', onRowsFocusin);
   const reorder = attachReorder(rows, { enabled: reorderable, onMove: move, row: '.list-item', handle: '.list-item__handle', idKey: 'listId' });
   const unsubscribe = store.subscribe(() => refresh());
   const unsubscribeOrder = onListOrderChange(() => refresh());
@@ -474,9 +596,7 @@ export function mountLists(view, {
       unsubscribe();
       unsubscribeOrder();
       sortMenu.destroy();
-      for (const behavior of menus) {
-        behavior.destroy();
-      }
+      destroyMenus();
       reorder.destroy();
       announcer.destroy();
     },

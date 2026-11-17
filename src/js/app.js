@@ -245,7 +245,8 @@ async function start() {
       title = list.name;
     }
     const element = shell.update(route, title);
-    if (screen?.element !== element) {
+    const mounted = screen?.element !== element;
+    if (mounted) {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
       const options = {
@@ -256,6 +257,10 @@ async function start() {
     }
     screen.controller?.update(route);
     editorPanel.update(route);
+    if (mounted) {
+      // The router restores the scroll position once this settles, so the rows must exist by then.
+      await screen.controller?.idle?.();
+    }
     if (shownViewKey !== null && shownViewKey !== route.viewKey) {
       shell.main.focus({ preventScroll: true });
     }
