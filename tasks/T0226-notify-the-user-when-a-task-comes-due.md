@@ -5,20 +5,22 @@ session: claude-20261117-ef73e0
 needs: []
 branch: task/T0226-notify-the-user-when-a-task-comes-due
 worktree: .plan/work/T0226-notify-the-user-when-a-task-comes-due
-status: active
+status: completed
 started_at: "2026-11-17T04:00:56Z"
-ended_at: —
+ended_at: "2026-11-17T04:18:50Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 844.9, input: 152, output: 53963, cache_read: 10100787, cache_write: 152603}
-  review: {turns: 1, duration_s: 115.6, input: 49218, output: 3307, cache_read: 550912, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 192.5, input: 96460, output: 5168, cache_read: 950016, cache_write: 0}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-17T04:17:31Z"
-review_session: codex-20261117-ce8721
-work_duration: 844.5
+review_session: codex-20261117-0a8b40
+work_duration: 1073.7
+reviewed_by: "@codex"
+completion-commit: 86e5950ddc2deec1755c3cb688d35de8025cdea8
 ---
 # T0226: Notify the user when a task comes due while the app is open, with opt-in and a lead time
 
@@ -43,7 +45,7 @@ Size estimate: 8 files, 350 lines.
 - [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
 - [x] **[Visual]**    Inspect the Settings section and a real notification in Chrome and Firefox on desktop.
 - [x] **[Doc]**       Add reminder requirements, the Settings design, the wireframe, and a CHANGELOG.md entry.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-12] **[Doc]**
@@ -94,4 +96,11 @@ Size estimate: 8 files, 350 lines.
 
 - [2026-11-17] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 2 approved by @codex: [Decided]** Approved the round 1 rework, with zero blocking findings.
+  - Findings: [review-findings-2.md](T0226-notify-the-user-when-a-task-comes-due/review-findings-2.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 

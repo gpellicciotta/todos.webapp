@@ -32,7 +32,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0222 Name the Shared filter in the hidden-task toast and let Show clear it.
 - [x] T0217 Show the Finished today only choice in the view options wireframe and the gallery's Status popover samples.
 - [x] T0218 Evaluate adopting DevopsCli from support-python v3.3.0, modeled on support.webapp's devops script.
-- [~] T0226 [owner: @claude] Notify the user when a task comes due while the app is open, with opt-in and a lead time.
+- [x] T0226 Notify the user when a task comes due while the app is open, with opt-in and a lead time.
 - [ ] T0072 Make the sidebar scroll only its lists, keep the current list in view, and patch rows in place.
 - [ ] T0073 [needs: T0072] Add the find field, roving focus, and the l shortcut to the sidebar lists.
 - [ ] T0074 Add the find bar, sort menu, info line, and Create list offer to the Lists screen.
@@ -45,4 +45,4 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [ ] T0267 Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
 - [ ] T0266 Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
-- [ ] T0227 [needs: T0226] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
+- [ ] T0227 Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
