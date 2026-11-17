@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1834.4, input: 10, output: 2008, cache_read: 805305, cache_write: 7309}
+  worker: {turns: 3, duration_s: 2052.7, input: 30, output: 11583, cache_read: 3331516, cache_write: 22511}
 work_duration: 1893.6
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T15:05:46Z"
 ---
 # T0264: Redesign the task row as a description line plus a meta line, with overdue due text in orange
 
@@ -66,4 +69,7 @@ Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signe
   Captured rows before and after at 360, 768, and 1440 px in both themes; see validation-proof.md.
   - [After 360 light](T0264-redesign-the-task-row-as-a-description-line/screenshots/after-360-light.png).
   - [Before 360 light](T0264-redesign-the-task-row-as-a-description-line/screenshots/before-360-light.png).
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
