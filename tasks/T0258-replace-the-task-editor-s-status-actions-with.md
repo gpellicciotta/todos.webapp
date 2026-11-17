@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1130.7, input: 170, output: 65816, cache_read: 13481362, cache_write: 195112}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T12:51:52Z"
 ---
 # T0258: Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257
 
@@ -66,4 +71,7 @@ Replace the editor's status action buttons with four state buttons and, above ta
   - Files touched: 10.
   - Lines touched: 583.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
