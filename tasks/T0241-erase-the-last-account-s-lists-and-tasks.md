@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1233.9, input: 168, output: 59802, cache_read: 14328575, cache_write: 203403}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T11:23:14Z"
 ---
 # T0241: Erase the last account's lists and tasks on the next connect after Delete all data in local mode
 
@@ -62,4 +67,7 @@ Make a Delete all data done in local mode reach the account on the next connect.
   - Files touched: 16.
   - Lines touched: 573.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
