@@ -543,8 +543,6 @@ export function createTaskList({
   let added = null;
   let addedTimer = null;
   let ctx = {};
-  // Whether a task shows under the view's filters, as the last render passed it.
-  let shows = null;
   // The keys of the collapsed groups, and the arguments of the last render, which a toggle renders again.
   const collapsed = new Set();
   let last = null;
@@ -559,42 +557,29 @@ export function createTaskList({
   });
 
   /**
-   * Post a user event on a task, and show an Undo toast, whose Undo posts the inverse event, when `always` asks for one
-   * or the change hides its row under the view's filters. The toast names the new status, or the counts when only they
-   * changed. The row is judged with the event applied, so a task finished now counts as finished today.
-   * An event whose precondition fails, such as after another tab changed the task, posts nothing.
-   * @param {object} task the task
-   * @param {string} type the event type
-   * @param {boolean} [always] whether the toast shows also while the row stays shown, as after a tick
+   * Tick a task, and show an Undo toast, whose Undo posts the inverse event. The toast names the new status, or the
+   * counts when only they changed. Nothing posts when the user's role locks its status (`SHR-4`), when the task has no
+   * tick, as when completed at target 1 or cancelled, or when the event's precondition fails, as after another tab
+   * changed the task.
+   * @param {object|undefined} task the task
    */
-  function post(task, type, always = false) {
+  function tick(task) {
+    const type = task ? tickEvent(task['current-occurrence'], task['lifecycle-rules']) : null;
+    if (!type || isLocked(task, ctx)) {
+      return;
+    }
     const time = new Date(ctx.now ?? Date.now()).toISOString();
     const before = task['current-occurrence'];
     const occurrence = applyEvent(before, { type, 'creation-time': time }, task['lifecycle-rules']);
     if (!occurrence) {
       return;
     }
-    const hides = shows !== null && !shows({ ...task, 'current-occurrence': occurrence, 'last-update-time': time });
     store.postEvent(task.id, type).then(() => {
-      if (always || hides) {
-        toaster.show(occurrence.status === before.status ? STRINGS.ticked(occurrence) : STRINGS.marked(occurrence.status), {
-          undo: true,
-          onAction: () => store.postEvent(task.id, INVERSE[type]).catch(fail),
-        });
-      }
+      toaster.show(occurrence.status === before.status ? STRINGS.ticked(occurrence) : STRINGS.marked(occurrence.status), {
+        undo: true,
+        onAction: () => store.postEvent(task.id, INVERSE[type]).catch(fail),
+      });
     }, fail);
-  }
-
-  /**
-   * Tick a task with an Undo toast, unless the user's role locks its status (`SHR-4`) or its tick posts nothing,
-   * as on a completed task at target 1 or a cancelled task.
-   * @param {object|undefined} task the task
-   */
-  function tick(task) {
-    const type = task ? tickEvent(task['current-occurrence'], task['lifecycle-rules']) : null;
-    if (type && !isLocked(task, ctx)) {
-      post(task, type, true);
-    }
   }
 
   /**
@@ -1083,15 +1068,13 @@ export function createTaskList({
      * @param {object[]} tasks the tasks to show
      * @param {{now?: Date, lists?: Map<string, object>, listsByTask?: Map<string, string[]>}} context the time,
      *   the live lists in display order, and list identifiers by task
-     * @param {{groups?: Array<{key: string, label: string, tasks: object[], total?: number}>|null,
-     *   shows?: ((task: object) => boolean)|null}} [grouping] the groups of `groupTasks`, and whether a task shows under the view's filters, for the Undo toast
-     *   of a status change that hides its row
+     * @param {{groups?: Array<{key: string, label: string, tasks: object[], total?: number}>|null}} [grouping] the
+     *   groups of `groupTasks`
      */
     render(tasks, context, grouping = {}) {
-      const { groups: given = null, shows: filter = null } = grouping;
+      const { groups: given = null } = grouping;
       last = [tasks, context, grouping];
       ctx = context;
-      shows = filter;
       // The display rule: a recurring task past its period end shows as ready with count 0 until it rolls over.
       const now = context.now ?? new Date();
       const shown = (task) => displayTask(task, now);

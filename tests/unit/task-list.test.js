@@ -228,7 +228,6 @@ describe('createTaskList', () => {
       shapeTask({ id: 'c', description: 'Water the plants', status: 'completed', 'due-time': null }),
       shapeTask({ id: 'd', description: 'Renew the gym pass', status: 'cancelled', 'due-time': null }),
     ];
-    const OPEN = (task) => ['ready', 'in-progress'].includes(task['current-occurrence'].status);
 
     /**
      * Find the status button of a task.
@@ -386,19 +385,7 @@ describe('createTaskList', () => {
       expect(store.postEvent).not.toHaveBeenCalled();
     });
 
-    it('shows an Undo toast when the change hides the row, and Undo posts the inverse event', async () => {
-      list.render(four.slice(0, 2), ctx, { shows: OPEN });
-      statusOf('b').click();
-      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
-      const [message, settings] = toaster.show.mock.lastCall;
-      expect(message).toBe('Task marked completed.');
-      expect(settings.undo).toBe(true);
-      settings.onAction();
-      expect(store.postEvent.mock.calls).toEqual([['b', 'complete'], ['b', 'uncomplete']]);
-    });
-
-    it('shows the Undo toast for x that hides the row too', async () => {
-      list.render(four, ctx, { shows: OPEN });
+    it('shows the Undo toast for x too', async () => {
       const open = document.querySelector('.task-row[data-task-id="a"] .task-row__open');
       open.focus();
       press(open, 'x');
@@ -406,12 +393,10 @@ describe('createTaskList', () => {
       expect(toaster.show.mock.lastCall[0]).toBe('Task marked completed.');
     });
 
-    it('shows the Undo toast after every tick, also when the row stays shown and without a filter', async () => {
-      list.render(four, ctx, { shows: () => true });
+    it('shows an Undo toast after every tick, and Undo posts the inverse event', async () => {
       statusOf('a').click();
       await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
       expect(toaster.show.mock.lastCall[0]).toBe('Task marked completed.');
-      list.render(four, ctx);
       statusOf('b').click();
       await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(2));
       const [message, settings] = toaster.show.mock.lastCall;
@@ -443,12 +428,12 @@ describe('createTaskList', () => {
       expect(store.postEvent.mock.calls).toEqual([['g', 'complete'], ['g', 'complete'], ['g', 'complete'], ['g', 'uncomplete']]);
     });
 
-    it('judges the hiding with the change applied, so Finished today only keeps a task finished now', () => {
-      const seen = [];
-      list.render(four, ctx, { shows: (task) => seen.push(task) > 0 });
+    it('never asks the view filter whether a ticked row hides', async () => {
+      const shows = vi.fn(() => false);
+      list.render(four, ctx, { shows });
       statusOf('a').click();
-      expect(seen[0]['current-occurrence']).toMatchObject({ status: 'completed', 'close-time': NOW.toISOString() });
-      expect(seen[0]['last-update-time']).toBe(NOW.toISOString());
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
+      expect(shows).not.toHaveBeenCalled();
     });
   });
 

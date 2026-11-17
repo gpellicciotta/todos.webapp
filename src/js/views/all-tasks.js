@@ -348,7 +348,7 @@ export function mountAllTasks(view, {
           : sortByPosition(group.tasks, positionsOfList(data.memberships, group.key)),
       }));
     }
-    taskList.render(shown, ctx, { groups, shows: (task) => filterTasks([task], filter, ctx).length > 0 });
+    taskList.render(shown, ctx, { groups });
     showAdded();
     addBar.setKnown(exactMatchIndex(byOptions));
     const nothingMatches = addHint.update({ text: filter.text ?? '', shown: shown.length, viewer: false });
