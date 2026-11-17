@@ -5,21 +5,22 @@ session: claude-20261117-e20a61
 needs: []
 branch: task/T0240-make-delete-all-data-also-erase-the-account
 worktree: .plan/work/T0240-make-delete-all-data-also-erase-the-account
-status: active
+status: completed
 started_at: "2026-11-17T03:22:09Z"
-ended_at: —
+ended_at: "2026-11-17T10:33:51Z"
 review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 4, duration_s: 763.9, input: 178, output: 47685, cache_read: 14435604, cache_write: 397041}
+  worker: {turns: 5, duration_s: 863.7, input: 196, output: 49867, cache_read: 16356787, cache_write: 405881}
   review: {turns: 3, duration_s: 256.3, input: 160139, output: 6035, cache_read: 950912, cache_write: 0}
 review_status: approved
 review_round: 3
 review_requested_at: "2026-11-17T10:30:29Z"
 review_session: codex-20261117-cc1be5
-work_duration: 25778.3
+work_duration: 25902.1
 reviewed_by: "@codex"
+completion-commit: 59a5c83d5cd3c31c4fbed2715a31700a6a705022
 ---
 # T0240: Make Delete all data also erase the account's lists and tasks while connected, queued while offline
 
@@ -111,4 +112,7 @@ Make Delete all data erase the account's lists, tasks, and notes too, not only t
 - [2026-11-17] **[Review]**
   Round 3 approved by @codex: Approved.
   - Findings: [review-findings-3.md](T0240-make-delete-all-data-also-erase-the-account/review-findings-3.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
