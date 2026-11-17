@@ -6,7 +6,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0257 Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
 - [x] T0240 Make Delete all data also erase the account's lists and tasks while connected, queued while offline.
 - [x] T0267 Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
-- [ ] T0258 Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257.
+- [~] T0258 [owner: @claude] Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257.
 - [ ] T0259 [needs: T0258] Make the task row's status button tick by target, never untick, and offer Undo after every tick.
 - [!] T0254 [reason: blocked: support.webapp has no release with T0049 yet; its checkout is 0.1.1-pre, latest tag v0.1.0. Release 0.1.1 there, then vendor it here.] [owner: @claude, session: claude-20261117-fc9300] [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.
 - [x] T0241 Erase the last account's lists and tasks on the next connect after Delete all data in local mode.

@@ -1,11 +1,11 @@
 ---
 id: T0258
-owner: ~
-needs: [T0257]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0258-replace-the-task-editor-s-status-actions-with
+worktree: .plan/work/T0258-replace-the-task-editor-s-status-actions-with
+status: active
+started_at: "2026-11-17T12:32:48Z"
 ended_at: —
 review: agent
 preview: none

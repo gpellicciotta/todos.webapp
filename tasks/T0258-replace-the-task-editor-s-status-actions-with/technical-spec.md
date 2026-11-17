@@ -16,6 +16,8 @@ Size estimate: 8 files, 400 lines.
 - The Task Editor Status section of T0257's brief governs; revise this spec if sign-off changed it.
 - Brief: ../T0257-design-a-tabbed-task-editor-and-a-clearer/technical-spec.md.
 
+- The status part is the first part of the editor's Status tab; T0262 adds the rules and the other parts below it.
+
 ### State Buttons
 - Replace the tick button and the Start, Undo start, Cancel task, and Reopen buttons of `fillStatus`.
 - Four icon buttons in a labeled group: Ready, In progress, Completed, Cancelled, using the status sprite icons.
