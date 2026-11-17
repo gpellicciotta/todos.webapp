@@ -254,10 +254,10 @@ export function exactMatchIndex(tasks) {
 }
 
 /** The filters that can hide a new task from its view, in display order. */
-const HIDING_FILTERS = Object.freeze(['lists', 'statuses', 'due', 'created']);
+const HIDING_FILTERS = Object.freeze(['lists', 'statuses', 'due', 'created', 'shared']);
 
 /**
- * Name the filters that hide a task, testing each one alone; the search text and sharing never count.
+ * Name the filters that hide a task, testing each one alone; the search text never counts.
  * @param {object} task the task
  * @param {object} filter the filter
  * @param {object} [ctx] the query context, as for `filterTasks`

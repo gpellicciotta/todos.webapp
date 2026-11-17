@@ -197,6 +197,22 @@ test('the Shared filter of All tasks shows only the tasks of shared lists while 
   await expect(page.locator('.task-row__description')).toHaveText(['Buy paint']);
 });
 
+test('a task added under Shared: yes names the filter in the toast, and Show reveals it (TV-7)', async ({ page }) => {
+  await connect(page, { ...OWNED, lists: [{ ...OWNED.lists[0], sharing: RULES }] }, RULES);
+  await open(page, '#/tasks/view-options');
+  const options = page.locator('[data-editor-slot] .view-options');
+  await options.getByRole('button', { name: /^Shared/ }).click();
+  await options.getByRole('radio', { name: 'Shared', exact: true }).check();
+  await expect(page.locator('.task-row__description')).toHaveText(['Plan the trip']);
+  await page.getByLabel('Search or add a task').fill('Paint the door');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  const toast = page.locator('.toast', { hasText: 'Task added.' });
+  await expect(toast).toContainText('Shared: yes hides it.');
+  await toast.getByRole('button', { name: 'Show' }).click();
+  await expect(page.locator('.task-row', { hasText: 'Paint the door' })).toBeVisible();
+  await expect(page.locator('.info-line__text')).not.toContainText('Shared: yes');
+});
+
 test('All tasks offers no Shared filter in local mode (TV-7)', async ({ page }) => {
   await page.setViewportSize(WIDE);
   await page.goto('/#/tasks/view-options');

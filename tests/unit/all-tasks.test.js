@@ -326,6 +326,50 @@ describe('mountAllTasks', () => {
     expect(viewModels.tasks.get().filter.lists).toBeUndefined();
   });
 
+  it('names the Shared filter in the hidden-task toast while connected, and Show clears only it', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const store = {
+      snapshot: async () => ({ lists: [], tasks: [], memberships: [], notes: [] }),
+      subscribe: () => () => {},
+      createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))),
+    };
+    const show = vi.fn();
+    const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show }, viewModels, session: { state: () => 'connected' }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    viewModels.tasks.set({ ...viewModels.tasks.get(), filter: { ...viewModels.tasks.get().filter, shared: true, due: ['today'] } });
+    document.querySelector('[data-shortcut~="add"]').value = 'Paint the door';
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(show).toHaveBeenCalledTimes(1));
+    expect(show.mock.calls[0][0]).toBe('Task added. Due: today and Shared: yes hides it.');
+    show.mock.calls[0][1].onAction();
+    expect(viewModels.tasks.get().filter.shared).toBeUndefined();
+    expect(viewModels.tasks.get().filter.due).toBeUndefined();
+  });
+
+  it('ignores the Shared filter in the hidden-task toast while local', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const store = {
+      snapshot: async () => ({ lists: [], tasks: [], memberships: [], notes: [] }),
+      subscribe: () => () => {},
+      createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))),
+    };
+    const show = vi.fn();
+    const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show }, viewModels, session: { state: () => 'local' }, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    viewModels.tasks.set({ ...viewModels.tasks.get(), filter: { ...viewModels.tasks.get().filter, shared: true } });
+    document.querySelector('[data-shortcut~="add"]').value = 'Paint the door';
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(store.createTask).toHaveBeenCalled());
+    await screen.idle();
+    expect(show).not.toHaveBeenCalled();
+  });
+
   it('shows no hidden-task toast when the Lists filter names only deleted lists', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const lists = [{ id: 'home', name: 'Home' }];

@@ -483,6 +483,19 @@ describe('exact match and hidden task helpers', () => {
     expect(hidingFilters(fresh, DEFAULT_FILTER, { now: NOW })).toEqual([]);
   });
 
+  it('names the Shared filter when a task outside shared lists falls outside it', () => {
+    const fresh = task('n', { 'creation-time': '2026-11-04T12:00:00.000Z' });
+    const ctx = { now: NOW, listsByTask: new Map([['n', ['own']]]), sharedListIds: new Set(['team']) };
+    expect(hidingFilters(fresh, { shared: true }, ctx)).toEqual(['shared']);
+    expect(hidingFilters(fresh, { shared: false }, ctx)).toEqual([]);
+    expect(hidingFilters(fresh, { lists: ['team'], shared: true }, ctx)).toEqual(['lists', 'shared']);
+    expect(hidingFilters(fresh, { statuses: ['completed'], shared: true }, ctx)).toEqual(['statuses', 'shared']);
+  });
+
+  it('clears only the Shared filter when it is named', () => {
+    expect(clearFilters({ shared: true, due: ['today'] }, ['shared'])).toEqual({ due: ['today'] });
+  });
+
   it('clears the named filters, restoring the default statuses', () => {
     const filter = { statuses: ['completed'], due: ['today'], lists: [HOME] };
     expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'], lists: [HOME] });

@@ -500,6 +500,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - An empty result names the active filters and offers Reset.
 - Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
 - A new task joins no list; a Lists filter that hides it brings the "Task added" toast with Show.
+  While connected, Shared: yes hides it too and the toast names it; Show clears it. Local mode ignores the Shared filter.
 - Overdue chips refresh every minute, also for tasks that keep their status.
   The minute tick redraws only due chips; a Due filter also updates which tasks show.
 - **[Decided]** Lists of up to 200 tasks render every row; longer lists render only the rows in view (`TEC-16`).

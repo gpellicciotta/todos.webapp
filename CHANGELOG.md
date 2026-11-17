@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Named the Shared filter in the All tasks hidden-task toast while connected, so a task added under Shared: yes no longer hides silently and Show clears the filter.
 - FrontEnd: Fixed the All tasks hidden-task toast reading "Task added. hides it." when the Lists filter names only deleted lists, by using the pruned filter for rows and toast.
 - Tests: Made the shell areas e2e test wait for the action bar, main area, and bottom bar, and poll their geometry, so full parallel runs no longer read a null box.
 - FrontEnd: Added Delete account to Settings, which marks the connected account for deletion on the service, then disconnects and keeps the local data (CON-14).

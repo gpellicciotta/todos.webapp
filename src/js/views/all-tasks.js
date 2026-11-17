@@ -187,7 +187,7 @@ export function mountAllTasks(view, {
       throw error;
     }
     notifyIfHidden({
-      task, listIds, filter: effectiveFilter(), lists: data?.lists ?? [], now: now(), toaster,
+      task, listIds, filter: effectiveFilter(), lists: data?.lists ?? [], sharedListIds: data?.sharedListIds, now: now(), toaster,
       onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
     });
     if (first && !asked) {

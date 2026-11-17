@@ -293,12 +293,13 @@ export function addedMessage(description) {
  * @param {string[]} options.listIds the lists the task joined
  * @param {object} options.filter the filter of the view
  * @param {object[]} options.lists the live lists
+ * @param {Set<string>} [options.sharedListIds] the identifiers of the shared lists, for the Shared filter
  * @param {Date} options.now the current time
  * @param {{show: Function}} options.toaster the toaster
  * @param {(keys: string[]) => void} options.onShow resets the filters that hide the task
  */
-export function notifyIfHidden({ task, listIds, filter, lists, now, toaster, onShow }) {
-  const keys = hidingFilters(task, filter, { now, listsByTask: new Map([[task.id, listIds]]) });
+export function notifyIfHidden({ task, listIds, filter, lists, sharedListIds, now, toaster, onShow }) {
+  const keys = hidingFilters(task, filter, { now, listsByTask: new Map([[task.id, listIds]]), sharedListIds });
   if (keys.length === 0) {
     return;
   }
