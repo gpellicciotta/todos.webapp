@@ -1,6 +1,7 @@
 ---
 id: T0264
 owner: "@claude"
+session: claude-20261117-16be50
 needs: []
 branch: task/T0264-redesign-the-task-row-as-a-description-line
 worktree: .plan/work/T0264-redesign-the-task-row-as-a-description-line
@@ -24,12 +25,12 @@ Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signe
 - Rules and tests: [technical-spec.md](T0264-redesign-the-task-row-as-a-description-line/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read T0257's signed-off brief and canvas variant C, metaOf in task-list.js, and the row styles.
-- [ ] **[Implement]** Author failing unit and e2e tests for the two lines, the count badge, the meta line, and overdue color.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
-- [ ] **[Implement]** Implement the description line, the count badge, the meta line, and the overdue style.
+- [x] **[Read]**      Read T0257's signed-off brief and canvas variant C, metaOf in task-list.js, and the row styles.
+- [x] **[Implement]** Author failing unit and e2e tests for the two lines, the count badge, the meta line, and overdue color.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
+- [x] **[Implement]** Implement the description line, the count badge, the meta line, and the overdue style.
 - [ ] **[Verify]**    Run the unit suite and the All tasks and gallery e2e specs and confirm they pass.
-- [ ] **[Visual]**    Capture rows at 360, 768, and 1440 px, with overdue and recurring rows, in both themes.
+- [x] **[Visual]**    Capture rows at 360, 768, and 1440 px, with overdue and recurring rows, in both themes.
 - [ ] **[Doc]**       Update the Task Row section, the gallery, the style guide, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
@@ -42,4 +43,9 @@ Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signe
 
 - [2026-11-16] **[Doc]**
   Added the corner count badge from T0257 and took the counts out of the meta line.
+
+- [2026-11-17] **[Implement]**
+  Rebuilt the row as a 2-line clamped description over a meta line, with a status-tinted count badge and orange overdue due text.
+  - Added a repeat icon to the sprite.
+  - Undeclared files: icons.svg, service-worker.js, hashes, three test files.
 
