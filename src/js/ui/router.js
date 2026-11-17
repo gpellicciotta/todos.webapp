@@ -10,6 +10,9 @@
 export const DEFAULT_HASH = '#/tasks';
 
 /** Route patterns, in match order; `:name` segments are identifiers. */
+/** Frames a scroll restore keeps retrying while the browser clamps it below the target (about one second). */
+const RESTORE_FRAMES = 60;
+
 const ROUTES = [
   { name: 'tasks', path: 'tasks', view: 'tasks', editor: null },
   { name: 'view-options', path: 'tasks/view-options', view: 'tasks', editor: 'view-options' },
@@ -110,6 +113,7 @@ export function createRouter({ onRoute, onUnknown = () => {}, scroller, window: 
   const memories = new Map();
   let current = null;
   let queue = Promise.resolve();
+  let cancelRestore = () => {};
 
   /**
    * Render the route of the current hash, after saving the scroll position of the view it leaves.
@@ -132,12 +136,55 @@ export function createRouter({ onRoute, onUnknown = () => {}, scroller, window: 
     current = route;
     await onRoute(route);
     if (!sameView) {
-      scroller.scrollTop = scrolls.get(route.viewKey) ?? 0;
+      restoreScroll(scrolls.get(route.viewKey) ?? 0);
     }
   }
 
-  /** Queue a render, so routes render in order. */
+  /**
+   * Set the scroll position, then keep setting it in the background while the browser clamps it below the target.
+   * Rows off screen with `content-visibility: auto` count at their estimated height until they render, so the scroll
+   * height grows over the next frames. The retries never block the route queue; user input, a hash change, or
+   * the end of the frames cancels them, so a paused frame loop cannot hold up navigation.
+   * @param {number} target the scroll position to restore
+   */
+  function restoreScroll(target) {
+    cancelRestore();
+    scroller.scrollTop = target;
+    if (!win.requestAnimationFrame || Math.abs(scroller.scrollTop - target) < 1) {
+      return;
+    }
+    // Scroll anchoring also moves the position as rows render, so only the user's own input ends the retries.
+    const inputs = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+    let attempts = 0;
+    let stopped = false;
+    const stop = () => {
+      inputs.forEach((type) => scroller.removeEventListener?.(type, stop));
+      if (cancelRestore === stop) {
+        cancelRestore = () => {};
+      }
+      stopped = true;
+    };
+    const step = () => {
+      if (stopped) {
+        return;
+      }
+      scroller.scrollTop = target;
+      attempts += 1;
+      if (attempts >= RESTORE_FRAMES || Math.abs(scroller.scrollTop - target) < 1) {
+        stop();
+      }
+      else {
+        win.requestAnimationFrame(step);
+      }
+    };
+    cancelRestore = stop;
+    inputs.forEach((type) => scroller.addEventListener?.(type, stop, { passive: true }));
+    win.requestAnimationFrame(step);
+  }
+
+  /** Queue a render, so routes render in order; a newer navigation ends a pending scroll restore at once. */
   function onHashChange() {
+    cancelRestore();
     queue = queue.then(handle).catch((error) => console.error('Route failed:', error));
   }
 
@@ -173,6 +220,7 @@ export function createRouter({ onRoute, onUnknown = () => {}, scroller, window: 
       } while (last !== queue);
     },
     destroy() {
+      cancelRestore();
       win.removeEventListener('hashchange', onHashChange);
     },
   };

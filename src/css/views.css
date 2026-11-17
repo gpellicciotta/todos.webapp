@@ -849,7 +849,7 @@
 /* Rows off screen skip layout and paint, so 500 lists open fast while find in page, the tab order, and the scroll stay true (`TEC-16`). */
 .lists-view__rows > .list-item {
   content-visibility: auto;
-  contain-intrinsic-size: auto 64px;
+  contain-intrinsic-size: auto var(--row-height);
 }
 
 /* A dragged row and a drop target paint outside their box, which the containment of content-visibility would clip. */

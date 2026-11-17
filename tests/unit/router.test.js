@@ -135,6 +135,71 @@ describe('createRouter', () => {
     expect(scroller.scrollTop).toBe(40);
   });
 
+  it('keeps restoring a scroll the browser clamps while rows off screen grow the content', async () => {
+    const win = fakeWindow('#/tasks');
+    let max = 100;
+    let value = 0;
+    const scroller = {
+      get scrollTop() {
+        return value;
+      },
+      set scrollTop(next) {
+        value = Math.min(next, max);
+      },
+    };
+    const frames = [];
+    win.requestAnimationFrame = (callback) => {
+      frames.push(callback);
+    };
+    const router = createRouter({ window: win, scroller, onRoute: async () => {}, onUnknown: () => {} });
+    router.start();
+    await router.idle();
+    value = 450;
+    router.navigate('#/bin');
+    await router.idle();
+    max = 100;
+    win.history.back();
+    await router.idle();
+    while (frames.length && scroller.scrollTop !== 450) {
+      max += 100;
+      frames.shift()();
+    }
+    expect(scroller.scrollTop).toBe(450);
+  });
+
+  it('renders a newer route at once while a clamped restore waits for frames that never run', async () => {
+    const win = fakeWindow('#/tasks');
+    let value = 0;
+    const scroller = {
+      get scrollTop() {
+        return value;
+      },
+      set scrollTop(next) {
+        value = Math.min(next, 100);
+      },
+    };
+    const frames = [];
+    win.requestAnimationFrame = (callback) => {
+      frames.push(callback);
+    };
+    const onRoute = vi.fn(async () => {});
+    const router = createRouter({ window: win, scroller, onRoute, onUnknown: () => {} });
+    router.start();
+    await router.idle();
+    value = 900;
+    router.navigate('#/bin');
+    await router.idle();
+    router.navigate('#/tasks');
+    await router.idle();
+    expect(frames).toHaveLength(1);
+    router.navigate('#/settings');
+    await router.idle();
+    expect(onRoute).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'settings' }));
+    const pending = frames.splice(0);
+    pending.forEach((callback) => callback());
+    expect(frames).toHaveLength(0);
+  });
+
   it('keeps the scroll position when an editor opens over the same view', async () => {
     const { router, scroller, onRoute } = await startOn('#/tasks');
     scroller.scrollTop = 120;

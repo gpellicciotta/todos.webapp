@@ -24,14 +24,16 @@ async function seed(page) {
   await expect(page.locator('.lists-view__rows .list-item')).toHaveCount(TOTAL);
 }
 
-test('rows use content-visibility with a 64 px intrinsic size and hold no menus until opened', async ({ page }) => {
+test('rows use content-visibility with a 48 px intrinsic size and hold no menus until opened', async ({ page }) => {
   await seed(page);
   const style = await page.locator('.lists-view__rows .list-item').first().evaluate((element) => {
     const computed = getComputedStyle(element);
     return { visibility: computed.contentVisibility, size: computed.containIntrinsicBlockSize };
   });
   expect(style.visibility).toBe('auto');
-  expect(style.size).toContain('64px');
+  expect(style.size).toContain('48px');
+  const height = await page.locator('.lists-view__rows .list-item').first().evaluate((element) => element.getBoundingClientRect().height);
+  expect(height).toBe(48);
   await expect(page.locator('.lists-view__rows .menu')).toHaveCount(0);
   await page.getByRole('button', { name: 'List actions: List 2', exact: true }).click();
   await expect(page.locator('.lists-view__rows .menu')).toHaveCount(1);

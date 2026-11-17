@@ -635,9 +635,9 @@ The sidebar and this screen share the rules below.
   The text lives in the router memory for the session; Reset clears the sort and the text, and the info line hides it at the defaults.
   Create list checks the name with the store's validation, so a name held by a list in the Recycle bin offers nothing.
   [lists.js](../../src/js/views/lists.js) builds the block and the screen.
-- **[Decided]** Rows stay 64 px high, and there is no density option; find and sort carry the scale.
+- **[Decided]** Rows stay 48 px high (`--row-height`), and there is no density option; find and sort carry the scale.
 - **[Decided]** Rendering: the sidebar renders every row, since 500 plain links are cheap.
-  This screen renders every row too, each with `content-visibility: auto` and `contain-intrinsic-size: auto 64px`.
+  This screen renders every row too, each with `content-visibility: auto` and `contain-intrinsic-size: auto var(--row-height)`, so unrendered rows count at their real height and a Back restores the scroll.
   Row menus build on first open, so 500 rows hold no 500 menus.
   A click, Enter, Space, or Up or Down on a More button builds its menu just before the menu opens; a render drops the built menus.
   A dragged row and a drop target use `content-visibility: visible`, so their indicators are not clipped.

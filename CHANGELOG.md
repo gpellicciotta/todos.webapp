@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Fixed the Lists screen Back restoring the scroll too short, clamped at 10958 px with 300 rows, by sizing unrendered `content-visibility` rows at the real 48 px row height instead of 64 px, and by making the router retry a clamped restore for up to 60 frames unless the user scrolls (LST-15, TEC-16).
 - FrontEnd: Made All tasks open within 200 ms with 5000 tasks under 4x CPU throttling, from about 289 ms to about 116 ms, by sharing one cached read of the task records between openings until the next store write, and by reading only the four stores the screen shows (TEC-16).
 - FrontEnd: Made the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x CPU throttling, from about 389 ms to about 165 ms, by sharing one cached read of the lists and counts between the sidebar and the screen instead of counting every task again (TEC-16, LST-15).
 - Tests: Added the 150-list render check, asserted at 200 ms, and a 500-list recording to the performance spec (TEC-16).
