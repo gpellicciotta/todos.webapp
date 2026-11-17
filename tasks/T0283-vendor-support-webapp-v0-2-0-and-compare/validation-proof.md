@@ -1,7 +1,7 @@
 ## Walkthrough & Validation
 
 ### Summary
-- Vendored support.webapp v0.2.0 (commit 276cc51); v0.2.1 has no release, see [technical-spec.md](technical-spec.md).
+- Vendored support.webapp v0.2.0 (commit 276cc51), then re-vendored v0.2.1 in review round 2 (commit c1edcb6); see [technical-spec.md](technical-spec.md).
 - Adapted focus glows, separators, the account panel, and the precache (commit 3222844).
 - Fixed two stale e2e tests and a Ruff reformat that failed on main e5c72a2 (commit f54e596).
 - Harness: [proof/capture.spec.js](proof/capture.spec.js), [proof/capture.config.js](proof/capture.config.js),
@@ -12,19 +12,19 @@
 Exit code: 0.
 
 ```text
-OK: 141 precached files match VERSION 2026-11-17.35.
+OK: 141 precached files match VERSION 2026-11-17.36.
 integrity: PASS
 conformance: PASS
 [... unit test lines omitted ...]
  Test Files  66 passed (66)
       Tests  1756 passed (1756)
 [... e2e test lines omitted ...]
-  271 passed (5.5m)
+  272 passed (4.3m)
 [... lint output omitted ...]
 All checks passed!
 4 files already formatted
 [... pytest progress omitted ...]
-189 passed in 188.25s (0:03:08)
+189 passed in 117.06s (0:01:57)
 ```
 
 The global Python's support-python 3.1.0 failed three release tests in `test_devops.py`; the pinned `.venv` passes them.
@@ -70,8 +70,36 @@ The same command after the CSS changes. Exit code: 0.
   92 passed (56.3s)
 ```
 
+### Round 2: v0.2.1 and Forced Colors on Task Rows
+`node <scratchpad>/support-webapp-v0.2.1/bin/cli.mjs vendor --look neutral --to src/vendor/design`, then `node src/vendor/design/bin/check.mjs`. Exit codes: 0 and 0.
+Changed files: `design.json`, `src/vendor/design/css/reset.css`, and `src/vendor/design/manifest.json`.
+
+```text
+integrity: PASS
+conformance: PASS
+```
+
+Red: `npx playwright test tests/e2e/focus.spec.js -g "forced colors" --reporter=line`, before the app rule. Exit code: 1.
+
+```text
+    Error: expect(received).toBe(expected) // Object.is equality
+    Expected: "rgb(55, 0, 110)"
+    Received: "rgb(0, 0, 0)"
+    > 115 |   expect(colors.row).toBe(colors.highlight);
+  1 failed
+```
+
+Green: `npx playwright test tests/e2e/focus.spec.js --reporter=line`, after the rule in app-components.css. Exit code: 0.
+
+```text
+  6 passed (29.1s)
+```
+
+v0.2.1 changes no default rendering: forced colors mode is off in every capture, so the screenshot sets stand.
+
 ### Visual Verification
 Each capture run loads the app over HTTP 200 and fails on console errors, page errors, failed requests, or HTTP 400 and higher.
+Copies of the harness are in `proof/`; the runs used them from the git-ignored `work/t0283/` folder of the worktree.
 `$env:CAPTURE_OUT='<companion>/screenshots/after'; npx playwright test work/t0283/capture.spec.js --config work/t0283/capture.config.js`. Exit code: 0.
 
 ```text

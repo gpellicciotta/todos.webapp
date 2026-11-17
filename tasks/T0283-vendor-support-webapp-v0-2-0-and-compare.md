@@ -13,10 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 3536.3, input: 82, output: 19500, cache_read: 10824120, cache_write: 38565}
-work_duration: 1873.0
-review_status: pending
+  review: {turns: 1, duration_s: 464.0, input: 38, output: 10658, cache_read: 1112456, cache_write: 51942}
+work_duration: 4082.9
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T19:39:57Z"
+reviewed_by: "@claude"
+review_session: claude-20261117-f773dc
 ---
 # T0283: Vendor support.webapp v0.2.1 and compare the screenshots.
 
@@ -69,4 +72,22 @@ Completion check: python scripts/devops.py check
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @claude: The work is solid but vendors the wrong version, so it is rejected.
+  - Findings: [review-findings-1.md](T0283-vendor-support-webapp-v0-2-0-and-compare/review-findings-1.md).
+
+- [2026-11-17] **[Decided]**
+  Re-vendored v0.2.1 after review round 1; its tag c2e7347 landed at 18:44Z, during the first turn, so the v0.2.0 decision went stale.
+  - The creation log's 'published as v0.2.1' note was right.
+
+- [2026-11-17] **[Implement]**
+  Painted focused task rows' forced colors outline in Highlight, matching the v0.2.1 reset; filed T0287 for the nav toggle and icon rail.
+
+- [2026-11-17] **[Verify]**
+  Passed devops.py check, exit 0, and the vendored integrity check on v0.2.1.
+  - Unit 1756, e2e 272, pytest 189 passed.
+  - Files touched: 13.
+  - Lines touched: 179.
+  - Reopenings: 0.
 
