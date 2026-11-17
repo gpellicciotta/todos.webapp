@@ -10,14 +10,14 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0260 [needs: T0259] Remove the task row's status menu, now that the task editor holds every status action.
 - [ ] T0259 [needs: T0258] Make the task row's status button tick by target, never untick, and offer Undo after every tick.
 - [ ] T0258 [needs: T0257] Replace the task editor's status actions with four state buttons and a count stepper, as designed in T0257.
-- [~] T0257 [owner: @claude] Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
+- [!] T0257 [reason: needs review: sign off the wireframes and design text, then T0258 to T0265 get revised] [owner: @claude] Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off.
 - [x] T0256 Let users resize the task editor panel and the lists sidebar by dragging on desktop, remembered per device.
 - [x] T0255 [owner: @claude, session: claude-20261117-27758f] [protocol: adhoc] Close the task editor when the row of the task it shows is clicked again.
 - [!] T0254 [reason: blocked: support.webapp has no release with T0049 yet; its checkout is 0.1.1-pre, latest tag v0.1.0. Release 0.1.1 there, then vendor it here.] [owner: @claude, session: claude-20261117-fc9300] [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.
 - [x] T0253 [owner: @claude, session: claude-20261117-19e435] [protocol: adhoc] Add at least 0.5rem of space above the Search or add a task bar.
 - [x] T0252 [owner: @claude, session: claude-20261117-a6d051] [protocol: adhoc] Give Keyboard shortcuts its own Settings section, keeping About as the last section.
 - [x] T0251 Move the view's More menu to a vertical three-dot button beside the account button in the desktop header.
-- [ ] T0250 Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column.
+- [~] T0250 [owner: @claude] Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column.
 - [ ] T0249 Sync Delete permanently and Empty recycle bin to the account while connected, queued while offline.
 - [ ] T0248 [needs: T0247] Add Restore all and Delete all for the entries matching the Recycle Bin filter.
 - [ ] T0247 Add a find field and an All, Lists, Tasks choice to the Recycle Bin to filter its entries.

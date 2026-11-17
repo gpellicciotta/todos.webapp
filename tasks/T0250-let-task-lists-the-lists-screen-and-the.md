@@ -1,11 +1,11 @@
 ---
 id: T0250
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0250-let-task-lists-the-lists-screen-and-the
+worktree: .plan/work/T0250-let-task-lists-the-lists-screen-and-the
+status: active
+started_at: "2026-11-17T01:07:48Z"
 ended_at: —
 review: agent
 preview: none
