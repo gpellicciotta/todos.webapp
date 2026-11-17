@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 341.9, input: 24, output: 3886, cache_read: 702395, cache_write: 38477}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:41:31Z"
 ---
 # T0238: Make the compact layout shell e2e test wait for the action bar, since full parallel runs fail it
 
@@ -52,4 +57,7 @@ Size estimate: 1 files, 20 lines.
 
 - [2026-11-17] **[Doc]**
   Added a Tests bullet under v0.5.1-pre in CHANGELOG.md.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
