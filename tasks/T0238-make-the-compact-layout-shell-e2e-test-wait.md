@@ -1,11 +1,11 @@
 ---
 id: T0238
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0238-make-the-compact-layout-shell-e2e-test-wait
+worktree: .plan/work/T0238-make-the-compact-layout-shell-e2e-test-wait
+status: active
+started_at: "2026-11-17T03:35:42Z"
 ended_at: —
 review: agent
 preview: none
