@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Kept the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.
 - FrontEnd: Added Restore and Delete permanently for every Recycle Bin entry that matches the filter, replacing Empty recycle bin while filtered (BIN-9).
 - FrontEnd: Added a find field and an All, Lists, Tasks choice to the Recycle Bin, with a match count and Reset (BIN-8).
 - Sync: Synced Delete permanently and Empty recycle bin to the account while connected, queued while offline, bringing back an entry restored on another device.

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachSyncIndicator, SYNC_STRINGS } from '../../src/js/views/sync-indicator.js';
+import { attachSyncIndicator, SYNC_SPIN_TURN_MS, SYNC_STRINGS } from '../../src/js/views/sync-indicator.js';
 import { createSeenMarker } from '../../src/js/views/sync-log.js';
 
 const NOW = Date.UTC(2026, 10, 7, 9, 0, 0);
@@ -129,22 +129,95 @@ describe('the sync indicator states', () => {
 
   it('follows the engine and the session as they change', () => {
     const { slot, engine, session } = mount();
-    engine.set({ status: 'syncing' });
-    expect(slot.querySelector('.sync-indicator').dataset.state).toBe('syncing');
-    engine.set({ status: 'offline', pending: 1 });
-    expect(slot.querySelector('.sync-indicator__label').textContent).toBe('Offline · 1 pending');
-    session.set('local');
-    expect(slot.querySelector('.sync-indicator').dataset.state).toBe('local');
+    vi.useFakeTimers();
+    try {
+      engine.set({ status: 'syncing' });
+      expect(slot.querySelector('.sync-indicator').dataset.state).toBe('syncing');
+      vi.advanceTimersByTime(SYNC_SPIN_TURN_MS);
+      engine.set({ status: 'offline', pending: 1 });
+      expect(slot.querySelector('.sync-indicator__label').textContent).toBe('Offline · 1 pending');
+      session.set('local');
+      expect(slot.querySelector('.sync-indicator').dataset.state).toBe('local');
+    }
+    finally {
+      vi.useRealTimers();
+    }
   });
 
   it('announces a changed state except Syncing', () => {
-    const { engine, announce } = mount();
+    vi.useFakeTimers();
+    try {
+      const { engine, announce } = mount();
+      engine.set({ status: 'syncing' });
+      expect(announce).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(SYNC_SPIN_TURN_MS);
+      engine.set({ status: 'offline', pending: 2 });
+      expect(announce).toHaveBeenCalledWith('Offline · 2 pending');
+      engine.set({ status: 'offline', pending: 3 });
+      expect(announce).toHaveBeenCalledTimes(1);
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('the syncing spin', () => {
+  it('keeps showing Syncing for one full turn when the run ends sooner', () => {
+    vi.useFakeTimers();
+    try {
+      const { slot, engine } = mount();
+      const button = slot.querySelector('.sync-indicator');
+      engine.set({ status: 'syncing' });
+      vi.advanceTimersByTime(100);
+      engine.set({ status: 'synced' });
+      expect(button.dataset.state).toBe('syncing');
+      vi.advanceTimersByTime(SYNC_SPIN_TURN_MS - 101);
+      expect(button.dataset.state).toBe('syncing');
+      vi.advanceTimersByTime(2);
+      expect(button.dataset.state).toBe('synced');
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows a later error at once after the turn and never holds past it', () => {
+    vi.useFakeTimers();
+    try {
+      const { slot, engine } = mount();
+      const button = slot.querySelector('.sync-indicator');
+      engine.set({ status: 'syncing' });
+      engine.set({ status: 'error' });
+      expect(button.dataset.state).toBe('syncing');
+      vi.advanceTimersByTime(SYNC_SPIN_TURN_MS);
+      expect(button.dataset.state).toBe('error');
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('lets a lost session override the held Syncing at once', () => {
+    vi.useFakeTimers();
+    try {
+      const { slot, engine, session } = mount();
+      engine.set({ status: 'syncing' });
+      engine.set({ status: 'synced' });
+      session.set('local');
+      expect(slot.querySelector('.sync-indicator').dataset.state).toBe('local');
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the same icon element across re-renders so the animation does not restart', () => {
+    const { slot, engine } = mount();
     engine.set({ status: 'syncing' });
-    expect(announce).not.toHaveBeenCalled();
-    engine.set({ status: 'offline', pending: 2 });
-    expect(announce).toHaveBeenCalledWith('Offline · 2 pending');
-    engine.set({ status: 'offline', pending: 3 });
-    expect(announce).toHaveBeenCalledTimes(1);
+    const before = slot.querySelector('.sync-indicator .icon');
+    engine.set({ pending: 2 });
+    expect(slot.querySelector('.sync-indicator .icon')).toBe(before);
   });
 });
 

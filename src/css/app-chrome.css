@@ -220,7 +220,7 @@
 /*
  * Sync indicator: a button with one icon and label per state, opening the sync popover.
  * States (data-state): local, synced, syncing, offline, sign-in, error, and update-required.
- * Sign-in uses the signal color, error and update-required use the danger color; the syncing icon spins, except under reduced motion.
+ * Sign-in uses the signal color, error and update-required use the danger color; the syncing icon spins in the primary color, except under reduced motion.
  * The dot marks unseen sync log entries; visually hidden text names it.
  * Its ring matches the ground under it: --sync-indicator-ground, the page ground by default,
  * then the hover or pressed ground of the indicator itself.
@@ -263,6 +263,7 @@
   --sync-indicator-ring: var(--color-surface-active);
 }
 
+.sync-indicator[data-state='syncing'],
 .sync-indicator[data-state='sign-in'] {
   color: var(--color-primary);
 }

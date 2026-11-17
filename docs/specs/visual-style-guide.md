@@ -289,7 +289,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Screens give their content room to scroll clear of it, and hide it while an editor covers the same corner.
 - [Sync indicator](../../src/demo/visual-style-gallery.html#sync-indicator): a `.sync-indicator` button with one icon and label per `data-state`.
   States: `local`, `synced`, `syncing`, `offline` with its pending count, `sign-in`, and `error`.
-  Sign-in uses the signal color and error uses the danger color; the syncing icon spins, except under reduced motion.
+  Sign-in uses the signal color and error uses the danger color; the syncing icon spins in the primary color for at least one full turn per run, except under reduced motion.
   The `.sync-indicator__dot` marks unseen sync log entries, with visually hidden text naming it.
   Its ring takes the ground under it: `--sync-indicator-ground`, the page ground by default.
   The sidebar and the top bar set it to the surface; hover and active use the indicator's own ground.

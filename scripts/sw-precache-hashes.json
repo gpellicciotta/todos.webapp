@@ -1,12 +1,12 @@
 {
-  "version": "2026-11-17.8",
+  "version": "2026-11-17.9",
   "files": {
     "index.html": "f931c26f97171652dcaa6b912f3fc2f0d8dbbfb0f300c2b03c0eddbd29723e82",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
     "css/style.css": "a3d0c3b32ac129d6aa3ff1799eae8b8fee68af9986afc32743fda11f8e16379a",
     "css/tokens.css": "93624ca0cececdd5056643d06867b14d391aff348b417b5ed7254c44594b36ae",
     "css/app-components.css": "4aa4725180880c436eca5e53a89d561fc69e69bd0b25e02585cfea22389f5e0e",
-    "css/app-chrome.css": "48551e761778c3ca683cd2116b423d0b69e9bbd8b5dc4e97381ef899b47342fa",
+    "css/app-chrome.css": "b18bc4023212d274908a302f83013b9c2c4e67421cb629a91715f36c1c84c190",
     "css/views.css": "8a7edd1d0d2f2d589bccb17a62e8c1d79fe0915b49ff8d28578ab0c6f7bfbe33",
     "img/icons.svg": "f3580626a2cf0d50aaa7b079f755f41a7d235e73f24f972a6cba28e127891471",
     "img/app-icon.svg": "218d7161ec62d7c6d566b541e2f22c275e0b0f8123582f63d2e315a060c9a3d2",
@@ -66,7 +66,7 @@
     "js/views/reorder.js": "8d78d48f0210c091871c0598e7c2b13da7a318596fdd592e41e8dbc2aa6c2286",
     "js/views/settings.js": "1c4e06da181bd4bc6952f5ef79b6bc8e82870670362de680c160d0b3cfcbe33d",
     "js/views/sharing.js": "62fbc978c4e0af4e2ff2c9ce88045a752c9349fe7c2d3487f6bca9d28b8e2687",
-    "js/views/sync-indicator.js": "544af92890cc7f4e48a6c916b8e7ca05a1e6b83bb44a398478770a3f9f258a3f",
+    "js/views/sync-indicator.js": "fcf2d39260dc7329c853f387c3121d96a7e109fdfe191da6b92113ebe9cf9339",
     "js/views/sync-log.js": "8757182c5b381dcb1cbea7ea256d3e6b5fd787304d1b09e14710e7568843382f",
     "js/views/task-editor.js": "a02320dce5586a80a600820c91cd5130c42701dae815c622767c62412352d98d",
     "js/views/task-history.js": "1fd7b62087e312c9f7997265e3f832d5815ef6a086aa1de041c2a9dae12b81d6",

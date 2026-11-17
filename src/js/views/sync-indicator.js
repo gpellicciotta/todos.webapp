@@ -7,6 +7,7 @@
  * The popover shows the state, the last sync time, and a Sync now button, which becomes Retry after an error.
  * Update required names the minimum version and offers Check for update; Local only offers Connect; Sign in needed offers Sign in.
  * While the session needs a new sign-in, a banner above the views offers Sign in too (`CON-13`).
+ * A run shows Syncing for at least one full turn of the icon, even when the engine finishes sooner.
  * A changed state is announced through the polite live region, except Syncing, which comes and goes with every run.
  */
 
@@ -16,6 +17,9 @@ import { attachPopover } from '../../vendor/design/js/popover.js';
 const ICONS = 'img/icons.svg';
 const LOG_HASH = '#/settings/sync-log';
 const CONNECT_HASH = '#/connect';
+
+/** One turn of the syncing icon, matching `--duration-spin`; a run shows Syncing for at least this long. */
+export const SYNC_SPIN_TURN_MS = 1200;
 
 /** Indicator strings, for the strings module of TEC-13 to absorb. */
 export const SYNC_STRINGS = Object.freeze({
@@ -154,6 +158,11 @@ export function attachSyncIndicator(slot, { engine, session, readLog, seen, bann
   let running = false;
   let destroyed = false;
   let reading = 0;
+  let spinEnd = 0;
+  let spinTimer = null;
+  let iconId = null;
+  let iconElement = null;
+  let dotNodes = [];
 
   const button = make(doc, 'button', 'sync-indicator');
   button.type = 'button';
@@ -177,6 +186,26 @@ export function attachSyncIndicator(slot, { engine, session, readLog, seen, bann
     }
     else if (connection === 'sign-in-needed') {
       status = 'sign-in-needed';
+    }
+    else if (status === 'syncing') {
+      if (spinEnd === 0) {
+        spinEnd = Date.now() + SYNC_SPIN_TURN_MS;
+      }
+    }
+    else if (spinEnd !== 0) {
+      const left = spinEnd - Date.now();
+      if (left > 0) {
+        status = 'syncing';
+        if (spinTimer === null) {
+          spinTimer = setTimeout(() => {
+            spinTimer = null;
+            refresh();
+          }, left);
+        }
+      }
+      else {
+        spinEnd = 0;
+      }
     }
     return { status, text: status === 'offline' ? SYNC_STRINGS.offline(state.pending) : SYNC_STRINGS.labels[status], state };
   }
@@ -253,16 +282,27 @@ export function attachSyncIndicator(slot, { engine, session, readLog, seen, bann
     const view = describe();
     const look = LOOKS[view.status] ?? LOOKS.error;
     button.dataset.state = look.state;
-    button.replaceChildren(icon(doc, look.icon), make(doc, 'span', 'visually-hidden', SYNC_STRINGS.prefix), label);
+    // Keep the icon element while its symbol stays, so the spin does not restart on every render.
+    if (iconId !== look.icon) {
+      const next = icon(doc, look.icon);
+      if (iconElement) {
+        iconElement.replaceWith(next);
+      }
+      else {
+        button.prepend(next, make(doc, 'span', 'visually-hidden', SYNC_STRINGS.prefix), label);
+      }
+      iconElement = next;
+      iconId = look.icon;
+    }
     if (view.status === 'offline' && view.state.pending > 0) {
       label.replaceChildren(doc.createTextNode('Offline · '), make(doc, 'span', 'sync-indicator__count', String(view.state.pending)), doc.createTextNode(' pending'));
     }
     else {
       label.textContent = view.text;
     }
-    if (unseen) {
-      button.append(make(doc, 'span', 'sync-indicator__dot'), make(doc, 'span', 'visually-hidden', SYNC_STRINGS.newEntries));
-    }
+    dotNodes.forEach((node) => node.remove());
+    dotNodes = unseen ? [make(doc, 'span', 'sync-indicator__dot'), make(doc, 'span', 'visually-hidden', SYNC_STRINGS.newEntries)] : [];
+    button.append(...dotNodes);
     renderPanel(view);
     renderBanner();
     if (popover.isOpen()) {
@@ -343,6 +383,7 @@ export function attachSyncIndicator(slot, { engine, session, readLog, seen, bann
     /** Stop following the engine, the session, and the log, and remove the button, the panel, and the banner. */
     destroy() {
       destroyed = true;
+      clearTimeout(spinTimer);
       stops.forEach((stop) => stop());
       button.removeEventListener('click', refresh);
       popover.destroy();
