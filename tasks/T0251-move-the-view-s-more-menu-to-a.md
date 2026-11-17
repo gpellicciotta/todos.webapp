@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 815.5, input: 94, output: 27309, cache_read: 4558662, cache_write: 116547}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T00:17:29Z"
 ---
 # T0251: Move the view's More menu to a vertical three-dot button beside the account button in the desktop header
 
@@ -67,6 +72,8 @@ Move each view's actions to one place in the header on desktop, as the Google Cl
 - [2026-11-17] **[Doc]**
   Added the CHANGELOG.md bullet under v0.5.1-pre.
 
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
 ## Screenshots
 - Before, desktop: [before-all-tasks-desktop-light.png](T0251-move-the-view-s-more-menu-to-a/before-all-tasks-desktop-light.png)
