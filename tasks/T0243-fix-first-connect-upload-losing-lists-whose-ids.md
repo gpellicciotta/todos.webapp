@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 166.1, input: 48, output: 12478, cache_read: 2145314, cache_write: 86864}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T03:11:26Z"
 ---
 # T0243: Fix first-connect upload losing lists whose IDs match trashed server lists, and make restore re-send memberships
 
@@ -51,4 +56,7 @@ Size estimate: 6 files, 200 lines
 
 - [2026-11-17] **[Doc]**
   Added two Sync bullets under v0.5.1-pre in CHANGELOG.md.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
