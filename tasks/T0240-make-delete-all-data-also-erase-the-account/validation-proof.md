@@ -53,8 +53,17 @@ Round 2, after the server jar was rebuilt (2026-11-17 10:54). Command: `TODOS_SE
 
 The erase test passes against the real server: account rows disappear and a second device receives the tombstones.
 
-**Production deployment not verified.** The server changelog shows v4.1.0 as released on 2026-11-16 but carries no deployment marker; only v4.0.0 has one (`google-cloud-run: todos-00015-bhv`).
-A human must confirm the erase route is live in production before this ships.
+**Production check (2026-11-17), unauthenticated probes of `https://todos.pellicciotta.com`.** No authenticated call was made, since it would erase real data.
+
+```text
+GET /api/status                    -> 200, "version": "4.1.1", "build-time": "2026-11-17T08:18:32Z"
+DELETE /api/users/0/data           -> 401
+DELETE /api/users/0/nonexistent-probe -> 400
+```
+
+Production runs v4.1.1, built after v4.1.0 (2026-11-16) added the erase route per the server changelog.
+The erase path answers 401, as an authenticated route does, and differs from an unknown path under the same prefix.
+This is indirect evidence: it shows the version and a route-level response, not a successful erase. A human may still want to run one real erase on a test account.
 ### Visual
 - Connected button: [light](after-button-light.png), [dark](after-button-dark.png)
 - Connected dialog: [light](after-dialog-light.png), [dark](after-dialog-dark.png)

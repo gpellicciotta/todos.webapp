@@ -13,12 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 720.1, input: 164, output: 45276, cache_read: 13044278, cache_write: 390639}
-  review: {turns: 1, duration_s: 98.2, input: 49490, output: 2339, cache_read: 419712, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 183.6, input: 117896, output: 4172, cache_read: 697472, cache_write: 0}
+review_status: rejected
 review_round: 2
 review_requested_at: "2026-11-17T10:27:48Z"
-review_session: codex-20261117-32aee0
-work_duration: 794.2
+review_session: codex-20261117-9d1d79
+work_duration: 25630.4
+reviewed_by: "@codex"
 ---
 # T0240: Make Delete all data also erase the account's lists and tasks while connected, queued while offline
 
@@ -95,4 +96,12 @@ Make Delete all data erase the account's lists, tasks, and notes too, not only t
 
 - [2026-11-17] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 2 rejected by @codex: Rejected: the production prerequisite remains unverified.
+  - Findings: [review-findings-2.md](T0240-make-delete-all-data-also-erase-the-account/review-findings-2.md).
+
+- [2026-11-17] **[Verify]**
+  Production runs v4.1.1, built after the erase route; unauthenticated DELETE on the route answers 401.
+  - Indirect evidence; no authenticated erase was run.
 
