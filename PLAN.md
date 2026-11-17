@@ -20,6 +20,8 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
 
 ## Backlog
+- [ ] T0277 Replace the todos icons, favicon, and manifest icons with the shared support.webapp hexagon icon set.
+- [ ] T0276 Fix the gallery toast e2e test, whose aria-live locator also matches the task editor count region added in T0258.
 - [ ] T0275 Make the e2e suite stable under full parallel load: all-tasks.spec.js:591 and sidebar-find.spec.js:43 each failed once.
 - [ ] T0273 Fix the gallery filter popover keyboard e2e test, failing on main ba41de1: four Tabs no longer reach Clear.
 - [ ] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
