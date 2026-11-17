@@ -23,6 +23,11 @@
   }
 }
 
+/* The bar keeps at least 0.5rem above the add field, more than the shell's default. */
+.app__action-bar:has(> .add-block) {
+  padding-block-start: var(--space-2);
+}
+
 /* The add block fills the action bar at the width of the view above it. */
 .app__action-bar > .add-block {
   inline-size: 100%;
