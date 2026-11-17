@@ -1,0 +1,21 @@
+{"schema": 1,
+ "completed": [
+  {"item": "Failing unit and e2e tab tests written and proven red", "evidence": "tests/unit/task-editor.test.js tabs block: 10 failed before implementation; e2e 'splits into' 2 failed (uncommitted)"},
+  {"item": "Content, Status, History tabs with vendored tabs.js, rules, Delete at Status bottom, history loads on first show, field error selects tab", "evidence": "src/js/views/task-editor.js, src/css/views.css (uncommitted)"},
+  {"item": "Notes add field also searches the notes", "evidence": "src/js/views/notes.js; unit test 'filters the note thread' passes"},
+  {"item": "Unit suite green", "evidence": "npm test: 65 files, 1754 tests passed after last code change"},
+  {"item": "Lint and service worker check green", "evidence": "npx eslint . exit 0; check-sw-version OK at VERSION 2026-11-17.31"},
+  {"item": "Task editor e2e and affected specs green", "evidence": "task-editor.spec.js 14 passed; all-tasks and list TSK-4 tests passed after tab clicks"},
+  {"item": "Visual captures before and after, both themes, 390 and 1440 px", "evidence": "companion screenshots/ (16 PNGs), zero console or network errors"},
+  {"item": "Docs: ui-design Task Editor, style guide, gallery, CHANGELOG", "evidence": "uncommitted edits in docs/specs and src/demo"}
+ ],
+ "remaining": [
+  "Rerun the final affected e2e specs (task editor, all-tasks, list, gallery, behaviors); the last run was interrupted",
+  "Write validation-proof.md with verbatim outputs",
+  "Check steps 4 to 7, log size note (16 files, 763 lines vs 400 estimate) and outcomes",
+  "Create a backlog task for 3 pre-existing e2e failures (behaviors-dialog live region, bin-settings shortcuts list)",
+  "Run plan tasks validate --completion and commit to the task branch"
+ ],
+ "next_action": "Rerun the affected e2e specs, then record proof, check steps, and commit the 17 changed files",
+ "blocker": null,
+ "scope": null}

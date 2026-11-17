@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1802.7, input: 2, output: 24}
+work_duration: 1818.3
 ---
 # T0262: Split the task editor into Content, Status, and History tabs, with Lists and Delete on Status
 
