@@ -17,16 +17,19 @@
  * for 150 ms; Enter opens the first match, Escape clears, Down enters the rows, and `/` focuses it (`LST-10`).
  * The text lasts for the session in the router memory; the sort persists per device in `todos.view.lists` (`LST-12`).
  * A text with no match offers Create list for a valid new name, which opens the new list's editor (`LST-11`).
- * Reordering needs Manual order and an empty field; otherwise the handles hide and Alt+Up or Alt+Down says why.
+ * Reordering needs Manual order, an empty field, and no Shared only; otherwise the handles hide and Alt+Up or Alt+Down says why.
+ * While connected with at least one shared list, the sort menu ends with a Shared only checkbox that the info line names; it persists
+ * in `todos.view.lists` beside the sort and Reset clears it (`LST-16`).
  * Long lists stay cheap: rows use `content-visibility: auto`, a row's menu builds on its first open, and the rows are one
  * roving tab stop with Up and Down between rows and Right and Left between a row and its More button (`LST-15`, `TEC-16`).
- * Sharing state and the owner of others' lists join the rows once sharing lands (`SHR-3`).
+ * Rows show the sharing state and the owner of others' lists (`SHR-3`).
  */
 
 import { countLists, countOf } from '../core/list-counts.js';
 import { FIND_MAX_LENGTH, findLists } from '../core/list-find.js';
 import { applyListOrder, movedMessage, moveListTo, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
-import { LIST_SORTS, readListSort, SORT_LABELS, sortLists, writeListSort } from '../core/list-sort.js';
+import { LIST_SORTS, readListSort, readSharedOnly, SORT_LABELS, sortLists, writeListView } from '../core/list-sort.js';
+import { isSharedList } from '../core/permissions.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 import { formatRoute } from '../ui/router.js';
@@ -67,6 +70,8 @@ const STRINGS = Object.freeze({
   reset: 'Reset',
   sortButton: (sort) => `Sort: ${SORT_LABELS[sort].short}`,
   sortedBy: (sort) => `Sorted by ${SORT_LABELS[sort].short}`,
+  sharedOnly: 'Shared only',
+  noShared: 'No shared lists.',
   total: (count) => `${count} ${count === 1 ? 'list' : 'lists'}`,
   matches: (shown, total) => `${shown} of ${total} ${total === 1 ? 'list' : 'lists'}`,
   noMatch: (text) => `No list matches "${text}".`,
@@ -162,6 +167,11 @@ function createFindBlock(doc) {
     item.dataset.sort = key;
     menu.append(item);
   }
+  // The Shared only item joins the menu's end only while it applies (`LST-16`), so it never takes a hidden place in the arrow keys.
+  const shared = make(doc, 'button', 'menu__item', STRINGS.sharedOnly);
+  shared.type = 'button';
+  shared.setAttribute('role', 'menuitemcheckbox');
+  shared.dataset.filter = 'shared';
   bar.append(field, sort, menu);
   const info = make(doc, 'div', 'info-line');
   const infoText = make(doc, 'p', 'info-line__text');
@@ -169,7 +179,7 @@ function createFindBlock(doc) {
   reset.type = 'button';
   info.append(infoText, reset);
   element.append(bar, info);
-  return { element, field, sort, sortLabel, menu, infoText, reset };
+  return { element, field, sort, sortLabel, menu, shared, infoText, reset };
 }
 
 /**
@@ -185,16 +195,19 @@ function createFindBlock(doc) {
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device sort
  * @param {() => Promise<{lists: object[], counts: object}>} [options.readSnapshot] reads the lists and their counts shared
  *   with the sidebar, so opening the screen does not read every task again (`TEC-16`); the store is read when absent
+ * @param {{state: () => string, subscribe?: Function}} [options.session] the session; Shared only applies while it is not local (`LST-16`)
  * @returns {{update: () => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountLists(view, {
   store, toaster = { show() {} }, navigate = () => {}, overlays = null, actionBar = null, memory = {}, getStorage, readSnapshot = null,
+  session = null,
 }) {
   const doc = view.ownerDocument;
   let pending = null;
   let destroyed = false;
   let text = typeof memory.text === 'string' ? memory.text : '';
   let sort = readListSort(getStorage);
+  let sharedOnly = readSharedOnly(getStorage);
   let data = null;
   let findTimer = null;
   let renderToken = 0;
@@ -223,11 +236,17 @@ export function mountLists(view, {
   let tabStopId = null;
   const menus = new Map();
 
-  /** @returns {boolean} true while reordering is on: Manual order and an empty field (`LV-8`) */
-  const reorderable = () => sort === 'manual' && text.trim() === '';
+  /** @returns {boolean} true when the Shared only item applies: connected, with at least one shared list (`LST-16`) */
+  const sharedAvailable = () => Boolean(data) && Boolean(session) && session.state() !== 'local' && data.lists.some(isSharedList);
+
+  /** @returns {boolean} true while only the shared lists show */
+  const sharedActive = () => sharedOnly && sharedAvailable();
+
+  /** @returns {boolean} true while reordering is on: Manual order, an empty field, and no Shared only (`LV-8`, `LST-16`) */
+  const reorderable = () => sort === 'manual' && text.trim() === '' && !sharedActive();
 
   const sortMenu = attachMenu(find.sort, find.menu, {
-    onSelect: (item) => chooseSort(item.dataset.sort),
+    onSelect: (item) => (item.dataset.filter === 'shared' ? chooseShared(!sharedOnly) : chooseSort(item.dataset.sort)),
     align: 'end',
   });
 
@@ -301,7 +320,7 @@ export function mountLists(view, {
     renderToken += 1;
     const { lists, counts } = data;
     const query = text.trim();
-    const ordered = applyListOrder(lists, readListOrder());
+    const ordered = applyListOrder(sharedActive() ? lists.filter(isSharedList) : lists, readListOrder());
     shown = findLists(sort === 'manual' ? ordered : sortLists(ordered, sort, counts), query, { descriptions: true });
     destroyMenus();
     const handles = reorderable();
@@ -309,7 +328,7 @@ export function mountLists(view, {
     syncTabStop();
     rows.hidden = shown.length === 0;
     empty.hidden = shown.length > 0;
-    emptyText.textContent = lists.length === 0 ? STRINGS.empty : STRINGS.noMatch(query);
+    emptyText.textContent = lists.length === 0 ? STRINGS.empty : query === '' ? STRINGS.noShared : STRINGS.noMatch(query);
     create.hidden = true;
     if (shown.length === 0 && lists.length > 0) {
       offerCreate(query, renderToken);
@@ -345,7 +364,8 @@ export function mountLists(view, {
    */
   function renderFindBlock(total) {
     const query = text.trim();
-    const hidden = total < FIND_FROM && query === '' && sort === 'manual';
+    const filtered = sharedActive();
+    const hidden = total < FIND_FROM && query === '' && sort === 'manual' && !filtered;
     find.element.hidden = hidden;
     // The action bar joins the shell only while it holds content, so a hidden block leaves it.
     if (actionBar && hidden === find.element.isConnected) {
@@ -361,12 +381,23 @@ export function mountLists(view, {
     for (const item of find.menu.querySelectorAll('[role="menuitemradio"]')) {
       item.setAttribute('aria-checked', String(item.dataset.sort === sort));
     }
-    const parts = [query === '' ? STRINGS.total(total) : STRINGS.matches(shown.length, total)];
+    // The item is in the menu only while it applies, and a render settles its checked state.
+    if (sharedAvailable()) {
+      find.shared.setAttribute('aria-checked', String(filtered));
+      find.menu.append(find.shared);
+    }
+    else {
+      find.shared.remove();
+    }
+    const parts = [query === '' && !filtered ? STRINGS.total(total) : STRINGS.matches(shown.length, total)];
     if (sort !== 'manual') {
       parts.push(STRINGS.sortedBy(sort));
     }
+    if (filtered) {
+      parts.push(STRINGS.sharedOnly);
+    }
     find.infoText.textContent = parts.join(' · ');
-    find.reset.hidden = sort === 'manual' && query === '';
+    find.reset.hidden = sort === 'manual' && query === '' && !filtered;
   }
 
   /** Put focus back on the control that had it before a move; the render that follows a move replaces every row. */
@@ -423,19 +454,33 @@ export function mountLists(view, {
       return;
     }
     sort = next;
-    writeListSort(sort, getStorage);
+    writeListView({ sort, sharedOnly }, getStorage);
     if (data) {
       render();
     }
     announcer.announce(STRINGS.sortedBy(sort));
   }
 
-  /** Reset clears the sort and the text, which are the defaults of this screen. */
+  /**
+   * Turn Shared only on or off: store it with the sort, render, and announce it (`LST-16`).
+   * @param {boolean} next true to show only the shared lists
+   */
+  function chooseShared(next) {
+    sharedOnly = next;
+    writeListView({ sort, sharedOnly }, getStorage);
+    if (data) {
+      render();
+    }
+    announcer.announce(next ? STRINGS.sharedOnly : STRINGS.total(data?.lists.length ?? 0));
+  }
+
+  /** Reset clears the sort, the Shared only filter, and the text, which are the defaults of this screen. */
   function reset() {
     clearTimeout(findTimer);
     find.field.value = '';
     sort = 'manual';
-    writeListSort(sort, getStorage);
+    sharedOnly = false;
+    writeListView({ sort, sharedOnly }, getStorage);
     setText('', false);
     if (!data) {
       return;
@@ -582,6 +627,12 @@ export function mountLists(view, {
   const reorder = attachReorder(rows, { enabled: reorderable, onMove: move, row: '.list-item', handle: '.list-item__handle', idKey: 'listId' });
   const unsubscribe = store.subscribe(() => refresh());
   const unsubscribeOrder = onListOrderChange(() => refresh());
+  // Signing in or out changes whether Shared only applies.
+  const unsubscribeSession = session?.subscribe?.(() => {
+    if (data && !destroyed) {
+      render();
+    }
+  });
   const first = refresh();
 
   return {
@@ -607,6 +658,7 @@ export function mountLists(view, {
       find.element.remove();
       unsubscribe();
       unsubscribeOrder();
+      unsubscribeSession?.();
       sortMenu.destroy();
       destroyMenus();
       reorder.destroy();

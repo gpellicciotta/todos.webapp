@@ -3,7 +3,7 @@
  *
  * The input is in manual order, and every sort keeps it among ties, since the array sort is stable.
  * A sort never changes the stored order; it returns a new array.
- * The choice persists per device in `todos.view.lists` as `{sort}` (`TV-12`); manual order stores nothing.
+ * The choice persists per device in `todos.view.lists` as `{sort, shared}` (`TV-12`, `LST-16`); the defaults store nothing.
  */
 
 import { countOf } from './list-counts.js';
@@ -59,5 +59,31 @@ export function readListSort(getStorage) {
  * @returns {boolean} true when stored or removed
  */
 export function writeListSort(sort, getStorage) {
-  return sort === 'manual' ? removePreference(LIST_SORT_KEY, getStorage) : writePreference(LIST_SORT_KEY, { sort }, getStorage);
+  return writeListView({ sort, sharedOnly: readSharedOnly(getStorage) }, getStorage);
+}
+
+/**
+ * Read the stored Shared only choice (`LST-16`).
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true only for an entry holding `shared: true`
+ */
+export function readSharedOnly(getStorage) {
+  return readPreference(LIST_SORT_KEY, null, getStorage)?.shared === true;
+}
+
+/**
+ * Store the sort and the Shared only choice together as `{sort, shared}`; the defaults forget their keys, and none forgets the entry.
+ * @param {{sort: string, sharedOnly: boolean}} view the choices
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when stored or removed
+ */
+export function writeListView({ sort, sharedOnly }, getStorage) {
+  const entry = {};
+  if (sort !== 'manual') {
+    entry.sort = sort;
+  }
+  if (sharedOnly) {
+    entry.shared = true;
+  }
+  return Object.keys(entry).length === 0 ? removePreference(LIST_SORT_KEY, getStorage) : writePreference(LIST_SORT_KEY, entry, getStorage);
 }

@@ -363,6 +363,94 @@ describe('mountLists find, sort, and the reorder lock (LST-10, LST-11, LST-12)',
     await vi.waitFor(() => expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('No list matches "Orchard".'));
   });
 
+  describe('the Shared only filter (LST-16)', () => {
+    const SAM = { id: 9, email: 'sam@example.com', name: 'Sam Roe' };
+    const checkbox = (bar) => bar.querySelector('.menu [role="menuitemcheckbox"]');
+
+    /**
+     * Mount over `total` lists, the first `shared` of them shared.
+     * @param {number} total how many lists
+     * @param {number} shared how many of them are shared
+     * @param {object} [extra] more mount options
+     * @returns {Promise<{view: HTMLElement, bar: HTMLElement}>} the parts
+     */
+    async function mountShared(total, shared, extra = {}) {
+      ({ store } = await freshStore());
+      for (let index = 1; index <= total; index += 1) {
+        const list = await store.createList({ name: `List ${index}` });
+        if (index <= shared) {
+          await setListFields(store, list.id, { role: 'editor', owner: SAM, sharing: [] });
+        }
+      }
+      const view = document.body.appendChild(document.createElement('div'));
+      const bar = document.body.appendChild(document.createElement('div'));
+      navigate = vi.fn();
+      screen = mountLists(view, { store, navigate, actionBar: bar, memory: {}, ...extra });
+      await screen.idle();
+      return { view, bar };
+    }
+
+    const connected = { state: () => 'connected' };
+
+    it('has no checkbox in local mode or with no shared list, and one when connected with a shared list', async () => {
+      const local = await mountShared(13, 2, { session: { state: () => 'local' } });
+      expect(checkbox(local.bar)).toBeNull();
+      screen.destroy();
+      store.close();
+      document.body.replaceChildren();
+      const none = await mountShared(13, 0, { session: connected });
+      expect(checkbox(none.bar)).toBeNull();
+      screen.destroy();
+      store.close();
+      document.body.replaceChildren();
+      const some = await mountShared(13, 1, { session: connected });
+      expect(checkbox(some.bar).textContent).toBe('Shared only');
+      expect(checkbox(some.bar).getAttribute('aria-checked')).toBe('false');
+      expect(some.bar.querySelector('.menu').lastElementChild).toBe(checkbox(some.bar));
+    });
+
+    it('keeps only shared lists, names the filter on the info line, persists it, and Reset clears it', async () => {
+      const { view, bar } = await mountShared(13, 2, { session: connected });
+      checkbox(bar).click();
+      await vi.waitFor(() => expect(rowNames(view)).toEqual(['List 1', 'List 2']));
+      expect(infoText(bar)).toBe('2 of 13 lists · Shared only');
+      expect(checkbox(bar).getAttribute('aria-checked')).toBe('true');
+      expect(JSON.parse(localStorage.getItem('todos.view.lists'))).toEqual({ shared: true });
+      await vi.waitFor(() => expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('Shared only'));
+      bar.querySelector('.info-line__reset').click();
+      await vi.waitFor(() => expect(rowNames(view)).toHaveLength(13));
+      expect(localStorage.getItem('todos.view.lists')).toBeNull();
+      expect(infoText(bar)).toBe('13 lists');
+    });
+
+    it('keeps the sort next to the filter in the stored choice', async () => {
+      const { bar } = await mountShared(13, 2, { session: connected });
+      checkbox(bar).click();
+      bar.querySelector('.lists-find__sort').click();
+      bar.querySelector('[data-sort="name"]').click();
+      expect(JSON.parse(localStorage.getItem('todos.view.lists'))).toEqual({ sort: 'name', shared: true });
+      expect(infoText(bar)).toBe('2 of 13 lists · Sorted by Name · Shared only');
+    });
+
+    it('locks reordering while the filter is on', async () => {
+      localStorage.setItem('todos.view.lists', JSON.stringify({ shared: true }));
+      const { view } = await mountShared(13, 2, { session: connected });
+      expect(view.querySelectorAll('.list-item')).toHaveLength(2);
+      expect(view.querySelector('.list-item__handle').hidden).toBe(true);
+      view.querySelectorAll('.list-row')[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }));
+      await vi.waitFor(() => expect(document.body.querySelector('[aria-live="polite"]').textContent).toBe('Reordering needs Manual order and no search.'));
+      expect(localStorage.getItem('todos.lists.order')).toBeNull();
+    });
+
+    it('ignores a stored filter while local, and keeps the entry', async () => {
+      localStorage.setItem('todos.view.lists', JSON.stringify({ shared: true }));
+      const { view, bar } = await mountShared(13, 2, { session: { state: () => 'local' } });
+      expect(view.querySelectorAll('.list-item')).toHaveLength(13);
+      expect(infoText(bar)).toBe('13 lists');
+      expect(JSON.parse(localStorage.getItem('todos.view.lists'))).toEqual({ shared: true });
+    });
+  });
+
   it('hides Create list when the name is taken by a list in the recycle bin', async () => {
     const { view, bar } = await mountMany(13);
     const banked = await store.createList({ name: 'Banked', description: '' });

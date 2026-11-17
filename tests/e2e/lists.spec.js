@@ -279,6 +279,53 @@ test('Alt+Up and Alt+Down reorder lists by keyboard, announce the move, and keep
   expect(problems).toEqual([]);
 });
 
+test('connected with two shared lists, Shared only shows just those lists and survives a reload (LST-16)', async ({ page }) => {
+  const server = `http://127.0.0.1:${process.env.E2E_PORT ?? 8754}`;
+  const time = '2026-11-04T09:00:00Z';
+  const jane = { id: 3, email: 'jane@example.com', name: 'Jane Doe' };
+  const sam = { id: 9, email: 'sam@example.com', name: 'Sam Roe' };
+  const list = (id, name, fields) => ({
+    id, name, description: '', 'creation-time': time, 'last-update-time': time, 'deletion-time': null, revision: 10, ...fields,
+  });
+  const feed = {
+    lists: [
+      list('0192f1a2-0000-7000-8000-0000000000a1', 'Family', { owner: jane, role: 'owner', sharing: [{ id: 1, 'shared-with-email': 'p@example.com', 'shared-role': 'viewer' }] }),
+      list('0192f1a2-0000-7000-8000-0000000000a2', 'Garden', { owner: sam, role: 'editor', sharing: [] }),
+      ...Array.from({ length: 10 }, (_, index) => list(`0192f1a2-0000-7000-8000-0000000001${String(index).padStart(2, '0')}`, `Solo ${index + 1}`, { owner: jane, role: 'owner', sharing: [] })),
+    ],
+    tasks: [],
+    memberships: [],
+  };
+  await page.addInitScript((session) => {
+    localStorage.setItem('todos.session', JSON.stringify(session));
+    localStorage.setItem('todos.server-url', JSON.stringify(session.server));
+  }, { token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server });
+  await page.route(`${server}/api/**`, (route) => {
+    const { pathname } = new URL(route.request().url());
+    const json = (body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    if (pathname === '/api/users/me') {
+      return json(jane);
+    }
+    if (pathname === '/api/changes') {
+      return json({ cursor: 'c1', 'has-more': false, notes: [], tombstones: [], protocol: 1, ...feed });
+    }
+    return json(pathname === '/api/notifications' ? [] : {});
+  });
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/lists');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  const names = page.locator('[data-view="lists"] .list-row__name');
+  await expect(names).toHaveCount(12);
+  await page.getByRole('button', { name: /^Sort:/ }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Shared only' }).click();
+  await expect(names).toHaveText(['Family', 'Garden']);
+  await expect(page.locator('.lists-find .info-line__text')).toHaveText('2 of 12 lists · Shared only');
+  await page.reload();
+  await expect(names).toHaveText(['Family', 'Garden']);
+  await page.locator('.lists-find .info-line__reset').click();
+  await expect(names).toHaveCount(12);
+});
+
 test('Enter in the new list name creates the draft', async ({ page }) => {
   const problems = watch(page);
   await page.goto('/#/lists/new');

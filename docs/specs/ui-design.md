@@ -619,9 +619,10 @@ The sidebar and this screen share the rules below.
   and Last update (newest first), where a list's last update is the latest `last-update-time` of its tasks.
   The choice persists per device in `todos.view.lists` (`TV-12`) and never changes the stored order, as for tasks (`LV-7`).
   Compact layouts show the button as an icon in the pinned bar.
-  Connected with a shared list, the menu ends with a Shared only checkbox that the info line names.
-  It arrives with `T0028`.
-- **[Decided]** Reordering needs Manual order and an empty field, as for tasks (`LV-8`).
+  Connected with a shared list, the menu ends with a Shared only checkbox that the info line names: "2 of 124 lists · Shared only".
+  It keeps lists that others share with the user or that the user shares (`SHR-3`), persists as `shared` in `todos.view.lists`,
+  and Reset clears it. Local mode and a user without shared lists see no checkbox and ignore a stored choice.
+- **[Decided]** Reordering needs Manual order, an empty field, and no Shared only, as for tasks (`LV-8`, `LST-16`).
   Otherwise drag handles and move entries are hidden.
   Alt+Up and Alt+Down then announce "Reordering needs Manual order and no search."
 - **[Decided]** Move to top and Move to bottom join the row menu while reordering is available.
