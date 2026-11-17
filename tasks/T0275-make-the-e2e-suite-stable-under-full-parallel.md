@@ -12,8 +12,8 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 3655.8, input: 14, output: 1982, cache_read: 456379, cache_write: 6578}
-work_duration: 3729.0
+  worker: {turns: 4, duration_s: 3685.8, input: 24, output: 3662, cache_read: 1032072, cache_write: 9285}
+work_duration: 3781.2
 ---
 # T0275: Make the e2e suite stable under full parallel load: all-tasks.spec.js:591 and sidebar-find.spec.js:43 each failed once
 
@@ -24,17 +24,42 @@ Each passed five times in a row alone, and the next full run passed.
 Find the timing assumption each test makes, and make the wait deterministic.
 Completion check: three consecutive `python scripts/devops.py check` runs pass.
 Size estimate: 2 files, 40 lines.
+Mechanical command: node scripts/check-sw-version.mjs --update
+Mechanical files: scripts/sw-precache-hashes.json
 
 ### Tests
 - Unit: none (only browser timing shows the defect).
 - Integration: both specs with `--repeat-each 10`, then three full e2e runs.
 
 ## Task Execution Steps
-- [ ] **[Implement]** Implement required changes for T0275.
-- [ ] **[Verify]**    Verify implementation with automated test suites.
-- [ ] **[Doc]**       Update documentation and CHANGELOG.md.
+- [x] **[Implement]** Implement required changes for T0275.
+- [x] **[Verify]**    Verify implementation with automated test suites.
+- [x] **[Doc]**       Update documentation and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-17] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-17] **[Implement]**
+  Paused the clock and awaited each add in the just added row test; awaited the find count in sidebar-find.
+  - Stress 80/80 passed; before, 5 of 80 failed.
+
+- [2026-11-17] **[Decided]**
+  Bumped the service worker VERSION, since T0278 left check failing on main; fixed serve.test.js and sharing.spec.js flakes found in full runs.
+  - Undeclared files: service-worker.js, serve.test.js, sharing.spec.js.
+
+- [2026-11-17] **[Decided]**
+  Left pwa.spec.js unchanged: one ready timeout had all requests succeed, and other tests in that run stalled too.
+  - Not reproduced in 80 stressed runs.
+
+- [2026-11-17] **[Verify]**
+  Three consecutive devops check runs passed on f374c06; verbatim output in validation-proof.md.
+  - 1755 unit, 272 e2e, 189 pytest each run.
+
+- [2026-11-17] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 5.
+  - Lines touched: 20.
+  - Reopenings: 0.
+
