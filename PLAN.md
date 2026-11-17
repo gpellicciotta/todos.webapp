@@ -12,7 +12,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0241 Erase the last account's lists and tasks on the next connect after Delete all data in local mode.
 - [x] T0260 Remove the task row's status menu, now that the task editor holds every status action.
 - [x] T0263 Reorder task rows by press-and-drag on desktop, long hold on touch, and Alt keys, with an outside handle.
-- [ ] T0264 Redesign the task row as a description line plus a meta line, with overdue due text in orange.
+- [~] T0264 [owner: @claude] Redesign the task row as a description line plus a meta line, with overdue due text in orange.
 - [ ] T0076 Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
 - [ ] T0262 Split the task editor into Content, Status, and History tabs, with Delete in a header More menu.
 - [ ] T0265 [needs: T0264] Remove the task row's More button and menu, now that the editor and the move keys cover them.

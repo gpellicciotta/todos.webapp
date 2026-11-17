@@ -31,7 +31,7 @@ Size estimate: 8 files, 400 lines.
 ### Meta Line
 - Small muted text under the description, aligned with its start, shown only when it has content.
 - A clock icon and the relative due text, such as "Tomorrow 18:00", or a repeat icon and the interval, such as "Daily".
-- Then the lists: plain text joined by " · " below 48rem; small pills from 48rem.
+- The due or repeat text stays left-aligned; the lists are right-aligned on the same line: plain text joined by " · " below 48rem; small pills from 48rem.
 - The list view leaves out its own list, as today; text that does not fit ends in an ellipsis.
 
 ### Overdue

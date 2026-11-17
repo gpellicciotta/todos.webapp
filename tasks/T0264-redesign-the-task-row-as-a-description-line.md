@@ -1,11 +1,11 @@
 ---
 id: T0264
-owner: ~
-needs: [T0263]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0264-redesign-the-task-row-as-a-description-line
+worktree: .plan/work/T0264-redesign-the-task-row-as-a-description-line
+status: active
+started_at: "2026-11-17T14:30:05Z"
 ended_at: —
 review: agent
 preview: none
@@ -17,7 +17,7 @@ protocol: standard
 Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signed-off brief.
 - Line 1 holds the status button and the description, wrapping to at most 2 lines.
 - Above target 1, a corner badge on the status icon shows the counts, such as 2/3.
-- Line 2 holds the due or repeat icon with its text, and the lists, only when it has content.
+- Line 2 holds the due or repeat chip, left-aligned, and the lists, right-aligned, only when it has content.
 - Overdue due text and its clock show in orange; in-time ones stay muted.
 - The row drops the note count and the people icon.
 - The More button stays until T0265.
