@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 593.4, input: 54, output: 12134, cache_read: 2046543, cache_write: 69211}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T23:14:25Z"
 ---
 # T0285: Fix the three test_devops.py release tests failing on main at 1ee04e2, including the release dry run
 
@@ -41,4 +46,7 @@ Fix the three test_devops.py release tests failing on main at 1ee04e2, including
   - Files touched: 2.
   - Lines touched: 26.
   - Reopenings: 0.
+
+- [2026-11-18] **[Review]**
+  Round 1 requested (mode: agent).
 
