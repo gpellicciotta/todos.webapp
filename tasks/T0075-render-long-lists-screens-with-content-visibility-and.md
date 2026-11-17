@@ -1,11 +1,11 @@
 ---
 id: T0075
-owner: ~
-needs: [T0074]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0075-render-long-lists-screens-with-content-visibility-and
+worktree: .plan/work/T0075-render-long-lists-screens-with-content-visibility-and
+status: active
+started_at: "2026-11-17T04:51:56Z"
 ended_at: —
 review: agent
 preview: none
