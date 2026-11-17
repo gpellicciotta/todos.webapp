@@ -1,11 +1,11 @@
 ---
 id: T0245
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0245-merge-the-connect-screen-into-the-settings-connection
+worktree: .plan/work/T0245-merge-the-connect-screen-into-the-settings-connection
+status: active
+started_at: "2026-11-17T02:43:04Z"
 ended_at: —
 review: agent
 preview: none
