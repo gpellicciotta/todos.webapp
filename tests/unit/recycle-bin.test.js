@@ -168,6 +168,142 @@ describe('mountRecycleBin', () => {
     expect(navigate).toHaveBeenCalledWith('#/lists/l1');
   });
 
+  describe('find and type filter (BIN-8)', () => {
+    const field = () => document.querySelector('[data-role="find"]');
+    const names = () => [...document.querySelectorAll('.bin-row__name')].map((node) => node.textContent);
+    const info = () => document.querySelector('.bin__info-text');
+    const reset = () => document.querySelector('[data-role="reset-find"]');
+    const radio = (label) => [...document.querySelectorAll('.bin__type input')].find((input) => input.parentElement.textContent === label);
+    const type = (text) => {
+      field().value = text;
+      field().dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    const sample = () => [
+      entry(new Date(), { id: 't1', description: 'Buy new curtains' }),
+      entry(new Date(), { id: 't2', description: 'Café table' }),
+      entry(new Date(), { type: 'list', id: 'l1', name: 'Garden', description: undefined }),
+      entry(new Date(), { type: 'list', id: 'l2', name: 'CURTAIN ideas', description: undefined }),
+    ];
+
+    /**
+     * Mount on a bin with its own filter state.
+     * @param {object[]} entries the bin entries
+     * @returns {Promise<object>} the mount parts
+     */
+    async function mountFresh(entries) {
+      document.body.innerHTML = '<div data-view="bin"></div>';
+      const store = fakeStore(entries);
+      screen = mountRecycleBin(document.querySelector('[data-view]'), {
+        store, toaster: { show: vi.fn() }, navigate: vi.fn(), now: () => new Date(), filter: { text: '', type: 'all' },
+      });
+      await screen.idle();
+      return { store };
+    }
+
+    it('hides the controls while the bin is empty, and shows them with entries', async () => {
+      await mountFresh([]);
+      expect(document.querySelector('.bin__find').hidden).toBe(true);
+      screen.destroy();
+      await mountFresh(sample());
+      expect(document.querySelector('.bin__find').hidden).toBe(false);
+      expect(field().maxLength).toBe(100);
+      expect(field().placeholder).toBe('Find in the recycle bin');
+      expect(field().dataset.shortcut).toBe('search');
+      expect(radio('All').checked).toBe(true);
+      expect(info().textContent).toBe('4 entries');
+      expect(reset().hidden).toBe(true);
+    });
+
+    it('matches names and descriptions anywhere, ignoring case and accents, in bin order', async () => {
+      await mountFresh(sample());
+      type('CURTAIN');
+      await vi.waitFor(() => expect(names()).toEqual(['Buy new curtains', 'CURTAIN ideas']));
+      expect(info().textContent).toBe('2 of 4 entries');
+      type('cafe');
+      await vi.waitFor(() => expect(names()).toEqual(['Café table']));
+      expect(info().textContent).toBe('1 of 4 entries');
+    });
+
+    it('narrows by type at once, and combines with text', async () => {
+      await mountFresh(sample());
+      radio('Lists').click();
+      expect(names()).toEqual(['Garden', 'CURTAIN ideas']);
+      expect(info().textContent).toBe('2 of 4 entries');
+      type('curtain');
+      await vi.waitFor(() => expect(names()).toEqual(['CURTAIN ideas']));
+      radio('Tasks').click();
+      expect(names()).toEqual(['Buy new curtains']);
+    });
+
+    it('offers Reset while text or type differ, and Reset clears both', async () => {
+      await mountFresh(sample());
+      radio('Tasks').click();
+      expect(reset().hidden).toBe(false);
+      reset().click();
+      expect(radio('All').checked).toBe(true);
+      expect(reset().hidden).toBe(true);
+      type('garden');
+      await vi.waitFor(() => expect(reset().hidden).toBe(false));
+      reset().click();
+      expect(field().value).toBe('');
+      expect(names()).toHaveLength(4);
+      expect(document.activeElement).toBe(field());
+    });
+
+    it('says what is missing when nothing matches', async () => {
+      await mountFresh([entry(new Date())]);
+      type('zebra');
+      await vi.waitFor(() => expect(document.querySelector('.bin__nomatch').textContent).toBe('Nothing in the recycle bin matches "zebra".'));
+      expect(document.querySelector('.bin-row')).toBeNull();
+      expect(info().textContent).toBe('0 of 1 entries');
+      reset().click();
+      radio('Lists').click();
+      expect(document.querySelector('.bin__nomatch').textContent).toBe('No deleted lists.');
+      radio('Tasks').click();
+      expect(document.querySelector('.bin__nomatch').hidden).toBe(true);
+      expect(document.querySelectorAll('.bin-row')).toHaveLength(1);
+    });
+
+    it('clears the text on Escape and moves into the rows on Down', async () => {
+      await mountFresh(sample());
+      type('garden');
+      await vi.waitFor(() => expect(names()).toEqual(['Garden']));
+      field().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      expect(document.activeElement).toBe(document.querySelector('.bin-row [data-role="restore"]'));
+      field().focus();
+      field().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(field().value).toBe('');
+      expect(names()).toHaveLength(4);
+    });
+
+    it('announces the match count in a polite live region', async () => {
+      await mountFresh(sample());
+      const region = document.querySelector('.bin__info');
+      expect(region.getAttribute('role')).toBe('status');
+      expect(region.getAttribute('aria-live')).toBe('polite');
+      expect(region.contains(info())).toBe(true);
+    });
+
+    it('keeps the filter after restoring, and moves focus to the next matching row', async () => {
+      await mountFresh(sample());
+      type('curtain');
+      await vi.waitFor(() => expect(names()).toHaveLength(2));
+      document.querySelector('.bin-row [data-role="restore"]').focus();
+      document.querySelector('.bin-row [data-role="restore"]').click();
+      await vi.waitFor(() => expect(names()).toEqual(['CURTAIN ideas']));
+      expect(field().value).toBe('curtain');
+      expect(info().textContent).toBe('1 of 3 entries');
+      expect(document.activeElement).toBe(document.querySelector('.bin-row [data-role="restore"]'));
+    });
+
+    it('keeps Empty recycle bin covering the whole bin', async () => {
+      await mountFresh(sample());
+      radio('Lists').click();
+      document.querySelector('[data-role="empty-bin"]').click();
+      expect(document.querySelector('.bin__confirm').textContent).toContain('Permanently delete 2 lists and 2 tasks?');
+    });
+  });
+
   describe('Empty recycle bin', () => {
     const empty = () => document.querySelector('[data-role="empty-bin"]');
     const question = () => document.querySelector('.bin__confirm');

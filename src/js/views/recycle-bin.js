@@ -6,16 +6,23 @@
  * Restoring brings back every membership (`BIN-3`) and shows a toast whose Open action goes to the item.
  * Empty recycle bin sits above the rows while the bin has entries (`BIN-7`): it asks in place first, with the count,
  * and Keep or Escape closes the question.
+ * A find field and an All, Lists, Tasks choice filter the rows (`BIN-8`); an info line counts the matches and offers Reset.
+ * The text applies after typing pauses (`TEC-16`), the type at once, and both last for the session.
  * Days count calendar days in the device timezone (`TEC-14`); the screen renders again after every store change.
  */
 
+import { FIND_MAX_LENGTH, foldText } from '../core/list-find.js';
 import { RETENTION_DAYS } from '../store/bin.js';
 import { formatRoute } from '../ui/router.js';
 import { spriteIcon } from './task-list.js';
 
 const DAY_MS = 86_400_000;
 const REDRAW_MS = 60_000;
+const FIND_DELAY_MS = 150;
 const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+/** The filter of the session: it outlives the screen, so leaving and returning keeps it. */
+const sessionFilter = { text: '', type: 'all' };
 
 /**
  * Describe a count with its noun, or nothing for zero.
@@ -38,6 +45,13 @@ const STRINGS = Object.freeze({
   question: 'Delete forever?',
   keep: 'Keep',
   confirm: 'Delete',
+  findLabel: 'Find in the recycle bin',
+  typeLabel: 'Show',
+  typeChoices: Object.freeze([['all', 'All'], ['list', 'Lists'], ['task', 'Tasks']]),
+  reset: 'Reset',
+  entries: (shown, total) => `${shown === total ? '' : `${shown} of `}${total} ${total === 1 && shown === total ? 'entry' : 'entries'}`,
+  noMatch: (text) => `Nothing in the recycle bin matches "${text}".`,
+  noType: Object.freeze({ list: 'No deleted lists.', task: 'No deleted tasks.' }),
   emptyBin: 'Empty recycle bin',
   emptyQuestion: (lists, tasks) => `Permanently delete ${[count(lists, 'list'), count(tasks, 'task')].filter(Boolean).join(' and ')}? This cannot be undone.`,
   confirmAll: 'Delete all',
@@ -127,15 +141,18 @@ function button(doc, className, text, role) {
  * @param {{show: Function}} options.toaster the toaster
  * @param {(hash: string) => void} [options.navigate] opens a route, setting the location hash by default
  * @param {() => Date} [options.now] the clock
+ * @param {{text: string, type: string}} [options.filter] the filter state, the session's by default
  * @returns {{update: () => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountRecycleBin(view, {
   store, toaster, navigate = (hash) => {
     view.ownerDocument.defaultView.location.hash = hash;
-  }, now = () => new Date(),
+  }, now = () => new Date(), filter = sessionFilter,
 }) {
   const doc = view.ownerDocument;
   let entries = [];
+  let shown = [];
+  let findTimer = null;
   let asking = null;
   let askingAll = false;
   let emptying = false;
@@ -151,7 +168,38 @@ export function mountRecycleBin(view, {
   emptyTitle.tabIndex = -1;
   empty.append(spriteIcon(doc, 'bin', 'icon empty-state__icon'), emptyTitle, make(doc, 'p', 'empty-state__text', STRINGS.note));
   const toolbar = make(doc, 'div', 'bin__toolbar');
-  root.append(toolbar, note, list, empty);
+  const find = make(doc, 'div', 'bin__find');
+  const input = make(doc, 'input', 'field__control bin__field');
+  Object.assign(input, {
+    type: 'text', maxLength: FIND_MAX_LENGTH, placeholder: STRINGS.findLabel, autocomplete: 'off', spellcheck: false, value: filter.text,
+  });
+  input.dataset.role = 'find';
+  input.dataset.shortcut = 'search';
+  input.setAttribute('aria-label', STRINGS.findLabel);
+  const choice = make(doc, 'fieldset', 'segmented bin__type');
+  const choices = make(doc, 'div', 'segmented__options');
+  choice.append(make(doc, 'legend', 'visually-hidden', STRINGS.typeLabel), choices);
+  const radios = STRINGS.typeChoices.map(([value, label]) => {
+    const option = make(doc, 'label', 'segmented__option');
+    const radio = doc.createElement('input');
+    Object.assign(radio, { type: 'radio', name: 'bin-type', value, checked: value === filter.type });
+    radio.addEventListener('change', () => {
+      filter.type = value;
+      applyFilter();
+    });
+    option.append(radio, doc.createTextNode(label));
+    choices.append(option);
+    return radio;
+  });
+  const info = make(doc, 'p', 'bin__info');
+  info.setAttribute('role', 'status');
+  info.setAttribute('aria-live', 'polite');
+  const infoText = make(doc, 'span', 'bin__info-text');
+  const resetButton = button(doc, 'link-button bin__reset', STRINGS.reset, 'reset-find');
+  info.append(infoText, resetButton);
+  find.append(input, choice, info);
+  const noMatch = make(doc, 'p', 'bin__nomatch');
+  root.append(toolbar, find, note, list, noMatch, empty);
   view.replaceChildren(root);
 
   /**
@@ -341,7 +389,7 @@ export function mountRecycleBin(view, {
    * @param {string} role the `data-role` that gets focus in that row
    */
   function ask(key, role) {
-    const index = entries.findIndex((entry) => keyOf(entry) === (key ?? asking));
+    const index = shown.findIndex((entry) => keyOf(entry) === (key ?? asking));
     asking = key;
     render();
     focusRow(index, role);
@@ -369,6 +417,58 @@ export function mountRecycleBin(view, {
     return row;
   }
 
+  /**
+   * Render the find controls, the info line, and the no-match text for the shown rows.
+   * @param {string} needle the folded find text
+   */
+  function renderFind(needle) {
+    const filtered = filter.text.trim() !== '' || filter.type !== 'all';
+    find.hidden = entries.length === 0;
+    infoText.textContent = STRINGS.entries(shown.length, entries.length);
+    resetButton.hidden = !filtered && input.value === '';
+    noMatch.hidden = entries.length === 0 || shown.length > 0;
+    if (!noMatch.hidden) {
+      noMatch.textContent = needle === '' ? STRINGS.noType[filter.type] : STRINGS.noMatch(filter.text.trim());
+    }
+    for (const radio of radios) {
+      radio.checked = radio.value === filter.type;
+    }
+  }
+
+  /** Apply the typed text and the chosen type now. */
+  function applyFilter() {
+    clearTimeout(findTimer);
+    findTimer = null;
+    filter.text = input.value;
+    render();
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(findTimer);
+    findTimer = setTimeout(applyFilter, FIND_DELAY_MS);
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && input.value !== '') {
+      event.preventDefault();
+      event.stopPropagation();
+      input.value = '';
+      applyFilter();
+    }
+    else if (event.key === 'ArrowDown') {
+      const first = list.querySelector('[data-role="restore"]');
+      if (first) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  });
+  resetButton.addEventListener('click', () => {
+    input.value = '';
+    filter.type = 'all';
+    applyFilter();
+    input.focus();
+  });
+
   /** Render the entries, keeping focus on the same control of the same row, or on the row now at its place. */
   function render() {
     const focused = doc.activeElement?.closest?.('.bin-row');
@@ -379,13 +479,17 @@ export function mountRecycleBin(view, {
     }
     const time = now();
     shownDay = time.toDateString();
-    list.replaceChildren(...entries.map((entry) => rowOf(entry, time)));
+    const needle = foldText(filter.text.trim());
+    shown = entries.filter((entry) => (filter.type === 'all' || entry.type === filter.type)
+      && (needle === '' || foldText(nameOf(entry) ?? '').includes(needle)));
+    list.replaceChildren(...shown.map((entry) => rowOf(entry, time)));
     renderToolbar();
-    list.hidden = entries.length === 0;
+    renderFind(needle);
+    list.hidden = shown.length === 0;
     note.hidden = entries.length === 0;
     empty.hidden = entries.length > 0;
     if (memo) {
-      const index = entries.findIndex((entry) => keyOf(entry) === memo.key);
+      const index = shown.findIndex((entry) => keyOf(entry) === memo.key);
       focusRow(index < 0 ? memo.index : index, index < 0 ? 'restore' : memo.role);
     }
   }
@@ -429,6 +533,7 @@ export function mountRecycleBin(view, {
     destroy() {
       unsubscribe();
       clearInterval(timer);
+      clearTimeout(findTimer);
     },
   };
 }

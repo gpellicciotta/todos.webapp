@@ -757,6 +757,14 @@ Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
 - Empty recycle bin sits above the rows and is hidden while the bin is empty (`BIN-7`).
   It asks in place first: "Permanently delete 1 list and 2 tasks? This cannot be undone." with Keep and Delete all.
   Escape or Keep closes the question; while connected, emptying and Delete permanently apply to the account on every device, and wait in the queue while offline. A toast says "Recycle bin emptied." or that emptying failed, and the question stays open.
+- A find field and an All, Lists, Tasks choice sit under Empty recycle bin while the bin has entries (`BIN-8`).
+  The field takes 100 characters, with the placeholder "Find in the recycle bin"; `/` focuses it.
+  Text matches list names and task descriptions anywhere, ignoring case and accents, in bin order with no ranking.
+  Rows filter once typing pauses for 150 ms; the type choice applies at once; both last for the session.
+- An info line reads "37 entries", or "4 of 37 entries" when filtered, and announces the count politely.
+  A quiet Reset link clears text and type. Empty recycle bin still covers the whole bin.
+- No match says "Nothing in the recycle bin matches "{{text}}"."; with only a type, "No deleted lists." or "No deleted tasks."
+- Escape in the field clears the text; Down moves into the rows. Restoring or deleting keeps the filter.
 - Days left count to the exact purge time, 30 times 24 hours after the deletion.
 - Restoring shows a toast linking to the restored item (`BIN-3`).
 - An empty bin says that deleted items stay here for 30 days; otherwise that note sits above the rows.

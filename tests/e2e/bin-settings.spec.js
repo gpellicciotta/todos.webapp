@@ -101,6 +101,35 @@ test('Delete permanently asks in the row, Keep leaves the entry, and Delete remo
   expect(problems).toEqual([]);
 });
 
+test('the find field and the type choice filter the bin, and a match restores', async ({ page }) => {
+  const problems = watch(page);
+  await open(page, '#/bin');
+  await seed(page, { deleteList: true });
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const task = await store.createTask({ description: 'Café opening' }, {});
+    await store.deleteTask(task.id);
+    store.close();
+  });
+  await expect(page.locator('.bin-row')).toHaveCount(3);
+  await expect(page.locator('.bin__info')).toContainText('3 entries');
+  await page.getByRole('textbox', { name: 'Find in the recycle bin' }).fill('CAFE');
+  await expect(page.locator('.bin-row')).toHaveCount(1);
+  await expect(page.locator('.bin__info')).toContainText('1 of 3 entries');
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await expect(page.locator('.bin-row')).toHaveCount(3);
+  await page.getByRole('group', { name: 'Show' }).getByText('Lists').click();
+  await expect(page.locator('.bin-row')).toHaveCount(1);
+  await expect(page.locator('.bin-row')).toContainText('Home');
+  await page.getByRole('textbox', { name: 'Find in the recycle bin' }).fill('zzz');
+  await expect(page.locator('.bin__nomatch')).toContainText('Nothing in the recycle bin matches "zzz".');
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await page.getByRole('button', { name: 'Restore Buy paint' }).click();
+  await expect(page.locator('.bin__info')).toContainText('2 entries');
+  expect(problems).toEqual([]);
+});
+
 test('Empty recycle bin asks with the count, then empties the bin for good, also after a reload', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize({ width: 390, height: 844 });

@@ -398,12 +398,12 @@ test('an unknown route or list opens All tasks with a toast naming it', async ({
 
 test('the n and / shortcuts focus the add bar and search once a view has them', async ({ page }) => {
   const problems = watch(page);
-  await page.goto('/#/bin');
+  await page.goto('/#/settings');
   await ready(page);
   await page.keyboard.press('n');
   expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await page.evaluate(() => {
-    const view = document.querySelector('[data-view="bin"]');
+    const view = document.querySelector('[data-view="settings"]');
     view.insertAdjacentHTML('beforeend', '<input data-shortcut="add" aria-label="Add a task"><input data-shortcut="search" aria-label="Search">');
   });
   await page.keyboard.press('n');

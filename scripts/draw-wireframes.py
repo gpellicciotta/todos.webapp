@@ -1154,11 +1154,19 @@ def bin_row(f, x, y, width, kind, name, age, confirm, compact):
     return y + 64
 
 
+def bin_find(f, x, y, width):
+    """Draw the recycle bin find field, the All, Lists, Tasks choice, and the info line; return the bottom edge."""
+    y = field(f, x, y, width, "Find in the recycle bin", muted=True) + 8
+    segmented(f, x, y, width, ["All", "Lists", "Tasks"], 0, 13, 40)
+    info_line(f, x, y + 40 + 20, x + width, f"{len(BIN_ROWS)} entries")
+    return y + 40 + 28
+
+
 def recycle_bin():
     """The recycle bin with one row asking for confirmation."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     top_bar(compact, "Recycle bin")
-    y = 60
+    y = bin_find(compact, 16, 68, compact.width - 32) + 12
     for index, row in enumerate(BIN_ROWS):
         y = bin_row(compact, 0, y, compact.width, *row, index == 1, True)
     compact.text(16, y + 32, "Deleted items stay here for 30 days.", 13, "muted")
@@ -1166,10 +1174,15 @@ def recycle_bin():
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "Recycle bin")
     page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Recycle bin", "Deleted items stay here for 30 days.")
-    y = 116
+    y = bin_find(wide, MAIN_LEFT, 116, MAIN_RIGHT - MAIN_LEFT) + 12
     for index, row in enumerate(BIN_ROWS):
         y = bin_row(wide, MAIN_LEFT, y, MAIN_RIGHT - MAIN_LEFT, *row, index == 1, False)
-    return "Recycle bin", "Restore or permanently delete; permanent deletion asks in the row first.", compact, wide
+    return (
+        "Recycle bin",
+        "Find by text and choose All, Lists, or Tasks; restore or permanently delete, asking in the row first.",
+        compact,
+        wide,
+    )
 
 
 def settings_sections(f, x, y, width):
