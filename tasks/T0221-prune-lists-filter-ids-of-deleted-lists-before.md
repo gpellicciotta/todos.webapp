@@ -1,11 +1,11 @@
 ---
 id: T0221
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0221-prune-lists-filter-ids-of-deleted-lists-before
+worktree: .plan/work/T0221-prune-lists-filter-ids-of-deleted-lists-before
+status: active
+started_at: "2026-11-17T03:42:55Z"
 ended_at: —
 review: agent
 preview: none
