@@ -115,7 +115,9 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
 The vendored [shell.css](../../src/vendor/design/css/shell.css) places its areas, as ADR-0004 of support.webapp defines.
-One DOM holds both layouts; [views.css](../../src/css/views.css) centers the views and the add block at `--width-main`.
+One DOM holds both layouts; [views.css](../../src/css/views.css) fills the main area with the row views and their add block.
+Those views are All tasks, a list, Lists, and Recycle bin.
+Settings, the Sync log, and Connect stay in a centered `--width-main` column.
 - **[Decided]** The shell runs in the main scroll mode, `app--scroll-main`, with every area of the todos setup.
   A skip link opens the page; it focuses the main column without changing the route.
 - The action bar holds the add block of the task views; it joins the page only while a view puts content in it.

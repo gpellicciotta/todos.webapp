@@ -2,13 +2,18 @@
  * Screen layouts of ToDo's: how the views fill the areas of the vendored shell.css.
  *
  * The task view pattern and its parts live in app-components.css; these rules place them in the app.
- * The main column centers each view at --width-main; the add block takes the same column in the action bar.
+ * Row views fill the main column; reading views center at --width-main.
+ * The add block takes the width of the view above it in the action bar.
  * Rules here use semantic tokens only.
  */
 
 .app__view {
-  max-inline-size: var(--width-main);
   margin-inline: auto;
+}
+
+/* Reading views (Settings, the Sync log, Connect, banners) keep a centered column; row views fill the main area. */
+.app__view:not([data-view="tasks"], [data-view="list"], [data-view="lists"], [data-view="bin"]) {
+  max-inline-size: var(--width-main);
 }
 
 .app__broadcasts {
@@ -28,11 +33,14 @@
   padding-block-start: var(--space-2);
 }
 
-/* The add block fills the action bar at the width of the view above it. */
+/* The add block fills the action bar at the width of the view above it: full for row views, 45rem otherwise. */
 .app__action-bar > .add-block {
   inline-size: 100%;
-  max-inline-size: var(--width-main);
   margin-inline: auto;
+}
+
+.app:not(:has(.app__view:is([data-view="tasks"], [data-view="list"], [data-view="lists"], [data-view="bin"]))) .app__action-bar > .add-block {
+  max-inline-size: var(--width-main);
 }
 
 /* Closed parts of the add block set `hidden`, which their display rules would otherwise override. */

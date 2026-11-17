@@ -15,7 +15,7 @@ The tokens, the font, the controls, the app components, and their gallery sectio
   The app-local controls: the overdue chip color, choices, the filter chip, the in-view dialog, and the error banner.
 - [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
 - [shell.css](../../src/vendor/design/css/shell.css): the vendored app shell, which places every area of the page.
-- [views.css](../../src/css/views.css): how the views fill the shell areas, at the `--width-main` column.
+- [views.css](../../src/css/views.css): how the views fill the shell areas, full width for row views, at the `--width-main` column for reading views.
 - [icons.svg](../../src/img/icons.svg): the icon sprite, one `<symbol>` per icon on a 24 px grid.
 - [visual-style-gallery.html](../../src/demo/visual-style-gallery.html): every token, control, app component, and pattern.
 
@@ -142,7 +142,8 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - `--icon-md` and `--icon-stroke`: every icon is 20 px with one stroke width.
 - `--icon-lg` and `--icon-stroke-thin`: the larger, thinner icon of empty states.
 - `--row-height`: 48 px, the minimum task row height.
-- Layout: `--width-main` caps the main column, `--width-sidebar` and `--width-side-panel` size the side panels.
+- Layout: `--width-main` caps reading views, and row views fill the main area.
+- Layout: `--width-sidebar` and `--width-side-panel` size the side panels.
 - Control minimums: `--width-menu` for menus and popovers; the package sets the narrowest segmented option.
 - `--width-chip-max`: the widest list chip in a task row; longer list names truncate.
 - Text minimums: `--width-text-min` before a banner's action wraps; the package sets the lowest textarea.

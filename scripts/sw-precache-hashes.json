@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-17.4",
+  "version": "2026-11-17.5",
   "files": {
     "index.html": "f931c26f97171652dcaa6b912f3fc2f0d8dbbfb0f300c2b03c0eddbd29723e82",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -7,7 +7,7 @@
     "css/tokens.css": "93624ca0cececdd5056643d06867b14d391aff348b417b5ed7254c44594b36ae",
     "css/app-components.css": "4aa4725180880c436eca5e53a89d561fc69e69bd0b25e02585cfea22389f5e0e",
     "css/app-chrome.css": "48551e761778c3ca683cd2116b423d0b69e9bbd8b5dc4e97381ef899b47342fa",
-    "css/views.css": "019fc4e932c3597185f909f5db99729dc46fde27cebf15e53e903009eddbb0b9",
+    "css/views.css": "5bf6636a5189f1d8c5888d25f959ce81c88a05828a913f4faaaa71dc0865c29d",
     "img/icons.svg": "f3580626a2cf0d50aaa7b079f755f41a7d235e73f24f972a6cba28e127891471",
     "img/app-icon.svg": "218d7161ec62d7c6d566b541e2f22c275e0b0f8123582f63d2e315a060c9a3d2",
     "img/app-icon-192.png": "98c47d21427e52846ef3258282c3f2572265614587c2b1e78892a45bd801d12d",

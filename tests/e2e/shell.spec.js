@@ -45,6 +45,45 @@ test('the view menu sits beside the user button from 64rem, and in the view head
   expect(problems).toEqual([]);
 });
 
+test('row views fill the main area at 1440 px while Settings keeps the 45rem column', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/tasks');
+  await ready(page);
+  const listId = await createList(page, 'Home');
+  await page.evaluate(async (id) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const long = 'Buy paint for the living room walls, the hallway, and the two bedrooms upstairs before the weekend';
+    await store.createTask({ description: long }, { lists: [id] });
+    const gone = await store.createTask({ description: `${long}, then return the old brushes` }, { lists: [id] });
+    await store.deleteTask(gone.id);
+    store.close();
+  }, listId);
+  const widthOf = (selector) => page.locator(selector).first().evaluate((el) => el.getBoundingClientRect().width);
+  const main = await widthOf('.app__main');
+  const rows = [
+    ['/#/tasks', '.app__view[data-view="tasks"] .task-row'],
+    [`/#/lists/${listId}`, '.app__view[data-view="list"] .task-row'],
+    ['/#/lists', '.app__view[data-view="lists"] .list-row'],
+    ['/#/bin', '.app__view[data-view="bin"] .bin-row'],
+  ];
+  for (const [route, selector] of rows) {
+    await page.goto(route);
+    await expect(page.locator(selector).first()).toBeVisible();
+    expect(await widthOf(selector), route).toBeGreaterThan(720);
+    expect(await widthOf(selector), route).toBeGreaterThan(main - 160); // list rows sit beside a drag handle and move buttons
+  }
+  await page.goto('/#/tasks');
+  await expect(page.locator('.app__action-bar > .add-block')).toBeVisible();
+  const view = await widthOf('.app__view[data-view="tasks"]');
+  expect(Math.abs((await widthOf('.app__action-bar > .add-block')) - view)).toBeLessThanOrEqual(1);
+  await page.goto('/#/settings');
+  await expect(page.locator('.app__view[data-view="settings"]')).toBeVisible();
+  expect(Math.round(await widthOf('.app__view[data-view="settings"]'))).toBe(720);
+  expect(problems).toEqual([]);
+});
+
 test('dragging the separators resizes the sidebar and the editor, and the widths survive a reload', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
