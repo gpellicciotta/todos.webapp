@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1826.2, input: 10, output: 1629, cache_read: 918841, cache_write: 6325}
+  worker: {turns: 3, duration_s: 2133.9, input: 30, output: 6740, cache_read: 3774148, cache_write: 17505}
 work_duration: 1858.5
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T22:48:18Z"
 ---
 # T0266: Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
 
@@ -72,4 +75,7 @@ Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-t
   - Files touched: 19.
   - Lines touched: 423.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
