@@ -12,8 +12,8 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1800.3, input: 2, output: 3}
-work_duration: 1810.0
+  worker: {turns: 2, duration_s: 1826.2, input: 10, output: 1629, cache_read: 918841, cache_write: 6325}
+work_duration: 1858.5
 ---
 # T0266: Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
 
@@ -31,8 +31,8 @@ Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-t
 - [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
 - [x] **[Implement]** Add the settings sync module, record edit times on writes, and run it in each sync run.
 - [x] **[Implement]** Author the two-device e2e scenario and the settings contract test.
-- [ ] **[Verify]**    Run `npm test`, the e2e suite, and `npm run test:contract`, and record the passing output.
-- [ ] **[Doc]**       Update ui-design.md, devops.md if the contract setup changes, and CHANGELOG.md.
+- [x] **[Verify]**    Run `npm test`, the e2e suite, and `npm run test:contract`, and record the passing output.
+- [x] **[Doc]**       Update ui-design.md, devops.md if the contract setup changes, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -47,4 +47,29 @@ Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-t
 
 - [2026-11-17] **[Doc]**
   Renamed synced settings to their full todos.-prefixed keys, which todos.server T0262 now requires.
+
+- [2026-11-17] **[Implement]**
+  Added the settings sync module, edit times in preferences.js, the engine step and edit kick, and redraws on download.
+  - Commits 8baaac6 and b1848c0.
+  - Unblocked: todos.server T0262 landed as 16ad8ee.
+
+- [2026-11-17] **[Implement]**
+  Touched undeclared files: reorder.js and lists.js for the drag deferral, settings.js for the switch, and four test fixtures.
+  - Also index.html and service-worker.js for the new module.
+  - Also tests/e2e/shell.spec.js to mock the settings route.
+
+- [2026-11-17] **[Implement]**
+  Size note: 19 counted files and 423 lines cross the typical line; one sync mechanism serves every setting, so a split would duplicate it.
+
+- [2026-11-17] **[Verify]**
+  Unit, full e2e, lint, service worker check, and contract suites passed; see validation-proof.md.
+  - npm test: 1783 passed.
+  - npx playwright test: 274 passed.
+  - Contract: 22 passed against a scratch todos.server build.
+
+- [2026-11-17] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 19.
+  - Lines touched: 423.
+  - Reopenings: 0.
 
