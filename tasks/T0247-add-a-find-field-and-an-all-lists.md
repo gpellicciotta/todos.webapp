@@ -1,11 +1,11 @@
 ---
 id: T0247
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0247-add-a-find-field-and-an-all-lists
+worktree: .plan/work/T0247-add-a-find-field-and-an-all-lists
+status: active
+started_at: "2026-11-17T01:53:53Z"
 ended_at: —
 review: agent
 preview: none
