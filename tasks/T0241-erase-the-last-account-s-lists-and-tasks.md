@@ -1,11 +1,11 @@
 ---
 id: T0241
-owner: ~
-needs: [T0240]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0241-erase-the-last-account-s-lists-and-tasks
+worktree: .plan/work/T0241-erase-the-last-account-s-lists-and-tasks
+status: active
+started_at: "2026-11-17T11:02:32Z"
 ended_at: —
 review: agent
 preview: none
