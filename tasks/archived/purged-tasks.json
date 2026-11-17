@@ -22,5 +22,13 @@
   "T0246": {
     "description": "Keep the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.",
     "purged_at": "2026-11-17"
+  },
+  "T0280": {
+    "description": "Fix the gallery toast e2e test, whose aria-live locator also matches the task editor count specimen added in T0258.",
+    "purged_at": "2026-11-17"
+  },
+  "T0279": {
+    "description": "Scope the toast test's polite live region locator, which also matches the task editor's count since T0258.",
+    "purged_at": "2026-11-17"
   }
 }

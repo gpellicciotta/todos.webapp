@@ -18,7 +18,7 @@ session_created_at: 2026-11-17T05:43:28Z
 **[Decided]** Approved. The previous required rework is satisfied; no implementation changed since round one.
 Recorded stress runs reproduce the scroll failure on branch 0932d14 and base e173243.
 They report 34 failures versus 23 failures across 80 repetitions each, with the same 10958 px clamp.
-The existing defect is tracked by [T0271](../../T0271-fix-the-lists-back-scroll-restore-clamping-at.md).
+The existing defect is tracked by [T0271](../T0271-fix-the-lists-back-scroll-restore-clamping-at.md).
 The original failure remains recorded in [round-one findings](review-findings-1.md).
 Recorded normal-suite repetitions include 120 passing tests and disclose the preceding intermittent failure.
 
