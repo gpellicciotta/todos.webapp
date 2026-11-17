@@ -492,6 +492,53 @@ describe('restoreEntries', () => {
   });
 });
 
+describe('restoring queues the memberships the service may lack', () => {
+  /**
+   * Make a tracked store with a list holding two tasks, one of them also in a second list, and an empty queue.
+   * @returns {Promise<object>} the store and records
+   */
+  async function trackedSetup() {
+    const tracked = await freshStore({ tracking: () => true });
+    const a = await tracked.store.createList({ name: 'A' });
+    const b = await tracked.store.createList({ name: 'B' });
+    const t1 = await tracked.store.createTask({ description: 'T1' }, { lists: [a.id, b.id] });
+    const t2 = await tracked.store.createTask({ description: 'T2' }, { lists: [a.id] });
+    return { ...tracked, a, b, t1, t2 };
+  }
+
+  const pairs = (entries) => entries.map((entry) => [entry.operation, entry.target['list-id'] ?? null, entry.target.id]);
+
+  it('queues an add-membership for each task of a restored list', async () => {
+    const { store, a, t1, t2 } = await trackedSetup();
+    await store.deleteList(a.id);
+    await store.queue.clear();
+    await store.restoreList(a.id);
+    expect(pairs(await store.queue.all())).toEqual([['restore-list', null, a.id], ['add-membership', a.id, t1.id], ['add-membership', a.id, t2.id]]);
+    store.close();
+  });
+
+  it('queues an add-membership for each live list of a restored task', async () => {
+    const { store, a, b, t1 } = await trackedSetup();
+    await store.deleteTask(t1.id);
+    await store.deleteList(b.id);
+    await store.queue.clear();
+    await store.restoreTask(t1.id);
+    expect(pairs(await store.queue.all())).toEqual([['restore-task', null, t1.id], ['add-membership', a.id, t1.id]]);
+    store.close();
+  });
+
+  it('queues each membership once when a list and its task restore together', async () => {
+    const { store, a, t2 } = await trackedSetup();
+    await store.deleteList(a.id);
+    await store.deleteTask(t2.id);
+    await store.queue.clear();
+    await store.restoreEntries([{ type: 'list', id: a.id }, { type: 'task', id: t2.id }]);
+    const operations = pairs(await store.queue.all()).filter(([operation]) => operation === 'add-membership');
+    expect(operations.filter(([, listId, taskId]) => listId === a.id && taskId === t2.id)).toHaveLength(1);
+    store.close();
+  });
+});
+
 describe('purgeEntries', () => {
   it('purges the given entries with memberships and notes, and nothing else', async () => {
     const other = await store.createTask({ description: 'Other' }, { lists: [work.id] });

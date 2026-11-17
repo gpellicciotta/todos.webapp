@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- Sync: Fixed first connect losing live local lists whose identifiers match trashed account lists, by restoring them on the account before upload.
+- Sync: Queued the memberships of a restored list or task, so moves after a restore no longer fail on the account.
 - FrontEnd: Merged the connect screen into the Settings Connection section, which now shows every sign-in phase and keeps `#/connect` as an alias for the Auth return.
 - FrontEnd: Dropped the stale "later version" sync text from the connected state.
 - FrontEnd: Kept the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.

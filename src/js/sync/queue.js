@@ -337,6 +337,33 @@ function binEntry(type, operation, record, from) {
 }
 
 /**
+ * Build add-membership entries for the memberships of restored lists and tasks, which the service may lack
+ * (a binned row's memberships can be missing or refused there). Only memberships between live rows qualify.
+ * @param {{db: IDBDatabase}} ctx the store context
+ * @param {{type: string, id: string}[]} restored the restored entries
+ * @returns {Promise<object[]>} the entries, each membership once
+ */
+async function membershipsOfRestored(ctx, restored) {
+  const { memberships, lists, tasks } = await transact(ctx.db, [STORES.memberships, STORES.lists, STORES.tasks], 'readonly', async (tx) => ({
+    memberships: await request(tx.objectStore(STORES.memberships).getAll()),
+    lists: await request(tx.objectStore(STORES.lists).getAll()),
+    tasks: await request(tx.objectStore(STORES.tasks).getAll()),
+  }));
+  const live = (rows) => new Set(rows.filter((row) => !row['deletion-time']).map((row) => row.id));
+  const [liveLists, liveTasks] = [live(lists), live(tasks)];
+  const wanted = new Set(restored.map(({ type, id }) => `${type}:${id}`));
+  return memberships
+    .filter((m) => (wanted.has(`list:${m['list-id']}`) || wanted.has(`task:${m['task-id']}`)) && liveLists.has(m['list-id']) && liveTasks.has(m['task-id']))
+    .map((m) => ({
+      target: { type: 'membership', id: m['task-id'], 'list-id': m['list-id'] },
+      operation: 'add-membership',
+      fields: {},
+      'edit-times': { existence: m['added-time'] ?? ctx.now().toISOString() },
+      undo: { kind: 'remove-membership', listId: m['list-id'], taskId: m['task-id'] },
+    }));
+}
+
+/**
  * Describe the queue entries of a committed write.
  * @param {{db: IDBDatabase, now: () => Date}} ctx the store context
  * @param {string} operation the facade method
@@ -477,7 +504,15 @@ export async function trackChange(ctx, queue, operation, args) {
   return async (result) => {
     const created = ctx.now().toISOString();
     if (operation === 'restoreEntries') {
-      await queue.add(result.restored.flatMap(({ type, record, from }) => binEntry(type, `restore-${type}`, record, from)).map((entry) => ({ ...entry, created })));
+      const restores = result.restored.flatMap(({ type, record, from }) => binEntry(type, `restore-${type}`, record, from));
+      const adds = await membershipsOfRestored(ctx, result.restored);
+      await queue.add([...restores, ...adds].map((entry) => ({ ...entry, created })));
+      return;
+    }
+    if (operation === 'restoreList' || operation === 'restoreTask') {
+      const type = operation === 'restoreList' ? 'list' : 'task';
+      const adds = await membershipsOfRestored(ctx, [{ type, id: result.id }]);
+      await queue.add([...binEntry(type, `restore-${type}`, result, before['deletion-time']), ...adds].map((entry) => ({ ...entry, created })));
       return;
     }
     if (operation === 'purgeEntries') {

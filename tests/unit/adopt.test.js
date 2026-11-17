@@ -85,6 +85,31 @@ describe('adopting local data on first connect', () => {
     expect(await store.getList(local.id)).toBeDefined();
   });
 
+  it('restores a trashed account list whose identifier matches a live local list', async () => {
+    const { store, service, api } = await setup();
+    const local = await store.createList({ name: 'Home' });
+    const task = await store.createTask({ description: 'Paint' }, { lists: [local.id] });
+    service.lists.set(local.id, { id: local.id, name: 'Home', 'deletion-time': '2026-11-01T00:00:00Z', role: 'owner' });
+    const result = await adopt({ store, api, account: ACCOUNT });
+    expect(service.lists.get(local.id)['deletion-time']).toBeNull();
+    const restore = service.calls.findIndex((call) => call.method === 'PUT' && call.path === `/api/lists/${local.id}` && call.body['undo-delete']);
+    const add = service.calls.findIndex((call) => call.path === `/api/lists/${local.id}/tasks/${task.id}`);
+    expect(restore).toBeGreaterThanOrEqual(0);
+    expect(restore).toBeLessThan(add);
+    expect(service.memberships.has(`${local.id}/${task.id}`)).toBe(true);
+    expect(result.rejected).toBe(0);
+    expect((await store.getList(local.id))['deletion-time']).toBeNull();
+  });
+
+  it('keeps a trashed local list trashed when it matches a trashed account list', async () => {
+    const { store, service, api } = await setup();
+    const local = await store.createList({ name: 'Home' });
+    await store.deleteList(local.id);
+    service.lists.set(local.id, { id: local.id, name: 'Home', 'deletion-time': '2026-11-01T00:00:00Z', role: 'owner' });
+    await adopt({ store, api, account: ACCOUNT });
+    expect(service.calls.some((call) => call.body?.['undo-delete'])).toBe(false);
+  });
+
   it('uploads 5 lists and 34 tasks with their notes and reports the progress', async () => {
     const { store, service, api } = await setup();
     await fill(store, 5, 34);

@@ -69,7 +69,7 @@ describe('the change queue', () => {
     const entries = await store.queue.all();
     expect(entries.slice(4).map((entry) => entry.operation)).toEqual([
       'add-membership', 'add-membership', 'move-membership', 'remove-membership',
-      'create-note', 'edit-note', 'delete-note', 'delete-task', 'restore-task', 'delete-list', 'restore-list',
+      'create-note', 'edit-note', 'delete-note', 'delete-task', 'restore-task', 'add-membership', 'delete-list', 'restore-list',
     ]);
     expect(entries.find((entry) => entry.operation === 'move-membership').fields).toEqual({ before: first.id });
     expect(entries.find((entry) => entry.operation === 'edit-note').fields).toEqual({ text: 'Hello' });

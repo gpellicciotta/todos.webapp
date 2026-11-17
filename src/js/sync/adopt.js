@@ -3,7 +3,7 @@
  *
  * Rules: the todos business logic spec, Adopting Local Data on First Connect.
  * 1. Read the lists the account can see, trashed ones too, from the snapshot of the change feed.
- * 2. Match each local list by identifier (the same list), by name ignoring case (merge into the account list),
+ * 2. Match each local list by identifier (the same list; a live local list restores its trashed account list), by name ignoring case (merge into the account list),
  *    or by the name of a trashed account list (rename to `{{name}} (local)`, `(local 2)`, and so on).
  *    A merged list moves to the account list's identifier locally; the map is saved in `sync-state` as `list-map`.
  * 3. Upload lists, tasks with their lifecycle rules, memberships, the user events of each task, and notes,
@@ -104,7 +104,7 @@ function planMatching(data, account) {
  * @param {Set<string>} skipLists identifiers of merged lists, which exist on the account already
  * @returns {{kind: string, record: object}[]} the steps
  */
-function planSteps(data, skipLists) {
+function planSteps(data, skipLists, restoreLists = new Set()) {
   const byTime = (a, b) => a['creation-time'].localeCompare(b['creation-time']) || (a.id < b.id ? -1 : 1);
   const byPosition = (a, b) => {
     const [x, y] = [a['list-id'], b['list-id']];
@@ -124,6 +124,7 @@ function planSteps(data, skipLists) {
   const events = (data.events ?? []).filter((event) => USER_EVENT_TYPES.includes(event.type) && taskOrder.has(event['task-id']))
     .sort((a, b) => taskOrder.get(a['task-id']) - taskOrder.get(b['task-id']) || byTime(a, b));
   return [
+    ...lists.filter((list) => restoreLists.has(list.id)).map((record) => ({ kind: 'restore-list', record })),
     ...lists.map((record) => ({ kind: 'list', record })),
     ...tasks.map((record) => ({ kind: 'task', record })),
     ...[...data.memberships].sort(byPosition).map((record) => ({ kind: 'membership', record })),
@@ -186,6 +187,10 @@ async function runStep(api, { kind, record }) {
         },
         editTime: record['creation-time'],
       }];
+      break;
+    case 'restore-list':
+      // No edit time: the service takes its receive time, so the restore wins over the older deletion.
+      request = ['PUT', `/api/lists/${record.id}`, { body: { 'undo-delete': true } }];
       break;
     case 'trash-list':
       request = ['PUT', `/api/lists/${record.id}`, { body: { delete: true }, editTime: record['deletion-time'] }];
@@ -252,7 +257,9 @@ export async function adopt({ store, api, account, onProgress = () => {} }) {
   const listMap = { ...(await queue.getState('list-map', {})), ...merged };
   await queue.setState('list-map', listMap);
   const data = await store.snapshot();
-  const steps = planSteps(data, new Set(Object.values(listMap)));
+  const trashed = new Set(accountLists.filter((list) => list['deletion-time'] && list.role === 'owner').map((list) => list.id));
+  const restoreLists = new Set(data.lists.filter((list) => trashed.has(list.id) && !list['deletion-time']).map((list) => list.id));
+  const steps = planSteps(data, new Set(Object.values(listMap)), restoreLists);
   const total = steps.length;
   const previous = await queue.getState('adoption');
   let done = resuming && previous.total === total ? previous.done : 0;
