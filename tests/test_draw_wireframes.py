@@ -22,6 +22,8 @@ SCREENS = {
     "lists-many.svg",
     "lists-find.svg",
     "task-editor.svg",
+    "task-editor-status.svg",
+    "task-editor-history.svg",
     "list-editor.svg",
     "recycle-bin.svg",
     "settings.svg",
@@ -196,13 +198,61 @@ def test_import_wireframe_fills_the_compact_main_view_between_the_bars(output):
     assert "Import backup" in labels and "Tasks" in labels and "Lists" in labels
 
 
-def test_task_editor_wireframe_has_no_page_level_more_button(output):
+@pytest.mark.parametrize("name", ["task-editor.svg", "task-editor-status.svg", "task-editor-history.svg"])
+def test_task_editor_has_three_tabs_and_the_row_has_no_more_button(output, name):
+    _, groups = frames(output / name)
+    for group in groups:
+        labels = labels_of(group)
+        assert labels.count("Content") == 1 and "Status" in labels and "History" in labels
+        assert "⋯" not in [t.text for t in group.iter(f"{SVG}text") if float(t.get("y")) < 140 and float(t.get("x")) > 1000]
+    _, (_, wide) = frames(output / "all-tasks.svg")
+    assert not [t for t in wide.iter(f"{SVG}text") if t.text == "⋯" and float(t.get("x")) < 1100 and float(t.get("y")) > 150]
+
+
+def test_content_tab_holds_only_description_and_notes(output):
     _, groups = frames(output / "task-editor.svg")
-    wide = groups[1]
-    header_dots = [
-        t for t in wide.iter(f"{SVG}text") if t.text == "⋯" and float(t.get("y")) < 80 and float(t.get("x")) > 900
-    ]
-    assert header_dots == []
+    for group in groups:
+        labels = labels_of(group)
+        assert "Description" in labels and "Notes" in labels
+        assert "Lists" not in labels[labels.index("Description"):]
+        assert "Delete task" not in labels
+        assert "Add or search notes" in labels
+
+
+def test_status_tab_orders_status_lists_configuration_then_delete(output):
+    _, groups = frames(output / "task-editor-status.svg")
+    for group in groups:
+        ys = {t.text: float(t.get("y")) for t in group.iter(f"{SVG}text") if float(t.get("x")) > 1000 or group is groups[0]}
+        order = ["2 of 3", "Lists", "Target count", "Due", "Repeat"]
+        assert [ys[k] for k in order] == sorted(ys[k] for k in order)
+        delete = [t for t in group.iter(f"{SVG}text") if t.text == "Delete task"]
+        assert len(delete) == 1 and float(delete[0].get("y")) > ys["Repeat"]
+        rules = [float(line.get("y1")) for line in group.iter(f"{SVG}line") if line.get("class") == "rule" and float(line.get("y1")) > 140 and float(line.get("x2")) - float(line.get("x1")) > 300]
+        assert any(ys["2 of 3"] < r < ys["Lists"] for r in rules)
+        assert any(ys["Lists"] < r < ys["Target count"] for r in rules)
+
+
+def test_row_list_pills_are_right_aligned_and_due_text_left_aligned(output):
+    _, (_, wide) = frames(output / "all-tasks.svg")
+    texts = {t.text: t for t in wide.iter(f"{SVG}text")}
+    assert float(texts["◷ Today 18:00"].get("x")) < 400
+    errands = [t for t in wide.iter(f"{SVG}text") if t.text == "Errands" and float(t.get("x")) > 400]
+    assert errands and max(float(t.get("x")) for t in errands) > 800
+
+
+def test_filter_note_sits_under_the_add_bar(output):
+    _, (_, wide) = frames(output / "all-tasks.svg")
+    note = [t for t in wide.iter(f"{SVG}text") if t.text and t.text.startswith("Add creates")]
+    info = [t for t in wide.iter(f"{SVG}text") if t.text == "1 of 24 tasks"]
+    rows = [t for t in wide.iter(f"{SVG}text") if t.text == "Buy paint for the hallway"]
+    assert float(info[0].get("y")) < float(note[0].get("y")) < float(rows[0].get("y"))
+
+
+def test_rows_show_a_count_badge_and_no_status_menu(output):
+    _, (compact, _) = frames(output / "all-tasks.svg")
+    labels = labels_of(compact)
+    assert "2/3" in labels
+    assert "Completed" not in labels and "Cancelled" not in labels
 
 
 def labels_of(group):

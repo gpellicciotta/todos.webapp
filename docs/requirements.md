@@ -74,9 +74,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-2: A new task has status `ready` and overdue behavior `keep` unless the user picks otherwise.
 - TSK-3: A task status is one of `ready`, `in-progress`, `completed`, or `cancelled`.
 - TSK-4: Users change a task status through events, offered only while their preconditions hold.
-  One click on a task's status button ticks: `complete` below target, `uncomplete` once completed.
-  On a cancelled task the click posts `reopen`.
-  The row's status menu and the editor's status buttons offer `start`, `unstart`, `cancel`, and `reopen`.
+  One click on a task row's status button posts `complete`; it does nothing once completed or cancelled.
+  Every tick shows an Undo toast.
+  The editor's Status tab has one button per status; each posts the events that reach it.
+  A stepper there corrects the count above target 1.
 - TSK-5: Users set, change, or clear an optional due time.
 - TSK-6: A due date without a time of day means 23:59 local time on that date.
 - TSK-7: Users set the overdue behavior to `keep` or `cancel` on a task with a due time.
@@ -90,11 +91,16 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-14: A due date, a time, and list tags typed in the add field set the new task's due time and lists.
   A preview line under the field names what the add will set; the parser works offline, in US English.
 - TSK-15: Users set a task's target count, the completions it takes to be completed, from 1 to 999.
-  Rows and the editor show the done and target counts, such as `2/3`, when the target is above 1.
+  Above target 1, rows show the counts as a badge on the status icon, such as `2/3`, and the editor as a stepper.
 - TSK-16: Users make a task repeat daily, weekly, or monthly, every 1 to 99 units, in an IANA timezone.
   A recurrence may end on a date or after a number of periods; a recurring task comes back as to do each period.
-  Rows show a repeat chip, such as "Weekly"; past its period end a task shows as to do until it rolls over.
-  For 24 hours after a period ends, users can still complete that period from the row's status menu.
+  Rows show the repeat text, such as "Weekly", on the meta line; past its period end a task shows as to do until it rolls over.
+  For 24 hours after a period ends, users can still complete that period from the editor's Status tab.
+- TSK-18: The task editor groups its fields in three tabs: Content, Status, and History.
+  Content holds the description and notes; Status holds the status, lists, configuration, and Delete task.
+  It opens on Content.
+- TSK-19: A task row shows a status button, its description, and a meta line with the due or repeat text on the left and the lists on the right.
+  Overdue due text uses the danger color and stays as text; a row has no menu or More button.
 - TSK-17: Users see a task's history: its occurrences and events, newest first.
   It reads the server while connected, and the local stores in local mode.
 
@@ -132,7 +138,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ### List View
 - LV-1: The list view shows all tasks of one list, with the list name and description.
 - LV-2: The list view shows tasks in the list's manual order by default.
-- LV-3: Users reorder tasks by dragging, and by keyboard move-up and move-down actions.
+- LV-3: Users reorder tasks by pressing and dragging, by a long hold on touch, and by the Alt+arrow, Alt+Home, and Alt+End keys.
 - LV-4: Each list keeps its own manual order; reordering one list leaves other lists unchanged.
 - LV-5: A task added to a list goes after its last task.
 - LV-6: Users sort the view by manual order, due time, creation time, last update time, status, or description.

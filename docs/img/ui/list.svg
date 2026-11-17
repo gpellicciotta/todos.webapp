@@ -39,41 +39,41 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="60" y="37" font-size="20" class="bold">Home</text>
     <text x="16" y="88" font-size="14" class="muted">Chores and repairs around the house</text>
     <text x="16" y="110" font-size="13" class="muted">Shared with 2 people · You own this list</text>
-    <line x1="0" y1="172" x2="390" y2="172" class="rule"/>
+    <line x1="0" y1="192" x2="390" y2="192" class="rule"/>
     <circle cx="22" cy="148" r="9" class="icon"/>
-    <path d="M22 139.0 A9 9 0 0 1 22 157.0 Z" class="icon-fill"/>
-    <rect x="309.52" y="136" width="76.48" height="24" rx="12" class="signal"/>
-    <text x="347.76" y="152" font-size="12" text-anchor="middle">! Overdue</text>
-    <text x="44" y="154" font-size="15">Call the plumber about the le…</text>
-    <line x1="0" y1="220" x2="390" y2="220" class="rule"/>
-    <circle cx="22" cy="196" r="9" class="icon"/>
-    <rect x="296.08" y="184" width="89.92" height="24" rx="12" class="chip"/>
-    <text x="341.04" y="200" font-size="12" text-anchor="middle">Today 18:00</text>
-    <text x="44" y="202" font-size="15">Buy paint for the hallway</text>
-    <line x1="0" y1="268" x2="390" y2="268" class="rule"/>
-    <circle cx="22" cy="244" r="9" class="icon"/>
-    <rect x="349.84" y="232" width="36.16" height="24" rx="12" class="chip"/>
-    <text x="367.92" y="248" font-size="12" text-anchor="middle">Sat</text>
-    <text x="44" y="250" font-size="15">Clean the gutters</text>
-    <line x1="0" y1="316" x2="390" y2="316" class="rule"/>
-    <circle cx="22" cy="292" r="9" class="icon"/>
-    <text x="44" y="298" font-size="15">Replace the smoke detector batteries</text>
-    <line x1="0" y1="364" x2="390" y2="364" class="rule"/>
-    <circle cx="22" cy="340" r="9" class="icon"/>
-    <path d="M22 331.0 A9 9 0 0 1 22 349.0 Z" class="icon-fill"/>
-    <text x="44" y="346" font-size="15">Sort the winter clothes</text>
-    <line x1="0" y1="412" x2="390" y2="412" class="rule"/>
-    <circle cx="22" cy="388" r="9" class="icon"/>
-    <text x="44" y="394" font-size="15">Fix the squeaky door</text>
-    <line x1="0" y1="460" x2="390" y2="460" class="rule"/>
-    <circle cx="22" cy="436" r="9" class="icon-fill"/>
-    <path d="M18 436.0 l3 3 l5 -6" class="icon-mark"/>
-    <text x="44" y="442" font-size="15" class="muted">Paint the garden fence</text>
-    <line x1="0" y1="508" x2="390" y2="508" class="rule"/>
-    <circle cx="22" cy="484" r="9" class="icon"/>
-    <line x1="17.05" y1="484" x2="26.95" y2="484" class="icon-line"/>
-    <text x="44" y="490" font-size="15" class="muted">Buy a new lawn mower</text>
-    <line x1="44" y1="485" x2="195.2" y2="485" class="icon-line"/>
+    <path d="M22 139 A9 9 0 0 1 22 157 Z" class="icon-fill"/>
+    <text x="48" y="153" font-size="15">Call the plumber about the leak</text>
+    <text x="48" y="176" font-size="12" class="bold">◷ Overdue</text>
+    <line x1="0" y1="260" x2="390" y2="260" class="rule"/>
+    <circle cx="22" cy="216" r="9" class="icon"/>
+    <text x="48" y="221" font-size="15">Buy paint for the hallway</text>
+    <text x="48" y="244" font-size="12" class="muted">◷ Today 18:00</text>
+    <text x="382" y="244" font-size="12" class="muted" text-anchor="end">Errands</text>
+    <line x1="0" y1="328" x2="390" y2="328" class="rule"/>
+    <circle cx="22" cy="284" r="9" class="icon"/>
+    <text x="48" y="289" font-size="15">Clean the gutters</text>
+    <text x="48" y="312" font-size="12" class="muted">◷ Sat</text>
+    <line x1="0" y1="376" x2="390" y2="376" class="rule"/>
+    <circle cx="22" cy="352" r="9" class="icon"/>
+    <text x="48" y="357" font-size="15">Replace the smoke detector batteries</text>
+    <line x1="0" y1="424" x2="390" y2="424" class="rule"/>
+    <circle cx="22" cy="400" r="9" class="icon"/>
+    <path d="M22 391 A9 9 0 0 1 22 409 Z" class="icon-fill"/>
+    <rect x="25" y="404" width="24.8" height="15" rx="7" class="chip"/>
+    <text x="37.4" y="415" font-size="10" class="bold" text-anchor="middle">2/3</text>
+    <text x="48" y="405" font-size="15">Sort the winter clothes</text>
+    <line x1="0" y1="472" x2="390" y2="472" class="rule"/>
+    <circle cx="22" cy="448" r="9" class="icon"/>
+    <text x="48" y="453" font-size="15">Fix the squeaky door</text>
+    <line x1="0" y1="520" x2="390" y2="520" class="rule"/>
+    <circle cx="22" cy="496" r="9" class="icon-fill"/>
+    <path d="M18 496 l3 3 l5 -6" class="icon-mark"/>
+    <text x="48" y="501" font-size="15" class="muted">Paint the garden fence</text>
+    <line x1="0" y1="568" x2="390" y2="568" class="rule"/>
+    <circle cx="22" cy="544" r="9" class="icon"/>
+    <line x1="17.05" y1="544" x2="26.95" y2="544" class="icon-line"/>
+    <text x="48" y="549" font-size="15" class="muted">Buy a new lawn mower</text>
+    <line x1="48" y1="544" x2="199.2" y2="544" class="icon-line"/>
     <rect x="0" y="692" width="390" height="88" rx="0" class="bar"/>
     <rect x="326.48" y="700" width="55.52" height="44" rx="6" class="primary"/>
     <text x="354.24" y="726.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
@@ -126,73 +126,45 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="312" y="120" width="720.48" height="44" rx="6" class="control"/>
     <text x="324" y="147" font-size="14" class="muted">Search or add a task</text>
     <text x="312" y="194" font-size="12" class="muted">8 tasks</text>
-    <line x1="304" y1="290" x2="1104" y2="290" class="rule"/>
-    <text x="316" y="272" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="266" r="9" class="icon"/>
-    <path d="M354 257.0 A9 9 0 0 1 354 275.0 Z" class="icon-fill"/>
-    <rect x="1056" y="244" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="271" font-size="16" text-anchor="middle">⋯</text>
-    <rect x="1011.84" y="254" width="36.16" height="24" rx="12" class="chip"/>
-    <text x="1029.92" y="270" font-size="12" text-anchor="middle">✎ 2</text>
-    <rect x="929.36" y="254" width="76.48" height="24" rx="12" class="signal"/>
-    <text x="967.6" y="270" font-size="12" text-anchor="middle">! Overdue</text>
-    <text x="376" y="272" font-size="15">Call the plumber about the leak</text>
-    <line x1="304" y1="338" x2="1104" y2="338" class="rule"/>
-    <text x="316" y="320" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="314" r="9" class="icon"/>
-    <rect x="1056" y="292" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="319" font-size="16" text-anchor="middle">⋯</text>
-    <rect x="984.96" y="302" width="63.04" height="24" rx="12" class="chip"/>
-    <text x="1016.48" y="318" font-size="12" text-anchor="middle">Errands</text>
-    <rect x="889.04" y="302" width="89.92" height="24" rx="12" class="chip"/>
-    <text x="934" y="318" font-size="12" text-anchor="middle">Today 18:00</text>
-    <text x="376" y="320" font-size="15">Buy paint for the hallway</text>
-    <line x1="304" y1="386" x2="1104" y2="386" class="rule"/>
-    <text x="316" y="368" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="362" r="9" class="icon"/>
-    <rect x="1056" y="340" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="367" font-size="16" text-anchor="middle">⋯</text>
-    <rect x="1011.84" y="350" width="36.16" height="24" rx="12" class="chip"/>
-    <text x="1029.92" y="366" font-size="12" text-anchor="middle">Sat</text>
-    <text x="376" y="368" font-size="15">Clean the gutters</text>
-    <line x1="304" y1="386" x2="1104" y2="386" class="drop"/>
-    <line x1="304" y1="434" x2="1104" y2="434" class="rule"/>
-    <text x="316" y="416" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="410" r="9" class="icon"/>
-    <rect x="1056" y="388" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="415" font-size="16" text-anchor="middle">⋯</text>
-    <text x="376" y="416" font-size="15">Replace the smoke detector batteries</text>
-    <line x1="304" y1="482" x2="1104" y2="482" class="rule"/>
-    <text x="316" y="464" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="458" r="9" class="icon"/>
-    <path d="M354 449.0 A9 9 0 0 1 354 467.0 Z" class="icon-fill"/>
-    <rect x="1056" y="436" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="463" font-size="16" text-anchor="middle">⋯</text>
-    <rect x="1011.84" y="446" width="36.16" height="24" rx="12" class="chip"/>
-    <text x="1029.92" y="462" font-size="12" text-anchor="middle">✎ 1</text>
-    <text x="376" y="464" font-size="15">Sort the winter clothes</text>
-    <line x1="304" y1="530" x2="1104" y2="530" class="rule"/>
-    <text x="316" y="512" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="506" r="9" class="icon"/>
-    <rect x="1056" y="484" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="511" font-size="16" text-anchor="middle">⋯</text>
-    <text x="376" y="512" font-size="15">Fix the squeaky door</text>
-    <line x1="304" y1="578" x2="1104" y2="578" class="rule"/>
-    <text x="316" y="560" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="554" r="9" class="icon-fill"/>
-    <path d="M350 554.0 l3 3 l5 -6" class="icon-mark"/>
-    <rect x="1056" y="532" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="559" font-size="16" text-anchor="middle">⋯</text>
-    <text x="376" y="560" font-size="15" class="muted">Paint the garden fence</text>
-    <line x1="304" y1="626" x2="1104" y2="626" class="rule"/>
-    <text x="316" y="608" font-size="14" class="muted">⋮⋮</text>
-    <circle cx="354" cy="602" r="9" class="icon"/>
-    <line x1="349.05" y1="602" x2="358.95" y2="602" class="icon-line"/>
-    <rect x="1056" y="580" width="44" height="44" rx="6" class="control"/>
-    <text x="1078" y="607" font-size="16" text-anchor="middle">⋯</text>
-    <text x="376" y="608" font-size="15" class="muted">Buy a new lawn mower</text>
-    <line x1="376" y1="603" x2="527.2" y2="603" class="icon-line"/>
-    <text x="304" y="658" font-size="13" class="muted">Drag a handle or use Move up and Move down in the row menu; the black line marks the drop spot.</text>
+    <line x1="304" y1="310" x2="1104" y2="310" class="rule"/>
+    <circle cx="326" cy="266" r="9" class="icon"/>
+    <path d="M326 257 A9 9 0 0 1 326 275 Z" class="icon-fill"/>
+    <text x="352" y="271" font-size="15">Call the plumber about the leak</text>
+    <text x="352" y="294" font-size="12" class="bold">◷ Overdue</text>
+    <line x1="304" y1="378" x2="1104" y2="378" class="rule"/>
+    <text x="282" y="340" font-size="14" class="muted">⋮⋮</text>
+    <circle cx="326" cy="334" r="9" class="icon"/>
+    <text x="352" y="339" font-size="15">Buy paint for the hallway</text>
+    <text x="352" y="362" font-size="12" class="muted">◷ Today 18:00</text>
+    <rect x="1032.96" y="346" width="63.04" height="24" rx="12" class="chip"/>
+    <text x="1064.48" y="362" font-size="12" text-anchor="middle">Errands</text>
+    <line x1="304" y1="446" x2="1104" y2="446" class="rule"/>
+    <circle cx="326" cy="402" r="9" class="icon"/>
+    <text x="352" y="407" font-size="15">Clean the gutters</text>
+    <text x="352" y="430" font-size="12" class="muted">◷ Sat</text>
+    <line x1="304" y1="446" x2="1104" y2="446" class="drop"/>
+    <line x1="304" y1="494" x2="1104" y2="494" class="rule"/>
+    <circle cx="326" cy="470" r="9" class="icon"/>
+    <text x="352" y="475" font-size="15">Replace the smoke detector batteries</text>
+    <line x1="304" y1="542" x2="1104" y2="542" class="rule"/>
+    <circle cx="326" cy="518" r="9" class="icon"/>
+    <path d="M326 509 A9 9 0 0 1 326 527 Z" class="icon-fill"/>
+    <rect x="329" y="522" width="24.8" height="15" rx="7" class="chip"/>
+    <text x="341.4" y="533" font-size="10" class="bold" text-anchor="middle">2/3</text>
+    <text x="352" y="523" font-size="15">Sort the winter clothes</text>
+    <line x1="304" y1="590" x2="1104" y2="590" class="rule"/>
+    <circle cx="326" cy="566" r="9" class="icon"/>
+    <text x="352" y="571" font-size="15">Fix the squeaky door</text>
+    <line x1="304" y1="638" x2="1104" y2="638" class="rule"/>
+    <circle cx="326" cy="614" r="9" class="icon-fill"/>
+    <path d="M322 614 l3 3 l5 -6" class="icon-mark"/>
+    <text x="352" y="619" font-size="15" class="muted">Paint the garden fence</text>
+    <line x1="304" y1="686" x2="1104" y2="686" class="rule"/>
+    <circle cx="326" cy="662" r="9" class="icon"/>
+    <line x1="321.05" y1="662" x2="330.95" y2="662" class="icon-line"/>
+    <text x="352" y="667" font-size="15" class="muted">Buy a new lawn mower</text>
+    <line x1="352" y1="662" x2="503.2" y2="662" class="icon-line"/>
+    <text x="304" y="718" font-size="13" class="muted">Press and drag a row, or use Alt+Up, Alt+Down, Alt+Home, and Alt+End; the black line marks the drop spot.</text>
     <rect x="852" y="70" width="200" height="176" rx="8" class="frame"/>
     <text x="868" y="103" font-size="14">Edit list</text>
     <text x="868" y="143" font-size="14">Edit view options</text>

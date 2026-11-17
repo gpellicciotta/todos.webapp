@@ -227,58 +227,63 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 ## Shared Components
 
 ### Task Row
+Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/list.svg).
+
 ```text
-| [status] Description text, truncated...  [2/3] [due|repeat] [list] [list] [+1] [notes] [more] |
+| [status 2/3] Description text, wrapping to at most 2 lines                              |
+|              [clock] Tomorrow 18:00 · Home · Errands                                    |
 ```
-- The row is 48 px high and shows one line; the whole row opens the task editor.
-- A click on the status button ticks, the most frequent change (`TSK-4`):
-  it posts `complete` below target and `uncomplete` once the occurrence is completed.
-  Enter and Space on the button, and `x` on any control of the focused row, do the same.
-- **[Decided]** On a cancelled task the click posts `reopen`, since a cancelled count changes only after it reopens.
-- Its accessible name states the action, such as "Mark Buy paint completed" at target 1.
-  Above target 1 it names the counts, such as "Tick French exercises, 2 of 3 done" or "Untick …".
-  A cancelled task reads "Reopen Buy paint".
-- Its tooltip names the status, the counts above target 1, and how to reach more actions.
-- The status menu offers the event actions whose preconditions hold, in this order:
-  - Start (`start`, from To do), with the In progress icon.
-  - Undo start (`unstart`, from In progress with no completion), with the To do icon.
-  - Cancel task (`cancel`, unless cancelled), with the Cancelled icon.
-  - Reopen (`reopen`, once cancelled), with the To do icon.
-  - Complete for previous period, with the Completed icon, for 24 hours after a recurring task's period ends (`TSK-16`).
-    It posts `complete` naming that period's occurrence, so a forgotten completion still counts.
-- It opens on a right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key.
-  Focus starts on its first entry.
-  **[Decided]** The task editor's status actions are its visible alternative, so rows need no chevron button.
-- An event that hides the row under the view's filters shows an Undo toast, such as "Task marked completed.".
-  Undo, or Ctrl+Z, posts the inverse event: `uncomplete` for `complete`, `reopen` for `cancel`, and so on.
-- A count chip, such as "2/3", leads the chips when the target is above 1 (`TSK-15`).
-  It stays in compact layouts, where the list and note chips hide.
+- **[Decided]** Variant C of the row design, signed off by the user (see T0257).
+- Line 1 holds the status button with its count badge, then the description, which wraps to at most 2 lines.
+- Line 2, the meta line, shows only with content, in small muted text:
+  - a clock icon and the due text, or a repeat icon and the interval, such as Daily;
+  - the lists, right-aligned on the same line: plain text joined by " · " on compact layouts, small pills on wide layouts.
+  - The due or repeat text stays left-aligned.
+- A row is 48 px high without a meta line; the whole row opens the task editor.
+- Overdue due text and its clock use the danger color (orange); in-time ones stay muted (`OVD-2`).
+  The due text always shows, so overdue never relies on color alone.
+- The row has no note count, people icon, More button, or status menu; those actions live in the editor.
+- A click on the status button ticks, the most frequent change (`TSK-4`); `x` on the focused row does the same:
+
+  | Status      | Click at target 1 | Click above target 1               |
+  | :---------- | :---------------- | :--------------------------------- |
+  | Ready       | `complete`        | `complete`, so 1 of 3, In progress |
+  | In progress | `complete`        | `complete`; Completed at target    |
+  | Completed   | nothing           | `complete`, so 4 of 3              |
+  | Cancelled   | nothing           | nothing; the count stays           |
+
+- A closed recurring series takes no click; the editor reopens it.
+- Every tick shows an Undo toast, which Ctrl+Z also runs, since a target 1 row cannot untick.
+- Above target 1, a corner badge on the status icon shows the counts, such as "2/3" (`TSK-15`).
+  The badge is part of the status button, so a tap on it ticks.
+- The status button's name states the action and the counts, such as "Tick French exercises, 2 of 3 done".
+- The tooltip names the status and the counts above target 1.
+- There is no right-click, long-press, Down, Up, Shift+F10, or Menu key menu on a row.
 - The status icons differ in shape, not only in color:
   - `ready`: an empty circle, in the muted text color.
   - `in-progress`: a circle with a filled bottom half, in blue.
   - `completed`: a filled circle with a check, in green, and struck-through muted text.
   - `cancelled`: a filled circle with a dash, in the danger color, and struck-through muted text.
-- The due chip shows a relative time, such as "Tomorrow 18:00"; overdue tasks show "Overdue" in the signal color (`OVD-2`).
-- A recurring task shows a repeat chip, such as "Weekly" or "Every 2 weeks", instead of a due chip (`TSK-16`).
-  It is never overdue, since its due times only end periods.
-- Past its period end, until it rolls over, a recurring row shows To do with count 0, such as "0/3".
+- A recurring task shows its repeat text instead of a due text (`TSK-16`); it is never overdue.
+- Past its period end, until it rolls over, a recurring row shows Ready with count 0, such as "0/3".
   The minute tick redraws such a row when its period ends.
-- List chips show at most two list names and a "+n" count; the list view leaves out its own list.
-- A note icon with a count appears when the task has notes; a people icon marks tasks in shared lists.
-- Compact layouts show only the status, the description, the count chip, and the due chip.
-  A list view adds the More button.
-- The More button opens the row menu; it has no status entry, since the status button sets it:
-  - Add to list and Remove from this list (`TSK-8`).
-    Add to list swaps the menu for the lists that do not hold the task yet, and appears only while one is left.
-    If a render leaves no such list, the menu closes and focus returns to the More button.
-  - Move up and Move down, in a list view with manual order only (`LV-3`).
-  - Delete, which moves the task to the recycle bin and shows an Undo toast (`TSK-11`).
-- Menu entries the user's role does not allow are left out (`SHR-4`):
-  a viewer has a disabled status button, no `x`, no status menu, and no More button; a task editor has Add to list (only to lists they may add to)
-  and Remove from this list, and only the task owner or the owner of a list holding the task sees Delete.
-- [task-list.js](../../src/js/views/task-list.js) renders the rows and their menus for All tasks and the list view.
+- List pills show at most two list names and a "+n" count; the list view leaves out its own list.
+- A viewer has a disabled status button and no `x` (`SHR-4`).
+- **[Decided]** Add to list, Remove from this list, and Complete for previous period move to the editor.
+  Delete task moves to the editor's Status tab.
+- [task-list.js](../../src/js/views/task-list.js) renders the rows.
   After a change, focus stays on that row's status button.
-  A row that leaves the view after a change passes focus to the row now at its place.
+  A row that leaves the view passes focus to the row now at its place.
+
+#### Task Reordering
+- Under manual order without grouping or search, rows reorder as in `LV-8`.
+- Desktop: press and drag the row; the drag starts after the pointer moves past a small threshold.
+  A plain click still opens the editor; buttons inside the row never start drags.
+- Desktop: a drag handle shows in the gutter before the focused or hovered row.
+- Touch: a long hold of about 400 ms without movement starts the drag; scrolling still works.
+- Keyboard on a focused row: Alt+Up and Alt+Down move one place; Alt+Home and Alt+End move to the top or bottom.
+- Lists use the same Alt+Home and Alt+End, replacing the planned Alt+Shift+Up and Alt+Shift+Down.
+- **[Decided]** Every drag keeps a keyboard alternative but needs no visible button.
 
 ### Add Bar
 - One text field and an Add button; Add, Shift+Enter, Alt+Enter, or Enter creates the task (`TSK-1`, `VO-3`).
@@ -561,11 +566,11 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - **[Decided]** The order, the grouping, and the filters persist per device and per list (`TV-12`).
 - Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
 - A drag near the main column's top or bottom edge scrolls it; Escape or a lost pointer capture cancels the drag.
-- Keyboard users move a focused row with Alt+Up and Alt+Down, and focus stays on the moved row.
-  This works from any control of the row; on the status and More buttons it never opens a menu.
+- Keyboard users move a focused row with Alt+Up, Alt+Down, Alt+Home, and Alt+End; focus stays on the moved row.
+  This works from any control of the row.
 - A polite live region announces each move, such as "Buy paint moved to position 2 of 5."
 - Moves place a task next to its shown neighbor, so tasks the status filter hides keep their places.
-- **[Decided]** Compact rows keep the More button in the list view, since touch screens show no drag handle.
+- **[Decided]** Touch screens start a drag with a long hold on the row; no row has a More button.
 - Another sort affects the view only; the info line reads "Sorted by Due time" and the manual order is kept (`LV-7`).
 - While sorted or grouped, drag handles and move entries are hidden; Manual order restores the stored order (`LV-8`).
 - The status filter checks every status by default (`LV-10`), so the info line names no status.
@@ -690,35 +695,55 @@ The sidebar and this screen share the rules below.
   Quick for experts, but invisible on touch and a new component; the sidebar field with `l` is as fast.
 
 ### Task Editor
-Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
+Wireframes: [Content](../img/ui/task-editor.svg), [Status](../img/ui/task-editor-status.svg), and [History](../img/ui/task-editor-history.svg).
 
 - Wide layouts open it as a right panel next to the rows; compact layouts open it as a full screen.
 - Fields save on change, with no Save button; invalid values show a field error and are not saved.
-- Sections, in order:
+- **[Decided]** Three tabs with underline styling follow the WAI-ARIA tabs pattern, using the vendored tabs.js.
+  The tab strip has no More button.
+- The editor always opens on Content, keeping the description focus rule (`TSK-13`).
+- Content tab: only the description and the notes.
   - Description: a multi-line field of at most 500 characters (`TSK-1`).
-  - Status: the status icon and name, with the counts above target 1 (`TSK-3`).
-    It reads, for example, "In progress, 2 of 3 done".
-    Under it, buttons for the event actions whose preconditions hold (`TSK-4`).
-    The tick comes first: Complete or Undo completion at target 1.
-    Above target 1 it reads "Tick, 2 of 3" or "Untick, 3 of 3".
-    Start, Undo start, Cancel task, and Reopen follow, as in the row's status menu.
-    A focused button that hides passes the focus to the first button left.
+  - Notes: an add field, then the note thread, newest first (`NOT-1` to `NOT-6`).
+    The field reads "Add or search notes"; typing also filters the thread to the notes that match.
+    The thread shows global notes, then those of the current occurrence, then those of earlier ones.
+    Each linked note shows its occurrence, such as "#2 · Nov 5 – Nov 5".
+- **[Decided]** Status tab, in order, with a horizontal rule between each part:
+  1. The active status, the first part.
+  2. Lists.
+  3. The configuration groups: Target count, Due with Overdue behavior, and Repeat.
+  4. Delete task, after a last rule, away from the notes.
+- Status part:
+  - Four icon buttons in a group: Ready, In progress, Completed, and Cancelled (`TSK-3`, `TSK-4`).
+    The current one is pressed (`aria-pressed`); each has its status name as accessible name and tooltip.
+  - A text line stays, such as "In progress, 2 of 3 done".
+  - A button posts the events of `eventsTowardsStatus` in occurrences.js:
+    Ready resets the count to 0, with one `uncomplete` per completion or `unstart`.
+    Cancelled posts `cancel` and keeps the count; leaving Cancelled posts `reopen` first.
+  - Above target 1, Completed is disabled below target, with the tooltip "Reach 3 of 3 to complete".
+    In progress is disabled at or above target; the stepper moves between the two.
+  - At target 1, every button applies; Completed to In progress posts `uncomplete` then `start`.
+  - Above target 1 and outside Ready, a second line shows the stepper `[−] 2 of 3 [+]`.
+    It is read-only while cancelled; minus is disabled at 0; plus always applies.
+    Minus from 1 posts `uncomplete` then `start`, so the task stays In progress at 0.
+    The stepper never previews a status icon.
+  - A closed recurring series enables only Ready, which posts `reopen` and opens a fresh period.
+  - For 24 hours after a period ends, a Complete for previous period button names that occurrence (`TSK-16`).
+- Lists part: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
+- Configuration part, each group with a bold heading:
   - Target count: a number field from 1 to 999 (`TSK-15`).
   - Due: a date field, an optional time field, and Clear (`TSK-5`, `TSK-6`).
-  - Overdue behavior: Keep open or Cancel when overdue, shown once a due time is set (`TSK-7`).
+    Overdue behavior, Keep open or Cancel when overdue, shows once a due time is set (`TSK-7`).
   - Repeat: Never, Daily, Weekly, or Monthly (`TSK-16`).
     A first choice also sets every 1 and the browser's timezone; Never stops the recurrence.
     A recurring task then shows Every (1 to 99), Ends on (a date), Ends after (a count), and Timezone.
     Timezone takes an IANA name, with the browser's zones as suggestions.
   - Target count, due time, overdue behavior, and the repeat fields save as lifecycle rule edits.
     A recurring task hides Due and Overdue behavior, since its periods set its due times.
-    Past its period end, the status shows To do with count 0 until the task rolls over.
-  - Lists: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
-  - Notes: an add note field, then the note thread, newest first (`NOT-1` to `NOT-6`).
-    The thread shows global notes, then those of the current occurrence, then those of earlier ones.
-    Each linked note shows its occurrence, such as "#2 · Nov 5 – Nov 5".
-  - History: Show history lists the occurrences and the events, newest first (`TSK-17`).
-    An occurrence shows its number, period, status, and counts; a closed one still To do reads Missed.
+    Past its period end, the status shows Ready with count 0 until the task rolls over.
+- History tab: History, then Details.
+  - History lists the occurrences and the events, newest first (`TSK-17`).
+    An occurrence shows its number, period, status, and counts; a closed one still Ready reads Missed.
     A closed one still In progress reads Partly done.
     An event shows its time, what happened, such as Ticked or Period ended, and its occurrence.
     Under each occurrence come its notes, newest first, each with its time.
@@ -726,7 +751,6 @@ Wireframe: [task-editor.svg](../img/ui/task-editor.svg).
     While connected it reads the server routes; in local mode, or when they fail, it reads the local stores.
     [task-history.js](../../src/js/views/task-history.js) builds it.
   - Details: created, last updated, and owner when connected (`TSK-12`).
-  - Delete task, at the bottom, after a divider and extra space, away from the notes.
 - Each note shows its author when connected: You for own notes, Collaborator for others, Former member for a deleted account.
 - Each note shows its time, and "edited" after a change; only own notes have Edit and Delete.
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
@@ -891,7 +915,7 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 1. The user adds tasks with the add bar in All tasks or in a list.
 2. New list on the Lists screen, its Create list offer, or the editor's Add to list box creates a list.
 3. The editor's Lists section adds a task to several lists; the row menu adds one list at a time.
-4. In a list with manual order, the user drags rows or uses Move up and Move down.
+4. In a list with manual order, the user drags rows or uses the Alt keys.
 5. Every step works offline; the user menu stays at Local only.
 
 ### Connecting
@@ -981,7 +1005,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
   It never runs another toast action, such as Reload.
 - Page shortcuts never fire while a text field has focus; the add field's keys and Escape in an editor do.
 - The Keyboard shortcuts section lists every shortcut that works today.
-- Drag and drop always has a keyboard alternative: Move up and Move down for tasks (`LV-3`), Alt+arrows and menu entries for lists.
+- Drag and drop always has a keyboard alternative: Alt+arrows, Alt+Home, and Alt+End for tasks (`LV-3`), Alt+arrows and menu entries for lists.
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.
 - Focus moves to the editor's description when it opens, and back to the row when it closes.

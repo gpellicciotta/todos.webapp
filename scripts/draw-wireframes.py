@@ -81,9 +81,10 @@ TASKS = [
         "lists": ["Work"],
         "notes": 3,
         "shared": True,
+        "count": "2/3",
     },
     {"text": "Send the invoice to the client", "status": "todo", "lists": ["Work"]},
-    {"text": "Water the plants", "status": "todo"},
+    {"text": "Water the plants", "status": "todo", "repeat": "Daily"},
     {"text": "Read chapter 4 of the novel", "status": "todo", "lists": ["Reading"]},
     {"text": "Fix the bike light", "status": "todo", "lists": ["Errands"]},
 ]
@@ -93,7 +94,7 @@ HOME_TASKS = [
     {"text": "Buy paint for the hallway", "status": "todo", "due": "Today 18:00", "lists": ["Errands"]},
     {"text": "Clean the gutters", "status": "todo", "due": "Sat"},
     {"text": "Replace the smoke detector batteries", "status": "todo"},
-    {"text": "Sort the winter clothes", "status": "in-progress", "notes": 1},
+    {"text": "Sort the winter clothes", "status": "in-progress", "count": "2/3"},
     {"text": "Fix the squeaky door", "status": "todo"},
     {"text": "Paint the garden fence", "status": "completed"},
     {"text": "Buy a new lawn mower", "status": "cancelled"},
@@ -469,7 +470,7 @@ def grouped_rows(f, x, y, width, wide, bottom):
         ("No list", [TASKS[6]], "1", False),
     ]
     for name, tasks, count, collapsed in groups:
-        if y + 32 + ROW_HEIGHT > bottom:
+        if y + 32 + ROW_HEIGHT + 20 > bottom:
             break
         y = group_header(f, x, y, width, name, count, collapsed)
         if not collapsed:
@@ -525,58 +526,61 @@ def view_options_fields(f, x, y, width, compact=False):
     return y
 
 
-def task_row(f, x, y, width, task, wide, handle=False, selected=False):
-    """Draw one 48 px task row and return the y of the next row."""
-    if selected:
-        f.rect(x, y + 1, width, ROW_HEIGHT - 2, "selected", radius=4)
-    f.line(x, y + ROW_HEIGHT, x + width, y + ROW_HEIGHT)
-    left = x + 4
-    if handle:
-        f.text(left + 8, y + 30, "⋮⋮", 14, "muted")
-        left += 28
-    status_icon(f, left + 18, y + ROW_HEIGHT / 2, task["status"])
-    text_left = left + 40
-    right = x + width - 4
-    if wide:
-        icon_button(f, right - 44, y + 2, "⋯")
-        right -= 52
-        if task.get("notes"):
-            right = chip(f, right, y + 12, f"✎ {task['notes']}") - 6
-        if task.get("shared"):
-            right = chip(f, right, y + 12, "Shared") - 6
-        names = task.get("lists", [])
-        if len(names) > 2:
-            right = chip(f, right, y + 12, f"+{len(names) - 2}") - 6
-        for name in reversed(names[:2]):
-            right = chip(f, right, y + 12, name) - 6
+def row_meta(task):
+    """Return the meta line parts of a task row: the due or repeat text with its overdue flag, and the list names."""
     if task.get("due"):
-        overdue = task["due"] == "Overdue"
-        label = "! Overdue" if overdue else task["due"]
-        right = chip(f, right, y + 12, label, "signal" if overdue else "chip") - 8
+        text = ("◷ " + task["due"], task["due"] == "Overdue")
+    elif task.get("repeat"):
+        text = ("↻ " + task["repeat"], False)
+    else:
+        text = None
+    return text, task.get("lists", [])
+
+
+def task_row(f, x, y, width, task, wide, handle=False, selected=False):
+    """Draw one task row, variant C: a status button with a count badge, the description, and a meta line.
+
+    The row is 48 px high, or 68 px when the meta line has content. The drag handle sits in the gutter before the
+    row. Return the y of the next row.
+    """
+    text, names = row_meta(task)
+    height = ROW_HEIGHT + (20 if text or names else 0)
+    if selected:
+        f.rect(x, y + 1, width, height - 2, "selected", radius=4)
+    f.line(x, y + height, x + width, y + height)
+    if handle:
+        f.text(x - 22, y + 30, "⋮⋮", 14, "muted")
+    cx, cy = x + 22, y + 24
+    status_icon(f, cx, cy, task["status"])
+    if task.get("count"):
+        badge = text_width(task["count"], 10) + 8
+        f.rect(cx + 3, cy + 4, badge, 15, "chip", radius=7)
+        f.text(cx + 3 + badge / 2, cy + 15, task["count"], 10, "bold", "middle")
+    text_left = x + 48
     done = task["status"] in ("completed", "cancelled")
-    label = fit(task["text"], right - text_left - 4, 15)
-    f.text(text_left, y + 30, label, 15, "muted" if done else "")
+    label = fit(task["text"], x + width - 8 - text_left, 15)
+    f.text(text_left, y + 29, label, 15, "muted" if done else "")
     if task["status"] == "cancelled":
-        f.line(text_left, y + 25, text_left + text_width(label, 15) * 0.9, y + 25, "icon-line")
-    return y + ROW_HEIGHT
-
-
-def status_menu(f, x, y, current):
-    """Draw the status menu that the status button opens, marking the current status."""
-    f.rect(x, y, 200, 192, "frame", radius=8)
-    for index, (status, label) in enumerate(STATUSES):
-        top = y + 8 + index * 44
-        if status == current:
-            f.rect(x + 6, top, 188, 44, "selected", radius=4)
-            f.text(x + 180, top + 27, "✓", 14, "bold", "end")
-        status_icon(f, x + 26, top + 22, status)
-        f.text(x + 48, top + 27, label, 14, "bold" if status == current else "")
+        f.line(text_left, y + 24, text_left + text_width(label, 15) * 0.9, y + 24, "icon-line")
+    left = text_left
+    if text:
+        f.text(left, y + 52, text[0], 12, "bold" if text[1] else "muted")
+        left += text_width(text[0], 12) + 10
+    right = x + width - 8
+    if names and not wide:
+        f.text(right, y + 52, fit(" · ".join(names), right - left, 12), 12, "muted", "end")
+    elif names:
+        if len(names) > 2:
+            right = chip(f, right, y + 36, f"+{len(names) - 2}") - 6
+        for name in reversed(names[:2]):
+            right = chip(f, right, y + 36, name) - 6
+    return y + height
 
 
 def task_rows(f, x, y, width, tasks, wide, bottom, handle=False, selected=None):
     """Draw task rows until the list or the space runs out; return the y after the last row."""
     for index, task in enumerate(tasks):
-        if y + ROW_HEIGHT > bottom:
+        if y + ROW_HEIGHT + 20 > bottom:
             break
         y = task_row(f, x, y, width, task, wide, handle, index == selected)
     return y
@@ -672,10 +676,10 @@ def wide_all_tasks(
         grouped_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, True, f.height - 24)
     elif typed:
         matches = [task for task in TASKS if typed in task["text"].lower()]
-        end = task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, matches, True, f.height - 24)
+        task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, matches, True, f.height - 24)
         f.text(
-            MAIN_LEFT,
-            end + 32,
+            MAIN_LEFT + 8,
+            top - 24,
             f"Add creates \u201c{typed}\u201d as a new task; matching tasks stay listed above.",
             13,
             "muted",
@@ -704,11 +708,11 @@ def wide_list(f, account="connected", right=MAIN_RIGHT):
     for index, task in enumerate(HOME_TASKS):
         if index == 3:
             f.line(MAIN_LEFT, y, right, y, "drop")
-        y = task_row(f, MAIN_LEFT, y, width, task, True, handle=True)
+        y = task_row(f, MAIN_LEFT, y, width, task, True, handle=index == 1)
     f.text(
         MAIN_LEFT,
         y + 32,
-        "Drag a handle or use Move up and Move down in the row menu; the black line marks the drop spot.",
+        "Press and drag a row, or use Alt+Up, Alt+Down, Alt+Home, and Alt+End; the black line marks the drop spot.",
         13,
         "muted",
     )
@@ -764,12 +768,11 @@ def all_tasks():
     """All tasks with the default filter of every status."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     compact_task_screen(compact, "All tasks", TASKS)
-    status_menu(compact, 12, 190, "todo")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_all_tasks(wide, typed="paint", info="1 of 24 tasks")
     return (
         "All tasks",
-        "Quiet by default (compact, with the status menu a long press opens); typing in the add bar filters the rows (wide).",
+        "Rows show status, count badge, description, and meta line; a tap ticks, a row opens the editor (wide: filtered).",
         compact,
         wide,
     )
@@ -986,32 +989,44 @@ def lists_find():
     )
 
 
-def editor_fields(f, x, y, width, compact):
-    """Draw the task editor sections from Description to Delete; return the bottom edge."""
+TAB_NAMES = ["Content", "Status", "History"]
+
+
+def tab_strip(f, x, y, width, current):
+    """Draw the editor tab strip with equal tabs and an underline on the current one; return the bottom edge."""
+    tab = width / len(TAB_NAMES)
+    for index, name in enumerate(TAB_NAMES):
+        f.text(x + index * tab + tab / 2, y + 28, name, 15, "bold" if index == current else "muted", "middle")
+    f.line(x, y + 44, x + width, y + 44)
+    f.rect(x + current * tab + 8, y + 41, tab - 16, 3, "primary", radius=0)
+    return y + 60
+
+
+def state_buttons(f, x, y, width, current, disabled):
+    """Draw the four status buttons as a group of equal cells, each with its icon and name."""
+    cell = width / 4
+    f.rect(x, y, width, 60, "control")
+    for index, (status, label) in enumerate(STATUSES):
+        left = x + index * cell
+        if status == current:
+            f.rect(left + 2, y + 2, cell - 4, 56, "selected", radius=4)
+        elif status in disabled:
+            f.rect(left + 2, y + 2, cell - 4, 56, "disabled", radius=4)
+        status_icon(f, left + cell / 2, y + 22, status)
+        css = "bold" if status == current else ("muted" if status in disabled else "")
+        f.text(left + cell / 2, y + 50, "Ready" if status == "todo" else label, 11, css, "middle")
+
+
+def content_tab(f, x, y, width):
+    """Draw the Content tab: only Description and Notes; return the bottom edge."""
     f.text(x, y + 14, "Description", 13, "muted")
     f.rect(x, y + 22, width, 64, "control")
     f.text(x + 12, y + 50, "Buy paint for the hallway", 15)
-    y += 100
-    segmented(f, x, y, width, ["To do", "In progress", "Completed", "Cancelled"], 0, 12, 40)
-    y += 56
-    f.text(x, y + 14, "Due", 13, "muted")
-    date_width = width * 0.45
-    field(f, x, y + 22, date_width, "6 Nov 2026")
-    field(f, x + date_width + 8, y + 22, width * 0.3, "18:00")
-    button_right(f, x + width, y + 22, "Clear")
-    y += 80
-    radio(f, x, y, "Keep open", None, True)
-    radio(f, x + width * 0.4, y, "Cancel when overdue", None, False)
-    y += 36
-    f.text(x, y + 14, "Lists", 13, "muted")
-    left = chip_left(f, x, y + 24, "Home  ×", size=13) + 8
-    left = chip_left(f, left, y + 24, "Errands  ×", size=13) + 8
-    chip_left(f, left, y + 24, "+ Add to list", "control", 13)
-    y += 64
+    y += 104
     f.text(x, y + 14, "Notes", 13, "muted")
     y += 24
     add_left = button_right(f, x + width, y, "Add note")
-    field(f, x, y, add_left - x - 8, "Add a note", muted=True)
+    field(f, x, y, add_left - x - 8, "Add or search notes", muted=True)
     y += 52
     notes = [
         ("You · 3 Nov 09:12 · edited", "Hardware store closes at 18:00."),
@@ -1023,17 +1038,78 @@ def editor_fields(f, x, y, width, compact):
         f.text(x + 12, y + 46, fit(body, width - 64, 14), 14)
         f.text(x + width - 20, y + 22, "⋯", 14, "", "middle")
         y += 68
-    if not compact:
-        f.text(x, y + 14, "Created 1 Nov · Last activity 3 Nov 09:12 · Owner: you", 12, "muted")
-        y += 24
-    return danger_zone(f, x, y, width, "Delete task")
+    return y
+
+
+def status_tab(f, x, y, width):
+    """Draw the Status tab for a daily task at 2 of 3.
+
+    Three parts split by rules: the active status, the lists, then the configuration groups
+    (target count, due date, repeat), and Delete task at the end.
+    """
+    state_buttons(f, x, y, width, "in-progress", {"completed"})
+    f.text(x, y + 82, "In progress, 2 of 3 done", 14)
+    y += 94
+    f.rect(x, y, width, 44, "control")
+    f.text(x + 22, y + 28, "−", 18, "", "middle")
+    f.text(x + width / 2, y + 28, "2 of 3", 15, "bold", "middle")
+    f.text(x + width - 22, y + 28, "+", 18, "", "middle")
+    y += 56
+    button(f, x, y, "Complete for previous period (5 Nov)", "control", 13, 36)
+    y += 52
+    f.line(x, y, x + width, y)
+    f.text(x, y + 28, "Lists", 14, "bold")
+    left = chip_left(f, x, y + 40, "Home  ×", size=13) + 8
+    left = chip_left(f, left, y + 40, "Errands  ×", size=13) + 8
+    chip_left(f, left, y + 40, "+ Add to list", "control", 13)
+    y += 80
+    f.line(x, y, x + width, y)
+    f.text(x, y + 28, "Target count", 14, "bold")
+    field(f, x + width - 96, y + 8, 96, "3", height=32)
+    y += 52
+    f.text(x, y + 14, "Due", 14, "bold")
+    date_width = width * 0.45
+    field(f, x, y + 22, date_width, "6 Nov 2026", height=36)
+    field(f, x + date_width + 8, y + 22, width * 0.3, "18:00", height=36)
+    button_right(f, x + width, y + 22, "Clear", height=36)
+    radio(f, x, y + 72, "Keep open", None, True)
+    radio(f, x + width * 0.4, y + 72, "Cancel when overdue", None, False)
+    y += 108
+    f.text(x, y + 14, "Repeat", 14, "bold")
+    field(f, x, y + 22, width, "Daily ▾", height=36)
+    y += 74
+    f.line(x, y, x + width, y)
+    button(f, x, y + 16, "Delete task", "control")
+    return y + 60
 
 
 def danger_zone(f, x, y, width, label):
-    """Draw a divider with extra space, then the editor's delete button; return the bottom edge."""
+    """Draw a divider with extra space, then a delete button; return the bottom edge."""
     f.line(x, y + 20, x + width, y + 20)
     button(f, x, y + 40, label, "control")
     return y + 84
+
+
+def history_tab(f, x, y, width):
+    """Draw the History tab: the activity entries, then the Details block."""
+    f.text(x, y + 14, "History", 13, "muted")
+    y += 24
+    entries = [
+        ("3 Nov 09:12", "You edited a note"),
+        ("3 Nov 08:30", "You ticked it, 2 of 3"),
+        ("2 Nov 14:05", "Ann added a note"),
+        ("1 Nov 10:00", "You created the task"),
+    ]
+    for when, what in entries:
+        f.rect(x, y, width, 48, "box")
+        f.text(x + 12, y + 20, when, 12, "muted")
+        f.text(x + 12, y + 39, fit(what, width - 24, 14), 14)
+        y += 56
+    y += 12
+    f.text(x, y + 14, "Details", 13, "muted")
+    for index, line in enumerate(["Created 1 Nov 2026 10:00", "Last activity 3 Nov 2026 09:12", "Owner: you"]):
+        f.text(x, y + 40 + index * 22, line, 14)
+    return y + 108
 
 
 def editor_panel(f, title):
@@ -1044,21 +1120,39 @@ def editor_panel(f, title):
     return EDITOR_LEFT + 24, WIDE_WIDTH - EDITOR_LEFT - 48
 
 
-def task_editor():
-    """The task editor as a full screen and as a right panel."""
+def tabbed_editor(tab, draw, caption):
+    """Draw the task editor on one tab, as a full screen and as a right panel; return the screen tuple."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     top_bar(compact, "Task", "connected", back=True)
-    editor_fields(compact, 16, 76, compact.width - 32, True)
+    draw(compact, 16, tab_strip(compact, 16, 76, compact.width - 32, tab), compact.width - 32)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_all_tasks(wide, "connected", selected=1, right=EDITOR_LEFT - 20, more=False)
     left, width = editor_panel(wide, "Task")
-    editor_fields(wide, left, 76, width, False)
-    return (
-        "Task editor",
-        "Every field saves on change; a full screen on phones and a right panel on wide screens.",
-        compact,
-        wide,
+    draw(wide, left, tab_strip(wide, left, 76, width, tab), width)
+    return ("Task editor · " + TAB_NAMES[tab], caption, compact, wide)
+
+
+def task_editor():
+    """The task editor on its Content tab."""
+    return tabbed_editor(
+        0,
+        content_tab,
+        "Opens on Content: the description and the notes only; every field saves on change.",
     )
+
+
+def task_editor_status():
+    """The task editor on its Status tab."""
+    return tabbed_editor(
+        1,
+        status_tab,
+        "The active status first, then the lists, then the configuration groups, then Delete task; rules separate them.",
+    )
+
+
+def task_editor_history():
+    """The task editor on its History tab."""
+    return tabbed_editor(2, history_tab, "History first, then Details; read-only.")
 
 
 def list_editor_fields(f, x, y, width):
@@ -1394,6 +1488,8 @@ SCREENS = {
     "lists-many.svg": lists_many,
     "lists-find.svg": lists_find,
     "task-editor.svg": task_editor,
+    "task-editor-status.svg": task_editor_status,
+    "task-editor-history.svg": task_editor_history,
     "list-editor.svg": list_editor,
     "recycle-bin.svg": recycle_bin,
     "settings.svg": settings,
