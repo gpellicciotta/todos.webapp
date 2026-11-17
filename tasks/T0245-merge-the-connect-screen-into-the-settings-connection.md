@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 895.2, input: 116, output: 46681, cache_read: 7561178, cache_write: 146770}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T02:58:13Z"
 ---
 # T0245: Merge the connect screen into the Settings Connection section, keeping #/connect as an alias for the Auth return
 
@@ -72,4 +77,7 @@ Make the Settings Connection section the only place to connect, removing the sep
 
 - [2026-11-17] **[Visual]**
   Before and after: ![before intro](T0245-merge-the-connect-screen-into-the-settings-connection/screenshots/before-intro-light-desktop.png) then ![after intro](T0245-merge-the-connect-screen-into-the-settings-connection/screenshots/intro-light-desktop.png).
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
