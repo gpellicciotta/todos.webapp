@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 534.9, input: 116, output: 38604, cache_read: 8070121, cache_write: 164182}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T01:41:34Z"
 ---
 # T0249: Sync Delete permanently and Empty recycle bin to the account while connected, queued while offline
 
@@ -60,4 +65,7 @@ Make permanent deletes from the Recycle Bin reach the account, not just this dev
   - Files touched: 11.
   - Lines touched: 451.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
