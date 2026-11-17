@@ -5,16 +5,16 @@ session: claude-20261117-e11e57
 needs: []
 branch: task/T0077-add-a-150-list-render-check-to-the
 worktree: .plan/work/T0077-add-a-150-list-render-check-to-the
-status: suspended
+status: active
 started_at: "2026-11-17T05:08:32Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 301.8, input: 54, output: 9073, cache_read: 1927724, cache_write: 128817}
+  worker: {turns: 4, duration_s: 484.8, input: 70, output: 11360, cache_read: 2680830, cache_write: 138946}
   review: {turns: 1, duration_s: 163.7, input: 37232, output: 2330, cache_read: 650368, cache_write: 0}
-work_duration: 4648.2
+work_duration: 4855.9
 review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T06:23:15Z"
@@ -65,4 +65,9 @@ Update the measured numbers in ui-design.md.
   Full npm run test:perf fails on two All tasks checks (274 and 270 ms); they fail before T0269 too, so not a regression here.
   - Lists checks pass: 158 ms and 364 ms.
   - Human decision needed on narrowing completion check.
+
+- [2026-11-17] **[Verify]**
+  Full npm run test:perf passes after T0272: 150 lists open in 161 ms, 500 lists in 375 ms.
+  - 500 lists is 2.3x the 150-list time.
+  - Files touched: 0; lines touched: 0; reopenings: 0.
 
