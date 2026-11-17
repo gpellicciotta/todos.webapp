@@ -10,8 +10,18 @@ Design source: docs/specs/ui-design.md, sections Sidebar With Many Lists and Lis
 - tests/unit/list-order.test.js
 - tests/unit/lists.test.js
 - tests/e2e/lists.spec.js
+- src/js/views/settings.js (added during execution: the About shortcut step)
+- tests/unit/settings.test.js (added during execution: the About shortcut step)
+- tests/unit/layout.test.js (added during execution: the sidebar keys)
+- src/js/views/reorder.js (added during execution: a stale module comment)
+- src/service-worker.js (added during execution: the required precache `VERSION` bump)
+- docs/specs/ui-design.md (added during execution: the Doc step)
+
+Mechanical command: node scripts/check-sw-version.mjs --update
+Mechanical files: scripts/sw-precache-hashes.json
 
 Size estimate: 7 files, 220 lines
+Size note: 13 counted files and 330 lines; the extra files are small edits the task steps require, which cannot merge apart.
 Completion check: `npm test` and `npx playwright test tests/e2e/lists.spec.js`
 
 ### Tests
