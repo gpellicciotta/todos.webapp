@@ -128,6 +128,22 @@
   --sync-indicator-ground: var(--color-surface);
 }
 
+/*
+ * The app's sidebar holds the brand, All tasks, and Lists fixed, and only the list rows scroll (`LST-14`).
+ * The scroll region takes the remaining height, keeps the page still at its ends, and shows a thin scrollbar.
+ */
+.app__sidebar.sidebar {
+  overflow: hidden;
+}
+
+.sidebar__scroll {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
 .sidebar__brand {
   display: flex;
   align-items: center;

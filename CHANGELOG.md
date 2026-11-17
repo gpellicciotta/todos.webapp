@@ -32,6 +32,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Added 0.5rem of space above the Search or add a task bar.
 - FrontEnd: Moved the menu of All tasks and of a list to a vertical three-dot button beside the user button from 64rem.
 - Docs: Showed the Finished today only choice in the view options wireframe and both gallery Status popover samples, and bumped the service worker VERSION to clear drift.
+- FrontEnd: Made the wide sidebar scroll only its list rows below the fixed brand, All tasks, and Lists items, patched rows by list identifier, scrolled the current list into view on a route change, hid a zero count, and capped counts at 999+ (LST-14).
 
 ## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.

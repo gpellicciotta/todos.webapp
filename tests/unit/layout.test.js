@@ -177,6 +177,108 @@ describe('renderShell list order', () => {
   });
 });
 
+describe('renderShell sidebar scroll region and in-place patching (LST-14)', () => {
+  const COUNTS = (open) => ({ all: 0, byList: new Map(Object.entries(open).map(([id, count]) => [id, { open: count, total: count }])) });
+  const row = (root, id) => root.querySelector(`[data-nav="list:${id}"]`);
+  const shown = (root, id) => row(root, id).querySelector('.nav-item__count > [aria-hidden="true"]').textContent;
+  const hidden = (root, id) => row(root, id).querySelector('.nav-item__count .visually-hidden').textContent;
+  const lists = (...ids) => ids.map((id) => ({ id, name: id.toUpperCase() }));
+
+  it('holds only the list rows in a scroll region below the fixed brand, All tasks, and Lists items', () => {
+    const { root } = render();
+    const region = root.querySelector('.app__sidebar .sidebar__scroll');
+    expect(region).not.toBeNull();
+    expect(region.querySelector('[data-nav-lists]')).not.toBeNull();
+    expect(region.querySelector('[data-nav="tasks"]')).toBeNull();
+    expect(region.querySelector('[data-nav="lists"]')).toBeNull();
+    expect(region.parentElement.classList.contains('app__sidebar')).toBe(true);
+  });
+
+  it('keeps the same row elements when counts change, so focus survives', () => {
+    const { root, shell } = render();
+    shell.setLists(lists('a', 'b'), COUNTS({ a: 1, b: 2 }));
+    const a = row(root, 'a');
+    a.focus();
+    shell.setLists(lists('a', 'b'), COUNTS({ a: 7, b: 0 }));
+    expect(row(root, 'a')).toBe(a);
+    expect(document.activeElement).toBe(a);
+    expect(shown(root, 'a')).toBe('7');
+    expect(shown(root, 'b')).toBe('');
+  });
+
+  it('shows no text for a count of 0, keeps the exact number hidden, and caps the shown count at 999+', () => {
+    const { root, shell } = render();
+    shell.setLists(lists('a', 'b', 'c'), COUNTS({ a: 0, b: 999, c: 1000 }));
+    expect(shown(root, 'a')).toBe('');
+    expect(hidden(root, 'a')).toBe('0 open tasks');
+    expect(shown(root, 'b')).toBe('999');
+    expect(shown(root, 'c')).toBe('999+');
+    expect(hidden(root, 'c')).toBe('1000 open tasks');
+  });
+
+  it('drops the row of a removed list and adds a new list at its place in the stored order', () => {
+    localStorage.setItem('todos.lists.order', JSON.stringify(['c', 'a', 'b']));
+    const { root, shell } = render();
+    shell.setLists(lists('a', 'b'), COUNTS({}));
+    const a = row(root, 'a');
+    shell.setLists(lists('a', 'b', 'c'), COUNTS({}));
+    expect([...root.querySelectorAll('[data-nav-lists] [data-nav]')].map((link) => link.dataset.nav)).toEqual(['list:c', 'list:a', 'list:b']);
+    expect(row(root, 'a')).toBe(a);
+    shell.setLists(lists('a', 'c'), COUNTS({}));
+    expect(row(root, 'b')).toBeNull();
+    expect(root.querySelectorAll('[data-nav-lists] li')).toHaveLength(2);
+  });
+
+  it('patches a renamed list in place', () => {
+    const { root, shell } = render();
+    shell.setLists([{ id: 'a', name: 'Old' }], COUNTS({}));
+    const a = row(root, 'a');
+    shell.setLists([{ id: 'a', name: 'New' }], COUNTS({}));
+    expect(row(root, 'a')).toBe(a);
+    expect(a.querySelector('.nav-item__label').textContent).toBe('New');
+    expect(a.title).toBe('New');
+  });
+
+  it('scrolls the current row into view once per route change, and never for a count change', () => {
+    const scroll = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      const { root, shell } = render();
+      shell.setLists(lists('a', 'b'), COUNTS({}));
+      shell.update({ view: 'list', viewKey: 'list:b', params: { listId: 'b' } }, 'B');
+      expect(scroll).toHaveBeenCalledTimes(1);
+      expect(scroll.mock.contexts[0]).toBe(row(root, 'b'));
+      expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
+      shell.setLists(lists('a', 'b'), COUNTS({ b: 5 }));
+      shell.update({ view: 'list', viewKey: 'list:b', editor: 'task', params: { listId: 'b', taskId: 't' } }, 'B');
+      expect(scroll).toHaveBeenCalledTimes(1);
+      shell.update({ view: 'list', viewKey: 'list:a', params: { listId: 'a' } }, 'A');
+      expect(scroll).toHaveBeenCalledTimes(2);
+    }
+    finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
+  it('scrolls the current row into view once it renders, when the route came before the lists', () => {
+    const scroll = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      const { shell } = render();
+      shell.update({ view: 'list', viewKey: 'list:b', params: { listId: 'b' } }, 'B');
+      expect(scroll).not.toHaveBeenCalled();
+      shell.setLists(lists('a', 'b'), COUNTS({}));
+      shell.setLists(lists('a', 'b'), COUNTS({ b: 2 }));
+      expect(scroll).toHaveBeenCalledTimes(1);
+    }
+    finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+});
+
 describe('renderShell areas (ADR-0004)', () => {
   const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 

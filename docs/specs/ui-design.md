@@ -111,6 +111,8 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
   The visually hidden text keeps the exact number.
 - The sidebar patches rows by list identifier instead of rebuilding them.
   Focus, scroll, and the find text survive a count change.
+  A renamed list updates its label and `title` in place; a deleted list drops its row; a new list joins at its place in the order.
+- The scroll region is `.sidebar__scroll` inside `.app__sidebar`; the sidebar itself never scrolls.
 
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.

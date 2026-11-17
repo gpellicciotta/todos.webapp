@@ -144,6 +144,46 @@ function watch(page) {
   return problems;
 }
 
+test('with 150 lists only the list region scrolls, and the current list scrolls into view once (LST-14)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/');
+  await ready(page);
+  const ids = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const made = [];
+    for (let index = 1; index <= 150; index += 1) {
+      made.push((await store.createList({ name: `List ${index}` })).id);
+    }
+    store.close();
+    return made;
+  });
+  const sidebar = page.locator('.app__sidebar');
+  const region = page.locator('.app__sidebar .sidebar__scroll');
+  await expect(sidebar.locator('[data-nav-lists] li')).toHaveCount(150);
+  const metrics = (selector) => page.locator(selector).evaluate((element) => ({ scroll: element.scrollTop, over: element.scrollHeight > element.clientHeight }));
+  expect(await metrics('.app__sidebar')).toEqual({ scroll: 0, over: false });
+  expect((await metrics('.app__sidebar .sidebar__scroll')).over).toBe(true);
+  await page.goto(`/#/lists/${ids[119]}`);
+  const current = sidebar.locator(`[data-nav="list:${ids[119]}"]`);
+  await expect(current).toHaveAttribute('aria-current', 'page');
+  await expect(current).toBeInViewport();
+  await expect(sidebar.getByRole('link', { name: /^All tasks/ })).toBeInViewport();
+  await expect(sidebar.getByRole('link', { name: /^Lists/ })).toBeInViewport();
+  const top = (await metrics('.app__sidebar .sidebar__scroll')).scroll;
+  expect(top).toBeGreaterThan(0);
+  expect((await metrics('.app__sidebar')).scroll).toBe(0);
+  await region.evaluate((element) => {
+    element.scrollTop += 200;
+  });
+  const moved = (await metrics('.app__sidebar .sidebar__scroll')).scroll;
+  await createList(page, 'Zulu list');
+  await expect(sidebar.locator('[data-nav-lists] li')).toHaveCount(151);
+  expect((await metrics('.app__sidebar .sidebar__scroll')).scroll).toBe(moved);
+  expect(problems).toEqual([]);
+});
+
 /**
  * Wait until the shell has rendered its first route.
  * @param {import('@playwright/test').Page} page the page
@@ -342,10 +382,11 @@ test('every route renders its title and its view, and the sidebar follows the li
   await page.goto('/');
   await ready(page);
   const sidebar = page.locator('.app__sidebar');
-  await expect(sidebar.getByRole('link', { name: /All tasks/ })).toHaveText('All tasks0 open tasks');
+  await expect(sidebar.getByRole('link', { name: /All tasks/ })).toHaveText(/^All tasks0 open tasks$/);
+  await expect(sidebar.getByRole('link', { name: /All tasks/ }).locator('.nav-item__count > [aria-hidden="true"]')).toHaveText('');
   const id = await createList(page, 'Home');
-  await expect(sidebar.getByRole('link', { name: /^Home/ })).toHaveText('Home1 open tasks');
-  await expect(sidebar.getByRole('link', { name: /All tasks/ })).toHaveText('All tasks1 open tasks');
+  await expect(sidebar.getByRole('link', { name: /^Home/ })).toHaveText(/^Home1\s*1 open tasks$/);
+  await expect(sidebar.getByRole('link', { name: /All tasks/ })).toHaveText(/^All tasks1\s*1 open tasks$/);
   const routes = [
     ['#/tasks', 'All tasks', 'tasks'],
     ['#/tasks/0192f1a2-0000-7000-8000-000000000002', 'All tasks', 'tasks'],

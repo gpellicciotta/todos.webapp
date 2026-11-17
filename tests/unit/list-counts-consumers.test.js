@@ -68,7 +68,7 @@ describe('list counts in the sidebar and on the Lists screen', () => {
     expect(screenCounts(ids.home)).toBe('3 open · 5 total');
     expect(sidebarOpen(ids.work)).toBe('1');
     expect(screenCounts(ids.work)).toBe('1 open · 1 total');
-    expect(sidebarOpen(ids.empty)).toBe('0');
+    expect(sidebarOpen(ids.empty)).toBe('');
     expect(screenCounts(ids.empty)).toBe('0 open · 0 total');
   });
 
@@ -87,7 +87,7 @@ describe('list counts in the sidebar and on the Lists screen', () => {
     await vi.waitFor(() => expect(screenCounts(ids.home)).toBe('3 open · 4 total'));
     expect(sidebarOpen(ids.home)).toBe('3');
     expect(screenCounts(ids.work)).toBe('0 open · 0 total');
-    expect(sidebarOpen(ids.work)).toBe('0');
+    expect(sidebarOpen(ids.work)).toBe('');
     expect(root.querySelector('[data-count="all"]').firstChild.textContent).toBe('3');
     await store.addToList(ids.progress, ids.empty);
     await refreshSidebar();

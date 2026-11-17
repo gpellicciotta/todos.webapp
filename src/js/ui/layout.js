@@ -16,6 +16,9 @@
  * A session banner above the views offers Sign in while the session expired.
  * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it (`LST-8`).
  * Each list shows its open task count from core/list-counts.js, the pass shared with the Lists screen.
+ * The wide sidebar keeps the brand, All tasks, and Lists fixed and scrolls only its list rows (`LST-14`).
+ * Rows are patched by list identifier, so focus and scroll survive a count change; a route to a list scrolls its row
+ * to the nearest edge once. A count of 0 shows nothing and a count above 999 reads "999+"; hidden text keeps the number.
  * From 64rem, separators resize the sidebar and the editor panel and the widths stay on the device (see panel-resize.js).
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
@@ -31,6 +34,9 @@ import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachUserMenu } from './user-menu.js';
 
 const ICONS = 'img/icons.svg';
+
+/** The largest count shown as a number; a larger count reads "999+" (`LST-14`). */
+const MAX_SHOWN_COUNT = 999;
 
 /** Shell strings, for the strings module of TEC-13 to absorb. */
 export const STRINGS = Object.freeze({
@@ -114,11 +120,16 @@ function sidebarItem(destination) {
  * @param {number} count the open task count
  */
 function setCount(element, count) {
-  element.textContent = String(count);
-  const hidden = element.ownerDocument.createElement('span');
-  hidden.className = 'visually-hidden';
-  hidden.textContent = STRINGS.openTasks;
-  element.append(hidden);
+  if (!element.firstElementChild) {
+    const shown = element.ownerDocument.createElement('span');
+    shown.setAttribute('aria-hidden', 'true');
+    const hidden = element.ownerDocument.createElement('span');
+    hidden.className = 'visually-hidden';
+    element.append(shown, hidden);
+  }
+  const [shown, hidden] = element.children;
+  shown.textContent = count === 0 ? '' : count > MAX_SHOWN_COUNT ? `${MAX_SHOWN_COUNT}+` : String(count);
+  hidden.textContent = `${count}${STRINGS.openTasks}`;
 }
 
 /**
@@ -142,7 +153,7 @@ export function renderShell(root, { session = createSession() } = {}) {
     <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
       <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/app-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
       <ul class="nav-list app__nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
-      <ul class="nav-list app__nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
+      <div class="sidebar__scroll"><ul class="nav-list app__nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul></div>
     </nav>
     <div class="app__banners"><div data-session-banner hidden></div><div data-notice hidden></div><div class="app__broadcasts" hidden></div></div>
     <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"></main>
@@ -178,6 +189,9 @@ export function renderShell(root, { session = createSession() } = {}) {
   let announcer = null;
   let shownLists = [];
   let shownCounts = { all: 0, byList: new Map() };
+  const rows = new Map();
+  let currentListId = null;
+  let revealId = null;
 
   /** Mark the links of the current route with `aria-current="page"`. */
   function markCurrent() {
@@ -198,23 +212,61 @@ export function renderShell(root, { session = createSession() } = {}) {
   /** Render the sidebar lists from the last lists and counts, in the stored order. */
   function renderLists() {
     setCount(root.querySelector('[data-count="all"]'), shownCounts.all);
-    listNav.replaceChildren(...applyListOrder(shownLists, readListOrder()).map((list) => {
-      const item = doc.createElement('li');
-      const link = doc.createElement('a');
-      link.className = 'app__nav-item nav-item nav-item--list';
-      link.href = `#/lists/${encodeURIComponent(list.id)}`;
-      link.dataset.nav = `list:${list.id}`;
-      const label = doc.createElement('span');
-      label.className = 'nav-item__label';
-      label.textContent = list.name;
-      const count = doc.createElement('span');
-      count.className = 'nav-item__count';
-      setCount(count, countOf(shownCounts, list.id).open);
-      link.append(label, count);
-      item.append(link);
-      return item;
-    }));
+    const ordered = applyListOrder(shownLists, readListOrder());
+    const keep = new Set(ordered.map((list) => list.id));
+    for (const [id, parts] of rows) {
+      if (!keep.has(id)) {
+        parts.item.remove();
+        rows.delete(id);
+      }
+    }
+    let cursor = listNav.firstElementChild;
+    for (const list of ordered) {
+      const parts = rows.get(list.id) ?? createRow(list);
+      rows.set(list.id, parts);
+      if (parts.label.textContent !== list.name) {
+        parts.label.textContent = list.name;
+        parts.link.title = list.name;
+      }
+      setCount(parts.count, countOf(shownCounts, list.id).open);
+      if (parts.item === cursor) {
+        cursor = cursor.nextElementSibling;
+      }
+      else {
+        listNav.insertBefore(parts.item, cursor);
+      }
+    }
     markCurrent();
+    revealCurrent();
+  }
+
+  /**
+   * Create the row of a list; later renders patch it by list identifier.
+   * @param {{id: string, name: string}} list the list
+   * @returns {{item: HTMLElement, link: HTMLElement, label: HTMLElement, count: HTMLElement}} the row parts
+   */
+  function createRow(list) {
+    const item = doc.createElement('li');
+    const link = doc.createElement('a');
+    link.className = 'app__nav-item nav-item nav-item--list';
+    link.href = `#/lists/${encodeURIComponent(list.id)}`;
+    link.dataset.nav = `list:${list.id}`;
+    const label = doc.createElement('span');
+    label.className = 'nav-item__label';
+    const count = doc.createElement('span');
+    count.className = 'nav-item__count';
+    link.append(label, count);
+    item.append(link);
+    return { item, link, label, count };
+  }
+
+  /** Scroll the row of the current list to the nearest edge once, after a route change to that list. */
+  function revealCurrent() {
+    const parts = revealId ? rows.get(revealId) : null;
+    if (parts) {
+      revealId = null;
+      parts.link.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   /**
@@ -305,7 +357,13 @@ export function renderShell(root, { session = createSession() } = {}) {
       }
       editor.dataset.editor = next.editor ?? '';
       editor.dataset.taskId = next.params.taskId ?? '';
+      const listId = next.params.listId ?? null;
+      if (listId !== currentListId) {
+        currentListId = listId;
+        revealId = listId;
+      }
       markCurrent();
+      revealCurrent();
       return view;
     },
 
