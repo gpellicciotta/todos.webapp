@@ -187,7 +187,7 @@ export async function purgeForever(ctx, type, id) {
 
 /**
  * Permanently delete every recycle bin entry in one transaction (`BIN-7`); the caller asks for confirmation first.
- * Like `purgeForever`, it queues nothing for sync.
+ * The facade queues one `empty-bin` entry for sync while connected.
  * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context
  * @returns {Promise<{type: string, id: string}[]>} the purged entries
  */

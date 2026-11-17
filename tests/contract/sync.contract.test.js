@@ -451,6 +451,63 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(await ada.store.getTask(task.id)).toMatchObject({ description: 'Short-lived' });
   });
 
+  it('purges a trashed task from the recycle bin, and a second device sees a purged tombstone', async () => {
+    const ada = await device('code-ada');
+    const other = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Purge me' });
+    await ada.engine.syncNow();
+    await ada.store.deleteTask(task.id);
+    await ada.engine.syncNow();
+    await other.engine.syncNow();
+    expect(await other.store.getTask(task.id)).toMatchObject({ description: 'Purge me' });
+    const before = (await other.store.queue.getState('cursor')).value;
+
+    await ada.store.purgeForever('task', task.id);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect(await ada.store.queue.count()).toBe(0);
+    const feed = await (await other.raw('GET', `/api/changes?cursor=${before}`, { Accept: 'application/json' })).json();
+    expect(feed.tombstones).toEqual([expect.objectContaining({ type: 'task', id: task.id, reason: 'purged' })]);
+    expect(await other.engine.syncNow()).toBe('synced');
+    expect(await other.store.getTask(task.id)).toBeUndefined();
+    expect((await serverState(ada)).tasks.map((row) => row.id)).not.toContain(task.id);
+  });
+
+  it('empties the recycle bin at the service, so a fresh snapshot keeps it empty', async () => {
+    const ada = await device('code-ada');
+    const other = await device('code-ada');
+    const list = await ada.store.createList({ name: 'Bin list' });
+    const task = await ada.store.createTask({ description: 'Bin task' });
+    await ada.engine.syncNow();
+    await ada.store.deleteList(list.id);
+    await ada.store.deleteTask(task.id);
+    await ada.engine.syncNow();
+    ada.clock.tick(60_000);
+    await ada.store.emptyBin();
+    expect(await ada.engine.syncNow()).toBe('synced');
+    const state = await serverState(ada);
+    expect(state.lists.map((row) => row.id)).not.toContain(list.id);
+    expect(state.tasks.map((row) => row.id)).not.toContain(task.id);
+    await other.engine.syncNow();
+    expect(await other.store.listBin()).toEqual([]);
+  });
+
+  it('brings a purged task back when it was restored on another device', async () => {
+    const ada = await device('code-ada');
+    const other = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Kept after all' });
+    await ada.engine.syncNow();
+    await ada.store.deleteTask(task.id);
+    await ada.engine.syncNow();
+    await other.engine.syncNow();
+    await other.store.restoreTask(task.id);
+    await other.engine.syncNow();
+
+    await ada.store.purgeForever('task', task.id);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect(await ada.store.getTask(task.id)).toMatchObject({ description: 'Kept after all', 'deletion-time': null });
+    expect((await ada.store.queue.log()).map((record) => record.message)).toContain('Not deleted: it was restored on another device.');
+  });
+
   it('answers 410 to an expired cursor, and the client fetches a new snapshot', async () => {
     const ada = await device('code-ada');
     const list = await ada.store.createList({ name: 'Cursor' });

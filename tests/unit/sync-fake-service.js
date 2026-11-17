@@ -43,6 +43,9 @@ export function fakeService({ lists = [] } = {}) {
     if (kind === 'changes') {
       return { status: 200, body: { cursor: 'c1', 'has-more': false, lists: [...service.lists.values()], tasks: [], memberships: [], notes: [], tombstones: [], protocol: 1 } };
     }
+    if (kind === 'recycle-bin') {
+      return recycleBin(id, sub);
+    }
     if (kind === 'lists' && !id) {
       return createRow(service.lists, body, { 'deletion-time': null, role: 'owner' }, (list) => [...service.lists.values()].some((other) => other.id !== list.id && other.name.toLowerCase() === list.name.toLowerCase()));
     }
@@ -100,6 +103,37 @@ export function fakeService({ lists = [] } = {}) {
       return { status: 200, body: task };
     }
     return { status: 404 };
+  }
+
+  /**
+   * Handle the recycle bin purge routes: a purge of one entry (`404` unknown, `409` outside the bin), or emptying the bin.
+   * @param {string|undefined} type `lists` or `tasks`; absent when emptying
+   * @param {string|undefined} id the entry
+   * @returns {{status: number, body?: object}} the reply
+   */
+  function recycleBin(type, id) {
+    const rows = type === 'lists' ? service.lists : service.tasks;
+    if (!type) {
+      const purged = { lists: 0, tasks: 0 };
+      for (const kind of ['lists', 'tasks']) {
+        for (const [key, row] of service[kind]) {
+          if (row['deletion-time']) {
+            service[kind].delete(key);
+            purged[kind] += 1;
+          }
+        }
+      }
+      return { status: 200, body: purged };
+    }
+    const row = rows.get(id);
+    if (!row) {
+      return { status: 404 };
+    }
+    if (!row['deletion-time']) {
+      return { status: 409 };
+    }
+    rows.delete(id);
+    return { status: 200, body: { lists: type === 'lists' ? 1 : 0, tasks: type === 'tasks' ? 1 : 0 } };
   }
 
   /**
@@ -177,10 +211,11 @@ export function fakeService({ lists = [] } = {}) {
 
   service.fetch = async (url, init = {}) => {
     const method = init.method ?? 'GET';
-    const { pathname } = new URL(url);
+    const { pathname, searchParams } = new URL(url);
     const call = {
       method,
       path: pathname,
+      query: Object.fromEntries(searchParams),
       headers: init.headers ?? {},
       body: init.body ? JSON.parse(init.body) : undefined,
     };

@@ -173,10 +173,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - BIN-1: The recycle bin lists deleted lists and tasks with their deletion time and days left.
 - BIN-2: Users restore a deleted list or task within 30 days of its deletion.
 - BIN-3: Restoring a list or task brings back all of its memberships.
-- BIN-4: Users delete a recycle bin entry permanently after confirming.
+- BIN-4: Users delete a recycle bin entry permanently after confirming; while connected, it is deleted for the account on every device.
 - BIN-5: Entries deleted more than 30 days ago are purged permanently.
 - BIN-6: Deleted tasks accept no edits until restored.
-- BIN-7: Users empty the recycle bin after confirming, which permanently deletes every entry in it.
+- BIN-7: Users empty the recycle bin after confirming, which permanently deletes every entry in it; while connected, it empties the account's bin on every device.
 
 ### Backup and Restore
 - BAK-1: Users export a backup of all stored data as one JSON file, in both modes.

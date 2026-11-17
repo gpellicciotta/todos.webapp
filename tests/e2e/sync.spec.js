@@ -177,3 +177,62 @@ test('an expired session shows Sign in needed and a banner with Sign in', async 
   await page.locator('[data-session-banner]').getByRole('link', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/#\/connect$/);
 });
+
+
+test('Empty recycle bin while connected purges at the service, so a fresh snapshot keeps the bin empty', async ({ page }) => {
+  const service = await connect(page);
+  const calls = [];
+  let trashed = null;
+  await page.route(`${SERVER}/api/**`, (route) => {
+    const { pathname, search } = new URL(route.request().url());
+    const method = route.request().method();
+    calls.push(`${method} ${pathname}${search}`);
+    const json = (body) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    if (pathname === '/api/recycle-bin' && method === 'DELETE') {
+      const count = trashed ? 1 : 0;
+      trashed = null;
+      return json({ lists: 0, tasks: count });
+    }
+    if (pathname === '/api/changes') {
+      return json({ cursor: 'c1', 'has-more': false, lists: [], tasks: trashed ? [trashed] : [], memberships: [], notes: [], tombstones: [], protocol: 1 });
+    }
+    return pathname === '/api/notifications' ? json([]) : route.fallback();
+  });
+  await open(page, '#/bin');
+  await expect(indicator(page)).toHaveAttribute('data-state', 'synced');
+  const task = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true, tracking: () => true });
+    const created = await store.createTask({ description: 'Buy paint' });
+    const deleted = await store.deleteTask(created.id);
+    store.close();
+    return deleted;
+  });
+  await expect(page.locator('.bin-row', { hasText: 'Buy paint' })).toBeVisible();
+  await expect(indicator(page)).toHaveAttribute('data-state', 'synced');
+  trashed = { ...task, revision: 5 };
+  await page.getByRole('button', { name: 'Empty recycle bin' }).click();
+  await page.getByRole('group', { name: 'Empty recycle bin' }).getByRole('button', { name: 'Delete all' }).click();
+  await expect(page.locator('.bin-row')).toHaveCount(0);
+  await expect.poll(() => calls.some((call) => call === 'DELETE /api/recycle-bin')).toBe(true);
+  await expect.poll(() => trashed).toBeNull();
+  await page.evaluate(() => new Promise((resolve, reject) => {
+    const opening = indexedDB.open('todos');
+    opening.onerror = () => reject(opening.error);
+    opening.onsuccess = () => {
+      const db = opening.result;
+      const tx = db.transaction('sync-state', 'readwrite');
+      tx.objectStore('sync-state').delete('cursor');
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+    };
+  }));
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await expect(indicator(page)).toHaveAttribute('data-state', 'synced');
+  await expect(page.locator('.bin-row')).toHaveCount(0);
+  await expect(page.locator('.empty-state')).toBeVisible();
+  expect(service.mode).toBe('online');
+});

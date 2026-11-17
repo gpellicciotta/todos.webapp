@@ -5,7 +5,8 @@
  * The other tabs read its state through a BroadcastChannel, and take over when the leader closes.
  * Replies map to outcomes (docs/specs/local-store.md, Sync Queue):
  * - 2xx: the entry is done; fields the merge overwrote go to the sync log, and the value the service kept applies locally.
- * - 400, 403, 404, 409, 412: the change is rolled back locally and logged, except a 404 on a delete or remove.
+ * - 400, 403, 404, 409, 412: the change is rolled back locally and logged, except a 404 on a delete, remove, or purge.
+ * - A refused purge rolls nothing back: a 409 reads the row back and stores it, any other refusal is logged and dropped.
  * - 401: pause and report Sign in needed; the queue keeps its entries.
  * - 426: stop all syncing and report Update required.
  * - No network or 5xx: try the same entry again with backoff.
@@ -14,18 +15,20 @@
 
 import { adopt } from './adopt.js';
 import { createApi, judge, SyncStop } from './api.js';
-import { planConflicts } from './merge.js';
+import { planConflicts, planPage } from './merge.js';
 
 export const LOCK_NAME = 'todos-sync';
 const POLL_MS = 30_000;
 const BACKOFF_MS = [1000, 2000, 5000, 15_000, 30_000, 60_000];
-const DONE_ON_404 = new Set(['delete-list', 'delete-task', 'delete-note', 'remove-membership']);
+const DONE_ON_404 = new Set(['delete-list', 'delete-task', 'delete-note', 'remove-membership', 'purge', 'empty-bin']);
+const PURGES = new Set(['purge', 'empty-bin']);
 const LABELS = {
   'create-list': 'a new list', 'update-list': 'a list change', 'delete-list': 'a list deletion', 'restore-list': 'a list restore',
   'create-task': 'a new task', 'update-task': 'a task change', 'delete-task': 'a task deletion', 'restore-task': 'a task restore',
   'post-event': 'a status change', 'update-rules': 'a deadline change',
   'add-membership': 'adding a task to a list', 'move-membership': 'a task move', 'remove-membership': 'removing a task from a list',
   'create-note': 'a new note', 'edit-note': 'a note change', 'delete-note': 'a note deletion',
+  purge: 'a permanent deletion', 'empty-bin': 'emptying the recycle bin',
 };
 
 /**
@@ -65,6 +68,10 @@ function toRequest(entry, mapList) {
       return ['DELETE', `/api/tasks/${target.id}`, { editTime }];
     case 'restore-task':
       return ['POST', `/api/tasks/${target.id}/restore`, { editTime }];
+    case 'purge':
+      return ['DELETE', `/api/recycle-bin/${target.type === 'list' ? `lists/${list}` : `tasks/${target.id}`}`, {}];
+    case 'empty-bin':
+      return ['DELETE', '/api/recycle-bin', {}];
     case 'update-rules':
       return ['PATCH', `/api/tasks/${target.id}/lifecycle-rules`, { body: { ...fields, 'edit-times': times } }];
     case 'post-event':
@@ -178,6 +185,35 @@ export function createPush({
   }
 
   /**
+   * Settle a purge the service refused. The row is gone locally, so nothing rolls back.
+   * A `409` on one entry means it was restored elsewhere: the app reads the row back, stores it, and logs it.
+   * Any other refusal drops the entry and logs a sync error.
+   * @param {object} entry the purge entry
+   * @param {number} status the HTTP status
+   */
+  async function settleRefusedPurge(entry, status) {
+    if (status === 409 && entry.operation === 'purge') {
+      // The entry stays queued until the whole recovery is done: a failing read (a stop thrown by `judge`) retries the purge,
+      // which answers 409 again, so an interrupted recovery never gets lost.
+      const { type, id } = entry.target;
+      const response = await api.send('GET', `/api/${type}s/${id}`);
+      if (judge(response) === 'done' && response.body) {
+        const pending = (await queue.all()).filter((other) => other.seq !== entry.seq);
+        await store.applyChanges((data, now) => ({
+          changes: planPage(data, { [`${type}s`]: [response.body] }, { pending, final: false, now }).changes,
+          result: null,
+        }));
+      }
+      await queue.setState('cursor', null);
+      await queue.appendLog([{ kind: 'error', target: entry.target, message: 'Not deleted: it was restored on another device.', detail: `HTTP ${status}` }]);
+      await queue.remove([entry.seq]);
+      return;
+    }
+    await queue.remove([entry.seq]);
+    await queue.appendLog([{ kind: 'error', target: entry.target, message: `The service refused ${describeEntry(entry)}, so it was dropped.`, detail: `HTTP ${status}` }]);
+  }
+
+  /**
    * Upload the first entry.
    * @param {object} entry the entry
    * @param {Record<string, string>} listMap the local-to-account list ids
@@ -196,6 +232,9 @@ export function createPush({
     }
     else if (response.status === 404 && DONE_ON_404.has(entry.operation)) {
       await queue.remove([entry.seq]);
+    }
+    else if (PURGES.has(entry.operation)) {
+      await settleRefusedPurge(entry, response.status);
     }
     else {
       await reject(entry, response.status);

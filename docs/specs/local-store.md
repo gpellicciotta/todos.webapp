@@ -128,6 +128,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `listBin` returns entries with `type`, `id`, `name` or `description`, `deletion-time`, and `purge-time`, newest first.
 - `purge-time` is 30 days after `deletion-time`; restoring later throws code `expired` (`BIN-2`).
 - `purgeForever(type, id)` removes a bin entry and its memberships, and a task's notes, occurrences, and events (`BIN-4`).
+  While connected it also queues a purge for the account, see Sync Queue.
 - Restoring keeps each membership's `position`, so the task returns to its place in every list.
 - `purgeExpired(now)` removes every entry deleted more than 30 days ago in one transaction (`BIN-5`).
 - `emptyBin()` permanently removes every bin entry, with memberships and notes, in one transaction and returns the purged `{type, id}` entries (`BIN-7`).
@@ -304,13 +305,20 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `openStore({tracking})` queues every committed write while `tracking()` is true, that is, while an account is connected or expired (`SYN-1`, `SYN-2`).
   - Local mode queues nothing.
   - The entry joins the queue right after the write commits, in a second transaction.
-  - `purgeForever`, `emptyBin`, `deleteAllData`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
+  - `deleteAllData`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
+  - `purgeForever(type, id)` queues one `purge` entry and `emptyBin()` one `empty-bin` entry with `fields.time`, the emptying time (`BIN-4`, `BIN-7`).
+    Earlier entries of a purged row stay and upload first, so a queued trash reaches the service before its purge.
+    A queued `create` may already be uploading or have lost its reply, so no entry is dropped; a purge of a row the service never got answers `404`, which is done.
 - An entry holds `seq`, `target`, `operation`, `fields`, `edit-times`, `created`, and `undo`.
   - `fields` holds only what changed (`SYN-5`). `edit-times` holds the client time of each field. Creates carry all fields.
   - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type. A task create carries its `lifecycle-rules`.
   - Rules: `update-rules`, sent as `PATCH /api/tasks/{{task-id}}/lifecycle-rules` with the edit time of each field.
   - Events: `post-event`, sent in order as `POST /api/tasks/{{task-id}}/events` with `id`, `type`, `creation-time`, and `occurrence`.
   - Memberships: `add-`, `move-`, and `remove-membership`.
+  - Purges: `purge`, sent as `DELETE /api/recycle-bin/lists/{{list-id}}` or `DELETE /api/recycle-bin/tasks/{{task-id}}`.
+    `empty-bin` is sent as `DELETE /api/recycle-bin` and purges every entry the user may restore at the service's receive time.
+    It sends no `before`: the service stamps `deletion-time` with its receive time, so a client time, or a skewed clock, could miss entries trashed from the queue.
+    The entry keeps `fields.time`, the emptying time, for the record.
   - Notes: `create-note`, `edit-note`, and `delete-note`.
     A create sends `occurrence` when linked or explicitly global; otherwise the service places the note.
     An edit sends the changed `text` and `occurrence` with their `edit-times`; undo restores both.
@@ -323,11 +331,16 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 | :------------------------ | :-------------------------------------------------------------------------------------- |
 | 2xx                       | Done; `conflicts` in the reply go to the sync log as `overwritten`.                     |
 | 400, 403, 404, 409, 412   | Rejected: undo the change locally, log it as `rejected`, and tell the user (`SYN-9`).   |
-| 404 on a delete or remove | Done; the row is already gone.                                                          |
+| 404 on a delete or remove | Done; the row is already gone. A `404` on a purge is done too.                          |
+| 409 on a purge            | Restored elsewhere: read the row with `GET`, store it, and log it as `error`.           |
+| Other 4xx on a purge      | The entry is dropped and logged as `error`; nothing is undone, as the row is gone.      |
 | 401                       | The session expires and the queue pauses, keeping its entries. The app asks to sign in. |
 | 426                       | All syncing stops. The app asks for an update and names the minimum from `Upgrade`.     |
 | No network, 5xx, 408, 429 | Retry the same entry after 1, 2, 5, 15, 30, then 60 seconds.                            |
 
+- A `409` on a purge stores the row read back and clears the stored cursor, so the next pull brings its memberships in a snapshot.
+  The log message is "Not deleted: it was restored on another device."
+  The entry leaves the queue last: a read that fails, or a `401`, keeps it, and the retry repeats the purge and the recovery.
 - Undo changes only fields that still hold the value the rejected change gave them.
 - Later local edits therefore stay.
 - A rejected create removes the row and drops the queued entries that build on it.

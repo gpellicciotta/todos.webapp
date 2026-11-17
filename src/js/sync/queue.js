@@ -22,6 +22,7 @@ const NOTE_FIELDS = ['text', 'occurrence'];
 const OPERATIONS = new Set([
   'createList', 'updateList', 'deleteList', 'restoreList', 'createTask', 'updateTask', 'deleteTask', 'restoreTask',
   'postEvent', 'updateRules', 'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
+  'purgeForever', 'emptyBin',
 ]);
 
 /**
@@ -443,6 +444,27 @@ async function describe(ctx, operation, args, before, result) {
 }
 
 /**
+ * Queue the permanent deletion of recycle bin entries after they left the local data.
+ * Earlier entries of a purged row stay and upload first, so the service has the row, and its trash, before its purge.
+ * A queued create may already be uploading or have lost its reply, so no entry is ever dropped: a purge of a row the service
+ * never got answers `404`, which counts as done.
+ * Emptying the bin queues one `empty-bin` entry that purges, at the service, every entry deleted before `time`.
+ * @param {object} queue the queue
+ * @param {{type: string, id: string}[]} rows the purged rows
+ * @param {string} time the time of the write
+ * @param {boolean} empty true when the whole bin was emptied
+ * @returns {Promise<void>}
+ */
+async function queuePurges(queue, rows, time, empty) {
+  if (empty) {
+    await queue.add([{ target: { type: 'recycle-bin' }, operation: 'empty-bin', fields: { time }, 'edit-times': {}, undo: { kind: 'none' }, created: time }]);
+    return;
+  }
+  await queue.add(rows.map((row) => ({
+    target: { type: row.type, id: row.id }, operation: 'purge', fields: {}, 'edit-times': {}, undo: { kind: 'none' }, created: time,
+  })));
+}
+/**
  * Start recording a write: read what it changes now, and return the function that queues it once it committed.
  * @param {{db: IDBDatabase, now: () => Date}} ctx the store context
  * @param {object} queue the queue
@@ -454,6 +476,10 @@ export async function trackChange(ctx, queue, operation, args) {
   const before = await readBefore(ctx, operation, args);
   return async (result) => {
     const created = ctx.now().toISOString();
+    if (operation === 'purgeForever' || operation === 'emptyBin') {
+      await queuePurges(queue, operation === 'purgeForever' ? [{ type: args[0], id: args[1] }] : result, created, operation === 'emptyBin');
+      return;
+    }
     const entries = await describe(ctx, operation, args, before, result);
     await queue.add(entries.map((entry) => ({ ...entry, created })));
   };

@@ -197,6 +197,49 @@ describe('listBin', () => {
   });
 });
 
+describe('purgeForever while tracking', () => {
+  /**
+   * Open a connected store whose rows were all sent already.
+   * @returns {Promise<{store: object, clock: object}>} the store
+   */
+  async function sent() {
+    const tracked = await freshStore({ tracking: () => true });
+    return tracked;
+  }
+
+  it('queues a purge after the earlier entries of the row, which stay', async () => {
+    const tracked = await sent();
+    const item = await tracked.store.createTask({ description: 'Paint' });
+    await tracked.store.queue.clear();
+    await tracked.store.deleteTask(item.id);
+    await tracked.store.purgeForever('task', item.id);
+    const entries = await tracked.store.queue.all();
+    expect(entries.map((entry) => entry.operation)).toEqual(['delete-task', 'purge']);
+    expect(entries[1]).toMatchObject({ target: { type: 'task', id: item.id } });
+    tracked.store.close();
+  });
+
+  it('queues a purge of a list', async () => {
+    const tracked = await sent();
+    const item = await tracked.store.createList({ name: 'A' });
+    await tracked.store.queue.clear();
+    await tracked.store.deleteList(item.id);
+    await tracked.store.purgeForever('list', item.id);
+    expect((await tracked.store.queue.all()).at(-1)).toMatchObject({ operation: 'purge', target: { type: 'list', id: item.id } });
+    tracked.store.close();
+  });
+
+  it('keeps every earlier entry of a row whose create is still queued, then queues the purge', async () => {
+    const tracked = await sent();
+    const item = await tracked.store.createTask({ description: 'Paint' });
+    await tracked.store.addNote(item.id, { text: 'Blue' });
+    await tracked.store.deleteTask(item.id);
+    await tracked.store.purgeForever('task', item.id);
+    expect((await tracked.store.queue.all()).map((entry) => entry.operation)).toEqual(['create-task', 'create-note', 'delete-task', 'purge']);
+    tracked.store.close();
+  });
+});
+
 describe('purgeForever', () => {
   it('deletes a list and its memberships, never its tasks', async () => {
     await store.deleteList(home.id);
@@ -289,15 +332,35 @@ describe('emptyBin', () => {
     expect(heard).toEqual(['emptyBin']);
   });
 
-  it('queues nothing for sync while tracking', async () => {
+  it('queues one empty-bin entry with the emptying time while tracking, after the earlier entries', async () => {
     const tracked = await freshStore({ tracking: () => true });
     const list = await tracked.store.createList({ name: 'A' });
     await tracked.store.deleteList(list.id);
+    await tracked.store.queue.remove((await tracked.store.queue.all()).filter((entry) => entry.operation === 'create-list').map((entry) => entry.seq));
     const before = (await tracked.store.queue.all()).length;
-    expect(before).toBeGreaterThan(0);
+    tracked.clock.tick(5000);
     await tracked.store.emptyBin();
-    expect((await tracked.store.queue.all()).length).toBe(before);
+    const entries = await tracked.store.queue.all();
+    expect(entries).toHaveLength(before + 1);
+    expect(entries.at(-1)).toMatchObject({ operation: 'empty-bin', fields: { time: new Date(tracked.clock.now).toISOString() } });
     tracked.store.close();
+  });
+
+  it('keeps the entries of a row whose create is still queued, and queues empty-bin after them', async () => {
+    const tracked = await freshStore({ tracking: () => true });
+    const list = await tracked.store.createList({ name: 'A' });
+    await tracked.store.deleteList(list.id);
+    await tracked.store.emptyBin();
+    expect((await tracked.store.queue.all()).map((entry) => entry.operation)).toEqual(['create-list', 'delete-list', 'empty-bin']);
+    tracked.store.close();
+  });
+
+  it('queues nothing in local mode', async () => {
+    const list = await store.createList({ name: 'A' });
+    await store.deleteList(list.id);
+    await store.purgeForever('list', list.id);
+    await store.emptyBin();
+    expect(await store.queue.count()).toBe(0);
   });
 
   it('removes nothing when a removal fails part way', async () => {

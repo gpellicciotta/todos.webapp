@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- Sync: Synced Delete permanently and Empty recycle bin to the account while connected, queued while offline, bringing back an entry restored on another device.
 - FrontEnd: Let task lists, Lists, and the Recycle Bin fill the main area instead of a 45rem column.
 - FrontEnd: Kept the account avatar inside its round button, which it overhung by 2 px on each side.
 - FrontEnd: Made the `occurrences` array optional when importing a format 2 backup.

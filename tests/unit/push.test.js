@@ -295,3 +295,194 @@ describe('one tab syncs', () => {
     second.stop();
   });
 });
+
+describe('purging from the recycle bin', () => {
+  it('sends the purge routes and the empty route without a time, in order', async () => {
+    const { store, clock, service, push } = await setup();
+    const list = await store.createList({ name: 'Home' });
+    const one = await store.createTask({ description: 'One' });
+    const two = await store.createTask({ description: 'Two' });
+    await push.drainOnce();
+    await store.deleteList(list.id);
+    await store.deleteTask(one.id);
+    await store.deleteTask(two.id);
+    await store.purgeForever('list', list.id);
+    await store.purgeForever('task', one.id);
+    clock.tick(5000);
+    await store.emptyBin();
+    service.calls.length = 0;
+    expect(await push.drainOnce()).toBe('synced');
+    expect(service.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+      `PUT /api/lists/${list.id}`, `DELETE /api/tasks/${one.id}`, `DELETE /api/tasks/${two.id}`,
+      `DELETE /api/recycle-bin/lists/${list.id}`, `DELETE /api/recycle-bin/tasks/${one.id}`, 'DELETE /api/recycle-bin',
+    ]);
+    expect(service.calls.at(-1).query).toEqual({});
+    expect([service.lists.size, service.tasks.size]).toEqual([0, 0]);
+    expect(await store.queue.count()).toBe(0);
+    expect(await store.queue.log()).toEqual([]);
+  });
+
+  it('counts a 404 on a purge as done', async () => {
+    const { store, service, push, rejected } = await setup();
+    const task = await store.createTask({ description: 'Paint' });
+    await push.drainOnce();
+    await store.deleteTask(task.id);
+    await store.purgeForever('task', task.id);
+    service.fail = (call) => (call.path.startsWith('/api/recycle-bin') ? 404 : null);
+    expect(await push.drainOnce()).toBe('synced');
+    expect(rejected).toEqual([]);
+    expect(await store.queue.log()).toEqual([]);
+  });
+
+  it('reads a task back, stores it, and logs it when the purge answers 409', async () => {
+    const { store, service, push, rejected } = await setup();
+    const task = await store.createTask({ description: 'Paint' });
+    await push.drainOnce();
+    await store.deleteTask(task.id);
+    await push.drainOnce();
+    await store.purgeForever('task', task.id);
+    expect(await store.getTask(task.id)).toBeUndefined();
+    const row = service.tasks.get(task.id);
+    row['deletion-time'] = null;
+    row['current-occurrence'] = task['current-occurrence'];
+    expect(await push.drainOnce()).toBe('synced');
+    expect(service.calls.map((call) => `${call.method} ${call.path}`).slice(-2)).toEqual([
+      `DELETE /api/recycle-bin/tasks/${task.id}`, `GET /api/tasks/${task.id}`,
+    ]);
+    expect(await store.getTask(task.id)).toMatchObject({ id: task.id, description: 'Paint', 'deletion-time': null });
+    expect(await store.queue.count()).toBe(0);
+    expect(rejected).toEqual([]);
+    expect((await store.queue.log()).map((record) => [record.kind, record.message])).toEqual([
+      ['error', 'Not deleted: it was restored on another device.'],
+    ]);
+  });
+
+  it('reads a list back, stores it, and logs it when the purge answers 409', async () => {
+    const { store, service, push } = await setup();
+    const list = await store.createList({ name: 'Home' });
+    await push.drainOnce();
+    await store.deleteList(list.id);
+    await push.drainOnce();
+    await store.purgeForever('list', list.id);
+    service.lists.get(list.id)['deletion-time'] = null;
+    expect(await push.drainOnce()).toBe('synced');
+    expect(await store.getList(list.id)).toMatchObject({ id: list.id, name: 'Home', 'deletion-time': null });
+    expect((await store.queue.log()).map((record) => record.kind)).toEqual(['error']);
+  });
+
+  it('drops a purge refused with another 4xx and logs a sync error', async () => {
+    const { store, service, push } = await setup();
+    const task = await store.createTask({ description: 'Paint' });
+    await push.drainOnce();
+    await store.deleteTask(task.id);
+    await store.purgeForever('task', task.id);
+    service.fail = (call) => (call.path.startsWith('/api/recycle-bin') ? 403 : null);
+    expect(await push.drainOnce()).toBe('synced');
+    expect(await store.queue.count()).toBe(0);
+    expect((await store.queue.log()).map((record) => record.kind)).toEqual(['error']);
+    expect(await store.getTask(task.id)).toBeUndefined();
+  });
+
+  it('keeps the purge while offline and pauses on 401', async () => {
+    const { store, service, push } = await setup();
+    const task = await store.createTask({ description: 'Paint' });
+    await push.drainOnce();
+    await store.deleteTask(task.id);
+    await store.purgeForever('task', task.id);
+    service.fail = () => 'network';
+    expect(await push.drainOnce()).toBe('retry');
+    expect(await store.queue.count()).toBe(2);
+    service.fail = () => 401;
+    expect(await push.drainOnce()).toBe('paused');
+    expect(await store.queue.count()).toBe(2);
+  });
+});
+
+describe('purging rows whose creation may have reached the service', () => {
+  it.each([['task'], ['list']])('purges a %s whose create reply was lost, so the service keeps no row', async (type) => {
+    const { store, service, push } = await setup();
+    const row = type === 'task' ? await store.createTask({ description: 'Paint' }) : await store.createList({ name: 'Home' });
+    service.fail = (call) => (call.method === 'POST' ? 'lost-reply' : null);
+    expect(await push.drainOnce()).toBe('retry');
+    expect((type === 'task' ? service.tasks : service.lists).has(row.id)).toBe(true);
+    await (type === 'task' ? store.deleteTask(row.id) : store.deleteList(row.id));
+    await store.purgeForever(type, row.id);
+    service.fail = () => null;
+    expect(await push.drainOnce()).toBe('synced');
+    expect((type === 'task' ? service.tasks : service.lists).has(row.id)).toBe(false);
+    expect(await store.queue.count()).toBe(0);
+  });
+
+  it.each([['task'], ['list']])('purges a %s whose create is in flight when it is purged locally', async (type) => {
+    const { store, service, push } = await setup();
+    const row = type === 'task' ? await store.createTask({ description: 'Paint' }) : await store.createList({ name: 'Home' });
+    const rows = type === 'task' ? service.tasks : service.lists;
+    let release;
+    const gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    const fetchOriginal = service.fetch;
+    service.fetch = async (url, init) => {
+      if (init?.method === 'POST' && !release.done) {
+        release.done = true;
+        release.reached = true;
+        await gate;
+      }
+      return fetchOriginal(url, init);
+    };
+    const drain = createPush({ store, session: fakeSession(), fetch: service.fetch, channelName: `test-sync-${channelCount++}` }).drainOnce();
+    await vi.waitFor(() => expect(release.reached).toBe(true));
+    await (type === 'task' ? store.deleteTask(row.id) : store.deleteList(row.id));
+    await store.purgeForever(type, row.id);
+    release();
+    await drain;
+    expect(await push.drainOnce()).toBe('synced');
+    expect(rows.has(row.id)).toBe(false);
+    expect(await store.queue.count()).toBe(0);
+  });
+});
+
+describe('recovering from a refused purge', () => {
+  /**
+   * Prepare a task that was purged locally while another device restored it, with the recovery read failing once.
+   * @param {(call: object) => any} failure how the first read fails
+   * @returns {Promise<object>} the pieces and the task
+   */
+  async function conflicted(failure) {
+    const pieces = await setup();
+    const { store, service, push } = pieces;
+    const task = await store.createTask({ description: 'Paint' });
+    await push.drainOnce();
+    await store.deleteTask(task.id);
+    await push.drainOnce();
+    await store.purgeForever('task', task.id);
+    Object.assign(service.tasks.get(task.id), { 'deletion-time': null, 'current-occurrence': task['current-occurrence'] });
+    let failed = false;
+    service.fail = (call) => {
+      if (call.method === 'GET' && !failed) {
+        failed = true;
+        return failure;
+      }
+      return null;
+    };
+    return { ...pieces, task };
+  }
+
+  it.each([
+    ['a network failure', 'network', 'retry'],
+    ['a 503', 503, 'retry'],
+    ['a 401', 401, 'paused'],
+  ])('keeps the purge queued through %s on the read, then recovers the row on the retry', async (_name, failure, outcome) => {
+    const { store, service, session, push, task } = await conflicted(failure);
+    expect(await push.drainOnce()).toBe(outcome);
+    expect(await store.queue.count()).toBe(1);
+    expect(await store.queue.log()).toEqual([]);
+    expect(await store.getTask(task.id)).toBeUndefined();
+    session.status = 'connected';
+    expect(await push.drainOnce()).toBe('synced');
+    expect(await store.getTask(task.id)).toMatchObject({ description: 'Paint', 'deletion-time': null });
+    expect(await store.queue.count()).toBe(0);
+    expect((await store.queue.log()).map((record) => record.message)).toEqual(['Not deleted: it was restored on another device.']);
+    expect(service.tasks.has(task.id)).toBe(true);
+  });
+});
