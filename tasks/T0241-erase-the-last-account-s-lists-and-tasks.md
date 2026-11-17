@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1233.9, input: 168, output: 59802, cache_read: 14328575, cache_write: 203403}
+  worker: {turns: 2, duration_s: 1588.7, input: 222, output: 74785, cache_read: 20812596, cache_write: 229733}
   review: {turns: 1, duration_s: 118.6, input: 59849, output: 2451, cache_read: 456064, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T11:23:14Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T12:00:59Z"
 review_session: codex-20261117-5d8520
 work_duration: 1364.6
 ---
@@ -97,4 +96,7 @@ Make a Delete all data done in local mode reach the account on the next connect.
   Reversed the round 1 choice per review D1 and the spec: any failed pending erase, including a 4xx refusal, now stays and blocks adoption.
   - Counted size: 16 files, 583 lines, excluding the mechanical hashes.
   - The 17 files, 592 lines figure includes sw-precache-hashes.json.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
