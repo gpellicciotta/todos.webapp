@@ -1,15 +1,19 @@
 ---
 id: T0257
-owner: "@claude-code"
+owner: "@claude"
+session: claude-20261117-2c6785
 needs: []
-branch: —
-worktree: —
+branch: task/T0257-design-a-tabbed-task-editor-and-a-clearer
+worktree: .plan/work/T0257-design-a-tabbed-task-editor-and-a-clearer
 status: active
-started_at: "2026-11-16T22:35:29Z"
+started_at: "2026-11-17T01:01:48Z"
 ended_at: —
 review: human
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 7, duration_s: 0.0}
+work_duration: 85.4
 ---
 # T0257: Design a tabbed task editor and a clearer status and count interaction, with wireframes and human sign-off
 
