@@ -5,20 +5,22 @@ session: claude-20261117-de9862
 needs: []
 branch: task/T0245-merge-the-connect-screen-into-the-settings-connection
 worktree: .plan/work/T0245-merge-the-connect-screen-into-the-settings-connection
-status: active
+status: completed
 started_at: "2026-11-17T02:43:04Z"
-ended_at: —
+ended_at: "2026-11-17T03:08:09Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1244.9, input: 138, output: 52916, cache_read: 9410654, cache_write: 162139}
-  review: {turns: 1, duration_s: 114.1, input: 46932, output: 2501, cache_read: 343040, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 209.1, input: 92729, output: 4358, cache_read: 760576, cache_write: 0}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-17T03:06:30Z"
-review_session: codex-20261117-47dec8
-work_duration: 1025.3
+review_session: codex-20261117-1902ea
+work_duration: 1504.5
+reviewed_by: "@codex"
+completion-commit: 0cd0ecfb3d2e9cfea8f6d181e83c0a67ae13759b
 ---
 # T0245: Merge the connect screen into the Settings Connection section, keeping #/connect as an alias for the Auth return
 
@@ -39,7 +41,7 @@ Make the Settings Connection section the only place to connect, removing the sep
 - [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
 - [x] **[Visual]**    Capture each phase in Settings, light and dark, at desktop and phone widths.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -93,4 +95,11 @@ Make the Settings Connection section the only place to connect, removing the sep
 
 - [2026-11-17] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 2 approved by @codex: Approved.
+  - Findings: [review-findings-2.md](T0245-merge-the-connect-screen-into-the-settings-connection/review-findings-2.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
