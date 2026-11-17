@@ -12,8 +12,8 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1800.8, input: 2, output: 78}
-work_duration: 1811.9
+  worker: {turns: 2, duration_s: 1855.5, input: 12, output: 1958, cache_read: 456379, cache_write: 6578}
+work_duration: 1905.6
 ---
 # T0275: Make the e2e suite stable under full parallel load: all-tasks.spec.js:591 and sidebar-find.spec.js:43 each failed once
 
