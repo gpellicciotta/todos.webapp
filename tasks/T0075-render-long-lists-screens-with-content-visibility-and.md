@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 647.5, input: 98, output: 27100, cache_read: 4592557, cache_write: 86638}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T05:02:52Z"
 ---
 # T0075: Render long Lists screens with content-visibility and lazy row menus, with roving focus between rows
 
@@ -45,4 +50,7 @@ Keep find in page, the tab order, and the restored scroll position true.
 
 - [2026-11-17] **[Verify]**
   Full vitest 1670 passed, lint clean, e2e 241 passed with one failure that predates the task.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
