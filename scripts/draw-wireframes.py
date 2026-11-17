@@ -503,6 +503,7 @@ def view_options_fields(f, x, y, width, compact=False):
         if expanded:
             for _, name in STATUSES:
                 y = check_row(f, x + 12, y, name, True)
+            y = check_row(f, x + 12, y, "Finished today only", False)
             y += 4
         f.line(x, y, x + width, y)
     y += 12

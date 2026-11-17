@@ -32,9 +32,11 @@ function wirePopover() {
    * Show the checked statuses on the chip and mark it active while any is checked.
    */
   function update() {
-    const checked = boxes.filter((box) => box.checked).map((box) => box.value);
-    value.textContent = checked.length > 0 ? `: ${checked.join(', ')}` : '';
-    chip.dataset.active = String(checked.length > 0);
+    const checked = boxes.filter((box) => box.checked && !box.dataset.toggle).map((box) => box.value);
+    const today = boxes.some((box) => box.checked && box.dataset.toggle);
+    const parts = today ? [...checked, 'finished today'] : checked;
+    value.textContent = parts.length > 0 ? `: ${parts.join(', ')}` : '';
+    chip.dataset.active = String(parts.length > 0);
   }
 
   attachPopover(chip, panel);

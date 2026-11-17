@@ -60,27 +60,29 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="28" y="296" width="16" height="16" rx="3" class="control"/>
     <text x="36" y="309" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="56" y="309" font-size="14">Cancelled</text>
-    <line x1="16" y1="324" x2="374" y2="324" class="rule"/>
-    <text x="16" y="350" font-size="14">Due</text>
-    <text x="350" y="350" font-size="13" class="muted" text-anchor="end">Any</text>
-    <text x="368" y="350" font-size="14" text-anchor="middle">›</text>
-    <line x1="16" y1="364" x2="374" y2="364" class="rule"/>
-    <text x="16" y="390" font-size="14">Created</text>
-    <text x="350" y="390" font-size="13" class="muted" text-anchor="end">Any</text>
-    <text x="368" y="390" font-size="14" text-anchor="middle">›</text>
-    <line x1="16" y1="404" x2="374" y2="404" class="rule"/>
-    <text x="16" y="430" font-size="12" class="muted">Group by</text>
-    <rect x="16" y="438" width="358" height="36" rx="6" class="control"/>
-    <text x="28" y="461" font-size="14">List</text>
-    <text x="358" y="461" font-size="14" text-anchor="middle">⌄</text>
-    <text x="16" y="504" font-size="12" class="muted">Sort by</text>
-    <rect x="16" y="512" width="200" height="36" rx="6" class="control"/>
-    <text x="28" y="535" font-size="14">Created</text>
-    <text x="200" y="535" font-size="14" text-anchor="middle">⌄</text>
-    <rect x="224" y="512" width="150" height="36" rx="6" class="control"/>
-    <text x="261.5" y="533.85" font-size="11" text-anchor="middle">Ascending</text>
-    <rect x="301" y="514" width="71" height="32" rx="4" class="selected"/>
-    <text x="336.5" y="533.85" font-size="11" class="bold" text-anchor="middle">Descending</text>
+    <rect x="28" y="328" width="16" height="16" rx="3" class="control"/>
+    <text x="56" y="341" font-size="14">Finished today only</text>
+    <line x1="16" y1="356" x2="374" y2="356" class="rule"/>
+    <text x="16" y="382" font-size="14">Due</text>
+    <text x="350" y="382" font-size="13" class="muted" text-anchor="end">Any</text>
+    <text x="368" y="382" font-size="14" text-anchor="middle">›</text>
+    <line x1="16" y1="396" x2="374" y2="396" class="rule"/>
+    <text x="16" y="422" font-size="14">Created</text>
+    <text x="350" y="422" font-size="13" class="muted" text-anchor="end">Any</text>
+    <text x="368" y="422" font-size="14" text-anchor="middle">›</text>
+    <line x1="16" y1="436" x2="374" y2="436" class="rule"/>
+    <text x="16" y="462" font-size="12" class="muted">Group by</text>
+    <rect x="16" y="470" width="358" height="36" rx="6" class="control"/>
+    <text x="28" y="493" font-size="14">List</text>
+    <text x="358" y="493" font-size="14" text-anchor="middle">⌄</text>
+    <text x="16" y="536" font-size="12" class="muted">Sort by</text>
+    <rect x="16" y="544" width="200" height="36" rx="6" class="control"/>
+    <text x="28" y="567" font-size="14">Created</text>
+    <text x="200" y="567" font-size="14" text-anchor="middle">⌄</text>
+    <rect x="224" y="544" width="150" height="36" rx="6" class="control"/>
+    <text x="261.5" y="565.85" font-size="11" text-anchor="middle">Ascending</text>
+    <rect x="301" y="546" width="71" height="32" rx="4" class="selected"/>
+    <text x="336.5" y="565.85" font-size="11" class="bold" text-anchor="middle">Descending</text>
     <rect x="16" y="768" width="358" height="44" rx="6" class="primary"/>
     <text x="195" y="794.9" font-size="14" class="on-primary" text-anchor="middle">Show 12 tasks</text>
   </g>
@@ -232,26 +234,28 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="1056" y="296" width="16" height="16" rx="3" class="control"/>
     <text x="1064" y="309" font-size="13" class="bold" text-anchor="middle">✓</text>
     <text x="1084" y="309" font-size="14">Cancelled</text>
-    <line x1="1044" y1="324" x2="1416" y2="324" class="rule"/>
-    <text x="1044" y="350" font-size="14">Due</text>
-    <text x="1392" y="350" font-size="13" class="muted" text-anchor="end">Any</text>
-    <text x="1410" y="350" font-size="14" text-anchor="middle">›</text>
-    <line x1="1044" y1="364" x2="1416" y2="364" class="rule"/>
-    <text x="1044" y="390" font-size="14">Created</text>
-    <text x="1392" y="390" font-size="13" class="muted" text-anchor="end">Any</text>
-    <text x="1410" y="390" font-size="14" text-anchor="middle">›</text>
-    <line x1="1044" y1="404" x2="1416" y2="404" class="rule"/>
-    <text x="1044" y="430" font-size="12" class="muted">Group by</text>
-    <rect x="1044" y="438" width="372" height="36" rx="6" class="control"/>
-    <text x="1056" y="461" font-size="14">List</text>
-    <text x="1400" y="461" font-size="14" text-anchor="middle">⌄</text>
-    <text x="1044" y="504" font-size="12" class="muted">Sort by</text>
-    <rect x="1044" y="512" width="214" height="36" rx="6" class="control"/>
-    <text x="1056" y="535" font-size="14">Created</text>
-    <text x="1242" y="535" font-size="14" text-anchor="middle">⌄</text>
-    <rect x="1266" y="512" width="150" height="36" rx="6" class="control"/>
-    <text x="1303.5" y="533.85" font-size="11" text-anchor="middle">Ascending</text>
-    <rect x="1343" y="514" width="71" height="32" rx="4" class="selected"/>
-    <text x="1378.5" y="533.85" font-size="11" class="bold" text-anchor="middle">Descending</text>
+    <rect x="1056" y="328" width="16" height="16" rx="3" class="control"/>
+    <text x="1084" y="341" font-size="14">Finished today only</text>
+    <line x1="1044" y1="356" x2="1416" y2="356" class="rule"/>
+    <text x="1044" y="382" font-size="14">Due</text>
+    <text x="1392" y="382" font-size="13" class="muted" text-anchor="end">Any</text>
+    <text x="1410" y="382" font-size="14" text-anchor="middle">›</text>
+    <line x1="1044" y1="396" x2="1416" y2="396" class="rule"/>
+    <text x="1044" y="422" font-size="14">Created</text>
+    <text x="1392" y="422" font-size="13" class="muted" text-anchor="end">Any</text>
+    <text x="1410" y="422" font-size="14" text-anchor="middle">›</text>
+    <line x1="1044" y1="436" x2="1416" y2="436" class="rule"/>
+    <text x="1044" y="462" font-size="12" class="muted">Group by</text>
+    <rect x="1044" y="470" width="372" height="36" rx="6" class="control"/>
+    <text x="1056" y="493" font-size="14">List</text>
+    <text x="1400" y="493" font-size="14" text-anchor="middle">⌄</text>
+    <text x="1044" y="536" font-size="12" class="muted">Sort by</text>
+    <rect x="1044" y="544" width="214" height="36" rx="6" class="control"/>
+    <text x="1056" y="567" font-size="14">Created</text>
+    <text x="1242" y="567" font-size="14" text-anchor="middle">⌄</text>
+    <rect x="1266" y="544" width="150" height="36" rx="6" class="control"/>
+    <text x="1303.5" y="565.85" font-size="11" text-anchor="middle">Ascending</text>
+    <rect x="1343" y="546" width="71" height="32" rx="4" class="selected"/>
+    <text x="1378.5" y="565.85" font-size="11" class="bold" text-anchor="middle">Descending</text>
   </g>
 </svg>
