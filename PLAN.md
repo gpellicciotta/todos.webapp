@@ -20,6 +20,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
 
 ## Backlog
+- [ ] T0281 Fix the gallery toast e2e test's live-region locator and the Settings shortcut list e2e test, both failing on main.
 - [ ] T0280 [protocol: adhoc] Fix the gallery toast e2e test, whose aria-live locator also matches the task editor count specimen added in T0258.
 - [ ] T0279 [protocol: adhoc] Scope the toast test's polite live region locator, which also matches the task editor's count since T0258.
 - [ ] T0278 [protocol: adhoc] Drop the task list's filter-hide toast logic, since only ticks post from rows and always show Undo.
