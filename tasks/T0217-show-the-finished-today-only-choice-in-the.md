@@ -1,11 +1,11 @@
 ---
 id: T0217
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0217-show-the-finished-today-only-choice-in-the
+worktree: .plan/work/T0217-show-the-finished-today-only-choice-in-the
+status: active
+started_at: "2026-11-17T03:53:54Z"
 ended_at: —
 review: agent
 preview: none
