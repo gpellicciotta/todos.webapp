@@ -42,22 +42,19 @@ Command: `npx playwright test` (exit code 0)
 ```
 
 ### Contract suite
-Command: `TODOS_SERVER_DIR=C:/Dev-Projects/todos.server npm run test:contract` (exit code 1)
+Round 1 (stale jar dated 2026-11-15): exit code 1, 17 passed, 4 failed, including the erase test.
+
+Round 2, after the server jar was rebuilt (2026-11-17 10:54). Command: `TODOS_SERVER_DIR=C:/Dev-Projects/todos.server npm run test:contract` (exit code 0)
 
 ```text
- ❯ tests/contract/sync.contract.test.js (21 tests | 4 failed) 4764ms
-     × purges a trashed task from the recycle bin, and a second device sees a purged tombstone 201ms
-     × empties the recycle bin at the service, so a fresh snapshot keeps it empty 173ms
-     × erases the account data from a queued erase, so another device gets tombstones 173ms
-     × brings a purged task back when it was restored on another device 189ms
- Test Files  1 failed (1)
-      Tests  4 failed | 17 passed (21)
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
 ```
 
-**Not verified against a real server.** The server jar at `todos.server/output/server/install/todos/todos-server.jar` is dated 2026-11-15, before the erase route (server v4.1.0, 2026-11-16) and the recycle-bin purge routes existed.
-The three recycle-bin tests, which passed before this task's route work was needed, fail for the same reason: the jar is stale.
-Rebuilding writes to a sibling repository, which needs user confirmation. The new erase contract test stays unproven until the jar is rebuilt.
+The erase test passes against the real server: account rows disappear and a second device receives the tombstones.
 
+**Production deployment not verified.** The server changelog shows v4.1.0 as released on 2026-11-16 but carries no deployment marker; only v4.0.0 has one (`google-cloud-run: todos-00015-bhv`).
+A human must confirm the erase route is live in production before this ships.
 ### Visual
 - Connected button: [light](after-button-light.png), [dark](after-button-dark.png)
 - Connected dialog: [light](after-dialog-light.png), [dark](after-dialog-dark.png)

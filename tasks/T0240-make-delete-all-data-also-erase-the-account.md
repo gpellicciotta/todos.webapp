@@ -5,7 +5,7 @@ session: claude-20261117-e20a61
 needs: []
 branch: task/T0240-make-delete-all-data-also-erase-the-account
 worktree: .plan/work/T0240-make-delete-all-data-also-erase-the-account
-status: suspended
+status: active
 started_at: "2026-11-17T03:22:09Z"
 ended_at: —
 review: agent
@@ -89,4 +89,8 @@ Make Delete all data erase the account's lists, tasks, and notes too, not only t
   Round 1 blocks on a stale server jar and unverified production deployment; both need a human.
   - Human: authorize jar rebuild or supply artifact.
   - Human: confirm T0257 is deployed, or revise prerequisite.
+
+- [2026-11-17] **[Verify]**
+  Contract suite passes 21 of 21 against the rebuilt server jar, erase test included.
+  - Production deployment of the route stays unverified.
 
