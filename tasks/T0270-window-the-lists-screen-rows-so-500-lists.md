@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1823.8, input: 10, output: 1595, cache_read: 654527, cache_write: 6864}
+  worker: {turns: 3, duration_s: 2486.1, input: 52, output: 11416, cache_read: 5277491, cache_write: 23554}
 work_duration: 1855.2
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T09:42:28Z"
 ---
 # T0270: Window the Lists screen rows so 500 lists open within twice the 150-list time
 
@@ -46,4 +49,7 @@ Window the Lists screen rows so 500 lists open within twice the 150-list time.
   - Files touched: 7.
   - Lines touched: 623.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
