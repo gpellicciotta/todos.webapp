@@ -5,17 +5,22 @@ session: claude-20261117-02f07b
 needs: []
 branch: task/T0247-add-a-find-field-and-an-all-lists
 worktree: .plan/work/T0247-add-a-find-field-and-an-all-lists
-status: active
+status: completed
 started_at: "2026-11-17T01:53:53Z"
-ended_at: —
+ended_at: "2026-11-17T02:18:01Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1287.1, input: 104, output: 28273, cache_read: 5935179, cache_write: 113525}
-review_status: pending
+  review: {turns: 1, duration_s: 147.2, input: 44659, output: 2386, cache_read: 394368, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T02:15:30Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-fe944a
+work_duration: 1447.8
+completion-commit: 713c5adbef441a300351ec375244fb2edebd18b7
 ---
 # T0247: Add a find field and an All, Lists, Tasks choice to the Recycle Bin to filter its entries
 
@@ -36,7 +41,7 @@ Make entries easy to find in a full Recycle Bin, before restoring or deleting th
 - [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
 - [x] **[Visual]**    Capture the filtered bin in light and dark themes, at desktop and phone widths.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -70,6 +75,13 @@ Make entries easy to find in a full Recycle Bin, before restoring or deleting th
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: [Decided]** Approved with non-blocking wording and evidence gaps.
+  - Findings: [review-findings-1.md](T0247-add-a-find-field-and-an-all-lists/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
 ## Screenshots
 - Before: [bin-before-light-desktop.png](T0247-add-a-find-field-and-an-all-lists/bin-before-light-desktop.png)
