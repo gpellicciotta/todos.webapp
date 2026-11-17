@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { attachReorder } from '../../src/js/views/reorder.js';
-import { createTaskList, formatDue } from '../../src/js/views/task-list.js';
+import { createTaskList, formatDue, tickEvent } from '../../src/js/views/task-list.js';
 import { isShowing } from './popover-shim.js';
 import { shapeTask } from './task-shape.js';
 
@@ -37,6 +37,36 @@ describe('formatDue', () => {
     expect(formatDue(shapeTask({ 'due-time': at(9, 10), status: 'ready' }), NOW, 'en-GB').text).toBe('Mon 10:00');
     expect(formatDue(shapeTask({ 'due-time': at(12, 23, 59), status: 'ready' }), NOW, 'en-GB').text).toBe('12 Nov');
     expect(formatDue(shapeTask({ 'due-time': new Date(2027, 0, 3, 23, 59).toISOString(), status: 'ready' }), NOW, 'en-GB').text).toBe('3 Jan 2027');
+  });
+});
+
+describe('tickEvent', () => {
+  const tickOf = (status, target, count = undefined) => {
+    const task = shapeTask({ status, 'target-count': target, ...(count === undefined ? {} : { 'completion-count': count }) });
+    return tickEvent(task['current-occurrence'], task['lifecycle-rules']);
+  };
+
+  it('completes open tasks at target 1, and leaves completed and cancelled ones alone (TSK-4)', () => {
+    expect(tickOf('ready', 1)).toBe('complete');
+    expect(tickOf('in-progress', 1)).toBe('complete');
+    expect(tickOf('completed', 1)).toBeNull();
+    expect(tickOf('cancelled', 1)).toBeNull();
+  });
+
+  it('completes every status but cancelled above target 1, also past the target (TSK-4)', () => {
+    expect(tickOf('ready', 3, 0)).toBe('complete');
+    expect(tickOf('in-progress', 3, 2)).toBe('complete');
+    expect(tickOf('completed', 3, 3)).toBe('complete');
+    expect(tickOf('completed', 3, 4)).toBe('complete');
+    expect(tickOf('cancelled', 3, 2)).toBeNull();
+  });
+
+  it('leaves a closed recurring series alone, completed or cancelled', () => {
+    const rules = { ...shapeTask()['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 1 };
+    for (const status of ['completed', 'cancelled']) {
+      const occurrence = { ...shapeTask({ status, 'target-count': 3, 'completion-count': 3 })['current-occurrence'], 'close-time': at(2, 0) };
+      expect(tickEvent(occurrence, { ...rules, 'target-count': 3 }), status).toBeNull();
+    }
   });
 });
 
@@ -133,11 +163,11 @@ describe('createTaskList', () => {
     expect(rows[1].querySelector('.task-row__count').textContent).toBe('4/3 done');
     expect(rows.slice(2).map((row) => row.querySelector('.task-row__count'))).toEqual([null, null, null]);
     expect(rows[0].querySelector('.status-button').getAttribute('aria-label')).toBe('Tick French exercises, 2 of 3 done');
-    expect(rows[1].querySelector('.status-button').getAttribute('aria-label')).toBe('Untick Gym, 4 of 3 done');
+    expect(rows[1].querySelector('.status-button').getAttribute('aria-label')).toBe('Tick Gym, 4 of 3 done');
     expect(rows[0].querySelector('.status-button').title).toBe('In progress, 2 of 3 done. Right-click or press Down for more actions.');
   });
 
-  it('ticks a target-3 task towards its target, and unticks it once completed', () => {
+  it('ticks a target-3 task towards its target, and past it once completed', () => {
     const french = (count) => shapeTask({
       id: 'f', description: 'French exercises', status: count >= 3 ? 'completed' : count > 0 ? 'in-progress' : 'ready',
       'target-count': 3, 'completion-count': count,
@@ -147,7 +177,7 @@ describe('createTaskList', () => {
     list.render([french(3)], ctx);
     expect(document.querySelector('.task-row__count').textContent).toBe('3/3 done');
     document.querySelector('.status-button').click();
-    expect(store.postEvent.mock.calls).toEqual([['f', 'complete'], ['f', 'uncomplete']]);
+    expect(store.postEvent.mock.calls).toEqual([['f', 'complete'], ['f', 'complete']]);
   });
 
   it('renders the row again when only its count changes', () => {
@@ -205,11 +235,11 @@ describe('createTaskList', () => {
       list.render(four, ctx);
     });
 
-    it('ticks: completes open tasks, uncompletes completed ones, and reopens cancelled ones, on one click', () => {
+    it('ticks: completes open tasks on one click, and never changes completed or cancelled ones at target 1', () => {
       for (const { id } of four) {
         statusOf(id).click();
       }
-      expect(store.postEvent.mock.calls).toEqual([['a', 'complete'], ['b', 'complete'], ['c', 'uncomplete'], ['d', 'reopen']]);
+      expect(store.postEvent.mock.calls).toEqual([['a', 'complete'], ['b', 'complete']]);
       expect(store.updateTask).not.toHaveBeenCalled();
       expect(document.querySelector('.status-menu').hidden).toBe(true);
     });
@@ -217,10 +247,25 @@ describe('createTaskList', () => {
     it('names the action of the click and the current status, without a menu popup', () => {
       expect(statusOf('a').getAttribute('aria-label')).toBe('Mark Buy paint completed');
       expect(statusOf('b').getAttribute('aria-label')).toBe('Mark Call the plumber completed');
-      expect(statusOf('c').getAttribute('aria-label')).toBe('Mark Water the plants to do');
-      expect(statusOf('d').getAttribute('aria-label')).toBe('Reopen Renew the gym pass');
       expect(statusOf('b').title).toBe('In progress. Right-click or press Down for more actions.');
       expect(statusOf('a').hasAttribute('aria-haspopup')).toBe(false);
+      expect(statusOf('a').hasAttribute('aria-disabled')).toBe(false);
+      expect(statusOf('b').hasAttribute('aria-disabled')).toBe(false);
+    });
+
+    it('marks an inert status button aria-disabled, focusable, and named by its status alone', () => {
+      expect(statusOf('c').getAttribute('aria-label')).toBe('Water the plants, completed');
+      expect(statusOf('d').getAttribute('aria-label')).toBe('Renew the gym pass, cancelled');
+      list.render([shapeTask({ id: 'g', description: 'Gym', status: 'cancelled', 'target-count': 3, 'completion-count': 2 })], ctx);
+      expect(statusOf('g').getAttribute('aria-label')).toBe('Gym, cancelled, 2 of 3 done');
+      list.render(four, ctx);
+      for (const id of ['c', 'd']) {
+        expect(statusOf(id).getAttribute('aria-disabled'), id).toBe('true');
+        expect(statusOf(id).disabled, id).toBe(false);
+        expect(statusOf(id).title, id).toBe('Open the task to change its status.');
+        statusOf(id).focus();
+        expect(document.activeElement, id).toBe(statusOf(id));
+      }
     });
 
     it('opens the status menu on right-click with start, unstart, cancel, and reopen as their preconditions hold', () => {
@@ -315,9 +360,22 @@ describe('createTaskList', () => {
       const open = document.querySelector('.task-row[data-task-id="b"] .task-row__open');
       open.focus();
       expect(press(open, 'x').defaultPrevented).toBe(true);
-      statusOf('c').focus();
-      press(statusOf('c'), 'x');
-      expect(store.postEvent.mock.calls).toEqual([['b', 'complete'], ['c', 'uncomplete']]);
+      statusOf('a').focus();
+      press(statusOf('a'), 'x');
+      expect(store.postEvent.mock.calls).toEqual([['b', 'complete'], ['a', 'complete']]);
+    });
+
+    it('posts nothing on x in a row whose click is inert', async () => {
+      for (const id of ['c', 'd']) {
+        const open = document.querySelector(`.task-row[data-task-id="${id}"] .task-row__open`);
+        open.focus();
+        press(open, 'x');
+        statusOf(id).focus();
+        press(statusOf(id), 'x');
+      }
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(store.postEvent).not.toHaveBeenCalled();
+      expect(toaster.show).not.toHaveBeenCalled();
     });
 
     it('ignores x with a modifier key, and x typed in a text field', () => {
@@ -345,6 +403,7 @@ describe('createTaskList', () => {
       list.render([{ ...four[0], 'owner-id': 9 }], viewer);
       const button = statusOf('a');
       expect(button.disabled).toBe(true);
+      expect(button.hasAttribute('aria-disabled')).toBe(false);
       button.click();
       button.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
       const open = document.querySelector('.task-row__open');
@@ -377,12 +436,48 @@ describe('createTaskList', () => {
       expect(toaster.show.mock.lastCall[0]).toBe('Task marked cancelled.');
     });
 
-    it('shows no toast when the row stays shown, and none without a filter', async () => {
+    it('shows the Undo toast after every tick, also when the row stays shown and without a filter', async () => {
       list.render(four, ctx, { shows: () => true });
       statusOf('a').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
+      expect(toaster.show.mock.lastCall[0]).toBe('Task marked completed.');
       list.render(four, ctx);
-      statusOf('c').click();
-      await vi.waitFor(() => expect(store.postEvent).toHaveBeenCalledTimes(2));
+      statusOf('b').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(2));
+      const [message, settings] = toaster.show.mock.lastCall;
+      expect(message).toBe('Task marked completed.');
+      expect(settings.undo).toBe(true);
+      settings.onAction();
+      expect(store.postEvent.mock.calls).toEqual([['a', 'complete'], ['b', 'complete'], ['b', 'uncomplete']]);
+    });
+
+    it('names the counts in the toast of a tick that changes only the count, and Undo posts uncomplete', async () => {
+      const gym = (count) => shapeTask({
+        id: 'g', description: 'Gym', status: count >= 3 ? 'completed' : count > 0 ? 'in-progress' : 'ready',
+        'target-count': 3, 'completion-count': count,
+      });
+      list.render([gym(1)], ctx);
+      statusOf('g').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
+      expect(toaster.show.mock.lastCall[0]).toBe('Ticked, 2 of 3 done.');
+      list.render([gym(2)], ctx);
+      statusOf('g').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(2));
+      expect(toaster.show.mock.lastCall[0]).toBe('Task marked completed.');
+      list.render([gym(3)], ctx);
+      statusOf('g').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(3));
+      const [message, settings] = toaster.show.mock.lastCall;
+      expect(message).toBe('Ticked, 4 of 3 done.');
+      settings.onAction();
+      expect(store.postEvent.mock.calls).toEqual([['g', 'complete'], ['g', 'complete'], ['g', 'complete'], ['g', 'uncomplete']]);
+    });
+
+    it('shows no toast for a status menu pick that keeps the row shown', async () => {
+      list.render(four, ctx, { shows: () => true });
+      openStatusMenu(statusOf('a'));
+      document.querySelector('.status-menu [data-event="start"]').click();
+      await vi.waitFor(() => expect(store.postEvent).toHaveBeenCalledTimes(1));
       await new Promise((resolve) => setTimeout(resolve));
       expect(toaster.show).not.toHaveBeenCalled();
     });

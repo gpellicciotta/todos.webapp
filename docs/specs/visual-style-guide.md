@@ -218,10 +218,12 @@ Defined in [app-components.css](../../src/css/app-components.css) and [app-chrom
 App states use attributes the app sets, such as `data-status` and `aria-current`, never gallery classes.
 
 - [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` that ticks on click.
-  A tick completes the task below target, undoes a completion once completed, and reopens a cancelled task.
+  A tick posts `complete`: at target 1 while open, and above target 1 unless cancelled, also past the target.
   A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key opens the status menu instead.
   It sets no text selection and no touch callout, so a long press reaches the menu.
   Its `aria-label` names the click action, such as "Mark Buy paint completed" or "Tick French exercises, 2 of 3 done".
+  A button whose click does nothing sets `aria-disabled="true"`, with no hover ground and a default cursor.
+  It keeps its status color, and its `aria-label` drops the verb, such as "Water the plants, completed".
   The icon shapes differ, so status never relies on color. The app sets `data-status` on the button, which colors the icon:
   - `ready`: an empty circle, in the muted text color.
   - `in-progress`: a circle with a filled bottom half, in blue.

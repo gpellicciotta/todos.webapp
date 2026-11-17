@@ -428,11 +428,18 @@
  * Icons: status-ready (empty circle), status-in-progress (circle with a filled bottom half),
  * status-completed (filled circle with a check), status-cancelled (filled circle with a dash).
  * Read-only rows disable it but keep the icon at full icon contrast.
+ * A row whose click posts nothing, such as a completed task at target 1, marks it aria-disabled:
+ * it keeps its status color and focus ring, but shows no hover ground or pointer, since a click does nothing.
  * The long press must not select text or show the touch callout of the browser.
  */
 .status-button {
   -webkit-touch-callout: none;
   user-select: none;
+}
+
+.status-button[aria-disabled='true'] {
+  background-color: transparent;
+  cursor: default;
 }
 
 .status-button:disabled {

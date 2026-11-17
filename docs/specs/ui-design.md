@@ -254,10 +254,16 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
 
 - A closed recurring series takes no click; the editor reopens it.
 - Every tick shows an Undo toast, which Ctrl+Z also runs, since a target 1 row cannot untick.
+  It shows also when the row stays in view; Undo posts `uncomplete`.
+  It reads "Task marked completed." when the status changes, and "Ticked, 2 of 3 done." when only the count does.
 - Above target 1, a corner badge on the status icon shows the counts, such as "2/3" (`TSK-15`).
   The badge is part of the status button, so a tap on it ticks.
 - The status button's name states the action and the counts, such as "Tick French exercises, 2 of 3 done".
 - The tooltip names the status and the counts above target 1.
+- A row whose click does nothing marks its status button `aria-disabled="true"`.
+  The button stays focusable for the row keys and keeps its status color, without a hover ground.
+  Its name drops the verb, such as "Water the plants, completed".
+  Its tooltip reads "Open the task to change its status."
 - There is no right-click, long-press, Down, Up, Shift+F10, or Menu key menu on a row.
 - The status icons differ in shape, not only in color:
   - `ready`: an empty circle, in the muted text color.

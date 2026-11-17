@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Made the task row's status button and `x` only ever tick: completed rows at target 1 and cancelled rows turn inert with `aria-disabled`, a completed row above target 1 ticks past its target, and every tick shows an Undo toast, such as "Ticked, 4 of 3 done." (TSK-4).
 - FrontEnd: Replaced the task editor's tick, Start, Undo start, Cancel task, and Reopen buttons with four state buttons, a count stepper above target 1, and Complete for previous period, so no button shows a completed icon at 2 of 3 (TSK-4, TSK-15, TSK-16).
 - Docs: Designed the tabbed task editor, the two-line task row with a count badge, and the Alt-key row reordering, with wireframes.
 - FrontEnd: Made a Delete all data done in local mode erase the account's lists and tasks on the next connect, before the new local data uploads: automatically for the last connected account, otherwise after an Erase or Keep question in Settings (BAK-15, CON-4).

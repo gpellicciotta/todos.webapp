@@ -749,7 +749,7 @@ describe('Keyboard shortcuts section', () => {
     [['Shift+Enter', 'Alt+Enter'], 'Add the task or list, in the search and add field.'],
     [['Escape'], 'Clear the search and add field, or close the editor or a dialog.'],
     [['Alt+Up', 'Alt+Down'], "Move the focused list, or the focused task in a list's manual order."],
-    [['x'], 'Tick the focused task: complete it below target, undo a completion once completed, or reopen it once cancelled.'],
+    [['x'], 'Tick the focused task, as a click on its status button does; a toast offers Undo.'],
     [['Ctrl+Z', 'Cmd+Z'], 'Undo the newest change shown in a toast.'],
   ];
 

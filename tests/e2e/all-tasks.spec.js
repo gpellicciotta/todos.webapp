@@ -168,7 +168,7 @@ test('Enter or Add adds a task, opens it beside the add bar, keeps the focus the
   expect(problems).toEqual([]);
 });
 
-test('one click completes a task, x toggles the focused row, and Undo or Ctrl+Z sets it back (TSK-4)', async ({ page }) => {
+test('one click completes a task, x ticks the focused row, and Undo or Ctrl+Z sets it back (TSK-4)', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
   await openApp(page);
@@ -198,6 +198,41 @@ test('one click completes a task, x toggles the focused row, and Undo or Ctrl+Z 
   });
   expect((await statuses())['Book flights']).toBe('ready');
   expect((await statuses())['Buy paint']).toBe('ready');
+  expect(problems).toEqual([]);
+});
+
+test('a click ticks a completed target-3 task to 4 of 3, and one Undo sets it back to 3 of 3 (TSK-4)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await openApp(page);
+  const id = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const gym = await store.createTask({ description: 'Gym' });
+    await store.updateRules(gym.id, { 'target-count': 3 });
+    for (let step = 0; step < 3; step += 1) {
+      await store.postEvent(gym.id, 'complete');
+    }
+    store.close();
+    return gym.id;
+  });
+  const gym = page.locator('.task-row', { hasText: 'Gym' });
+  await expect(gym.locator('.task-row__count')).toHaveText('3/3 done');
+  await gym.getByRole('button', { name: 'Tick Gym, 3 of 3 done', exact: true }).click();
+  await expect(gym.locator('.task-row__count')).toHaveText('4/3 done');
+  await expect(gym).toHaveAttribute('data-status', 'completed');
+  const toast = page.locator('.toast', { hasText: 'Ticked, 4 of 3 done.' });
+  await toast.getByRole('button', { name: 'Undo' }).click();
+  await expect(gym.locator('.task-row__count')).toHaveText('3/3 done');
+  await expect(gym).toHaveAttribute('data-status', 'completed');
+  const occurrence = await page.evaluate(async (taskId) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const task = (await store.listTasks()).find((each) => each.id === taskId);
+    store.close();
+    return task['current-occurrence'];
+  }, id);
+  expect(occurrence).toMatchObject({ 'completion-count': 3, status: 'completed' });
   expect(problems).toEqual([]);
 });
 

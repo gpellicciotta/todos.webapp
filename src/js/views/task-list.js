@@ -3,14 +3,16 @@
  *
  * A row shows the status button, the description, the done and target counts above target 1, the due chip,
  * up to two list chips, and the note count. The open link fills the row and opens the task editor route.
- * A click on the status button ticks: it posts `complete` below target, `uncomplete` once completed, and `reopen`
- * once cancelled; `x` does the same on the focused row (`TSK-4`).
+ * A click on the status button only ever ticks, posting `complete`: at target 1 while open, and above target 1
+ * unless cancelled, also past the target; `x` does the same on the focused row (`TSK-4`).
+ * A row whose click would post nothing marks the button `aria-disabled`, which keeps it focusable for the row keys.
+ * Every tick shows an Undo toast, which posts `uncomplete` and which Ctrl+Z also runs.
  * A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key on it opens the status menu,
  * which offers `start`, `unstart`, `cancel`, and `reopen` while their preconditions hold.
  * A recurring row shows a repeat chip, such as Weekly, instead of a due chip, and is never overdue.
  * Past its period end it shows as `ready` with count 0 until the roll-over (the display rule), also on the minute tick.
  * For 24 hours after a period ends, the status menu adds Complete for previous period, which names that occurrence.
- * An event that hides the row under the view's filters shows an Undo toast, which Ctrl+Z also runs.
+ * A status menu event that hides the row under the view's filters shows an Undo toast too.
  * The More button offers Add to list and Delete, which moves the task to the recycle bin
  * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu; the status button sets it.
  * In a list view, the More menu adds Remove from this list, and Move up and Move down while moves are on,
@@ -106,18 +108,16 @@ export function countWords(occurrence) {
 /** Row strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   statusOf: 'Status of ',
-  tick: (type, description, occurrence) => {
-    if (type === 'reopen') {
-      return `Reopen ${description}`;
-    }
-    if (showsCount(occurrence)) {
-      return `${type === 'complete' ? 'Tick' : 'Untick'} ${description}, ${countWords(occurrence)}`;
-    }
-    return `Mark ${description} ${type === 'complete' ? 'completed' : 'to do'}`;
-  },
+  tick: (description, occurrence) => (showsCount(occurrence)
+    ? `Tick ${description}, ${countWords(occurrence)}`
+    : `Mark ${description} completed`),
+  inert: (description, occurrence) => `${description}, ${STATUS_LABELS[occurrence.status].toLowerCase()}`
+    + `${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`,
   statusHint: (occurrence) => `${STATUS_LABELS[occurrence.status]}${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`
     + '. Right-click or press Down for more actions.',
+  inertHint: 'Open the task to change its status.',
   marked: (status) => `Task marked ${STATUS_LABELS[status].toLowerCase()}.`,
+  ticked: (occurrence) => `Ticked, ${countWords(occurrence)}.`,
   done: ' done',
   moreFor: 'More actions for ',
   addToList: 'Add to list',
@@ -139,18 +139,19 @@ const STRINGS = Object.freeze({
 });
 
 /**
- * Return the event one click on the status button posts, its tick: `complete` below target, `uncomplete` once completed,
- * and `reopen` for a cancelled occurrence, whose count changes only after it reopens.
- * A closed recurring occurrence, such as a series ended as completed, takes only `reopen`.
+ * Return the event one click on the status button posts, its tick, which never lowers the count (`TSK-4`).
+ * At target 1, an open occurrence takes `complete`, and a completed one nothing.
+ * Above target 1, every occurrence but a cancelled one takes `complete`, so a count may pass its target, such as 4 of 3.
+ * A cancelled occurrence and a closed recurring series take nothing; the task editor changes their status.
  * @param {object} occurrence the current occurrence
  * @param {object} [rules] the lifecycle rules
- * @returns {'complete'|'uncomplete'|'reopen'} the event type
+ * @returns {'complete'|null} the event type, or null when a click posts nothing
  */
 export function tickEvent(occurrence, rules = undefined) {
   if (occurrence.status === 'cancelled' || (isRecurring(rules) && occurrence['close-time'] !== null)) {
-    return 'reopen';
+    return null;
   }
-  return occurrence.status === 'completed' ? 'uncomplete' : 'complete';
+  return occurrence.status === 'completed' && occurrence['target-count'] <= 1 ? null : 'complete';
 }
 
 /**
@@ -309,8 +310,10 @@ function viewOf(task, ctx, options) {
   const occurrence = task['current-occurrence'];
   const count = showsCount(occurrence) ? `${occurrence['completion-count']}/${occurrence['target-count']}` : null;
   const repeat = recurrenceLabel(task['lifecycle-rules']);
+  // An ended series keeps its status and count but turns inert, so the key holds the tick too.
+  const tick = tickEvent(occurrence, task['lifecycle-rules']);
   return {
-    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, notes, access.locked, access.menu]),
+    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, notes, access.locked, access.menu, tick]),
     dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, repeat, href, handle, names, notes, locked: access.locked, menu: access.menu,
   };
 }
@@ -459,8 +462,13 @@ function renderRow(doc, task, view, template, selected) {
   const open = more.previousElementSibling;
   const status = open.previousElementSibling;
   const occurrence = task['current-occurrence'];
-  status.setAttribute('aria-label', STRINGS.tick(tickEvent(occurrence, task['lifecycle-rules']), task.description, occurrence));
-  status.title = STRINGS.statusHint(occurrence);
+  // A click that posts nothing leaves the button focusable for the row keys, but aria-disabled; a viewer's stays disabled.
+  const inert = !view.locked && tickEvent(occurrence, task['lifecycle-rules']) === null;
+  status.setAttribute('aria-label', inert ? STRINGS.inert(task.description, occurrence) : STRINGS.tick(task.description, occurrence));
+  status.title = inert ? STRINGS.inertHint : STRINGS.statusHint(occurrence);
+  if (inert) {
+    status.setAttribute('aria-disabled', 'true');
+  }
   status.dataset.status = statusOf(task);
   status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${statusOf(task)}`);
   open.href = view.href;
@@ -666,22 +674,25 @@ export function createTaskList({
   }
 
   /**
-   * Post a user event on a task; when the change hides its row under the view's filters, show an Undo toast,
-   * whose Undo posts the inverse event. The row is judged with the event applied, so a task finished now counts as
-   * finished today. An event whose precondition fails, such as after another tab changed the task, posts nothing.
+   * Post a user event on a task, and show an Undo toast, whose Undo posts the inverse event, when `always` asks for one
+   * or the change hides its row under the view's filters. The toast names the new status, or the counts when only they
+   * changed. The row is judged with the event applied, so a task finished now counts as finished today.
+   * An event whose precondition fails, such as after another tab changed the task, posts nothing.
    * @param {object} task the task
    * @param {string} type the event type
+   * @param {boolean} [always] whether the toast shows also while the row stays shown, as after a tick
    */
-  function post(task, type) {
+  function post(task, type, always = false) {
     const time = new Date(ctx.now ?? Date.now()).toISOString();
-    const occurrence = applyEvent(task['current-occurrence'], { type, 'creation-time': time }, task['lifecycle-rules']);
+    const before = task['current-occurrence'];
+    const occurrence = applyEvent(before, { type, 'creation-time': time }, task['lifecycle-rules']);
     if (!occurrence) {
       return;
     }
     const hides = shows !== null && !shows({ ...task, 'current-occurrence': occurrence, 'last-update-time': time });
     store.postEvent(task.id, type).then(() => {
-      if (hides) {
-        toaster.show(STRINGS.marked(occurrence.status), {
+      if (always || hides) {
+        toaster.show(occurrence.status === before.status ? STRINGS.ticked(occurrence) : STRINGS.marked(occurrence.status), {
           undo: true,
           onAction: () => store.postEvent(task.id, INVERSE[type]).catch(fail),
         });
@@ -690,13 +701,14 @@ export function createTaskList({
   }
 
   /**
-   * Tick a task, unless the user's role locks its status (`SHR-4`): complete below target, uncomplete once completed,
-   * and reopen once cancelled.
+   * Tick a task with an Undo toast, unless the user's role locks its status (`SHR-4`) or its tick posts nothing,
+   * as on a completed task at target 1 or a cancelled task.
    * @param {object|undefined} task the task
    */
   function tick(task) {
-    if (task && !accessOf(task, ctx, listId).locked) {
-      post(task, tickEvent(task['current-occurrence'], task['lifecycle-rules']));
+    const type = task ? tickEvent(task['current-occurrence'], task['lifecycle-rules']) : null;
+    if (type && !accessOf(task, ctx, listId).locked) {
+      post(task, type, true);
     }
   }
 

@@ -74,7 +74,8 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-2: A new task has status `ready` and overdue behavior `keep` unless the user picks otherwise.
 - TSK-3: A task status is one of `ready`, `in-progress`, `completed`, or `cancelled`.
 - TSK-4: Users change a task status through events, offered only while their preconditions hold.
-  One click on a task row's status button posts `complete`; it does nothing once completed or cancelled.
+  One click on a task row's status button posts `complete` and never lowers the count.
+  It does nothing once cancelled, or once completed at target 1; above target 1 the count may pass the target.
   Every tick shows an Undo toast.
   The editor's Status tab has one button per status; each posts the events that reach it.
   A stepper there corrects the count above target 1.

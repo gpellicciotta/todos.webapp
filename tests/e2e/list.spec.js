@@ -297,6 +297,33 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
+  test('a completed target-1 row is inert to a click and to x, and keeps its status menu (TSK-4)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page, { statuses: null });
+    const plants = page.locator('.list-view .task-row', { hasText: 'Water the plants' });
+    const button = plants.getByRole('button', { name: 'Water the plants, completed' });
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
+    await expect(button).toHaveAttribute('title', 'Open the task to change its status.');
+    // Playwright waits for aria-disabled buttons to enable; force sends the real mouse click a user would.
+    await button.click({ force: true });
+    await button.focus();
+    await page.keyboard.press('x');
+    await expect(plants).toHaveAttribute('data-status', 'completed');
+    await expect(page.locator('.toast')).toHaveCount(0);
+    await button.click({ button: 'right', force: true });
+    await expect(page.getByRole('menu', { name: 'Status of Water the plants' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    const status = await page.evaluate(async () => {
+      const { openStore } = await import('/js/store/db.js');
+      const store = await openStore();
+      const tasks = await store.listTasks();
+      store.close();
+      return tasks.find((task) => task.description === 'Water the plants')['current-occurrence'].status;
+    });
+    expect(status).toBe('completed');
+    expect(problems).toEqual([]);
+  });
+
   test('the More menu holds Edit list, Edit view options, Share list, and Delete list (VO-4)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);

@@ -84,15 +84,16 @@ describe('ended recurring series', () => {
     }
   });
 
-  it('offers only Reopen on the row of a series that ended completed', () => {
+  it('offers only Reopen on the row of a series that ended completed, whose click is inert', () => {
     const task = ended('completed');
-    expect(tickEvent(task['current-occurrence'], task['lifecycle-rules'])).toBe('reopen');
+    expect(tickEvent(task['current-occurrence'], task['lifecycle-rules'])).toBeNull();
     expect(statusActions(task['current-occurrence'], task['lifecycle-rules']).map(({ event }) => event)).toEqual(['reopen']);
     document.body.innerHTML = '';
     const list = createTaskList({ document, store: { postEvent: vi.fn() }, toaster: { show: vi.fn() }, label: 'Tasks', hrefOf: () => '#' });
     document.body.append(list.element);
     list.render([task], { now: new Date('2026-11-09T08:00:00Z') });
-    expect(document.querySelector('.status-button').getAttribute('aria-label')).toBe('Reopen Water the plants');
+    expect(document.querySelector('.status-button').getAttribute('aria-label')).toBe('Water the plants, completed');
+    expect(document.querySelector('.status-button').getAttribute('aria-disabled')).toBe('true');
     list.destroy();
   });
 
