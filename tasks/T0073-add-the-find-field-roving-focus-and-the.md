@@ -1,11 +1,11 @@
 ---
 id: T0073
-owner: ~
-needs: ['T0072']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0073-add-the-find-field-roving-focus-and-the
+worktree: .plan/work/T0073-add-the-find-field-roving-focus-and-the
+status: active
+started_at: "2026-11-17T04:25:51Z"
 ended_at: —
 review: agent
 preview: none
