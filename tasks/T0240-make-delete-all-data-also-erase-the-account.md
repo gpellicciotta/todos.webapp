@@ -5,7 +5,7 @@ session: claude-20261117-e20a61
 needs: []
 branch: task/T0240-make-delete-all-data-also-erase-the-account
 worktree: .plan/work/T0240-make-delete-all-data-also-erase-the-account
-status: active
+status: suspended
 started_at: "2026-11-17T03:22:09Z"
 ended_at: —
 review: agent
@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 640.6, input: 136, output: 42037, cache_read: 10566245, cache_write: 183916}
-review_status: pending
+  review: {turns: 1, duration_s: 98.2, input: 49490, output: 2339, cache_read: 419712, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T03:32:57Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-32aee0
+work_duration: 748.4
 ---
 # T0240: Make Delete all data also erase the account's lists and tasks while connected, queued while offline
 
@@ -76,4 +80,13 @@ Make Delete all data erase the account's lists, tasks, and notes too, not only t
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: Rejected: the required real-server erase contract check fails with the available server artifact.
+  - Findings: [review-findings-1.md](T0240-make-delete-all-data-also-erase-the-account/review-findings-1.md).
+
+- [2026-11-17] **[Review]**
+  Round 1 blocks on a stale server jar and unverified production deployment; both need a human.
+  - Human: authorize jar rebuild or supply artifact.
+  - Human: confirm T0257 is deployed, or revise prerequisite.
 
