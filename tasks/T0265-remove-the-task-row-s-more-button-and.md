@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1518.2, input: 226, output: 64542, cache_read: 21036557, cache_write: 231881}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T16:36:14Z"
 ---
 # T0265: Remove the task row's More button and menu, now that the editor and the move keys cover them
 
@@ -59,4 +64,7 @@ Remove the row's More button and menu, by the Task Row Layout rules in T0257's s
   - Files touched: 16.
   - Lines touched: 665.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
