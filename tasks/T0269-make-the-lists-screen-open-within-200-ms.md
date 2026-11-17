@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 625.0, input: 76, output: 19758, cache_read: 3731583, cache_write: 97975}
+  worker: {turns: 2, duration_s: 1686.1, input: 102, output: 23997, cache_read: 5353383, cache_write: 110327}
   review: {turns: 1, duration_s: 163.7, input: 39400, output: 2814, cache_read: 761216, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T05:22:36Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T05:43:28Z"
 review_session: codex-20261117-c47fd8
 work_duration: 799.0
 ---
@@ -57,4 +56,7 @@ Make the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x 
 - [2026-11-17] **[Verify]**
   Review round 1 failure also fails on base e173243 under load; documented, follow-up T0271.
   - Branch 34 of 80, base 23 of 80 failed.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
