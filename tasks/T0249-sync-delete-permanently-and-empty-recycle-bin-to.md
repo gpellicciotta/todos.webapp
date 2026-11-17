@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 534.9, input: 116, output: 38604, cache_read: 8070121, cache_write: 164182}
+  worker: {turns: 2, duration_s: 768.4, input: 156, output: 52137, cache_read: 12003484, cache_write: 189260}
   review: {turns: 1, duration_s: 202.0, input: 94644, output: 4431, cache_read: 713984, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T01:41:34Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T01:49:23Z"
 review_session: codex-20261117-71f7cc
 work_duration: 754.0
 ---
@@ -85,4 +84,7 @@ Make permanent deletes from the Recycle Bin reach the account, not just this dev
 
 - [2026-11-17] **[Doc]**
   Updated the local store spec and technical spec for no dropped entries and no before.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
