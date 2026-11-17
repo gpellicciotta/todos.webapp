@@ -11,8 +11,12 @@
 - docs/specs/visual-style-guide.md
 - docs/specs/ui-design.md
 - docs/requirements.md
+- tests/e2e/all-tasks.spec.js (added during execution: two of its tests drove the status menu)
+- tests/unit/recurrence-review.test.js (added during execution: it imported `statusActions`)
+- docs/specs/local-store.md (added during execution: its display rule named the status menu)
 
 Size estimate: 10 files, 380 lines, mostly deletions.
+Measured: 13 files, 580 lines (162 added, 418 deleted).
 Size note: removing one component crosses JS, CSS, gallery, docs, and tests; no split piece merges alone.
 
 ### Removal
