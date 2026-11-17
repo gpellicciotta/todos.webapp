@@ -30,6 +30,8 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
 
 ## Backlog
+- [ ] T0285 Fix the three test_devops.py release tests failing on main at 1ee04e2, including the release dry run.
+- [ ] T0284 [protocol: adhoc] Fix the Ruff format check failing on main in tests/test_draw_wireframes.py near line 207.
 - [ ] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [ ] T0227 Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [ ] T0266 Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
