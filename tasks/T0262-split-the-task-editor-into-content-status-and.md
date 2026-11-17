@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1835.9, input: 12, output: 2087, cache_read: 1068718, cache_write: 7450}
+  worker: {turns: 3, duration_s: 2077.6, input: 42, output: 11003, cache_read: 4990541, cache_write: 23513}
 work_duration: 1875.0
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T16:04:06Z"
 ---
 # T0262: Split the task editor into Content, Status, and History tabs, with Lists and Delete on Status
 
@@ -81,4 +84,7 @@ Split the long task editor into three tabs, by the Tabs rules in T0257's signed-
   - Files touched: 15.
   - Lines touched: 748.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
