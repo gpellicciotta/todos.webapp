@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 699.3, input: 94, output: 40916, cache_read: 6135202, cache_write: 144510}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T04:49:49Z"
 ---
 # T0074: Add the find bar, sort menu, info line, and Create list offer to the Lists screen
 
@@ -46,4 +51,7 @@ Hide reordering while a sort or find text is active, and announce why.
 
 - [2026-11-17] **[Decided]**
   Full e2e run showed behaviors.spec.js popover keyboard test failing also on the clean baseline; left untouched. Fixed the stale bin-settings shortcut expectations.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
