@@ -130,6 +130,37 @@ test('the find field and the type choice filter the bin, and a match restores', 
   expect(problems).toEqual([]);
 });
 
+test('Restore and Delete act on every entry that matches the filter', async ({ page }) => {
+  const problems = watch(page);
+  await open(page, '#/bin');
+  await seed(page, { deleteList: true });
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const task = await store.createTask({ description: 'Café opening' }, {});
+    await store.deleteTask(task.id);
+    store.close();
+  });
+  await expect(page.locator('.bin-row')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: 'Empty recycle bin' })).toBeVisible();
+  await page.getByRole('group', { name: 'Show' }).getByText('Tasks').click();
+  await expect(page.getByRole('button', { name: 'Empty recycle bin' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete 2 permanently' })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('filtered-toolbar.png') });
+  await page.getByRole('button', { name: 'Restore 2' }).click();
+  await expect(page.locator('.toast').filter({ hasText: 'Restored 2 tasks.' })).toHaveCount(1);
+  await expect(page.locator('.bin__info')).toContainText('0 of 1 entries');
+  await expect(page.getByRole('textbox', { name: 'Find in the recycle bin' })).toBeFocused();
+  await page.getByRole('group', { name: 'Show' }).getByText('Lists').click();
+  await page.getByRole('button', { name: 'Delete 1 permanently' }).click();
+  const confirm = page.getByRole('group', { name: 'Delete the matches permanently' });
+  await expect(confirm).toContainText('Permanently delete 1 list that match? This cannot be undone.');
+  await page.screenshot({ path: test.info().outputPath('filtered-question.png') });
+  await confirm.getByRole('button', { name: 'Delete all' }).click();
+  await expect(page.locator('.toast').filter({ hasText: 'Deleted 1 list permanently.' })).toHaveCount(1);
+  await expect(page.locator('.empty-state')).toBeVisible();
+  expect(problems).toEqual([]);
+});
 test('Empty recycle bin asks with the count, then empties the bin for good, also after a reload', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize({ width: 390, height: 844 });

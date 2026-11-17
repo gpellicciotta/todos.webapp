@@ -441,3 +441,98 @@ describe('deleteAllData', () => {
     expect(await store.getTask(task.id)).toBeDefined();
   });
 });
+
+describe('restoreEntries', () => {
+  it('restores the given entries with memberships in one write, leaving other entries in the bin', async () => {
+    const other = await store.createTask({ description: 'Other' }, { lists: [home.id] });
+    await store.deleteTask(task.id);
+    await store.deleteList(home.id);
+    await store.deleteTask(other.id);
+    clock.tick();
+    const heard = [];
+    store.subscribe((change) => heard.push(change.operation));
+    const result = await store.restoreEntries([{ type: 'task', id: task.id }, { type: 'list', id: home.id }]);
+    expect(result.restored.map(({ type, id }) => ({ type, id }))).toEqual([{ type: 'task', id: task.id }, { type: 'list', id: home.id }]);
+    expect(result.skipped).toEqual([]);
+    expect(heard).toEqual(['restoreEntries']);
+    expect((await store.listBin()).map((entry) => entry.id)).toEqual([other.id]);
+    expect((await store.listsOfTask(task.id)).sort()).toEqual([home.id, work.id].sort());
+  });
+
+  it('skips expired, missing, and not deleted entries, and restores the rest', async () => {
+    const fresh = await store.createTask({ description: 'Fresh' });
+    await store.deleteTask(task.id);
+    clock.tick(30 * DAY + 1);
+    await store.deleteTask(fresh.id);
+    const result = await store.restoreEntries([
+      { type: 'task', id: task.id }, { type: 'task', id: fresh.id }, { type: 'task', id: MISSING }, { type: 'list', id: work.id },
+    ]);
+    expect(result.restored.map((item) => item.id)).toEqual([fresh.id]);
+    expect(result.skipped.map((item) => item.id).sort()).toEqual([task.id, MISSING, work.id].sort());
+    expect((await store.listBin()).map((entry) => entry.id)).toEqual([task.id]);
+  });
+
+  it('restores nothing when a write fails part way', async () => {
+    await store.deleteTask(task.id);
+    await store.deleteList(home.id);
+    await expectCode(store.restoreEntries([{ type: 'list', id: home.id }, { type: 'note', id: task.id }]), 'invalid');
+    expect((await store.listBin()).map((entry) => entry.id).sort()).toEqual([task.id, home.id].sort());
+  });
+
+  it('queues one restore per restored entry while tracking, and nothing for skipped ones', async () => {
+    const tracked = await freshStore({ tracking: () => true });
+    const a = await tracked.store.createList({ name: 'A' });
+    const t = await tracked.store.createTask({ description: 'T' });
+    await tracked.store.deleteList(a.id);
+    await tracked.store.deleteTask(t.id);
+    await tracked.store.queue.clear();
+    await tracked.store.restoreEntries([{ type: 'list', id: a.id }, { type: 'task', id: t.id }, { type: 'task', id: MISSING }]);
+    expect((await tracked.store.queue.all()).map((entry) => [entry.operation, entry.target.id])).toEqual([['restore-list', a.id], ['restore-task', t.id]]);
+    tracked.store.close();
+  });
+});
+
+describe('purgeEntries', () => {
+  it('purges the given entries with memberships and notes, and nothing else', async () => {
+    const other = await store.createTask({ description: 'Other' }, { lists: [work.id] });
+    await store.addNote(task.id, { text: 'Goes' });
+    await store.addNote(other.id, { text: 'Stays' });
+    await store.deleteTask(task.id);
+    await store.deleteTask(other.id);
+    await store.deleteList(home.id);
+    const heard = [];
+    store.subscribe((change) => heard.push(change.operation));
+    const purged = await store.purgeEntries([{ type: 'task', id: task.id }, { type: 'list', id: home.id }]);
+    expect(purged).toEqual([{ type: 'task', id: task.id }, { type: 'list', id: home.id }]);
+    expect(heard).toEqual(['purgeEntries']);
+    expect((await store.listBin()).map((entry) => entry.id)).toEqual([other.id]);
+    expect((await rawAll('notes')).map((n) => n.text)).toEqual(['Stays']);
+    expect((await rawAll('memberships')).map((m) => m['task-id'])).toEqual([other.id]);
+    expect(await store.getTask(task.id)).toBeUndefined();
+  });
+
+  it('skips entries that are not in the bin, and rejects unknown types', async () => {
+    await store.deleteTask(task.id);
+    expect(await store.purgeEntries([{ type: 'task', id: MISSING }, { type: 'list', id: home.id }, { type: 'task', id: task.id }])).toEqual([{ type: 'task', id: task.id }]);
+    expect(await store.getList(home.id)).toBeTruthy();
+    await expectCode(store.purgeEntries([{ type: 'note', id: task.id }]), 'invalid');
+  });
+
+  it('queues one purge per purged entry while tracking', async () => {
+    const tracked = await freshStore({ tracking: () => true });
+    const a = await tracked.store.createList({ name: 'A' });
+    const t = await tracked.store.createTask({ description: 'T' });
+    await tracked.store.deleteList(a.id);
+    await tracked.store.deleteTask(t.id);
+    await tracked.store.queue.clear();
+    await tracked.store.purgeEntries([{ type: 'list', id: a.id }, { type: 'task', id: t.id }]);
+    expect((await tracked.store.queue.all()).map((entry) => [entry.operation, entry.target.type, entry.target.id])).toEqual([['purge', 'list', a.id], ['purge', 'task', t.id]]);
+    tracked.store.close();
+  });
+
+  it('queues nothing in local mode', async () => {
+    await store.deleteTask(task.id);
+    await store.purgeEntries([{ type: 'task', id: task.id }]);
+    expect(await store.queue.count()).toBe(0);
+  });
+});

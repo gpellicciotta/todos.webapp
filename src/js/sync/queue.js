@@ -22,7 +22,7 @@ const NOTE_FIELDS = ['text', 'occurrence'];
 const OPERATIONS = new Set([
   'createList', 'updateList', 'deleteList', 'restoreList', 'createTask', 'updateTask', 'deleteTask', 'restoreTask',
   'postEvent', 'updateRules', 'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
-  'purgeForever', 'emptyBin',
+  'purgeForever', 'restoreEntries', 'purgeEntries', 'emptyBin',
 ]);
 
 /**
@@ -476,6 +476,14 @@ export async function trackChange(ctx, queue, operation, args) {
   const before = await readBefore(ctx, operation, args);
   return async (result) => {
     const created = ctx.now().toISOString();
+    if (operation === 'restoreEntries') {
+      await queue.add(result.restored.flatMap(({ type, record, from }) => binEntry(type, `restore-${type}`, record, from)).map((entry) => ({ ...entry, created })));
+      return;
+    }
+    if (operation === 'purgeEntries') {
+      await queuePurges(queue, result, created, false);
+      return;
+    }
     if (operation === 'purgeForever' || operation === 'emptyBin') {
       await queuePurges(queue, operation === 'purgeForever' ? [{ type: args[0], id: args[1] }] : result, created, operation === 'emptyBin');
       return;

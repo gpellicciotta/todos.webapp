@@ -186,6 +186,63 @@ export async function purgeForever(ctx, type, id) {
 }
 
 /**
+ * Restore the given recycle bin entries in one transaction (`BIN-9`), each with its memberships (`BIN-3`).
+ * An entry that is expired, missing, or no longer deleted is skipped; the others still restore.
+ * The facade queues one restore per restored entry for sync while connected.
+ * @param {{db: IDBDatabase, now: () => Date}} ctx store context
+ * @param {{type: string, id: string}[]} entries the entries to restore
+ * @returns {Promise<{restored: {type: string, id: string, record: object, from: string}[], skipped: {type: string, id: string}[]}>}
+ *   the restored records with their former `deletion-time`, and the skipped entries
+ */
+export function restoreEntries(ctx, entries) {
+  for (const { type } of entries) {
+    storeOf(type);
+  }
+  return transact(ctx.db, [STORES.lists, STORES.tasks], 'readwrite', async (tx) => {
+    const now = ctx.now();
+    const time = now.toISOString();
+    const restored = [];
+    const skipped = [];
+    for (const { type, id } of entries) {
+      const objects = tx.objectStore(storeOf(type));
+      const record = await request(objects.get(id));
+      if (!record?.['deletion-time'] || now.getTime() > Date.parse(purgeTime(record['deletion-time']))) {
+        skipped.push({ type, id });
+        continue;
+      }
+      const updated = { ...record, 'deletion-time': null, 'last-update-time': time };
+      await request(objects.put(updated));
+      restored.push({ type, id, record: updated, from: record['deletion-time'] });
+    }
+    return { restored, skipped };
+  });
+}
+
+/**
+ * Permanently delete the given recycle bin entries in one transaction (`BIN-9`); the caller asks for confirmation first.
+ * An entry that is missing or not deleted is skipped.
+ * The facade queues one `purge` per purged entry for sync while connected.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context
+ * @param {{type: string, id: string}[]} entries the entries to delete
+ * @returns {Promise<{type: string, id: string}[]>} the purged entries
+ */
+export function purgeEntries(ctx, entries) {
+  for (const { type } of entries) {
+    storeOf(type);
+  }
+  return transact(ctx.db, ALL_STORES, 'readwrite', async (tx) => {
+    const purged = [];
+    for (const { type, id } of entries) {
+      const record = await request(tx.objectStore(storeOf(type)).get(id));
+      if (record?.['deletion-time']) {
+        await removeRecord(tx, ctx, type, id);
+        purged.push({ type, id });
+      }
+    }
+    return purged;
+  });
+}
+/**
  * Permanently delete every recycle bin entry in one transaction (`BIN-7`); the caller asks for confirmation first.
  * The facade queues one `empty-bin` entry for sync while connected.
  * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange}} ctx store context

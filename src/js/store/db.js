@@ -61,7 +61,7 @@ const WRITES = [
   'createList', 'updateList', 'createTask', 'updateTask', 'postEvent', 'updateRules', 'expireTask', 'rollOverTask',
   'addToList', 'removeFromList', 'moveInList',
   'addNote', 'editNote', 'deleteNote', 'deleteList', 'deleteTask', 'restoreList', 'restoreTask',
-  'purgeForever', 'emptyBin', 'deleteAllData', 'purgeExpired', 'applyChanges',
+  'purgeForever', 'restoreEntries', 'purgeEntries', 'emptyBin', 'deleteAllData', 'purgeExpired', 'applyChanges',
 ];
 
 /**
@@ -182,6 +182,8 @@ export async function openStore({
     restoreList: (id) => bin.restoreList(ctx, id),
     restoreTask: (id) => bin.restoreTask(ctx, id),
     purgeForever: (type, id) => bin.purgeForever(ctx, type, id),
+    restoreEntries: (entries) => bin.restoreEntries(ctx, entries),
+    purgeEntries: (entries) => bin.purgeEntries(ctx, entries),
     emptyBin: () => bin.emptyBin(ctx),
     deleteAllData: () => bin.deleteAllData(ctx),
     listBin: () => bin.listBin(ctx),

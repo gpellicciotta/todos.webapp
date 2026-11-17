@@ -419,7 +419,9 @@
 
 .bin__toolbar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .bin__toolbar .bin__confirm {

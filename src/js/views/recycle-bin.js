@@ -7,6 +7,8 @@
  * Empty recycle bin sits above the rows while the bin has entries (`BIN-7`): it asks in place first, with the count,
  * and Keep or Escape closes the question.
  * A find field and an All, Lists, Tasks choice filter the rows (`BIN-8`); an info line counts the matches and offers Reset.
+ * While the filter narrows the bin, Restore {n} and Delete {n} permanently replace Empty recycle bin (`BIN-9`):
+ * restoring acts at once, deleting asks in place first, and each runs as one store call.
  * The text applies after typing pauses (`TEC-16`), the type at once, and both last for the session.
  * Days count calendar days in the device timezone (`TEC-14`); the screen renders again after every store change.
  */
@@ -34,6 +36,16 @@ function count(n, noun) {
   return n === 0 ? '' : `${n} ${noun}${n === 1 ? '' : 's'}`;
 }
 
+/**
+ * Describe lists and tasks together.
+ * @param {number} lists the number of lists
+ * @param {number} tasks the number of tasks
+ * @returns {string} such as "1 list and 2 tasks"
+ */
+function summarize(lists, tasks) {
+  return [count(lists, 'list'), count(tasks, 'task')].filter(Boolean).join(' and ');
+}
+
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   label: 'Deleted lists and tasks',
@@ -53,9 +65,18 @@ const STRINGS = Object.freeze({
   noMatch: (text) => `Nothing in the recycle bin matches "${text}".`,
   noType: Object.freeze({ list: 'No deleted lists.', task: 'No deleted tasks.' }),
   emptyBin: 'Empty recycle bin',
-  emptyQuestion: (lists, tasks) => `Permanently delete ${[count(lists, 'list'), count(tasks, 'task')].filter(Boolean).join(' and ')}? This cannot be undone.`,
+  emptyQuestion: (lists, tasks) => `Permanently delete ${summarize(lists, tasks)}? This cannot be undone.`,
   confirmAll: 'Delete all',
   emptied: 'Recycle bin emptied.',
+  restoreMatches: (n) => `Restore ${n}`,
+  deleteMatches: (n) => `Delete ${n} permanently`,
+  matchQuestion: (lists, tasks) => `Permanently delete ${summarize(lists, tasks)} that match? This cannot be undone.`,
+  matchGroup: 'Delete the matches permanently',
+  restoredMany: (lists, tasks) => `Restored ${summarize(lists, tasks)}.`,
+  deletedMany: (lists, tasks) => `Deleted ${summarize(lists, tasks)} permanently.`,
+  notRestored: (n) => `${n} could no longer be restored.`,
+  restoreMatchesFailed: 'The matching entries could not be restored.',
+  deleteMatchesFailed: 'The matching entries could not be deleted.',
   emptyFailed: 'The recycle bin could not be emptied.',
   open: 'Open',
   lastDay: 'last day',
@@ -263,26 +284,82 @@ export function mountRecycleBin(view, {
     await attempt(entry, () => store.purgeForever(entry.type, entry.id), STRINGS.purgeFailed);
   }
 
-  /** Empty the bin after the question; the question stays open when it fails. */
-  async function emptyAll() {
+  /** Tell whether the filter narrows the bin. */
+  const isFiltered = () => filter.text.trim() !== '' || filter.type !== 'all';
+
+  /**
+   * Count the lists and tasks of some entries.
+   * @param {{type: string}[]} items the entries
+   * @returns {[number, number]} the lists and the tasks
+   */
+  function tally(items) {
+    const lists = items.filter((item) => item.type === 'list').length;
+    return [lists, items.length - lists];
+  }
+
+  /** Move focus to the find field, or to the empty bin text when the bin has no entries left. */
+  function focusFind() {
+    (find.hidden ? emptyTitle : input).focus();
+  }
+
+  /** Restore every entry that matches the filter at once, and report the result in a toast. */
+  async function restoreMatches() {
     if (emptying) {
       return;
     }
     emptying = true;
     try {
-      await store.emptyBin();
-      askingAll = false;
-      toaster.show(STRINGS.emptied);
+      const { restored, skipped } = await store.restoreEntries(shown.map(({ type, id }) => ({ type, id })));
+      const single = restored.length === 1 && skipped.length === 0 ? shown.find((entry) => keyOf(entry) === `${restored[0].type}:${restored[0].id}`) : null;
+      if (single) {
+        const hash = single.type === 'list' ? formatRoute('list', { listId: single.id }) : formatRoute('task', { taskId: single.id });
+        toaster.show(STRINGS.restored(nameOf(single)), { actionLabel: STRINGS.open, onAction: () => navigate(hash) });
+      }
+      else {
+        const text = restored.length > 0 ? STRINGS.restoredMany(...tally(restored)) : '';
+        toaster.show([text, skipped.length > 0 ? STRINGS.notRestored(skipped.length) : ''].filter(Boolean).join(' '));
+      }
+      await refresh();
+      focusFind();
     }
     catch (error) {
       console.error('Recycle bin action failed:', error);
-      toaster.show(STRINGS.emptyFailed);
+      toaster.show(STRINGS.restoreMatchesFailed);
     }
     finally {
       emptying = false;
     }
   }
 
+  /** Delete the bin, or the matches of the filter, after the question; the question stays open when it fails. */
+  async function confirmAll() {
+    if (emptying) {
+      return;
+    }
+    emptying = true;
+    const matches = isFiltered();
+    try {
+      if (matches) {
+        const purged = await store.purgeEntries(shown.map(({ type, id }) => ({ type, id })));
+        askingAll = false;
+        toaster.show(STRINGS.deletedMany(...tally(purged)));
+        await refresh();
+        focusFind();
+      }
+      else {
+        await store.emptyBin();
+        askingAll = false;
+        toaster.show(STRINGS.emptied);
+      }
+    }
+    catch (error) {
+      console.error('Recycle bin action failed:', error);
+      toaster.show(matches ? STRINGS.deleteMatchesFailed : STRINGS.emptyFailed);
+    }
+    finally {
+      emptying = false;
+    }
+  }
   /**
    * Open or close the question of Empty recycle bin, and move focus to the control that now matters.
    * @param {boolean} open true to ask, false to close
@@ -290,10 +367,10 @@ export function mountRecycleBin(view, {
   function askAll(open) {
     askingAll = open;
     renderToolbar();
-    toolbar.querySelector(open ? '[data-role="keep-all"]' : '[data-role="empty-bin"]')?.focus();
+    toolbar.querySelector(open ? '[data-role="keep-all"]' : '[data-role="empty-bin"], [data-role="delete-matches"]')?.focus();
   }
 
-  /** Render the toolbar: the Empty recycle bin button, or its question; nothing while the bin is empty. */
+  /** Render the toolbar: Empty recycle bin, or Restore and Delete for the matches, or the question; nothing without entries. */
   function renderToolbar() {
     const focusedRole = toolbar.contains(doc.activeElement) ? doc.activeElement.dataset.role : null;
     try {
@@ -308,8 +385,19 @@ export function mountRecycleBin(view, {
 
   /** Draw the toolbar content for the current state. */
   function drawToolbar() {
-    if (entries.length === 0) {
+    const filtered = isFiltered();
+    const targets = filtered ? shown : entries;
+    if (targets.length === 0) {
       askingAll = false;
+    }
+    if (!askingAll && filtered) {
+      const restoreButton = button(doc, 'button button--secondary', STRINGS.restoreMatches(shown.length), 'restore-matches');
+      const deleteButton = button(doc, 'button button--secondary button--danger', STRINGS.deleteMatches(shown.length), 'delete-matches');
+      restoreButton.addEventListener('click', restoreMatches);
+      deleteButton.addEventListener('click', () => askAll(true));
+      toolbar.replaceChildren(...(shown.length === 0 ? [] : [restoreButton, deleteButton]));
+      toolbar.hidden = shown.length === 0;
+      return;
     }
     if (!askingAll) {
       const emptyButton = button(doc, 'button button--secondary button--danger', STRINGS.emptyBin, 'empty-bin');
@@ -319,15 +407,15 @@ export function mountRecycleBin(view, {
       toolbar.hidden = entries.length === 0;
       return;
     }
-    const lists = entries.filter((entry) => entry.type === 'list').length;
+    const [lists, tasks] = tally(targets);
     const group = make(doc, 'div', 'inline-confirm bin__confirm');
     group.setAttribute('role', 'group');
-    group.setAttribute('aria-label', STRINGS.emptyBin);
+    group.setAttribute('aria-label', filtered ? STRINGS.matchGroup : STRINGS.emptyBin);
     const actions = make(doc, 'div', 'inline-confirm__actions');
     const keep = button(doc, 'button button--secondary', STRINGS.keep, 'keep-all');
     const confirm = button(doc, 'button button--danger', STRINGS.confirmAll, 'confirm-all');
     keep.addEventListener('click', () => askAll(false));
-    confirm.addEventListener('click', emptyAll);
+    confirm.addEventListener('click', confirmAll);
     group.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -336,7 +424,7 @@ export function mountRecycleBin(view, {
       }
     });
     actions.append(keep, confirm);
-    const text = make(doc, 'p', 'inline-confirm__text', STRINGS.emptyQuestion(lists, entries.length - lists));
+    const text = make(doc, 'p', 'inline-confirm__text', (filtered ? STRINGS.matchQuestion : STRINGS.emptyQuestion)(lists, tasks));
     text.id = 'bin-empty-question';
     group.setAttribute('aria-describedby', text.id);
     group.append(text, actions);
@@ -422,7 +510,7 @@ export function mountRecycleBin(view, {
    * @param {string} needle the folded find text
    */
   function renderFind(needle) {
-    const filtered = filter.text.trim() !== '' || filter.type !== 'all';
+    const filtered = isFiltered();
     find.hidden = entries.length === 0;
     infoText.textContent = STRINGS.entries(shown.length, entries.length);
     resetButton.hidden = !filtered && input.value === '';
@@ -440,6 +528,7 @@ export function mountRecycleBin(view, {
     clearTimeout(findTimer);
     findTimer = null;
     filter.text = input.value;
+    askingAll = false;
     render();
   }
 

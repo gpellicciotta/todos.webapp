@@ -132,6 +132,9 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - Restoring keeps each membership's `position`, so the task returns to its place in every list.
 - `purgeExpired(now)` removes every entry deleted more than 30 days ago in one transaction (`BIN-5`).
 - `emptyBin()` permanently removes every bin entry, with memberships and notes, in one transaction and returns the purged `{type, id}` entries (`BIN-7`).
+- `restoreEntries(entries)` restores the given `{type, id}` entries with memberships in one transaction (`BIN-9`).
+  It skips expired, missing, and not deleted entries, and returns `{restored, skipped}`.
+- `purgeEntries(entries)` permanently removes the given entries as `purgeForever` does, in one transaction, skipping missing or not deleted ones, and returns the purged `{type, id}` entries (`BIN-9`).
 - Restoring or purging an entry outside the bin throws code `not-deleted`.
 - `deleteAllData()` clears lists, tasks, memberships, and notes, including bin entries, in one transaction and returns `{lists, tasks}` counts (`BAK-15`).
   It leaves the sync stores alone and queues nothing; the app offers it only while not connected.
@@ -307,6 +310,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   - The entry joins the queue right after the write commits, in a second transaction.
   - `deleteAllData`, `purgeExpired`, and `applyChanges` queue nothing. A backup import queues in its own task.
   - `purgeForever(type, id)` queues one `purge` entry and `emptyBin()` one `empty-bin` entry with `fields.time`, the emptying time (`BIN-4`, `BIN-7`).
+  - `restoreEntries(entries)` queues one `restore-list` or `restore-task` entry per restored entry, and `purgeEntries(entries)` one `purge` entry per purged entry (`BIN-9`).
     Earlier entries of a purged row stay and upload first, so a queued trash reaches the service before its purge.
     A queued `create` may already be uploading or have lost its reply, so no entry is dropped; a purge of a row the service never got answers `404`, which is done.
 - An entry holds `seq`, `target`, `operation`, `fields`, `edit-times`, `created`, and `undo`.

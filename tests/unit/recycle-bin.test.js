@@ -32,6 +32,16 @@ function fakeStore(entries) {
     restoreTask: vi.fn(async (id) => drop(id)),
     restoreList: vi.fn(async (id) => drop(id)),
     purgeForever: vi.fn(async (type, id) => drop(id)),
+    restoreEntries: vi.fn(async (items) => {
+      bin = bin.filter((candidate) => !items.some((item) => item.id === candidate.id));
+      listeners.forEach((listener) => listener({ operation: 'restoreEntries', remote: false }));
+      return { restored: items.map(({ type, id }) => ({ type, id })), skipped: [] };
+    }),
+    purgeEntries: vi.fn(async (items) => {
+      bin = bin.filter((candidate) => !items.some((item) => item.id === candidate.id));
+      listeners.forEach((listener) => listener({ operation: 'purgeEntries', remote: false }));
+      return items.map(({ type, id }) => ({ type, id }));
+    }),
     emptyBin: vi.fn(async () => {
       const purged = bin.map(({ type, id }) => ({ type, id }));
       bin = [];
@@ -296,11 +306,11 @@ describe('mountRecycleBin', () => {
       expect(document.activeElement).toBe(document.querySelector('.bin-row [data-role="restore"]'));
     });
 
-    it('keeps Empty recycle bin covering the whole bin', async () => {
+    it('swaps Empty recycle bin for the match actions while filtered', async () => {
       await mountFresh(sample());
       radio('Lists').click();
-      document.querySelector('[data-role="empty-bin"]').click();
-      expect(document.querySelector('.bin__confirm').textContent).toContain('Permanently delete 2 lists and 2 tasks?');
+      expect(document.querySelector('[data-role="empty-bin"]')).toBeNull();
+      expect(document.querySelector('[data-role="restore-matches"]').textContent).toBe('Restore 2');
     });
   });
 
@@ -370,6 +380,175 @@ describe('mountRecycleBin', () => {
       error.mockRestore();
       expect(document.querySelectorAll('.bin-row')).toHaveLength(1);
       expect(question()).not.toBeNull();
+    });
+  });
+
+  describe('Restore all and Delete all for the matches (BIN-9)', () => {
+    const empty = () => document.querySelector('[data-role="empty-bin"]');
+    const restoreAll = () => document.querySelector('[data-role="restore-matches"]');
+    const deleteAll = () => document.querySelector('[data-role="delete-matches"]');
+    const question = () => document.querySelector('.bin__confirm');
+    const field = () => document.querySelector('[data-role="find"]');
+    const names = () => [...document.querySelectorAll('.bin-row__name')].map((node) => node.textContent);
+    const radio = (label) => [...document.querySelectorAll('.bin__type input')].find((input) => input.parentElement.textContent === label);
+    const press = (label) => [...question().querySelectorAll('button')].find((button) => button.textContent === label);
+    const sample = () => [
+      entry(new Date(), { id: 't1', description: 'Buy new curtains' }),
+      entry(new Date(), { id: 't2', description: 'Café table' }),
+      entry(new Date(), { type: 'list', id: 'l1', name: 'Garden', description: undefined }),
+    ];
+
+    /**
+     * Mount on a bin with its own filter state.
+     * @param {object[]} entries the bin entries
+     * @returns {Promise<{store: object, toaster: {show: Function}, navigate: Function}>} the parts
+     */
+    async function mountFresh(entries) {
+      document.body.innerHTML = '<div data-view="bin"></div>';
+      const store = fakeStore(entries);
+      const toaster = { show: vi.fn() };
+      const navigate = vi.fn();
+      screen = mountRecycleBin(document.querySelector('[data-view]'), {
+        store, toaster, navigate, now: () => new Date(), filter: { text: '', type: 'all' },
+      });
+      await screen.idle();
+      return { store, toaster, navigate };
+    }
+
+    it('shows Empty recycle bin unfiltered, and the two actions with the match count while filtered', async () => {
+      await mountFresh(sample());
+      expect(empty().hidden).toBe(false);
+      expect(restoreAll()).toBeNull();
+      radio('Tasks').click();
+      expect(empty()).toBeNull();
+      expect(restoreAll().textContent).toBe('Restore 2');
+      expect(deleteAll().textContent).toBe('Delete 2 permanently');
+      field().value = 'curtain';
+      field().dispatchEvent(new Event('input', { bubbles: true }));
+      await vi.waitFor(() => expect(restoreAll().textContent).toBe('Restore 1'));
+      expect(deleteAll().textContent).toBe('Delete 1 permanently');
+    });
+
+    it('shows neither action nor Empty recycle bin when nothing matches', async () => {
+      await mountFresh(sample());
+      field().value = 'zebra';
+      field().dispatchEvent(new Event('input', { bubbles: true }));
+      await vi.waitFor(() => expect(document.querySelector('.bin__nomatch').hidden).toBe(false));
+      expect(restoreAll()).toBeNull();
+      expect(deleteAll()).toBeNull();
+      expect(empty()).toBeNull();
+    });
+
+    it('restores every match at once, keeps the filter, toasts the counts, and focuses the find field', async () => {
+      const { store, toaster } = await mountFresh([...sample(), entry(new Date(), { id: 't3', description: 'Buy milk' })]);
+      radio('Tasks').click();
+      field().value = 'buy';
+      field().dispatchEvent(new Event('input', { bubbles: true }));
+      await vi.waitFor(() => expect(names()).toEqual(['Buy new curtains', 'Buy milk']));
+      restoreAll().click();
+      await vi.waitFor(() => expect(store.restoreEntries).toHaveBeenCalledTimes(1));
+      expect(store.restoreEntries).toHaveBeenCalledWith([{ type: 'task', id: 't1' }, { type: 'task', id: 't3' }]);
+      await vi.waitFor(() => expect(names()).toEqual([]));
+      expect(toaster.show).toHaveBeenCalledWith('Restored 2 tasks.');
+      expect(field().value).toBe('buy');
+      expect(document.querySelector('.bin__info-text').textContent).toBe('0 of 2 entries');
+      expect(document.activeElement).toBe(field());
+    });
+
+    it('gives one restored entry the usual toast with a link to it', async () => {
+      const { toaster, navigate } = await mountFresh(sample());
+      radio('Lists').click();
+      restoreAll().click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
+      expect(toaster.show.mock.calls[0][0]).toBe('Restored "Garden".');
+      toaster.show.mock.calls[0][1].onAction();
+      expect(navigate).toHaveBeenCalledWith('#/lists/l1');
+    });
+
+    it('reports entries that could no longer be restored', async () => {
+      const { store, toaster } = await mountFresh(sample());
+      store.restoreEntries.mockResolvedValueOnce({ restored: [{ type: 'task', id: 't1' }, { type: 'list', id: 'l1' }], skipped: [{ type: 'task', id: 't2' }] });
+      radio('Tasks').click();
+      radio('All').click();
+      field().value = 'a';
+      field().dispatchEvent(new Event('input', { bubbles: true }));
+      await vi.waitFor(() => expect(restoreAll()).not.toBeNull());
+      restoreAll().click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledWith('Restored 1 list and 1 task. 1 could no longer be restored.'));
+    });
+
+    it('shows a toast when restoring fails, and keeps the rows', async () => {
+      const { store, toaster } = await mountFresh(sample());
+      store.restoreEntries.mockRejectedValueOnce(new Error('disk full'));
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      radio('Tasks').click();
+      restoreAll().click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledWith('The matching entries could not be restored.'));
+      error.mockRestore();
+      expect(names()).toHaveLength(2);
+    });
+
+    it('asks in place before deleting, and Keep, Escape, or a filter change close the question without deleting', async () => {
+      const { store } = await mountFresh(sample());
+      radio('Tasks').click();
+      deleteAll().click();
+      expect(question().textContent).toContain('Permanently delete 2 tasks that match? This cannot be undone.');
+      expect(question().getAttribute('role')).toBe('group');
+      expect(document.activeElement.textContent).toBe('Keep');
+      document.activeElement.click();
+      expect(question()).toBeNull();
+      expect(document.activeElement).toBe(deleteAll());
+      deleteAll().click();
+      question().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(question()).toBeNull();
+      deleteAll().click();
+      radio('Lists').click();
+      expect(question()).toBeNull();
+      expect(store.purgeEntries).not.toHaveBeenCalled();
+    });
+
+    it('words the question with lists and tasks', async () => {
+      await mountFresh(sample());
+      field().value = 'a';
+      field().dispatchEvent(new Event('input', { bubbles: true }));
+      await vi.waitFor(() => expect(deleteAll()).not.toBeNull());
+      deleteAll().click();
+      expect(question().textContent).toContain('Permanently delete 1 list and 2 tasks that match?');
+    });
+
+    it('deletes the matches after Delete all, keeps the filter, toasts, and focuses the find field', async () => {
+      const { store, toaster } = await mountFresh(sample());
+      radio('Tasks').click();
+      deleteAll().click();
+      press('Delete all').click();
+      await vi.waitFor(() => expect(store.purgeEntries).toHaveBeenCalledWith([{ type: 'task', id: 't1' }, { type: 'task', id: 't2' }]));
+      await vi.waitFor(() => expect(names()).toEqual([]));
+      expect(toaster.show).toHaveBeenCalledWith('Deleted 2 tasks permanently.');
+      expect(question()).toBeNull();
+      expect(radio('Tasks').checked).toBe(true);
+      expect(document.activeElement).toBe(field());
+    });
+
+    it('keeps the question open and toasts when deleting fails, and ignores a second click while deleting', async () => {
+      const { store, toaster } = await mountFresh(sample());
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      store.purgeEntries.mockRejectedValueOnce(new Error('disk full'));
+      radio('Tasks').click();
+      deleteAll().click();
+      press('Delete all').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledWith('The matching entries could not be deleted.'));
+      error.mockRestore();
+      expect(question()).not.toBeNull();
+      expect(names()).toHaveLength(2);
+      let release;
+      store.purgeEntries.mockImplementationOnce(() => new Promise((resolve) => {
+        release = resolve;
+      }));
+      const confirm = press('Delete all');
+      confirm.click();
+      confirm.click();
+      release([]);
+      await vi.waitFor(() => expect(store.purgeEntries).toHaveBeenCalledTimes(2));
     });
   });
 });

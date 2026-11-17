@@ -762,7 +762,11 @@ Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
   Text matches list names and task descriptions anywhere, ignoring case and accents, in bin order with no ranking.
   Rows filter once typing pauses for 150 ms; the type choice applies at once; both last for the session.
 - An info line reads "37 entries", or "4 of 37 entries" when filtered, and announces the count politely.
-  A quiet Reset link clears text and type. Empty recycle bin still covers the whole bin.
+  A quiet Reset link clears text and type. Empty recycle bin shows only while the filter is clear.
+- While the filter narrows the bin, Restore {{n}} and Delete {{n}} permanently replace Empty recycle bin; with no match, neither shows (`BIN-9`).
+  Restore acts at once and toasts the counts, such as "Restored 1 list and 2 tasks.", adding "1 could no longer be restored." for an expired entry.
+  Delete asks in place first: "Permanently delete 1 list and 2 tasks that match? This cannot be undone." with Keep and Delete all.
+  Escape, Keep, or a filter change closes the question. The filter stays after either action, and focus moves to the find field.
 - No match says "Nothing in the recycle bin matches "{{text}}"."; with only a type, "No deleted lists." or "No deleted tasks."
 - Escape in the field clears the text; Down moves into the rows. Restoring or deleting keeps the filter.
 - Days left count to the exact purge time, 30 times 24 hours after the deletion.
