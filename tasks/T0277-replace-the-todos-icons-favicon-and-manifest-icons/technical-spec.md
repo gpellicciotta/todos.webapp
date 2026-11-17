@@ -29,7 +29,13 @@ Mechanical files: scripts/sw-precache-hashes.json
 - src/js/ui/layout.js
 - src/js/views/settings.js
 - src/demo/visual-style-gallery.html
-- LICENSE.md
+- README.md
+- docs/devops.md
+- tests/e2e/pwa.spec.js
+- tests/unit/session.test.js
+
+`NOTICE.md` replaced the `LICENSE.md` edit, so GitHub still detects the MIT license; added files are not counted.
+Size note: 11 counted files and 86 lines; the extra files are the docs, the e2e scenario, and a renamed test URL.
 
 ### Tests
 - Unit: a test checks manifest `any` and `maskable` entries at 192 and 512 px point to existing files.

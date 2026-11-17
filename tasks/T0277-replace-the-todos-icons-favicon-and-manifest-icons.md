@@ -1,6 +1,7 @@
 ---
 id: T0277
 owner: "@claude"
+session: claude-20261117-7c37a7
 needs: []
 branch: task/T0277-replace-the-todos-icons-favicon-and-manifest-icons
 worktree: .plan/work/T0277-replace-the-todos-icons-favicon-and-manifest-icons
@@ -23,15 +24,40 @@ Copy the files from support.webapp `src/img/app-icons/` at release v0.1.1 or lat
 todos.server T0267 then points its admin favicon and mail logos at these files.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the app icons spec and every icon, favicon, and manifest reference in `src/` and `scripts/`.
-- [ ] **[Implement]** Author failing tests for the manifest icons, head links, and service worker precache list.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the expected reason.
-- [ ] **[Implement]** Copy the icon files, update references, and bump the service worker version and hashes.
-- [ ] **[Verify]**    Run `python scripts/devops.py check` and the browser scenario of the technical spec.
-- [ ] **[Visual]**    Capture before and after screenshots of the tab, sidebar brand, settings, and gallery.
-- [ ] **[Doc]**       Update CHANGELOG.md, the Lucide notice, and any docs that name the old icon files.
+- [x] **[Read]**      Read the app icons spec and every icon, favicon, and manifest reference in `src/` and `scripts/`.
+- [x] **[Implement]** Author failing tests for the manifest icons, head links, and service worker precache list.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the expected reason.
+- [x] **[Implement]** Copy the icon files, update references, and bump the service worker version and hashes.
+- [x] **[Verify]**    Run `python scripts/devops.py check` and the browser scenario of the technical spec.
+- [x] **[Visual]**    Capture before and after screenshots of the tab, sidebar brand, settings, and gallery.
+- [x] **[Doc]**       Update CHANGELOG.md, the Lucide notice, and any docs that name the old icon files.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-17] **[Doc]**
   Created from the support.webapp app icon set; the user chose flat icons in the app and dimensional install icons.
+
+- [2026-11-17] **[Read]**
+  Copied the todos icons from support.webapp tag v0.2.0, the first tag after v0.1.0; every file matches its tag blob.
+
+- [2026-11-17] **[Decided]**
+  Added NOTICE.md for the Lucide ISC notice instead of editing LICENSE.md, so GitHub still detects the MIT license.
+
+- [2026-11-17] **[Verify]**
+  New unit and e2e tests pass; devops check fails only on e2e, Ruff, and pytest failures that also fail on main.
+  - T0282 tracks the 3 e2e failures.
+  - Created T0284 for Ruff and T0285 for test_devops.
+  - Proof: validation-proof.md.
+
+- [2026-11-17] **[Visual]**
+  Captured before and after screenshots of the icons, sidebar brand, settings, compact layout, and gallery; see validation-proof.md.
+
+- [2026-11-17] **[Implement]**
+  Size note: 11 counted files and 86 lines cross the typical line; docs, the e2e scenario, and a test URL add files.
+  - Files touched: 11.
+  - Lines touched: 86.
+  - Reopenings: 0.
+
+- [2026-11-17] **[Visual]**
+  Screenshots: [before icons](T0277-replace-the-todos-icons-favicon-and-manifest-icons/before-icons.png), [after icons](T0277-replace-the-todos-icons-favicon-and-manifest-icons/after-icons.png), [after sidebar](T0277-replace-the-todos-icons-favicon-and-manifest-icons/after-sidebar-light.png).
+
