@@ -46,3 +46,13 @@ Command: `npx playwright test tests/e2e/sidebar-find.spec.js tests/e2e/shell.spe
 
   59 passed (37.1s)
 ```
+
+### Round 1 rework: l opens Lists without a field
+
+Command: `npm test`, `npm run lint`, `npx playwright test tests/e2e/sidebar-find.spec.js tests/e2e/shell.spec.js` (exit 0)
+
+```
+ Test Files  63 passed (63)
+      Tests  1647 passed (1647)
+  32 passed (20.8s)
+```
