@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1135.8, input: 166, output: 61553, cache_read: 12680367, cache_write: 186463}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T13:46:16Z"
 ---
 # T0260: Remove the task row's status menu, now that the task editor holds every status action
 
@@ -74,4 +79,7 @@ Remove the row status menu, since the task editor of T0258 now offers every stat
   - Files touched: 13.
   - Lines touched: 580.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
