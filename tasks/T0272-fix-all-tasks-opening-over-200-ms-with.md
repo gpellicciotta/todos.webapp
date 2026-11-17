@@ -1,11 +1,11 @@
 ---
 id: T0272
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0272-fix-all-tasks-opening-over-200-ms-with
+worktree: .plan/work/T0272-fix-all-tasks-opening-over-200-ms-with
+status: active
+started_at: "2026-11-17T06:29:48Z"
 ended_at: —
 review: agent
 preview: none
