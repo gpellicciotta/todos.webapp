@@ -1,10 +1,11 @@
 ---
 id: T0077
 owner: "@claude"
-needs: []
+session: claude-20261117-e11e57
+needs: ['T0269']
 branch: task/T0077-add-a-150-list-render-check-to-the
 worktree: .plan/work/T0077-add-a-150-list-render-check-to-the
-status: active
+status: suspended
 started_at: "2026-11-17T05:08:32Z"
 ended_at: —
 review: agent
@@ -27,3 +28,9 @@ Update the measured numbers in ui-design.md.
 ## Execution Log
 - [2026-11-07] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-17] **[Verify]**
+  150-list open takes about 386 ms under 4x throttling, over the 200 ms budget; 500 lists take about 699 ms.
+  - Reproduced in two runs.
+  - Lists screen needs optimizing first.
+
