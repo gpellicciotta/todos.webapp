@@ -19,11 +19,22 @@ function at(day, hours, minutes = 0) {
 }
 
 /**
- * Open the status menu of a status button, as a right-click or a long press does.
- * @param {HTMLElement} button the status button
+ * Count the menus that show, such as an open More menu.
+ * @returns {number} the showing menus
  */
-function openStatusMenu(button) {
-  button.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+function menusShowing() {
+  return [...document.querySelectorAll('.menu')].filter((menu) => isShowing(menu)).length;
+}
+
+/**
+ * Open the More menu of a row.
+ * @param {HTMLElement} row the task row
+ * @returns {HTMLElement} the menu
+ */
+function openMoreMenu(row) {
+  const more = row.querySelector('.task-row__more');
+  more.click();
+  return document.getElementById(more.getAttribute('aria-controls'));
 }
 
 describe('formatDue', () => {
@@ -127,29 +138,13 @@ describe('createTaskList', () => {
     expect(document.querySelector('[aria-current]')).toBeNull();
   });
 
-  it('opens the status menu with the event actions whose preconditions hold, and posts the picked one (TSK-4)', () => {
-    const button = document.querySelectorAll('.status-button')[1];
-    openStatusMenu(button);
-    const menu = document.getElementById(button.getAttribute('aria-controls'));
-    expect(isShowing(menu)).toBe(true);
-    const items = [...menu.querySelectorAll('[role="menuitem"]')];
-    expect(items.map((item) => item.textContent.trim())).toEqual(['Start', 'Cancel task']);
-    expect(document.activeElement).toBe(items[0]);
-    items[0].click();
-    expect(isShowing(menu)).toBe(false);
-    expect(store.postEvent).toHaveBeenCalledWith('t2', 'start');
-    expect(store.updateTask).not.toHaveBeenCalled();
-  });
-
-  it('opens the status menu from the keyboard on the status button', () => {
-    const button = document.querySelectorAll('.status-button')[0];
-    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
-    const menu = document.getElementById(button.getAttribute('aria-controls'));
-    expect(isShowing(menu)).toBe(true);
-    expect(document.activeElement.textContent.trim()).toBe('Undo start');
-    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
-    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    expect(store.postEvent).toHaveBeenCalledWith('t1', 'cancel');
+  it('builds only the More menu, and no status menu, next to the list', () => {
+    expect(document.querySelectorAll('.task-list-frame > .menu')).toHaveLength(1);
+    expect(document.querySelector('.status-menu')).toBeNull();
+    for (const button of document.querySelectorAll('.status-button')) {
+      expect(button.hasAttribute('aria-controls')).toBe(false);
+      expect(button.hasAttribute('aria-haspopup')).toBe(false);
+    }
   });
 
   it('shows done and target counts on a row whose target is above 1, and none at target 1', () => {
@@ -164,7 +159,8 @@ describe('createTaskList', () => {
     expect(rows.slice(2).map((row) => row.querySelector('.task-row__count'))).toEqual([null, null, null]);
     expect(rows[0].querySelector('.status-button').getAttribute('aria-label')).toBe('Tick French exercises, 2 of 3 done');
     expect(rows[1].querySelector('.status-button').getAttribute('aria-label')).toBe('Tick Gym, 4 of 3 done');
-    expect(rows[0].querySelector('.status-button').title).toBe('In progress, 2 of 3 done. Right-click or press Down for more actions.');
+    expect(rows[0].querySelector('.status-button').title).toBe('In progress, 2 of 3 done');
+    expect(rows[1].querySelector('.status-button').title).toBe('Completed, 4 of 3 done');
   });
 
   it('ticks a target-3 task towards its target, and past it once completed', () => {
@@ -202,7 +198,7 @@ describe('createTaskList', () => {
     expect(store.addToList).toHaveBeenCalledWith('t2', 'l3');
   });
 
-  describe('ticking and the status menu (TSK-4)', () => {
+  describe('ticking, without a status menu (TSK-4)', () => {
     const four = [
       shapeTask({ id: 'a', description: 'Buy paint', status: 'ready', 'due-time': null }),
       shapeTask({ id: 'b', description: 'Call the plumber', status: 'in-progress', 'due-time': null }),
@@ -241,13 +237,14 @@ describe('createTaskList', () => {
       }
       expect(store.postEvent.mock.calls).toEqual([['a', 'complete'], ['b', 'complete']]);
       expect(store.updateTask).not.toHaveBeenCalled();
-      expect(document.querySelector('.status-menu').hidden).toBe(true);
+      expect(menusShowing()).toBe(0);
     });
 
     it('names the action of the click and the current status, without a menu popup', () => {
       expect(statusOf('a').getAttribute('aria-label')).toBe('Mark Buy paint completed');
       expect(statusOf('b').getAttribute('aria-label')).toBe('Mark Call the plumber completed');
-      expect(statusOf('b').title).toBe('In progress. Right-click or press Down for more actions.');
+      expect(statusOf('a').title).toBe('To do');
+      expect(statusOf('b').title).toBe('In progress');
       expect(statusOf('a').hasAttribute('aria-haspopup')).toBe(false);
       expect(statusOf('a').hasAttribute('aria-disabled')).toBe(false);
       expect(statusOf('b').hasAttribute('aria-disabled')).toBe(false);
@@ -268,88 +265,41 @@ describe('createTaskList', () => {
       }
     });
 
-    it('opens the status menu on right-click with start, unstart, cancel, and reopen as their preconditions hold', () => {
-      const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
-      statusOf('a').dispatchEvent(event);
-      expect(event.defaultPrevented).toBe(true);
-      const menu = document.querySelector('.status-menu');
-      expect(isShowing(menu)).toBe(true);
-      const offered = (id) => {
-        openStatusMenu(statusOf(id));
-        return [...menu.querySelectorAll('.menu__item')].map((item) => item.dataset.event);
-      };
-      expect(offered('a')).toEqual(['start', 'cancel']);
-      expect(offered('b')).toEqual(['unstart', 'cancel']);
-      expect(offered('c')).toEqual(['cancel']);
-      expect(offered('d')).toEqual(['reopen']);
-      menu.querySelector('[data-event="reopen"]').click();
-      openStatusMenu(statusOf('b'));
-      menu.querySelector('[data-event="cancel"]').click();
-      expect(store.postEvent.mock.calls).toEqual([['d', 'reopen'], ['b', 'cancel']]);
-    });
-
-    it('offers no Undo start once an in-progress task has a completion', () => {
-      list.render([shapeTask({ id: 'p', description: 'Practice', status: 'in-progress', 'target-count': 3, 'completion-count': 1 })], ctx);
-      openStatusMenu(statusOf('p'));
-      expect([...document.querySelectorAll('.status-menu .menu__item')].map((item) => item.dataset.event)).toEqual(['cancel']);
-    });
-
-    it('closes an open status menu on a click of its button, without changing the status', async () => {
-      openStatusMenu(statusOf('a'));
-      statusOf('a').click();
-      expect(isShowing(document.querySelector('.status-menu'))).toBe(false);
+    it('opens no menu on a right-click of the status button, and leaves the browser its own menu', async () => {
+      for (const { id } of four) {
+        const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+        statusOf(id).dispatchEvent(event);
+        expect(event.defaultPrevented, id).toBe(false);
+        expect(menusShowing(), id).toBe(0);
+      }
       await new Promise((resolve) => setTimeout(resolve));
       expect(store.postEvent).not.toHaveBeenCalled();
     });
 
-    it('opens the menu with Down, Up, Shift+F10, or the Menu key, and leaves Enter to the click', async () => {
-      const menu = document.querySelector('.status-menu');
-      for (const [key, extra] of [['ArrowDown'], ['ArrowUp'], ['F10', { shiftKey: true }], ['ContextMenu']]) {
-        statusOf('b').focus();
-        expect(press(statusOf('b'), key, extra).defaultPrevented, key).toBe(true);
-        expect(isShowing(menu), key).toBe(true);
-        press(document.activeElement, 'Escape');
-        expect(isShowing(menu), key).toBe(false);
-        // A key in the same task as the close counts as part of it, as a click on the button would.
-        await new Promise((resolve) => setTimeout(resolve));
+    it('opens no menu on Down, Up, Shift+F10, or the Menu key, and leaves those keys to the browser', async () => {
+      for (const id of ['a', 'b', 'c', 'd']) {
+        for (const [key, extra] of [['ArrowDown'], ['ArrowUp'], ['F10', { shiftKey: true }], ['ContextMenu']]) {
+          statusOf(id).focus();
+          expect(press(statusOf(id), key, extra).defaultPrevented, `${id} ${key}`).toBe(false);
+          expect(menusShowing(), `${id} ${key}`).toBe(0);
+          expect(document.activeElement, `${id} ${key}`).toBe(statusOf(id));
+        }
       }
-      expect(press(statusOf('b'), 'Enter').defaultPrevented).toBe(false);
-      expect(isShowing(menu)).toBe(false);
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(store.postEvent).not.toHaveBeenCalled();
     });
 
-    it('opens the menu on a long press by touch, and the release does not change the status', () => {
+    it('opens no menu on a long press by touch, so its release ticks like any tap', () => {
       vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
       try {
         const button = statusOf('a');
         button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 10, clientY: 10 }));
-        vi.advanceTimersByTime(499);
-        expect(isShowing(document.querySelector('.status-menu'))).toBe(false);
-        vi.advanceTimersByTime(1);
-        expect(isShowing(document.querySelector('.status-menu'))).toBe(true);
+        vi.advanceTimersByTime(2000);
+        expect(menusShowing()).toBe(0);
         button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
         button.click();
-        expect(isShowing(document.querySelector('.status-menu'))).toBe(true);
-        expect(store.postEvent).not.toHaveBeenCalled();
-      }
-      finally {
-        vi.useRealTimers();
-      }
-    });
-
-    it('treats a short tap or a moved touch as no long press', () => {
-      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-      try {
-        const button = statusOf('a');
-        button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 10, clientY: 10 }));
-        vi.advanceTimersByTime(200);
-        button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
-        button.click();
-        vi.advanceTimersByTime(1000);
-        expect(store.postEvent).toHaveBeenCalledWith('a', 'complete');
-        button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 10, clientY: 10 }));
-        button.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'touch', clientX: 10, clientY: 40 }));
-        vi.advanceTimersByTime(1000);
-        expect(isShowing(document.querySelector('.status-menu'))).toBe(false);
+        expect(menusShowing()).toBe(0);
+        expect(store.postEvent.mock.calls).toEqual([['a', 'complete']]);
       }
       finally {
         vi.useRealTimers();
@@ -409,7 +359,7 @@ describe('createTaskList', () => {
       const open = document.querySelector('.task-row__open');
       open.focus();
       press(open, 'x');
-      expect(isShowing(document.querySelector('.status-menu'))).toBe(false);
+      expect(menusShowing()).toBe(0);
       expect(store.postEvent).not.toHaveBeenCalled();
     });
 
@@ -424,16 +374,13 @@ describe('createTaskList', () => {
       expect(store.postEvent.mock.calls).toEqual([['b', 'complete'], ['b', 'uncomplete']]);
     });
 
-    it('shows the Undo toast for x and for a menu pick that hide the row too', async () => {
+    it('shows the Undo toast for x that hides the row too', async () => {
       list.render(four, ctx, { shows: OPEN });
       const open = document.querySelector('.task-row[data-task-id="a"] .task-row__open');
       open.focus();
       press(open, 'x');
       await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
-      openStatusMenu(statusOf('b'));
-      document.querySelector('.status-menu [data-event="cancel"]').click();
-      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(2));
-      expect(toaster.show.mock.lastCall[0]).toBe('Task marked cancelled.');
+      expect(toaster.show.mock.lastCall[0]).toBe('Task marked completed.');
     });
 
     it('shows the Undo toast after every tick, also when the row stays shown and without a filter', async () => {
@@ -473,15 +420,6 @@ describe('createTaskList', () => {
       expect(store.postEvent.mock.calls).toEqual([['g', 'complete'], ['g', 'complete'], ['g', 'complete'], ['g', 'uncomplete']]);
     });
 
-    it('shows no toast for a status menu pick that keeps the row shown', async () => {
-      list.render(four, ctx, { shows: () => true });
-      openStatusMenu(statusOf('a'));
-      document.querySelector('.status-menu [data-event="start"]').click();
-      await vi.waitFor(() => expect(store.postEvent).toHaveBeenCalledTimes(1));
-      await new Promise((resolve) => setTimeout(resolve));
-      expect(toaster.show).not.toHaveBeenCalled();
-    });
-
     it('judges the hiding with the change applied, so Finished today only keeps a task finished now', () => {
       const seen = [];
       list.render(four, ctx, { shows: (task) => seen.push(task) > 0 });
@@ -499,17 +437,12 @@ describe('createTaskList', () => {
     expect(danger).toEqual(['delete']);
   });
 
-  it('marks each status button with its status and each status menu item with its event and the status icon it leads to', () => {
+  it('marks each status button with its status', () => {
     const buttons = [...document.querySelectorAll('.status-button')];
     expect(buttons.length).toBeGreaterThan(0);
     for (const button of buttons) {
       expect(button.dataset.status).toBe(button.closest('.task-row').dataset.status);
     }
-    openStatusMenu(buttons[0]);
-    const menu = document.getElementById(buttons[0].getAttribute('aria-controls'));
-    const items = [...menu.querySelectorAll('[role="menuitem"]')];
-    expect(items.map((item) => item.dataset.event)).toEqual(['unstart', 'cancel']);
-    expect(items.map((item) => item.querySelector('use').getAttribute('href'))).toEqual(['img/icons.svg#status-ready', 'img/icons.svg#status-cancelled']);
   });
 
   describe('by role (SHR-4, SHR-5)', () => {
@@ -600,31 +533,20 @@ describe('createTaskList', () => {
     expect(document.activeElement.classList.contains('status-button')).toBe(true);
   });
 
-  it('keeps an open status menu open, on the same item, when rows render again', () => {
-    openStatusMenu(document.querySelectorAll('.status-button')[1]);
-    const menu = document.querySelector('.status-menu');
+  it('keeps an open More menu open, on the same item, when rows render again', () => {
+    const menu = openMoreMenu(document.querySelectorAll('.task-row')[1]);
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    expect(document.activeElement.dataset.action).toBe('delete');
     list.render([...tasks].reverse(), ctx);
     expect(isShowing(menu)).toBe(true);
-    expect(document.activeElement.dataset.event).toBe('cancel');
-    const trigger = [...document.querySelectorAll('.task-row')].find((row) => row.dataset.taskId === 't2').querySelector('.status-button');
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    document.activeElement.click();
-    expect(store.postEvent).toHaveBeenCalledWith('t2', 'cancel');
-  });
-
-  it('keeps an open More menu open when rows render again', () => {
-    document.querySelectorAll('.task-row__more')[0].click();
-    list.render(tasks, ctx);
-    const menu = document.querySelectorAll('.task-list-frame .menu')[1];
-    expect(isShowing(menu)).toBe(true);
     expect(menu.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement.dataset.action).toBe('delete');
   });
 
   it('closes the menu and passes focus on when its row leaves', () => {
-    openStatusMenu(document.querySelectorAll('.status-button')[1]);
+    const menu = openMoreMenu(document.querySelectorAll('.task-row')[1]);
     list.render([tasks[0], tasks[2]], ctx);
-    expect(isShowing(document.querySelector('.status-menu'))).toBe(false);
+    expect(isShowing(menu)).toBe(false);
     expect(document.activeElement.closest('.task-row').dataset.taskId).toBe('t3');
   });
 
@@ -658,12 +580,12 @@ describe('createTaskList', () => {
     list.render([...tasks, due], ctx);
     const before = [...document.querySelectorAll('.task-row')];
     expect(before[3].querySelector('.chip').textContent).toMatch(/^Today /);
-    openStatusMenu(before[3].querySelector('.status-button'));
+    const menu = openMoreMenu(before[3]);
     const focused = document.activeElement;
     list.tick(new Date(2026, 10, 4, 10, 1));
     [...document.querySelectorAll('.task-row')].forEach((row, index) => expect(row).toBe(before[index]));
     expect(before[3].querySelector('.chip--overdue').textContent).toBe('Overdue');
-    expect(isShowing(document.querySelector('.status-menu'))).toBe(true);
+    expect(isShowing(menu)).toBe(true);
     expect(document.activeElement).toBe(focused);
   });
 
@@ -764,8 +686,7 @@ describe('createTaskList', () => {
     });
 
     it('keeps the focused row, its neighbors, and an open menu rendered while they scroll away', () => {
-      openStatusMenu(rowOf('m5').querySelector('.status-button'));
-      const menu = other.element.querySelector('.status-menu');
+      const menu = openMoreMenu(rowOf('m5'));
       expect(isShowing(menu)).toBe(true);
       scrollTo(2000 * ROW);
       expect(shown().slice(0, 3).map((row) => row.dataset.taskId)).toEqual(['m4', 'm5', 'm6']);
@@ -1221,16 +1142,16 @@ describe('createTaskList', () => {
       expect(rowOf().querySelector('.task-row__count').textContent).toBe('0/3 done');
     });
 
-    it('offers grace completion of the previous period in the status menu for 24 hours, naming the cached occurrence', () => {
+    it('leaves grace completion of the previous period to the task editor, with no row menu offering it', () => {
       list.render([recurring()], { ...ctx, now: new Date('2026-11-02T08:00:00Z') });
-      openStatusMenu(rowOf().querySelector('.status-button'));
-      const items = () => [...document.querySelectorAll('.status-menu [role="menuitem"]')];
-      expect(items().map((item) => item.textContent.trim())).toEqual(['Start', 'Cancel task', 'Complete for previous period']);
-      items().at(-1).click();
-      expect(store.postEvent).toHaveBeenCalledWith('r1', 'complete', { occurrence: 1 });
-      list.render([recurring()], { ...ctx, now: new Date('2026-11-03T00:00:00Z') });
-      openStatusMenu(rowOf().querySelector('.status-button'));
-      expect(items().map((item) => item.textContent.trim())).toEqual(['Start', 'Cancel task']);
+      const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      rowOf().querySelector('.status-button').dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+      expect(menusShowing()).toBe(0);
+      const menu = openMoreMenu(rowOf());
+      expect([...menu.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent.trim())).not.toContain('Complete for previous period');
+      expect(list.element.textContent).not.toContain('previous period');
+      expect(store.postEvent).not.toHaveBeenCalled();
     });
 
     it('ticks a row shown ready for the new period without naming an occurrence', () => {

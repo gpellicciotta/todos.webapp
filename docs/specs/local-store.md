@@ -193,7 +193,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - A recurring task past its period end, not rolled over yet, shows as `ready` with count 0 (`displayTask`).
 - All tasks and the list view apply it before they filter, sort, and group, so such a task shows under the open filter.
   Their minute tick renders again when a task passes its period end (`becameStale`).
-- Rows, the status menu, and the editor's status apply it; the editor takes an injectable clock.
+- Rows and the editor's status apply it; the editor takes an injectable clock.
 - `countLists(tasks, memberships, now)` counts such a task as open; the sidebar counts refresh every minute.
 - **[Decided]** A connected event on such a task joins the period covering now, computed locally.
   It goes to the service without `occurrence`, so the service assigns the period containing its time.

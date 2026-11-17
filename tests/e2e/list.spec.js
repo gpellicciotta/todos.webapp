@@ -250,16 +250,16 @@ test.describe('List screen', () => {
     await page.getByRole('menuitem', { name: 'Move down' }).click();
     await expect.poll(() => rows(page)).toEqual(['Clean the gutters', 'Fix the door', 'Buy paint']);
 
-    // On a status button, Alt+Down moves the row instead of opening the status menu.
+    // On a status button, Alt+Down moves the row too, and no menu opens.
     await page.locator('.list-view .status-button').first().focus();
     await page.keyboard.press('Alt+ArrowDown');
     await expect.poll(() => rows(page)).toEqual(['Fix the door', 'Clean the gutters', 'Buy paint']);
     await expect(page.locator('.list-view .task-row').nth(1).locator('.status-button')).toBeFocused();
-    await expect(page.locator('.list-view .status-menu')).toBeHidden();
+    await expect(page.getByRole('menu')).toHaveCount(0);
     expect(problems).toEqual([]);
   });
 
-  test('one click completes a task with an Undo toast, and the status menu cancels a task (TSK-4)', async ({ page }) => {
+  test('one click completes a task with an Undo toast, the row opens no status menu, and the editor cancels a task (TSK-4)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);
     const paint = page.locator('.list-view .task-row', { hasText: 'Buy paint' });
@@ -269,22 +269,30 @@ test.describe('List screen', () => {
     await done.getByRole('button', { name: 'Undo' }).click();
     await expect(paint).toHaveAttribute('data-status', 'ready');
 
-    const gutters = page.locator('.list-view .task-row', { hasText: 'Clean the gutters' });
-    await gutters.locator('.status-button').click({ button: 'right' });
-    const menu = page.getByRole('menu', { name: 'Status of Clean the gutters' });
-    await expect(menu).toBeVisible();
-    await menu.getByRole('menuitem', { name: 'Cancel task' }).click();
-    await expect(gutters).toHaveCount(0);
-    await expect(page.locator('.toast', { hasText: 'Task marked cancelled.' })).toBeVisible();
-
-    // A long press by touch opens the menu too, and its release keeps the status.
+    // Right-click, Down, Up, Shift+F10, the Menu key, and a long press by touch open no menu on the status button.
     const door = page.locator('.list-view .task-row', { hasText: 'Fix the door' }).locator('.status-button');
+    await door.click({ button: 'right' });
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await door.focus();
+    for (const key of ['ArrowDown', 'ArrowUp', 'Shift+F10', 'ContextMenu']) {
+      await page.keyboard.press(key);
+      await expect(page.getByRole('menu'), key).toHaveCount(0);
+      await expect(door, key).toBeFocused();
+    }
     await door.dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true, clientX: 5, clientY: 5 });
-    await expect(page.getByRole('menu', { name: 'Status of Fix the door' })).toBeVisible();
+    await page.waitForTimeout(800);
+    await expect(page.getByRole('menu')).toHaveCount(0);
     await door.dispatchEvent('pointerup', { pointerType: 'touch', isPrimary: true });
-    await door.dispatchEvent('click');
-    await expect(page.getByRole('menu', { name: 'Status of Fix the door' })).toBeVisible();
-    await page.keyboard.press('Escape');
+    await expect(door).toHaveAttribute('data-status', 'in-progress');
+    await expect(door).not.toHaveAttribute('title', /menu|actions/i);
+
+    // The task editor holds the other status actions, such as Cancelled.
+    const gutters = page.locator('.list-view .task-row', { hasText: 'Clean the gutters' });
+    await gutters.locator('.task-row__open').click();
+    const panel = page.locator('[data-editor-slot] .editor-panel');
+    await expect(panel.getByLabel('Description')).toHaveValue('Clean the gutters');
+    await panel.getByRole('button', { name: 'Cancelled', exact: true }).click();
+    await expect(gutters).toHaveCount(0);
 
     const statuses = await page.evaluate(async () => {
       const { openStore } = await import('/js/store/db.js');
@@ -297,7 +305,7 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
-  test('a completed target-1 row is inert to a click and to x, and keeps its status menu (TSK-4)', async ({ page }) => {
+  test('a completed target-1 row is inert to a click, to x, and to a right-click (TSK-4)', async ({ page }) => {
     const problems = watch(page);
     await openList(page, { statuses: null });
     const plants = page.locator('.list-view .task-row', { hasText: 'Water the plants' });
@@ -311,8 +319,7 @@ test.describe('List screen', () => {
     await expect(plants).toHaveAttribute('data-status', 'completed');
     await expect(page.locator('.toast')).toHaveCount(0);
     await button.click({ button: 'right', force: true });
-    await expect(page.getByRole('menu', { name: 'Status of Water the plants' })).toBeVisible();
-    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu')).toHaveCount(0);
     const status = await page.evaluate(async () => {
       const { openStore } = await import('/js/store/db.js');
       const store = await openStore();

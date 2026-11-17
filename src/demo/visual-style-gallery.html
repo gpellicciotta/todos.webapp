@@ -693,8 +693,8 @@
 
       <section class="gallery-section" id="status-button" aria-labelledby="status-button-title" data-gallery-group="app">
         <h2 id="status-button-title">Status button</h2>
-        <p>The status icon of a task row; the shapes differ, so status never relies on color. A click ticks: it completes a task below target, undoes a completion, or reopens a cancelled task.</p>
-        <p>A right-click or long press opens the status menu.</p>
+        <p>The status icon of a task row; the shapes differ, so status never relies on color. A click ticks: it posts one completion, and never lowers the count.</p>
+        <p>It opens no menu; the task editor holds the other status actions.</p>
 
         <h3>Statuses</h3>
         <ul class="states">
@@ -712,19 +712,6 @@
           <li class="state"><button class="icon-button status-button is-active" data-status="in-progress" type="button" aria-label="Mark Fix the bike light completed (active)"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button><span class="state__label">Active</span></li>
           <li class="state"><button class="icon-button status-button" data-status="in-progress" type="button" aria-label="Mark Fix the bike light completed (read-only)" disabled><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button><span class="state__label">Read-only</span></li>
         </ul>
-
-        <h3>Status menu</h3>
-        <p>The menu offers the event actions; each icon shows the status the action leads to.</p>
-        <p>This specimen shows all four entries; a task shows only those whose preconditions hold.</p>
-        <p>Start shows hover and Cancel task shows focus-visible.</p>
-        <div class="stage">
-          <div class="menu status-menu" role="menu" aria-label="Status of Call the plumber">
-            <button class="menu__item is-hover" type="button" role="menuitem" data-event="start" data-status="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg>Start</button>
-            <button class="menu__item" type="button" role="menuitem" data-event="unstart" data-status="ready"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>Undo start</button>
-            <button class="menu__item is-focus" type="button" role="menuitem" data-event="cancel" data-status="cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg>Cancel task</button>
-            <button class="menu__item" type="button" role="menuitem" data-event="reopen" data-status="ready"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg>Reopen</button>
-          </div>
-        </div>
       </section>
 
       <section class="gallery-section" id="task-row" aria-labelledby="task-row-title" data-gallery-group="app">

@@ -424,19 +424,13 @@
 }
 
 /*
- * Status button: an icon button showing the status icon; a click ticks, and a long press opens the status menu.
+ * Status button: an icon button showing the status icon; a click ticks, and it opens no menu.
  * Icons: status-ready (empty circle), status-in-progress (circle with a filled bottom half),
  * status-completed (filled circle with a check), status-cancelled (filled circle with a dash).
  * Read-only rows disable it but keep the icon at full icon contrast.
  * A row whose click posts nothing, such as a completed task at target 1, marks it aria-disabled:
  * it keeps its status color and focus ring, but shows no hover ground or pointer, since a click does nothing.
- * The long press must not select text or show the touch callout of the browser.
  */
-.status-button {
-  -webkit-touch-callout: none;
-  user-select: none;
-}
-
 .status-button[aria-disabled='true'] {
   background-color: transparent;
   cursor: default;
@@ -447,8 +441,7 @@
   cursor: default;
 }
 
-/* Status menu: the package menu of event actions, each with the icon of the status it leads to. */
-.status-menu .menu__item > .icon,
+/* Task editor status line: its icon keeps the muted text color until a status color applies. */
 .task-editor__status[data-status] > .icon {
   color: var(--color-text-muted);
 }
@@ -459,21 +452,18 @@
  * An enabled state button of the task editor tints its icon too; a disabled one keeps the disabled color.
  */
 .status-button[data-status='in-progress'],
-.status-menu .menu__item[data-status='in-progress'] > .icon,
 .task-editor__status[data-status='in-progress'] > .icon,
 .task-editor__state[data-status='in-progress']:not(:disabled) > .icon {
   color: var(--color-status-in-progress);
 }
 
 .status-button[data-status='completed'],
-.status-menu .menu__item[data-status='completed'] > .icon,
 .task-editor__status[data-status='completed'] > .icon,
 .task-editor__state[data-status='completed']:not(:disabled) > .icon {
   color: var(--color-status-completed);
 }
 
 .status-button[data-status='cancelled'],
-.status-menu .menu__item[data-status='cancelled'] > .icon,
 .task-editor__status[data-status='cancelled'] > .icon,
 .task-editor__state[data-status='cancelled']:not(:disabled) > .icon {
   color: var(--color-status-cancelled);

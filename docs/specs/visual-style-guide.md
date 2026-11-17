@@ -11,7 +11,7 @@ The tokens, the font, the controls, the app components, and their gallery sectio
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
   It imports only the public [looks/neutral/index.css](../../src/vendor/design/looks/neutral/index.css) of the package, which loads every package component.
 - [tokens.css](../../src/css/tokens.css): the app-local size tokens only.
-- [app-components.css](../../src/css/app-components.css): the app-local controls the package lacks, then the task list, task row, status button, and status menu.
+- [app-components.css](../../src/css/app-components.css): the app-local controls the package lacks, then the task list, task row, and status button.
   The app-local controls: the overdue chip color, choices, the filter chip, the in-view dialog, and the error banner.
 - [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
 - [shell.css](../../src/vendor/design/css/shell.css): the vendored app shell, which places every area of the page.
@@ -219,8 +219,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 
 - [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` that ticks on click.
   A tick posts `complete`: at target 1 while open, and above target 1 unless cancelled, also past the target.
-  A right-click, a long press by touch, Down, Up, Shift+F10, or the Menu key opens the status menu instead.
-  It sets no text selection and no touch callout, so a long press reaches the menu.
+  It opens no menu; the task editor's state buttons hold the other status actions.
+  Its tooltip names the status, with the counts above target 1, such as "In progress, 2 of 3 done".
   Its `aria-label` names the click action, such as "Mark Buy paint completed" or "Tick French exercises, 2 of 3 done".
   A button whose click does nothing sets `aria-disabled="true"`, with no hover ground and a default cursor.
   It keeps its status color, and its `aria-label` drops the verb, such as "Water the plants, completed".
@@ -230,10 +230,6 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - `completed`: a filled circle with a check, in green, with struck-through muted text.
   - `cancelled`: a filled circle with a dash, in the danger color, with struck-through muted text.
 
-  The status menu is a `.menu.status-menu` of `menuitem` actions: Start, Undo start, Cancel task, and Reopen.
-  Only rows keep this menu; the task editor offers state buttons instead.
-  Each item carries its event in `data-event` and the status it leads to in `data-status`, which colors its icon.
-  A task shows only the actions whose preconditions hold.
   Read-only rows disable the button but keep its icon at full icon contrast.
 - [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, one line at `--row-height`.
   It holds the drag handle, the status button, the open link, and the More button.

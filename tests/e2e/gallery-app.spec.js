@@ -339,10 +339,11 @@ for (const theme of THEMES) {
       }));
       return {
         buttons: read('#status-button .status-button[data-status]:not(:disabled):not(.is-hover):not(.is-active):not(.is-focus)'),
-        menu: read('#status-button .status-menu .menu__item[data-status]'),
         rows: read('#task-list .status-button[data-status]'),
       };
     });
+    // The row status menu is gone; the task editor's state buttons hold the other status actions.
+    await expect(page.locator('.status-menu')).toHaveCount(0);
     for (const group of Object.values(colors)) {
       expect(group.length).toBeGreaterThanOrEqual(4);
       for (const { status, color } of group) {

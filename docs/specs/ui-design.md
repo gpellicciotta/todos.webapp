@@ -265,6 +265,7 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
   Its name drops the verb, such as "Water the plants, completed".
   Its tooltip reads "Open the task to change its status."
 - There is no right-click, long-press, Down, Up, Shift+F10, or Menu key menu on a row.
+  These inputs keep their browser defaults; the editor's state buttons hold every other status action.
 - The status icons differ in shape, not only in color:
   - `ready`: an empty circle, in the muted text color.
   - `in-progress`: a circle with a filled bottom half, in blue.
