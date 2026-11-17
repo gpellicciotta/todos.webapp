@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 1799.3, input: 170, output: 65952, cache_read: 13324098, cache_write: 199497}
+  worker: {turns: 4, duration_s: 3358.2, input: 208, output: 75467, cache_read: 17840285, cache_write: 215858}
   review: {turns: 1, duration_s: 486.0, input: 73584, output: 4557, cache_read: 2208512, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T10:12:29Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T11:52:49Z"
 review_session: codex-20261117-fc96c2
 work_duration: 6093.8
 ---
@@ -102,4 +101,7 @@ Size estimate: 4 files, 500 lines.
   - First runs each hit one load-sensitive e2e test, passing 5/5 alone.
   - Filed T0275 for that e2e flakiness.
   - Files touched: 5; Lines touched: 733; Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
