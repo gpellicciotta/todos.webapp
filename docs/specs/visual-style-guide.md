@@ -229,6 +229,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - `cancelled`: a filled circle with a dash, in the danger color, with struck-through muted text.
 
   The status menu is a `.menu.status-menu` of `menuitem` actions: Start, Undo start, Cancel task, and Reopen.
+  Only rows keep this menu; the task editor offers state buttons instead.
   Each item carries its event in `data-event` and the status it leads to in `data-status`, which colors its icon.
   A task shows only the actions whose preconditions hold.
   Read-only rows disable the button but keep its icon at full icon contrast.
@@ -320,6 +321,11 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The scrolling options keep `--space-2` of inline padding, so focus rings never clip at their edges.
 - [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
   Compact layouts show the panel alone, as a full screen.
+  Its status part puts four `.icon-button.task-editor__state` buttons on a `.segmented__options` track, one per status.
+  The current one sets `aria-pressed`; each enabled one tints its icon by its `data-status`, and a disabled one dims it.
+  Each icon names its own status, never the status a click leads to.
+  Above target 1, a `.task-editor__stepper` holds minus and plus icon buttons around a polite live count, such as "1 of 3".
+  Complete for previous period is a secondary button under them, shown only during the grace period.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.
   A destructive row action swaps its buttons for it, as the last note of the note thread shows.
 

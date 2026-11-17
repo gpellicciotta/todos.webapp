@@ -4,8 +4,9 @@
  * Sections, in order: description (`TSK-1`), status (`TSK-3`, `TSK-4`), target count (`TSK-15`),
  * due date and time (`TSK-5`, `TSK-6`), overdue behavior once a due time is set (`TSK-7`), repeat (`TSK-16`), lists (`TSK-8`),
  * notes (`NOT-1` to `NOT-5`), history (`TSK-17`), details (`TSK-12`), and Delete task (`TSK-11`).
- * The status section names the status, with the done and target counts above target 1, and offers the event actions
- * whose preconditions hold: the tick, `complete` or `uncomplete`, then `start`, `unstart`, `cancel`, and `reopen`.
+ * The status section names the status, with the done and target counts above target 1, and offers one state button per
+ * status, posting the events of `eventsTowardsStatus`. Above target 1 the counts gate Completed and In progress,
+ * and a stepper adds or undoes completions. For 24 hours after a period ends, a button completes that period.
  * Target count, deadline, and overdue behavior edit the lifecycle rules; a recurring task has no deadline to edit.
  * Repeat makes the task recurring daily, weekly, or monthly in the browser's timezone; a recurring task then shows its
  * interval, end date, end count, and timezone, and Never stops the recurrence. Past its period end, the status shows
@@ -21,7 +22,7 @@
  * there the panel sits beside the rows, so the user keeps typing the next task (`TSK-13`).
  */
 
-import { applyEvent, displayTask, overdueHandlingOf } from '../core/occurrences.js';
+import { displayTask, eventsTowardsStatus, graceOccurrence, isRecurring, overdueHandlingOf } from '../core/occurrences.js';
 import { browserTimezone, isValidTimezone } from '../core/periods.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 
@@ -29,15 +30,18 @@ import { DESCRIPTION_MAX } from '../store/tasks.js';
 import { createEditorField } from './editor-panel.js';
 import { createTaskHistory, readServerOccurrences } from './task-history.js';
 import { createNoteThread } from './notes.js';
-import { countWords, make as el, showsCount, spriteIcon, STATUS_ACTIONS, STATUS_LABELS } from './task-list.js';
+import { countWords, make as el, showsCount, spriteIcon, STATUS_LABELS } from './task-list.js';
 
 /** Editor strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
-  title: 'Task', description: 'Description', status: 'Status', actions: 'Status actions', target: 'Target count',
+  title: 'Task', description: 'Description', status: 'Status', target: 'Target count',
   targetHint: 'How many times to do the task before it is completed.',
   targetRange: 'Enter a whole number from 1 to 999.',
-  complete: 'Complete', uncomplete: 'Undo completion', tick: (occurrence) => `Tick, ${occurrence['completion-count']} of ${occurrence['target-count']}`,
-  untick: (occurrence) => `Untick, ${occurrence['completion-count']} of ${occurrence['target-count']}`,
+  reachTarget: (target) => `Reach ${target} of ${target} to complete`,
+  belowTarget: (target) => `Step below ${target} of ${target} to be in progress`,
+  completions: 'Completions', stepDown: 'Undo a completion', stepUp: 'Add a completion',
+  count: (done, target) => `${done} of ${target}`,
+  previousPeriod: (day) => `Complete for previous period (${day})`,
   dueDate: 'Due date', dueTime: 'Due time',
   clear: 'Clear', clearLabel: 'Clear the due date', overdue: 'Overdue behavior',
   keep: 'Keep open', cancel: 'Cancel when overdue', lists: 'Lists',
@@ -57,6 +61,9 @@ const STRINGS = Object.freeze({
 });
 
 let instances = 0;
+
+/** The statuses of the state buttons, in order. */
+const STATES = Object.freeze(['ready', 'in-progress', 'completed', 'cancelled']);
 
 /** The highest target count the editor takes; the service stores up to 32767, but no task needs that many. */
 const TARGET_MAX = 999;
@@ -232,39 +239,89 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   const statusIcon = spriteIcon(doc, 'status-ready');
   const statusText = el(doc, 'span', 'task-editor__status-text');
   statusLine.append(statusIcon, statusText);
-  const actions = el(doc, 'div', 'task-editor__actions');
-  actions.setAttribute('role', 'group');
-  actions.setAttribute('aria-label', STRINGS.actions);
   /**
-   * Create the button of an event action.
-   * @param {string} event the event type
-   * @param {string} [status] the status whose icon the button shows
+   * Create an icon button; its icon never previews a status it leads to.
+   * @param {string} icon the sprite icon
+   * @param {string} label the accessible name
    * @returns {HTMLButtonElement} the button
    */
-  const actionButton = (event, status) => {
-    const button = el(doc, 'button', 'button button--secondary');
+  const iconButton = (icon, label) => {
+    const button = el(doc, 'button', 'icon-button');
     button.type = 'button';
-    button.dataset.event = event;
-    if (status) {
-      button.dataset.status = status;
-      button.append(spriteIcon(doc, `status-${status}`));
-    }
-    button.append(el(doc, 'span', 'task-editor__action-text'));
-    actions.append(button);
+    button.setAttribute('aria-label', label);
+    button.append(spriteIcon(doc, icon));
     return button;
   };
-  const tick = actionButton('complete', 'completed');
-  const statusButtons = STATUS_ACTIONS.map(({ event, label, status }) => {
-    const button = actionButton(event, status);
-    button.lastElementChild.textContent = label;
+  const stateGroup = el(doc, 'div', 'segmented__options task-editor__states');
+  stateGroup.setAttribute('role', 'group');
+  stateGroup.setAttribute('aria-label', STRINGS.status);
+  const stateButtons = STATES.map((status) => {
+    const button = iconButton(`status-${status}`, STATUS_LABELS[status]);
+    button.classList.add('task-editor__state');
+    button.dataset.status = status;
+    button.setAttribute('aria-pressed', 'false');
     return button;
   });
+  stateGroup.append(...stateButtons);
+  const stepper = el(doc, 'div', 'task-editor__stepper');
+  stepper.setAttribute('role', 'group');
+  stepper.setAttribute('aria-label', STRINGS.completions);
+  const stepDown = iconButton('minus', STRINGS.stepDown);
+  stepDown.dataset.step = 'down';
+  const stepUp = iconButton('plus', STRINGS.stepUp);
+  stepUp.dataset.step = 'up';
+  const countText = el(doc, 'span', 'task-editor__count');
+  countText.setAttribute('aria-live', 'polite');
+  stepper.append(stepDown, countText, stepUp);
+  stepper.hidden = true;
+  const previousPeriod = el(doc, 'button', 'button button--secondary task-editor__previous');
+  previousPeriod.type = 'button';
+  previousPeriod.dataset.action = 'previous-period';
+  previousPeriod.hidden = true;
+  const statusControls = el(doc, 'div', 'task-editor__status-controls');
+  statusControls.append(stateGroup, stepper, previousPeriod);
   const statusSection = section('status');
-  statusSection.append(el(doc, 'h3', 'editor-panel__section-title', STRINGS.status), statusLine, actions);
-  actions.addEventListener('click', (event) => {
-    const button = event.target.closest?.('button[data-event]');
-    if (button && !button.hidden) {
-      store.postEvent(taskId, button.dataset.event).catch(fail);
+  statusSection.append(el(doc, 'h3', 'editor-panel__section-title', STRINGS.status), statusLine, statusControls);
+
+  // What the last fill showed, so a click posts the events from the state the user saw.
+  let shownOccurrence = null;
+  let closedSeries = false;
+  let graceNumber = null;
+  let posting = Promise.resolve();
+
+  /**
+   * Post events in order, after those of earlier clicks; a failed event stops the rest.
+   * @param {string[]} types the event types
+   * @param {{occurrence: number}} [options] the occurrence the events name, the current one by default
+   */
+  function post(types, options) {
+    posting = posting.then(async () => {
+      for (const type of types) {
+        await (options ? store.postEvent(taskId, type, options) : store.postEvent(taskId, type));
+      }
+    }).catch(fail);
+  }
+
+  stateGroup.addEventListener('click', (event) => {
+    const button = event.target.closest?.('button[data-status]');
+    if (!button || button.disabled || !shownOccurrence) {
+      return;
+    }
+    // A closed recurring series takes only reopen, which opens a fresh period.
+    const status = button.dataset.status;
+    post(closedSeries ? (status === 'ready' ? ['reopen'] : []) : eventsTowardsStatus(shownOccurrence, status, task['lifecycle-rules']));
+  });
+  stepper.addEventListener('click', (event) => {
+    const button = event.target.closest?.('button[data-step]');
+    if (!button || button.disabled || !shownOccurrence) {
+      return;
+    }
+    // Minus from 1 starts again, so the task stays In progress at 0 rather than falling back to Ready.
+    post(button.dataset.step === 'up' ? ['complete'] : shownOccurrence['completion-count'] === 1 ? ['uncomplete', 'start'] : ['uncomplete']);
+  });
+  previousPeriod.addEventListener('click', () => {
+    if (graceNumber !== null) {
+      post(['complete'], { occurrence: graceNumber });
     }
   });
 
@@ -569,33 +626,55 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   panel.body.append(banner, lock, fields, danger);
 
   /**
-   * Show the status, its counts, and the event actions whose preconditions hold for the current occurrence.
-   * A focused action that hides passes the focus to the first action left, so the keyboard user stays in the group.
+   * Show the status and its counts, press the state button of the status, and gate the controls.
+   * Above target 1, Completed needs the target and In progress a count below it; the stepper shows outside Ready.
+   * A focused control that disables or hides passes the focus to the pressed state button.
    */
   function fillStatus() {
     const occurrence = displayTask(task, now())['current-occurrence'];
     const rules = task['lifecycle-rules'];
-    const counted = showsCount(occurrence);
-    statusLine.dataset.status = occurrence.status;
-    statusIcon.firstElementChild.setAttribute('href', `img/icons.svg#status-${occurrence.status}`);
-    statusText.textContent = `${STATUS_LABELS[occurrence.status]}${counted ? `, ${countWords(occurrence)}` : ''}`;
-    const can = (event) => applyEvent(occurrence, { type: event, 'creation-time': occurrence['start-time'] }, rules) !== null;
-    const completed = occurrence.status === 'completed';
-    // A closed recurring occurrence takes only Reopen, so its tick hides.
-    tick.dataset.event = completed ? 'uncomplete' : 'complete';
-    tick.lastElementChild.textContent = counted ? (completed ? STRINGS.untick : STRINGS.tick)(occurrence)
-      : completed ? STRINGS.uncomplete : STRINGS.complete;
-    // The tick shows the icon of the status it leads to, such as In progress when unticking 3 of 3.
-    const after = applyEvent(occurrence, { type: tick.dataset.event, 'creation-time': occurrence['start-time'] }, rules);
-    tick.dataset.status = after?.status ?? 'completed';
-    tick.querySelector('use').setAttribute('href', `img/icons.svg#status-${tick.dataset.status}`);
-    const focused = actions.contains(doc.activeElement) ? doc.activeElement : null;
-    tick.hidden = !after;
-    for (const button of statusButtons) {
-      button.hidden = !can(button.dataset.event);
+    const { status } = occurrence;
+    const done = occurrence['completion-count'];
+    const target = occurrence['target-count'];
+    const focused = statusControls.contains(doc.activeElement) ? doc.activeElement : null;
+    shownOccurrence = occurrence;
+    closedSeries = isRecurring(rules) && occurrence['close-time'] !== null;
+    statusLine.dataset.status = status;
+    statusIcon.firstElementChild.setAttribute('href', `img/icons.svg#status-${status}`);
+    statusText.textContent = `${STATUS_LABELS[status]}${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`;
+    for (const button of stateButtons) {
+      const state = button.dataset.status;
+      const reason = target <= 1 ? null
+        : state === 'completed' && done < target ? STRINGS.reachTarget(target)
+          : state === 'in-progress' && done >= target ? STRINGS.belowTarget(target) : null;
+      button.setAttribute('aria-pressed', String(state === status));
+      // A viewer or a deleted task sees every control disabled, also where the fieldset does not reach, as in tests.
+      button.disabled = fields.disabled || (closedSeries ? state !== 'ready' : reason !== null);
+      button.title = reason ?? STATUS_LABELS[state];
     }
-    if (focused?.hidden) {
-      [...actions.children].find((button) => !button.hidden)?.focus();
+    stepper.hidden = target <= 1 || status === 'ready';
+    const count = STRINGS.count(done, target);
+    // The count is a live region, so it changes only when the count does.
+    if (countText.textContent !== count) {
+      countText.textContent = count;
+    }
+    const frozen = fields.disabled || status === 'cancelled' || closedSeries;
+    stepDown.disabled = frozen || done === 0;
+    stepUp.disabled = frozen;
+    graceNumber = graceOccurrence(task, now());
+    previousPeriod.hidden = graceNumber === null;
+    previousPeriod.disabled = fields.disabled;
+    if (graceNumber !== null) {
+      // The previous period ends where the current one starts; a cached one past its end ends at its due time.
+      const current = task['current-occurrence'];
+      const end = Date.parse(graceNumber === current.occurrence ? current['due-time'] : current['start-time']);
+      const zone = isValidTimezone(rules.timezone ?? '') ? rules.timezone : undefined;
+      const day = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: zone }).format(new Date(end - 1));
+      previousPeriod.textContent = STRINGS.previousPeriod(day);
+    }
+    if (focused && (focused.disabled || focused.closest('[hidden]'))) {
+      (stateButtons.find((button) => button.getAttribute('aria-pressed') === 'true' && !button.disabled)
+        ?? stateButtons.find((button) => !button.disabled))?.focus();
     }
   }
 

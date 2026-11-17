@@ -716,19 +716,27 @@ Wireframes: [Content](../img/ui/task-editor.svg), [Status](../img/ui/task-editor
 - Status part:
   - Four icon buttons in a group: Ready, In progress, Completed, and Cancelled (`TSK-3`, `TSK-4`).
     The current one is pressed (`aria-pressed`); each has its status name as accessible name and tooltip.
+    **[Decided]** The Ready button reads "To do", the label the status line and rows use for `ready`.
+    Each icon names its own status, so no control previews the status a click leads to.
   - A text line stays, such as "In progress, 2 of 3 done".
   - A button posts the events of `eventsTowardsStatus` in occurrences.js:
     Ready resets the count to 0, with one `uncomplete` per completion or `unstart`.
     Cancelled posts `cancel` and keeps the count; leaving Cancelled posts `reopen` first.
   - Above target 1, Completed is disabled below target, with the tooltip "Reach 3 of 3 to complete".
-    In progress is disabled at or above target; the stepper moves between the two.
+    In progress is disabled at or above target, with the tooltip "Step below 3 of 3 to be in progress".
+    The stepper moves between the two.
   - At target 1, every button applies; Completed to In progress posts `uncomplete` then `start`.
   - Above target 1 and outside Ready, a second line shows the stepper `[−] 2 of 3 [+]`.
+    Minus reads "Undo a completion" and plus "Add a completion"; the count between them is a polite live region.
     It is read-only while cancelled; minus is disabled at 0; plus always applies.
     Minus from 1 posts `uncomplete` then `start`, so the task stays In progress at 0.
     The stepper never previews a status icon.
   - A closed recurring series enables only Ready, which posts `reopen` and opens a fresh period.
   - For 24 hours after a period ends, a Complete for previous period button names that occurrence (`TSK-16`).
+    Its label names the last day of that period in the task's timezone, such as "Complete for previous period (5 Nov)".
+  - A focused control that becomes disabled or hidden passes the focus to the pressed state button.
+  - A viewer or a deleted task sees the state buttons and the stepper disabled, and no previous period button.
+  - [task-editor.js](../../src/js/views/task-editor.js) builds the status part.
 - Lists part: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
 - Configuration part, each group with a bold heading:
   - Target count: a number field from 1 to 999 (`TSK-15`).

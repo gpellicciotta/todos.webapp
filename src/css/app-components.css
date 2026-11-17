@@ -442,30 +442,67 @@
 
 /* Status menu: the package menu of event actions, each with the icon of the status it leads to. */
 .status-menu .menu__item > .icon,
-:is(.task-editor__status, .task-editor__actions > .button)[data-status] > .icon {
+.task-editor__status[data-status] > .icon {
   color: var(--color-text-muted);
 }
 
 /*
  * Status colors: In progress is blue, Completed green, and Cancelled gray; To do keeps the muted text color.
  * The rules sit after the hover and disabled rules so that the color stays in every state.
+ * An enabled state button of the task editor tints its icon too; a disabled one keeps the disabled color.
  */
 .status-button[data-status='in-progress'],
 .status-menu .menu__item[data-status='in-progress'] > .icon,
-:is(.task-editor__status, .task-editor__actions > .button)[data-status='in-progress'] > .icon {
+.task-editor__status[data-status='in-progress'] > .icon,
+.task-editor__state[data-status='in-progress']:not(:disabled) > .icon {
   color: var(--color-status-in-progress);
 }
 
 .status-button[data-status='completed'],
 .status-menu .menu__item[data-status='completed'] > .icon,
-:is(.task-editor__status, .task-editor__actions > .button)[data-status='completed'] > .icon {
+.task-editor__status[data-status='completed'] > .icon,
+.task-editor__state[data-status='completed']:not(:disabled) > .icon {
   color: var(--color-status-completed);
 }
 
 .status-button[data-status='cancelled'],
 .status-menu .menu__item[data-status='cancelled'] > .icon,
-:is(.task-editor__status, .task-editor__actions > .button)[data-status='cancelled'] > .icon {
+.task-editor__status[data-status='cancelled'] > .icon,
+.task-editor__state[data-status='cancelled']:not(:disabled) > .icon {
   color: var(--color-status-cancelled);
+}
+
+/*
+ * Task editor status controls: the state buttons, the count stepper, and Complete for previous period, stacked.
+ * The state buttons are package icon buttons on the package segmented track, sized to their content;
+ * the pressed one takes the icon button's selected ground and primary outline.
+ */
+.task-editor__status-controls {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.task-editor__states {
+  display: inline-flex;
+  flex-wrap: wrap;
+}
+
+.task-editor__stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.task-editor__count {
+  min-inline-size: 7ch;
+  text-align: center;
+}
+
+.task-editor__stepper[hidden],
+.task-editor__previous[hidden] {
+  display: none;
 }
 
 /*

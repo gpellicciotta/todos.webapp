@@ -1437,9 +1437,19 @@
               <div class="editor-panel__section" data-section="status">
                 <h4 class="editor-panel__section-title">Status</h4>
                 <p class="task-editor__status" data-status="in-progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg><span class="task-editor__status-text">In progress, 1 of 3 done</span></p>
-                <div class="task-editor__actions" role="group" aria-label="Status actions">
-                  <button class="button button--secondary" type="button" data-event="complete" data-status="completed"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg><span class="task-editor__action-text">Tick, 1 of 3</span></button>
-                  <button class="button button--secondary" type="button" data-event="cancel" data-status="cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg><span class="task-editor__action-text">Cancel task</span></button>
+                <div class="task-editor__status-controls">
+                  <div class="segmented__options task-editor__states" role="group" aria-label="Status">
+                    <button class="icon-button task-editor__state" type="button" data-status="ready" aria-pressed="false" aria-label="To do" title="To do"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-ready"/></svg></button>
+                    <button class="icon-button task-editor__state" type="button" data-status="in-progress" aria-pressed="true" aria-label="In progress" title="In progress"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-in-progress"/></svg></button>
+                    <button class="icon-button task-editor__state" type="button" data-status="completed" aria-pressed="false" aria-label="Completed" title="Reach 3 of 3 to complete" disabled><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-completed"/></svg></button>
+                    <button class="icon-button task-editor__state" type="button" data-status="cancelled" aria-pressed="false" aria-label="Cancelled" title="Cancelled"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#status-cancelled"/></svg></button>
+                  </div>
+                  <div class="task-editor__stepper" role="group" aria-label="Completions">
+                    <button class="icon-button" type="button" data-step="down" aria-label="Undo a completion"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#minus"/></svg></button>
+                    <span class="task-editor__count" aria-live="polite">1 of 3</span>
+                    <button class="icon-button" type="button" data-step="up" aria-label="Add a completion"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg></button>
+                  </div>
+                  <button class="button button--secondary task-editor__previous" type="button" data-action="previous-period">Complete for previous period (5 Nov)</button>
                 </div>
               </div>
               <div class="editor-panel__section" data-section="target">
