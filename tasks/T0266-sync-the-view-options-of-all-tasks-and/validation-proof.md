@@ -65,7 +65,52 @@ one device appear on the other (SYN-13) (6.5s)
   274 passed (3.7m)
 ```
 
-### Contract Suite
+### Review Round 1 Rework
+The engine now passes every list ID the store holds, recycle bin included, so only purged lists lose their view options.
+The new engine-wiring test failed before the fix, at the binned-list check:
+
+Command: `npx vitest run tests/unit/settings-sync.test.js -t "binned list"` (exit 1)
+```text
+     × keeps the view options of a binned list, and sends null for them once the list is purged, through its default 
+settings sync 36ms
+AssertionError: expected undefined to deeply equal { …(3) }
+ ❯ tests/unit/settings-sync.test.js:370:36
+      Tests  1 failed | 17 skipped (18)
+```
+
+Reruns on commit `f02e392`:
+
+Command: `npm test` (exit 0)
+```text
+ Test Files  67 passed (67)
+      Tests  1785 passed (1785)
+   Start at  23:57:02
+   Duration  16.34s (tests 47%, environment 39%, import 9%, transform 3%, worker 1%, setup 1%)
+```
+
+Command: `npx eslint .` (exit 0, no output); `node scripts/check-sw-version.mjs` (exit 0)
+```text
+OK: 143 precached files match VERSION 2026-11-17.41.
+```
+
+Command: `npx playwright test` (exit 0)
+```text
+  ok 213 [chromium] › tests\e2e\settings-sync.spec.js:116:1 › view options, the list order, and Make Enter add set on 
+one device appear on the other (SYN-13) (5.8s)
+  274 passed (3.4m)
+```
+
+Command: `$env:TODOS_SERVER_DIR = "{{scratch}}/todos-server"; npx vitest run --config vitest.contract.config.js --reporter verbose` (exit 0)
+```text
+ ✓ tests/contract/sync.contract.test.js > the sync client against a real todos server > patches, reads, and 
+conditionally reads the user settings, and merges two devices by edit time (SYN-13) 134ms
+ Test Files  1 passed (1)
+      Tests  22 passed (22)
+   Start at  00:01:01
+   Duration  6.32s (tests 95%, import 3%, transform 2%)
+```
+
+### Contract Suite (Round 0)
 The sibling's built jar predates todos.server T0262, so the suite ran against a scratch clone at `8992db5`.
 The clone was built with `gradlew.bat :server:installDist --offline`; the sibling checkout stayed untouched.
 

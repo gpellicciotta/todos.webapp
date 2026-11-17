@@ -13,10 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 2133.9, input: 30, output: 6740, cache_read: 3774148, cache_write: 17505}
-work_duration: 1858.5
-review_status: pending
+  review: {turns: 1, duration_s: 374.6, input: 30, output: 10474, cache_read: 1195324, cache_write: 78497}
+work_duration: 2569.2
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T22:48:18Z"
+reviewed_by: "@claude"
+review_session: claude-20261117-361149
 ---
 # T0266: Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
 
@@ -78,4 +81,26 @@ Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-t
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @claude: The settings sync is mostly sound and well tested.
+  - Findings: [review-findings-1.md](T0266-sync-the-view-options-of-all-tasks-and/review-findings-1.md).
+
+- [2026-11-18] **[Implement]**
+  Fixed review round 1: the engine prunes view options only for purged lists, passing live and recycle bin list IDs.
+  - Engine-wiring unit test: binned keeps, purged sends null.
+  - Settings switch listener stops on destroy; e2e asserts a 304.
+  - Commit f02e392.
+
+- [2026-11-18] **[Verify]**
+  Reran unit, lint, service worker check, full e2e, and contract suites after the rework; all passed.
+  - npm test: 1785 passed.
+  - npx playwright test: 274 passed.
+  - Contract: 22 passed.
+
+- [2026-11-18] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 19.
+  - Lines touched: 453.
+  - Reopenings: 0.
 
