@@ -34,11 +34,11 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0218 Evaluate adopting DevopsCli from support-python v3.3.0, modeled on support.webapp's devops script.
 - [x] T0226 Notify the user when a task comes due while the app is open, with opt-in and a lead time.
 - [x] T0072 Make the sidebar scroll only its lists, keep the current list in view, and patch rows in place.
-- [~] T0073 [owner: @claude] Add the find field, roving focus, and the l shortcut to the sidebar lists.
+- [x] T0073 Add the find field, roving focus, and the l shortcut to the sidebar lists.
 - [ ] T0074 Add the find bar, sort menu, info line, and Create list offer to the Lists screen.
 - [ ] T0075 [needs: T0074] Render long Lists screens with content-visibility and lazy row menus, with roving focus between rows.
 - [ ] T0076 [needs: T0074, T0263] Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
-- [ ] T0077 [needs: T0073, T0075] Add a 150-list render check to the performance spec, and record 500 lists.
+- [ ] T0077 [needs: T0075] Add a 150-list render check to the performance spec, and record 500 lists.
 - [ ] T0078 [needs: T0074] Add the Shared only filter to the Lists screen sort menu while connected.
 
 ## Backlog
