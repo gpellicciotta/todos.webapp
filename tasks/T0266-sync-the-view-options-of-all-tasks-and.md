@@ -1,11 +1,11 @@
 ---
 id: T0266
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0266-sync-the-view-options-of-all-tasks-and
+worktree: .plan/work/T0266-sync-the-view-options-of-all-tasks-and
+status: active
+started_at: "2026-11-17T22:11:50Z"
 ended_at: —
 review: agent
 preview: none
