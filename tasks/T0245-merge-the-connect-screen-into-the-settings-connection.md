@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 895.2, input: 116, output: 46681, cache_read: 7561178, cache_write: 146770}
+  worker: {turns: 2, duration_s: 1244.9, input: 138, output: 52916, cache_read: 9410654, cache_write: 162139}
   review: {turns: 1, duration_s: 114.1, input: 46932, output: 2501, cache_read: 343040, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T02:58:13Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T03:06:30Z"
 review_session: codex-20261117-47dec8
 work_duration: 1025.3
 ---
@@ -91,4 +90,7 @@ Make the Settings Connection section the only place to connect, removing the sep
 
 - [2026-11-17] **[Implement]**
   Review D1 fixed: sign-in phase now lasts until its promise settles; added notification-order and expired-return tests. Unit 1574, e2e 223 pass.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
