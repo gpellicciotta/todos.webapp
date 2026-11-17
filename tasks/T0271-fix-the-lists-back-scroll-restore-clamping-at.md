@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 601.1, input: 62, output: 13053, cache_read: 2255388, cache_write: 91321}
-review_status: pending
+  review: {turns: 1, duration_s: 245.5, input: 65239, output: 2984, cache_read: 586496, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T08:45:17Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-904760
+work_duration: 858.4
 ---
 # T0271: Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e
 
@@ -46,4 +50,17 @@ Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibili
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: The Lists regression checks pass, but the router introduces a navigation cancellation defect.
+  - Findings: [review-findings-1.md](T0271-fix-the-lists-back-scroll-restore-clamping-at/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Reworked review round 1: restore retries run unblocked and cancel on navigation; two router tests added.
+
+- [2026-11-17] **[Verify]**
+  Unit 1686, lint, lists e2e 40/40 and 43 other e2e pass.
+  - Files touched: 5.
+  - Lines touched: 150.
+  - Reopenings: 0.
 

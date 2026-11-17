@@ -4,10 +4,13 @@ round: 1
 verdict: rejected
 blocking: 1
 reviewer: "@codex"
-reviewed_at: 2026-11-17T08:45:18Z
+reviewed_at: 2026-11-17T08:49:24Z
 reviewed_commit: "2cf4504"
 base_commit: "d517663"
 branch: task/T0271-fix-the-lists-back-scroll-restore-clamping-at
+session: codex-20261117-904760
+session_agent: codex
+session_created_at: 2026-11-17T08:45:18Z
 ---
 # Review Findings: Task T0271 (Round 1)
 
