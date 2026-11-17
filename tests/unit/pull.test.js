@@ -201,6 +201,41 @@ describe('disconnecting', () => {
     expect(service.calls).toEqual([]);
   });
 
+  it('saves the account as the last account, which outlives the disconnect', async () => {
+    const { store, pull } = await setup();
+    await pull.disconnect();
+    expect(await store.queue.getState('account')).toBeNull();
+    expect(await store.queue.getState('last-account')).toEqual(ACCOUNT);
+  });
+
+  it('takes the last account from an unfinished adoption when no adoption finished', async () => {
+    const { store, pull } = await setup();
+    await store.queue.setState('account', null);
+    await store.queue.setState('adoption', { status: 'running', account: ACCOUNT, done: 0, total: 3 });
+    await pull.disconnect();
+    expect(await store.queue.getState('last-account')).toEqual(ACCOUNT);
+  });
+
+  it('turns a queued erase into a pending erase with the entry time and the account', async () => {
+    const { store, clock, pull } = await setup();
+    await store.createTask({ description: 'Gone' });
+    clock.tick(5000);
+    await store.deleteAllData();
+    const [entry] = await store.queue.all();
+    clock.tick(5000);
+    await store.createTask({ description: 'Kept' });
+    await pull.disconnect();
+    expect(await store.queue.count()).toBe(0);
+    expect(await store.queue.getState('pending-erase')).toEqual({ time: entry.fields.time, account: ACCOUNT });
+  });
+
+  it('saves no pending erase when no erase is queued', async () => {
+    const { store, pull } = await setup();
+    await store.createTask({ description: 'Kept' });
+    await pull.disconnect();
+    expect(await store.queue.getState('pending-erase')).toBeNull();
+  });
+
   it('keeps a status set on another device through a disconnect and the next adoption (CON-8, CON-4)', async () => {
     const { store, service, pull } = await setup();
     const done = { occurrence: 1, 'start-time': T0, 'due-time': null, 'target-count': 1, 'completion-count': 1, status: 'completed', 'close-time': T0 };

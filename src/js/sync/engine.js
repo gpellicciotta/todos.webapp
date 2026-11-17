@@ -5,7 +5,8 @@
  * Only the tab that holds the Web Lock `todos-sync` syncs. Its run replays the queue, then pulls the feed.
  * The leader runs again every 30 seconds, after going online, gaining focus, becoming visible, and after local changes.
  * It pulls only while the page is visible; a hidden page still replays the queue.
- * The state is `local-only`, `synced`, `syncing`, `offline`, `sign-in-needed`, `error`, or `update-required`.
+ * The state is `local-only`, `synced`, `syncing`, `offline`, `sign-in-needed`, `question`, `error`, or `update-required`.
+ * `question` waits for the user to answer whether a local Delete all data also erases the account (see adopt.js).
  * A queued `erase` entry blocks the pull: the pull runs only once the queue is empty, so it follows the erase.
  * Disconnecting leaves the account's data behind (`CON-8`, `CON-9`): see pull.js.
  */

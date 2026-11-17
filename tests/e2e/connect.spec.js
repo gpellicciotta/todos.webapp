@@ -192,6 +192,114 @@ test('Delete account marks the account on the service, disconnects, and keeps th
   expect(marked).toMatchObject({ url: `${SERVER}/api/users/3`, authorization: 'Bearer session-1' });
 });
 
+/**
+ * Mock Auth, and a service that keeps the account's tasks and erases them as `DELETE /api/users/3/data?before=` does.
+ * @param {import('@playwright/test').Page} page the page
+ * @returns {Promise<{tasks: Map<string, object>, erases: string[]}>} the account's tasks by id, and the `before` of each erase
+ */
+async function mockAccount(page) {
+  const account = { tasks: new Map([['old-1', { id: 'old-1', description: 'Old account task', 'creation-time': '2026-01-01T00:00:00.000Z' }]]), erases: [] };
+  await mockServices(page);
+  await page.route(`${SERVER}/api/**`, (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.pathname === '/api/tasks' && request.method() === 'POST') {
+      const task = request.postDataJSON();
+      account.tasks.set(task.id, task);
+      return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(task) });
+    }
+    if (url.pathname === '/api/users/3/data' && request.method() === 'DELETE') {
+      const before = url.searchParams.get('before');
+      account.erases.push(before);
+      const erased = [...account.tasks.values()].filter((task) => task['creation-time'] < before);
+      erased.forEach((task) => account.tasks.delete(task.id));
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ lists: 0, tasks: erased.length, notes: 0 }) });
+    }
+    return route.fallback();
+  });
+  return account;
+}
+
+/**
+ * Add a task from the All tasks screen.
+ * @param {import('@playwright/test').Page} page the page
+ * @param {string} description the task
+ */
+async function addTask(page, description) {
+  await open(page, '#/tasks');
+  await page.getByRole('textbox', { name: 'Search or add a task' }).fill(description);
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('link', { name: description })).toBeVisible();
+}
+
+/**
+ * Erase all data on this device through Settings.
+ * @param {import('@playwright/test').Page} page the page
+ */
+async function deleteAllData(page) {
+  await open(page, '#/settings');
+  await page.getByRole('button', { name: 'Delete all data' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete all data?' });
+  await dialog.getByLabel('Type DELETE to confirm').fill('DELETE');
+  await dialog.getByRole('button', { name: 'Delete everything' }).click();
+  await expect(page.locator('.toast', { hasText: 'All data deleted.' })).toBeVisible();
+}
+
+test('a local Delete all data erases the last account on the next connect, before the new local data uploads', async ({ page }) => {
+  const account = await mockAccount(page);
+  const card = page.locator('section[aria-labelledby="settings-connection"]');
+  await addTask(page, 'Uploaded on the first connect');
+  await open(page, '#/settings');
+  await card.getByRole('button', { name: 'Sign in' }).click();
+  await expect(card).toContainText('Signed in as Jane Doe (jane@example.com)');
+  await expect.poll(() => [...account.tasks.values()].map((task) => task.description).sort()).toEqual(['Old account task', 'Uploaded on the first connect']);
+  await card.getByRole('button', { name: 'Disconnect' }).click();
+  await page.getByRole('dialog', { name: 'Disconnect from your account?' }).getByRole('button', { name: 'Disconnect' }).click();
+  await expect(card).toContainText('Not connected. Your data stays on this device.');
+  await deleteAllData(page);
+  await addTask(page, 'Created after the erase');
+  await open(page, '#/settings');
+  await card.getByRole('button', { name: 'Sign in' }).click();
+  await expect(card).toContainText('Signed in as Jane Doe (jane@example.com)');
+  await expect.poll(() => [...account.tasks.values()].map((task) => task.description)).toEqual(['Created after the erase']);
+  expect(account.erases).toHaveLength(1);
+  await expect(card).not.toContainText('You deleted all data');
+});
+
+test('connecting a device never connected asks before erasing, and Keep leaves the account alone', async ({ page }) => {
+  const account = await mockAccount(page);
+  const card = page.locator('section[aria-labelledby="settings-connection"]');
+  await deleteAllData(page);
+  await addTask(page, 'Created after the erase');
+  await open(page, '#/settings');
+  await card.getByRole('button', { name: 'Sign in' }).click();
+  const question = card.getByText('Also erase the lists and tasks of jane@example.com created before then?');
+  await expect(question).toBeVisible();
+  await expect(card).toContainText('You deleted all data on this device on');
+  await expect(card.locator('.settings__sync-state')).toHaveText('Sync state: Waiting for your answer');
+  expect([...account.tasks.keys()]).toEqual(['old-1']);
+  await card.screenshot({ path: test.info().outputPath('erase-question-after-light.png') });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await card.screenshot({ path: test.info().outputPath('erase-question-after-dark.png') });
+  await card.getByRole('button', { name: 'Keep' }).click();
+  await expect(question).toHaveCount(0);
+  await expect.poll(() => [...account.tasks.values()].map((task) => task.description).sort()).toEqual(['Created after the erase', 'Old account task']);
+  expect(account.erases).toEqual([]);
+});
+
+test('Erase in the connect question erases the account before the local data uploads', async ({ page }) => {
+  const account = await mockAccount(page);
+  const card = page.locator('section[aria-labelledby="settings-connection"]');
+  await deleteAllData(page);
+  await addTask(page, 'Created after the erase');
+  await open(page, '#/settings');
+  await card.getByRole('button', { name: 'Sign in' }).click();
+  await card.getByRole('button', { name: 'Erase' }).click();
+  await expect(card.getByText('Also erase the lists and tasks')).toHaveCount(0);
+  await expect.poll(() => [...account.tasks.values()].map((task) => task.description)).toEqual(['Created after the erase']);
+  expect(account.erases).toHaveLength(1);
+});
+
 test('an expired session asks to sign in again and keeps local work going', async ({ page }) => {
   await page.addInitScript((record) => localStorage.setItem('todos.session', JSON.stringify(record)), { ...SESSION, expiry: '2000-01-01T00:00:00Z' });
   await open(page, '#/settings');

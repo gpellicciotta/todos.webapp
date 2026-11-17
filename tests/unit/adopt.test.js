@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { adopt } from '../../src/js/sync/adopt.js';
 import { createApi } from '../../src/js/sync/api.js';
+import { createPush } from '../../src/js/sync/push.js';
 import { freshStore } from './store-helpers.js';
 import { fakeService, fakeSession } from './sync-fake-service.js';
 
@@ -182,5 +183,101 @@ describe('adopting local data on first connect', () => {
     expect(await store.queue.count()).toBe(1);
     await adopt({ store, api, account: ACCOUNT });
     expect(await store.queue.count()).toBe(0);
+  });
+});
+
+describe('a local erase waiting for the next connect', () => {
+  const ERASED = '2026-11-03T08:00:00.000Z';
+  let channels = 0;
+
+  /**
+   * Set up a device about to connect to ACCOUNT, with a pending erase and a task created after it.
+   * @param {object|null} account the account of the pending erase
+   * @returns {Promise<object>} the pieces, with the push engine
+   */
+  async function connecting(account) {
+    const pieces = await setup({ lists: [{ id: 'acct-1', name: 'Old', 'creation-time': '2026-10-01T00:00:00.000Z' }] });
+    await pieces.store.queue.setState('pending-erase', { time: ERASED, account });
+    const task = await pieces.store.createTask({ description: 'After the erase' });
+    const push = createPush({ store: pieces.store, session: fakeSession(), api: pieces.api, locks: null, channelName: `test-erase-${channels++}` });
+    return { ...pieces, task, push };
+  }
+
+  const eraseCalls = (service) => service.calls.filter((call) => call.method === 'DELETE' && call.path.endsWith('/data'));
+
+  it('erases the same account before adoption, with before set to the saved time', async () => {
+    const { store, service, push, task } = await connecting(ACCOUNT);
+    expect(await push.drainOnce()).toBe('synced');
+    const erase = service.calls.findIndex((call) => call.method === 'DELETE' && call.path === '/api/users/7/data');
+    const upload = service.calls.findIndex((call) => call.method === 'POST' && call.path === '/api/tasks');
+    expect(erase).toBeGreaterThanOrEqual(0);
+    expect(service.calls[erase].query).toEqual({ before: ERASED });
+    expect(erase).toBeLessThan(upload);
+    expect([...service.lists.keys()]).toEqual([]);
+    expect([...service.tasks.keys()]).toEqual([task.id]);
+    expect(await store.queue.getState('pending-erase')).toBeNull();
+    expect((await store.queue.log()).map((record) => record.kind)).toEqual(['erased']);
+  });
+
+  it('asks before erasing another account, and uploads nothing until the answer', async () => {
+    const { store, service, push } = await connecting({ email: 'bob@example.com', server: ACCOUNT.server });
+    expect(await push.drainOnce()).toBe('paused');
+    expect(push.state()).toMatchObject({ status: 'question', erase: { time: ERASED } });
+    expect(eraseCalls(service)).toEqual([]);
+    expect(service.calls.some((call) => call.method !== 'GET')).toBe(false);
+    expect(await store.queue.getState('adoption')).toBeNull();
+  });
+
+  it('asks on a device never connected', async () => {
+    const { push } = await connecting(null);
+    expect(await push.drainOnce()).toBe('paused');
+    expect(push.state().status).toBe('question');
+  });
+
+  it('leaves the account data alone after Keep, and adopts', async () => {
+    const { store, service, push, task } = await connecting(null);
+    await push.drainOnce();
+    await store.queue.setState('pending-erase', null);
+    expect(await push.drainOnce()).toBe('synced');
+    expect(eraseCalls(service)).toEqual([]);
+    expect([...service.lists.keys()]).toEqual(['acct-1']);
+    expect([...service.tasks.keys()]).toEqual([task.id]);
+  });
+
+  it('erases after Erase, which names the connected account', async () => {
+    const { store, service, push } = await connecting(null);
+    await push.drainOnce();
+    await store.queue.setState('pending-erase', { time: ERASED, account: ACCOUNT });
+    expect(await push.drainOnce()).toBe('synced');
+    expect(eraseCalls(service).map((call) => call.query.before)).toEqual([ERASED]);
+  });
+
+  it('keeps the pending erase and stops before adoption when the erase fails', async () => {
+    const { store, service, push } = await connecting(ACCOUNT);
+    service.fail = (call) => (call.path.endsWith('/data') ? 503 : null);
+    expect(await push.drainOnce()).toBe('retry');
+    expect(await store.queue.getState('pending-erase')).toEqual({ time: ERASED, account: ACCOUNT });
+    expect(service.calls.some((call) => call.method === 'POST')).toBe(false);
+    expect(await store.queue.getState('adoption')).toBeNull();
+  });
+
+  it('keeps a refused erase, stops before adoption, and erases before adoption on a later try', async () => {
+    const { store, service, push, task } = await connecting(ACCOUNT);
+    service.fail = (call) => (call.path.endsWith('/data') ? 403 : null);
+    expect(await push.drainOnce()).toBe('retry');
+    expect(push.state()).toMatchObject({ status: 'error', error: expect.stringContaining('HTTP 403') });
+    expect(await store.queue.getState('pending-erase')).toEqual({ time: ERASED, account: ACCOUNT });
+    expect(service.calls.some((call) => call.method === 'POST')).toBe(false);
+    expect(await store.queue.getState('adoption')).toBeNull();
+    expect((await store.queue.log()).map((record) => record.kind)).toEqual(['error']);
+    service.fail = () => null;
+    service.calls.length = 0;
+    expect(await push.drainOnce()).toBe('synced');
+    const erase = service.calls.findIndex((call) => call.method === 'DELETE' && call.path === '/api/users/7/data');
+    const upload = service.calls.findIndex((call) => call.method === 'POST' && call.path === '/api/tasks');
+    expect(erase).toBeGreaterThanOrEqual(0);
+    expect(erase).toBeLessThan(upload);
+    expect([...service.tasks.keys()]).toEqual([task.id]);
+    expect(await store.queue.getState('pending-erase')).toBeNull();
   });
 });

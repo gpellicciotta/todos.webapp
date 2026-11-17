@@ -32,6 +32,7 @@ export const SYNC_STRINGS = Object.freeze({
     syncing: 'Syncing',
     offline: 'Offline',
     'sign-in-needed': 'Sign in needed',
+    question: 'Waiting for your answer',
     error: 'Sync error',
     'update-required': 'Update required',
   }),
@@ -44,6 +45,8 @@ export const SYNC_STRINGS = Object.freeze({
   offlineText: 'You are offline. Changes sync when the connection returns.',
   errorText: 'Syncing failed. It will try again.',
   signInText: 'Your session expired. Your changes stay on this device until you sign in again.',
+  questionText: 'Answer the question in Settings to finish connecting.',
+  openSettings: 'Open Settings',
   updateText: (minimum) => (minimum ? `Version ${minimum} or newer is required to sync.` : 'A newer version of the app is required to sync.'),
   sessionExpired: 'Your session expired. Your changes stay on this device until you sign in again.',
   syncNow: 'Sync now',
@@ -61,6 +64,7 @@ const LOOKS = Object.freeze({
   syncing: { state: 'syncing', icon: 'sync-syncing' },
   offline: { state: 'offline', icon: 'sync-offline' },
   'sign-in-needed': { state: 'sign-in', icon: 'sync-sign-in' },
+  question: { state: 'sign-in', icon: 'alert' },
   error: { state: 'error', icon: 'sync-error' },
   'update-required': { state: 'update-required', icon: 'alert' },
 });
@@ -241,6 +245,10 @@ export function attachSyncIndicator(slot, { engine, session, readLog, seen, bann
       case 'sign-in-needed':
         time.textContent = SYNC_STRINGS.signInText;
         actions.append(linkButton(doc, SYNC_STRINGS.signIn, CONNECT_HASH, ''));
+        break;
+      case 'question':
+        time.textContent = SYNC_STRINGS.questionText;
+        actions.append(linkButton(doc, SYNC_STRINGS.openSettings, CONNECT_HASH, ''));
         break;
       default:
         time.textContent = SYNC_STRINGS.updateText(state.minimum);

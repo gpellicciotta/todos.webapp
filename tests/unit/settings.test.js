@@ -205,6 +205,87 @@ describe('Connection in Settings while connected', () => {
   });
 });
 
+describe('The erase question while connecting', () => {
+  const ERASED = '2026-11-03T12:00:00.000Z';
+
+  /**
+   * Mount Settings connected, with the sync engine waiting on the erase question or in another state.
+   * @param {{status?: string}} [options] the sync status
+   * @returns {object} the parts, with the queue and the sync stand-ins
+   */
+  function mountQuestion({ status = 'question' } = {}) {
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = {
+      state: () => 'connected',
+      account: () => ({ name: 'Jane Doe', email: 'jane@example.com', server: 'https://todos.example.com' }),
+      subscribe: () => () => {},
+      serverUrl: () => 'https://todos.example.com',
+    };
+    const listeners = new Set();
+    const sync = {
+      current: { status, erase: status === 'question' ? { time: ERASED, account: null } : undefined },
+      state: () => sync.current,
+      subscribe: (listener) => listeners.add(listener) && (() => listeners.delete(listener)),
+      pendingCount: async () => 0,
+      syncNow: vi.fn(async () => {
+        sync.current = { status: 'synced' };
+        listeners.forEach((listener) => listener(sync.current));
+        return 'synced';
+      }),
+    };
+    const queue = { getState: vi.fn(async () => ({ time: ERASED, account: null })), setState: vi.fn(async () => {}) };
+    const toaster = { show: vi.fn() };
+    mountSettings(view, { session, sync, toaster, store: { queue }, getStorage: () => null });
+    return { view, sync, queue, toaster };
+  }
+
+  const find = (root, text) => [...root.querySelectorAll('button')].find((button) => button.textContent === text);
+
+  it('asks in place, with the date and the email, before anything uploads', () => {
+    const { view } = mountQuestion();
+    const card = view.querySelector('section[aria-labelledby="settings-connection"]');
+    expect(card.querySelector('[aria-live]').textContent).toContain(
+      'You deleted all data on this device on 3 Nov 2026. Also erase the lists and tasks of jane@example.com created before then?',
+    );
+    expect(find(card, 'Erase').className).toContain('button--danger');
+    expect(find(card, 'Keep')).toBeDefined();
+    expect(card.querySelector('.settings__sync-state').textContent).toBe('Sync state: Waiting for your answer');
+  });
+
+  it('shows no question in other sync states', () => {
+    const { view } = mountQuestion({ status: 'synced' });
+    expect(view.textContent).not.toContain('You deleted all data');
+    expect(find(view, 'Erase')).toBeUndefined();
+  });
+
+  it('Keep drops the pending erase, syncs, and the question goes', async () => {
+    const { view, queue, sync } = mountQuestion();
+    find(view, 'Keep').click();
+    await settle();
+    expect(queue.setState).toHaveBeenCalledWith('pending-erase', null);
+    expect(sync.syncNow).toHaveBeenCalledTimes(1);
+    expect(view.textContent).not.toContain('You deleted all data');
+  });
+
+  it('Erase names the connected account in the pending erase, then syncs', async () => {
+    const { view, queue, sync } = mountQuestion();
+    find(view, 'Erase').click();
+    await settle();
+    expect(queue.setState).toHaveBeenCalledWith('pending-erase', { time: ERASED, account: { email: 'jane@example.com', server: 'https://todos.example.com' } });
+    expect(sync.syncNow).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the question with a toast when the answer cannot be saved', async () => {
+    const { view, queue, sync, toaster } = mountQuestion();
+    queue.setState.mockRejectedValueOnce(new Error('disk full'));
+    find(view, 'Keep').click();
+    await settle();
+    expect(toaster.show).toHaveBeenCalledWith(expect.stringContaining('could not be saved'));
+    expect(sync.syncNow).not.toHaveBeenCalled();
+    expect(find(view, 'Keep').disabled).toBe(false);
+  });
+});
+
 describe('Connection section phases', () => {
   const JANE = { name: 'Jane Doe', email: 'jane@example.com', server: 'https://todos.example.com' };
   let screen;

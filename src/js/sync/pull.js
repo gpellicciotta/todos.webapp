@@ -167,14 +167,22 @@ export function createPull({ store, session, api, onLostAccess = () => {}, pageS
     /**
      * Leave the account's data behind (`CON-8`, `CON-9`): keep own lists and tasks as local data,
      * remove the rest, forget the cursor and the queue, and call no route.
+     * The account stays as `last-account`, and a queued erase as `pending-erase`, for the next connect (`BAK-15`).
      * @returns {Promise<void>}
      */
     async disconnect() {
-      const user = await queue.getState('user-id');
+      const [user, adopted, adoption, cursor] = await Promise.all(['user-id', 'account', 'adoption', 'cursor'].map((key) => queue.getState(key)));
+      const known = adopted ?? adoption?.account ?? cursor?.account ?? null;
+      const last = known ? { email: known.email, server: known.server } : await queue.getState('last-account');
+      const erase = (await queue.all()).findLast((entry) => entry.operation === 'erase');
       await store.applyChanges((data) => ({ changes: planDisconnect(data, user), result: null }));
       await queue.clear();
       for (const key of ['cursor', 'user-id', 'account', 'adoption', 'list-map']) {
         await queue.setState(key, null);
+      }
+      await queue.setState('last-account', last);
+      if (erase) {
+        await queue.setState('pending-erase', { time: erase.fields.time, account: last });
       }
     },
   };

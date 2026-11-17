@@ -416,6 +416,35 @@ describe('deleteAllData', () => {
     expect(await store.queue.count()).toBe(0);
   });
 
+  it('saves a pending erase with its time and the last account in local mode', async () => {
+    const account = { email: 'ada@example.com', server: 'https://todos.example.com' };
+    await store.queue.setState('last-account', account);
+    clock.tick(5000);
+    await store.deleteAllData();
+    expect(await store.queue.getState('pending-erase')).toEqual({ time: new Date(clock.now).toISOString(), account });
+  });
+
+  it('saves a pending erase without an account on a device never connected', async () => {
+    await store.deleteAllData();
+    expect(await store.queue.getState('pending-erase')).toEqual({ time: new Date(clock.now).toISOString(), account: null });
+  });
+
+  it('replaces the time and keeps the account of an earlier pending erase', async () => {
+    const first = { email: 'ada@example.com', server: 'https://todos.example.com' };
+    await store.queue.setState('pending-erase', { time: '2026-01-01T00:00:00.000Z', account: first });
+    await store.queue.setState('last-account', { email: 'bob@example.com', server: 'https://todos.example.com' });
+    clock.tick(5000);
+    await store.deleteAllData();
+    expect(await store.queue.getState('pending-erase')).toEqual({ time: new Date(clock.now).toISOString(), account: first });
+  });
+
+  it('saves no pending erase while tracking, since the erase entry is queued', async () => {
+    const tracked = await freshStore({ tracking: () => true });
+    await tracked.store.deleteAllData();
+    expect(await tracked.store.queue.getState('pending-erase')).toBeNull();
+    tracked.store.close();
+  });
+
   it('drops the earlier entries and queues one erase entry with the time while tracking', async () => {
     const tracked = await freshStore({ tracking: () => true });
     const list = await tracked.store.createList({ name: 'A' });

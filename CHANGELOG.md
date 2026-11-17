@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Made a Delete all data done in local mode erase the account's lists and tasks on the next connect, before the new local data uploads: automatically for the last connected account, otherwise after an Erase or Keep question in Settings (BAK-15, CON-4).
 - Tooling: Rebuilt [devops.py](scripts/devops.py) on support-python 3.3.0 `DevopsCli` with a `NodeProject` subclass, adding `format`, `build`, `clean`, `versions`, `test --slow`, and shared help and logging; the release flow stays a `Project.release` override.
 - Tooling: Renamed the release option `--no-github-release` to `--skip-github-release`, keeping the old name as an alias, and pinned support-python, pytest, and Ruff in [requirements.txt](scripts/requirements.txt) for a `.venv` that `devops.py` runs itself in.
 - Tests: Fixed the gallery popover keyboard e2e test tabbing onto the Finished today only choice instead of Clear, and made it toggle that choice.

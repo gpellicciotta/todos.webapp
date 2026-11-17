@@ -11,6 +11,7 @@
  * Connected, the section names the account, its server, the sync state, and a Sync log link; the URL cannot change (`CON-11`).
  * Delete all data erases this device after an offer to export first and a typed DELETE; connected, it also erases the account's data (`BAK-15`).
  * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
+ * While a connect waits on a local Delete all data, the section asks whether to erase the account too (`BAK-15`).
  * Keyboard shortcuts lists the shortcuts that work today, from `SHORTCUTS`.
  */
 
@@ -86,6 +87,10 @@ const STRINGS = Object.freeze({
   signedIn: (account) => (account.name ? `Signed in as ${account.name} (${account.email})` : `Signed in as ${account.email}`),
   server: (url) => `Server: ${url}`,
   syncState: (label) => `Sync state: ${label}`,
+  eraseQuestion: (date, email) => `You deleted all data on this device on ${date}. Also erase the lists and tasks of ${email} created before then?`,
+  erase: 'Erase',
+  keep: 'Keep',
+  answerFailed: 'Your answer could not be saved. Try again.',
   syncLog: 'Sync log',
   expired: 'Your session expired. Your changes stay on this device until you sign in again.',
   signInAgain: 'Sign in again',
@@ -181,6 +186,15 @@ function button(doc, className, text, onClick) {
     element.addEventListener('click', onClick);
   }
   return element;
+}
+
+/**
+ * Format the day of a time in the device timezone, as in "4 Nov 2026" (`TEC-14`).
+ * @param {string} iso the ISO time
+ * @returns {string} the date
+ */
+function formatDay(iso) {
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
 }
 
 /**
@@ -774,6 +788,40 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign, st
   }
 
   /**
+   * Answer the erase question of a connect (`BAK-15`): Erase names the connected account in the pending erase,
+   * so the engine erases it before adoption; Keep drops the pending erase. Either way syncing resumes.
+   * @param {boolean} erase true for Erase
+   * @param {HTMLButtonElement[]} controls the answer buttons, off while the answer is saved
+   * @returns {Promise<void>}
+   */
+  async function answerErase(erase, controls) {
+    controls.forEach((control) => {
+      control.disabled = true;
+    });
+    try {
+      const pending = await store.queue.getState('pending-erase');
+      if (pending) {
+        const { email, server } = session.account();
+        await store.queue.setState('pending-erase', erase ? { ...pending, account: { email, server } } : null);
+      }
+    }
+    catch (error) {
+      console.error('Saving the erase answer failed:', error);
+      toaster?.show(STRINGS.answerFailed);
+      controls.forEach((control) => {
+        control.disabled = false;
+      });
+      return;
+    }
+    try {
+      await sync?.syncNow?.();
+    }
+    catch (error) {
+      console.error('Sync after the erase answer failed:', error);
+    }
+  }
+
+  /**
    * Create the status line and hint of a failed sign-in.
    * @returns {HTMLElement[]} the lines
    */
@@ -810,8 +858,11 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign, st
       }
       return;
     }
-    const syncStatus = sync?.state?.().status;
+    const syncState = sync?.state?.();
+    const syncStatus = syncState?.status;
     const failure = phase === 'not-invited' || phase === 'error';
+    // The engine waits on this question before it uploads anything for a newly connected account.
+    const question = state === 'connected' && syncStatus === 'question' && syncState.erase && store?.queue ? syncState.erase : null;
     live.dataset.phase = failure ? phase : state === 'sign-in-needed' ? 'expired' : 'signed-in';
     if (failure) {
       live.replaceChildren(...failureParts());
@@ -820,6 +871,14 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign, st
       live.replaceChildren(state === 'sign-in-needed' ? make(doc, 'p', 'settings__text', STRINGS.expired) : status('check', STRINGS.signedIn(account)));
     }
     const parts = [];
+    if (question) {
+      live.append(make(doc, 'p', 'settings__text settings__question', STRINGS.eraseQuestion(formatDay(question.time), account.email)));
+      const answers = make(doc, 'div', 'settings__actions');
+      const keep = button(doc, 'button button--secondary', STRINGS.keep, () => answerErase(false, [keep, erase]));
+      const erase = button(doc, 'button button--danger', STRINGS.erase, () => answerErase(true, [keep, erase]));
+      answers.append(keep, erase);
+      parts.push(answers);
+    }
     if (state === 'sign-in-needed') {
       parts.push(make(doc, 'p', 'settings__text', STRINGS.signedIn(account)));
       actions.append(button(doc, 'button', STRINGS.signInAgain, signIn));
@@ -837,7 +896,7 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign, st
     }
     body.replaceChildren(...parts, actions);
     if (justFinished) {
-      actions.firstElementChild.focus();
+      body.querySelector('.settings__actions').firstElementChild.focus();
     }
   }
 

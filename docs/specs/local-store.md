@@ -75,7 +75,11 @@ Keyed by `key`, with the record `{key, value}`.
 - `list-map`: local list id to account list id, for local lists merged into account lists.
 - `cursor`: `{account, value}`, the opaque cursor of the change feed for one account and server.
 - `user-id`: the connected user, from `/api/users/me`; it tells own lists and tasks from those of others.
-- Disconnecting clears `cursor`, `user-id`, `account`, `adoption`, and `list-map`.
+- `last-account`: `{email, server}` of the account this device was last connected to; disconnecting saves it, and it stays.
+- `pending-erase`: `{time, account}`, a Delete all data done in local mode that the account has not heard of yet (`BAK-15`).
+  `account` is `last-account` at the time, or null on a device never connected. A later local erase replaces `time` and keeps `account`.
+- Disconnecting clears `cursor`, `user-id`, `account`, `adoption`, and `list-map`, and saves `last-account`.
+  A queued `erase` entry becomes `pending-erase` with that entry's time, so the erase survives the disconnect.
 
 ### `sync-log`
 Keyed by `id`, with an index on `time`; records of what sync changed or refused, kept for 30 days for the Sync log screen (`SYN-8`).
@@ -137,7 +141,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `purgeEntries(entries)` permanently removes the given entries as `purgeForever` does, in one transaction, skipping missing or not deleted ones, and returns the purged `{type, id}` entries (`BIN-9`).
 - Restoring or purging an entry outside the bin throws code `not-deleted`.
 - `deleteAllData()` clears lists, tasks, memberships, and notes, including bin entries, in one transaction and returns `{lists, tasks}` counts (`BAK-15`). While connected it also queues an account erase, see Sync Queue.
-  It leaves the sync stores alone; the app offers it in every mode.
+  In local mode the same transaction saves `pending-erase` in `sync-state`; the other sync state stays. The app offers it in every mode.
 
 ---
 
@@ -361,10 +365,17 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - One tab syncs (`SYN-12`): the holder of the Web Lock `todos-sync` drains the queue.
   It shares its state on the `todos-sync` BroadcastChannel.
   Other tabs show that state and take over when the leader closes.
-- The sync state is `idle`, `syncing`, `synced`, `offline`, `error`, `sign-in-needed`, or `update-required`.
-  It also holds the pending count.
+- The sync state is `idle`, `syncing`, `synced`, `offline`, `error`, `sign-in-needed`, `question`, or `update-required`.
+  It also holds the pending count; `question` also holds `erase`, the waiting `pending-erase`.
 
 ### First Connect
+- Before adoption, a `pending-erase` settles (`BAK-15`):
+  - Its `account` matches the connected account: the app sends `DELETE /api/users/{{user-id}}/data?before={{time}}`.
+  - Otherwise the state becomes `question` and nothing uploads until the user answers in Settings.
+    Erase sets `account` to the connected account, so the erase runs as above; Keep removes `pending-erase`.
+  - A 2xx logs an `erased` record and removes `pending-erase`; adoption then runs, so data created after the erase still uploads.
+  - Any failure stops the run before adoption and keeps `pending-erase` for the next run.
+    Offline, a 5xx, or a `401` stop as an adoption step does. A refusal (another 4xx) logs an `error` record and shows Sync error.
 - Once per account and server, before the queue drains, `adopt` uploads the local data (`CON-4`, `CON-5`).
 - It first clears the queue, since the upload covers it.
 - It reads the account's lists from the snapshot of the change feed, then matches each local list:
@@ -411,10 +422,10 @@ and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6
   Never-uploaded rows stay. A row with queued changes loses only its revision, so the new snapshot merges into it.
   The pull then fetches a snapshot without a message.
 - A feed `protocol` other than `1` stops syncing, and the state becomes `update-required` (`SYN-11`).
-- Sync states: `local-only`, `synced`, `syncing`, `offline`, `sign-in-needed`, `error`, and `update-required`.
+- Sync states: `local-only`, `synced`, `syncing`, `offline`, `sign-in-needed`, `question`, `error`, and `update-required`.
 - Disconnecting (`CON-8`, `CON-9`) keeps own lists and tasks, and removes the rest with its memberships and notes.
   Kept rows lose `revision`, `role`, and `sharing`, and tasks and notes lose their service `owner-id`.
-  The queue, the cursor, and the adoption state go. No route is called.
+  The queue, the cursor, and the adoption state go; `last-account` and a queued erase stay, see `sync-state`. No route is called.
   A kept task whose local events fold to another status than its occurrence gets events that reproduce it, so the next adoption keeps it.
 
 - A local write between the pull's read of the queue and the entry joining it can lose to the pulled value; the next replay restores it.

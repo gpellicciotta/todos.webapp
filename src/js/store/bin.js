@@ -264,19 +264,28 @@ export function emptyBin(ctx) {
 
 /**
  * Permanently erase every list, task, membership, note, and recycle bin entry in one transaction (`BAK-15`).
- * The caller asks for confirmation first and offers a backup. It leaves the sync stores alone.
+ * The caller asks for confirmation first and offers a backup.
  * While connected, the store facade replaces the change queue with one `erase` entry (see sync/queue.js).
- * @param {{db: IDBDatabase}} ctx store context
+ * In local mode it saves `pending-erase` in `sync-state`, so the next connect can erase the account too;
+ * a later erase replaces the time and keeps the account. The rest of the sync state stays.
+ * @param {{db: IDBDatabase, now: () => Date, local?: () => boolean}} ctx store context
  * @returns {Promise<{lists: number, tasks: number}>} how many lists and tasks it erased
  */
 export function deleteAllData(ctx) {
-  return transact(ctx.db, ALL_STORES, 'readwrite', async (tx) => {
+  const local = ctx.local?.() ?? false;
+  return transact(ctx.db, local ? [...ALL_STORES, STORES.state] : ALL_STORES, 'readwrite', async (tx) => {
     const counts = {
       lists: await request(tx.objectStore(STORES.lists).count()),
       tasks: await request(tx.objectStore(STORES.tasks).count()),
     };
     for (const name of ALL_STORES) {
       await request(tx.objectStore(name).clear());
+    }
+    if (local) {
+      const state = tx.objectStore(STORES.state);
+      const pending = (await request(state.get('pending-erase')))?.value ?? null;
+      const account = pending ? pending.account ?? null : (await request(state.get('last-account')))?.value ?? null;
+      await request(state.put({ key: 'pending-erase', value: { time: ctx.now().toISOString(), account } }));
     }
     return counts;
   });

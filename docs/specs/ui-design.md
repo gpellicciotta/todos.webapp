@@ -460,6 +460,8 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - Syncing: a progress icon, without motion under reduced motion.
   - Offline: a pending change count, such as "Offline · 3 pending".
   - Sign in needed: the session expired (`CON-13`); the popover and the banner offer Sign in.
+  - Waiting for your answer: a connect waits on the erase question of Settings (`BAK-15`); the popover offers Open Settings.
+    It uses the alert icon.
   - Sync error: the popover names the error and offers Retry.
   - Update required: the service refuses this app version, or its feed uses a newer protocol; syncing stops (`SYN-11`).
     The popover names the minimum version and offers Check for update, which looks for a new worker; its Update toast follows.
@@ -834,6 +836,11 @@ Settings is one page with these sections:
   The section shows every sign-in phase in place: Signing in, signed in, not invited, error, and expired.
   Its polite live region announces each phase once; after Signing in, focus moves to the first action of the new phase.
 - Connection, when connected: account name and email, server, sync state, Sync log, and Disconnect.
+- A Delete all data done in local mode can wait for the next connect (`BAK-15`).
+  For another account, or from a device never connected, the section asks in place before anything uploads:
+  "You deleted all data on this device on {{date}}. Also erase the lists and tasks of {{email}} created before then?"
+  Keep and Erase (danger) sit in their own row under the question; the polite live region reads the question.
+  Either answer resumes syncing; a failed answer keeps the question with an error toast.
 - Connection also holds the server URL, changeable only while disconnected (`CON-12`).
 - Keyboard shortcuts: its own section, before About, listing the shortcuts.
 - About, always the last section: app version, build date, the add field syntax, and a link to the requirements and source.
@@ -846,7 +853,7 @@ Settings is one page with these sections:
 - Connected, the section also shows the sync state and a Sync log link.
 - An expired session adds "Your session expired." with Sign in again, which signs in directly.
 - Disconnect opens a dialog; without pending changes it offers Cancel and Disconnect, and a toast confirms.
-- Delete account (`CON-14`) is a danger button after Disconnect, shown only while connected; Delete all data never touches the account.
+- Delete account (`CON-14`) is a danger button after Disconnect, shown only while connected.
   Its dialog names the account email and says the service erases the account later, with all its lists and tasks.
   Delete account enables only after the user types the account email, exact.
   It sends `PUT /api/users/{{user-id}}` with `{ "delete": true }`; a 2xx reply disconnects as Disconnect does, keeps the local data, and shows a toast.

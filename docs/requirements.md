@@ -210,13 +210,13 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - BAK-12: The user confirms or cancels an import; cancelling changes nothing.
 - BAK-13: An invalid or unsupported file changes nothing and reports the reason.
 - BAK-14: An exported backup re-imported in overwrite mode reproduces the same data.
-- BAK-15: Users erase all data on this device after typing DELETE, with an offer to export a backup first; while connected it also erases the lists, tasks, and notes the user owns from the account, queued while offline.
+- BAK-15: Users erase all data on this device after typing DELETE, with an offer to export a backup first; while connected it also erases the lists, tasks, and notes the user owns from the account, queued while offline. In local mode the erase reaches the account on the next connect: automatically for the account this device was last connected to, otherwise only if the user agrees.
 
 ### Connecting
 - CON-1: Users connect from the settings by signing in through the Auth service.
 - CON-2: The app explains, before sign-in, that connecting needs an account and gives up anonymity.
 - CON-3: A sign-in by a user without an invitation shows that access is by invitation only.
-- CON-4: On first connect, the app uploads all local lists, tasks, memberships, and notes to the account.
+- CON-4: On first connect, the app uploads all local lists, tasks, memberships, and notes to the account. A pending local erase (`BAK-15`) runs first.
 - CON-5: A local list whose name matches an account list merges into it, keeping both sets of tasks.
 - CON-6: After connecting, the app downloads all data the account can see.
 - CON-7: Users disconnect from the settings; the app then returns to local mode.

@@ -12,9 +12,10 @@
  * - 426: stop all syncing and report Update required.
  * - No network or 5xx: try the same entry again with backoff.
  * Before the first entry of a newly connected account, the local data is adopted (see adopt.js).
+ * A Delete all data done in local mode settles first; for another account the state is `question` until the user answers.
  */
 
-import { adopt } from './adopt.js';
+import { adopt, findUser, settlePendingErase } from './adopt.js';
 import { createApi, judge, SyncStop } from './api.js';
 import { planConflicts, planPage } from './merge.js';
 
@@ -215,31 +216,12 @@ export function createPush({
   }
 
   /**
-   * Find the connected user: remembered, then asked from the service.
-   * @returns {Promise<number|string>} the user identifier
-   * @throws {SyncStop} when the service cannot name the user, so the entry is tried again later
-   */
-  async function findUser() {
-    const saved = await queue.getState('user-id');
-    if (saved !== null) {
-      return saved;
-    }
-    const response = await api.send('GET', '/api/users/me');
-    const id = judge(response) === 'done' ? response.body?.id ?? null : null;
-    if (id === null) {
-      throw new SyncStop('retry');
-    }
-    await queue.setState('user-id', id);
-    return id;
-  }
-
-  /**
    * Upload an erase entry: the service erases what the account owned before the entry's time.
    * A refusal drops the entry and logs a sync error; nothing rolls back, since the data is already gone locally.
    * @param {object} entry the erase entry
    */
   async function uploadErase(entry) {
-    const userId = await findUser();
+    const userId = await findUser(queue, api);
     const before = encodeURIComponent(entry.fields.time);
     const response = await api.send('DELETE', `/api/users/${encodeURIComponent(userId)}/data?before=${before}`);
     const outcome = judge(response);
@@ -287,17 +269,22 @@ export function createPush({
   }
 
   /**
-   * Adopt the local data when this account has not had it yet.
-   * @returns {Promise<void>}
+   * Settle a pending local erase, then adopt the local data when this account has not had it yet.
+   * @returns {Promise<object|null>} the pending erase when the user must answer first; nothing uploads meanwhile
    */
   async function ensureAdopted() {
     const { email, server } = session.account();
+    const question = await settlePendingErase({ store, api, account: { email, server } });
+    if (question) {
+      return question;
+    }
     await adopt({
       store,
       api,
       account: { email, server },
       onProgress: (progress) => publish({ status: 'syncing', progress }),
     });
+    return null;
   }
 
   /** @returns {Promise<'synced'|'retry'|'paused'|'stopped'|'idle'>} how the run ended */
@@ -316,7 +303,11 @@ export function createPush({
     }
     try {
       await publish({ status: 'syncing', progress: null });
-      await ensureAdopted();
+      const question = await ensureAdopted();
+      if (question) {
+        await publish({ status: 'question', progress: null, erase: { time: question.time, account: question.account } });
+        return 'paused';
+      }
       const listMap = await queue.getState('list-map', {});
       for (let entry = await queue.first(); entry; entry = await queue.first()) {
         await upload(entry, listMap);

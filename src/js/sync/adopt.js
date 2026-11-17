@@ -11,10 +11,11 @@
  * The step count is saved as `adoption`, so an interrupted upload resumes without repeating finished steps;
  * repeating a step is harmless anyway, since every create is idempotent by identifier.
  * A change the service rejects is logged and skipped: adoption never deletes local data.
+ * Before it, `settlePendingErase` carries a Delete all data done in local mode to the account (`BAK-15`).
  */
 
 import { RULE_FIELDS, USER_EVENT_TYPES } from '../core/occurrences.js';
-import { judge } from './api.js';
+import { judge, SyncStop } from './api.js';
 
 const NAME_MAX = 100;
 
@@ -226,6 +227,60 @@ function refusedTarget({ kind, record }) {
     target['task-id'] = record['task-id'];
   }
   return target;
+}
+
+/**
+ * Find the connected user: remembered, then asked from the service.
+ * @param {object} queue the sync queue, which holds the `user-id` state
+ * @param {object} api the API client
+ * @returns {Promise<number|string>} the user identifier
+ * @throws {SyncStop} when the service cannot name the user, so the caller tries again later
+ */
+export async function findUser(queue, api) {
+  const saved = await queue.getState('user-id');
+  if (saved !== null) {
+    return saved;
+  }
+  const response = await api.send('GET', '/api/users/me');
+  const id = judge(response) === 'done' ? response.body?.id ?? null : null;
+  if (id === null) {
+    throw new SyncStop('retry');
+  }
+  await queue.setState('user-id', id);
+  return id;
+}
+
+/**
+ * Settle a Delete all data done in local mode, before adoption (`BAK-15`).
+ * For the account it names, the service erases what the account owned before the erase time.
+ * Only a successful erase removes the pending erase, so adoption then uploads only what was created after it.
+ * @param {object} options the dependencies
+ * @param {object} options.store the store facade
+ * @param {object} options.api the API client
+ * @param {{email: string, server: string}} options.account the connected account
+ * @returns {Promise<{time: string, account: object|null}|null>} the pending erase when the user must answer first, otherwise null
+ * @throws {SyncStop} when the service cannot be reached or asks to stop; the pending erase stays
+ * @throws {Error} when the service refuses the erase; the pending erase stays, and the run reports a sync error
+ */
+export async function settlePendingErase({ store, api, account }) {
+  const { queue } = store;
+  const pending = await queue.getState('pending-erase');
+  if (!pending) {
+    return null;
+  }
+  if (!sameAccount(pending.account, account)) {
+    return pending;
+  }
+  const userId = await findUser(queue, api);
+  const response = await api.send('DELETE', `/api/users/${encodeURIComponent(userId)}/data?before=${encodeURIComponent(pending.time)}`);
+  if (judge(response) !== 'done') {
+    // A refusal stops the connect like any failure: the erase stays for the next run, and nothing uploads meanwhile.
+    throw new Error(`The service refused erasing the account data (HTTP ${response.status}).`);
+  }
+  const { lists = 0, tasks = 0, notes = 0 } = response.body ?? {};
+  await queue.appendLog([{ kind: 'erased', lists, tasks, notes, message: 'Erased the data of your account.' }]);
+  await queue.setState('pending-erase', null);
+  return null;
 }
 
 /**
