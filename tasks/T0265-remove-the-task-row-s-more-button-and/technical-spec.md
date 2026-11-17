@@ -27,6 +27,6 @@ Size estimate: 8 files, 350 lines, mostly deletions.
 ### Tests
 - Unit: rows render no More button, and no key opens a row menu.
 - Integration: the All tasks e2e spec deletes a task from the editor and undoes it with Ctrl+Z.
-- Integration: the list e2e spec removes a task from the list in the editor's Lists section.
+- Integration: the list e2e spec removes a task from the list in the Lists section of the editor's Status tab.
 
 Completion check: `npm test` and `npx playwright test tests/e2e/all-tasks.spec.js tests/e2e/list.spec.js` pass.

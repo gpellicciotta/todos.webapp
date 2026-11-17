@@ -1,11 +1,11 @@
 ---
 id: T0265
-owner: ~
-needs: [T0264]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0265-remove-the-task-row-s-more-button-and
+worktree: .plan/work/T0265-remove-the-task-row-s-more-button-and
+status: active
+started_at: "2026-11-17T16:10:37Z"
 ended_at: —
 review: agent
 preview: none
@@ -15,8 +15,8 @@ protocol: standard
 
 ## Goals
 Remove the row's More button and menu, by the Task Row Layout rules in T0257's signed-off brief.
-- Add to list and Remove from this list live in the editor's Lists section.
-- Delete lives in the editor's header menu once T0262 lands, and at the editor's bottom before that.
+- Add to list and Remove from this list live in the Lists section of the editor's Status tab.
+- Delete lives at the bottom of the editor's Status tab once T0262 lands, and at the editor's bottom before that.
 - Move up and Move down give way to the drags and Alt keys of T0263.
 - Rules and tests: [technical-spec.md](T0265-remove-the-task-row-s-more-button-and/technical-spec.md).
 
