@@ -21,7 +21,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0249 Sync Delete permanently and Empty recycle bin to the account while connected, queued while offline.
 - [x] T0248 Add Restore all and Delete all for the entries matching the Recycle Bin filter.
 - [x] T0247 Add a find field and an All, Lists, Tasks choice to the Recycle Bin to filter its entries.
-- [ ] T0246 [protocol: adhoc] Keep the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.
+- [~] T0246 [owner: @claude] [protocol: adhoc] Keep the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.
 - [ ] T0245 Merge the connect screen into the Settings Connection section, keeping #/connect as an alias for the Auth return.
 - [ ] T0243 Fix first-connect upload losing lists whose IDs match trashed server lists, and make restore re-send memberships.
 - [ ] T0242 Add Delete account to Settings, marking the connected account for deletion on the service.
