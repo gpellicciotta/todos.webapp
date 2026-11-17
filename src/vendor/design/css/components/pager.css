@@ -1,0 +1,29 @@
+/*
+ * Pager: status text beside First, Previous, Next, and Last buttons below a table or list.
+ * Markup and CSS only; applications own paging logic and disable unavailable buttons natively.
+ */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
+}
+
+.pager[hidden] {
+  display: none;
+}
+
+.pager__text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.pager__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

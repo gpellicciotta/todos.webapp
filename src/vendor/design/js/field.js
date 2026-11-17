@@ -6,7 +6,7 @@
  * keeping ids that belong to no part. The help text stays described while collapsed.
  * States: `setError` sets `aria-invalid`, `setPending` sets `aria-busy` on the field, `setValid` shows the status line.
  * Each state pairs an icon from the look sprite with text; messages reach screen readers through a polite live region.
- * Ported from todos.webapp `views/editor-panel.js` at commit 0cf4981.
+ * Keeps the `{element, control, setError}` result of the earlier editor-panel field for easy migration.
  */
 
 import { createIcon } from './icon.js';
@@ -256,7 +256,7 @@ export function attachField(element, options = {}) {
 }
 
 /**
- * Create a field skeleton and attach it; the result keeps todos.webapp's `{element, control, setError}`.
+ * Create a field skeleton and attach it; the result holds `{element, control, setError}`.
  * @param {Document} doc the document
  * @param {object} options field options, plus every `attachField` option
  * @param {string} options.label the label text

@@ -293,7 +293,7 @@ export function createToast(options = {}) {
 }
 
 /**
- * Create a toaster with todos.webapp's former name.
+ * Create a toaster under the earlier name, kept for migration.
  * @deprecated Use `createToast`; this alias goes away in the next minor release.
  * @param {object} [options] toaster options, as for `createToast`
  * @returns {{show: (message: string, options?: object) => () => void, undoLatest: () => boolean, destroy: () => void}}

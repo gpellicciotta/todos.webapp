@@ -1,0 +1,19 @@
+/*
+ * Toolbar: filter fields and optional trailing actions in one wrapping row above a table or list.
+ * Items align to their bottom edge so labeled controls and buttons share one baseline.
+ */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+}
+
+.toolbar[hidden] {
+  display: none;
+}
+
+.toolbar > :where(:not(button, a)) {
+  min-inline-size: min(100%, var(--width-menu));
+}

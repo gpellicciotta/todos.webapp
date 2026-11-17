@@ -32,6 +32,20 @@
   max-inline-size: 100%;
 }
 
+/*
+ * Actions end at the row's end edge and top-align.
+ * The text pads its first line to the middle of the 44 px action target.
+ * Button labels then share the first baseline of the row text, also when that text wraps.
+ */
+.row:has(> .row__actions) {
+  align-items: flex-start;
+  padding-inline-end: 0;
+}
+
+.row:has(> .row__actions) > .row__main {
+  padding-block: max(0px, (var(--target-min) - 1lh) / 2);
+}
+
 /* Keep every action available in narrow columns, including on desktop. */
 @container row-list (width < 36rem) {
   .row {
@@ -40,6 +54,11 @@
 
   .row__main {
     flex-basis: 100%;
+  }
+
+  /* Wrapped actions sit on their own line, so the text needs no alignment padding. */
+  .row:has(> .row__actions) > .row__main {
+    padding-block: 0;
   }
 
   .row__actions {

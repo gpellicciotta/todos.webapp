@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg">
   <!--
-    Icon sprite of the neutral look, copied from todos.webapp with the icon- id prefix: one 24 px grid, stroked outlines, round caps and joins.
+    Icon sprite of the neutral look, with the icon- id prefix: one 24 px grid, stroked outlines, round caps and joins.
     Pages draw an icon with <svg class="icon" aria-hidden="true" focusable="false"><use href="{{path}}/looks/neutral/icons.svg#{{id}}"/></svg>.
     Every look sprite provides the core ids that src/contract.json lists under "icons".
     The `.icon` class sets the size, the stroke width, and `stroke: currentColor`, so icons follow the text color.
@@ -45,9 +45,12 @@
     <path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.2a6 6 0 0 1 3 5.8"/>
   </symbol>
   <symbol id="icon-more" viewBox="0 0 24 24">
-    <circle cx="5" cy="12" r="1"/>
+    <circle cx="12" cy="5" r="1"/>
     <circle cx="12" cy="12" r="1"/>
-    <circle cx="19" cy="12" r="1"/>
+    <circle cx="12" cy="19" r="1"/>
+  </symbol>
+  <symbol id="icon-nav-menu" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h16"/>
   </symbol>
   <symbol id="icon-grip" viewBox="0 0 24 24">
     <circle cx="9" cy="6" r="1"/>

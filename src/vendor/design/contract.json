@@ -538,6 +538,34 @@
       "required": true
     },
     {
+      "name": "--focus-glow-danger",
+      "category": "Lines",
+      "group": "focus-glow",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--focus-glow",
+      "category": "Lines",
+      "group": "focus-glow",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--focus-glow-inset",
+      "category": "Lines",
+      "group": "focus-glow",
+      "owner": "base",
+      "required": true
+    },
+    {
+      "name": "--focus-glow-danger-inset",
+      "category": "Lines",
+      "group": "focus-glow",
+      "owner": "base",
+      "required": true
+    },
+    {
       "name": "--icon-md",
       "category": "Sizes",
       "group": "icon",
@@ -859,7 +887,8 @@
     "icon-check",
     "icon-alert",
     "icon-help",
-    "icon-chevron-down"
+    "icon-chevron-down",
+    "icon-nav-menu"
   ],
   "components": [
     "button",
@@ -883,7 +912,10 @@
     "empty-state",
     "collapsible",
     "list",
+    "toolbar",
     "table",
+    "pager",
+    "detail-panel",
     "tabs",
     "toast",
     "banner",

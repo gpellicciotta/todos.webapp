@@ -23,6 +23,12 @@
   cursor: pointer;
 }
 
+/* The default small face is wider than the target, so it shrinks to sit inside the round button. */
+.account-menu__button > .avatar--sm {
+  inline-size: calc(var(--target-min) - var(--space-1));
+  block-size: calc(var(--target-min) - var(--space-1));
+}
+
 .account-menu__button:is(:hover, .is-hover) {
   background-color: var(--color-surface-hover);
 }

@@ -84,7 +84,8 @@ test.describe('toast behavior', () => {
     await page.keyboard.press('Enter');
     await expect(toast).toHaveCount(1);
     await expect(toast).toHaveText(/Task moved to the recycle bin\./);
-    await expect(page.locator('[aria-live="polite"]')).toHaveText('Task moved to the recycle bin.');
+    // The shared polite live region announces it; the gallery's task editor has a polite counter of its own.
+    await expect(page.locator('[data-live-region="polite"]')).toHaveText('Task moved to the recycle bin.');
 
     await page.keyboard.press('Tab');
     await expect(toast.getByRole('button', { name: 'Undo' })).toBeFocused();

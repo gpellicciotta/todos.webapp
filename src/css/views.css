@@ -120,9 +120,10 @@
   color: var(--color-text);
 }
 
-/* The ring sits inside the row, which spans the list. */
+/* The glow sits inside the row, which spans the list. */
 .group-header__toggle:focus-visible {
   outline-offset: var(--focus-ring-offset-inset);
+  box-shadow: var(--focus-glow-inset);
 }
 
 .group-header__icon {
@@ -928,9 +929,10 @@
   text-decoration: none;
 }
 
-/* The ring sits inside the row, so the rows around it never cover it. */
+/* The glow sits inside the row, so the rows around it never cover it. */
 .list-row:focus-visible {
   outline-offset: var(--focus-ring-offset-inset);
+  box-shadow: var(--focus-glow-inset);
 }
 
 .list-row__name,

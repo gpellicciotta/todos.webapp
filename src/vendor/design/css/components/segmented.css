@@ -2,6 +2,7 @@
  * Segmented control: a fieldset of 2 to 5 native radios in one row, such as a view or status choice.
  * Narrow screens wrap the options into equal columns.
  * The checked option takes the surface ground, a primary outline, and semibold text; arrow keys move the choice.
+ * Outlines and the focus glow draw inside each option, and a full spacing step separates neighbors, so outlines never touch.
  * Disable one option with `disabled` on its radio, or the whole control with `disabled` on the fieldset.
  */
 .segmented {
@@ -21,7 +22,7 @@
 .segmented__options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--_segmented-option-min)), 1fr));
-  gap: var(--space-1);
+  gap: var(--space-2);
   padding: var(--space-1);
   border-radius: var(--radius-control);
   background-color: var(--color-surface-sunken);
@@ -67,8 +68,9 @@
 }
 
 .segmented__option:is(:has(:focus-visible), .is-focus) {
-  outline: var(--focus-ring-width) solid var(--color-focus);
-  outline-offset: var(--focus-ring-offset);
+  outline: var(--focus-ring-width) solid transparent;
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  box-shadow: var(--focus-glow-inset);
 }
 
 /* A disabled radio dims its own option; a disabled fieldset disables every radio, so it dims them all. */

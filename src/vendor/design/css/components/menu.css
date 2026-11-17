@@ -7,7 +7,7 @@
   display: grid;
   min-inline-size: var(--width-menu);
   max-inline-size: min(100%, var(--width-side-panel));
-  padding: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-card);
   background-color: var(--color-surface);
@@ -53,18 +53,19 @@
   background-color: var(--color-surface-active);
 }
 
-/* Menu items draw the ring flush with the item, inside the menu's padding. */
+/* Items touch each other, so the glow and the forced colors outline stay inside the item. */
 .menu__item:is(:focus-visible, .is-focus) {
-  outline-offset: 0;
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  box-shadow: var(--focus-glow-inset);
 }
 
-/* Danger item: a delete action takes the danger color on text, icon, and ring; pressed uses the hover ground to keep 4.5:1. */
+/* Danger item: a delete action takes the danger color on text, icon, and glow; pressed uses the hover ground to keep 4.5:1. */
 .menu__item--danger {
   color: var(--color-danger);
 }
 
 .menu__item--danger:is(:focus-visible, .is-focus) {
-  outline-color: var(--color-danger);
+  box-shadow: var(--focus-glow-danger-inset);
 }
 
 .menu__item--danger:is(:active, .is-active) {

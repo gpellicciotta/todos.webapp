@@ -32,6 +32,12 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+/* Danger focus: the glow replaces the invalid outline and keeps the danger color. */
+.checkbox__control[aria-invalid='true']:is(:focus-visible, .is-focus) {
+  box-shadow: var(--focus-glow-danger);
+  outline-color: transparent;
+}
+
 .checkbox:has(> .checkbox__control:disabled) {
   background-color: transparent;
   color: var(--color-text-disabled);

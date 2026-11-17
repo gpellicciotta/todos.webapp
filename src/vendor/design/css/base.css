@@ -34,6 +34,20 @@
   --gutter: clamp(1rem, 4vw, 2rem);
   --offset-press: 1px;
   --offset-lift: -2px;
+  /* Focus glow: a solid contour of --focus-ring-width plus a halo at 20%, which keeps the contour at 3:1.
+   * Inset variants stay inside the box, for rows that touch their neighbors. */
+  --focus-glow:
+    0 0 0 var(--focus-ring-width) var(--color-focus),
+    0 0 calc(var(--focus-ring-width) * 2) var(--focus-ring-width) color-mix(in srgb, var(--color-focus) 20%, transparent);
+  --focus-glow-inset:
+    inset 0 0 0 var(--focus-ring-width) var(--color-focus),
+    inset 0 0 calc(var(--focus-ring-width) * 2) var(--focus-ring-width) color-mix(in srgb, var(--color-focus) 20%, transparent);
+  --focus-glow-danger:
+    0 0 0 var(--focus-ring-width) var(--color-danger),
+    0 0 calc(var(--focus-ring-width) * 2) var(--focus-ring-width) color-mix(in srgb, var(--color-danger) 20%, transparent);
+  --focus-glow-danger-inset:
+    inset 0 0 0 var(--focus-ring-width) var(--color-danger),
+    inset 0 0 calc(var(--focus-ring-width) * 2) var(--focus-ring-width) color-mix(in srgb, var(--color-danger) 20%, transparent);
 }
 
 :root[data-theme='light'] { color-scheme: light; }

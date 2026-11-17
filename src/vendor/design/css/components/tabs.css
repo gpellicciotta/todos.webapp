@@ -1,4 +1,6 @@
-/* Horizontal tabs: selected underline, hover, active, focus-visible, and disabled states. */
+/* Horizontal tabs: selected bar, hover, active, focus-visible, and disabled states.
+ * Tabs round only their top corners, so the selected bar stays straight and sits on the list divider.
+ * The focus glow draws inside each tab, because the scrolling list clips anything outside it. */
 .tabs {
   min-inline-size: 0;
 }
@@ -7,7 +9,7 @@
   display: flex;
   overflow-x: auto;
   gap: var(--space-1);
-  padding: var(--space-1);
+  padding: var(--space-1) var(--space-1) 0;
   border-block-end: var(--border-width) solid var(--color-border);
 }
 
@@ -17,8 +19,8 @@
   min-block-size: var(--target-min);
   padding: var(--space-2) var(--space-3);
   border: 0;
-  border-block-end: var(--border-width) solid transparent;
-  border-radius: var(--radius-control);
+  border-block-end: var(--border-width-strong) solid transparent;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
   background: transparent;
   color: var(--color-text);
   font: inherit;
@@ -26,8 +28,13 @@
 }
 
 .tabs__tab[aria-selected='true'] {
-  border-block-end-color: currentColor;
+  border-block-end-color: var(--color-primary);
   font-weight: var(--weight-bold);
+}
+
+.tabs__tab:is(:focus-visible, .is-focus) {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  box-shadow: var(--focus-glow-inset);
 }
 
 .tabs__tab:enabled:is(:hover, .is-hover) {
@@ -46,4 +53,15 @@
 .tabs__panel {
   padding: var(--space-3);
   overflow-wrap: anywhere;
+}
+
+/* Forced colors paint transparent borders, so only the selected tab keeps a visible bar. */
+@media (forced-colors: active) {
+  .tabs__tab {
+    border-block-end-color: Canvas;
+  }
+
+  .tabs__tab[aria-selected='true'] {
+    border-block-end-color: Highlight;
+  }
 }

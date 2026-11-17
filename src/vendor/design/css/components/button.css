@@ -69,7 +69,7 @@
 
 /* Danger focus: danger buttons draw the focus ring in the danger color. */
 .button--danger:is(:focus-visible, .is-focus) {
-  outline-color: var(--color-danger);
+  box-shadow: var(--focus-glow-danger);
 }
 
 .button--quiet {

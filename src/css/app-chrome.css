@@ -254,9 +254,15 @@
   color: var(--color-text);
 }
 
+/* The glow sits inside the item, which spans its share of the bar; the current item keeps its top bar. */
 .bottom-nav__item:focus-visible,
 .bottom-nav__item.is-focus {
   outline-offset: var(--focus-ring-offset-inset);
+  box-shadow: var(--focus-glow-inset);
+}
+
+.bottom-nav .bottom-nav__item[aria-current='page']:is(:focus-visible, .is-focus) {
+  box-shadow: var(--focus-glow-inset), inset 0 var(--border-width-strong) 0 var(--color-primary);
 }
 
 .bottom-nav__item[aria-current='page'] {
@@ -459,15 +465,12 @@
   gap: var(--space-2);
 }
 
-/* The package's small avatar (3rem) is wider than its 2.75rem button; a face one ring smaller stays inside the target. */
-.account-menu__button > .avatar--sm {
-  inline-size: calc(var(--target-min) - var(--space-1));
-  block-size: calc(var(--target-min) - var(--space-1));
-}
-
-/* The menu keeps a gutter to the window edges, also for a long name on a narrow screen. */
+/*
+ * The menu keeps the content gutter to both window edges, also for a long name on a narrow screen.
+ * Its end lines up with the button, which ends one gutter before the window's end edge.
+ */
 .user-menu .account-menu__panel {
-  max-inline-size: min(calc(100% - var(--space-4)), var(--width-side-panel));
+  max-inline-size: min(calc(100% - var(--gutter) - var(--gutter)), var(--width-side-panel));
 }
 
 /* The sync indicator overlays the account button to save header space. */
@@ -855,7 +858,8 @@
 /*
  * Panel separators (panel-resize.js): an 8 px hit area on the inner edge of the sidebar and of the editor panel,
  * with a 2 px line in the focus color on hover, focus, and drag. They show from 64rem only, where the side columns exist.
- * The shell tracks equal the width tokens, so the separators sit at those offsets inside the positioned app root.
+ * Each one takes the grid area of its column, so it spans the column between the top bar and the action bar,
+ * which span every wide column. The line is the only focus mark, so the shared glow stays off.
  */
 .panel-resize {
   display: none;
@@ -876,14 +880,17 @@
     touch-action: none;
     background: transparent;
     outline: none;
+    box-shadow: none;
   }
 
   .panel-resize--sidebar {
-    inset-inline-start: calc(var(--width-sidebar) - 4px);
+    grid-area: sidebar;
+    inset-inline-start: calc(100% - 4px);
   }
 
   .panel-resize--editor {
-    inset-inline-end: calc(var(--width-side-panel) - 4px);
+    grid-area: panel;
+    inset-inline-start: -4px;
   }
 
   .app:not(:has(> .app__side-panel:not([hidden]))) > .panel-resize--editor {

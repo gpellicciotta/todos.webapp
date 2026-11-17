@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { installFocusIndicator } from './focus-indicator.js';
 
 const GALLERY = '/demo/visual-style-gallery.html';
 const SPRITE = '/img/icons.svg';
@@ -56,6 +57,7 @@ async function openGallery(page, viewport, theme) {
   expect(response.status()).toBe(200);
   await page.getByRole('radio', { name: theme.label, exact: true }).check();
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme.name);
+  await installFocusIndicator(page);
 }
 
 /**
@@ -234,10 +236,7 @@ for (const viewport of VIEWPORTS) {
           return { outside: true };
         }
         const hosts = [element, element.closest('label'), element.closest('.task-row')].filter(Boolean);
-        const ringed = hosts.some((host) => {
-          const style = getComputedStyle(host);
-          return style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) >= 2;
-        });
+        const ringed = hosts.some((host) => window.focusIndicator(host));
         const name = element.getAttribute('aria-label') ?? (element.closest('label') ?? element).textContent.trim();
         return { id: `${section.id}: ${element.tagName.toLowerCase()} "${name}"`, ringed };
       }, SECTIONS);
@@ -259,10 +258,7 @@ test('the status button and task row sections show forced focus-visible specimen
 
   const sections = await page.locator('#status-button, #task-row').evaluateAll((elements) => elements.map((section) => {
     const specimens = [...section.querySelectorAll('.is-focus')];
-    const unringed = specimens.filter((specimen) => {
-      const style = getComputedStyle(specimen);
-      return style.outlineStyle === 'none' || parseFloat(style.outlineWidth) < 2;
-    });
+    const unringed = specimens.filter((specimen) => !window.focusIndicator(specimen));
     return { id: section.id, count: specimens.length, unringed: unringed.length };
   }));
 

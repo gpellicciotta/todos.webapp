@@ -5,10 +5,15 @@
  * Invalid: the control sets aria-invalid="true", and the error line pairs the alert icon with its text.
  * Pending: the field sets aria-busy="true", and the status line shows the check in progress.
  * Valid: the status line shows the check icon and a success message.
+ * Read-only controls drop their border; the message lines inset their text to match the text inside the control.
+ * A single-line select replaces the native arrow with a chevron inset like the collapsible's.
  */
 .field {
+  --_field-text-inset: calc(var(--space-3) + var(--border-width));
+
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
   align-items: center;
   gap: var(--space-1) var(--space-3);
   min-inline-size: 0;
@@ -88,11 +93,12 @@
   border-color: var(--color-text-muted);
 }
 
-/* Field controls show the ring on any focus, including the picker buttons inside date and time inputs. */
+/* Field controls glow on any focus, including the picker buttons inside date and time inputs. */
 .field__control:is(:focus-within, .is-focus) {
   border-color: var(--color-focus);
-  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline: var(--focus-ring-width) solid transparent;
   outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-glow);
 }
 
 textarea.field__control {
@@ -111,14 +117,55 @@ textarea.field__control {
   background-color: var(--color-surface-sunken);
 }
 
+/* A read-only control keeps the border width, so its text stays in place, and shows the border only on focus. */
+.field__control:read-only:not(:disabled, select, :focus-within, .is-focus) {
+  border-color: transparent;
+}
+
+/*
+ * The chevron: two diagonal strokes drawn as gradients in a token color, so it follows the theme without a raw color.
+ * Its geometry follows the icon sprite's chevron: a 6 by 6 unit V on the 24 unit grid of an md icon.
+ * Like the collapsible's chevron, an md icon box sits one small step inside the border edge, one small step after the text.
+ */
+select.field__control:not([multiple], [size]:not([size='1'])) {
+  --_field-chevron-color: var(--color-text-muted);
+  --_field-chevron-arm: calc(var(--icon-md) * 7 / 24);
+  --_field-chevron-stroke: calc(var(--icon-md) * var(--icon-stroke) / 24);
+  --_field-chevron-center: calc(var(--space-2) + var(--icon-md) / 2);
+  --_field-chevron-line: transparent calc(50% - var(--_field-chevron-stroke) / 2),
+    var(--_field-chevron-color) 0 calc(50% + var(--_field-chevron-stroke) / 2), transparent 0;
+
+  padding-inline-end: calc(var(--space-2) * 2 + var(--icon-md));
+  background-image:
+    linear-gradient(45deg, var(--_field-chevron-line)),
+    linear-gradient(135deg, var(--_field-chevron-line));
+  background-position:
+    right var(--_field-chevron-center) center,
+    right calc(var(--_field-chevron-center) - var(--_field-chevron-arm)) center;
+  background-origin: border-box;
+  background-repeat: no-repeat;
+  background-size: var(--_field-chevron-arm) var(--_field-chevron-arm);
+  appearance: none;
+}
+
+select.field__control:not([multiple], [size]:not([size='1'])):dir(rtl) {
+  background-position:
+    left calc(var(--_field-chevron-center) - var(--_field-chevron-arm)) center,
+    left var(--_field-chevron-center) center;
+}
+
+select.field__control:not([multiple], [size]:not([size='1'])):disabled {
+  --_field-chevron-color: var(--color-text-disabled);
+}
+
 .field__control[aria-invalid='true'] {
   border-color: var(--color-danger);
   box-shadow: inset 0 0 0 var(--border-width) var(--color-danger);
 }
 
-/* Danger focus: an invalid control draws the focus ring in the danger color too. */
+/* Danger focus: an invalid control glows in the danger color and keeps its inset danger border. */
 .field__control[aria-invalid='true']:is(:focus-within, .is-focus) {
-  outline-color: var(--color-danger);
+  box-shadow: var(--focus-glow-danger), inset 0 0 0 var(--border-width) var(--color-danger);
 }
 
 .field:not([aria-busy='true']):has(> .field__status:not([hidden])) > .field__control:not([aria-invalid='true']) {
@@ -131,6 +178,20 @@ textarea.field__control {
 .field__error {
   margin: 0;
   font-size: var(--text-sm);
+}
+
+/* Message lines start and end where the text inside the control does, as the help toggle's icon does. */
+.field > :is(.field__hint, .field__counter, .field__status, .field__error) {
+  padding-inline: var(--_field-text-inset);
+}
+
+/* The hint and the counter share a row, so the hint leaves the gap between them to the column gap. */
+.field > .field__hint:has(~ .field__counter) {
+  padding-inline-end: 0;
+}
+
+.field > .field__hint ~ .field__counter {
+  padding-inline-start: 0;
 }
 
 .field__hint,
@@ -190,5 +251,10 @@ textarea.field__control {
 @media (forced-colors: active) {
   .field__control[aria-invalid='true'] {
     border-width: var(--border-width-strong);
+  }
+
+  /* Forced colors drop gradient backgrounds, so a select falls back to the native arrow in system colors. */
+  select.field__control:not([multiple], [size]:not([size='1'])) {
+    appearance: auto;
   }
 }

@@ -74,10 +74,15 @@ test('row views fill the main area at 1440 px while Settings keeps the 45rem col
     expect(await widthOf(selector), route).toBeGreaterThan(720);
     expect(await widthOf(selector), route).toBeGreaterThan(main - 160); // list rows sit beside a drag handle and move buttons
   }
+  // The action bar spans every wide column, and the add block fills it between the content gutters.
   await page.goto('/#/tasks');
   await expect(page.locator('.app__action-bar > .add-block')).toBeVisible();
-  const view = await widthOf('.app__view[data-view="tasks"]');
-  expect(Math.abs((await widthOf('.app__action-bar > .add-block')) - view)).toBeLessThanOrEqual(1);
+  const content = await page.locator('.app > .app__action-bar').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return element.clientWidth - parseFloat(style.paddingInlineStart) - parseFloat(style.paddingInlineEnd);
+  });
+  expect(await widthOf('.app > .app__action-bar')).toBe(1440);
+  expect(Math.abs((await widthOf('.app__action-bar > .add-block')) - content)).toBeLessThanOrEqual(1);
   await page.goto('/#/settings');
   await expect(page.locator('.app__view[data-view="settings"]')).toBeVisible();
   expect(Math.round(await widthOf('.app__view[data-view="settings"]'))).toBe(720);
@@ -221,10 +226,12 @@ for (const [viewport, compact] of [[COMPACT, true], [{ width: 1023, height: 800 
     await expect(page.locator('.app__more')).toHaveCount(0);
     await expect(page.locator('.app__sidebar')).toBeVisible({ visible: !compact });
     await expect(page.locator('.app__sidebar, .app__bottom-nav').getByRole('link', { name: /Recycle bin|Bin|Settings/ })).toHaveCount(0);
-    // The user button ends the top bar, at the right edge of the main column.
+    // The top bar spans the window, and the user button ends it on the content column's end edge.
     const bar = await page.locator('.app__top-bar').boundingBox();
     const button = await page.locator('.app__top-bar .account-menu__button').boundingBox();
-    expect(bar.x + bar.width - (button.x + button.width)).toBeLessThanOrEqual(16);
+    const gutter = await page.locator('.app__main').evaluate((element) => parseFloat(getComputedStyle(element).paddingInlineEnd));
+    expect(bar.width).toBe(viewport.width);
+    expect(Math.abs(bar.x + bar.width - (button.x + button.width) - gutter)).toBeLessThanOrEqual(1);
     expect(button.y).toBeLessThan(bar.y + bar.height);
     await expect(page.locator('[data-editor-slot]')).toBeHidden();
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);

@@ -300,10 +300,12 @@ for (const [size, viewport] of [['wide', { width: 1440, height: 900 }], ['compac
     const about = page.getByRole('region', { name: 'Keyboard shortcuts' });
     await expect(about.getByRole('heading', { name: 'Keyboard shortcuts', level: 2 })).toBeVisible();
     const terms = about.locator('.settings__shortcuts dt');
-    await expect(terms).toHaveText(['n or /', 'l', '/', 'Enter', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'x', 'Ctrl+Z or Cmd+Z']);
-    await expect(about.locator('.settings__shortcuts kbd')).toHaveCount(13);
+    await expect(terms).toHaveText([
+      'n or /', 'l', '/', 'Enter', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'Alt+Home or Alt+End', 'x', 'Ctrl+Z or Cmd+Z',
+    ]);
+    await expect(about.locator('.settings__shortcuts kbd')).toHaveCount(15);
     const actions = about.locator('.settings__shortcuts dd');
-    await expect(actions).toHaveCount(9);
+    await expect(actions).toHaveCount(10);
     const boxes = await about.locator('.settings__shortcuts > div').evaluateAll((rows) => rows.map((row) => {
       const [term, action] = [row.querySelector('dt'), row.querySelector('dd')].map((cell) => cell.getBoundingClientRect());
       return { termLeft: term.left, termRight: term.right, termBottom: term.bottom, actionLeft: action.left, actionTop: action.top };

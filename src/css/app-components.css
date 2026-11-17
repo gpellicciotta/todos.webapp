@@ -106,6 +106,11 @@
   background-color: var(--color-surface-selected);
 }
 
+/* The active chip's inner border is a box-shadow too, so focus layers the glow over it. */
+.filter-chip[data-active='true']:is(:focus-visible, .is-focus) {
+  box-shadow: var(--focus-glow), inset 0 0 0 var(--border-width) var(--color-primary);
+}
+
 .filter-chip[data-active='true']:hover,
 .filter-chip[data-active='true'].is-hover {
   background-color: var(--color-surface-hover);
@@ -227,11 +232,25 @@
   --row-ground: var(--color-surface-active);
 }
 
-/* The open link fills the row, so the row draws its focus ring, inside its own edge. */
+/*
+ * The open link fills the row, so the row draws its focus glow, inside its own edge.
+ * The transparent outline shows only in forced colors mode, as the package's glow does.
+ * The glow appears at once: only the ground transitions into this state, while the drag lift keeps its shadow fade.
+ */
 .task-row:has(.task-row__open:focus-visible),
 .task-row.is-focus {
-  outline: var(--focus-ring);
+  outline: var(--focus-ring-width) solid transparent;
   outline-offset: var(--focus-ring-offset-inset);
+  box-shadow: var(--focus-glow-inset);
+  transition-property: background-color;
+}
+
+/* Forced colors paint the row's outline in Highlight, as the package's reset does for focused controls. */
+@media (forced-colors: active) {
+  .task-row:has(.task-row__open:focus-visible),
+  .task-row.is-focus {
+    outline-color: Highlight;
+  }
 }
 
 .task-row:has(.task-row__open[aria-current='page']) {
@@ -362,9 +381,10 @@
   text-decoration: none;
 }
 
-/* The row draws the ring for its open link, so the link draws none of its own. */
+/* The row draws the glow for its open link, so the link draws none of its own. */
 .task-row__open:focus-visible {
   outline: none;
+  box-shadow: none;
 }
 
 /* Description line: wraps to at most 2 lines on every width, then ends in an ellipsis. */

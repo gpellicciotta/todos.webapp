@@ -28,6 +28,11 @@
   background-color: var(--color-primary-active);
 }
 
+/* The glow keeps the button's elevation. */
+.fab:is(:focus-visible, .is-focus) {
+  box-shadow: var(--focus-glow), var(--elevation-2);
+}
+
 .fab:disabled {
   background-color: var(--color-surface-sunken);
   color: var(--color-text-disabled);

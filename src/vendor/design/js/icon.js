@@ -57,7 +57,7 @@ export function createIcon(doc, name, { size, className = '', label } = {}) {
 }
 
 /**
- * Build an icon with todos.webapp's former signature.
+ * Build an icon with the earlier signature, kept for migration.
  * @deprecated Use `createIcon`; this alias goes away in the next minor release.
  * @param {Document} doc document that creates the elements
  * @param {string} name glyph name without the `icon-` prefix

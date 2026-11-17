@@ -51,7 +51,7 @@
 }
 
 .icon-button--danger:is(:focus-visible, .is-focus) {
-  outline-color: var(--color-danger);
+  box-shadow: var(--focus-glow-danger);
 }
 
 .icon-button:disabled {

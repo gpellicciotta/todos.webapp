@@ -6,7 +6,7 @@ The [ui-design.md](ui-design.md) spec defines screens and behavior; this guide d
 
 ## Status of the System
 The tokens, the font, the controls, the app components, and their gallery sections exist.
-- [design.json](../../design.json): pins the vendored [support.webapp](../../../support.webapp/README.md) design system, version 0.1.0, neutral look.
+- [design.json](../../design.json): pins the vendored [support.webapp](../../../support.webapp/README.md) design system, version 0.2.1, neutral look.
 - [src/vendor/design/](../../src/vendor/design/): the vendored copy; its base and neutral look define every contract token, both themes, and the Inter font face.
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
   It imports only the public [looks/neutral/index.css](../../src/vendor/design/looks/neutral/index.css) of the package, which loads every package component.
@@ -70,6 +70,10 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
   Rejected: a More menu in the top bar that held only New list, which hid the one action of the screen.
 - **[Decided]** The vendored shell.css positions the sidebar, the bottom bar, the floating button, and the editor panel.
   App styles hold no fixed or sticky positions, which the vendored check enforces, so the gallery shows them in place.
+- **[Decided]** From support.webapp 0.2.0, the top bar and the action bar span every wide column.
+  The sidebar and the editor panel sit between them; the panel separators take their columns' grid areas.
+  The brand stays at the top of the sidebar, and the top bar starts with the route title.
+  The app has no `app__nav-toggle` yet, so the wide sidebar stays open; below 64rem the bottom bar navigates.
 - **[Decided]** Navigation links carry the shell's `app__nav-item` beside the app's `.nav-item` or `.bottom-nav__item`.
   The app stylesheets follow shell.css, so the app items win equal selectors; the shell's more specific bar rules still apply.
 - **[Decided]** Component styles never scale a token by a bare number, such as `* 2` or `/ 2`.
@@ -90,32 +94,33 @@ The primitives are private to the vendored neutral look; app styles never use th
 
 ### Color
 Definitions live in the vendored [look.css](../../src/vendor/design/looks/neutral/look.css); the gallery's Color section shows them live.
-- Palette: a slightly cool gray ramp, a navy ramp as the one signal hue, and deep orange for danger, all private to the look.
+- Palette: a slate gray ramp, a blue ramp as the one signal hue, and deep orange for danger, all private to the look.
 - Grounds: `--color-bg` for the page, `--color-surface` for panels and dialogs, `--color-surface-sunken` for wells and chips.
 - Hover and selection: `--color-surface-hover` for hovered rows, `--color-surface-selected` for the current row, route, and pressed toggles.
 - Pressed: `--color-surface-active` for gray controls while pressed; only text and link colors sit on it.
 - Text: `--color-text`, `--color-text-muted` for secondary lines and done tasks, `--color-text-disabled` for disabled controls only.
 - Borders: `--color-border` for dividers, `--color-border-strong` for controls that need 3:1 contrast.
 - Signal: `--color-primary` for the main action, `--color-on-primary` for text on it.
-- Danger: `--color-danger` for error borders, error text, alert icons, overdue due text, Delete outlines and menu items, filled Delete buttons, and the focus ring of those controls.
+- Danger: `--color-danger` for error borders, error text, alert icons, overdue due text, Delete outlines and menu items, filled Delete buttons, and the focus glow of those controls.
 - Danger states: `--color-danger-hover` and `--color-danger-active` for the filled Delete button, `--color-on-danger` for its text.
 - Status: `--color-status-in-progress` (sky blue), `--color-status-completed` (green), and `--color-status-cancelled` (the danger color) for status icons; each reaches 3:1 on every ground.
 - Signal states: `--color-primary-hover` and `--color-primary-active` for the hovered and pressed main action.
 - Links: `--color-link` for links and quiet buttons.
-- Focus: `--focus-ring` on every interactive element, drawn in `--color-focus` with a gap to the element.
+- Focus: `--focus-glow` on every interactive element, a solid `--color-focus` contour plus a soft halo, on `box-shadow`.
+  Danger controls use `--focus-glow-danger`; forced colors mode paints the outline in `Highlight`, task rows included.
 - Shadow and scrim: `--color-shadow` tints both elevation levels, `--color-backdrop` dims the page behind modal dialogs.
 
 Signal values and their lowest contrast ratios, checked by [tokens.test.js](../../tests/unit/tokens.test.js):
 
 | Token                    | Light               | Dark                | Lowest ratio, light / dark    |
 | :----------------------- | :------------------ | :------------------ | :---------------------------- |
-| `--color-primary`        | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds        |
-| `--color-primary-hover`  | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 10.36 / 10.82 with on-primary |
-| `--color-primary-active` | navy 800, #172e6e   | navy 200, #c7d4f0   | 12.71 / 13.33 with on-primary |
-| `--color-on-primary`     | gray 0, #ffffff     | gray 950, #111216   | 8.72 / 8.05 on primary        |
-| `--color-link`           | navy 700, #1e3a8a   | navy 300, #b3c4f6   | 8.95 / 7.78 on grounds        |
-| `--color-focus`          | navy 600, #1e40af   | navy 400, #8fa8f0   | 7.54 / 5.79 on grounds        |
-| `--color-danger`         | orange 700, #b23b0b | orange 400, #fb923c | 5.15 / 5.95 on grounds        |
+| `--color-primary`        | blue 600, #2563eb   | blue 400, #7ea2f6   | 4.72 / 5.84 on grounds        |
+| `--color-primary-hover`  | blue 700, #1d4ed8   | blue 300, #a3bdf8   | 6.70 / 10.75 with on-primary  |
+| `--color-primary-active` | blue 800, #1e40af   | blue 200, #c3d5fb   | 8.72 / 13.67 with on-primary  |
+| `--color-on-primary`     | gray 0, #ffffff     | gray 950, #020617   | 5.17 / 8.06 on primary        |
+| `--color-link`           | blue 700, #1d4ed8   | blue 300, #a3bdf8   | 6.12 / 7.80 on grounds        |
+| `--color-focus`          | blue 600, #2563eb   | blue 400, #7ea2f6   | 4.72 / 5.84 on grounds        |
+| `--color-danger`         | orange 700, #b23b0b | orange 400, #fb923c | 5.44 / 6.46 on grounds        |
 
 ### Typography
 - `--font-body`: Inter for all text, with tabular figures for times and counts.
@@ -135,8 +140,8 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - Radius roles: `--radius-chip` for chips and keys, `--radius-control` for fields and menu items, `--radius-button` for buttons.
   `--radius-card` for banners, toasts, and lifted rows, and `--radius-dialog` for dialogs and panels.
 - `--radius-round`: circles, such as the unseen entries dot of the sync indicator.
-- `--border-width` for every border; `--focus-ring-width` and `--focus-ring-offset` size the focus ring.
-- `--focus-ring-offset-inset`: draws the ring inside items that fill a bar, such as bottom bar items.
+- `--border-width` for every border; `--focus-ring-width` sizes the focus glow's contour.
+- `--focus-glow-inset`: draws the glow inside rows and items that fill a bar, such as bottom bar items.
 - `--border-width-strong`: the leading edge of error banners.
 - `--target-min`: 44 px, the minimum size of every control.
 - `--icon-md` and `--icon-stroke`: every icon is 20 px with one stroke width.
@@ -258,7 +263,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - Dragging: `data-dragging="true"` lifts the row to `--elevation-2`.
   - Drop target: `data-drop="before"` or `"after"` draws a signal line on that row edge.
   - Read-only: `data-readonly="true"`, a disabled status button that stays flat on hover, and no handle.
-  - Focus: the row draws the ring for its open link, inside its own edge.
+  - Focus: the row draws the inset glow for its open link, which draws none; the glow appears without a transition.
 
   Render the drag handle only in manual order. It is positioned outside the row, so rows keep no room for it.
   It shows on the hovered, focused, or dragged row; devices without hover and compact lists hide it.
@@ -268,7 +273,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The count reads "6 of 10" while filters hide tasks of the group, else the plain total.
   The button's `aria-label` names both, such as "Home, 6 of 10 tasks".
   `aria-expanded="false"` turns the chevron to point at the inline end; the group's rows leave the list.
-  Hover takes the hover ground and the text color; the focus ring sits inside the row.
+  Hover takes the hover ground and the text color; the focus glow sits inside the row.
   The name truncates with an ellipsis, and the count never wraps.
 - [Navigation](../../src/demo/visual-style-gallery.html#navigation): the wide `.sidebar` and the compact `.bottom-nav`.
   Both mark the current route with `aria-current="page"`: a signal edge, a signal icon, and semibold text.
@@ -318,6 +323,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 ## Patterns
 - [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header and its More button, the search field, an `.add-block`, and rows.
   The add block holds the add bar and the info line; the app puts it in the shell's action bar, under the rows.
+  From 64rem the action bar spans every column, so the add block runs between the window's content gutters.
 - Manual ordering: press and drag a row, or hold it on touch; the hovered or focused row shows a gutter handle.
   Alt+Up, Alt+Down, Alt+Home, and Alt+End move rows too; rows have no move buttons or menu.
 - Find and sort: the Lists screen reuses this block with a find field and a Sort button.
@@ -330,7 +336,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Each row shows its value at the end, and opening one row closes the other.
   Group by is a native select; Sort by is a native select with a segmented Ascending and Descending toggle.
   The compact screen ends with a sticky Show N tasks button.
-  The scrolling options keep `--space-2` of inline padding, so focus rings never clip at their edges.
+  The scrolling options keep `--space-2` of inline padding, so focus glows never clip at their edges.
 - [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
   Compact layouts show the panel alone, as a full screen.
   The package `.tabs` strip with Content, Status, and History tops the body, with the vendored tabs.js.

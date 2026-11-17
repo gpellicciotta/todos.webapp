@@ -204,9 +204,13 @@ def test_task_editor_has_three_tabs_and_the_row_has_no_more_button(output, name)
     for group in groups:
         labels = labels_of(group)
         assert labels.count("Content") == 1 and "Status" in labels and "History" in labels
-        assert "⋯" not in [t.text for t in group.iter(f"{SVG}text") if float(t.get("y")) < 140 and float(t.get("x")) > 1000]
+        assert "⋯" not in [
+            t.text for t in group.iter(f"{SVG}text") if float(t.get("y")) < 140 and float(t.get("x")) > 1000
+        ]
     _, (_, wide) = frames(output / "all-tasks.svg")
-    assert not [t for t in wide.iter(f"{SVG}text") if t.text == "⋯" and float(t.get("x")) < 1100 and float(t.get("y")) > 150]
+    assert not [
+        t for t in wide.iter(f"{SVG}text") if t.text == "⋯" and float(t.get("x")) < 1100 and float(t.get("y")) > 150
+    ]
 
 
 def test_content_tab_holds_only_description_and_notes(output):
@@ -214,7 +218,7 @@ def test_content_tab_holds_only_description_and_notes(output):
     for group in groups:
         labels = labels_of(group)
         assert "Description" in labels and "Notes" in labels
-        assert "Lists" not in labels[labels.index("Description"):]
+        assert "Lists" not in labels[labels.index("Description") :]
         assert "Delete task" not in labels
         assert "Add or search notes" in labels
 
@@ -222,12 +226,22 @@ def test_content_tab_holds_only_description_and_notes(output):
 def test_status_tab_orders_status_lists_configuration_then_delete(output):
     _, groups = frames(output / "task-editor-status.svg")
     for group in groups:
-        ys = {t.text: float(t.get("y")) for t in group.iter(f"{SVG}text") if float(t.get("x")) > 1000 or group is groups[0]}
+        ys = {
+            t.text: float(t.get("y"))
+            for t in group.iter(f"{SVG}text")
+            if float(t.get("x")) > 1000 or group is groups[0]
+        }
         order = ["2 of 3", "Lists", "Target count", "Due", "Repeat"]
         assert [ys[k] for k in order] == sorted(ys[k] for k in order)
         delete = [t for t in group.iter(f"{SVG}text") if t.text == "Delete task"]
         assert len(delete) == 1 and float(delete[0].get("y")) > ys["Repeat"]
-        rules = [float(line.get("y1")) for line in group.iter(f"{SVG}line") if line.get("class") == "rule" and float(line.get("y1")) > 140 and float(line.get("x2")) - float(line.get("x1")) > 300]
+        rules = [
+            float(line.get("y1"))
+            for line in group.iter(f"{SVG}line")
+            if line.get("class") == "rule"
+            and float(line.get("y1")) > 140
+            and float(line.get("x2")) - float(line.get("x1")) > 300
+        ]
         assert any(ys["2 of 3"] < r < ys["Lists"] for r in rules)
         assert any(ys["Lists"] < r < ys["Target count"] for r in rules)
 

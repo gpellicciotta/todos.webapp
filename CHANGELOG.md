@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Vendored support.webapp 0.2.1: slate grays and a brighter blue accent, a focus glow instead of the focus outline, and polished tabs, switches, selects, menus, banners, and badges.
+- FrontEnd: Painted focus outlines in the `Highlight` system color in forced colors mode, on package controls and on focused task rows.
+- FrontEnd: Spanned the top bar and the action bar over the sidebar and the editor panel at 64rem and wider, with the add bar between the window gutters and the user button on the content edge.
+- FrontEnd: Drew the focus glow inside task rows, list rows, group headers, and bottom bar items, with one glow per task row and a glow over active filter chips and the current bottom bar item.
+- FrontEnd: Kept the sidebar and editor separators between the top bar and the action bar, and kept the account menu one gutter from both window edges.
+- Tests: Required a visible focus glow or outline in the gallery focus checks, and added `focus.spec.js` for rows, bottom bar items, and separators.
+- Tests: Updated the Keyboard shortcuts and toast live region tests to the current screens, and formatted the wireframe test with Ruff.
 - FrontEnd: Replaced the app icon with the shared support.webapp todos hexagon from v0.2.0: the flat style for `favicon.ico`, the SVG favicon, the sidebar brand, the sign-in logo, and reminders, and the dimensional style for the apple touch icon and the manifest's `any` and `maskable` icons; removed `render-app-icons.mjs` and added `NOTICE.md` with the Lucide ISC notice (TEC-1).
 - FrontEnd: Removed the task row's More button and its Add to list, Remove from this list, Move up, Move down, and Delete menu, so rows end with their text; the editor's Status tab adds, removes, and deletes, and drags and the Alt keys move rows (TSK-8, TSK-11, LV-3).
 - FrontEnd: Split the task editor into Content, Status, and History tabs that always open on Content: Content holds the description and the notes, whose "Add or search notes" field also filters them; Status holds the status, Lists, Target count, Due, Overdue behavior, and Repeat, separated by rules, with Delete task last; History holds the history, which loads when the tab first shows, and Details (TSK-11, TSK-13, TSK-17).

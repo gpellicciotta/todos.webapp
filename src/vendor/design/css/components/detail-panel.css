@@ -1,0 +1,94 @@
+/*
+ * Detail panel: record details inside the shell's side panel, with a header, a scrolling body, and a danger zone.
+ * Markup and CSS only; applications own opening, closing, focus return, and destructive confirmations.
+ */
+.detail-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-block-size: 0;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.detail-panel[hidden] {
+  display: none;
+}
+
+.detail-panel__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: calc(var(--target-min) + var(--space-3));
+  padding-inline: var(--space-4) var(--space-2);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.detail-panel__title {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-panel__title:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.detail-panel__body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  padding-inline: var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.detail-panel__section {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.detail-panel__section:last-child,
+.detail-panel__section:has(+ .detail-panel__danger) {
+  border-block-end: 0;
+}
+
+.detail-panel__section :is(h2, h3, h4) {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.detail-panel__danger {
+  margin-block-start: var(--space-5);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.detail-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.detail-panel__actions > p {
+  inline-size: 100%;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.detail-panel__actions [role='group'] {
+  flex: 1 1 100%;
+}

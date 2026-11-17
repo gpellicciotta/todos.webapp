@@ -52,3 +52,33 @@ ol.list {
     border-block-end: var(--border-width) solid var(--color-border);
   }
 }
+
+/* Bordered facts grid: muted terms and values in one continuous frame, with a narrower compact term column. */
+.list--facts {
+  --_list-term-width: var(--width-menu);
+  display: grid;
+  grid-template-columns: min(45%, calc(var(--_list-term-width) + var(--space-3))) minmax(0, 1fr);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+}
+
+.list--compact {
+  --_list-term-width: calc(2 * var(--space-10));
+}
+
+.list--facts > .list__term {
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.list--facts > .list__value {
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.list--facts > :is(.list__term, .list__value):last-of-type {
+  border-block-end: 0;
+}

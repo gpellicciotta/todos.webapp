@@ -2,7 +2,10 @@
  * App shell (ADR-0004): the page grid of the top bar, navigation, banners, main area, action bar, side panel, and overlay layer.
  * Every area is optional except the main area; the grid drops the tracks of absent areas through :has().
  * Narrow layout below 64rem: one column; the sidebar hides, the bottom bar shows, and the side panel opens as a full-window sheet.
- * Wide layout from 64rem: sidebar, main column, and side panel side by side; the bottom bar hides.
+ *   The nav toggle opens the sidebar as a drawer under the top bar, unless a bottom bar holds the navigation.
+ * Wide layout from 64rem: the top bar and action bar span every column; the sidebar, main column, and side panel sit between them.
+ *   The nav toggle cycles the sidebar through open, an icon rail, and hidden; the bottom bar hides.
+ * Navigation state is native and ARIA only (app-nav.js): the toggle's aria-expanded, the sidebar's hidden, and :popover-open.
  * Custom properties do not work in media queries, so 64rem is a documented constant.
  * Scroll modes: `app--scroll-main`, the default without a modifier, scrolls the main area between fixed bars;
  *   `app--scroll-page` scrolls the document with sticky bars.
@@ -15,6 +18,7 @@
   --_app-sidebar-track: 0px;
   --_app-panel-track: 0px;
   --_app-action-offset: 0px;
+  --_app-top-offset: 0px;
   --_app-nav-offset: 0px;
   --_app-width: 100%;
   display: grid;
@@ -45,9 +49,10 @@
 .app--width-narrow { --_app-width: var(--width-narrow); }
 .app--width-content { --_app-width: var(--width-content); }
 
-.app:has(> .app__sidebar) { --_app-sidebar-track: var(--width-sidebar); }
+.app:has(> .app__sidebar:not([hidden])) { --_app-sidebar-track: var(--width-sidebar); }
 .app:has(> .app__side-panel:not([hidden])) { --_app-panel-track: var(--width-side-panel); }
 .app:has(> .app__action-bar) { --_app-action-offset: var(--_app-bar-size); }
+.app:has(> .app__top-bar) { --_app-top-offset: calc(var(--_app-bar-size) + env(safe-area-inset-top)); }
 .app:has(> .app__bottom-nav) { --_app-nav-offset: calc(var(--_app-bar-size) + env(safe-area-inset-bottom)); }
 
 /* Skip link: off screen above the top edge until focused, keeping its full target size. */
@@ -72,17 +77,35 @@
   translate: none;
 }
 
-/* Top bar: title or brand, a menu button or breadcrumb, and account actions. */
+/*
+ * Top bar: a nav toggle, title or brand, a menu button or breadcrumb, and account actions.
+ * It pads with the main area's formula, so its edge text starts and ends on the content column.
+ * In the wide layout with a sidebar, it starts on the sidebar's glyph column instead.
+ */
 .app__top-bar {
+  --_app-glyph-inset: calc((var(--target-min) - var(--icon-md)) / 2);
   display: flex;
   grid-area: top;
   align-items: center;
   gap: var(--space-2);
   min-block-size: calc(var(--_app-bar-size) + env(safe-area-inset-top));
   padding-block-start: env(safe-area-inset-top);
-  padding-inline: max(var(--space-4), env(safe-area-inset-left)) max(var(--space-2), env(safe-area-inset-right));
+  padding-inline: max(var(--gutter), (100% - var(--_app-width)) / 2, env(safe-area-inset-left)) max(var(--gutter), (100% - var(--_app-width)) / 2, env(safe-area-inset-right));
   border-block-end: var(--border-width) solid var(--color-border);
   background-color: var(--color-surface);
+}
+
+/*
+ * Edge icon buttons reach outward by their glyph inset, so the glyph, not the 44 px box, lines up with the content.
+ * Closed popovers and hidden siblings take no room, so a button followed only by its menu still counts as last.
+ */
+.app__top-bar > .icon-button:first-child {
+  margin-inline-start: calc(-1 * var(--_app-glyph-inset));
+}
+
+.app__top-bar > .icon-button:not(:has(~ :not([popover], [hidden]))),
+.app__top-bar > .app__top-actions:not(:has(~ :not([popover], [hidden]))) > .icon-button:not(:has(~ :not([popover], [hidden]))) {
+  margin-inline-end: calc(-1 * var(--_app-glyph-inset));
 }
 
 .app__title {
@@ -110,7 +133,8 @@
   text-decoration: none;
 }
 
-.app__menu-button {
+.app__menu-button,
+.app__nav-toggle {
   flex: none;
 }
 
@@ -231,6 +255,51 @@
   box-shadow: inset 0 var(--border-width-strong) 0 var(--color-primary);
 }
 
+.app__bottom-nav .app__nav-item[aria-current='page']:focus-visible {
+  box-shadow: var(--focus-glow), inset 0 var(--border-width-strong) 0 var(--color-primary);
+}
+
+/*
+ * Drawer: the sidebar as an open popover under the top bar, below 64rem or without the script.
+ * Its glyphs line up with the nav toggle's glyph on the bar gutter; the backdrop leaves the bar uncovered.
+ */
+.app > .app__sidebar:popover-open {
+  position: fixed;
+  inset: var(--_app-top-offset) auto 0 0;
+  display: flex;
+  flex-direction: column;
+  inline-size: min(var(--width-sidebar), 100% - var(--target-min));
+  block-size: auto;
+  margin: 0;
+  padding-block: var(--space-2) max(var(--space-2), env(safe-area-inset-bottom));
+  padding-inline: calc(max(var(--gutter), env(safe-area-inset-left)) - var(--space-3)) var(--space-2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-inline-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.app__sidebar::backdrop {
+  inset-block-start: calc(var(--target-min) + var(--space-3) + env(safe-area-inset-top));
+  background-color: var(--color-backdrop);
+}
+
+.app__sidebar:popover-open .app__nav-list {
+  gap: var(--space-1);
+}
+
+.app__sidebar:popover-open .app__nav-item {
+  border-radius: var(--radius-control);
+}
+
+@media (width < 64rem) {
+  .app:has(> .app__bottom-nav) > .app__top-bar > .app__nav-toggle {
+    display: none;
+  }
+}
+
 /* Banners: system and status banners above the content; the area takes no room while every banner is hidden. */
 .app__banners {
   display: grid;
@@ -254,6 +323,7 @@
 
 .app__main:focus {
   outline: none;
+  box-shadow: none;
 }
 
 .app:not(.app--scroll-page) > .app__main {
@@ -350,12 +420,23 @@
   }
 
   .app {
+    --_app-rail-track: calc(max(var(--space-2), env(safe-area-inset-left)) + var(--space-2) + 2 * var(--space-3) + var(--icon-md) + var(--border-width));
     grid-template-areas:
-      'sidebar top     panel'
+      'top     top     top'
       'sidebar banners panel'
       'sidebar main    panel'
-      'sidebar action  panel';
+      'action  action  action';
     grid-template-columns: var(--_app-sidebar-track) minmax(0, 1fr) var(--_app-panel-track);
+  }
+
+  /* The rail: a collapsed toggle over a shown sidebar narrows it to the glyph column. */
+  .app:has(> .app__top-bar > .app__nav-toggle[aria-expanded='false']):has(> .app__sidebar:not([hidden])) {
+    --_app-sidebar-track: var(--_app-rail-track);
+  }
+
+  /* With a sidebar, the top bar starts on the sidebar's glyph column, so the nav toggle's glyph tops the nav glyphs. */
+  .app:has(> .app__sidebar) > .app__top-bar {
+    padding-inline-start: calc(max(var(--space-2), env(safe-area-inset-left)) + var(--space-3));
   }
 
   .app:not(.app--scroll-page) {
@@ -374,19 +455,28 @@
     display: none;
   }
 
-  .app__sidebar {
+  /* A closed popover sidebar resets the platform's popover styles to sit in its grid column. */
+  .app__sidebar:not([hidden]) {
+    position: static;
+    inset: auto;
     display: flex;
     flex-direction: column;
     grid-area: sidebar;
     gap: var(--space-2);
-    padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+    inline-size: auto;
+    block-size: auto;
+    margin: 0;
+    padding-block: var(--space-2) max(var(--space-2), env(safe-area-inset-bottom));
     padding-inline: max(var(--space-2), env(safe-area-inset-left)) var(--space-2);
-    overflow-y: auto;
+    overflow: hidden auto;
+    border: 0;
     border-inline-end: var(--border-width) solid var(--color-border);
     background-color: var(--color-surface);
+    color: var(--color-text);
   }
 
   .app__sidebar .app__nav-list {
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-1);
   }
 
@@ -394,19 +484,26 @@
     border-radius: var(--radius-control);
   }
 
+  /* The rail clips the labels, which stay the links' accessible names. */
+  .app:has(> .app__top-bar > .app__nav-toggle[aria-expanded='false']) > .app__sidebar .app__nav-item {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
   .app__side-panel:not([hidden]) {
     position: static;
     grid-area: panel;
     z-index: auto;
+    padding-block-start: 0;
     padding-inline-start: 0;
     border-inline-start: var(--border-width) solid var(--color-border);
   }
 
-  /* In the page scroll mode, the side columns stay in view at the full viewport height while the document scrolls. */
-  .app--scroll-page > :is(.app__sidebar, .app__side-panel:not([hidden])) {
+  /* In the page scroll mode, the side columns stay in view between the sticky bars while the document scrolls. */
+  .app--scroll-page > :is(.app__sidebar:not([hidden]), .app__side-panel:not([hidden])) {
     position: sticky;
-    inset-block-start: 0;
+    inset-block-start: var(--_app-top-offset);
     align-self: start;
-    block-size: 100dvh;
+    block-size: calc(100dvh - var(--_app-top-offset) - var(--_app-action-offset));
   }
 }

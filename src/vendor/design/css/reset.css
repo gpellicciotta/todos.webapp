@@ -1,4 +1,4 @@
-/* Shared box model, browser text-size normalization, and the one focus ring. */
+/* Shared box model, browser text-size normalization, and the one focus glow. */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { margin: 0; }
@@ -16,10 +16,21 @@ body { margin: 0; }
   border: 0;
 }
 
-/* Focus: one outline for every control; outlines survive forced colors mode, where shadows disappear.
- * `.is-focus` forces the ring on a static gallery specimen; app markup never uses it. */
+/* Focus: one --focus-glow from base.css for every control; danger controls use --focus-glow-danger.
+ * The inset variants draw the glow inside the box, for rows that touch their neighbors, such as menu items.
+ * Forced colors mode drops shadows and paints the transparent outline in a system color instead.
+ * `.is-focus` forces the glow on a static gallery specimen; app markup never uses it. */
 :focus-visible,
 .is-focus {
-  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline: var(--focus-ring-width) solid transparent;
   outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-glow);
+}
+
+/* Forced colors name the focus color explicitly instead of relying on how a palette maps the transparent outline. */
+@media (forced-colors: active) {
+  :focus-visible,
+  .is-focus {
+    outline-color: Highlight;
+  }
 }

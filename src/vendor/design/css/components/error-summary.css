@@ -2,6 +2,7 @@
  * Error summary: shown after a failed submit, with a heading and one link per invalid field.
  * `attachForm` fills it, sets role="alert", and moves focus to it; each link moves focus to its field.
  * It shows the focus ring on any focus, because focus arrives by script after a pointer or keyboard submit.
+ * Like a danger banner, it uses the danger color for its edge and title, and the text color for its links.
  */
 .error-summary {
   display: grid;
@@ -19,12 +20,14 @@
 }
 
 .error-summary:is(:focus, .is-focus) {
-  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline: var(--focus-ring-width) solid transparent;
   outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-glow);
 }
 
 .error-summary__title {
   margin: 0;
+  color: var(--color-danger);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
@@ -40,7 +43,7 @@
   display: inline-flex;
   align-items: center;
   min-block-size: var(--target-min);
-  color: var(--color-danger);
+  color: var(--color-text);
   font-weight: var(--weight-medium);
   text-decoration: underline;
   text-underline-offset: 0.2em;

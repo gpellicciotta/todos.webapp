@@ -16,7 +16,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-17.33';
+const VERSION = '2026-11-17.36';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -111,6 +111,7 @@ const PRECACHE = [
   'vendor/design/css/components/checkbox.css',
   'vendor/design/css/components/chip.css',
   'vendor/design/css/components/collapsible.css',
+  'vendor/design/css/components/detail-panel.css',
   'vendor/design/css/components/dialog.css',
   'vendor/design/css/components/empty-state.css',
   'vendor/design/css/components/error-summary.css',
@@ -126,6 +127,7 @@ const PRECACHE = [
   'vendor/design/css/components/list.css',
   'vendor/design/css/components/loading.css',
   'vendor/design/css/components/menu.css',
+  'vendor/design/css/components/pager.css',
   'vendor/design/css/components/popover.css',
   'vendor/design/css/components/progress.css',
   'vendor/design/css/components/radio.css',
@@ -137,6 +139,7 @@ const PRECACHE = [
   'vendor/design/css/components/table.css',
   'vendor/design/css/components/tabs.css',
   'vendor/design/css/components/toast.css',
+  'vendor/design/css/components/toolbar.css',
   'vendor/design/css/components/tooltip.css',
   'vendor/design/css/deprecated.css',
   'vendor/design/css/reset.css',

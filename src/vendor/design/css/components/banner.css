@@ -2,13 +2,15 @@
  * Banner: a full-width notice above the content with an icon, one or two sentences, and an optional action.
  * Variants: default (information), `--success`, `--warning`, and `--danger`; each adds its color to the edge and the icon.
  * Danger banners use role="alert"; every other banner uses role="status".
+ * An action keeps one spacing step to the top, bottom, and end borders, and wraps to the end edge.
  */
 .banner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  padding: var(--space-2) var(--space-4);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-4) var(--space-2);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-card);
   background-color: var(--color-surface-sunken);
@@ -24,10 +26,27 @@
   color: var(--color-text-muted);
 }
 
+/*
+ * The text starts at its one-line width, so an action that does not fit beside one line wraps below it.
+ * An action then never sits beside wrapped text, which would grow its top and bottom space past its end space.
+ */
 .banner__text {
-  flex: 1 1 var(--width-menu);
+  flex: 1 1 auto;
+  max-inline-size: 100%;
   margin: 0;
   padding-block: var(--space-2);
+  /* With the banner's end padding, text keeps the same inset at the end as at the start. */
+  padding-inline-end: var(--space-2);
+}
+
+/* Leave room for the icon, so long text wraps beside it instead of moving to its own line. */
+.banner > .icon + .banner__text {
+  max-inline-size: calc(100% - var(--icon-md) - var(--space-3));
+}
+
+/* An action that wraps below the text moves to the end edge. */
+.banner__text + * {
+  margin-inline-start: auto;
 }
 
 .banner--success,

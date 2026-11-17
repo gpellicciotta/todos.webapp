@@ -1,6 +1,7 @@
 /* Switch: native checkbox; thumb position conveys off/on without relying on color.
  * States: hover, active, focus-visible, disabled (including fieldsets), and invalid.
- * The label is the 44 px target. No animation is needed for the state change. */
+ * The label is the 44 px target. No animation is needed for the state change.
+ * The track is a low rounded rectangle, one border width rounder than controls; the thumb radius stays concentric. */
 .switch {
   display: flex;
   align-items: center;
@@ -21,16 +22,18 @@
 }
 
 .switch__control {
+  --_switch-height: calc(var(--space-5) + 2 * var(--border-width));
+  --_switch-radius: calc(var(--radius-control) + var(--border-width));
   appearance: none;
   display: flex;
   align-items: center;
   flex: none;
   inline-size: var(--space-8);
-  block-size: var(--space-6);
+  block-size: var(--_switch-height);
   margin: 0;
   padding: var(--border-width);
   border: var(--border-width) solid var(--color-text-muted);
-  border-radius: var(--radius-round);
+  border-radius: var(--_switch-radius);
   background-color: var(--color-surface);
   color: var(--color-text-muted);
   cursor: inherit;
@@ -38,9 +41,9 @@
 
 .switch__control::before {
   content: '';
-  inline-size: calc(var(--space-6) - 4 * var(--border-width));
-  block-size: calc(var(--space-6) - 4 * var(--border-width));
-  border-radius: var(--radius-round);
+  inline-size: calc(var(--_switch-height) - 4 * var(--border-width));
+  block-size: calc(var(--_switch-height) - 4 * var(--border-width));
+  border-radius: max(0px, calc(var(--_switch-radius) - 2 * var(--border-width)));
   background-color: currentColor;
 }
 
@@ -60,9 +63,9 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+/* Keyboard focus replaces the danger outline with the glow. */
 .switch__control:is(:focus-visible, .is-focus) {
-  outline: var(--focus-ring-width) solid var(--color-focus);
-  outline-offset: var(--focus-ring-offset);
+  outline-color: transparent;
 }
 
 .switch:has(> :disabled) {

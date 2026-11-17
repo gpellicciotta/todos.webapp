@@ -31,9 +31,10 @@
   background-color: var(--color-surface-active);
 }
 
-/* The ring hugs the row, which spans its container. */
+/* The row spans its container, so the glow and the forced colors outline stay inside it. */
 .collapsible__toggle:is(:focus-visible, .is-focus) {
-  outline-offset: 0;
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  box-shadow: var(--focus-glow-inset);
 }
 
 .collapsible__icon {
