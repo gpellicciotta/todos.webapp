@@ -4,10 +4,13 @@ round: 1
 verdict: rejected
 blocking: 2
 reviewer: "@codex"
-reviewed_at: 2026-11-17T05:02:52Z
+reviewed_at: 2026-11-17T05:04:11Z
 reviewed_commit: "8e763c6"
 base_commit: "b3ae9df"
 branch: task/T0075-render-long-lists-screens-with-content-visibility-and
+session: codex-20261117-3cb8b3
+session_agent: codex
+session_created_at: 2026-11-17T05:02:52Z
 ---
 # Review Findings: Task T0075 (Round 1)
 

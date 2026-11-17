@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 647.5, input: 98, output: 27100, cache_read: 4592557, cache_write: 86638}
-review_status: pending
+  review: {turns: 1, duration_s: 78.1, input: 48039, output: 2395, cache_read: 281600, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T05:02:52Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-3cb8b3
+work_duration: 735.6
 ---
 # T0075: Render long Lists screens with content-visibility and lazy row menus, with roving focus between rows
 
@@ -53,4 +57,14 @@ Keep find in page, the tab order, and the restored scroll position true.
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected for two blocking keyboard and accessibility defects.
+  - Findings: [review-findings-1.md](T0075-render-long-lists-screens-with-content-visibility-and/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Review round 1 rework: added Home, End, and Page keys and collapsed menu semantics on unopened More buttons.
+
+- [2026-11-17] **[Verify]**
+  Rework verified: vitest 1672 passed, lint clean, 20 e2e passed; see validation-proof.md.
 
