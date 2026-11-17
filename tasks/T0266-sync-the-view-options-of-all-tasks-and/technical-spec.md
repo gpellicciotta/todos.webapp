@@ -11,24 +11,27 @@
   This task leaves it unchanged.
 - todos.server T0262 adds `GET` and `PATCH /api/users/{{user-id}}/settings`; read its REST API spec section first.
   Both accept `me`, merge by edit time, return tombstones as `"value": null`, and answer unchanged polls with `304`.
+  T0262 also adds `GET` and `DELETE /api/users/{{user-id}}/settings/{{name}}` for one setting.
 
 ### Synced Names
-The setting name is the preference key without `todos.`.
+The setting name is the full preference key, `todos.` prefix included.
+The service rejects any name without the `todos.` prefix, apart from its shared `timezone` setting.
 
-| Name                     | Requirement | Owner module     | Value                                |
-| :----------------------- | :---------- | :--------------- | :----------------------------------- |
-| `view.tasks`             | `TV-12`     | view-controls.js | `{filter, order, group}`             |
-| `view.list.{{list-id}}`  | `TV-12`     | view-controls.js | `{filter, order, group}`             |
-| `view.lists`             | `LST-12`    | T0074's module   | the Lists screen sort                |
-| `lists.order`            | `LST-8`     | list-order.js    | array of list IDs                    |
-| `enter-adds`             | `VO-3`      | settings.js      | boolean                              |
+| Name                           | Requirement | Owner module     | Value                                |
+| :----------------------------- | :---------- | :--------------- | :----------------------------------- |
+| `todos.view.tasks`             | `TV-12`     | view-controls.js | `{filter, order, group}`             |
+| `todos.view.list.{{list-id}}`  | `TV-12`     | view-controls.js | `{filter, order, group}`             |
+| `todos.view.lists`             | `LST-12`    | T0074's module   | the Lists screen sort                |
+| `todos.lists.order`            | `LST-8`     | list-order.js    | array of list IDs                    |
+| `todos.enter-adds`             | `VO-3`      | settings.js      | boolean                              |
 
-- `view.lists` does not exist until T0074 adds the Lists screen sort; sync it once it does.
+- `todos.view.lists` does not exist until T0074 adds the Lists screen sort; sync it once it does.
+- Downloads ignore names outside this list, such as `timezone`, and never write them to `localStorage`.
 - **[Decided]** Keep per device: `theme`, `server-url`, and the panel widths of T0256, as the user asked.
 - **[Decided]** Also keep per device: `sync-log.seen` and the session records; they describe this device, not a preference.
   The sync log itself is per device, so its seen time is too.
 - Keep the names in one list, so a later setting joins the sync without changes to the sync code.
-- `lists.order` merges as one value: the latest whole order wins, and lists missing from it append as today.
+- `todos.lists.order` merges as one value: the latest whole order wins, and lists missing from it append as today.
   At 500 lists the array holds about 19 KiB, inside the service's 64 KiB per value.
 
 ### Edit Times
@@ -45,15 +48,15 @@ The setting name is the preference key without `todos.`.
   Store the server edit time locally, so the next run does not send it back.
 - On the first connect, upload local options that the server lacks or holds with an older edit time.
 - A failed call leaves the pending names for the next run and never changes the sync state shown to the user.
-- Prune: after a list is permanently deleted, send `null` for its `view.list.{{list-id}}`.
+- Prune: after a list is permanently deleted, send `null` for its `todos.view.list.{{list-id}}` in the next `PATCH`.
 
 ### Refresh
 - After applying downloaded settings, tell each owner module, which reloads and redraws.
-- A downloaded `lists.order` reaches the sidebar and the Lists screen through the `onListOrderChange` listeners.
-- A downloaded `enter-adds` updates the Settings switch when the screen is open; the add bar reads it per key press.
+- A downloaded `todos.lists.order` reaches the sidebar and the Lists screen through the `onListOrderChange` listeners.
+- A downloaded `todos.enter-adds` updates the Settings switch when the screen is open; the add bar reads it per key press.
 - Other tabs learn of changes through the `storage` event, as `list-order.js` does.
 - **[Decided]** While the view options panel is open, a download for that view applies on close, so it never moves the user's focus.
-- **[Decided]** During a list drag, a downloaded `lists.order` applies after the drop, which then wins as the newer edit.
+- **[Decided]** During a list drag, a downloaded `todos.lists.order` applies after the drop, which then wins as the newer edit.
 
 ### Disconnect and Local Mode
 - Disconnecting keeps the current options on the device and clears the pending names, `ETag`, and edit times.
@@ -84,8 +87,9 @@ Size note: one sync mechanism serves every setting; splitting by setting would b
 - Unit: the merge applies a newer server value, keeps a newer local one, and removes the key for a newer tombstone.
 - Unit: pending names survive a failed `PATCH` and a reload, and a `304` changes nothing.
 - Unit: disconnecting clears the pending names, `ETag`, and edit times, and keeps the settings.
-- Unit: a downloaded `lists.order` calls the list order listeners, and a downloaded `enter-adds` changes what the add bar reads.
+- Unit: a downloaded `todos.lists.order` calls the list order listeners, and a downloaded `todos.enter-adds` changes what the add bar reads.
 - Unit: `theme` and `server-url` writes never enter the pending names.
+- Unit: every uploaded name starts with `todos.`, and a downloaded `timezone` never reaches `localStorage`.
 - Integration: e2e with two browser contexts on one mocked account: view options, list order, and Enter adding set on one appear on the other.
 - Integration: the contract test patches, reads, and conditionally reads settings against a real todos server with T0262.
 

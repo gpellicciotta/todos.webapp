@@ -40,3 +40,7 @@ Rules, size, and tests: [technical-spec.md](T0266-sync-the-view-options-of-all-t
 
 - [2026-11-17] **[Doc]**
   Widened to list order, Lists screen sort, and Enter adding per the user; added SYN-13 and updated LST-8, LST-12, VO-3.
+
+- [2026-11-17] **[Doc]**
+  Renamed synced settings to their full todos.-prefixed keys, which todos.server T0262 now requires.
+
