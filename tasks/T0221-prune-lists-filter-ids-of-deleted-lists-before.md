@@ -1,6 +1,7 @@
 ---
 id: T0221
 owner: "@claude"
+session: claude-20261117-a145d4
 needs: []
 branch: task/T0221-prune-lists-filter-ids-of-deleted-lists-before
 worktree: .plan/work/T0221-prune-lists-filter-ids-of-deleted-lists-before
@@ -22,11 +23,11 @@ A filter of deleted lists then hides nothing, so no toast shows.
 Rules and tests: [technical-spec.md](T0221-prune-lists-filter-ids-of-deleted-lists-before/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Implement]** Author the failing unit and e2e tests for a Lists filter of deleted lists.
-- [ ] **[Verify]**    Run the new tests and confirm they fail with the empty-named toast.
-- [ ] **[Implement]** Share the pruned filter between the rendering and the hidden-task toast.
-- [ ] **[Verify]**    Run `npm test`, `npm run lint`, and the All tasks e2e spec; record the passing output.
-- [ ] **[Doc]**       Add a CHANGELOG.md entry.
+- [x] **[Implement]** Author the failing unit and e2e tests for a Lists filter of deleted lists.
+- [x] **[Verify]**    Run the new tests and confirm they fail with the empty-named toast.
+- [x] **[Implement]** Share the pruned filter between the rendering and the hidden-task toast.
+- [x] **[Verify]**    Run `npm test`, `npm run lint`, and the All tasks e2e spec; record the passing output.
+- [x] **[Doc]**       Add a CHANGELOG.md entry.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -35,3 +36,16 @@ Rules and tests: [technical-spec.md](T0221-prune-lists-filter-ids-of-deleted-lis
 
 - [2026-11-16] **[Doc]**
   Confirmed the bug still exists in add-bar.js and all-tasks.js; wrote goals, tests, and steps.
+
+- [2026-11-17] **[Verify]**
+  Shared effectiveFilter() between render and the hidden-task toast; tests and proof recorded in validation-proof.md.
+
+- [2026-11-17] **[Implement]**
+  Added a unit test in all-tasks.test.js and an e2e test in all-tasks.spec.js for a Lists filter of a deleted list.
+
+- [2026-11-17] **[Implement]**
+  Added effectiveFilter() in all-tasks.js, used by render and by notifyIfHidden in add().
+
+- [2026-11-17] **[Doc]**
+  Added the CHANGELOG.md entry under v0.5.1-pre.
+
