@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 386.8, input: 42, output: 9937, cache_read: 1267401, cache_write: 43675}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T01:14:32Z"
 ---
 # T0250: Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column
 
@@ -63,4 +68,7 @@ Stop cutting off task descriptions and list names while the screen has room to s
 
 - [2026-11-17] **[Doc]**
   Updated ui-design.md, visual-style-guide.md, and CHANGELOG.md.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
