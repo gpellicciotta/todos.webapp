@@ -1,11 +1,11 @@
 ---
 id: T0275
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0275-make-the-e2e-suite-stable-under-full-parallel
+worktree: .plan/work/T0275-make-the-e2e-suite-stable-under-full-parallel
+status: active
+started_at: "2026-11-17T20:14:43Z"
 ended_at: —
 review: agent
 preview: none
