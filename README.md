@@ -5,7 +5,7 @@ The app works fully without a backend.
 When connected, it syncs with the [ToDo's service](https://github.com/gpellicciotta/todos).
 The service's [REST API spec](https://github.com/gpellicciotta/todos/blob/main/docs/specs/rest-api-spec.md) is the only contract between both projects.
 
-Licensed under the [MIT License](LICENSE.md).
+Licensed under the [MIT License](LICENSE.md); [NOTICE.md](NOTICE.md) lists third-party notices.
 
 See also:
 - [CHANGELOG](CHANGELOG.md)

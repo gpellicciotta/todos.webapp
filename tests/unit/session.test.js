@@ -76,11 +76,11 @@ function signIn(session) {
 
 describe('the Auth adapter', () => {
   it('builds the sign-in URL with the app name, the return URL, and the logo', () => {
-    const url = new URL(signInUrl('https://app.example/#/connect', { logoUrl: 'https://app.example/img/app-icon-192.png' }));
+    const url = new URL(signInUrl('https://app.example/#/connect', { logoUrl: 'https://app.example/img/todos-icon-192.png' }));
     expect(url.origin + url.pathname).toBe('https://auth.pellicciotta.com/sign-in');
     expect(url.searchParams.get('app-name')).toBe('todos');
     expect(url.searchParams.get('app-redirect-url')).toBe('https://app.example/#/connect');
-    expect(url.searchParams.get('app-logo-url')).toBe('https://app.example/img/app-icon-192.png');
+    expect(url.searchParams.get('app-logo-url')).toBe('https://app.example/img/todos-icon-192.png');
   });
 
   it('adds the state to the sign-in URL only when there is one', () => {

@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Replaced the app icon with the shared support.webapp todos hexagon from v0.2.0: the flat style for `favicon.ico`, the SVG favicon, the sidebar brand, the sign-in logo, and reminders, and the dimensional style for the apple touch icon and the manifest's `any` and `maskable` icons; removed `render-app-icons.mjs` and added `NOTICE.md` with the Lucide ISC notice (TEC-1).
 - FrontEnd: Removed the task row's More button and its Add to list, Remove from this list, Move up, Move down, and Delete menu, so rows end with their text; the editor's Status tab adds, removes, and deletes, and drags and the Alt keys move rows (TSK-8, TSK-11, LV-3).
 - FrontEnd: Split the task editor into Content, Status, and History tabs that always open on Content: Content holds the description and the notes, whose "Add or search notes" field also filters them; Status holds the status, Lists, Target count, Due, Overdue behavior, and Repeat, separated by rules, with Delete task last; History holds the history, which loads when the tab first shows, and Details (TSK-11, TSK-13, TSK-17).
 - FrontEnd: Added Move to top and Move to bottom to the Lists screen row menu, and Alt+Home and Alt+End to its rows and the sidebar list links, each announcing the new position and keeping the moved row focused and in view; Settings lists the keys (LST-13).

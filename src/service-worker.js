@@ -16,7 +16,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-17.32';
+const VERSION = '2026-11-17.33';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -31,9 +31,15 @@ const PRECACHE = [
   'css/app-chrome.css',
   'css/views.css',
   'img/icons.svg',
-  'img/app-icon.svg',
-  'img/app-icon-192.png',
-  'img/app-icon-512.png',
+  'favicon.ico',
+  'img/todos-icon.svg',
+  'img/todos-icon-128.png',
+  'img/todos-icon-192.png',
+  'img/install/todos-apple-touch-icon.png',
+  'img/install/todos-icon-192.png',
+  'img/install/todos-icon-512.png',
+  'img/install/todos-icon-maskable-192.png',
+  'img/install/todos-icon-maskable-512.png',
   'js/app.js',
   'js/core/backup.js',
   'js/core/list-counts.js',

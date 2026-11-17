@@ -180,7 +180,7 @@ export function renderShell(root, { session = createSession() } = {}) {
       <div class="app__top-actions" data-user-menu></div>
     </header>
     <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
-      <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/app-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
+      <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/todos-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
       <ul class="nav-list app__nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <div class="sidebar__find" hidden>
         <input class="field__control" type="search" maxlength="${FIND_MAX_LENGTH}" autocomplete="off" spellcheck="false" enterkeyhint="go"

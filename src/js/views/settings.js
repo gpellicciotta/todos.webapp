@@ -723,7 +723,7 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign, st
   function signIn() {
     const win = doc.defaultView;
     const returnUrl = new URL('#/connect', win.location.href).href;
-    const logoUrl = new URL('img/app-icon-192.png', win.location.href).href;
+    const logoUrl = new URL('img/todos-icon-192.png', win.location.href).href;
     (assign ?? ((url) => win.location.assign(url)))(session.start({ returnUrl, logoUrl }));
   }
 

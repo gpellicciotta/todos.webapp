@@ -50,6 +50,37 @@ test('after one online visit the app reloads and navigates offline', async ({ pa
   expect(problems).toEqual([]);
 });
 
+test('every icon of the head, the manifest, and the logos loads online and offline', async ({ page, context }) => {
+  const problems = watch(page);
+  await page.goto('/');
+  await ready(page);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  const icons = await page.evaluate(async () => {
+    const links = [...document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')].map((link) => link.getAttribute('href'));
+    const manifest = await (await fetch(document.querySelector('link[rel="manifest"]').href)).json();
+    const brand = document.querySelector('.sidebar__brand-icon').getAttribute('src');
+    return [...links, ...manifest.icons.map((icon) => icon.src), brand, 'img/todos-icon-192.png', 'img/todos-icon-128.png'];
+  });
+  expect(icons).toContain('favicon.ico');
+  const fetchAll = () => page.evaluate((paths) => Promise.all(paths.map(async (path) => {
+    const response = await fetch(path);
+    return `${path} ${response.status} ${response.headers.get('content-type')}`;
+  })), icons);
+  const expected = icons.map((path) => {
+    const type = path.endsWith('.ico') ? 'image/x-icon' : path.endsWith('.svg') ? 'image/svg+xml' : 'image/png';
+    return `${path} 200 ${type}`;
+  });
+  expect(await fetchAll()).toEqual(expected);
+  await context.setOffline(true);
+  await page.reload();
+  await ready(page);
+  expect(await fetchAll()).toEqual(expected);
+  await expect.poll(() => page.locator('.sidebar__brand-icon').first().evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+  await context.setOffline(false);
+  expect(problems).toEqual([]);
+});
+
 test('the manifest is served with its type and makes the app installable', async ({ page }) => {
   const problems = watch(page);
   await page.goto('/');

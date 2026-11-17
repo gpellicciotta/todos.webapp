@@ -84,7 +84,7 @@ function createLedger() {
  */
 async function showReminder({ title, body, tag, taskId }) {
   const registration = await navigator.serviceWorker.ready;
-  await registration.showNotification(title, { body, tag, data: taskId ? { taskId } : {}, icon: 'img/app-icon-192.png' });
+  await registration.showNotification(title, { body, tag, data: taskId ? { taskId } : {}, icon: 'img/todos-icon-192.png' });
 }
 
 /**

@@ -210,13 +210,14 @@ The page shows a lasting Update toast, "A new version is ready", through the ven
 - Test it by hand: serve version A, load it, serve version B, reload, and confirm the toast appears while the page stays on A.
 
 ### App Icons
-The app icon and the favicon are one file: the slightly rounded hexagon of the apps portal, with a fat navy 600 border and a white inside, holding its Todos glyph, a gray checklist box with a green check.
-[app-icon.svg](../src/img/app-icon.svg) is the source; the PNG icons of the manifest are rendered from it.
-Render them again after changing the SVG:
+The icons are the shared todos hexagon of the support.webapp [app icons spec](https://github.com/gpellicciotta/support.webapp/blob/main/docs/specs/app-icons.md).
+They are copies from support.webapp `src/img/app-icons/` at tag v0.2.0; never edit them here.
+- `blue-flat`: [favicon.ico](../src/favicon.ico), the [SVG favicon](../src/img/todos-icon.svg) and sidebar brand, and `img/todos-icon-{128,192}.png`.
+- The 192 px flat PNG is the sign-in logo and the reminder icon; todos.server uses the 128 px one in mail.
+- `blue-dimensional`: [img/install/](../src/img/install/) holds the apple touch icon and the manifest's `any` and `maskable` PNGs.
 
-```bash
-node scripts/render-app-icons.mjs
-```
+To update them, copy the same files from a newer support.webapp tag, bump the service worker VERSION, and run `node scripts/check-sw-version.mjs --update`.
+The checkbox glyph is Lucide's; [NOTICE.md](../NOTICE.md) keeps its ISC notice for the PNG and ICO copies.
 
 ---
 
