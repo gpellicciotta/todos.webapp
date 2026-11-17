@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 286.2, input: 68, output: 19734, cache_read: 3155188, cache_write: 87544}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T04:24:04Z"
 ---
 # T0072: Make the sidebar scroll only its lists, keep the current list in view, and patch rows in place
 
@@ -48,4 +53,7 @@ Hide a zero count and cap counts at "999+"; see ui-design.md, Sidebar With Many 
 
 - [2026-11-17] **[Doc]**
   Updated ui-design.md, changelog, and layout.js module comments.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
