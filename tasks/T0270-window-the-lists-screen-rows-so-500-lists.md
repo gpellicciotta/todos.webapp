@@ -1,11 +1,11 @@
 ---
 id: T0270
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0270-window-the-lists-screen-rows-so-500-lists
+worktree: .plan/work/T0270-window-the-lists-screen-rows-so-500-lists
+status: active
+started_at: "2026-11-17T09:00:07Z"
 ended_at: —
 review: agent
 preview: none
