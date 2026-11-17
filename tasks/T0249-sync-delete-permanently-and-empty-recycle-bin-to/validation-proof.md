@@ -57,3 +57,33 @@ Contract suite, run against a todos.server install whose `todos-server.jar` is t
 ```
 
 Not established: that todos.server T0257 is deployed to production. The app copes: a server without the routes answers 404, which counts as done, so the purge stays device-only until the service is upgraded.
+
+## Review round 2: production prerequisite
+
+Evidence that the production service serves the T0257 purge routes, gathered 2026-11-17T02:51+01:00 with a browser User-Agent and no credentials.
+
+`git -C C:/Dev-Projects/todos.server merge-base --is-ancestor c137816 v4.1.1`, exit code 0: the T0257 commit c137816 is in the v4.1.1 release.
+
+`GET https://todos.pellicciotta.com/api/status`, status 200, production runs the release that contains it:
+
+```
+  "version": "4.1.1",
+  "build-time": "2026-11-16T11:05:53Z",
+  "environment": "production",
+  "status": "running",
+```
+
+Unauthenticated `DELETE` probes against production, each on the all-zero identifier, so nothing can be deleted:
+
+```
+/api/recycle-bin/tasks/00000000-0000-7000-8000-000000000000 -> 401
+/api/recycle-bin/lists/00000000-0000-7000-8000-000000000000 -> 401
+/api/recycle-bin/nonsense/00000000-0000-7000-8000-000000000000 -> 400
+```
+
+The purge routes demand authentication (`401`), while an unknown path under the same prefix answers `400`, so the routes exist.
+Limit: no authenticated purge was run against production, since that needs a real account's token and would delete data.
+
+Exact contract setup of the earlier run: `TODOS_SERVER_DIR` named a scratch folder holding a copy of `todos.server/output/server/install/todos`,
+with its `todos-server.jar` replaced by `todos.server/output/server/libs/todos-server.jar` (built 2026-11-16 11:54), plus a copy of `server/src/main/resources/todos.config` at `server/src/main/resources/`.
+Command: `$env:TODOS_SERVER_DIR='<scratchpad>/srv'; npm run test:contract`, exit code 0, 20 passed.
