@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 4, duration_s: 3685.8, input: 24, output: 3662, cache_read: 1032072, cache_write: 9285}
+  worker: {turns: 5, duration_s: 4101.6, input: 46, output: 9134, cache_read: 2535058, cache_write: 17675}
 work_duration: 3781.2
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T21:25:03Z"
 ---
 # T0275: Make the e2e suite stable under full parallel load: all-tasks.spec.js:591 and sidebar-find.spec.js:43 each failed once
 
@@ -62,4 +65,7 @@ Mechanical files: scripts/sw-precache-hashes.json
   - Files touched: 5.
   - Lines touched: 20.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
