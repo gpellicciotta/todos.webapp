@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 442.6, input: 80, output: 28760, cache_read: 4099093, cache_write: 104319}
+  worker: {turns: 2, duration_s: 528.8, input: 100, output: 32845, cache_read: 5370904, cache_write: 117207}
   review: {turns: 1, duration_s: 76.3, input: 35112, output: 1713, cache_read: 265472, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T04:33:21Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T04:36:30Z"
 review_session: codex-20261117-e7b5a0
 work_duration: 528.6
 ---
@@ -73,4 +72,7 @@ Announce the match count through the polite live region after typing pauses for 
 
 - [2026-11-17] **[Doc]**
   Aligned ui-design.md and the Settings shortcut row with the Lists fallback.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
