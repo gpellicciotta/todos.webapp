@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 234.7, input: 58, output: 22102, cache_read: 2706761, cache_write: 94864}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T05:49:13Z"
 ---
 # T0078: Add the Shared only filter to the Lists screen sort menu while connected
 
@@ -48,4 +53,7 @@ Follow ui-design.md, Many Lists: sort.
 
 - [2026-11-17] **[Doc]**
   Updated ui-design.md, the changelog, and the lists module comments.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
