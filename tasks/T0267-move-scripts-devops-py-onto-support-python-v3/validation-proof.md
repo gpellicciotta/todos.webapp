@@ -113,6 +113,25 @@ Dry run: nothing was changed.
 
 `git status --porcelain` in the clone printed nothing afterward, and HEAD stayed at fc7b690.
 
+### Rework after review round 1
+The CLI server test now runs a scratch copy, so its state stays in `tmp_path/work/`.
+Command: `.venv/Scripts/python.exe -m pytest -q tests/test_devops.py -p no:cacheprovider -k "server or cli"`. Exit code: 0.
+
+```text
+.........................                                                [100%]
+25 passed, 63 deselected in 18.27s
+```
+
+The popover test still fails on current main at 59a5c83.
+Command: `npx playwright test tests/e2e/behaviors.spec.js:109 --reporter=line`. Exit code: 1.
+
+```text
+    Error: expect(locator).toBeFocused() failed
+  1 failed
+```
+
+Blocked: both completion commands need T0274 first; rerun them without `--skip-checks` once it lands.
+
 ### Markdown
 Command: `.venv/Scripts/lint-markdown.exe check CHANGELOG.md --offline`. Exit code: 0.
 

@@ -2,10 +2,10 @@
 id: T0267
 owner: "@claude"
 session: claude-20261117-e1c0a9
-needs: []
+needs: ['T0274']
 branch: task/T0267-move-scripts-devops-py-onto-support-python-v3
 worktree: .plan/work/T0267-move-scripts-devops-py-onto-support-python-v3
-status: active
+status: suspended
 started_at: "2026-11-17T09:44:52Z"
 ended_at: —
 review: agent
@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1638.4, input: 142, output: 58823, cache_read: 10253869, cache_write: 177358}
-review_status: pending
+  review: {turns: 1, duration_s: 486.0, input: 73584, output: 4557, cache_read: 2208512, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T10:12:29Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-fc96c2
+work_duration: 2150.3
 ---
 # T0267: Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override
 
@@ -43,7 +47,7 @@ Mechanical files: scripts/draw-wireframes.py
 - [x] **[Implement]** Author tests for the mapped actions and the release override.
 - [x] **[Verify]**    Run the new tests and confirm they fail.
 - [x] **[Implement]** Rebuild scripts/devops.py on DevopsCli and NodeProject.
-- [x] **[Verify]**    Run the tests, check, and the release dry run.
+- [ ] **[Verify]**    Run the tests, check, and the release dry run.
 - [x] **[Doc]**       Update docs/devops.md and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
@@ -81,4 +85,17 @@ Mechanical files: scripts/draw-wireframes.py
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected because the explicit completion check remains unmet.
+  - Findings: [review-findings-1.md](T0267-move-scripts-devops-py-onto-support-python-v3/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Addressed review round 1's process gap: the CLI server test runs a scratch copy with its own work/ state.
+  - Server and CLI tests: 25 passed.
+
+- [2026-11-17] **[Verify]**
+  Blocked on T0274: both completion commands stop at behaviors.spec.js:109, still failing on main at 59a5c83.
+  - Rerun check and release --dry-run --skip-github-release after T0274 integrates.
+  - Step 4 unchecked until both pass.
 

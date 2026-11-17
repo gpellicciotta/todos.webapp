@@ -4,10 +4,13 @@ round: 1
 verdict: rejected
 blocking: 1
 reviewer: "@codex"
-reviewed_at: 2026-11-17T10:12:30Z
+reviewed_at: 2026-11-17T10:20:41Z
 reviewed_commit: "91bf930"
 base_commit: "3ee12ec"
 branch: task/T0267-move-scripts-devops-py-onto-support-python-v3
+session: codex-20261117-fc96c2
+session_agent: codex
+session_created_at: 2026-11-17T10:12:30Z
 ---
 # Review Findings: Task T0267 (Round 1)
 
