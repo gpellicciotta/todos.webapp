@@ -403,6 +403,7 @@ test('a connected account shows its initials and name, and Connected in the pane
   const problems = watch(page);
   await page.route('http://127.0.0.1:1/api/notifications', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   await page.route('http://127.0.0.1:1/api/users/me', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"id":7}' }));
+  await page.route('http://127.0.0.1:1/api/users/me/settings', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"settings":{}}' }));
   await page.route('http://127.0.0.1:1/api/changes?**', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ cursor: 'c1', 'has-more': false, lists: [], tasks: [], memberships: [], notes: [], tombstones: [], protocol: 1 }),
   }));

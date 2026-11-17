@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readListOrder } from '../../src/js/core/list-order.js';
+import { announceSettings } from '../../src/js/core/preferences.js';
 import { createListMenu } from '../../src/js/views/list-actions.js';
 import { mountLists } from '../../src/js/views/lists.js';
 import { freshStore, setListFields } from './store-helpers.js';
@@ -108,6 +109,30 @@ describe('mountLists', () => {
   it('shows the stored device order, with unlisted lists at the end', async () => {
     const view = await mountThree(([garden, , work]) => ['unknown', work, garden]);
     expect(names(view)).toEqual(['Work', 'Garden', 'Home']);
+  });
+
+  it('applies a downloaded sort of the Lists screen at once (SYN-13)', async () => {
+    const view = await mountThree(([garden, home, work]) => [work, home, garden]);
+    localStorage.setItem('todos.view.lists', JSON.stringify({ sort: 'name' }));
+    announceSettings(['todos.view.lists']);
+    expect(names(view)).toEqual(['Garden', 'Home', 'Work']);
+  });
+
+  it('applies a downloaded list order that arrives during a drag after the drag ends (SYN-13)', async () => {
+    let ids;
+    const view = await mountThree((all) => {
+      ids = all;
+      return null;
+    });
+    const row = view.querySelector('.list-item');
+    row.querySelector('.list-item__handle').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0, pointerId: 1, clientY: 5 }));
+    expect(row.dataset.dragging).toBe('true');
+    localStorage.setItem('todos.lists.order', JSON.stringify([...ids].reverse()));
+    announceSettings(['todos.lists.order']);
+    expect(names(view)).toEqual(['Garden', 'Home', 'Work']);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await screen.idle();
+    await vi.waitFor(() => expect(names(view)).toEqual(['Work', 'Home', 'Garden']));
   });
 
   it('gives each row a drag handle and a More button, and no Move up or Move down buttons', async () => {

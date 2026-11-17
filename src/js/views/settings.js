@@ -2,7 +2,8 @@
  * Settings screen: Appearance, Adding tasks, Reminders, Data, Connection, Keyboard shortcuts, and About sections on one page.
  *
  * The theme choice applies at once and persists on this device (`todos.theme`).
- * The Make Enter add switch, on by default, sets whether Enter in the add field adds; it persists as `todos.enter-adds`.
+ * The Make Enter add switch, on by default, sets whether Enter in the add field adds; it persists as `todos.enter-adds`,
+ * which follows the account while connected (`SYN-13`), so a choice made on another device shows at once.
  * The Reminders switch is off by default; turning it on asks for notification permission, and a denial or missing
  * support leaves it off with the reason. The lead time persists as `todos.reminder-lead` (`REM-1` to `REM-3`).
  * Export backup saves the backup file at once and names it in a toast (`BAK-1`, `BAK-4`); Import backup opens its dialog.
@@ -17,8 +18,8 @@
 
 import { backupFileName, exportBackup } from '../core/backup.js';
 import {
-  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readReminderLead, readReminders, readServerUrl, readTheme,
-  writeEnterAdds, writeReminderLead, writeReminders, writeServerUrl, writeTheme,
+  DEFAULT_SERVER_URL, onSettingsChange, parseServerUrl, readEnterAdds, readReminderLead, readReminders, readServerUrl, readTheme,
+  touchesSetting, writeEnterAdds, writeReminderLead, writeReminders, writeServerUrl, writeTheme,
 } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { confirmDialog } from '../../vendor/design/js/dialog.js';
@@ -245,11 +246,11 @@ function appearanceSection(doc, getStorage, toaster) {
 }
 
 /**
- * Create the Adding tasks section: the Make Enter add switch, which applies at once and persists on this device.
+ * Create the Adding tasks section: the Make Enter add switch, which applies at once and follows the account while connected.
  * @param {Document} doc the document
  * @param {() => Storage} [getStorage] returns the storage of the preference
  * @param {{show: (message: string) => void}} [toaster] reports a choice that could not be saved
- * @returns {HTMLElement} the section
+ * @returns {{element: HTMLElement, destroy: () => void}} the section, and how to stop following downloaded choices
  */
 function addingSection(doc, getStorage, toaster) {
   const element = section(doc, 'adding', STRINGS.adding);
@@ -268,9 +269,15 @@ function addingSection(doc, getStorage, toaster) {
       toaster?.show(STRINGS.enterAddsNotSaved);
     }
   });
+  // A choice downloaded from the account, or made in another tab, shows at once (`SYN-13`); closing the screen stops following.
+  const stop = onSettingsChange((names) => {
+    if (touchesSetting(names, 'todos.enter-adds')) {
+      control.checked = readEnterAdds(getStorage);
+    }
+  });
   label.append(control, doc.createTextNode(STRINGS.enterAdds));
   element.append(label, hint);
-  return element;
+  return { element, destroy: stop };
 }
 
 /**
@@ -1017,7 +1024,8 @@ export function mountSettings(view, {
   const root = make(doc, 'div', 'settings');
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign, store, api });
   const data = dataSection(doc, store, toaster, { session, sync });
-  root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), remindersSection(doc, getStorage, toaster, notification, now), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
+  const adding = addingSection(doc, getStorage, toaster);
+  root.append(appearanceSection(doc, getStorage, toaster), adding.element, remindersSection(doc, getStorage, toaster, notification, now), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
   view.replaceChildren(root);
   return {
     /**
@@ -1038,6 +1046,7 @@ export function mountSettings(view, {
 
     /** Stop following the session; the controls go with the view. */
     destroy() {
+      adding.destroy();
       connection.destroy();
       data.destroy();
     },

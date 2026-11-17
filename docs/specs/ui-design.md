@@ -115,7 +115,7 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
 - **[Decided]** The sidebar always follows the manual order (`LST-8`); the sort of the Lists screen never changes it.
 - **[Decided]** One flat list: no pinned, favorite, or collapsible groups.
   Reason: manual order already pins, since Move to top puts a list first.
-  A group flag would be one more value that never syncs, as the order stays on the device.
+  A group flag would be one more value to sync beside the order.
 - A count of 0 shows nothing, and 1000 or more reads "999+".
   The visually hidden text keeps the exact number.
 - The sidebar patches rows by list identifier instead of rebuilding them.
@@ -182,8 +182,15 @@ Settings and the Sync log stay in a centered `--width-main` column.
   An editor not built yet leaves the slot hidden.
 - Editor routes keep their view, so opening an editor keeps the view's scroll and state.
 - Scroll positions and a memory object are kept per view, for the session; it keeps the search text.
-- Filters, grouping, and sort persist per device in `localStorage`, such as `todos.view.tasks`, or `todos.view.list.{{list-id}}` for a list (`TV-12`).
+- Filters, grouping, and sort persist in `localStorage`, such as `todos.view.tasks`, or `todos.view.list.{{list-id}}` for a list (`TV-12`).
   [preferences.js](../../src/js/core/preferences.js) reads and writes these keys; blocked storage falls back to defaults.
+- While connected, some settings follow the account through the service's user settings routes (`SYN-13`).
+  - Synced: the view options, the Lists screen sort, the list order, and Make Enter add.
+  - Kept on the device: the theme, the server URL, the panel widths, the sidebar state, and reminders.
+  - Each setting merges by edit time, so the latest change wins, also after an offline period.
+  - [settings.js](../../src/js/sync/settings.js) runs in each sync run, after the feed pull.
+  - A download redraws the screens that show the setting at once.
+  - Local mode never calls the routes, and disconnecting keeps the current settings on the device.
 - The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
 - On start the app opens the store, purges expired bin entries, then starts the overdue timer.
   The timer's first run cancels overdue `cancel` tasks.
@@ -432,7 +439,9 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 - The panel uses native inputs: checkboxes, radios, selects, and date fields.
 - The scrolling options keep 8 px of inline padding, so the focus rings of full-width controls stay visible.
 - A polite live region announces the count after each change, such as "12 tasks" (`VO-13`).
-- **[Decided]** The options persist per device: one entry for All tasks, and one entry per list, such as `todos.view.list.{{list-id}}`.
+- **[Decided]** The options persist in one entry for All tasks, and one entry per list, such as `todos.view.list.{{list-id}}`.
+  While connected, the entries follow the account (`SYN-13`).
+  **[Decided]** Options downloaded while their panel is open apply once it closes, so focus never moves.
   A list without an entry shows the list defaults. Reset restores the defaults and removes the entry of that list only.
   The entry shared by every list view of earlier versions is no longer read.
 
@@ -603,7 +612,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - Delete list asks for confirmation, then opens All tasks with an Undo toast (`LST-6`).
 - The view options replace the order buttons and the status chip (`VO-1`); Manual order is the first sort choice (`LV-6`).
 - **[Decided]** Due, Status, and A–Z sort ascending; Created and Last update show the newest first.
-- **[Decided]** The order, the grouping, and the filters persist per device and per list (`TV-12`).
+- **[Decided]** The order, the grouping, and the filters persist per list and follow the account while connected (`TV-12`, `SYN-13`).
 - Manual order is the default; rows then reorder as in [Task Reordering](#task-reordering) (`LV-2`, `LV-3`).
   A press drags the row, a touch drags it after a long hold, and the hovered or focused row shows a gutter handle.
 - A drag near the main column's top or bottom edge scrolls it; Escape or a lost pointer capture cancels the drag.
@@ -632,7 +641,9 @@ Wireframes: [lists.svg](../img/ui/lists.svg) with a few lists, [lists-many.svg](
 - Wide layouts keep this screen for managing lists, though the sidebar also lists them.
 - Each row links to its list; without lists, the screen says that a list groups tasks.
 - A shared list shows "Shared by {{owner}}" under its name, or "Shared with 2 people" for the owner; local lists show neither (`SHR-3`).
-- Rows follow the order of this device (`LST-8`); the sidebar shows the same order.
+- Rows follow the stored list order (`LST-8`); the sidebar shows the same order.
+  While connected, the whole order follows the account as one value, so the latest order wins (`SYN-13`).
+  **[Decided]** An order downloaded during a drag applies after the drop, which then wins as the newer edit.
   Drag a row by its handle, or press Alt+Up, Alt+Down, Alt+Home, or Alt+End on a row; the rows have no move buttons.
   **[Decided]** The handle also shows on touch screens, since it is the only way to reorder by pointer.
   A move announces "{{list}} moved to position 2 of 5." and focus stays on the moved row's control.
@@ -666,7 +677,8 @@ The sidebar and this screen share the rules below.
   It shows only for a valid new name; the floating plus keeps opening an empty editor.
 - **[Decided]** Sort: a "Sort: Manual order" button opens a menu with Manual order, Name (A to Z), Open tasks (most first),
   and Last update (newest first), where a list's last update is the latest `last-update-time` of its tasks.
-  The choice persists per device in `todos.view.lists` (`TV-12`) and never changes the stored order, as for tasks (`LV-7`).
+  The choice persists in `todos.view.lists` (`TV-12`) and follows the account while connected (`SYN-13`).
+  It never changes the stored order, as for tasks (`LV-7`).
   Compact layouts show the button as an icon in the pinned bar.
   Connected with a shared list, the menu ends with a Shared only checkbox that the info line names: "2 of 124 lists · Shared only".
   It keeps lists that others share with the user or that the user shares (`SHR-3`), persists as `shared` in `todos.view.lists`,
@@ -899,6 +911,7 @@ Settings is one page with these sections:
 - Adding tasks: the Make Enter add switch, on by default, with a hint that names the other adding keys.
   The hint reads "Shift+Enter and Alt+Enter always add. When this is off, Enter only searches."
   It applies at once; a choice the browser cannot store shows a toast and the switch turns back.
+  While connected, the choice follows the account, and a download updates the open switch (`SYN-13`).
 - Reminders: the Remind me when tasks come due switch, off by default, and a Remind me list of lead times (`REM-1` to `REM-3`).
   The list is off until the switch is on. Turning the switch on asks for notification permission; a denial or a browser without support leaves it off,
   with a status line that names the reason. The hint says reminders work while ToDo's is open, and that a date-only task reminds at 9:00.

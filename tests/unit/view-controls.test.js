@@ -22,7 +22,7 @@ function memoryStorage() {
 
 const LISTS = [{ id: 'l-home', name: 'Home' }, { id: 'l-work', name: 'Work' }];
 
-describe('view state per device (TV-12)', () => {
+describe('stored view state (TV-12)', () => {
   it('starts with every status checked and created newest first, or manual order in a list view', () => {
     expect(loadViewState('tasks', () => memoryStorage())).toEqual({
       filter: { statuses: ['ready', 'in-progress', 'completed', 'cancelled'] },
@@ -51,7 +51,8 @@ describe('view state per device (TV-12)', () => {
       group: 'list',
     };
     saveViewState('tasks', state, () => storage);
-    expect([...storage.data.keys()]).toEqual(['todos.view.tasks']);
+    // The view options follow the account, so their edit time and pending name are stored too (SYN-13).
+    expect([...storage.data.keys()]).toEqual(['todos.view.tasks', 'todos.settings.edit-times', 'todos.settings.pending']);
     expect(loadViewState('tasks', () => storage)).toEqual(state);
   });
 

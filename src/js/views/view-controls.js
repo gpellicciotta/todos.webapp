@@ -2,15 +2,16 @@
  * View options of the task views: the info line, and the View options panel.
  *
  * All tasks and every list view share one set of options: filters, a grouping, and a sort (`VO-1`). The view model holds
- * them, stores them per device through preferences.js (`TV-12`), and tells the screen and the panel about
- * changes; the search text from the add field stays out of storage, so a reload never hides tasks behind forgotten text.
+ * them, stores them through preferences.js, which syncs them with the account while connected (`TV-12`, `SYN-13`), and tells
+ * the screen and the panel about changes; the search text from the add field stays out of storage, so a reload never hides
+ * tasks behind forgotten text. Options downloaded while the panel of their view is open apply once it closes.
  * The info line under the add bar names the count and every active option (`VO-7`) and offers Reset (`VO-8`).
  * The panel opens in the editor panel from the More menu (`VO-4`, `VO-5`) with Reset, the Filter rows, Group by, and Sort by.
  * Manual order is a sort of the list view, and of All tasks while it groups by list, where each list group keeps its own order.
  */
 
 import { OPEN_STATUSES, STATUSES } from '../core/occurrences.js';
-import { readPreference, removePreference, writePreference } from '../core/preferences.js';
+import { onSettingsChange, PREFIX, readPreference, removePreference, touchesSetting, writePreference } from '../core/preferences.js';
 import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, GROUPINGS, NO_LIST, SORT_FIELDS } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { spriteIcon, STATUS_LABELS } from './task-list.js';
@@ -391,12 +392,12 @@ function copy(state) {
 }
 
 /**
- * Create the view model of a view: its options, stored per device, and the counts of its screen.
+ * Create the view model of a view: its stored options, which follow the account while connected, and the counts of its screen.
  * The screen and the panel share it, so the rows, the info line, and the panel follow one state.
  * The list model holds the options of one list at a time: `select` switches to another list, which keeps its own entry (`TV-12`).
  * @param {string} view the view key, `tasks` or `list`
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
- * @returns {{kind: string, get: Function, set: Function, select: Function, reset: Function, subscribe: Function,
+ * @returns {{kind: string, get: Function, set: Function, select: Function, hold: Function, reset: Function, subscribe: Function,
  *   counts: Function, setCounts: Function, subscribeCounts: Function}} the model
  */
 export function createViewModel(view, getStorage) {
@@ -406,6 +407,8 @@ export function createViewModel(view, getStorage) {
   let selected = null;
   let state = key ? loadViewState(key, getStorage) : defaultViewState(kind);
   let counts = null;
+  let holds = 0;
+  let waiting = false;
   const listeners = new Set();
   const countListeners = new Set();
 
@@ -413,6 +416,26 @@ export function createViewModel(view, getStorage) {
   function notify() {
     [...listeners].forEach((listener) => listener(state));
   }
+
+  /** Read the stored options again after a download or a write in another tab, keeping the search text. */
+  function reload() {
+    const text = state.filter.text;
+    state = loadViewState(key, getStorage);
+    if (text !== undefined) {
+      state.filter.text = text;
+    }
+    notify();
+  }
+
+  // Downloaded options apply at once, or once the View options panel closes, so they never move the user's focus (`SYN-13`).
+  onSettingsChange((names) => {
+    if (key && touchesSetting(names, `${PREFIX}view.${key}`)) {
+      waiting = holds > 0;
+      if (!waiting) {
+        reload();
+      }
+    }
+  });
 
   /**
    * Keep a new state: on this device, and with every listener.
@@ -439,8 +462,29 @@ export function createViewModel(view, getStorage) {
       }
       selected = listId;
       key = `list.${listId}`;
+      waiting = false;
       state = loadViewState(key, getStorage);
       notify();
+    },
+
+    /**
+     * Hold downloaded options of this view while its View options panel is open.
+     * @returns {() => void} releases the hold; the last release applies an options download that waited
+     */
+    hold() {
+      holds += 1;
+      let released = false;
+      return () => {
+        if (released) {
+          return;
+        }
+        released = true;
+        holds -= 1;
+        if (holds === 0 && waiting) {
+          waiting = false;
+          reload();
+        }
+      };
     },
 
     /**
@@ -886,6 +930,7 @@ export function mountViewOptions(panel, route, context) {
   done.addEventListener('click', () => panel.close());
 
   const stops = [
+    model.hold(),
     model.subscribe(sync),
     ...(context.session?.subscribe ? [context.session.subscribe(sync)] : []),
     model.subscribeCounts((counts) => {

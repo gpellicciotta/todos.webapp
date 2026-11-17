@@ -94,13 +94,14 @@ export function slotAt(midpoints, y) {
  * @param {string} [options.idKey] the `data-` key holding a row's identifier, `taskId` by default
  * @param {boolean} [options.press] whether a press on a row, or a touch hold, drags it too; off by default
  * @param {boolean} [options.ends] whether Alt+Home and Alt+End move the focused row to the top or bottom; off by default
- * @returns {{step: (taskId: string, step: -1|1) => void, jump: (taskId: string, end: -1|1) => void, destroy: () => void}}
- *   the controller
+ * @param {() => void} [options.onEnd] called once a drag ends, after its move is stored or once it is cancelled
+ * @returns {{step: (taskId: string, step: -1|1) => void, jump: (taskId: string, end: -1|1) => void, dragging: () => boolean,
+ *   destroy: () => void}} the controller
  */
 export function attachReorder(list, {
   enabled, onMove, scroller = () => list.closest('.app__main'), ids = null, midpoints = null,
   row: rowSelector = '.task-row', handle: handleSelector = '.task-row__handle', idKey = 'taskId',
-  press = false, ends = false,
+  press = false, ends = false, onEnd = () => {},
 }) {
   let drag = null;
   /** A row press or touch hold that has not turned into a drag yet. */
@@ -191,6 +192,7 @@ export function attachReorder(list, {
     if (commit && move) {
       onMove(current.taskId, move);
     }
+    onEnd();
   }
 
   /** Forget a pending row press or touch hold. */
@@ -461,6 +463,9 @@ export function attachReorder(list, {
   return {
     step,
     jump,
+
+    /** @returns {boolean} true while a row is dragged */
+    dragging: () => drag !== null,
 
     /** Cancel a drag and stop listening. */
     destroy() {

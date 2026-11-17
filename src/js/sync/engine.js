@@ -2,8 +2,9 @@
  * Sync engine: the state machine and the scheduler of syncing (`SYN-3`, `SYN-4`, `SYN-11`, `SYN-12`).
  *
  * It joins push.js (the upload of the change queue) and pull.js (the download of the change feed).
- * Only the tab that holds the Web Lock `todos-sync` syncs. Its run replays the queue, then pulls the feed.
- * The leader runs again every 30 seconds, after going online, gaining focus, becoming visible, and after local changes.
+ * Only the tab that holds the Web Lock `todos-sync` syncs. Its run replays the queue, pulls the feed, then syncs the settings (`SYN-13`).
+ * The leader runs again every 30 seconds, after going online, gaining focus, becoming visible, and after local changes,
+ * including edits of synced settings.
  * It pulls only while the page is visible; a hidden page still replays the queue.
  * The state is `local-only`, `synced`, `syncing`, `offline`, `sign-in-needed`, `question`, `error`, or `update-required`.
  * `question` waits for the user to answer whether a local Delete all data also erases the account (see adopt.js).
@@ -11,9 +12,21 @@
  * Disconnecting leaves the account's data behind (`CON-8`, `CON-9`): see pull.js.
  */
 
+import { onSettingEdit } from '../core/preferences.js';
 import { createApi } from './api.js';
 import { createPull } from './pull.js';
 import { createPush } from './push.js';
+import { createSettingsSync } from './settings.js';
+
+/**
+ * List every list the store holds, recycle bin included, so only purged lists lose their synced view options.
+ * @param {{listLists: Function, listBin: Function}} store the store facade
+ * @returns {Promise<string[]>} the list identifiers
+ */
+async function allListIds(store) {
+  const [live, bin] = await Promise.all([store.listLists(), store.listBin()]);
+  return [...live, ...bin.filter((entry) => entry.type === 'list')].map((list) => list.id);
+}
 
 /**
  * Create the engine of a session.
@@ -30,6 +43,7 @@ import { createPush } from './push.js';
  * @param {number} [options.pageSize] the page size of the feed calls
  * @param {Function} [options.onRejected] called with `{entry, status, message}` after a rollback
  * @param {Function} [options.onLostAccess] called with `{list, undone, message}` when a list was lost
+ * @param {{run: Function, disconnect: Function}} [options.settings] the settings sync, built from `session` and `api` by default
  * @returns {object} the engine: `start`, `stop`, `kick`, `syncNow`, `pendingCount`, `state`, `subscribe`, `isLeader`
  */
 export function createEngine({
@@ -45,6 +59,7 @@ export function createEngine({
   pageSize,
   onRejected,
   onLostAccess,
+  settings = createSettingsSync({ session, api, listIds: () => allListIds(store) }),
 }) {
   const pull = createPull({ store, session, api, onLostAccess, pageSize });
   const visible = () => (doc?.visibilityState ?? 'visible') !== 'hidden';
@@ -58,8 +73,10 @@ export function createEngine({
     channelName,
     onRejected,
     afterDrain: async () => {
+      // Settings follow the pull, so the lists their view options name are in the store; a failed step never fails the run.
       if (visible()) {
         await pull.pullOnce();
+        await settings.run();
       }
     },
   });
@@ -83,8 +100,10 @@ export function createEngine({
       listen(win, 'online', () => push.kick());
       listen(win, 'focus', () => push.kick());
       listen(doc, 'visibilitychange', () => visible() && push.kick());
+      off.push(onSettingEdit(() => push.kick()));
       off.push(session.subscribe((state) => {
         if (state === 'local') {
+          settings.disconnect();
           pull.disconnect().catch((error) => console.error('Leaving the account data failed:', error));
         }
       }));

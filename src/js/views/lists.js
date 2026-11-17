@@ -7,16 +7,18 @@
  * The button hides while an editor is open, so it never covers the editor panel.
  * Each row also has a More button with the actions of the List screen: Edit list, Edit view options, Share list,
  * and Delete list (`VO-4`), plus Move to top and Move to bottom while reordering is on (`LST-13`).
- * Rows follow the order of this device (`LST-8`): drag a row by its handle, press Alt+Up or Alt+Down on a row, or move
+ * Rows follow the stored list order (`LST-8`): drag a row by its handle, press Alt+Up or Alt+Down on a row, or move
  * it to an end with Alt+Home, Alt+End, or the menu, all through reorder.js. Each move announces the new position and
- * keeps focus on the row, which scrolls into view. The order stays on the device and new lists come last.
+ * keeps focus on the row, which scrolls into view. New lists come last. While connected the order follows the account
+ * (`SYN-13`); an order downloaded during a drag shows after the drop, which then wins as the newer edit.
  * The counts come from core/list-counts.js, shared with the sidebar, and the app passes the sidebar's own read of them
  * (core/list-snapshot.js) so the screen opens without counting 5000 tasks again (`TEC-16`); core/list-find.js and core/list-sort.js hold the
  * find and sort rules of the Many Lists design (`LST-10`, `LST-12`).
  * From 12 lists, or while it holds text, a find block joins the shell's action bar, pinned under the rows: a find field,
  * a sort button with its menu, and an info line with Reset. The field searches names and descriptions once typing pauses
  * for 150 ms; Enter opens the first match, Escape clears, Down enters the rows, and `/` focuses it (`LST-10`).
- * The text lasts for the session in the router memory; the sort persists per device in `todos.view.lists` (`LST-12`).
+ * The text lasts for the session in the router memory; the sort persists in `todos.view.lists` (`LST-12`), which follows
+ * the account while connected, so a sort downloaded from another device applies at once.
  * A text with no match offers Create list for a valid new name, which opens the new list's editor (`LST-11`).
  * Reordering needs Manual order, an empty field, and no Shared only; otherwise the handles and move entries hide, and
  * Alt+Up, Alt+Down, Alt+Home, or Alt+End says why.
@@ -32,8 +34,9 @@
 import { countLists, countOf } from '../core/list-counts.js';
 import { FIND_MAX_LENGTH, findLists } from '../core/list-find.js';
 import { applyListOrder, movedMessage, moveListTo, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
-import { LIST_SORTS, readListSort, readSharedOnly, SORT_LABELS, sortLists, writeListView } from '../core/list-sort.js';
+import { LIST_SORT_KEY, LIST_SORTS, readListSort, readSharedOnly, SORT_LABELS, sortLists, writeListView } from '../core/list-sort.js';
 import { isSharedList } from '../core/permissions.js';
+import { onSettingsChange, PREFIX, touchesSetting } from '../core/preferences.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
 import { formatRoute } from '../ui/router.js';
@@ -887,9 +890,17 @@ export function mountLists(view, {
   rows.addEventListener('keydown', onRowsCapture, true);
   rows.addEventListener('click', onRowsCapture, true);
   rows.addEventListener('focusin', onRowsFocusin);
+  // An order that arrives during a drag waits for its end, so the dragged row stays put (`SYN-13`).
+  let orderWaiting = false;
   const reorder = attachReorder(rows, {
     enabled: reorderable, onMove: move, scroller, ids: () => shown.map((list) => list.id), midpoints,
     row: '.list-item', handle: '.list-item__handle', idKey: 'listId', ends: true,
+    onEnd: () => {
+      if (orderWaiting) {
+        orderWaiting = false;
+        refresh();
+      }
+    },
   });
 
   /**
@@ -906,7 +917,23 @@ export function mountLists(view, {
   doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
   doc.defaultView?.addEventListener('resize', onScroll);
   const unsubscribe = store.subscribe(() => refresh());
-  const unsubscribeOrder = onListOrderChange(() => refresh());
+  const unsubscribeOrder = onListOrderChange(() => {
+    if (reorder.dragging()) {
+      orderWaiting = true;
+    }
+    else {
+      refresh();
+    }
+  });
+  const unfollowSort = onSettingsChange((names) => {
+    if (touchesSetting(names, PREFIX + LIST_SORT_KEY)) {
+      sort = readListSort(getStorage);
+      sharedOnly = readSharedOnly(getStorage);
+      if (data && !destroyed) {
+        render();
+      }
+    }
+  });
   // Signing in or out changes whether Shared only applies.
   const unsubscribeSession = session?.subscribe?.(() => {
     if (data && !destroyed) {
@@ -944,6 +971,7 @@ export function mountLists(view, {
       find.element.remove();
       unsubscribe();
       unsubscribeOrder();
+      unfollowSort();
       unsubscribeSession?.();
       sortMenu.destroy();
       destroyMenus();

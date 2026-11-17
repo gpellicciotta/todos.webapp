@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { exportBackup, importBackup } from '../../src/js/core/backup.js';
-import { writeServerUrl } from '../../src/js/core/preferences.js';
+import { removePreference, writePreference, writeServerUrl } from '../../src/js/core/preferences.js';
 import { createApi } from '../../src/js/sync/api.js';
 import { createEngine } from '../../src/js/sync/engine.js';
 import { createSession } from '../../src/js/sync/session.js';
+import { createSettingsSync } from '../../src/js/sync/settings.js';
 import { freshStore } from '../unit/store-helpers.js';
 import { serverDir, startStack } from './server.js';
 
@@ -27,6 +28,10 @@ let channelCount = 0;
 function memoryStorage() {
   const items = new Map();
   return {
+    get length() {
+      return items.size;
+    },
+    key: (index) => [...items.keys()][index] ?? null,
     getItem: (key) => items.get(key) ?? null,
     setItem: (key, value) => items.set(key, String(value)),
     removeItem: (key) => items.delete(key),
@@ -553,6 +558,43 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(ada.fetch.statuses).toEqual([410, 200]);
     expect((await ada.store.queue.getState('cursor')).value).not.toBe(forged);
     expect(await ada.store.getList(list.id)).toMatchObject({ name: 'Cursor' });
+  });
+
+  it('patches, reads, and conditionally reads the user settings, and merges two devices by edit time (SYN-13)', async () => {
+    const phone = await device('code-ada');
+    const laptop = await device('code-ada');
+    const settingsOf = (who) => {
+      const storage = memoryStorage();
+      const sync = createSettingsSync({ session: who.session, api: createApi({ session: who.session, fetch: who.fetch }), getStorage: () => storage });
+      return { storage, sync };
+    };
+    const one = settingsOf(phone);
+    const two = settingsOf(laptop);
+    const view = { filter: { statuses: ['ready'] }, order: { field: 'due-time', direction: 'asc' }, group: 'list' };
+    writePreference('view.tasks', view, () => one.storage);
+    writePreference('lists.order', ['0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2c41'], () => one.storage);
+    writePreference('theme', 'dark', () => one.storage);
+    expect(await one.sync.run()).toBe('uploaded');
+
+    const read = await phone.raw('GET', '/api/users/me/settings', { Accept: 'application/json' });
+    expect(read.status).toBe(200);
+    const etag = read.headers.get('etag');
+    expect(etag).toBeTruthy();
+    const { settings } = await read.json();
+    expect(settings['todos.view.tasks']).toMatchObject({ value: view, 'edit-time': expect.any(String) });
+    expect(settings['todos.theme']).toBeUndefined();
+    expect((await phone.raw('GET', '/api/users/me/settings', { 'If-None-Match': etag })).status).toBe(304);
+
+    expect(await two.sync.run()).toBe('downloaded');
+    expect(JSON.parse(two.storage.getItem('todos.view.tasks'))).toEqual(view);
+    expect(await two.sync.run()).toBe('unchanged');
+
+    removePreference('view.tasks', () => two.storage);
+    expect(await two.sync.run()).toBe('uploaded');
+    expect(await one.sync.run()).toBe('downloaded');
+    expect(one.storage.getItem('todos.view.tasks')).toBeNull();
+    const after = await (await phone.raw('GET', '/api/users/me/settings', { Accept: 'application/json' })).json();
+    expect(after.settings['todos.view.tasks'].value).toBeNull();
   });
 
   it('answers 426 to a client below the minimum version, and the client stops syncing', async () => {

@@ -77,7 +77,7 @@ describe('the sync state', () => {
     expect(await engine.syncNow()).toBe('synced');
     expect(engine.state()).toMatchObject({ status: 'synced', pending: 0 });
     expect(service.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
-      'POST /api/tasks', 'GET /api/users/me', 'GET /api/changes?page-size=200',
+      'POST /api/tasks', 'GET /api/users/me', 'GET /api/changes?page-size=200', 'GET /api/users/me/settings',
     ]);
   });
 
@@ -191,7 +191,7 @@ describe('erasing the account data', () => {
     service.calls.length = 0;
     expect(await engine.syncNow()).toBe('synced');
     expect(service.calls.map((call) => `${call.method} ${call.path.split('?')[0]}`)).toEqual([
-      'DELETE /api/users/7/data', 'GET /api/changes',
+      'DELETE /api/users/7/data', 'GET /api/changes', 'GET /api/users/me/settings',
     ]);
     expect(await store.listTasks()).toEqual([]);
   });

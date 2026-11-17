@@ -71,16 +71,17 @@ export function createApi({ session, fetch = (...args) => globalThis.fetch(...ar
      * Send one request.
      * @param {string} method the HTTP method
      * @param {string} path the path with its query, such as `/api/lists`
-     * @param {{body?: object, editTime?: string}} [options] the JSON body and the client time of the edit
+     * @param {{body?: object, editTime?: string, headers?: Record<string, string>}} [options] the JSON body, the client time of the edit,
+     *   and more headers, such as `If-None-Match`
      * @returns {Promise<{status: number, ok: boolean, headers: object, body: any}>} the reply
      * @throws {SyncStop} without a token (`auth`) or a connection (`retry`)
      */
-    async send(method, path, { body, editTime } = {}) {
+    async send(method, path, { body, editTime, headers: extra = {} } = {}) {
       const token = session.token();
       if (!token) {
         throw new SyncStop('auth');
       }
-      const headers = { Accept: 'application/json', Authorization: `Bearer ${token}`, 'Client-Version': clientVersion };
+      const headers = { ...extra, Accept: 'application/json', Authorization: `Bearer ${token}`, 'Client-Version': clientVersion };
       if (body !== undefined) {
         headers['Content-Type'] = 'application/json';
       }

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { announceSettings } from '../../src/js/core/preferences.js';
 import { mountSettings } from '../../src/js/views/settings.js';
 
 /** @returns {Promise<void>} resolves once pending promises and queued tasks have run */
@@ -737,6 +738,30 @@ describe('Adding tasks in Settings', () => {
     control.click();
     expect(control.checked).toBe(true);
     expect(toaster.show).toHaveBeenCalledWith('Make Enter add could not be saved on this device, so it stays as it was.');
+  });
+
+  it('follows a downloaded Make Enter add while the screen is open (SYN-13)', () => {
+    const stored = new Map();
+    const control = mountSwitch(stored);
+    stored.set('todos.enter-adds', 'false');
+    announceSettings(['todos.enter-adds']);
+    expect(control.checked).toBe(false);
+    stored.set('todos.enter-adds', 'true');
+    announceSettings(['todos.view.tasks']);
+    expect(control.checked).toBe(false);
+  });
+
+  it('stops following downloaded choices once the screen is destroyed', () => {
+    const stored = new Map();
+    const storage = { getItem: (key) => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, String(value)), removeItem: (key) => stored.delete(key) };
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
+    const screen = mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => storage });
+    const control = view.querySelector('input[role="switch"]');
+    screen.destroy();
+    stored.set('todos.enter-adds', 'false');
+    announceSettings(['todos.enter-adds']);
+    expect(control.checked).toBe(true);
   });
 });
 

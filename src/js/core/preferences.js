@@ -1,12 +1,126 @@
 /**
- * Per-device preferences in `localStorage`, under keys that start with `todos.`.
+ * Preferences in `localStorage`, under keys that start with `todos.`.
  *
  * Values are stored as JSON. Storage that is missing, blocked, or full never throws:
  * reads return the fallback and writes report failure, so the app works in private windows.
  * The views store their filters, grouping, and sort here (`TV-12`), All tasks once and each list on its own; Settings stores `theme`, `enter-adds`, and `server-url`.
+ * The names in `SYNCED_SETTINGS` follow the account while connected (`SYN-13`); sync/settings.js uploads and downloads them.
+ * Each write or removal of one records its edit time and marks it pending; every other key stays on this device.
  */
 
 export const PREFIX = 'todos.';
+
+/**
+ * The settings that follow the account while connected, as full keys; a trailing `*` matches any rest of the key.
+ * A later setting joins the sync by joining this list.
+ */
+export const SYNCED_SETTINGS = Object.freeze(['todos.view.tasks', 'todos.view.list.*', 'todos.view.lists', 'todos.lists.order', 'todos.enter-adds']);
+
+/** The map of a synced name to its ISO edit time, and the names not uploaded yet; both stay on this device. */
+export const EDIT_TIMES_KEY = 'settings.edit-times';
+export const PENDING_KEY = 'settings.pending';
+
+/**
+ * Tell whether a full key follows the account.
+ * @param {string} name the full key, such as `todos.view.tasks`
+ * @returns {boolean} true for a synced setting
+ */
+export function isSyncedSetting(name) {
+  return typeof name === 'string' && SYNCED_SETTINGS.some((pattern) => (pattern.endsWith('*')
+    ? name.length >= pattern.length && name.startsWith(pattern.slice(0, -1))
+    : name === pattern));
+}
+
+/**
+ * Read the edit times of the synced settings.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {Record<string, string>} the ISO edit time by full key; a key without one counts as the oldest
+ */
+export function readEditTimes(getStorage) {
+  const stored = readPreference(EDIT_TIMES_KEY, {}, getStorage);
+  return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+}
+
+/**
+ * Read the synced settings changed since the last upload.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {string[]} the full keys
+ */
+export function readPendingSettings(getStorage) {
+  const stored = readPreference(PENDING_KEY, [], getStorage);
+  return Array.isArray(stored) ? stored.filter(isSyncedSetting) : [];
+}
+
+/**
+ * Record an edit of a synced setting: its edit time, after the stored one so a local edit beats what it replaced, and its pending name.
+ * @param {string} name the full key
+ * @param {() => Storage} [getStorage] returns the storage
+ */
+function recordEdit(name, getStorage) {
+  const times = readEditTimes(getStorage);
+  const previous = Date.parse(times[name] ?? '');
+  const now = Date.now();
+  times[name] = new Date(Number.isFinite(previous) && previous >= now ? previous + 1 : now).toISOString();
+  writePreference(EDIT_TIMES_KEY, times, getStorage);
+  const pending = readPendingSettings(getStorage);
+  if (!pending.includes(name)) {
+    writePreference(PENDING_KEY, [...pending, name], getStorage);
+  }
+  [...editListeners].forEach((listener) => listener(name));
+}
+
+const editListeners = new Set();
+const settingListeners = new Set();
+
+/**
+ * Follow local edits of synced settings on this page, so the sync engine uploads them soon.
+ * @param {(name: string) => void} listener called with the full key after each recorded edit
+ * @returns {() => void} stops following
+ */
+export function onSettingEdit(listener) {
+  editListeners.add(listener);
+  return () => editListeners.delete(listener);
+}
+
+/**
+ * Tell the listeners of this page that the sync changed stored settings.
+ * @param {string[]} names the full keys that changed
+ */
+export function announceSettings(names) {
+  if (names.length > 0) {
+    [...settingListeners].forEach((listener) => listener(names));
+  }
+}
+
+/**
+ * Follow changes of synced settings: downloads on this page, and writes in another tab through the `storage` event.
+ * @param {(names: string[]|null) => void} listener called with the changed full keys; null when the whole storage was cleared
+ * @param {EventTarget|null} [target] the window that reports `storage` events
+ * @returns {() => void} stops following
+ */
+export function onSettingsChange(listener, target = globalThis) {
+  const onStorage = (event) => {
+    if (event.key === null || isSyncedSetting(event.key)) {
+      listener(event.key === null ? null : [event.key]);
+    }
+  };
+  settingListeners.add(listener);
+  target?.addEventListener?.('storage', onStorage);
+  return () => {
+    settingListeners.delete(listener);
+    target?.removeEventListener?.('storage', onStorage);
+  };
+}
+
+/**
+ * Tell whether a change notice names a key.
+ * @param {string[]|null} names the changed full keys, or null for any
+ * @param {string} name the full key
+ * @returns {boolean} true when the key may have changed
+ */
+export function touchesSetting(names, name) {
+  return names === null || names.includes(name);
+}
 
 /**
  * Read a preference.
@@ -33,13 +147,21 @@ export function readPreference(key, fallback, getStorage = () => globalThis.loca
  * @returns {boolean} true when stored
  */
 export function writePreference(key, value, getStorage = () => globalThis.localStorage) {
+  const name = PREFIX + key;
+  const raw = JSON.stringify(value);
+  let previous;
   try {
-    getStorage().setItem(PREFIX + key, JSON.stringify(value));
-    return true;
+    const storage = getStorage();
+    previous = isSyncedSetting(name) ? storage.getItem(name) : null;
+    storage.setItem(name, raw);
   }
   catch {
     return false;
   }
+  if (isSyncedSetting(name) && previous !== raw) {
+    recordEdit(name, getStorage);
+  }
+  return true;
 }
 
 /**
@@ -49,13 +171,20 @@ export function writePreference(key, value, getStorage = () => globalThis.localS
  * @returns {boolean} true when removed, or when nothing was stored
  */
 export function removePreference(key, getStorage = () => globalThis.localStorage) {
+  const name = PREFIX + key;
+  let previous;
   try {
-    getStorage().removeItem(PREFIX + key);
-    return true;
+    const storage = getStorage();
+    previous = isSyncedSetting(name) ? storage.getItem(name) : null;
+    storage.removeItem(name);
   }
   catch {
     return false;
   }
+  if (previous !== null) {
+    recordEdit(name, getStorage);
+  }
+  return true;
 }
 
 /** The server a new device connects to (`CON-12`). */

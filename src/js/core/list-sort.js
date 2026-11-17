@@ -3,7 +3,8 @@
  *
  * The input is in manual order, and every sort keeps it among ties, since the array sort is stable.
  * A sort never changes the stored order; it returns a new array.
- * The choice persists per device in `todos.view.lists` as `{sort, shared}` (`TV-12`, `LST-16`); the defaults store nothing.
+ * The choice persists in `todos.view.lists` as `{sort, shared}` (`TV-12`, `LST-16`); the defaults store nothing.
+ * While connected it follows the account (`SYN-13`).
  */
 
 import { countOf } from './list-counts.js';

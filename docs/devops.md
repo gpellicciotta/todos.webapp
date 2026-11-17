@@ -142,6 +142,7 @@ $env:TODOS_SERVER_DIR = "../todos"; npm run test:contract
 - The tests use the sync modules directly on `fake-indexeddb`, with real `fetch` and no browser.
   They cover first-connect adoption with a note, same-named list merge, two-device merge, a purged-list tombstone, `410`, and `426`.
   They also tick a target-3 task three times through events, and see a `409` event rolled back.
+  They patch, read, and conditionally read the user settings, so the server build needs the user settings routes.
 - The `410` test forges a cursor above the newest revision. Only the purge job raises the tombstone floor, and a running server has no route for it; the todos tests cover that path.
 
 

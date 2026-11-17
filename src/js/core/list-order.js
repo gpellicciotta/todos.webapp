@@ -1,13 +1,14 @@
 /**
- * The order of the lists on this device, shared by the sidebar and the Lists screen.
+ * The order of the lists, shared by the sidebar and the Lists screen.
  *
- * The order is a device preference of list identifiers (`lists.order`); the store and the sync feed never see it.
+ * The order is a preference of list identifiers (`lists.order`); the store and the change feed never see it.
+ * While connected it follows the account as one value, so the latest whole order wins (`SYN-13`).
  * Stored identifiers come first; lists without one, such as new lists, follow in name order.
  * A list moves one place, to an index, or to either end (`LST-8`, `LST-13`).
- * A write tells the listeners of this page, and a write in another tab arrives as a `storage` event.
+ * A write tells the listeners of this page; a write in another tab or a download tells them too.
  */
 
-import { PREFIX, readPreference, writePreference } from './preferences.js';
+import { onSettingsChange, PREFIX, readPreference, touchesSetting, writePreference } from './preferences.js';
 
 export const LIST_ORDER_KEY = 'lists.order';
 
@@ -38,21 +39,20 @@ export function writeListOrder(ids, getStorage) {
 }
 
 /**
- * Listen for a changed list order, on this page or in another tab.
+ * Listen for a changed list order: on this page, in another tab, or downloaded from the account.
  * @param {() => void} listener called after each change
  * @returns {() => void} stops listening
  */
 export function onListOrderChange(listener) {
-  const onStorage = (event) => {
-    if (event.key === null || event.key === PREFIX + LIST_ORDER_KEY) {
+  const stop = onSettingsChange((names) => {
+    if (touchesSetting(names, PREFIX + LIST_ORDER_KEY)) {
       listener();
     }
-  };
+  });
   listeners.add(listener);
-  globalThis.addEventListener?.('storage', onStorage);
   return () => {
     listeners.delete(listener);
-    globalThis.removeEventListener?.('storage', onStorage);
+    stop();
   };
 }
 
