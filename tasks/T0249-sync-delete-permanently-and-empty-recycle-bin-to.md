@@ -5,20 +5,22 @@ session: claude-20261117-81639b
 needs: []
 branch: task/T0249-sync-delete-permanently-and-empty-recycle-bin-to
 worktree: .plan/work/T0249-sync-delete-permanently-and-empty-recycle-bin-to
-status: active
+status: completed
 started_at: "2026-11-17T01:32:26Z"
-ended_at: —
+ended_at: "2026-11-17T01:53:32Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 822.4, input: 172, output: 55269, cache_read: 13576715, cache_write: 199651}
-  review: {turns: 2, duration_s: 285.8, input: 143317, output: 6195, cache_read: 985472, cache_write: 0}
-review_status: pending
+  review: {turns: 3, duration_s: 359.8, input: 186418, output: 8174, cache_read: 1222016, cache_write: 0}
+review_status: approved
 review_round: 3
 review_requested_at: "2026-11-17T01:52:12Z"
-review_session: codex-20261117-f5402b
-work_duration: 1103.7
+review_session: codex-20261117-604e71
+work_duration: 1264.8
+reviewed_by: "@codex"
+completion-commit: 7e3704b681f8b33245566082e4c3e8e7919bf3eb
 ---
 # T0249: Sync Delete permanently and Empty recycle bin to the account while connected, queued while offline
 
@@ -38,7 +40,7 @@ Make permanent deletes from the Recycle Bin reach the account, not just this dev
 - [x] **[Implement]** Implement the purge entries, their push, and the 409 recovery.
 - [x] **[Verify]**    Run the unit, e2e, and contract suites and confirm they pass.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -100,4 +102,11 @@ Make permanent deletes from the Recycle Bin reach the account, not just this dev
 
 - [2026-11-17] **[Review]**
   Round 3 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 3 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-3.md](T0249-sync-delete-permanently-and-empty-recycle-bin-to/review-findings-3.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
