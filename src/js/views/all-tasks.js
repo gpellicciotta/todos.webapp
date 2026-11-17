@@ -187,7 +187,7 @@ export function mountAllTasks(view, {
       throw error;
     }
     notifyIfHidden({
-      task, listIds, filter: model.get().filter, lists: data?.lists ?? [], now: now(), toaster,
+      task, listIds, filter: effectiveFilter(), lists: data?.lists ?? [], now: now(), toaster,
       onShow: (keys) => model.set({ ...model.get(), filter: clearFilters(model.get().filter, keys) }),
     });
     if (first && !asked) {
@@ -281,6 +281,22 @@ export function mountAllTasks(view, {
     empty.append(text, actions);
   }
 
+  /**
+   * Read the filter that selects the rows: without the Shared filter while local, and without ids of deleted lists.
+   * @returns {object} a copy of the stored filter
+   */
+  function effectiveFilter() {
+    const filter = { ...model.get().filter };
+    if (!session || session.state() === 'local') {
+      delete filter.shared;
+    }
+    if (filter.lists) {
+      const listIds = new Set((data?.lists ?? []).map((list) => list.id));
+      filter.lists = filter.lists.filter((id) => id === NO_LIST || listIds.has(id));
+    }
+    return filter;
+  }
+
   /** Render the current data with the current filters and order. */
   function render() {
     if (!data || destroyed) {
@@ -309,15 +325,8 @@ export function mountAllTasks(view, {
       addBlock.append(info.element);
     }
     const stored = model.get();
-    const listIds = new Set(data.lists.map((list) => list.id));
-    const filter = { ...stored.filter };
-    if (!session || session.state() === 'local') {
-      delete filter.shared;
-    }
+    const filter = effectiveFilter();
     const state = { ...stored, filter };
-    if (filter.lists) {
-      filter.lists = filter.lists.filter((id) => id === NO_LIST || listIds.has(id));
-    }
     const ctx = { ...data, now: now(), lists: new Map(data.lists.map((list) => [list.id, list])) };
     renderedAt = ctx.now;
     // The display rule comes first, so a recurring task past its period end filters, sorts, and groups as to do.

@@ -660,6 +660,37 @@ test('a task added while the Lists filter selects lists joins no list, and Show 
   expect(problems).toEqual([]);
 });
 
+test('a Lists filter of a deleted list hides nothing, so adding a task shows no toast', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await openApp(page);
+  await seed(page);
+  const options = await openOptions(page);
+  const region = await openRow(options, 'Lists');
+  await region.getByLabel('Home').check();
+  await expect(page.locator(INFO)).toContainText('Lists:');
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const data = await store.snapshot();
+    await store.deleteList(data.lists.find((list) => list.name === 'Home').id);
+  });
+  // The out-of-band delete reaches the view when it mounts again; the view options keep the Lists filter.
+  await page.evaluate(() => {
+    location.hash = '#/settings'; 
+  });
+  await expect(page.getByLabel('Search or add a task')).toHaveCount(0);
+  await page.evaluate(() => {
+    location.hash = '#/'; 
+  });
+  await expect(page.locator(INFO)).not.toContainText('Lists:');
+  await page.getByLabel('Search or add a task').fill('Paint the door');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.locator('.task-row', { hasText: 'Paint the door' })).toBeVisible();
+  await expect(page.locator('.toast', { hasText: 'hides it' })).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
 /**
  * Read the list as text: each group header as `# name count`, each row as its description.
  * @param {import('@playwright/test').Page} page the page

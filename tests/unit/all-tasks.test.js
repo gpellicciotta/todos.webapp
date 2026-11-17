@@ -326,6 +326,29 @@ describe('mountAllTasks', () => {
     expect(viewModels.tasks.get().filter.lists).toBeUndefined();
   });
 
+  it('shows no hidden-task toast when the Lists filter names only deleted lists', async () => {
+    document.body.innerHTML = '<div data-view="tasks"></div>';
+    const lists = [{ id: 'home', name: 'Home' }];
+    const store = {
+      snapshot: async () => ({ lists, tasks: [], memberships: [], notes: [] }),
+      subscribe: () => () => {},
+      createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))),
+    };
+    const show = vi.fn();
+    const viewModels = { tasks: createViewModel('tasks', () => ({ getItem: () => null, setItem: vi.fn() })) };
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store, toaster: { show }, viewModels, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    viewModels.tasks.set({ ...viewModels.tasks.get(), filter: { ...viewModels.tasks.get().filter, lists: ['gone'] } });
+    const field = document.querySelector('[data-shortcut~="add"]');
+    field.value = 'Paint the door';
+    document.querySelector('.add-bar').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(store.createTask).toHaveBeenCalledTimes(1));
+    await screen.idle();
+    expect(show).not.toHaveBeenCalled();
+  });
+
   it('opens the task editor of a new task and gives the focus back to the add field', async () => {
     document.body.innerHTML = '<div data-view="tasks"></div>';
     const store = { ...fakeStore(), createTask: vi.fn(async (input) => (shapeTask({ id: 't2', ...input, status: 'ready', 'due-time': null, 'creation-time': new Date().toISOString() }))) };
