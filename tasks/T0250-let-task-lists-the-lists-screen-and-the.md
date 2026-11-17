@@ -5,20 +5,22 @@ session: claude-20261117-8a5b80
 needs: []
 branch: task/T0250-let-task-lists-the-lists-screen-and-the
 worktree: .plan/work/T0250-let-task-lists-the-lists-screen-and-the
-status: active
+status: completed
 started_at: "2026-11-17T01:07:48Z"
-ended_at: —
+ended_at: "2026-11-17T01:32:22Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 782.5, input: 70, output: 16128, cache_read: 2348430, cache_write: 60217}
-  review: {turns: 2, duration_s: 522.0, input: 186810, output: 21590, cache_read: 2442978}
-review_status: pending
+  review: {turns: 3, duration_s: 601.1, input: 220086, output: 22838, cache_read: 2708706, cache_write: 0}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-17T01:30:32Z"
-review_session: antigravity-20261117-735877
-work_duration: 1374.4
+review_session: codex-20261117-bc5fde
+work_duration: 1474.4
+reviewed_by: "@codex"
+completion-commit: f5eadb730e8017b291e9c4058fe42462df98172c
 ---
 # T0250: Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column
 
@@ -39,7 +41,7 @@ Stop cutting off task descriptions and list names while the screen has room to s
 - [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
 - [x] **[Visual]**    Capture before and after at 1024, 1440, and 1920 px, with and without the editor panel open.
 - [x] **[Doc]**       Update the UI design, the visual style guide, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -84,4 +86,11 @@ Stop cutting off task descriptions and list names while the screen has room to s
 
 - [2026-11-17] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 2 approved by @codex: Approved.
+  - Findings: [review-findings-2.md](T0250-let-task-lists-the-lists-screen-and-the/review-findings-2.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
