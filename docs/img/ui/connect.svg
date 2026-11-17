@@ -25,7 +25,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">Connect</text>
-  <text x="40" y="72" font-size="16" class="muted">After sign-in, local data uploads into the account; same-named lists merge.</text>
+  <text x="40" y="72" font-size="16" class="muted">After sign-in, the Connection section uploads local data; same-named lists merge.</text>
   <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
   <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
   <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
@@ -36,24 +36,26 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
     <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
-    <text x="60" y="37" font-size="20" class="bold">Connect</text>
-    <text x="16" y="98" font-size="14">Connecting syncs your data across devices</text>
-    <text x="16" y="120" font-size="14">and lets you share lists.</text>
-    <text x="16" y="142" font-size="14" class="muted">It needs an account, so you are</text>
-    <text x="16" y="164" font-size="14" class="muted">no longer anonymous. Access is by invitation.</text>
-    <circle cx="28" cy="204" r="12" class="icon"/>
-    <text x="28" y="209" font-size="13" class="bold" text-anchor="middle">✓</text>
-    <text x="52" y="209" font-size="14">Signed in as jane@example.com</text>
-    <circle cx="28" cy="240" r="12" class="icon"/>
-    <text x="28" y="245" font-size="13" class="bold" text-anchor="middle">…</text>
-    <text x="52" y="245" font-size="14">Uploading 5 lists and 34 tasks</text>
-    <rect x="16" y="272" width="358" height="12" rx="6" class="control"/>
-    <rect x="16" y="272" width="214.8" height="12" rx="6" class="primary"/>
-    <text x="374" y="304" font-size="12" class="muted" text-anchor="end">21 of 34 tasks</text>
-    <text x="16" y="342" font-size="14">Home merged into the account's Home.</text>
-    <text x="16" y="366" font-size="13" class="muted">Next: download the account's data.</text>
-    <rect x="16" y="384" width="63.36" height="44" rx="6" class="disabled"/>
-    <text x="47.68" y="410.9" font-size="14" text-anchor="middle">Done</text>
+    <text x="60" y="37" font-size="20" class="bold">Settings</text>
+    <rect x="12" y="72" width="366" height="520" rx="8" class="box"/>
+    <text x="28" y="102" font-size="16" class="bold">Connection</text>
+    <text x="28" y="130" font-size="14">Connecting syncs your data across devices</text>
+    <text x="28" y="152" font-size="14">and lets you share lists.</text>
+    <text x="28" y="174" font-size="14" class="muted">It needs an account, so you are</text>
+    <text x="28" y="196" font-size="14" class="muted">no longer anonymous. Access is by invitation.</text>
+    <circle cx="40" cy="236" r="12" class="icon"/>
+    <text x="40" y="241" font-size="13" class="bold" text-anchor="middle">✓</text>
+    <text x="64" y="241" font-size="14">Signed in as jane@example.com</text>
+    <circle cx="40" cy="272" r="12" class="icon"/>
+    <text x="40" y="277" font-size="13" class="bold" text-anchor="middle">…</text>
+    <text x="64" y="277" font-size="14">Uploading 5 lists and 34 tasks</text>
+    <rect x="28" y="304" width="334" height="12" rx="6" class="control"/>
+    <rect x="28" y="304" width="200.4" height="12" rx="6" class="primary"/>
+    <text x="362" y="336" font-size="12" class="muted" text-anchor="end">21 of 34 tasks</text>
+    <text x="28" y="374" font-size="14">Home merged into the account's Home.</text>
+    <text x="28" y="398" font-size="13" class="muted">Next: download the account's data.</text>
+    <rect x="28" y="416" width="63.36" height="44" rx="6" class="disabled"/>
+    <text x="59.68" y="442.9" font-size="14" text-anchor="middle">Done</text>
     <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
     <rect x="88.5" y="794" width="18" height="18" rx="3" class="icon"/>
     <text x="97.5" y="828" font-size="12" text-anchor="middle">Tasks</text>
@@ -80,23 +82,25 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="1082" cy="44" r="22" class="icon-fill"/>
     <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
     <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>
-    <text x="304" y="60" font-size="28" class="bold">Connect</text>
-    <text x="304" y="114" font-size="14">Connecting syncs your data across devices</text>
-    <text x="304" y="136" font-size="14">and lets you share lists.</text>
-    <text x="304" y="158" font-size="14" class="muted">It needs an account, so you are</text>
-    <text x="304" y="180" font-size="14" class="muted">no longer anonymous. Access is by invitation.</text>
-    <circle cx="316" cy="220" r="12" class="icon"/>
-    <text x="316" y="225" font-size="13" class="bold" text-anchor="middle">✓</text>
-    <text x="340" y="225" font-size="14">Signed in as jane@example.com</text>
-    <circle cx="316" cy="256" r="12" class="icon"/>
-    <text x="316" y="261" font-size="13" class="bold" text-anchor="middle">…</text>
-    <text x="340" y="261" font-size="14">Uploading 5 lists and 34 tasks</text>
-    <rect x="304" y="288" width="560" height="12" rx="6" class="control"/>
-    <rect x="304" y="288" width="336" height="12" rx="6" class="primary"/>
-    <text x="864" y="320" font-size="12" class="muted" text-anchor="end">21 of 34 tasks</text>
-    <text x="304" y="358" font-size="14">Home merged into the account's Home.</text>
-    <text x="304" y="382" font-size="13" class="muted">Next: download the account's data.</text>
-    <rect x="304" y="400" width="63.36" height="44" rx="6" class="disabled"/>
-    <text x="335.68" y="426.9" font-size="14" text-anchor="middle">Done</text>
+    <text x="304" y="60" font-size="28" class="bold">Settings</text>
+    <rect x="304" y="96" width="640" height="500" rx="8" class="box"/>
+    <text x="320" y="126" font-size="16" class="bold">Connection</text>
+    <text x="320" y="154" font-size="14">Connecting syncs your data across devices</text>
+    <text x="320" y="176" font-size="14">and lets you share lists.</text>
+    <text x="320" y="198" font-size="14" class="muted">It needs an account, so you are</text>
+    <text x="320" y="220" font-size="14" class="muted">no longer anonymous. Access is by invitation.</text>
+    <circle cx="332" cy="260" r="12" class="icon"/>
+    <text x="332" y="265" font-size="13" class="bold" text-anchor="middle">✓</text>
+    <text x="356" y="265" font-size="14">Signed in as jane@example.com</text>
+    <circle cx="332" cy="296" r="12" class="icon"/>
+    <text x="332" y="301" font-size="13" class="bold" text-anchor="middle">…</text>
+    <text x="356" y="301" font-size="14">Uploading 5 lists and 34 tasks</text>
+    <rect x="320" y="328" width="560" height="12" rx="6" class="control"/>
+    <rect x="320" y="328" width="336" height="12" rx="6" class="primary"/>
+    <text x="880" y="360" font-size="12" class="muted" text-anchor="end">21 of 34 tasks</text>
+    <text x="320" y="398" font-size="14">Home merged into the account's Home.</text>
+    <text x="320" y="422" font-size="13" class="muted">Next: download the account's data.</text>
+    <rect x="320" y="440" width="63.36" height="44" rx="6" class="disabled"/>
+    <text x="351.68" y="466.9" font-size="14" text-anchor="middle">Done</text>
   </g>
 </svg>

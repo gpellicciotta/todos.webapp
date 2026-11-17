@@ -28,7 +28,6 @@ import { createSession } from './sync/session.js';
 import { applyTheme, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { mountAllTasks } from './views/all-tasks.js';
-import { mountConnect } from './views/connect.js';
 import { createEditorPanel } from './views/editor-panel.js';
 import { mountList } from './views/list.js';
 import { mountListEditor } from './views/list-editor.js';
@@ -51,7 +50,7 @@ const MESSAGES = Object.freeze({
 
 /** Screens that fill a view, by view name. */
 const SCREENS = {
-  tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, 'sync-log': mountSyncLog, connect: mountConnect,
+  tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, 'sync-log': mountSyncLog,
 };
 
 /** Editors of the editor panel, by the editor name of their routes. */

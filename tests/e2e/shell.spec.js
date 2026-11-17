@@ -319,7 +319,7 @@ test('a connected account shows its initials and name, and Connected in the pane
   expect(problems).toEqual([]);
 });
 
-test('an expired session shows a banner with Sign in that opens the connect screen', async ({ page }) => {
+test('an expired session shows a banner with Sign in that opens Settings at the Connection section', async ({ page }) => {
   const problems = watch(page);
   await page.addInitScript(() => localStorage.setItem('todos.session', JSON.stringify({
     token: 'session-1', expiry: '2000-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server: 'http://127.0.0.1:1',
@@ -327,8 +327,9 @@ test('an expired session shows a banner with Sign in that opens the connect scre
   await page.goto('/');
   await ready(page);
   await page.locator('[data-session-banner]').getByRole('link', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/#\/connect$/);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connect');
+  await expect(page).toHaveURL(/#\/settings$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Settings');
+  await expect(page.getByRole('heading', { name: 'Connection' })).toBeFocused();
   await page.getByRole('button', { name: 'Jane Doe' }).click();
   await expect(page.locator('.account-menu__panel')).toContainText('Sign in needed');
   await expect(page.locator('.account-menu__panel').getByRole('menuitem')).toHaveText(['Sign in needed', 'Recycle bin', 'Settings']);
@@ -356,7 +357,6 @@ test('every route renders its title and its view, and the sidebar follows the li
     ['#/bin', 'Recycle bin', 'bin'],
     ['#/settings', 'Settings', 'settings'],
     ['#/settings/sync-log', 'Sync log', 'sync-log'],
-    ['#/connect', 'Connect', 'connect'],
   ];
   for (const [hash, title, view] of routes) {
     await page.evaluate((target) => {

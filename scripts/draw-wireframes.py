@@ -1206,11 +1206,13 @@ def settings_sections(f, x, y, width):
     top = section("Data", 100)
     left = button(f, x + 16, top, "Export backup") + 8
     button(f, left, top, "Import backup")
-    top = section("Connection", 232)
+    top = section("Connection", 328)
     f.text(x + 16, top + 14, "Not connected. Your data stays on this device.", 13)
-    f.text(x + 16, top + 36, "Connect to sync devices and share lists.", 13, "muted")
-    button(f, x + 16, top + 52, "Connect", "primary")
-    field(f, x + 16, top + 112, width - 32, "https://todos.pellicciotta.com", "Server URL")
+    f.text(x + 16, top + 36, fit("Connecting syncs your data across devices and lets you share lists.", width - 32, 13), 13)
+    f.text(x + 16, top + 58, fit("It needs an account, so you are no longer anonymous. Access is by invitation.", width - 32, 13), 13)
+    f.text(x + 16, top + 84, "Server: https://todos.pellicciotta.com", 13, "muted")
+    button(f, x + 16, top + 100, "Sign in", "primary")
+    field(f, x + 16, top + 160, width - 32, "https://todos.pellicciotta.com", "Server URL")
     top = section("About", 72)
     f.text(x + 16, top + 4, "Version 1.0.0 · Built 3 Nov 2026", 13, "muted")
     return y
@@ -1228,6 +1230,8 @@ def settings():
     settings_sections(wide, MAIN_LEFT, 96, 640)
     wide.text(MAIN_LEFT + 680, 140, "Connected, the Connection section shows the account,", 13, "muted")
     wide.text(MAIN_LEFT + 680, 160, "server, sync state, Sync log, and Disconnect.", 13, "muted")
+    wide.text(MAIN_LEFT + 680, 188, "Signing in, not invited, errors, and an expired", 13, "muted")
+    wide.text(MAIN_LEFT + 680, 208, "session also show here, in the same section.", 13, "muted")
     return "Settings", "Theme, Make Enter add, backups, connection, server URL, and app version.", compact, wide
 
 
@@ -1281,7 +1285,7 @@ def sync_log():
 
 
 def connect_steps(f, x, y, width):
-    """Draw the connect screen during the local data upload; return the bottom edge."""
+    """Draw the Connection section of Settings during the local data upload; return the bottom edge."""
     lines = [
         "Connecting syncs your data across devices",
         "and lets you share lists.",
@@ -1310,16 +1314,20 @@ def connect_steps(f, x, y, width):
 
 
 def connect():
-    """The connect screen while uploading local data."""
+    """The Settings Connection section while uploading local data."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Connect", "connected", back=True)
-    connect_steps(compact, 16, 84, compact.width - 32)
+    top_bar(compact, "Settings", "connected", back=True)
+    compact.rect(12, 72, compact.width - 24, 520, "box", radius=8)
+    compact.text(28, 102, "Connection", 16, "bold")
+    connect_steps(compact, 28, 116, compact.width - 56)
     bottom_nav(compact, "Settings")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "Settings")
-    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Connect", account="connected")
-    connect_steps(wide, MAIN_LEFT, 100, 560)
-    return "Connect", "After sign-in, local data uploads into the account; same-named lists merge.", compact, wide
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Settings", account="connected")
+    wide.rect(MAIN_LEFT, 96, 640, 500, "box", radius=8)
+    wide.text(MAIN_LEFT + 16, 126, "Connection", 16, "bold")
+    connect_steps(wide, MAIN_LEFT + 16, 140, 560)
+    return "Connect", "After sign-in, the Connection section uploads local data; same-named lists merge.", compact, wide
 
 
 def import_fields(f, x, y, width, actions=True):

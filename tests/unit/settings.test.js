@@ -49,16 +49,176 @@ describe('Connection in Settings while connected', () => {
   });
 });
 
-describe('Connect in Settings', () => {
-  it('opens the connect flow through the navigate option, not by setting the location hash', () => {
+describe('Connection section phases', () => {
+  const JANE = { name: 'Jane Doe', email: 'jane@example.com', server: 'https://todos.example.com' };
+  let screen;
+
+  afterEach(() => {
+    screen?.destroy();
+    screen = null;
+  });
+
+  /**
+   * Mount Settings on a mutable session stand-in.
+   * @param {{state?: string, finishing?: Promise<void>|null}} [options] the starting state and the sign-in result
+   * @returns {{view: HTMLElement, session: object, assign: Function, navigate: Function, section: HTMLElement}} the parts
+   */
+  function mount({ state = 'local', finishing = null } = {}) {
     const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const listeners = new Set();
+    const session = {
+      current: state,
+      state: () => session.current,
+      account: () => (session.current === 'local' ? null : JANE),
+      serverUrl: () => 'https://todos.example.com',
+      subscribe: (listener) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+      change: (next) => {
+        session.current = next;
+        listeners.forEach((listener) => listener(next));
+      },
+      finish: () => finishing,
+      start: vi.fn(() => 'https://auth.example.com/sign-in'),
+    };
+    const assign = vi.fn();
     const navigate = vi.fn();
-    const before = location.hash;
-    mountSettings(view, { session, navigate, toaster: { show: vi.fn() }, getStorage: () => null });
-    [...view.querySelectorAll('button')].find((button) => button.textContent === 'Connect').click();
-    expect(navigate).toHaveBeenCalledWith('#/connect');
-    expect(location.hash).toBe(before);
+    screen = mountSettings(view, { session, assign, navigate, toaster: { show: vi.fn() }, getStorage: () => null });
+    return { view, session, assign, navigate, section: view.querySelector('section[aria-labelledby="settings-connection"]') };
+  }
+
+  /**
+   * Find a control of the section by its text.
+   * @param {HTMLElement} section the section
+   * @param {string} text the label
+   * @returns {HTMLElement|undefined} the control
+   */
+  const control = (section, text) => [...section.querySelectorAll('button, a')].find((candidate) => candidate.textContent === text);
+
+  it('shows the intro and Sign in in local mode, and Sign in starts Auth without opening another screen', () => {
+    const { section, session, assign, navigate } = mount();
+    expect(section.textContent).toContain('Connecting syncs your data across devices and lets you share lists.');
+    expect(section.textContent).toContain('It needs an account, so you are no longer anonymous. Access is by invitation.');
+    expect(section.textContent).toContain('Server: https://todos.example.com');
+    expect(control(section, 'Connect')).toBeUndefined();
+    expect(section.querySelector('input[type="url"]')).not.toBeNull();
+    control(section, 'Sign in').click();
+    expect(session.start).toHaveBeenCalledWith(expect.objectContaining({ returnUrl: expect.stringMatching(/#\/connect$/) }));
+    expect(assign).toHaveBeenCalledWith('https://auth.example.com/sign-in');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('shows Signing in, then the connected state, and moves focus to its first action', async () => {
+    let finish;
+    const finishing = new Promise((resolve) => {
+      finish = resolve;
+    });
+    const { section, session } = mount({ finishing });
+    expect(section.textContent).toContain('Signing in');
+    expect(section.querySelector('button')).toBeNull();
+    session.current = 'connected';
+    finish();
+    await vi.waitFor(() => expect(section.textContent).toContain('Signed in as Jane Doe (jane@example.com)'));
+    expect(section.textContent).not.toContain('Signing in');
+    expect(document.activeElement.textContent).toBe('Sync log');
+    expect(control(section, 'Done')).toBeUndefined();
+  });
+
+  it('keeps Signing in while the session notifies a connected state, then focuses Sync log once the sign-in resolves', async () => {
+    let finish;
+    const finishing = new Promise((resolve) => {
+      finish = resolve;
+    });
+    const { section, session } = mount({ finishing });
+    session.change('connected');
+    expect(section.textContent).toContain('Signing in');
+    expect(section.textContent).not.toContain('Signed in as');
+    finish();
+    await vi.waitFor(() => expect(section.textContent).toContain('Signed in as Jane Doe (jane@example.com)'));
+    expect(document.activeElement.textContent).toBe('Sync log');
+  });
+
+  describe('returning to an expired session', () => {
+    it('shows Signing in while pending, and the connected state with focus once it succeeds', async () => {
+      let finish;
+      const finishing = new Promise((resolve) => {
+        finish = resolve;
+      });
+      const { section, session } = mount({ state: 'sign-in-needed', finishing });
+      expect(section.textContent).toContain('Signing in');
+      expect(section.textContent).not.toContain('Your session expired.');
+      session.change('connected');
+      expect(section.textContent).toContain('Signing in');
+      finish();
+      await vi.waitFor(() => expect(section.textContent).toContain('Signed in as Jane Doe (jane@example.com)'));
+      expect(section.textContent).not.toContain('Your session expired.');
+      expect(document.activeElement.textContent).toBe('Sync log');
+    });
+
+    it.each([['network', 'Sign-in did not finish.'], ['not-invited', 'Access to ToDo\'s is by invitation only.']])(
+      'shows the %s failure instead of the expired state, and focuses Sign in again', async (reason, text) => {
+        const failure = Object.assign(new Error('failed'), { name: 'AuthError', reason });
+        const { section, session } = mount({ state: 'sign-in-needed', finishing: Promise.reject(failure) });
+        await vi.waitFor(() => expect(section.textContent).toContain(text));
+        expect(section.textContent).not.toContain('Your session expired.');
+        expect(document.activeElement.textContent).toBe('Sign in again');
+        session.change('sign-in-needed');
+        expect(section.textContent).toContain(text);
+        expect(section.textContent).not.toContain('Your session expired.');
+      });
+  });
+
+  it.each(['local', 'connected', 'sign-in-needed'])('never shows the later version sync text, in the %s state', (state) => {
+    const { section } = mount({ state });
+    expect(section.textContent).not.toContain('later version');
+  });
+
+  it('announces a failed sign-in once, through the live region only, and moves focus to Sign in', async () => {
+    const failure = Object.assign(new Error('offline'), { name: 'AuthError', reason: 'network' });
+    const { section } = mount({ finishing: Promise.reject(failure) });
+    await vi.waitFor(() => expect(section.textContent).toContain('Sign-in did not finish.'));
+    expect(section.textContent).toContain('The server could not be reached.');
+    expect(section.querySelector('[role="alert"]')).toBeNull();
+    expect(section.querySelector('[aria-live="polite"]').textContent).toContain('Sign-in did not finish.');
+    expect(document.activeElement.textContent).toBe('Sign in');
+    expect(control(section, 'Back to Settings')).toBeUndefined();
+  });
+
+  it('says access is by invitation only, keeps the hint, and moves focus to Sign in', async () => {
+    const failure = Object.assign(new Error('no grant'), { name: 'AuthError', reason: 'not-invited' });
+    const { section } = mount({ finishing: Promise.reject(failure) });
+    await vi.waitFor(() => expect(section.textContent).toContain('Access to ToDo\'s is by invitation only.'));
+    expect(section.textContent).toContain('Ask someone who uses ToDo\'s to invite you.');
+    expect(document.activeElement.textContent).toBe('Sign in');
+    expect(control(section, 'Back to Settings')).toBeUndefined();
+  });
+
+  it('shows the expired text with a Sign in again button that signs in directly', () => {
+    const { section, assign, navigate } = mount({ state: 'sign-in-needed' });
+    expect(section.textContent).toContain('Your session expired.');
+    const again = control(section, 'Sign in again');
+    expect(again.tagName).toBe('BUTTON');
+    again.click();
+    expect(assign).toHaveBeenCalledWith('https://auth.example.com/sign-in');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('on the #/connect route, scrolls the section into view, focuses its heading, and replaces the address with #/settings', async () => {
+    const { section, navigate } = mount();
+    section.scrollIntoView = vi.fn();
+    screen.update({ name: 'connect', view: 'settings', params: {} });
+    expect(navigate).toHaveBeenCalledWith('#/settings', { replace: true });
+    await vi.waitFor(() => expect(document.activeElement).toBe(section.querySelector('#settings-connection')));
+    expect(section.scrollIntoView).toHaveBeenCalled();
+  });
+
+  it('leaves the focus alone on the plain settings route', () => {
+    const { navigate } = mount();
+    const before = document.activeElement;
+    screen.update({ name: 'settings', view: 'settings', params: {} });
+    expect(document.activeElement).toBe(before);
+    expect(navigate).not.toHaveBeenCalled();
   });
 });
 
@@ -72,6 +232,7 @@ describe('Delete all data in Settings', () => {
     const view = document.body.appendChild(document.createElement('div'));
     const session = {
       state: () => state,
+      serverUrl: () => 'https://todos.example.com',
       account: () => ({ name: 'Jane', email: 'jane@example.com', server: 'https://todos.example.com' }),
       subscribe: () => () => {},
     };
@@ -173,6 +334,7 @@ describe('Delete all data in Settings', () => {
     const listeners = new Set();
     const session = {
       state: () => state,
+      serverUrl: () => 'https://todos.example.com',
       account: () => ({ name: 'Jane', email: 'jane@example.com', server: 'https://todos.example.com' }),
       subscribe: (listener) => {
         listeners.add(listener);
@@ -261,7 +423,7 @@ describe('Adding tasks in Settings', () => {
       removeItem: (key) => stored.delete(key),
     };
     const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
     mountSettings(view, { session, toaster, getStorage: () => storage });
     const section = view.querySelector('section[aria-labelledby="settings-adding"]');
     expect(section.querySelector('h2').textContent).toBe('Adding tasks');
@@ -295,7 +457,7 @@ describe('Adding tasks in Settings', () => {
   it('reports a choice that could not be saved', () => {
     const toaster = { show: vi.fn() };
     const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
     const blocked = { getItem: () => null, setItem: () => {
       throw new Error('blocked');
     } };
@@ -321,7 +483,7 @@ describe('Keyboard shortcuts section', () => {
   /** @returns {HTMLElement} the Keyboard shortcuts section of a freshly mounted Settings screen */
   function mountShortcuts() {
     const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
     mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
     return view.querySelector('section[aria-labelledby="settings-shortcuts"]');
   }
@@ -345,7 +507,7 @@ describe('Keyboard shortcuts section', () => {
 
   it('is its own section, before About, which stays the last section', () => {
     const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
     mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
     const titles = [...view.querySelectorAll('section > h2')].map((heading) => heading.textContent);
     expect(titles.slice(-2)).toEqual(['Keyboard shortcuts', 'About']);
@@ -354,7 +516,7 @@ describe('Keyboard shortcuts section', () => {
 
   it('explains the add field syntax in About, before the source link', () => {
     const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
     mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
     const about = view.querySelector('section[aria-labelledby="settings-about"]');
     const syntax = about.querySelector('.settings__syntax');

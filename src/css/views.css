@@ -590,6 +590,21 @@
   font-size: var(--text-sm);
 }
 
+/* The Connection section's live region and body lay out as if their children were the section's own. */
+.settings__body {
+  display: contents;
+}
+
+/* The live region keeps its own box, so assistive technology always sees it. */
+.settings__live {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settings__live:empty {
+  display: none;
+}
+
 .settings__text + .settings__hint,
 .settings__actions + .settings__hint {
   margin-block-start: calc(var(--space-2) - var(--space-3));

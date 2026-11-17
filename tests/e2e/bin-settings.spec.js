@@ -280,8 +280,8 @@ test('Settings shows the local connection card, the server URL, the enabled back
   for (const name of ['Export backup', 'Import backup']) {
     await expect(page.getByRole('button', { name, exact: true })).toBeEnabled();
   }
-  const connect = page.getByRole('button', { name: 'Connect', exact: true });
-  await expect(connect).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Connect', exact: true })).toHaveCount(0);
   await expect(page.locator('.settings')).toContainText('Not connected. Your data stays on this device.');
   const url = page.getByRole('textbox', { name: 'Server URL' });
   await expect(url).toHaveValue('https://todos.pellicciotta.com');

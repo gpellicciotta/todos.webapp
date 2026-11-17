@@ -54,8 +54,19 @@ const STRINGS = Object.freeze({
   deleteAllFailed: 'The data could not be deleted, and nothing changed. Try again.',
   connection: 'Connection',
   localState: 'Not connected. Your data stays on this device.',
-  localHint: 'Connect to sync devices and share lists.',
-  connect: 'Connect',
+  gains: 'Connecting syncs your data across devices and lets you share lists.',
+  cost: 'It needs an account, so you are no longer anonymous. Access is by invitation.',
+  signIn: 'Sign in',
+  working: 'Signing in…',
+  notInvited: 'Access to ToDo\'s is by invitation only.',
+  notInvitedHint: 'Ask someone who uses ToDo\'s to invite you. Your data stays on this device.',
+  failed: 'Sign-in did not finish.',
+  reasons: Object.freeze({
+    network: 'The server could not be reached. Check the connection and try again.',
+    'not-started': 'Start the sign-in from this section, then try again.',
+    'state-mismatch': 'The sign-in did not come from this section. Start it again from here.',
+    rejected: 'The server did not accept the sign-in. Try again.',
+  }),
   signedIn: (account) => (account.name ? `Signed in as ${account.name} (${account.email})` : `Signed in as ${account.email}`),
   server: (url) => `Server: ${url}`,
   syncState: (label) => `Sync state: ${label}`,
@@ -482,9 +493,41 @@ async function askDisconnect(doc, parent, opener, pending) {
  * @param {object} options the session, the sync hook, the preference storage, the toaster, and `navigate`
  * @returns {{element: HTMLElement, destroy: () => void}} the section
  */
-function connectionSection(doc, { getStorage, session, sync, toaster, navigate }) {
+function connectionSection(doc, { getStorage, session, sync, toaster, assign }) {
   const element = section(doc, 'connection', STRINGS.connection);
   const heading = element.firstChild;
+  heading.tabIndex = -1;
+  // The polite live region stays in place, so each phase message is announced once as its text changes.
+  const live = make(doc, 'div', 'settings__live');
+  live.setAttribute('aria-live', 'polite');
+  // Render replaces the body only, so the heading keeps the focus the #/connect route gave it.
+  const body = make(doc, 'div', 'settings__body');
+  element.append(live, body);
+  let alive = true;
+  /** The sign-in phase that overrides the session state: `working`, `not-invited`, `error`, or null. */
+  let phase = null;
+  let reason = null;
+
+  /** Send the browser to Auth, after remembering the sign-in on this device. */
+  function signIn() {
+    const win = doc.defaultView;
+    const returnUrl = new URL('#/connect', win.location.href).href;
+    const logoUrl = new URL('img/app-icon-192.png', win.location.href).href;
+    (assign ?? ((url) => win.location.assign(url)))(session.start({ returnUrl, logoUrl }));
+  }
+
+  /**
+   * Create a status line with an icon.
+   * @param {'check'|'alert'} icon the icon
+   * @param {string} text the text
+   * @param {boolean} [isError] whether the line shows a problem
+   * @returns {HTMLElement} the line
+   */
+  function status(icon, text, isError = false) {
+    const line = make(doc, 'p', `settings__text connect__status${isError ? ' connect__status--error' : ''}`);
+    line.append(spriteIcon(doc, icon), doc.createTextNode(text));
+    return line;
+  }
 
   /**
    * Ask, optionally sync, then disconnect.
@@ -517,38 +560,107 @@ function connectionSection(doc, { getStorage, session, sync, toaster, navigate }
     }
   }
 
+  /**
+   * Create the status line and hint of a failed sign-in.
+   * @returns {HTMLElement[]} the lines
+   */
+  function failureParts() {
+    return phase === 'not-invited'
+      ? [status('alert', STRINGS.notInvited, true), make(doc, 'p', 'settings__hint connect__hint--error', STRINGS.notInvitedHint)]
+      : [status('alert', STRINGS.failed, true), make(doc, 'p', 'settings__hint connect__hint--error', STRINGS.reasons[reason] ?? STRINGS.reasons.rejected)];
+  }
+
   /** Show the controls of the current state. */
   function render() {
     const state = session.state();
     const account = session.account();
     const actions = make(doc, 'div', 'settings__actions');
-    if (state === 'local') {
-      actions.append(button(doc, 'button', STRINGS.connect, () => navigate('#/connect')));
-      element.replaceChildren(heading, make(doc, 'p', 'settings__text', STRINGS.localState),
-        make(doc, 'p', 'settings__hint', STRINGS.localHint), actions, serverField(doc, getStorage));
+    const justFinished = phase !== 'working' && live.dataset.phase === 'working';
+    // The sign-in phase lasts until its promise settles, whatever the session notifies meanwhile: `save()` notifies
+    // a connected state before the code exchange resolves, and an expired session stays expired while a return fails.
+    if (phase === 'working') {
+      live.dataset.phase = 'working';
+      live.replaceChildren(make(doc, 'p', 'settings__text', STRINGS.working));
+      body.replaceChildren();
       return;
     }
-    const status = sync?.state?.().status;
-    const parts = [make(doc, 'p', 'settings__text', STRINGS.signedIn(account)), make(doc, 'p', 'settings__hint', STRINGS.server(account.server))];
-    if (status) {
-      parts.push(make(doc, 'p', 'settings__hint settings__sync-state', STRINGS.syncState(SYNC_STRINGS.labels[state === 'sign-in-needed' ? 'sign-in-needed' : status] ?? status)));
+    if (state === 'local') {
+      const parts = phase === 'not-invited' || phase === 'error'
+        ? failureParts()
+        : [make(doc, 'p', 'settings__text', STRINGS.localState), make(doc, 'p', 'settings__text', STRINGS.gains), make(doc, 'p', 'settings__text', STRINGS.cost)];
+      live.dataset.phase = phase ?? 'intro';
+      live.replaceChildren(...parts);
+      actions.append(button(doc, 'button', STRINGS.signIn, signIn));
+      body.replaceChildren(make(doc, 'p', 'settings__hint', STRINGS.server(session.serverUrl())), actions, serverField(doc, getStorage));
+      if (justFinished) {
+        actions.firstElementChild.focus();
+      }
+      return;
     }
+    const syncStatus = sync?.state?.().status;
+    const failure = phase === 'not-invited' || phase === 'error';
+    live.dataset.phase = failure ? phase : state === 'sign-in-needed' ? 'expired' : 'signed-in';
+    if (failure) {
+      live.replaceChildren(...failureParts());
+    }
+    else {
+      live.replaceChildren(state === 'sign-in-needed' ? make(doc, 'p', 'settings__text', STRINGS.expired) : status('check', STRINGS.signedIn(account)));
+    }
+    const parts = [];
     if (state === 'sign-in-needed') {
-      parts.push(make(doc, 'p', 'settings__text', STRINGS.expired));
-      const again = make(doc, 'a', 'button', STRINGS.signInAgain);
-      again.href = '#/connect';
-      actions.append(again);
+      parts.push(make(doc, 'p', 'settings__text', STRINGS.signedIn(account)));
+      actions.append(button(doc, 'button', STRINGS.signInAgain, signIn));
+    }
+    parts.push(make(doc, 'p', 'settings__hint', STRINGS.server(account.server)));
+    if (syncStatus) {
+      parts.push(make(doc, 'p', 'settings__hint settings__sync-state', STRINGS.syncState(SYNC_STRINGS.labels[state === 'sign-in-needed' ? 'sign-in-needed' : syncStatus] ?? syncStatus)));
     }
     const leave = button(doc, 'button button--secondary', STRINGS.disconnect, () => disconnect(leave));
     const log = make(doc, 'a', 'button button--secondary', STRINGS.syncLog);
     log.href = '#/settings/sync-log';
     actions.append(log, leave);
-    element.replaceChildren(heading, ...parts, actions);
+    body.replaceChildren(...parts, actions);
+    if (justFinished) {
+      actions.firstElementChild.focus();
+    }
   }
 
+  /**
+   * Finish an Auth return captured by the shell, showing Signing in until the sign-in settles.
+   * @returns {void}
+   */
+  function finishReturn() {
+    const finishing = session.finish?.();
+    if (!finishing) {
+      return;
+    }
+    phase = 'working';
+    finishing.then(() => {
+      phase = null;
+    }, (error) => {
+      if (error?.name !== 'AuthError') {
+        console.error('Sign-in failed:', error);
+      }
+      phase = error?.reason === 'not-invited' ? 'not-invited' : 'error';
+      reason = error?.reason;
+    }).then(() => {
+      if (alive) {
+        render();
+      }
+    });
+  }
+
+  finishReturn();
   render();
   const stops = [session.subscribe(render), sync?.subscribe?.(render)];
-  return { element, destroy: () => stops.forEach((stop) => stop?.()) };
+  return {
+    element,
+    heading,
+    destroy() {
+      alive = false;
+      stops.forEach((stop) => stop?.());
+    },
+  };
 }
 
 /**
@@ -603,23 +715,43 @@ function aboutSection(doc) {
  * @param {{show: (message: string) => void}} [options.toaster] shows confirmations and problems
  * @param {object} [options.session] the session, for the Connection section
  * @param {{pendingCount: () => Promise<number>, syncNow: () => Promise<void>, state: () => object, subscribe: Function}} [options.sync] the sync engine
- * @param {(hash: string) => void} [options.navigate] opens a route, setting the location hash by default
- * @returns {{update: () => void, destroy: () => void}} the screen
+ * @param {(hash: string, settings?: {replace?: boolean}) => void} [options.navigate] opens a route, setting the location hash by default
+ * @param {(url: string) => void} [options.assign] opens the Auth URL, `location.assign` by default
+ * @returns {{update: (route?: object) => void, destroy: () => void}} the screen
  */
 export function mountSettings(view, {
-  getStorage, store, toaster, session = createSession({ getStorage }), sync, navigate = (hash) => {
-    view.ownerDocument.defaultView.location.hash = hash;
+  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, navigate = (hash, { replace = false } = {}) => {
+    const { location } = view.ownerDocument.defaultView;
+    if (replace) {
+      location.replace(hash);
+    }
+    else {
+      location.hash = hash;
+    }
   },
 } = {}) {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
-  const connection = connectionSection(doc, { getStorage, session, sync, toaster, navigate });
+  const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign });
   const data = dataSection(doc, store, toaster, { session, sync });
   root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
   view.replaceChildren(root);
   return {
-    /** Follow a route of this view; Settings has no sub-routes of its own. */
-    update() {},
+    /**
+     * Follow a route of this view. `#/connect`, the Auth return alias, scrolls the Connection section into view,
+     * focuses its heading, and replaces the address with `#/settings`, so Back never returns to the alias.
+     * @param {{name?: string}} [route] the route
+     */
+    update(route) {
+      if (route?.name === 'connect') {
+        navigate('#/settings', { replace: true });
+        // The router restores the scroll position and the shell focuses the main area once this route renders; go after both.
+        setTimeout(() => {
+          connection.element.scrollIntoView?.({ block: 'start' });
+          connection.heading.focus({ preventScroll: true });
+        }, 0);
+      }
+    },
 
     /** Stop following the session; the controls go with the view. */
     destroy() {

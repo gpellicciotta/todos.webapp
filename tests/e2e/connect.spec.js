@@ -79,18 +79,24 @@ test('local mode makes no network request outside the app origin', async ({ page
   await open(page, '#/tasks');
   await page.getByRole('button', { name: 'Local User' }).click();
   await page.locator('.account-menu__panel').getByRole('menuitem', { name: 'Settings' }).click();
-  await page.getByRole('button', { name: 'Connect', exact: true }).click();
-  await expect(page).toHaveURL(/#\/connect$/);
-  await expect(page.locator('[data-view="connect"]')).toContainText('no longer anonymous');
+  await expect(page.locator('section[aria-labelledby="settings-connection"]')).toContainText('no longer anonymous');
+  await expect(page.getByRole('button', { name: 'Connect', exact: true })).toHaveCount(0);
   expect(foreign).toEqual([]);
 });
 
-test('a mocked Auth redirect returns to #/connect signed in', async ({ page }) => {
-  const calls = await mockServices(page);
+test('#/connect opens Settings at the Connection section and replaces the address', async ({ page }) => {
   await open(page, '#/connect');
+  await expect(page).toHaveURL(/#\/settings$/);
+  await expect(page.getByRole('heading', { name: 'Connection' })).toBeFocused();
+  await expect(page.locator('section[aria-labelledby="settings-connection"]')).toContainText('no longer anonymous');
+});
+
+test('signing in from Settings returns through #/connect and lands in Settings, connected', async ({ page }) => {
+  const calls = await mockServices(page);
+  await open(page, '#/settings');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByText('Signed in as Jane Doe (jane@example.com)')).toBeVisible();
-  await expect(page).toHaveURL(/#\/connect$/);
+  await expect(page).toHaveURL(/#\/settings$/);
   // The sync engine may start its own account read before this check runs, so only the first three calls are fixed.
   expect(calls.slice(0, 3).map((call) => `${call.method} ${new URL(call.url).pathname}`)).toEqual([
     'GET /api/auth-token/callback', 'POST /api/auth-token', 'GET /api/users/me',
@@ -98,26 +104,26 @@ test('a mocked Auth redirect returns to #/connect signed in', async ({ page }) =
   expect(new URL(calls[0].url).searchParams.get('authorization-code')).toBe('auth-code-1');
   expect(calls[1].authorization).toBe(`Basic ${Buffer.from('jane@example.com:123456').toString('base64')}`);
   expect(await storedSession(page)).toMatchObject({ token: 'session-1', email: 'jane@example.com', server: SERVER });
-  await page.getByRole('button', { name: 'Done' }).click();
-  await expect(page).toHaveURL(/#\/tasks$/);
+  await expect(page.getByRole('button', { name: 'Done' })).toHaveCount(0);
 });
 
 test('an uninvited user sees that access is by invitation only, and stays local', async ({ page }) => {
   await mockServices(page, { callbackStatus: 403 });
-  await open(page, '#/connect');
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.locator('[data-view="connect"]')).toContainText('Access to ToDo\'s is by invitation only.');
-  await expect(page).toHaveURL(/#\/connect$/);
-  expect(await storedSession(page)).toBeNull();
   await open(page, '#/settings');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.locator('section[aria-labelledby="settings-connection"]')).toContainText('Access to ToDo\'s is by invitation only.');
+  await expect(page).toHaveURL(/#\/settings$/);
+  expect(await storedSession(page)).toBeNull();
+  await page.reload();
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
   await expect(page.locator('.settings')).toContainText('Not connected. Your data stays on this device.');
 });
 
 test('a code that no sign-in on this device started is ignored', async ({ page }) => {
   const calls = await mockServices(page);
   await open(page, '#/connect?authorization-code=crafted');
-  await expect(page).toHaveURL(/#\/connect$/);
-  await expect(page.locator('[data-view="connect"]')).toContainText('Sign-in did not finish.');
+  await expect(page).toHaveURL(/#\/settings$/);
+  await expect(page.locator('section[aria-labelledby="settings-connection"]')).toContainText('Sign-in did not finish.');
   expect(calls).toEqual([]);
 });
 
@@ -129,10 +135,10 @@ test('a return whose state differs from the one sent is rejected before any requ
     sent = params.get('app-state');
     return route.fulfill({ status: 302, headers: { location: `${params.get('app-redirect-url')}?state=forged&authorization-code=auth-code-1` } });
   });
-  await open(page, '#/connect');
+  await open(page, '#/settings');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.locator('[data-view="connect"]')).toContainText('Sign-in did not finish.');
-  await expect(page).toHaveURL(/#\/connect$/);
+  await expect(page.locator('section[aria-labelledby="settings-connection"]')).toContainText('Sign-in did not finish.');
+  await expect(page).toHaveURL(/#\/settings$/);
   expect(sent).toMatch(/^[A-Za-z0-9_-]{22,}$/);
   expect(calls).toEqual([]);
   expect(await storedSession(page)).toBeNull();
@@ -167,7 +173,7 @@ test('an expired session asks to sign in again and keeps local work going', asyn
   await open(page, '#/settings');
   const card = page.locator('section[aria-labelledby="settings-connection"]');
   await expect(card).toContainText('Your session expired.');
-  await expect(card.getByRole('link', { name: 'Sign in again' })).toHaveAttribute('href', '#/connect');
+  await expect(card.getByRole('button', { name: 'Sign in again' })).toBeVisible();
   await open(page, '#/tasks');
   await page.getByRole('textbox', { name: 'Search or add a task' }).fill('Water the plants');
   await page.getByRole('button', { name: 'Add', exact: true }).click();

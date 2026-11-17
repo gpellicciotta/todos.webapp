@@ -42,7 +42,7 @@ export const STRINGS = Object.freeze({
   lists: 'Lists',
   titles: Object.freeze({
     tasks: 'All tasks', lists: 'Lists', list: 'List', bin: 'Recycle bin',
-    settings: 'Settings', 'sync-log': 'Sync log', connect: 'Connect',
+    settings: 'Settings', 'sync-log': 'Sync log',
   }),
 });
 
@@ -53,7 +53,7 @@ const DESTINATIONS = [
 ];
 
 /** Navigation destination of each view; the Recycle bin and Settings destinations sit in the user menu. */
-const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin', settings: 'settings', 'sync-log': 'settings', connect: 'connect' };
+const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin', settings: 'settings', 'sync-log': 'settings' };
 
 /**
  * Read the device's theme preference; storage that is missing or blocked means the system theme.

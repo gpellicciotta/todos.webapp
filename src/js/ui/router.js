@@ -24,7 +24,8 @@ const ROUTES = [
   { name: 'bin', path: 'bin', view: 'bin', editor: null },
   { name: 'settings', path: 'settings', view: 'settings', editor: null },
   { name: 'sync-log', path: 'settings/sync-log', view: 'sync-log', editor: null },
-  { name: 'connect', path: 'connect', view: 'connect', editor: null },
+  // The alias of the Auth return: it opens Settings, which scrolls to the Connection section and replaces the address.
+  { name: 'connect', path: 'connect', view: 'settings', editor: null },
 ].map((route) => ({ ...route, segments: route.path.split('/') }));
 
 /**

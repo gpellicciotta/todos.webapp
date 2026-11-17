@@ -175,7 +175,8 @@ test('an expired session shows Sign in needed and a banner with Sign in', async 
   await expect(indicator(page)).toHaveAttribute('data-state', 'sign-in');
   await expect(page.locator('[data-session-banner]')).toContainText('Your session expired.');
   await page.locator('[data-session-banner]').getByRole('link', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/#\/connect$/);
+  await expect(page).toHaveURL(/#\/settings$/);
+  await expect(page.locator('section[aria-labelledby="settings-connection"]')).toContainText('Your session expired.');
 });
 
 

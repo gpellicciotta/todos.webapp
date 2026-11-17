@@ -18,7 +18,7 @@ const ROUTES = [
   ['#/bin', 'bin', {}, 'bin', null],
   ['#/settings', 'settings', {}, 'settings', null],
   ['#/settings/sync-log', 'sync-log', {}, 'sync-log', null],
-  ['#/connect', 'connect', {}, 'connect', null],
+  ['#/connect', 'connect', {}, 'settings', null],
 ];
 
 /**

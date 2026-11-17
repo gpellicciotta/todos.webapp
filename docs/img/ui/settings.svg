@@ -55,18 +55,20 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="94.96" y="378.9" font-size="14" text-anchor="middle">Export backup</text>
     <rect x="169.92" y="352" width="133.92" height="44" rx="6" class="control"/>
     <text x="236.88" y="378.9" font-size="14" text-anchor="middle">Import backup</text>
-    <rect x="12" y="420" width="366" height="232" rx="8" class="box"/>
+    <rect x="12" y="420" width="366" height="328" rx="8" class="box"/>
     <text x="28" y="450" font-size="16" class="bold">Connection</text>
     <text x="28" y="478" font-size="13">Not connected. Your data stays on this device.</text>
-    <text x="28" y="500" font-size="13" class="muted">Connect to sync devices and share lists.</text>
-    <rect x="28" y="516" width="86.88" height="44" rx="6" class="primary"/>
-    <text x="71.44" y="542.9" font-size="14" class="on-primary" text-anchor="middle">Connect</text>
-    <text x="28" y="590" font-size="13" class="muted">Server URL</text>
-    <rect x="28" y="598" width="334" height="44" rx="6" class="control"/>
-    <text x="40" y="625" font-size="14">https://todos.pellicciotta.com</text>
-    <rect x="12" y="664" width="366" height="72" rx="8" class="box"/>
-    <text x="28" y="694" font-size="16" class="bold">About</text>
-    <text x="28" y="712" font-size="13" class="muted">Version 1.0.0 · Built 3 Nov 2026</text>
+    <text x="28" y="500" font-size="13">Connecting syncs your data across devices an…</text>
+    <text x="28" y="522" font-size="13">It needs an account, so you are no longer an…</text>
+    <text x="28" y="548" font-size="13" class="muted">Server: https://todos.pellicciotta.com</text>
+    <rect x="28" y="564" width="86.88" height="44" rx="6" class="primary"/>
+    <text x="71.44" y="590.9" font-size="14" class="on-primary" text-anchor="middle">Sign in</text>
+    <text x="28" y="638" font-size="13" class="muted">Server URL</text>
+    <rect x="28" y="646" width="334" height="44" rx="6" class="control"/>
+    <text x="40" y="673" font-size="14">https://todos.pellicciotta.com</text>
+    <rect x="12" y="760" width="366" height="72" rx="8" class="box"/>
+    <text x="28" y="790" font-size="16" class="bold">About</text>
+    <text x="28" y="808" font-size="13" class="muted">Version 1.0.0 · Built 3 Nov 2026</text>
     <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
     <rect x="88.5" y="794" width="18" height="18" rx="3" class="icon"/>
     <text x="97.5" y="828" font-size="12" text-anchor="middle">Tasks</text>
@@ -114,19 +116,23 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="386.96" y="402.9" font-size="14" text-anchor="middle">Export backup</text>
     <rect x="461.92" y="376" width="133.92" height="44" rx="6" class="control"/>
     <text x="528.88" y="402.9" font-size="14" text-anchor="middle">Import backup</text>
-    <rect x="304" y="444" width="640" height="232" rx="8" class="box"/>
+    <rect x="304" y="444" width="640" height="328" rx="8" class="box"/>
     <text x="320" y="474" font-size="16" class="bold">Connection</text>
     <text x="320" y="502" font-size="13">Not connected. Your data stays on this device.</text>
-    <text x="320" y="524" font-size="13" class="muted">Connect to sync devices and share lists.</text>
-    <rect x="320" y="540" width="86.88" height="44" rx="6" class="primary"/>
-    <text x="363.44" y="566.9" font-size="14" class="on-primary" text-anchor="middle">Connect</text>
-    <text x="320" y="614" font-size="13" class="muted">Server URL</text>
-    <rect x="320" y="622" width="608" height="44" rx="6" class="control"/>
-    <text x="332" y="649" font-size="14">https://todos.pellicciotta.com</text>
-    <rect x="304" y="688" width="640" height="72" rx="8" class="box"/>
-    <text x="320" y="718" font-size="16" class="bold">About</text>
-    <text x="320" y="736" font-size="13" class="muted">Version 1.0.0 · Built 3 Nov 2026</text>
+    <text x="320" y="524" font-size="13">Connecting syncs your data across devices and lets you share lists.</text>
+    <text x="320" y="546" font-size="13">It needs an account, so you are no longer anonymous. Access is by invitation.</text>
+    <text x="320" y="572" font-size="13" class="muted">Server: https://todos.pellicciotta.com</text>
+    <rect x="320" y="588" width="86.88" height="44" rx="6" class="primary"/>
+    <text x="363.44" y="614.9" font-size="14" class="on-primary" text-anchor="middle">Sign in</text>
+    <text x="320" y="662" font-size="13" class="muted">Server URL</text>
+    <rect x="320" y="670" width="608" height="44" rx="6" class="control"/>
+    <text x="332" y="697" font-size="14">https://todos.pellicciotta.com</text>
+    <rect x="304" y="784" width="640" height="72" rx="8" class="box"/>
+    <text x="320" y="814" font-size="16" class="bold">About</text>
+    <text x="320" y="832" font-size="13" class="muted">Version 1.0.0 · Built 3 Nov 2026</text>
     <text x="984" y="140" font-size="13" class="muted">Connected, the Connection section shows the account,</text>
     <text x="984" y="160" font-size="13" class="muted">server, sync state, Sync log, and Disconnect.</text>
+    <text x="984" y="188" font-size="13" class="muted">Signing in, not invited, errors, and an expired</text>
+    <text x="984" y="208" font-size="13" class="muted">session also show here, in the same section.</text>
   </g>
 </svg>

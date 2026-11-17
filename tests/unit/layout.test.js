@@ -78,9 +78,9 @@ describe('renderShell navigation', () => {
     shell.update({ view: 'bin', viewKey: 'bin', params: {} }, 'Recycle bin');
     expect(root.querySelector('.account-menu__panel [data-nav="bin"]').getAttribute('aria-current')).toBe('page');
     expect(root.querySelector('.account-menu__panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
-    shell.update({ view: 'connect', viewKey: 'connect', params: {} }, 'Connect');
-    expect(root.querySelector('.account-menu__panel [data-nav="connect"]').getAttribute('aria-current')).toBe('page');
-    expect(root.querySelector('.account-menu__panel [data-nav="settings"]').hasAttribute('aria-current')).toBe(false);
+    shell.update({ name: 'connect', view: 'settings', viewKey: 'settings', params: {} }, 'Settings');
+    expect(root.querySelector('.account-menu__panel [data-nav="settings"]').getAttribute('aria-current')).toBe('page');
+    expect(root.querySelector('.account-menu__panel [data-nav="connect"]').hasAttribute('aria-current')).toBe(false);
     expect(root.querySelector('.account-menu__panel [data-nav="bin"]').hasAttribute('aria-current')).toBe(false);
   });
 });

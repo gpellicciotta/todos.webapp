@@ -117,7 +117,7 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
 The vendored [shell.css](../../src/vendor/design/css/shell.css) places its areas, as ADR-0004 of support.webapp defines.
 One DOM holds both layouts; [views.css](../../src/css/views.css) fills the main area with the row views and their add block.
 Those views are All tasks, a list, Lists, and Recycle bin.
-Settings, the Sync log, and Connect stay in a centered `--width-main` column.
+Settings and the Sync log stay in a centered `--width-main` column.
 - **[Decided]** The shell runs in the main scroll mode, `app--scroll-main`, with every area of the todos setup.
   A skip link opens the page; it focuses the main column without changing the route.
 - The action bar holds the add block of the task views; it joins the page only while a view puts content in it.
@@ -128,7 +128,7 @@ Settings, the Sync log, and Connect stay in a centered `--width-main` column.
 - The wide layout shows the title above the main column, with the user button at its right end.
 - **[Decided]** From 64rem, the menu of the current view moves from the view header to the top bar, as in the Google Cloud console.
   The button is named "All tasks actions" or "{{list}} actions" and opens the same menu as before.
-  Lists, Recycle bin, Settings, Sync log, and Connect have no actions, so the button is hidden.
+  Lists, Recycle bin, Settings, and Sync log have no actions, so the button is hidden.
   Below 64rem the menu stays in the view header with the horizontal More icon; crossing 64rem closes an open menu.
 - The sync indicator sits beside the user button, before the inbox bell; see Sync Indicator below.
 - A session banner above the view offers Sign in while the session expired.
@@ -139,11 +139,11 @@ Settings, the Sync log, and Connect stay in a centered `--width-main` column.
   List views also carry `data-list-id`; the screen tasks fill these views.
   [all-tasks.js](../../src/js/views/all-tasks.js) fills `tasks`, [lists.js](../../src/js/views/lists.js) `lists`,
   [recycle-bin.js](../../src/js/views/recycle-bin.js) `bin`, [settings.js](../../src/js/views/settings.js) `settings`,
-  and [connect.js](../../src/js/views/connect.js) `connect`, and [sync-log.js](../../src/js/views/sync-log.js) `sync-log`.
+  and [sync-log.js](../../src/js/views/sync-log.js) `sync-log`.
 - A banner area above the view holds lasting notices, such as a newer version in another tab with Reload.
   Its slots hide while empty, so the area takes no room without a banner.
 - Moving to another view moves focus to the main column, which the route title labels.
-- Views: `tasks`, `lists`, `list`, `bin`, `settings`, `sync-log`, and `connect`.
+- Views: `tasks`, `lists`, `list`, `bin`, `settings`, and `sync-log`.
 - The `[data-editor-slot]` element names the open editor in `data-editor`: `task`, `list`, or empty.
   [editor-panel.js](../../src/js/views/editor-panel.js) mounts the editor of the route and unhides the slot.
   The slot is the shell's side panel: a full-window sheet in compact layouts, the right column in wide ones.
@@ -171,10 +171,10 @@ Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
   The menu hangs under the button, its end edge lined up with the button's.
 - ArrowUp and ArrowDown move between the items; Escape, an outside click, Tab, or choosing an item closes the menu.
 - The menu shows the user name, then three items with icons: the connection state, Recycle bin, and Settings.
-- The state item reads "Local only", "Connected", or "Sign in needed" (`CON-13`) and opens Connect.
-  The item of the current route is marked.
+- The state item reads "Local only", "Connected", or "Sign in needed" (`CON-13`) and opens Settings at the Connection section.
+  The item of the current route is marked; Settings is current on `#/settings` and `#/connect`.
 - Expired session: the menu says Sign in needed; the Sign in button sits in the session banner (see Sync Indicator).
-- Local mode has no Sign in text on the page (`LOC-1`); Connect stays reachable from Settings and the empty states.
+- Local mode has no Sign in text on the page (`LOC-1`); Sign in stays reachable from Settings and the empty states.
 - The menu reads the session each time it opens and when the session changes.
 
 ### Inbox
@@ -203,7 +203,9 @@ Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
 - `#/bin`: recycle bin.
 - `#/settings`: settings.
 - `#/settings/sync-log`: sync log.
-- `#/connect`: connect flow.
+- `#/connect`: alias of the Auth return and of every link that connects.
+  It renders Settings, scrolls the Connection section into view, focuses its heading, and replaces the address with `#/settings`.
+  The shell captures the Auth code from `#/connect?...` before routing.
 
 An unknown route or identifier opens All tasks with a toast naming the missing item.
 - An unknown route toast reads "Nothing found at #/{{route}}. Showing All tasks."
@@ -444,7 +446,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 - **[Decided]** The indicator is a button beside the user button, before the inbox bell, in both layouts.
   A badge on the user button would hide the state behind the account and clash with the initials.
 - Shows one of these states, each with its own icon and label (`SYN-4`):
-  - Local only: not connected; its popover links to the connect flow.
+  - Local only: not connected; its popover links to the Connection section of Settings.
   - Synced: the last sync time appears in its popover.
   - Syncing: a progress icon, without motion under reduced motion.
   - Offline: a pending change count, such as "Offline · 3 pending".
@@ -458,7 +460,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   The last visit is kept per device in `todos.sync-log.seen`.
 - Its popover shows the state, the last sync time or the error, a Sync now button, and a Sync log link.
   Sync now asks the engine for an immediate queue replay and poll; Retry does the same after an error.
-- The session banner sits above the views while the session needs a new sign-in, with Sign in, which opens `#/connect`.
+- The session banner sits above the views while the session needs a new sign-in, with Sign in, which opens the Connection section of Settings through `#/connect`.
 - A changed state is announced through the polite live region, except Syncing.
 
 ### Toasts and Banners
@@ -744,7 +746,7 @@ Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
   If the new role is refused, the old role is added back and the status line gives the reason.
 - Other users see the owner and their own role, read-only, with no controls (`SHR-3`).
 - Offline, every control is disabled and a banner says sharing needs a connection (`SHR-6`).
-- In local mode, the section only says "Connect to share this list" and links to the connect flow.
+- In local mode, the section only says "Connect to share this list" and links to the Connection section of Settings.
 - [sharing.js](../../src/js/views/sharing.js) builds the section; [permissions.js](../../src/js/core/permissions.js) holds the role rules (`SHR-5`).
 
 ### Recycle Bin
@@ -786,7 +788,10 @@ Settings is one page with these sections:
 - Delete all data is a danger button, last in Data; connected, it is disabled with the hint "Disconnect first. Deleting here never removes data from your account."
 - Its dialog names the counts, offers Export backup, and enables Delete everything only after the user types DELETE, exact and case-sensitive.
   Cancel and Escape change nothing; a toast says "All data deleted."; a failure keeps the dialog open with an error toast. The theme and server URL stay.
-- Connection, when local: a short explanation of connected mode and a Connect button.
+- Connection, when local: the explanation of connected mode (the gains, the loss of anonymity, invitation-only access), the server, and Sign in.
+  Sign in is the only place to connect; there is no separate connect screen.
+  The section shows every sign-in phase in place: Signing in, signed in, not invited, error, and expired.
+  Its polite live region announces each phase once; after Signing in, focus moves to the first action of the new phase.
 - Connection, when connected: account name and email, server, sync state, Sync log, and Disconnect.
 - Connection also holds the server URL, changeable only while disconnected (`CON-12`).
 - Keyboard shortcuts: its own section, before About, listing the shortcuts.
@@ -795,9 +800,10 @@ Settings is one page with these sections:
   A task that adds a shortcut adds its row to `SHORTCUTS` in [settings.js](../../src/js/views/settings.js).
   [version.js](../../src/js/version.js) holds both; a unit test matches the version to package.json.
 - The theme applies at once; a theme the browser cannot store shows a toast saying it lasts until reload.
-- Connect opens the connect screen; connected, the section shows "Signed in as {{name}} ({{email}})" and the server.
+- Sign in sends the browser to Auth; connected, the section shows "Signed in as {{name}} ({{email}})" and the server.
+- Not invited and error show the status line, its hint, and Sign in to try again.
 - Connected, the section also shows the sync state and a Sync log link.
-- An expired session adds "Your session expired." with Sign in again, which opens the connect screen.
+- An expired session adds "Your session expired." with Sign in again, which signs in directly.
 - Disconnect opens a dialog; without pending changes it offers Cancel and Disconnect, and a toast confirms.
 - The server URL defaults to `https://todos.pellicciotta.com`; an invalid address shows an error, and empty restores it.
 - It takes https, or http on `localhost`, `127.0.0.1`, or `[::1]`; the query and fragment are dropped.
@@ -838,17 +844,17 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 ### Connecting
 Wireframe: [connect.svg](../img/ui/connect.svg).
 
-1. The user opens Settings and selects Connect, or the Local only indicator.
-2. The connect screen explains the gains, the loss of anonymity, and the invitation-only access (`CON-2`).
-3. Sign in sends the browser to the Auth service; it returns to `#/connect` with a session.
-   The screen names the server; a code from a sign-in this device did not start shows "Sign-in did not finish."
-4. A user without an invitation sees a page saying access is by invitation only, and stays local (`CON-3`).
-   **[Decided]** Until sync lands, the screen ends at "Signed in as {{name}} ({{email}})" with Done.
-   The card's polite live region reads each result once; focus then moves to Done, Sign in, or Back to Settings.
-5. On success, the screen shows upload progress: "Uploading 5 lists and 34 tasks" (`CON-4`).
+1. The user opens Settings, or selects the Local only indicator, which opens Settings at the Connection section.
+2. The Connection section explains the gains, the loss of anonymity, and the invitation-only access (`CON-2`).
+3. Sign in sends the browser to the Auth service; it returns to `#/connect` with a session, which opens Settings at the section.
+   The section names the server; a code from a sign-in this device did not start shows "Sign-in did not finish."
+4. A user without an invitation sees that access is by invitation only, and stays local (`CON-3`).
+   **[Decided]** The section ends at "Signed in as {{name}} ({{email}})", with its sync state and Sync log; it has no Done button.
+   The section's polite live region reads each result once; focus then moves to Sync log or Sign in.
+5. On success, the section shows upload progress: "Uploading 5 lists and 34 tasks" (`CON-4`).
 6. It names merged lists, such as "Your list Home merged with your account's Home" (`CON-5`).
-7. It downloads the account's data, then shows Done and returns to All tasks (`CON-6`).
-8. An interruption keeps the screen resumable; restarting the upload creates no duplicates (`SYN-10`).
+7. It downloads the account's data, then shows the connected state (`CON-6`).
+8. An interruption keeps the section resumable; restarting the upload creates no duplicates (`SYN-10`).
 
 ### Syncing
 1. Each change applies locally and the indicator turns to Syncing, then Synced (`SYN-1`).
@@ -875,7 +881,7 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 
 ### Session Expiry
 1. An expired session turns the indicator to Sign in needed and shows a banner (`CON-13`).
-   Settings and the connect screen show it too.
+   The Connection section of Settings shows it too, with Sign in again.
 2. The app keeps working and queues changes.
 3. Sign in on the banner restores the session and syncs the queue.
 
