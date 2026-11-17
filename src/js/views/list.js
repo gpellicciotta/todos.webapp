@@ -4,7 +4,8 @@
  * It fills the shell's `[data-view="list"]` element with the header and the shared task list, and the shell's action bar
  * with the add bar, which also searches, and its info line; it renders again after every store change.
  * The More menu holds Edit list, Edit view options, Share list, and Delete list (`VO-4`).
- * Manual order shows drag handles and Move up and Move down; another sort affects the view only (`LV-7`, `LV-8`).
+ * Manual order drags rows by a press, a touch hold, or the handle, moves them with the Alt keys,
+ * and offers Move up and Move down; another sort affects the view only (`LV-3`, `LV-7`, `LV-8`).
  * A grouping by due date or status splits the rows into groups, each in the chosen order, and hides the moves (`LV-8`, `LV-11`).
  * The options live in a view model that the View options panel shares; they persist per device,
  * for every list view together (`TV-12`).
@@ -125,7 +126,9 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
     hrefOf: (task) => formatRoute('list-task', { listId, taskId: task.id }),
     closeHref: formatRoute('list', { listId }),
   });
-  const reorder = attachReorder(taskList.element, { enabled: moves.enabled, onMove: move, ids: taskList.ids, midpoints: taskList.midpoints });
+  const reorder = attachReorder(taskList.element, {
+    enabled: moves.enabled, onMove: move, ids: taskList.ids, midpoints: taskList.midpoints, press: true, ends: true,
+  });
   const empty = make(doc, 'p', 'empty-state empty-state__text');
   const addBlock = make(doc, 'div', 'add-block');
   addBlock.append(addBar.element, info.element);

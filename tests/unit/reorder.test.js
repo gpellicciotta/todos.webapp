@@ -178,4 +178,198 @@ describe('attachReorder', () => {
       frame.mockRestore();
     }
   });
+
+  /**
+   * Render rows with a handle, a status button, and an open link each, 48 px high from the list's top.
+   * @returns {HTMLUListElement} the list
+   */
+  function pressRows() {
+    document.body.innerHTML = `<ul>${IDS.map((id) => `<li class="task-row" data-task-id="${id}">`
+      + `<span class="task-row__handle"></span><button type="button" data-role="status">${id}</button>`
+      + `<a href="#${id}" data-role="open">${id}</a></li>`).join('')}</ul>`;
+    const list = document.querySelector('ul');
+    list.getBoundingClientRect = () => ({ top: 0, bottom: 192, height: 192 });
+    [...list.children].forEach((row, index) => {
+      row.getBoundingClientRect = () => ({ top: index * 48, bottom: index * 48 + 48, height: 48 });
+    });
+    return list;
+  }
+
+  /**
+   * Fire a pointer event of a pointer type at an element.
+   * @param {Element} target the element
+   * @param {string} type the event type
+   * @param {{x?: number, y: number, pointerType?: string}} position the pointer position and type
+   * @returns {PointerEvent} the event
+   */
+  function press(target, type, { x = 20, y, pointerType = 'mouse' }) {
+    const event = new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, pointerType, clientX: x, clientY: y });
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  /**
+   * Click an element.
+   * @param {Element} target the element
+   * @returns {MouseEvent} the event
+   */
+  function click(target) {
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  /**
+   * Press an Alt key combination on an element.
+   * @param {Element} target the element
+   * @param {string} key the key
+   * @returns {KeyboardEvent} the event
+   */
+  function altKey(target, key) {
+    const event = new KeyboardEvent('keydown', { key, altKey: true, bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  it('keeps a press that moves under 6 px a click, and drags past 6 px without opening the row', () => {
+    const list = pressRows();
+    const onMove = vi.fn();
+    const reorder = attachReorder(list, { enabled: () => true, onMove, press: true });
+    const link = list.querySelector('[data-task-id="b"] a');
+    const row = link.closest('.task-row');
+    press(link, 'pointerdown', { y: 72 });
+    press(link, 'pointermove', { x: 23, y: 76 });
+    expect(row.hasAttribute('data-dragging')).toBe(false);
+    press(link, 'pointerup', { x: 23, y: 76 });
+    expect(click(link).defaultPrevented).toBe(false);
+
+    press(link, 'pointerdown', { y: 72 });
+    press(link, 'pointermove', { y: 80 });
+    expect(row.dataset.dragging).toBe('true');
+    press(list, 'pointermove', { y: 180 });
+    expect(list.querySelector('[data-task-id="d"]').dataset.drop).toBe('after');
+    press(list, 'pointerup', { y: 180 });
+    expect(onMove).toHaveBeenCalledWith('b', { placement: { after: 'd' }, index: 3 });
+    const opened = vi.fn();
+    list.addEventListener('click', opened);
+    expect(click(link).defaultPrevented).toBe(true);
+    expect(opened).not.toHaveBeenCalled();
+    expect(click(link).defaultPrevented).toBe(false);
+    expect(opened).toHaveBeenCalledTimes(1);
+    reorder.destroy();
+  });
+
+  it('starts no row drag from a button of the row, with moves off, or without the press option', () => {
+    const list = pressRows();
+    const onMove = vi.fn();
+    let enabled = true;
+    const reorder = attachReorder(list, { enabled: () => enabled, onMove, press: true });
+    const row = list.querySelector('[data-task-id="b"]');
+    const button = row.querySelector('button');
+    const link = row.querySelector('a');
+    press(button, 'pointerdown', { y: 72 });
+    press(button, 'pointermove', { y: 120 });
+    expect(row.hasAttribute('data-dragging')).toBe(false);
+    press(button, 'pointerup', { y: 120 });
+    enabled = false;
+    press(link, 'pointerdown', { y: 72 });
+    press(link, 'pointermove', { y: 120 });
+    expect(row.hasAttribute('data-dragging')).toBe(false);
+    press(link, 'pointerup', { y: 120 });
+    reorder.destroy();
+
+    const handleOnly = attachReorder(list, { enabled: () => true, onMove });
+    press(link, 'pointerdown', { y: 72 });
+    press(link, 'pointermove', { y: 120 });
+    expect(row.hasAttribute('data-dragging')).toBe(false);
+    press(link, 'pointerup', { y: 120 });
+    handleOnly.destroy();
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('keeps the browser from dragging the open link or selecting text while row presses are on', () => {
+    const list = pressRows();
+    const reorder = attachReorder(list, { enabled: () => true, onMove: vi.fn(), press: true });
+    const link = list.querySelector('[data-task-id="b"] a');
+    const dragstart = new Event('dragstart', { bubbles: true, cancelable: true });
+    link.dispatchEvent(dragstart);
+    expect(dragstart.defaultPrevented).toBe(true);
+    press(link, 'pointerdown', { y: 72 });
+    const selectstart = new Event('selectstart', { bubbles: true, cancelable: true });
+    link.dispatchEvent(selectstart);
+    expect(selectstart.defaultPrevented).toBe(true);
+    press(link, 'pointerup', { y: 72 });
+    reorder.destroy();
+  });
+
+  it('starts a drag after a 400 ms touch hold with a short vibration, and lets a 10 px move scroll instead', () => {
+    vi.useFakeTimers();
+    const vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
+    try {
+      const list = pressRows();
+      const onMove = vi.fn();
+      const reorder = attachReorder(list, { enabled: () => true, onMove, press: true });
+      const link = list.querySelector('[data-task-id="b"] a');
+      const row = link.closest('.task-row');
+      const touch = { pointerType: 'touch' };
+      press(link, 'pointerdown', { ...touch, y: 72 });
+      press(link, 'pointermove', { ...touch, x: 24, y: 78 });
+      vi.advanceTimersByTime(399);
+      expect(row.hasAttribute('data-dragging')).toBe(false);
+      const early = new Event('touchmove', { bubbles: true, cancelable: true });
+      link.dispatchEvent(early);
+      expect(early.defaultPrevented).toBe(false);
+      vi.advanceTimersByTime(1);
+      expect(row.dataset.dragging).toBe('true');
+      expect(vibrate).toHaveBeenCalledTimes(1);
+      // The touched link's implicit capture passes to the row, which must not end the drag.
+      link.dispatchEvent(new PointerEvent('lostpointercapture', { bubbles: true, pointerId: 1 }));
+      expect(row.dataset.dragging).toBe('true');
+      const held = new Event('touchmove', { bubbles: true, cancelable: true });
+      link.dispatchEvent(held);
+      expect(held.defaultPrevented).toBe(true);
+      press(list, 'pointermove', { ...touch, y: 180 });
+      press(list, 'pointerup', { ...touch, y: 180 });
+      expect(onMove).toHaveBeenCalledWith('b', { placement: { after: 'd' }, index: 3 });
+      expect(click(link).defaultPrevented).toBe(true);
+
+      press(link, 'pointerdown', { ...touch, y: 72 });
+      press(link, 'pointermove', { ...touch, y: 83 });
+      vi.advanceTimersByTime(400);
+      expect(row.hasAttribute('data-dragging')).toBe(false);
+      press(link, 'pointerup', { ...touch, y: 83 });
+      press(link, 'pointerdown', { ...touch, y: 72 });
+      press(link, 'pointercancel', { ...touch, y: 72 });
+      vi.advanceTimersByTime(400);
+      expect(row.hasAttribute('data-dragging')).toBe(false);
+      expect(onMove).toHaveBeenCalledTimes(1);
+      reorder.destroy();
+    }
+    finally {
+      vi.useRealTimers();
+      delete navigator.vibrate;
+    }
+  });
+
+  it('moves the focused row to the top or bottom with Alt+Home and Alt+End when ends are on', () => {
+    const list = rows();
+    const onMove = vi.fn();
+    const reorder = attachReorder(list, { enabled: () => true, onMove, ends: true });
+    const link = list.querySelector('[data-task-id="b"] a');
+    expect(altKey(link, 'End').defaultPrevented).toBe(true);
+    expect(onMove).toHaveBeenLastCalledWith('b', { placement: { after: 'd' }, index: 3 });
+    altKey(link, 'Home');
+    expect(onMove).toHaveBeenLastCalledWith('b', { placement: { before: 'a' }, index: 0 });
+    altKey(list.querySelector('[data-task-id="a"] a'), 'Home');
+    expect(onMove).toHaveBeenCalledTimes(2);
+    reorder.jump('c', 1);
+    expect(onMove).toHaveBeenLastCalledWith('c', { placement: { after: 'd' }, index: 3 });
+    reorder.destroy();
+
+    const plain = attachReorder(list, { enabled: () => true, onMove });
+    expect(altKey(link, 'End').defaultPrevented).toBe(false);
+    expect(onMove).toHaveBeenCalledTimes(3);
+    plain.destroy();
+  });
 });

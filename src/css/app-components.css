@@ -199,7 +199,8 @@
 }
 
 /*
- * Task row: drag handle, status button, description with chips, and a More button, on one 48 px line.
+ * Task row: status button, description with chips, and a More button, on one 48 px line,
+ * with the drag handle in the gutter before it.
  * States: default, hover, focus-visible (on the row), active, selected (aria-current on the open link),
  * which adds a signal edge on the inline start and keeps hover and press feedback,
  * dragging (data-dragging="true"), drop target (data-drop="before" or "after"),
@@ -319,14 +320,29 @@
   flex: none;
 }
 
+/*
+ * Drag handle: in the gutter before the row, outside its box, so rows keep no room for it (`LV-3`).
+ * It shows on the hovered, focused, or dragged row only; hovering the handle keeps its row hovered.
+ */
 .task-row__handle {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 100%;
   display: grid;
-  flex: none;
   place-items: center;
-  align-self: stretch;
   inline-size: var(--space-5);
   color: var(--color-text-muted);
   cursor: grab;
+  visibility: hidden;
+}
+
+.task-row:is(:hover, :focus-within, .is-hover, .is-focus, [data-dragging='true']) > .task-row__handle {
+  visibility: visible;
+}
+
+/* A long hold on a row starts a drag, so it opens no link preview on touch screens. */
+.task-row:has(> .task-row__handle) {
+  -webkit-touch-callout: none;
 }
 
 .task-row__open {

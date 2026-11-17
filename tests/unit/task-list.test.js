@@ -759,6 +759,42 @@ describe('createTaskList', () => {
       expect(onMove).toHaveBeenCalledWith('m2', { placement: { before: 'm1005' }, index: 1004 });
       expect(other.element.querySelector('[data-drop], [data-dragging]')).toBeNull();
     });
+
+    it('drags a row by a press on its open link, never by its status button, and opens no editor on the drop (LV-3)', () => {
+      reorder.destroy();
+      reorder = attachReorder(other.element, { enabled: () => true, onMove, ids: other.ids, press: true, ends: true });
+      const press = (target, type, clientY) => target.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, button: 0, pointerId: 1, pointerType: 'mouse', clientX: 40, clientY,
+      }));
+      const status = rowOf('m2').querySelector('.status-button');
+      press(status, 'pointerdown', 2 * ROW + 20);
+      press(status, 'pointermove', 4 * ROW);
+      expect(rowOf('m2').hasAttribute('data-dragging')).toBe(false);
+      press(status, 'pointerup', 4 * ROW);
+      const open = rowOf('m2').querySelector('.task-row__open');
+      press(open, 'pointerdown', 2 * ROW + 20);
+      press(open, 'pointermove', 2 * ROW + 30);
+      expect(rowOf('m2').dataset.dragging).toBe('true');
+      press(other.element, 'pointermove', 5 * ROW);
+      press(other.element, 'pointerup', 5 * ROW);
+      expect(onMove).toHaveBeenCalledWith('m2', { placement: { before: 'm5' }, index: 4 });
+      const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+      open.dispatchEvent(click);
+      expect(click.defaultPrevented).toBe(true);
+    });
+
+    it('moves the focused row to the end with Alt+End and keeps focus on it in the new order (LV-3)', () => {
+      reorder.destroy();
+      reorder = attachReorder(other.element, { enabled: () => true, onMove, ids: other.ids, press: true, ends: true });
+      const link = rowOf('m5').querySelector('.task-row__open');
+      link.focus();
+      link.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', altKey: true, bubbles: true, cancelable: true }));
+      expect(onMove).toHaveBeenCalledWith('m5', { placement: { after: 'm4999' }, index: 4999 });
+      other.render([...many.filter((task) => task.id !== 'm5'), many[5]], ctx);
+      const focused = document.activeElement.closest('.task-row');
+      expect(focused.dataset.taskId).toBe('m5');
+      expect(focused.getAttribute('aria-posinset')).toBe('5000');
+    });
   });
 
   describe('with a long grouped list', () => {

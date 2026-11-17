@@ -283,11 +283,14 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
   A row that leaves the view passes focus to the row now at its place.
 
 #### Task Reordering
-- Under manual order without grouping or search, rows reorder as in `LV-8`.
-- Desktop: press and drag the row; the drag starts after the pointer moves past a small threshold.
-  A plain click still opens the editor; buttons inside the row never start drags.
-- Desktop: a drag handle shows in the gutter before the focused or hovered row.
-- Touch: a long hold of about 400 ms without movement starts the drag; scrolling still works.
+- Under manual order without another sort or a grouping, rows reorder as in `LV-8`.
+- Desktop: press and drag the row; the drag starts once the pointer moves 6 px.
+  A shorter press stays a click and opens the editor; buttons inside the row never start drags.
+  The click that ends a drag opens nothing, and the browser starts no link drag or text selection.
+- Desktop: a drag handle shows in the gutter before the focused or hovered row, outside its box.
+  It starts a drag at once; rows keep no room for it, and compact layouts hide it.
+- Touch: a hold of 400 ms that moves 10 px at most starts the drag, with a short vibration where supported.
+  A longer move first scrolls the page; the hold opens no context menu or link preview.
 - Keyboard on a focused row: Alt+Up and Alt+Down move one place; Alt+Home and Alt+End move to the top or bottom.
 - Lists use the same Alt+Home and Alt+End, replacing the planned Alt+Shift+Up and Alt+Shift+Down.
 - **[Decided]** Every drag keeps a keyboard alternative but needs no visible button.
@@ -536,7 +539,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - The focused row, the row of an open menu, the dragged row, and the selected row stay rendered when scrolled away.
   Their neighbors stay too, so Tab reaches the next row; menus stay open, and drags keep their row.
 - Rows carry `aria-setsize` and `aria-posinset`, so screen readers count every task, rendered or not.
-- Move up, Move down, Alt+Up, Alt+Down, and drag targets cover the whole list; a moved row scrolls into view.
+- Move up, Move down, the Alt keys, and drag targets cover the whole list; a moved row scrolls into view.
 - `TEC-16` is met for opening a view under 4x CPU throttling, the stand-in for a mid-range phone.
   The 150 lists it now names are measured under Many Lists: Lists opens in about 165 ms.
   With 5000 tasks, All tasks paints its first rows about 175 ms after the route change, down from about 265 ms.
@@ -571,7 +574,8 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - The view options replace the order buttons and the status chip (`VO-1`); Manual order is the first sort choice (`LV-6`).
 - **[Decided]** Due, Status, and A–Z sort ascending; Created and Last update show the newest first.
 - **[Decided]** The order, the grouping, and the filters persist per device and per list (`TV-12`).
-- Manual order is the default; rows then show a drag handle on pointer devices (`LV-2`, `LV-3`).
+- Manual order is the default; rows then reorder as in [Task Reordering](#task-reordering) (`LV-2`, `LV-3`).
+  A press drags the row, a touch drags it after a long hold, and the hovered or focused row shows a gutter handle.
 - A drag near the main column's top or bottom edge scrolls it; Escape or a lost pointer capture cancels the drag.
 - Keyboard users move a focused row with Alt+Up, Alt+Down, Alt+Home, and Alt+End; focus stays on the moved row.
   This works from any control of the row.

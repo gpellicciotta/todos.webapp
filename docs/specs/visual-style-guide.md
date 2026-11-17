@@ -232,7 +232,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 
   Read-only rows disable the button but keep its icon at full icon contrast.
 - [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, one line at `--row-height`.
-  It holds the drag handle, the status button, the open link, and the More button.
+  It holds the status button, the open link, and the More button; the drag handle sits in the gutter before it.
   The open link holds the description, a count chip, the due chip, and two list chips.
   A "+n" chip, the note count, and the shared marker follow.
   The `.task-row__count` chip, such as "2/3", shows the done and target counts above target 1, in tabular figures.
@@ -250,7 +250,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - Read-only: `data-readonly="true"`, a disabled status button that stays flat on hover, and no handle or More button.
   - Focus: the row draws the ring for its open link, inside its own edge.
 
-  Show the drag handle only in manual order; devices without hover hide it anyway.
+  Render the drag handle only in manual order. It is positioned outside the row, so rows keep no room for it.
+  It shows on the hovered, focused, or dragged row; devices without hover and compact lists hide it.
 - Group header: a `.group-header` row of a grouped `.task-list`, fixed at `--group-header-height` in the sunken surface.
   Its `h3` holds one `.group-header__toggle` button that spans the row, with `--space-3` of inline padding.
   The button holds a small chevron, the semibold name, and the count at the end in tabular figures.
@@ -305,7 +306,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 ## Patterns
 - [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header and its More button, the search field, an `.add-block`, and rows.
   The add block holds the add bar and the info line; the app puts it in the shell's action bar, under the rows.
-- Manual ordering: drag handles on pointer devices, plus Move up and Move down in the row menu.
+- Manual ordering: press and drag a row, or hold it on touch; the hovered or focused row shows a gutter handle.
+  The Alt keys and Move up and Move down in the row menu move rows too.
 - Find and sort: the Lists screen reuses this block with a find field and a Sort button.
   Its info line counts lists, such as "4 of 124 lists".
   Rows may use `content-visibility: auto` with `contain-intrinsic-size`, so long lists paint only the rows near the view.

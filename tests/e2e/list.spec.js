@@ -212,12 +212,12 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
-  test('dragging a row by its handle stores the new order, which survives a reload (LV-3)', async ({ page }) => {
+  test('pressing and dragging a row stores the new order, which survives a reload, and opens no editor (LV-3)', async ({ page }) => {
     const problems = watch(page);
-    await openList(page);
-    const handle = page.locator('.list-view .task-row').first().locator('.task-row__handle');
+    const listId = await openList(page);
+    const description = page.locator('.list-view .task-row').first().locator('.task-row__description');
     const target = await page.locator('.list-view .task-row').nth(2).boundingBox();
-    await handle.hover();
+    await description.hover();
     await page.mouse.down();
     await page.mouse.move(target.x + 20, target.y + target.height * 0.5, { steps: 8 });
     await expect(page.locator('.list-view .task-row[data-dragging="true"]')).toHaveCount(1);
@@ -226,9 +226,66 @@ test.describe('List screen', () => {
     await page.mouse.up();
     await expect.poll(() => rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
     await expect(page.locator('.list-view .task-row[data-dragging], .list-view .task-row[data-drop]')).toHaveCount(0);
+    expect(new URL(page.url()).hash).toBe(`#/lists/${listId}`);
     await page.reload();
     await expect(page.locator('.list-view .task-row')).toHaveCount(3);
     expect(await rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
+
+    // A press that barely moves stays a click and opens the editor.
+    const open = page.locator('.list-view .task-row').first().locator('.task-row__description');
+    const box = await open.boundingBox();
+    await page.mouse.move(box.x + 10, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 13, box.y + box.height / 2 + 2);
+    await page.mouse.up();
+    await expect.poll(() => new URL(page.url()).hash).toMatch(new RegExp(`^#/lists/${listId}/tasks/`));
+    expect(problems).toEqual([]);
+  });
+
+  test('the grip shows outside the hovered or focused row only, and rows keep no room for it (LV-3)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    const shown = page.locator('.list-view .task-row');
+    await page.locator('.list-view__description').hover();
+    await expect(shown.locator('.task-row__handle')).toHaveCount(3);
+    for (let index = 0; index < 3; index += 1) {
+      await expect(shown.nth(index).locator('.task-row__handle')).toBeHidden();
+    }
+    await shown.nth(1).locator('.task-row__description').hover();
+    await expect(shown.nth(1).locator('.task-row__handle')).toBeVisible();
+    await expect(shown.nth(0).locator('.task-row__handle')).toBeHidden();
+    const row = await shown.nth(1).boundingBox();
+    const grip = await shown.nth(1).locator('.task-row__handle').boundingBox();
+    const status = await shown.nth(1).locator('.status-button').boundingBox();
+    expect(grip.x + grip.width).toBeLessThanOrEqual(row.x + 0.5);
+    expect(grip.x).toBeGreaterThanOrEqual(0);
+    expect(status.x - row.x).toBeLessThan(16);
+
+    await page.locator('.list-view__description').hover();
+    await shown.nth(2).locator('.task-row__open').focus();
+    await expect(shown.nth(2).locator('.task-row__handle')).toBeVisible();
+    await expect(shown.nth(1).locator('.task-row__handle')).toBeHidden();
+    expect(problems).toEqual([]);
+  });
+
+  test('Alt+End and Alt+Home move the focused row to the bottom and the top, keeping focus on it (LV-3)', async ({ page }) => {
+    const problems = watch(page);
+    await openList(page);
+    await page.locator('.list-view .task-row__open').first().focus();
+    await page.keyboard.press('Alt+End');
+    await expect.poll(() => rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
+    await expect(page.locator('.list-view .task-row').nth(2).locator('.task-row__open')).toBeFocused();
+    await expect(page.locator('[data-live-region="polite"]').filter({ hasText: 'Clean the gutters moved to position 3 of 3.' }))
+      .toHaveCount(1);
+    await page.keyboard.press('Alt+Home');
+    await expect.poll(() => rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);
+    await expect(page.locator('.list-view .task-row').first().locator('.task-row__open')).toBeFocused();
+    await page.locator('.list-view .task-row').nth(1).locator('.task-row__open').focus();
+    await page.keyboard.press('Alt+End');
+    await expect.poll(() => rows(page)).toEqual(['Clean the gutters', 'Fix the door', 'Buy paint']);
+    await page.reload();
+    await expect(page.locator('.list-view .task-row')).toHaveCount(3);
+    expect(await rows(page)).toEqual(['Clean the gutters', 'Fix the door', 'Buy paint']);
     expect(problems).toEqual([]);
   });
 

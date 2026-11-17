@@ -13,7 +13,7 @@
  * The More button offers Add to list and Delete, which moves the task to the recycle bin
  * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu.
  * In a list view, the More menu adds Remove from this list, and Move up and Move down while moves are on,
- * when rows also show a drag handle (`LV-3`).
+ * when rows also carry a drag handle, shown in the gutter on the hovered or focused row (`LV-3`).
  * One More menu serves every row: each opening attaches the menu to that row's button.
  * Rendering again keeps an open menu open on the same row and item, and keeps focus on the same row control.
  * Rows are kept by key, the task id or, in a grouped list, the group and the task id, since a task of several lists
@@ -338,7 +338,7 @@ function metaOf(doc, { count, repeat, due, names, notes }) {
 /**
  * Create the empty row that the rows of a list are cloned from, since cloning beats building each element.
  * @param {Document} doc the document
- * @param {boolean} handle whether the row has a drag handle
+ * @param {boolean} handle whether the row has a drag handle, which app-components.css puts in the gutter before it
  * @returns {HTMLLIElement} the row
  */
 function rowTemplate(doc, handle) {
