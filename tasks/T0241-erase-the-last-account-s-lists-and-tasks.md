@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1233.9, input: 168, output: 59802, cache_read: 14328575, cache_write: 203403}
-review_status: pending
+  review: {turns: 1, duration_s: 118.6, input: 59849, output: 2451, cache_read: 456064, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T11:23:14Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-5d8520
+work_duration: 1364.6
 ---
 # T0241: Erase the last account's lists and tasks on the next connect after Delete all data in local mode
 
@@ -70,4 +74,27 @@ Make a Delete all data done in local mode reach the account on the next connect.
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected for one unmet failure-handling requirement.
+  - Findings: [review-findings-1.md](T0241-erase-the-last-account-s-lists-and-tasks/review-findings-1.md).
+
+- [2026-11-17] **[Implement]**
+  Reworked review D1: a refused pending erase now stops the connect before adoption and stays for the next run.
+  - Replaced the 403 drop test with retention, no-upload, and retry-order assertions.
+  - Aligned local-store.md; bumped the service worker to 2026-11-17.24.
+
+- [2026-11-17] **[Visual]**
+  Replaced the before screenshot with a real capture on base commit 30be458 from a temporary scratch worktree, since removed.
+
+- [2026-11-17] **[Verify]**
+  Unit 1720, connect e2e 12, contract 21, lint, and SW check pass; the earlier gallery failure cause stays unconfirmed.
+  - Files touched: 17.
+  - Lines touched: 592.
+  - Reopenings: 0.
+
+- [2026-11-17] **[Decided]**
+  Reversed the round 1 choice per review D1 and the spec: any failed pending erase, including a 4xx refusal, now stays and blocks adoption.
+  - Counted size: 16 files, 583 lines, excluding the mechanical hashes.
+  - The 17 files, 592 lines figure includes sw-precache-hashes.json.
 

@@ -12,7 +12,10 @@
 - Mechanical files: scripts/sw-precache-hashes.json
 
 ### Screenshots
-- Before: [erase-question-before.png](erase-question-before.png), the plain connected section every connect showed before; captured after Keep, which renders the same section.
+- Before: [erase-question-before.png](erase-question-before.png), captured on base commit `30be458` in a temporary worktree.
+  The flow: local Delete all data on a never-connected device, add a task, sign in.
+  The old code asked nothing, sent no erase, and kept the old account task.
+  Spec: [before-shot.spec.js](before-shot.spec.js); `npx playwright test tests/e2e/before-shot.spec.js`, exit code 0, `1 passed (4.3s)`.
 - After, light: [erase-question-after-light.png](erase-question-after-light.png)
 - After, dark: [erase-question-after-dark.png](erase-question-after-dark.png)
 
@@ -98,7 +101,8 @@ ring at 1440 px
   249 passed (4.5m)
 ```
 
-`npx playwright test tests/e2e/gallery-controls.spec.js --reporter=line`, exit code 0, so the failure was load-related:
+`npx playwright test tests/e2e/gallery-controls.spec.js --reporter=line`, exit code 0.
+The failure's cause is unconfirmed; it did not reproduce alone, and this task changes no gallery code:
 
 ```text
   14 passed (26.2s)
@@ -109,4 +113,47 @@ ring at 1440 px
 
 ```text
 OK: 131 precached files match VERSION 2026-11-17.23.
+```
+
+### Review round 1 rework (D1: a refused erase must stay)
+`settlePendingErase` now throws on a refusal, so `pending-erase` stays and adoption never starts.
+The reworked test failed first, `npx vitest run tests/unit/adopt.test.js`, exit code 1:
+
+```text
+ ❯ tests/unit/adopt.test.js (19 tests | 1 failed) 282ms
+     × keeps a refused erase, stops before adoption, and erases before adoption on a later try 21ms
+AssertionError: expected 'synced' to be 'retry' // Object.is equality
+      Tests  1 failed | 18 passed (19)
+```
+
+After the fix, `npx vitest run tests/unit/adopt.test.js tests/unit/push.test.js tests/unit/engine.test.js`, exit code 0:
+
+```text
+      Tests  68 passed (68)
+```
+
+`npm test`, exit code 0:
+
+```text
+ Test Files  65 passed (65)
+      Tests  1720 passed (1720)
+```
+
+`npx playwright test tests/e2e/connect.spec.js --reporter=line`, exit code 0:
+
+```text
+  12 passed (14.8s)
+```
+
+`TODOS_SERVER_DIR=<workspace>/todos.server npm run test:contract`, exit code 0:
+
+```text
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+```
+
+`npx eslint .`, exit code 0 with no output. `npm run check:sw`, exit code 0:
+
+```text
+OK: 131 precached files match VERSION 2026-11-17.24.
 ```
