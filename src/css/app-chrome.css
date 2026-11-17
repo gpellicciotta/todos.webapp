@@ -144,6 +144,42 @@
   scrollbar-width: thin;
 }
 
+/* The find field of the sidebar lists (`LST-10`): fixed above the scroll region, its match count at the end. */
+.sidebar__find {
+  position: relative;
+  flex: none;
+  padding-block: var(--space-1);
+}
+
+.sidebar__find[hidden],
+.sidebar__find-empty[hidden],
+.sidebar__scroll li[hidden] {
+  display: none;
+}
+
+.sidebar__find .field__control {
+  inline-size: 100%;
+  padding-inline-end: 4.5rem;
+}
+
+.sidebar__find-count {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--space-3);
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  pointer-events: none;
+}
+
+.sidebar__find-empty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 .sidebar__brand {
   display: flex;
   align-items: center;

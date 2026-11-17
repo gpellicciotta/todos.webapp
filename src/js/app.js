@@ -284,7 +284,19 @@ async function start() {
       return;
     }
     const route = router.current();
-    if (event.key === 'n' || event.key === '/') {
+    if (event.key === 'l') {
+      // The sidebar find field shows from 12 lists on wide layouts; without a field to focus, `l` opens Lists.
+      const field = document.getElementById('app').querySelector('[data-shortcut~="find-list"]');
+      if (field && !field.closest('[hidden]') && field.getClientRects().length > 0) {
+        event.preventDefault();
+        field.focus();
+      }
+      else if (route?.view !== 'lists') {
+        event.preventDefault();
+        router.navigate(formatRoute('lists', {}));
+      }
+    }
+    else if (event.key === 'n' || event.key === '/') {
       const target = document.getElementById('app').querySelector(`[data-shortcut~="${event.key === 'n' ? 'add' : 'search'}"]`);
       if (target) {
         event.preventDefault();

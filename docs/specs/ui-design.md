@@ -99,6 +99,13 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
   It counts matches at its end, such as "4 of 124".
   Enter or a click on a result opens that list and clears the field; Escape clears it; Down moves into the first row.
   The field is empty again on each start, like the add bar's search text.
+  The rows filter and the count updates once typing pauses for 150 ms; the polite live region then announces "4 of 124 lists match." or "No list matches.".
+- **[Decided]** The `l` key focuses the sidebar field outside text fields (`LST-15`).
+  Where there is no field to focus, below 12 lists or on a compact layout, it opens the Lists screen instead.
+  The Keyboard shortcuts section of Settings lists it.
+- **[Decided]** The list rows are one tab stop with a roving `tabindex`: the last focused row, else the current list, else the first shown row.
+  Up, Down, Home, End, PageUp, and PageDown move between the shown rows and stop at the ends; a Page key moves one region height.
+  Alt+Up and Alt+Down keep moving the list (`LST-8`).
 - **[Decided]** No match leaves the muted line "No list matches." and no creation action.
   The Lists screen offers Create list.
 - **[Decided]** Rows stay 40 px with 4 px gaps, and the sidebar has no density option.
@@ -929,7 +936,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
-- Shortcuts: `n` and `/` focus the add and search field, and Escape closes the editor or a dialog.
+- Shortcuts: `n` and `/` focus the add and search field, `l` focuses the sidebar find field, and Escape closes the editor or a dialog.
 - `x` ticks the task of the focused row, as a click on its status button does.
 - Shift+Enter or Alt+Enter in the add and search field adds the typed task, like the Add button.
 - On the Lists screen `/` focuses the find field; `l` focuses the sidebar's find field, or opens Lists where there is none.

@@ -1,5 +1,5 @@
 /**
- * Find lists by typed text, shared by the sidebar and the Lists screen (`LST-10`).
+ * Find lists by typed text, shared by the sidebar (ui/layout.js) and the Lists screen (`LST-10`).
  *
  * Matching ignores case and accents and finds the text anywhere in the name.
  * The Lists screen also searches descriptions; the sidebar searches names only.

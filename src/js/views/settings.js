@@ -121,6 +121,7 @@ const STRINGS = Object.freeze({
  */
 const SHORTCUTS = Object.freeze([
   Object.freeze({ keys: ['n', '/'], action: 'Focus the search and add field.' }),
+  Object.freeze({ keys: ['l'], action: 'Focus the find field of the sidebar lists, or open Lists where there is none.' }),
   Object.freeze({ keys: ['Enter'], action: 'Add the task, in the search and add field, while Make Enter add is on; otherwise apply the search.' }),
   Object.freeze({ keys: ['Shift+Enter', 'Alt+Enter'], action: 'Add the task or list, in the search and add field.' }),
   Object.freeze({ keys: ['Escape'], action: 'Clear the search and add field, or close the editor or a dialog.' }),

@@ -19,11 +19,15 @@
  * The wide sidebar keeps the brand, All tasks, and Lists fixed and scrolls only its list rows (`LST-14`).
  * Rows are patched by list identifier, so focus and scroll survive a count change; a route to a list scrolls its row
  * to the nearest edge once. A count of 0 shows nothing and a count above 999 reads "999+"; hidden text keeps the number.
+ * From 12 lists, or while it holds text, a find field above the rows filters them by name once typing pauses for 150 ms,
+ * counts matches ("4 of 124"), and announces them politely; Enter opens the first match, Escape clears, Down enters the rows,
+ * and `l` focuses it (`LST-10`, `LST-15`). The rows are one roving tab stop with Up, Down, Home, End, and Page keys.
  * From 64rem, separators resize the sidebar and the editor panel and the widths stay on the device (see panel-resize.js).
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
 import { countOf } from '../core/list-counts.js';
+import { FIND_MAX_LENGTH, findLists } from '../core/list-find.js';
 import { applyListOrder, movedMessage, moveList, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
 import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
@@ -38,6 +42,18 @@ const ICONS = 'img/icons.svg';
 /** The largest count shown as a number; a larger count reads "999+" (`LST-14`). */
 const MAX_SHOWN_COUNT = 999;
 
+/** From this many lists the sidebar shows its find field (`LST-10`). */
+const FIND_FROM = 12;
+
+/** The pause after typing before the rows filter and the match count is announced (`TEC-16`). */
+const FIND_PAUSE_MS = 150;
+
+/** Rows a Page key moves when the region has no measured height. */
+const PAGE_ROWS = 10;
+
+/** The height of a row with its gap, in pixels, to turn the region height into a Page step. */
+const ROW_HEIGHT = 44;
+
 /** Shell strings, for the strings module of TEC-13 to absorb. */
 export const STRINGS = Object.freeze({
   app: "ToDo's",
@@ -46,6 +62,8 @@ export const STRINGS = Object.freeze({
   newList: 'New list',
   openTasks: ' open tasks',
   lists: 'Lists',
+  findLists: 'Find a list',
+  noListMatches: 'No list matches.',
   titles: Object.freeze({
     tasks: 'All tasks', lists: 'Lists', list: 'List', bin: 'Recycle bin',
     settings: 'Settings', 'sync-log': 'Sync log',
@@ -153,7 +171,15 @@ export function renderShell(root, { session = createSession() } = {}) {
     <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
       <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/app-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
       <ul class="nav-list app__nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
-      <div class="sidebar__scroll"><ul class="nav-list app__nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul></div>
+      <div class="sidebar__find" hidden>
+        <input class="field__control" type="search" maxlength="${FIND_MAX_LENGTH}" autocomplete="off" spellcheck="false" enterkeyhint="go"
+          aria-label="${STRINGS.findLists}" placeholder="${STRINGS.findLists}" data-find-lists data-shortcut="find-list">
+        <span class="sidebar__find-count" aria-hidden="true"></span>
+      </div>
+      <div class="sidebar__scroll">
+        <p class="sidebar__find-empty" hidden>${STRINGS.noListMatches}</p>
+        <ul class="nav-list app__nav-list" aria-label="${STRINGS.lists}" data-nav-lists></ul>
+      </div>
     </nav>
     <div class="app__banners"><div data-session-banner hidden></div><div data-notice hidden></div><div class="app__broadcasts" hidden></div></div>
     <main class="app__main" id="main" tabindex="-1" aria-labelledby="app-title"></main>
@@ -192,6 +218,13 @@ export function renderShell(root, { session = createSession() } = {}) {
   const rows = new Map();
   let currentListId = null;
   let revealId = null;
+  let tabStopId = null;
+  let findTimer = null;
+  const findBox = root.querySelector('.sidebar__find');
+  const findField = root.querySelector('[data-find-lists]');
+  const findCount = root.querySelector('.sidebar__find-count');
+  const findEmpty = root.querySelector('.sidebar__find-empty');
+  const listScroll = root.querySelector('.sidebar__scroll');
 
   /** Mark the links of the current route with `aria-current="page"`. */
   function markCurrent() {
@@ -209,8 +242,123 @@ export function renderShell(root, { session = createSession() } = {}) {
     }
   }
 
-  /** Render the sidebar lists from the last lists and counts, in the stored order. */
+  /** Render the sidebar lists from the last lists and counts, in the stored order, filtered by the find text. */
   function renderLists() {
+    patchRows();
+    applyFilter();
+    revealCurrent();
+  }
+
+  /**
+   * Filter the rows by the find text, which matches names only and keeps the manual order (`LST-10`).
+   * Shows the field from 12 lists or while it holds text, the count at its end, and the no-match line.
+   * @returns {{matches: number, total: number, text: string}} the outcome, for the announcement
+   */
+  function applyFilter() {
+    const text = findField.value.trim();
+    const total = rows.size;
+    const found = new Set(findLists(shownLists, text).map((list) => list.id));
+    for (const [id, parts] of rows) {
+      parts.item.hidden = !found.has(id);
+    }
+    findBox.hidden = total < FIND_FROM && text === '';
+    findCount.textContent = text === '' ? '' : `${found.size} of ${total}`;
+    findEmpty.hidden = text === '' || found.size > 0;
+    syncTabStop();
+    return { matches: found.size, total, text };
+  }
+
+  /** @returns {HTMLAnchorElement[]} the links of the rows the filter shows, in order */
+  function shownLinks() {
+    return [...listNav.querySelectorAll('li:not([hidden]) > [data-nav]')];
+  }
+
+  /** Make exactly one shown row the tab stop: the last focused, else the current list, else the first (`LST-15`). */
+  function syncTabStop() {
+    const links = shownLinks();
+    const wanted = links.find((link) => link.dataset.nav === `list:${tabStopId}`)
+      ?? links.find((link) => link.dataset.nav === `list:${currentListId}`) ?? links[0];
+    for (const parts of rows.values()) {
+      parts.link.tabIndex = parts.link === wanted ? 0 : -1;
+    }
+  }
+
+  /**
+   * Announce the match count through the polite live region.
+   * @param {{matches: number, total: number, text: string}} outcome the result of `applyFilter`
+   */
+  function announceFind({ matches, total, text }) {
+    announcer ??= createLiveRegion({ document: doc });
+    announcer.announce(text === '' ? `${total} lists.` : matches === 0 ? STRINGS.noListMatches : `${matches} of ${total} lists match.`);
+  }
+
+  /**
+   * Clear the find field and show every row.
+   * @param {boolean} [announce] whether to announce the full count
+   */
+  function clearFind(announce = false) {
+    clearTimeout(findTimer);
+    findField.value = '';
+    const outcome = applyFilter();
+    if (announce) {
+      announceFind(outcome);
+    }
+  }
+
+  /**
+   * Handle the keys of the find field: Enter opens the first match, Escape clears, Down enters the rows.
+   * @param {KeyboardEvent} event the key event
+   */
+  function onFindKeydown(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      clearTimeout(findTimer);
+      const outcome = applyFilter();
+      const first = shownLinks()[0];
+      if (first && outcome.text !== '') {
+        first.click();
+      }
+    }
+    else if (event.key === 'Escape' && findField.value !== '') {
+      event.preventDefault();
+      clearFind(true);
+    }
+    else if (event.key === 'ArrowDown') {
+      const first = shownLinks()[0];
+      if (first) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  /**
+   * Move focus between the list rows with Up, Down, Home, End, PageUp, and PageDown, keeping one tab stop (`LST-15`).
+   * @param {KeyboardEvent} event the key event
+   */
+  function onRowsKeydown(event) {
+    const link = event.target.closest?.('[data-nav^="list:"]');
+    if (!link || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+    const links = shownLinks();
+    const at = links.indexOf(link);
+    const page = listScroll.clientHeight ? Math.max(1, Math.floor(listScroll.clientHeight / ROW_HEIGHT)) : PAGE_ROWS;
+    const steps = { ArrowUp: at - 1, ArrowDown: at + 1, Home: 0, End: links.length - 1, PageUp: at - page, PageDown: at + page };
+    if (at < 0 || !(event.key in steps)) {
+      return;
+    }
+    event.preventDefault();
+    const target = links[Math.min(links.length - 1, Math.max(0, steps[event.key]))];
+    target.focus();
+    target.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  /** Patch the rows by list identifier from the last lists and counts, in the stored order. */
+  function patchRows() {
     setCount(root.querySelector('[data-count="all"]'), shownCounts.all);
     const ordered = applyListOrder(shownLists, readListOrder());
     const keep = new Set(ordered.map((list) => list.id));
@@ -263,7 +411,7 @@ export function renderShell(root, { session = createSession() } = {}) {
   /** Scroll the row of the current list to the nearest edge once, after a route change to that list. */
   function revealCurrent() {
     const parts = revealId ? rows.get(revealId) : null;
-    if (parts) {
+    if (parts && !parts.item.hidden) {
       revealId = null;
       parts.link.scrollIntoView({ block: 'nearest' });
     }
@@ -316,6 +464,25 @@ export function renderShell(root, { session = createSession() } = {}) {
     main.focus();
   });
   listNav.addEventListener('keydown', onListKeydown);
+  listNav.addEventListener('keydown', onRowsKeydown);
+  listNav.addEventListener('focusin', (event) => {
+    const link = event.target.closest?.('[data-nav^="list:"]');
+    if (link) {
+      tabStopId = link.dataset.nav.slice('list:'.length);
+      syncTabStop();
+    }
+  });
+  // A click on a result opens it, so the field starts empty again for the next jump.
+  listNav.addEventListener('click', () => {
+    if (findField.value !== '') {
+      clearFind();
+    }
+  });
+  findField.addEventListener('keydown', onFindKeydown);
+  findField.addEventListener('input', () => {
+    clearTimeout(findTimer);
+    findTimer = setTimeout(() => announceFind(applyFilter()), FIND_PAUSE_MS);
+  });
   const unsubscribeOrder = onListOrderChange(() => {
     if (root.isConnected) {
       renderLists();
@@ -364,6 +531,7 @@ export function renderShell(root, { session = createSession() } = {}) {
       }
       markCurrent();
       revealCurrent();
+      syncTabStop();
       return view;
     },
 

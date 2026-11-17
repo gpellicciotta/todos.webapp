@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Added the sidebar find field from 12 lists, with name matching, a "4 of 124" count, Enter, Escape, and Down keys, one roving tab stop for the rows, the `l` shortcut, and a polite match announcement after a 150 ms pause (LST-10, LST-15).
 - FrontEnd: Named the Shared filter in the All tasks hidden-task toast while connected, so a task added under Shared: yes no longer hides silently and Show clears the filter.
 - FrontEnd: Fixed the All tasks hidden-task toast reading "Task added. hides it." when the Lists filter names only deleted lists, by using the pruned filter for rows and toast.
 - Tests: Made the shell areas e2e test wait for the action bar, main area, and bottom bar, and poll their geometry, so full parallel runs no longer read a null box.
