@@ -1,11 +1,11 @@
 ---
 id: T0287
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0287-design-and-add-the-app-nav-toggle-with
+worktree: .plan/work/T0287-design-and-add-the-app-nav-toggle-with
+status: active
+started_at: "2026-11-17T21:35:37Z"
 ended_at: —
 review: agent
 preview: none
