@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1287.1, input: 104, output: 28273, cache_read: 5935179, cache_write: 113525}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T02:15:30Z"
 ---
 # T0247: Add a find field and an All, Lists, Tasks choice to the Recycle Bin to filter its entries
 
@@ -63,6 +68,8 @@ Make entries easy to find in a full Recycle Bin, before restoring or deleting th
 - [2026-11-17] **[Doc]**
   Added BIN-8, UI design rules, regenerated the recycle-bin wireframe, and updated the changelog.
 
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
 ## Screenshots
 - Before: [bin-before-light-desktop.png](T0247-add-a-find-field-and-an-all-lists/bin-before-light-desktop.png)
