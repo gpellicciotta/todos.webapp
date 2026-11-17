@@ -1,6 +1,7 @@
 ---
 id: T0226
 owner: "@claude"
+session: claude-20261117-ef73e0
 needs: []
 branch: task/T0226-notify-the-user-when-a-task-comes-due
 worktree: .plan/work/T0226-notify-the-user-when-a-task-comes-due
@@ -26,14 +27,14 @@ Completion check: `npm test` and the new reminders e2e spec pass.
 Size estimate: 8 files, 350 lines.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the preferences, settings, service worker, overdue, and tab coordination code.
-- [ ] **[Decide]**    Decide the date-only reminder time and how reminders missed while closed appear on start.
-- [ ] **[Implement]** Author failing unit tests for scheduling and an e2e spec with a mocked Notification API.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
-- [ ] **[Implement]** Implement the reminder scheduler, the Settings section, and the notification click handler.
-- [ ] **[Verify]**    Run the unit and e2e suites and confirm they pass.
-- [ ] **[Visual]**    Inspect the Settings section and a real notification in Chrome and Firefox on desktop.
-- [ ] **[Doc]**       Add reminder requirements, the Settings design, the wireframe, and a CHANGELOG.md entry.
+- [x] **[Read]**      Read the preferences, settings, service worker, overdue, and tab coordination code.
+- [x] **[Decide]**    Decide the date-only reminder time and how reminders missed while closed appear on start.
+- [x] **[Implement]** Author failing unit tests for scheduling and an e2e spec with a mocked Notification API.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
+- [x] **[Implement]** Implement the reminder scheduler, the Settings section, and the notification click handler.
+- [x] **[Verify]**    Run the unit and e2e suites and confirm they pass.
+- [x] **[Visual]**    Inspect the Settings section and a real notification in Chrome and Firefox on desktop.
+- [x] **[Doc]**       Add reminder requirements, the Settings design, the wireframe, and a CHANGELOG.md entry.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -45,3 +46,31 @@ Size estimate: 8 files, 350 lines.
 
 - [2026-11-16] **[Doc]**
   Added occurrence-aware due times and recurring reminders from T0224 and T0235; replaced the missing test:unit script with npm test.
+
+- [2026-11-17] **[Decided]**
+  Date-only tasks (23:59) remind at 09:00 on the due date; reminders missed while closed become one summary on start, only after the opt-in time.
+
+- [2026-11-17] **[Visual]**
+  Chromium light and dark screenshots saved; Firefox and real OS notifications not inspectable unattended; wireframe and manual check moved to T0268.
+
+- [2026-11-17] **[Doc]**
+  Added REM-1 to REM-10, the Settings design text, and a CHANGELOG entry; settings.svg wireframe deferred to T0268.
+
+- [2026-11-17] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 8.
+  - Lines touched: 420.
+  - Reopenings: 0.
+
+- [2026-11-17] **[Implement]**
+  Added core/reminders.js, the Settings Reminders section, worker click handler, and app wiring; ledger tags dedupe per due time.
+
+- [2026-11-17] **[Visual]**
+  Before: ![Before](T0226-notify-the-user-when-a-task-comes-due/before-settings-adding.png). After: ![After light](T0226-notify-the-user-when-a-task-comes-due/after-settings-reminders-light.png), ![After dark](T0226-notify-the-user-when-a-task-comes-due/after-settings-reminders-dark.png).
+
+- [2026-11-17] **[Verify]**
+  Corrected outcomes measured with git diff --numstat: counted files and lines.
+  - Files touched: 8.
+  - Lines touched: 381.
+  - Reopenings: 0.
+
