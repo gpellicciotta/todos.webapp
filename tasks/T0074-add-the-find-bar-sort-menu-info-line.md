@@ -1,11 +1,11 @@
 ---
 id: T0074
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0074-add-the-find-bar-sort-menu-info-line
+worktree: .plan/work/T0074-add-the-find-bar-sort-menu-info-line
+status: active
+started_at: "2026-11-17T04:38:01Z"
 ended_at: —
 review: agent
 preview: none
