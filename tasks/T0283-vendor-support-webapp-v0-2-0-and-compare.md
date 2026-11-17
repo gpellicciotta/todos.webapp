@@ -1,6 +1,7 @@
 ---
 id: T0283
 owner: "@claude"
+session: claude-20261117-d371a3
 needs: []
 branch: task/T0283-vendor-support-webapp-v0-2-0-and-compare
 worktree: .plan/work/T0283-vendor-support-webapp-v0-2-0-and-compare
