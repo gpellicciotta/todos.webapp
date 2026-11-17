@@ -12,7 +12,8 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Forgiving: deletions go to the recycle bin, and a toast offers Undo.
 - Honest sync: the sync indicator always tells whether data is only local, pending, or synced.
 - Quiet chrome: the account, Recycle bin, and Settings sit behind the user button, since they are needed only now and then.
-- Keyboard and touch parity: every drag, hover, or shortcut has a visible button alternative.
+- Keyboard and touch parity: every drag keeps a keyboard alternative, with no visible button required.
+  Every hover or shortcut action stays reachable by a visible control.
 
 ---
 
@@ -241,11 +242,13 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
   - The due or repeat text stays left-aligned; list text that does not fit ends in an ellipsis.
 - The description clamps to 2 lines with an ellipsis on every width.
 - A row is 48 px high without a meta line and grows with its content; the whole row opens the task editor.
-  The status and More buttons stay on the first line.
+  The status button stays on the first line; the row has no trailing control, so the text takes the room.
 - Overdue due text and its clock use the danger color (orange) at regular weight; in-time ones stay muted (`OVD-2`).
   The due text always shows, such as "Yesterday 16:00", so overdue never relies on color alone.
-- The row has no note count, people icon, or status menu; those live in the editor.
-  The More button stays until T0265 removes it; below 36rem it hides, except in the list view.
+- The row has no note count, people icon, status menu, More button, or row menu; those live in the editor.
+  - Add to list and Remove from a list sit in the Lists section of the editor's Status tab (`TSK-8`).
+  - Delete task sits at the bottom of the Status tab, with an Undo toast (`TSK-11`).
+  - Drags and the Alt keys move rows, as in [Task Reordering](#task-reordering) (`LV-3`).
 - A click on the status button ticks, the most frequent change (`TSK-4`); `x` on the focused row does the same:
 
   | Status      | Click at target 1 | Click above target 1               |
@@ -541,10 +544,10 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
   The offsets of the rows add up the measured heights and the base height of the rows not yet seen.
   A resize of the window or of the list measures the rows again; rows that come in with another height than expected
   move the scroller by the difference, so the rows in view stay where they are.
-- The focused row, the row of an open menu, the dragged row, and the selected row stay rendered when scrolled away.
-  Their neighbors stay too, so Tab reaches the next row; menus stay open, and drags keep their row.
+- The focused row, the dragged row, and the selected row stay rendered when scrolled away.
+  Their neighbors stay too, so Tab reaches the next row, and drags keep their row.
 - Rows carry `aria-setsize` and `aria-posinset`, so screen readers count every task, rendered or not.
-- Move up, Move down, the Alt keys, and drag targets cover the whole list; a moved row scrolls into view.
+- The Alt keys and drag targets cover the whole list; a moved row scrolls into view.
 - `TEC-16` is met for opening a view under 4x CPU throttling, the stand-in for a mid-range phone.
   The 150 lists it now names are measured under Many Lists: Lists opens in about 165 ms.
   With 5000 tasks, All tasks paints its first rows about 175 ms after the route change, down from about 265 ms.
@@ -588,7 +591,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - Moves place a task next to its shown neighbor, so tasks the status filter hides keep their places.
 - **[Decided]** Touch screens start a drag with a long hold on the row; no row has a More button.
 - Another sort affects the view only; the info line reads "Sorted by Due time" and the manual order is kept (`LV-7`).
-- While sorted or grouped, drag handles and move entries are hidden; Manual order restores the stored order (`LV-8`).
+- While sorted or grouped, drag handles hide and the Alt keys move nothing; Manual order restores the stored order (`LV-8`).
 - The status filter checks every status by default (`LV-10`), so the info line names no status.
 - A deleted or unknown list redirects to All tasks with a toast.
 - Leaving the screen, such as with Back, closes an open Delete list dialog as Keep.
@@ -943,7 +946,7 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 ### Creating and Organizing Offline
 1. The user adds tasks with the add bar in All tasks or in a list.
 2. New list on the Lists screen, its Create list offer, or the editor's Add to list box creates a list.
-3. The editor's Lists section adds a task to several lists; the row menu adds one list at a time.
+3. The Lists section of the editor's Status tab adds a task to lists and removes it from them.
 4. In a list with manual order, the user drags rows or uses the Alt keys.
 5. Every step works offline; the user menu stays at Local only.
 

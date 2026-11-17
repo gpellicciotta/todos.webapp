@@ -722,13 +722,6 @@
   margin-inline-start: auto;
 }
 
-/* Compact rows keep the More button in the list view, since it holds Move up and Move down on touch screens. */
-@container task-list (width < 36rem) {
-  .list-view .task-row > .task-row__more {
-    display: inline-grid;
-  }
-}
-
 /*
  * Import backup dialog: the file field, then the file summary, the mode choice, and the counts.
  */

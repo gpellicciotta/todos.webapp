@@ -105,7 +105,7 @@ describe('mountAllTasks', () => {
     expect(document.querySelector('.info-line__text').textContent).toBe('4 tasks · Grouped by List · Sorted by Manual order');
   });
 
-  it('updates the due chip on the minute tick and keeps the row and an open More menu (OVD-2)', async () => {
+  it('updates the due chip on the minute tick and keeps the row and its focus, with no row menu (OVD-2)', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     try {
       let time = new Date(2026, 10, 4, 9, 59);
@@ -116,17 +116,14 @@ describe('mountAllTasks', () => {
       });
       await screen.idle();
       const row = document.querySelector('.task-row');
-      const more = row.querySelector('.task-row__more');
-      more.click();
-      const menu = document.getElementById(more.getAttribute('aria-controls'));
-      const focused = document.activeElement;
-      expect(menu.contains(focused)).toBe(true);
+      expect(row.querySelector('.task-row__more, [aria-haspopup]')).toBeNull();
+      const focused = row.querySelector('.task-row__open');
+      focused.focus();
       time = new Date(2026, 10, 4, 10, 1);
       vi.advanceTimersByTime(60_000);
       expect(document.querySelector('.task-row')).toBe(row);
       expect(row.querySelector('.task-row__due--overdue').textContent).toBe('Today 10:00');
-      expect(menu.hidden).toBe(false);
-      expect(document.querySelector('.status-menu')).toBeNull();
+      expect(document.querySelector('.task-list-frame .menu, .status-menu')).toBeNull();
       expect(document.activeElement).toBe(focused);
     }
     finally {

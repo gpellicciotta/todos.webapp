@@ -288,11 +288,11 @@ test('task row specimens cover every documented state', async ({ page }) => {
     '.task-row .task-row__lists',
     '.task-row .status-button > .task-row__count',
     '.task-row .task-row__handle',
-    '.task-row .task-row__more',
   ]) {
     await expect(page.locator(`#task-row ${selector}`).first(), selector).toBeVisible();
   }
   await expect(page.locator('#task-row, #task-list').locator('.task-row__notes, .task-row__shared, .chip--overdue, .task-row .chip')).toHaveCount(0);
+  await expect(page.locator('.task-row__more, .task-row [aria-haspopup]')).toHaveCount(0);
 });
 
 /**

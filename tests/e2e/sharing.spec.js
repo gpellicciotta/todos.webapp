@@ -144,7 +144,7 @@ test('a viewer sees the list read-only, without edit, move, or delete controls (
   await expect(page.getByRole('button', { name: 'Add', exact: true })).toBeHidden();
   const row = page.locator('.task-row', { hasText: 'Plan the trip' });
   await expect(row.locator('.status-button')).toBeDisabled();
-  await expect(row.locator('[data-role="more"]')).toBeHidden();
+  await expect(row.locator('[data-role="more"]')).toHaveCount(0);
   await expect(row.locator('.task-row__handle')).toHaveCount(0);
   await page.getByRole('button', { name: /^[^:]+ actions$/ }).click();
   await expect(page.getByRole('menuitem')).toHaveText(['List details', 'Edit view options']);

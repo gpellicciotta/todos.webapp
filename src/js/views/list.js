@@ -120,7 +120,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
   const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, now, getStorage });
   const addHint = createAddHint({ document: doc, describe: (text) => addBar.descriptionOf(text) });
-  const moves = { enabled: () => can(listRole(data?.list), 'reorder-task') && model.get().order.field === 'manual' && (model.get().group ?? 'none') === 'none', step: (taskId, step) => reorder.step(taskId, step) };
+  const moves = { enabled: () => can(listRole(data?.list), 'reorder-task') && model.get().order.field === 'manual' && (model.get().group ?? 'none') === 'none' };
   const taskList = createTaskList({
     document: doc, store, toaster, label: '', listId, moves, fallbackFocus: () => addBar.input,
     hrefOf: (task) => formatRoute('list-task', { listId, taskId: task.id }),

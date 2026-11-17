@@ -19,22 +19,11 @@ function at(day, hours, minutes = 0) {
 }
 
 /**
- * Count the menus that show, such as an open More menu.
+ * Count the menus that show; task rows open none.
  * @returns {number} the showing menus
  */
 function menusShowing() {
   return [...document.querySelectorAll('.menu')].filter((menu) => isShowing(menu)).length;
-}
-
-/**
- * Open the More menu of a row.
- * @param {HTMLElement} row the task row
- * @returns {HTMLElement} the menu
- */
-function openMoreMenu(row) {
-  const more = row.querySelector('.task-row__more');
-  more.click();
-  return document.getElementById(more.getAttribute('aria-controls'));
 }
 
 describe('formatDue', () => {
@@ -167,13 +156,24 @@ describe('createTaskList', () => {
     expect(document.querySelector('[aria-current]')).toBeNull();
   });
 
-  it('builds only the More menu, and no status menu, next to the list', () => {
-    expect(document.querySelectorAll('.task-list-frame > .menu')).toHaveLength(1);
-    expect(document.querySelector('.status-menu')).toBeNull();
-    for (const button of document.querySelectorAll('.status-button')) {
-      expect(button.hasAttribute('aria-controls')).toBe(false);
-      expect(button.hasAttribute('aria-haspopup')).toBe(false);
+  it('builds no menu next to the list, and rows end with no More button or other trailing control', () => {
+    expect(document.querySelector('.task-list-frame .menu, .status-menu')).toBeNull();
+    expect(document.querySelector('.task-row__more, [data-role="more"], .task-row [aria-haspopup]')).toBeNull();
+    for (const row of document.querySelectorAll('.task-row')) {
+      expect([...row.children].map((child) => child.dataset.role)).toEqual(['status', 'open']);
+      expect(row.lastElementChild.classList.contains('task-row__open')).toBe(true);
     }
+  });
+
+  it('opens no row menu from any key on any row control', () => {
+    const keys = [['Enter'], [' '], ['ArrowDown'], ['ArrowUp'], ['F10', { shiftKey: true }], ['ContextMenu']];
+    for (const control of document.querySelectorAll('.task-row [data-role]')) {
+      for (const [key, extra] of keys) {
+        control.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...extra }));
+        expect(menusShowing(), `${control.dataset.role} ${key}`).toBe(0);
+      }
+    }
+    expect(document.querySelector('.menu')).toBeNull();
   });
 
   it('shows done and target counts as a badge on the status icon above target 1, and none at target 1', () => {
@@ -219,19 +219,6 @@ describe('createTaskList', () => {
     list.render([french(2)], ctx);
     expect(document.querySelector('.task-row')).not.toBe(before);
     expect(document.querySelector('.task-row__count').textContent).toBe('2/3');
-  });
-
-  it('offers Add to list and Delete in the More menu, without Set status', async () => {
-    const more = document.querySelectorAll('.task-row__more')[1];
-    more.click();
-    const menu = document.getElementById(more.getAttribute('aria-controls'));
-    expect([...menu.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent.trim())).toEqual(['Add to list', 'Delete']);
-    menu.querySelector('[data-action="add-to-list"]').click();
-    expect(isShowing(menu)).toBe(true);
-    const choices = [...menu.querySelectorAll('[role="menuitem"]')];
-    expect(choices.map((item) => item.textContent.trim())).toEqual(['Errands', 'Work']);
-    choices[1].click();
-    expect(store.addToList).toHaveBeenCalledWith('t2', 'l3');
   });
 
   describe('ticking, without a status menu (TSK-4)', () => {
@@ -465,14 +452,6 @@ describe('createTaskList', () => {
     });
   });
 
-  it('styles the Delete menu item as danger and no other item', () => {
-    const more = document.querySelectorAll('.task-row__more')[1];
-    more.click();
-    const menu = document.getElementById(more.getAttribute('aria-controls'));
-    const danger = [...menu.querySelectorAll('.menu__item--danger')].map((item) => item.dataset.action);
-    expect(danger).toEqual(['delete']);
-  });
-
   it('marks each status button with its status', () => {
     const buttons = [...document.querySelectorAll('.status-button')];
     expect(buttons.length).toBeGreaterThan(0);
@@ -492,74 +471,27 @@ describe('createTaskList', () => {
     const foreign = [shapeTask({ id: 't1', description: 'Call the plumber', status: 'ready', 'due-time': null, 'owner-id': 9 })];
 
     /**
-     * Render the foreign task for a role and tell what its row and menu offer.
+     * Render the foreign task for a role and return its row.
      * @param {string} role the role on the list holding the task
      * @param {string|null} [listId] the list a list view shows
-     * @returns {{status: HTMLButtonElement, more: HTMLButtonElement, items: () => string[]}} the row controls
+     * @returns {HTMLLIElement} the row
      */
     function rowFor(role, listId = null) {
       list.destroy();
       list = createTaskList({ document, store, toaster, label: 'x', listId, hrefOf: (task) => `#/tasks/${task.id}` });
       document.body.replaceChildren(list.element);
       list.render(foreign, shared(role));
-      const row = document.querySelector('.task-row');
-      const more = row.querySelector('[data-role="more"]');
-      return {
-        status: row.querySelector('[data-role="status"]'),
-        more,
-        items: () => {
-          more.click();
-          return [...document.querySelectorAll('.menu:not([hidden]) .menu__item')].map((item) => item.textContent);
-        },
-      };
+      return document.querySelector('.task-row');
     }
 
-    it('locks the status of a viewer and leaves them no row menu', () => {
-      const row = rowFor('viewer');
-      expect(row.status.disabled).toBe(true);
-      expect(row.more.hidden).toBe(true);
+    it('locks the status of a viewer only, and gives no role a row menu: lists and Delete live in the editor', () => {
+      for (const [role, listId] of [['viewer', null], ['task-editor', 'l1'], ['task-editor', null], ['owner', null]]) {
+        const row = rowFor(role, listId);
+        expect(row.querySelector('[data-role="status"]').disabled, role).toBe(role === 'viewer');
+        expect(row.querySelector('[data-role="more"], [aria-haspopup]'), role).toBeNull();
+        expect(document.querySelector('.menu'), role).toBeNull();
+      }
     });
-
-    it('lets a task editor change the status and remove the task from the list, but not delete it', () => {
-      const row = rowFor('task-editor', 'l1');
-      expect(row.status.disabled).toBe(false);
-      expect(row.items()).toEqual(['Add to list', 'Remove from this list']);
-    });
-
-    it('offers a task editor Add to list only for the lists they may add to', () => {
-      const row = rowFor('task-editor');
-      expect(row.items()).toEqual(['Add to list']);
-      document.querySelector('.menu:not([hidden]) [data-action="add-to-list"]').click();
-      expect([...document.querySelectorAll('.menu:not([hidden]) .menu__item')].map((item) => item.textContent)).toEqual(['Mine']);
-    });
-
-    it('offers the owner of the list every action, including Delete', () => {
-      const row = rowFor('owner');
-      expect(row.items()).toEqual(['Add to list', 'Delete']);
-    });
-  });
-
-  it('closes a reopened Add to list menu that has no list left, and focuses the More button', () => {
-    const more = document.querySelectorAll('.task-row__more')[1];
-    more.click();
-    const menu = document.getElementById(more.getAttribute('aria-controls'));
-    menu.querySelector('[data-action="add-to-list"]').click();
-    list.render(tasks, { ...ctx, listsByTask: new Map([...ctx.listsByTask, ['t2', ['l1', 'l2', 'l3']]]) });
-    expect(isShowing(menu)).toBe(false);
-    expect(document.activeElement).toBe(document.querySelectorAll('.task-row__more')[1]);
-  });
-
-  it('moves a task to the recycle bin with an Undo toast (TSK-11)', async () => {
-    const more = document.querySelectorAll('.task-row__more')[0];
-    more.click();
-    document.getElementById(more.getAttribute('aria-controls')).querySelector('[data-action="delete"]').click();
-    await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
-    expect(store.deleteTask).toHaveBeenCalledWith('t1');
-    const [message, settings] = toaster.show.mock.lastCall;
-    expect(message).toBe('Task moved to the recycle bin.');
-    expect(settings.undo).toBe(true);
-    settings.onAction();
-    expect(store.restoreTask).toHaveBeenCalledWith('t1');
   });
 
   it('keeps focus on the same control when rows render again', () => {
@@ -569,21 +501,11 @@ describe('createTaskList', () => {
     expect(document.activeElement.classList.contains('status-button')).toBe(true);
   });
 
-  it('keeps an open More menu open, on the same item, when rows render again', () => {
-    const menu = openMoreMenu(document.querySelectorAll('.task-row')[1]);
-    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
-    expect(document.activeElement.dataset.action).toBe('delete');
-    list.render([...tasks].reverse(), ctx);
-    expect(isShowing(menu)).toBe(true);
-    expect(menu.contains(document.activeElement)).toBe(true);
-    expect(document.activeElement.dataset.action).toBe('delete');
-  });
-
-  it('closes the menu and passes focus on when its row leaves', () => {
-    const menu = openMoreMenu(document.querySelectorAll('.task-row')[1]);
+  it('passes focus on to the row now at its place when the focused row leaves', () => {
+    document.querySelectorAll('.status-button')[1].focus();
     list.render([tasks[0], tasks[2]], ctx);
-    expect(isShowing(menu)).toBe(false);
     expect(document.activeElement.closest('.task-row').dataset.taskId).toBe('t3');
+    expect(document.activeElement.classList.contains('status-button')).toBe(true);
   });
 
   it('keeps the other row elements when one task changes (TEC-16)', () => {
@@ -611,18 +533,17 @@ describe('createTaskList', () => {
     expect(after[2]).toBe(before[0]);
   });
 
-  it('updates only the due chips on the clock tick, keeping rows, an open menu, and focus', () => {
+  it('updates only the due chips on the clock tick, keeping rows and focus', () => {
     const due = shapeTask({ id: 't4', description: 'Pay the rent', status: 'ready', 'due-time': at(4, 10) });
     list.render([...tasks, due], ctx);
     const before = [...document.querySelectorAll('.task-row')];
     expect(before[3].querySelector('.task-row__due').textContent).toBe('Today 10:00');
     expect(before[3].querySelector('.task-row__due--overdue')).toBeNull();
-    const menu = openMoreMenu(before[3]);
-    const focused = document.activeElement;
+    const focused = before[3].querySelector('.task-row__open');
+    focused.focus();
     list.tick(new Date(2026, 10, 4, 10, 1));
     [...document.querySelectorAll('.task-row')].forEach((row, index) => expect(row).toBe(before[index]));
     expect(before[3].querySelector('.task-row__due--overdue').textContent).toBe('Today 10:00');
-    expect(isShowing(menu)).toBe(true);
     expect(document.activeElement).toBe(focused);
   });
 
@@ -651,7 +572,6 @@ describe('createTaskList', () => {
     let scrolled;
     let reorder;
     let onMove;
-    const step = (taskId, delta) => reorder.step(taskId, delta);
 
     /**
      * List the rendered rows.
@@ -680,7 +600,7 @@ describe('createTaskList', () => {
       scrolled = 0;
       onMove = vi.fn();
       other = createTaskList({
-        document, store, toaster, label: 'Tasks', hrefOf: () => '#', moves: { enabled: () => true, step },
+        document, store, toaster, label: 'Tasks', hrefOf: () => '#', moves: { enabled: () => true },
       });
       document.body.append(other.element);
       for (const element of [other.element, other.element.querySelector('.task-list')]) {
@@ -722,31 +642,28 @@ describe('createTaskList', () => {
       expect(shown()[0].dataset.taskId).toBe('m985');
     });
 
-    it('keeps the focused row, its neighbors, and an open menu rendered while they scroll away', () => {
-      const menu = openMoreMenu(rowOf('m5'));
-      expect(isShowing(menu)).toBe(true);
+    it('keeps the focused row and its neighbors rendered while they scroll away', () => {
+      const focused = rowOf('m5').querySelector('.task-row__open');
+      focused.focus();
       scrollTo(2000 * ROW);
       expect(shown().slice(0, 3).map((row) => row.dataset.taskId)).toEqual(['m4', 'm5', 'm6']);
       expect(shown()[3].dataset.taskId).toBe('m1980');
       expect(shown()[3].style.marginBlockStart).toBe(`${(1980 - 7) * ROW}px`);
       expect(other.element.querySelector('.task-list').style.paddingBlockStart).toBe(`${4 * ROW}px`);
-      expect(isShowing(menu)).toBe(true);
-      expect(menu.contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toBe(focused);
     });
 
-    it('offers Move down on the last rendered row, and scrolls a moved row into view with focus kept', () => {
+    it('moves the last rendered row down with Alt+Down, and scrolls it into view with focus kept', () => {
       const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
-      const more = rowOf('m29').querySelector('.task-row__more');
-      more.click();
-      const menu = document.getElementById(more.getAttribute('aria-controls'));
-      menu.querySelector('[data-action="move-down"]').click();
+      const status = rowOf('m29').querySelector('.status-button');
+      status.focus();
+      status.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true, cancelable: true }));
       expect(onMove).toHaveBeenCalledWith('m29', { placement: { after: 'm30' }, index: 30 });
-      more.focus();
       const moved = [...many.slice(0, 29), many[30], many[29], ...many.slice(31)];
       other.render(moved, ctx);
       const row = rowOf('m29');
       expect(row.getAttribute('aria-posinset')).toBe('31');
-      expect(document.activeElement).toBe(row.querySelector('.task-row__more'));
+      expect(document.activeElement).toBe(row.querySelector('.status-button'));
       expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
       expect(scroll.mock.contexts.at(-1)).toBe(row);
     });
@@ -1180,7 +1097,7 @@ describe('createTaskList', () => {
     const other = createTaskList({ document, store, toaster, label: 'Tasks', hrefOf: () => '#', fallbackFocus: () => fallback });
     document.body.append(other.element);
     other.render([tasks[1]], ctx);
-    other.element.querySelector('.task-row__more').focus();
+    other.element.querySelector('.status-button').focus();
     other.render([], ctx);
     expect(document.activeElement).toBe(fallback);
     other.destroy();
@@ -1222,8 +1139,7 @@ describe('createTaskList', () => {
       rowOf().querySelector('.status-button').dispatchEvent(event);
       expect(event.defaultPrevented).toBe(false);
       expect(menusShowing()).toBe(0);
-      const menu = openMoreMenu(rowOf());
-      expect([...menu.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent.trim())).not.toContain('Complete for previous period');
+      expect(rowOf().querySelector('[aria-haspopup]')).toBeNull();
       expect(list.element.textContent).not.toContain('previous period');
       expect(store.postEvent).not.toHaveBeenCalled();
     });

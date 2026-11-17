@@ -92,7 +92,7 @@ describe('attachReorder', () => {
     list.remove();
   });
 
-  it('moves a task by step for the Move up and Move down menu entries', () => {
+  it('moves a task by step, as Alt+Up and Alt+Down do', () => {
     const list = rows();
     const onMove = vi.fn();
     const reorder = attachReorder(list, { enabled: () => true, onMove });

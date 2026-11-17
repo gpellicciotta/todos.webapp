@@ -1,5 +1,5 @@
 /**
- * Task list: the task rows of All tasks and the list view, with their status buttons and More menus.
+ * Task list: the task rows of All tasks and the list view, with their status buttons.
  *
  * A row shows the status button and the description, clamped to two lines by app-components.css.
  * Above target 1, a badge on the status icon shows the done and target counts, such as 2/3.
@@ -13,12 +13,10 @@
  * The status button opens no menu: every other status action, and Complete for previous period, live in the task editor.
  * A recurring row shows its repeat interval, such as Weekly, instead of a due time, and is never overdue.
  * Past its period end it shows as `ready` with count 0 until the roll-over (the display rule), also on the minute tick.
- * The More button offers Add to list and Delete, which moves the task to the recycle bin
- * with an Undo toast (`TSK-8`, `TSK-11`). Status is not in the More menu.
- * In a list view, the More menu adds Remove from this list, and Move up and Move down while moves are on,
- * when rows also carry a drag handle, shown in the gutter on the hovered or focused row (`LV-3`).
- * One More menu serves every row: each opening attaches the menu to that row's button.
- * Rendering again keeps an open menu open on the same row and item, and keeps focus on the same row control.
+ * A row has no More button or menu: the task editor adds to and removes from lists and deletes (`TSK-8`, `TSK-11`).
+ * While moves are on, rows carry a drag handle, shown in the gutter on the hovered or focused row;
+ * drags and the Alt keys of reorder.js move rows (`LV-3`).
+ * Rendering again keeps focus on the same row control.
  * Rows are kept by key, the task id or, in a grouped list, the group and the task id, since a task of several lists
  * shows in each group: a render builds only the rows whose content changed and moves as few rows as it can,
  * and the clock tick redraws only meta lines whose due text changed (`TEC-16`).
@@ -30,16 +28,14 @@
  * A list of more than 200 tasks renders only the rows in view plus a buffer, so 5000 tasks open fast (`TEC-16`).
  * Padding on the list and a margin on a row after a gap stand in for the rows left out, so the scroll height holds;
  * the offsets of the rows add up the row and header heights.
- * The focused row, the row of an open menu, the dragged row, and the selected row stay rendered with their
- * neighbors, so focus, menus, Tab order, and drags survive a scroll. Rows carry `aria-setsize` and `aria-posinset`.
- * The menus live outside the list, since the list is a size container, which would anchor fixed menus.
+ * The focused row, the dragged row, and the selected row stay rendered with their neighbors,
+ * so focus, Tab order, and drags survive a scroll. Rows carry `aria-setsize` and `aria-posinset`.
  * `markAdded` highlights a new task's row for two seconds and scrolls it into view, rendering it first when needed.
  */
 
 import { applyEvent, displayTask, dueTimeOf, isRecurring, isStale, recurrenceLabel, statusOf } from '../core/occurrences.js';
 import { isOverdue } from '../core/overdue.js';
-import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
-import { attachMenu } from '../../vendor/design/js/menu.js';
+import { can, taskRole } from '../core/permissions.js';
 
 const ICONS = 'img/icons.svg';
 const SVG = 'http://www.w3.org/2000/svg';
@@ -60,7 +56,6 @@ const ROW_PX = 48;
 const HEADER_PX = 32;
 /** The most renders for one change: each measures the rows that showed for the first time, so few are needed. */
 const MAX_PASSES = 4;
-let instances = 0;
 
 /** Status names, in lifecycle order. */
 export const STATUS_LABELS = Object.freeze({
@@ -99,14 +94,6 @@ const STRINGS = Object.freeze({
   inertHint: 'Open the task to change its status.',
   marked: (status) => `Task marked ${STATUS_LABELS[status].toLowerCase()}.`,
   ticked: (occurrence) => `Ticked, ${countWords(occurrence)}.`,
-  moreFor: 'More actions for ',
-  addToList: 'Add to list',
-  addTo: 'Add to a list: ',
-  removeFromList: 'Remove from this list',
-  moveUp: 'Move up',
-  moveDown: 'Move down',
-  delete: 'Delete',
-  deleted: 'Task moved to the recycle bin.',
   failed: 'That change could not be saved.',
   yesterday: 'Yesterday',
   today: 'Today',
@@ -258,11 +245,11 @@ function metaItem(doc, className, icon, text) {
  * @param {object} ctx the render context of `render`
  * @param {object} options the list options
  * @returns {{key: string, dueKey: string, due: object|null, count: string|null, repeat: string|null, href: string,
- *   handle: boolean, names: string[], locked: boolean, menu: boolean}} the row content
+ *   handle: boolean, names: string[], locked: boolean}} the row content
  */
 function viewOf(task, ctx, options) {
   const ids = ctx.listsByTask?.get(task.id) ?? [];
-  const access = accessOf(task, ctx, options.listId);
+  const locked = isLocked(task, ctx);
   const names = ids.length === 0 ? [] : [...(ctx.lists?.values() ?? [])]
     .filter((list) => list.id !== options.listId && ids.includes(list.id)).map((list) => list.name);
   const href = options.hrefOf(task);
@@ -274,28 +261,20 @@ function viewOf(task, ctx, options) {
   // An ended series keeps its status and count but turns inert, so the key holds the tick too.
   const tick = tickEvent(occurrence, task['lifecycle-rules']);
   return {
-    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, access.locked, access.menu, tick]),
-    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, repeat, href, handle, names, locked: access.locked, menu: access.menu,
+    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, locked, tick]),
+    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, repeat, href, handle, names, locked,
   };
 }
 
 /**
- * Work out what the user's roles allow on a task (`SHR-4`, `SHR-5`): changing it, adding it to lists, removing it
- * from the list of a list view, and sending it to the recycle bin. A local task allows everything.
+ * Tell whether the user's roles lock a task's status (`SHR-4`), as for a viewer; a local task is never locked.
  * @param {object} task the task
  * @param {{lists?: Map<string, object>, listsByTask?: Map<string, string[]>, userId?: number|string|null}} ctx the render context
- * @param {string|null} listId the list a list view shows
- * @returns {{locked: boolean, add: boolean, remove: boolean, trash: boolean, menu: boolean}} the allowed actions;
- *   `menu` tells whether the More menu has an entry beyond the moves
+ * @returns {boolean} true when the user may not change the task
  */
-function accessOf(task, ctx, listId) {
+function isLocked(task, ctx) {
   const held = (ctx.listsByTask?.get(task.id) ?? []).map((id) => ctx.lists?.get(id)).filter(Boolean);
-  const userId = ctx.userId ?? null;
-  const role = taskRole(task, held, userId);
-  const trash = canTrashTask(task, held, userId);
-  const add = can(role, 'add-to-list');
-  const remove = listId !== null && can(listRole(ctx.lists?.get(listId)), 'remove-from-list');
-  return { locked: !can(role, 'update-task'), add, remove, trash, menu: add || remove || trash };
+  return !can(taskRole(task, held, ctx.userId ?? null), 'update-task');
 }
 
 /**
@@ -347,12 +326,7 @@ function rowTemplate(doc, handle) {
   const open = make(doc, 'a', 'task-row__open');
   open.dataset.role = 'open';
   open.append(make(doc, 'span', 'task-row__description'));
-  const more = make(doc, 'button', 'icon-button task-row__more');
-  more.type = 'button';
-  more.dataset.role = 'more';
-  more.setAttribute('aria-haspopup', 'menu');
-  more.append(spriteIcon(doc, 'more'));
-  row.append(status, open, more);
+  row.append(status, open);
   return row;
 }
 
@@ -416,8 +390,7 @@ function renderRow(doc, task, view, template, selected) {
   const row = template.cloneNode(true);
   row.dataset.status = statusOf(task);
   row.dataset.taskId = task.id;
-  const more = row.lastElementChild;
-  const open = more.previousElementSibling;
+  const open = row.lastElementChild;
   const status = open.previousElementSibling;
   const occurrence = task['current-occurrence'];
   // A click that posts nothing leaves the button focusable for the row keys, but aria-disabled; a viewer's stays disabled.
@@ -444,9 +417,7 @@ function renderRow(doc, task, view, template, selected) {
   if (meta) {
     open.append(meta);
   }
-  more.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
   status.disabled = view.locked;
-  more.hidden = !view.menu && !view.handle;
   return row;
 }
 
@@ -527,44 +498,19 @@ function placeRows(list, rows) {
 }
 
 /**
- * Create a menu item.
- * @param {Document} doc the document
- * @param {string} role `menuitem` or `menuitemradio`
- * @param {string} text the label
- * @param {object} data the dataset entries
- * @param {{icon?: string, checked?: boolean}} [extra] a leading icon and the radio state
- * @returns {HTMLButtonElement} the item
- */
-function menuItem(doc, role, text, data, { icon, checked, danger } = {}) {
-  const item = make(doc, 'button', danger ? 'menu__item menu__item--danger' : 'menu__item');
-  item.type = 'button';
-  item.setAttribute('role', role);
-  Object.assign(item.dataset, data);
-  if (role === 'menuitemradio') {
-    item.setAttribute('aria-checked', String(Boolean(checked)));
-    item.append(spriteIcon(doc, 'check', 'icon menu__check'));
-  }
-  if (icon) {
-    item.append(spriteIcon(doc, icon));
-  }
-  item.append(text);
-  return item;
-}
-
-/**
  * Create a task list.
  * @param {object} options list options
  * @param {Document} [options.document] the document
  * @param {object} options.store the store facade
- * @param {{show: Function}} options.toaster shows the Undo toast
+ * @param {{show: Function}} options.toaster shows the Undo toast of a tick
  * @param {string} options.label the accessible name of the list
  * @param {(task: object) => string} options.hrefOf the editor route of a task
  * @param {string|null} [options.closeHref] the route without an editor, which a click on the selected row opens
  * @param {string|null} [options.listId] the list a list view shows, left out of the list chips
  * @param {(error: unknown) => void} [options.onError] reports a failed change
  * @param {() => HTMLElement|null} [options.fallbackFocus] the control that gets focus when the last row leaves
- * @param {{enabled: () => boolean, step: (taskId: string, step: -1|1) => void}} [options.moves] the moves
- *   of a list view: whether they are on, and the move of a task one row up or down
+ * @param {{enabled: () => boolean}} [options.moves] the moves of a list view: whether they are on, which shows the
+ *   drag handles
  * @param {() => HTMLElement|null} [options.scroller] the element the list scrolls in, the main column by default
  * @returns {{element: HTMLElement, render: Function, tick: Function, setSelected: Function, ids: Function,
  *   destroy: Function}} the list
@@ -573,14 +519,10 @@ export function createTaskList({
   document: doc = globalThis.document, store, toaster, label, hrefOf, closeHref = null, listId = null, onError, fallbackFocus,
   moves = null, scroller = null,
 }) {
-  const id = `task-list-${(instances += 1)}`;
   const element = make(doc, 'div', 'task-list-frame');
   const list = make(doc, 'ul', 'task-list');
   list.setAttribute('aria-label', label);
-  const moreMenu = make(doc, 'div', 'menu');
-  moreMenu.id = `${id}-more`;
-  moreMenu.hidden = true;
-  element.append(list, moreMenu);
+  element.append(list);
   const options = { hrefOf, listId, moves, selected: null };
   const byId = new Map();
   const templates = new Map();
@@ -601,8 +543,6 @@ export function createTaskList({
   let added = null;
   let addedTimer = null;
   let ctx = {};
-  let active = null;
-  let justClosed = null;
   // Whether a task shows under the view's filters, as the last render passed it.
   let shows = null;
   // The keys of the collapsed groups, and the arguments of the last render, which a toggle renders again.
@@ -617,16 +557,6 @@ export function createTaskList({
     console.error('Task change failed:', error);
     toaster.show(STRINGS.failed);
   });
-
-  /** Detach the open or last menu from its More button, which keeps announcing its popup. */
-  function detach() {
-    if (active) {
-      const { trigger, controller } = active;
-      active = null;
-      controller.destroy();
-      trigger.setAttribute('aria-haspopup', 'menu');
-    }
-  }
 
   /**
    * Post a user event on a task, and show an Undo toast, whose Undo posts the inverse event, when `always` asks for one
@@ -662,115 +592,9 @@ export function createTaskList({
    */
   function tick(task) {
     const type = task ? tickEvent(task['current-occurrence'], task['lifecycle-rules']) : null;
-    if (type && !accessOf(task, ctx, listId).locked) {
+    if (type && !isLocked(task, ctx)) {
       post(task, type, true);
     }
-  }
-
-  /**
-   * Fill a menu, attach it to a row button, and open it.
-   * @param {HTMLElement} trigger the row button
-   * @param {HTMLElement} menu the menu
-   * @param {(item: HTMLElement) => void} onSelect handles the picked item
-   * @param {'first'|'last'|(() => HTMLElement|null)} at the item that gets focus
-   * @param {'more'|'add-to-list'} kind which menu content is open, to reopen it after a render
-   */
-  function openMenu(trigger, menu, onSelect, at, kind) {
-    detach();
-    const controller = attachMenu(trigger, menu, {
-      onSelect,
-      onClose: () => {
-        if (active?.controller === controller) {
-          detach();
-          justClosed = trigger;
-          setTimeout(() => {
-            justClosed = justClosed === trigger ? null : justClosed;
-          });
-        }
-      },
-    });
-    active = { trigger, controller, kind };
-    controller.open(typeof at === 'string' ? at : 'first');
-    if (typeof at === 'function') {
-      at()?.focus();
-    }
-  }
-
-  /**
-   * List the lists that do not hold a task yet.
-   * @param {object} task the task
-   * @returns {object[]} the lists, in display order
-   */
-  function freeLists(task) {
-    const member = ctx.listsByTask?.get(task.id) ?? [];
-    return [...(ctx.lists?.values() ?? [])].filter((candidate) => !member.includes(candidate.id) && can(listRole(candidate), 'add-to-list'));
-  }
-
-  /**
-   * Open the Add to list choices of a task in the More menu; with no list left, such as after a render, focus More.
-   * @param {HTMLElement} trigger the More button
-   * @param {object} task the task
-   */
-  function openAddToList(trigger, task) {
-    const free = freeLists(task);
-    if (free.length === 0) {
-      detach();
-      moreMenu.replaceChildren();
-      trigger.focus();
-      return;
-    }
-    moreMenu.setAttribute('aria-label', `${STRINGS.addTo}${task.description}`);
-    moreMenu.replaceChildren(...free.map((candidate) => menuItem(doc, 'menuitem', candidate.name, { listId: candidate.id })));
-    openMenu(trigger, moreMenu, (choice) => store.addToList(task.id, choice.dataset.listId).catch(fail), 'first', 'add-to-list');
-  }
-
-  /**
-   * Open the More menu of a task: Add to list when a list is left, Remove from this list in a list view,
-   * Move up and Move down while moves are on and a row is left that way, and Delete.
-   * @param {HTMLElement} trigger the More button
-   * @param {object} task the task
-   * @param {'first'|'last'} at the item that gets focus
-   */
-  function openMore(trigger, task, at) {
-    const index = places.get(task.id);
-    const movable = moves?.enabled() ?? false;
-    const access = accessOf(task, ctx, listId);
-    const entries = [
-      [access.add && freeLists(task).length > 0, STRINGS.addToList, 'add-to-list', 'plus'],
-      [access.remove, STRINGS.removeFromList, 'remove-from-list'],
-      [movable && index > 0, STRINGS.moveUp, 'move-up'],
-      [movable && index < items.length - 1, STRINGS.moveDown, 'move-down'],
-      [access.trash, STRINGS.delete, 'delete', 'bin'],
-    ];
-    moreMenu.setAttribute('aria-label', `${STRINGS.moreFor}${task.description}`);
-    moreMenu.replaceChildren(...entries.filter(([shown]) => shown)
-      .map(([, text, action, icon]) => menuItem(doc, 'menuitem', text, { action }, { icon, danger: action === 'delete' })));
-    openMenu(trigger, moreMenu, (item) => {
-      if (item.dataset.action === 'add-to-list') {
-        openAddToList(trigger, task);
-      }
-      else if (item.dataset.action === 'remove-from-list') {
-        store.removeFromList(task.id, listId).catch(fail);
-      }
-      else if (item.dataset.action === 'move-up' || item.dataset.action === 'move-down') {
-        moves.step(task.id, item.dataset.action === 'move-up' ? -1 : 1);
-      }
-      else if (item.dataset.action === 'delete') {
-        store.deleteTask(task.id).then(() => toaster.show(STRINGS.deleted, {
-          undo: true,
-          onAction: () => store.restoreTask(task.id).catch(fail),
-        }), fail);
-      }
-    }, at, 'more');
-  }
-
-  /**
-   * Return the key of a menu item: its event, action, or list identifier.
-   * @param {Element|null} item the item
-   * @returns {string|undefined} the key
-   */
-  function itemKey(item) {
-    return item?.dataset.event ?? item?.dataset.action ?? item?.dataset.listId;
   }
 
   /**
@@ -844,7 +668,7 @@ export function createTaskList({
   }
 
   /**
-   * List the items that stay rendered out of view: the focused row or header, the row of the open menu, the dragged row,
+   * List the items that stay rendered out of view: the focused row or header, the dragged row,
    * and the selected row, which gets focus back when its editor closes.
    * @param {Array<string|undefined>} extra more row keys, such as those a render keeps for focus
    * @returns {Set<string>} the row keys
@@ -852,7 +676,7 @@ export function createTaskList({
   function pinned(extra) {
     const keys = new Set([...extra, selectedKey()]);
     const focused = doc.activeElement?.closest?.('.task-row, .group-header');
-    for (const row of [focused, active?.trigger.closest('.task-row'), list.querySelector('.task-row[data-dragging]')]) {
+    for (const row of [focused, list.querySelector('.task-row[data-dragging]')]) {
       if (row && list.contains(row)) {
         keys.add(row.dataset.rowKey);
       }
@@ -1148,24 +972,13 @@ export function createTaskList({
   }
 
   /**
-   * Remember what has focus in the list or its open menu, before the rows render again: a row control or a header toggle.
-   * @returns {{key: string, taskId: string, role: string, index: number, kind?: string, item?: string}|null} the memo
+   * Remember what has focus in the list, before the rows render again: a row control or a header toggle.
+   * @returns {{key: string, role: string, index: number}|null} the memo
    */
   function remember() {
-    if (active?.controller.isOpen()) {
-      const row = active.trigger.closest('.task-row');
-      const item = doc.activeElement?.closest?.('.menu__item');
-      return {
-        key: row.dataset.rowKey, taskId: row.dataset.taskId, role: active.trigger.dataset.role, index: places.get(row.dataset.rowKey),
-        kind: active.kind, item: item && moreMenu.contains(item) ? itemKey(item) : undefined,
-      };
-    }
     const focused = doc.activeElement?.closest?.('.task-row, .group-header');
     return focused && list.contains(focused)
-      ? {
-        key: focused.dataset.rowKey, taskId: focused.dataset.taskId, role: doc.activeElement.dataset.role ?? 'open',
-        index: places.get(focused.dataset.rowKey),
-      }
+      ? { key: focused.dataset.rowKey, role: doc.activeElement.dataset.role ?? 'open', index: places.get(focused.dataset.rowKey) }
       : null;
   }
 
@@ -1183,8 +996,8 @@ export function createTaskList({
   }
 
   /**
-   * Restore focus after the rows rendered again: the open menu on the same row and item, the same row control,
-   * the control of the row now at the old place, or the fallback control once no row is left.
+   * Restore focus after the rows rendered again: the same row control, the control of the row now at the old place,
+   * or the fallback control once no row is left.
    * A row that moved, such as with Alt+Down, scrolls into view.
    * @param {object|null} memo the memo of `remember`
    */
@@ -1198,37 +1011,11 @@ export function createTaskList({
     }
     const same = rows.get(memo.key)?.row;
     const row = same ?? rows.get(items[taskIndexNear(memo.index)].key)?.row;
-    const trigger = row?.querySelector(`[data-role="${memo.role}"]`) ?? row?.querySelector('[data-role="open"], [data-role="toggle"]');
-    if (same && memo.kind) {
-      const reopen = { more: openMore, 'add-to-list': openAddToList }[memo.kind];
-      reopen(trigger, byId.get(memo.taskId), 'first');
-      [...moreMenu.querySelectorAll('.menu__item')].find((item) => itemKey(item) === memo.item)?.focus();
-    }
-    else {
-      trigger?.focus();
-    }
+    const control = row?.querySelector(`[data-role="${memo.role}"]`) ?? row?.querySelector('[data-role="open"], [data-role="toggle"]');
+    control?.focus();
     if (same && places.get(memo.key) !== memo.index) {
       same.scrollIntoView?.({ block: 'nearest' });
     }
-  }
-
-  /**
-   * Open the More menu of a row.
-   * @param {HTMLElement} trigger the More button
-   * @param {'first'|'last'} at the item that gets focus
-   */
-  function openFor(trigger, at) {
-    openMore(trigger, byId.get(trigger.closest('.task-row').dataset.taskId), at);
-  }
-
-  /**
-   * Find the More button of an event that has no menu attached yet.
-   * @param {Event} event the click or keydown event
-   * @returns {HTMLElement|null} the button
-   */
-  function menuButton(event) {
-    const trigger = event.target.closest?.('[data-role="more"]');
-    return trigger && active?.trigger !== trigger && justClosed !== trigger ? trigger : null;
   }
 
   /**
@@ -1270,22 +1057,10 @@ export function createTaskList({
     }
     if (event.target.closest?.('[data-role="status"]')) {
       tick(taskOf(event));
-      return;
-    }
-    const trigger = menuButton(event);
-    if (trigger) {
-      // The menu makes the button its popover invoker during this click, whose default toggle would close it again.
-      event.preventDefault();
-      openFor(trigger, 'first');
     }
   });
   list.addEventListener('keydown', (event) => {
-    const trigger = menuButton(event);
-    if (trigger && !event.altKey && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
-      event.preventDefault();
-      openFor(trigger, event.key === 'ArrowUp' ? 'last' : 'first');
-    }
-    else if (event.key === 'x' && !event.altKey && !event.ctrlKey && !event.metaKey && !inTextField(event) && taskOf(event)) {
+    if (event.key === 'x' && !event.altKey && !event.ctrlKey && !event.metaKey && !inTextField(event) && taskOf(event)) {
       event.preventDefault();
       tick(taskOf(event));
     }
@@ -1301,7 +1076,7 @@ export function createTaskList({
     element,
 
     /**
-     * Show tasks as rows, in the given order, keeping focus on the same row control and an open menu open.
+     * Show tasks as rows, in the given order, keeping focus on the same row control.
      * A focused row that left the list passes focus to the row now at its place, or to the fallback control.
      * With groups, a header row starts each group and the tasks of the groups show instead of `tasks`;
      * a collapsed group shows its header only.
@@ -1323,7 +1098,6 @@ export function createTaskList({
       const groups = given?.map((group) => ({ ...group, tasks: group.tasks.map(shown) })) ?? null;
       tasks = groups ? tasks : tasks.map(shown);
       const memo = remember();
-      detach();
       cancelFill();
       items = [];
       if (groups) {
@@ -1363,7 +1137,7 @@ export function createTaskList({
     },
 
     /**
-     * Show the due chips at a new time, such as on the minute tick, keeping every row, menu, and focus (`OVD-2`).
+     * Show the due chips at a new time, such as on the minute tick, keeping every row and focus (`OVD-2`).
      * @param {Date} now the current time
      */
     tick(now) {
@@ -1452,11 +1226,10 @@ export function createTaskList({
       return true;
     },
 
-    /** Close any open menu, and stop adding rows and following scrolls. */
+    /** Stop adding rows and following scrolls. */
     destroy() {
       clearTimeout(addedTimer);
       cancelFill();
-      detach();
       doc.removeEventListener('scroll', onScroll, { capture: true });
       doc.defaultView?.removeEventListener('resize', onScroll);
       watcher?.disconnect();

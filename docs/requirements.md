@@ -82,10 +82,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TSK-5: Users set, change, or clear an optional due time.
 - TSK-6: A due date without a time of day means 23:59 local time on that date.
 - TSK-7: Users set the overdue behavior to `keep` or `cancel` on a task with a due time.
-- TSK-8: Users add a task to one or more lists and remove it from any of them.
+- TSK-8: Users add a task to one or more lists and remove it from any of them, in the task editor.
 - TSK-9: A task created inside a list view starts as a member of that list.
 - TSK-10: A task in no list stays visible in the task view.
-- TSK-11: Deleting a task moves it to the recycle bin and hides it from every list and view.
+- TSK-11: Deleting a task, from the task editor, moves it to the recycle bin and hides it from every list and view.
 - TSK-12: Every task records its creation time and last update time, which every change of it or its parts moves.
 - TSK-13: A task added from the add field opens in the editor on a wide screen; the field keeps the focus.
   A compact screen opens no editor, so tasks can be added in a row.

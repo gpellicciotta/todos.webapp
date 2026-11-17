@@ -302,17 +302,40 @@ test.describe('List screen', () => {
     await expect.poll(() => rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);
     await expect(page.locator('.list-view .task-row').first().locator('.task-row__open')).toBeFocused();
 
-    await page.locator('.list-view .task-row').nth(1).locator('.task-row__more').click();
-    await expect(page.getByRole('menuitem', { name: 'Move up' })).toBeVisible();
-    await page.getByRole('menuitem', { name: 'Move down' }).click();
-    await expect.poll(() => rows(page)).toEqual(['Clean the gutters', 'Fix the door', 'Buy paint']);
+    // The rows have no More button with Move up and Move down; the Alt keys and drags replace them.
+    await expect(page.locator('.list-view .task-row__more, .list-view .task-row [aria-haspopup]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^More actions for / })).toHaveCount(0);
 
     // On a status button, Alt+Down moves the row too, and no menu opens.
     await page.locator('.list-view .status-button').first().focus();
     await page.keyboard.press('Alt+ArrowDown');
-    await expect.poll(() => rows(page)).toEqual(['Fix the door', 'Clean the gutters', 'Buy paint']);
+    await expect.poll(() => rows(page)).toEqual(['Buy paint', 'Clean the gutters', 'Fix the door']);
     await expect(page.locator('.list-view .task-row').nth(1).locator('.status-button')).toBeFocused();
     await expect(page.getByRole('menu')).toHaveCount(0);
+    expect(problems).toEqual([]);
+  });
+
+  test('the Lists section of the editor Status tab removes a task from the list, and its row leaves (TSK-8)', async ({ page }) => {
+    const problems = watch(page);
+    const listId = await openList(page);
+    const row = page.locator('.list-view .task-row', { hasText: 'Buy paint' });
+    await row.locator('.task-row__open').click();
+    const panel = page.locator('[data-editor-slot] .editor-panel');
+    await expect(panel.getByLabel('Description')).toHaveValue('Buy paint');
+    await panel.getByRole('tab', { name: 'Status' }).click();
+    await panel.getByRole('button', { name: 'Remove from Home' }).click();
+    await expect(row).toHaveCount(0);
+    expect(await rows(page)).toEqual(['Clean the gutters', 'Fix the door']);
+    const members = await page.evaluate(async (id) => {
+      const { openStore } = await import('/js/store/db.js');
+      const store = await openStore();
+      const tasks = await store.listTasks();
+      const paint = tasks.find((task) => task.description === 'Buy paint');
+      const lists = await store.listsOfTask(paint.id);
+      store.close();
+      return { exists: Boolean(paint), inList: lists.includes(id) };
+    }, listId);
+    expect(members).toEqual({ exists: true, inList: false });
     expect(problems).toEqual([]);
   });
 
@@ -423,11 +446,6 @@ test.describe('List screen', () => {
     await page.locator('.list-view .task-row__open').first().focus();
     await page.keyboard.press('Alt+ArrowDown');
     expect(await rows(page)).toEqual(['Buy paint', 'Fix the door', 'Clean the gutters']);
-    await page.locator('.list-view .task-row__more').first().click();
-    await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: /Move/ })).toHaveCount(0);
-    await page.keyboard.press('Escape');
-
     await options.getByLabel('Sort by').selectOption({ label: 'Manual order' });
     await expect(page.locator(INFO)).toHaveText('3 of 4 tasks · Status: open');
     expect(await rows(page)).toEqual(['Clean the gutters', 'Buy paint', 'Fix the door']);

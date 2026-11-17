@@ -182,7 +182,7 @@
 
 /*
  * Task list: a <ul> of task rows, and the size container the rows respond to.
- * Below 36rem of list width, rows drop the More button and the drag handle.
+ * Below 36rem of list width, rows drop the drag handle.
  * Below 48rem, the meta line shows lists as plain text joined by " · "; from 48rem, as small pills.
  */
 .task-list {
@@ -193,9 +193,9 @@
 }
 
 /*
- * Task row: the status button, the open link, and a More button, with the drag handle in the gutter before it.
+ * Task row: the status button and the open link, with the drag handle in the gutter before it; no trailing control.
  * The open link holds the description line, clamped to 2 lines, and the meta line below it when it has content.
- * A row is at least 48 px and grows with its content; the buttons stay on the first line.
+ * A row is at least 48 px and grows with its content; the status button stays on the first line.
  * The row ground lives in `--row-ground`, so the count badge ring can match it in every state.
  * States: default, hover, focus-visible (on the row), active, selected (aria-current on the open link),
  * which adds a signal edge on the inline start and keeps hover and press feedback,
@@ -444,8 +444,7 @@
 }
 
 @container task-list (width < 36rem) {
-  .task-row__handle,
-  .task-row__more {
+  .task-row__handle {
     display: none;
   }
 }

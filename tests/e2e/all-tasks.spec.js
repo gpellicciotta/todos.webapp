@@ -85,6 +85,19 @@ function rows(page) {
 }
 
 /**
+ * Delete a task from its editor: open the row, show the Status tab, and press Delete task at its bottom.
+ * @param {import('@playwright/test').Page} page the page
+ * @param {import('@playwright/test').Locator} row the task row
+ */
+async function deleteFromEditor(page, row) {
+  await row.locator('.task-row__open').click();
+  const panel = page.locator('[data-editor-slot] .editor-panel');
+  await panel.getByRole('tab', { name: 'Status' }).click();
+  await panel.getByRole('button', { name: 'Delete task' }).click();
+  await expect(panel).toHaveCount(0);
+}
+
+/**
  * Open the view options from the More menu of the page header.
  * @param {import('@playwright/test').Page} page the page
  * @returns {Promise<import('@playwright/test').Locator>} the view options
@@ -530,19 +543,21 @@ test('the view options open from their route after a reload, and Reset in the pa
   expect(problems).toEqual([]);
 });
 
-test('Delete moves a task to the recycle bin and Undo brings it back, also with Ctrl+Z (TSK-11)', async ({ page }) => {
+test('rows have no More button, and the editor deletes a task that Undo brings back, also with Ctrl+Z (TSK-11)', async ({ page }) => {
   const problems = watch(page);
+  await page.setViewportSize(WIDE);
   await openApp(page);
   await seed(page);
+  await expect(page.locator('.task-row').first()).toBeVisible();
+  await expect(page.locator('.task-row__more, .task-row [aria-haspopup]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^More actions for / })).toHaveCount(0);
   const row = page.locator('.task-row', { hasText: 'Book flights' });
-  await row.getByRole('button', { name: 'More actions for Book flights' }).click();
-  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  await deleteFromEditor(page, row);
   await expect(row).toHaveCount(0);
   const toast = page.locator('.toast', { hasText: 'Task moved to the recycle bin.' });
   await toast.getByRole('button', { name: 'Undo' }).click();
   await expect(row).toHaveCount(1);
-  await row.getByRole('button', { name: 'More actions for Book flights' }).click();
-  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  await deleteFromEditor(page, row);
   await expect(row).toHaveCount(0);
   await page.locator('main').focus();
   await page.keyboard.press('Control+z');
@@ -562,15 +577,12 @@ test('a row opens the task editor route, and the selected row is marked', async 
   expect(problems).toEqual([]);
 });
 
-test('a store change while the More menu is open keeps the menu open and focused', async ({ page }) => {
+test('a store change keeps focus on the same row control', async ({ page }) => {
   const problems = watch(page);
   await openApp(page);
   await seed(page);
-  const more = page.locator('.task-row', { hasText: 'Book flights' }).locator('.task-row__more');
-  await more.focus();
-  await page.keyboard.press('Enter');
-  const menu = page.getByRole('menu');
-  await expect(menu.getByRole('menuitem', { name: 'Add to list' })).toBeFocused();
+  const status = page.locator('.task-row', { hasText: 'Book flights' }).locator('.status-button');
+  await status.focus();
   await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore({ broadcast: true });
@@ -578,11 +590,7 @@ test('a store change while the More menu is open keeps the menu open and focused
     store.close();
   });
   await expect(page.locator('.task-row')).toHaveCount(7);
-  await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Add to list' })).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('menu')).toHaveCount(0);
-  await expect(more).toBeFocused();
+  await expect(status).toBeFocused();
   expect(problems).toEqual([]);
 });
 
@@ -597,8 +605,7 @@ test('Reset in an empty result focuses search, and deleting the last shown row f
   await expect(search).toHaveValue('');
   await search.fill('Book flights');
   await expect(page.locator('.task-row')).toHaveCount(1);
-  await page.getByRole('button', { name: 'More actions for Book flights' }).click();
-  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  await deleteFromEditor(page, page.locator('.task-row', { hasText: 'Book flights' }));
   await expect(page.locator('.task-row')).toHaveCount(0);
   await expect(page.getByLabel('Search or add a task')).toBeFocused();
   expect(problems).toEqual([]);

@@ -232,8 +232,9 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 
   Read-only rows disable the button but keep its icon at full icon contrast.
 - [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, at least `--row-height`.
-  It holds the status button, the open link, and the More button; the drag handle sits in the gutter before it.
-  The buttons and the handle stay on the first row height; the row grows with its content.
+  It holds the status button and the open link; the drag handle sits in the gutter before it.
+  It has no More button or other trailing control; the task editor holds the row's other actions.
+  The status button and the handle stay on the first row height; the row grows with its content.
   The open link stacks the description line over the `.task-row__meta` line, which shows only with content.
   The description wraps and clamps to 2 lines with an ellipsis on every width.
   The meta line is `--text-sm` muted text, aligned with the description start:
@@ -246,7 +247,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   It is `aria-hidden`, since the button's name holds the counts, in 10 px semibold tabular figures.
   Its ground is a 22 % tint of the status color over a light ground, with dark text, in both themes.
   A 1.5 px ring in `--row-ground`, the row's current ground, separates it from the icon.
-  Below 36rem of list width, rows drop the More button and the handle.
+  Below 36rem of list width, rows drop the handle.
   States use attributes the app sets:
   - Status: `data-status` mutes and strikes through completed and cancelled text.
   - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.
@@ -256,7 +257,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
     It does not animate, and it keeps hover and press feedback.
   - Dragging: `data-dragging="true"` lifts the row to `--elevation-2`.
   - Drop target: `data-drop="before"` or `"after"` draws a signal line on that row edge.
-  - Read-only: `data-readonly="true"`, a disabled status button that stays flat on hover, and no handle or More button.
+  - Read-only: `data-readonly="true"`, a disabled status button that stays flat on hover, and no handle.
   - Focus: the row draws the ring for its open link, inside its own edge.
 
   Render the drag handle only in manual order. It is positioned outside the row, so rows keep no room for it.
@@ -318,7 +319,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header and its More button, the search field, an `.add-block`, and rows.
   The add block holds the add bar and the info line; the app puts it in the shell's action bar, under the rows.
 - Manual ordering: press and drag a row, or hold it on touch; the hovered or focused row shows a gutter handle.
-  The Alt keys and Move up and Move down in the row menu move rows too.
+  Alt+Up, Alt+Down, Alt+Home, and Alt+End move rows too; rows have no move buttons or menu.
 - Find and sort: the Lists screen reuses this block with a find field and a Sort button.
   Its info line counts lists, such as "4 of 124 lists".
   Rows may use `content-visibility: auto` with `contain-intrinsic-size`, so long lists paint only the rows near the view.
