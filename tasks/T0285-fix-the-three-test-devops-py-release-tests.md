@@ -1,11 +1,11 @@
 ---
 id: T0285
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0285-fix-the-three-test-devops-py-release-tests
+worktree: .plan/work/T0285-fix-the-three-test-devops-py-release-tests
+status: active
+started_at: "2026-11-17T23:04:23Z"
 ended_at: —
 review: agent
 preview: none
