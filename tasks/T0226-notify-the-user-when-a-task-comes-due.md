@@ -1,11 +1,11 @@
 ---
 id: T0226
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0226-notify-the-user-when-a-task-comes-due
+worktree: .plan/work/T0226-notify-the-user-when-a-task-comes-due
+status: active
+started_at: "2026-11-17T04:00:56Z"
 ended_at: —
 review: agent
 preview: none
