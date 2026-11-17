@@ -14,7 +14,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0256 Let users resize the task editor panel and the lists sidebar by dragging on desktop, remembered per device.
 - [x] T0255 [owner: @claude, session: claude-20261117-27758f] [protocol: adhoc] Close the task editor when the row of the task it shows is clicked again.
 - [!] T0254 [reason: blocked: support.webapp has no release with T0049 yet; its checkout is 0.1.1-pre, latest tag v0.1.0. Release 0.1.1 there, then vendor it here.] [owner: @claude, session: claude-20261117-fc9300] [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.
-- [~] T0253 [owner: @claude] [protocol: adhoc] Add at least 0.5rem of space above the Search or add a task bar.
+- [x] T0253 [owner: @claude, session: claude-20261117-19e435] [protocol: adhoc] Add at least 0.5rem of space above the Search or add a task bar.
 - [ ] T0252 [protocol: adhoc] Give Keyboard shortcuts its own Settings section, keeping About as the last section.
 - [ ] T0251 Move the view's More menu to a vertical three-dot button beside the account button in the desktop header.
 - [ ] T0250 Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column.
