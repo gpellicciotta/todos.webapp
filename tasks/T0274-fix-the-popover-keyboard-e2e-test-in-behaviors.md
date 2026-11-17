@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1448.1, input: 54, output: 9876, cache_read: 1970548, cache_write: 66823}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T11:00:57Z"
 ---
 # T0274: Fix the popover keyboard e2e test in behaviors.spec.js failing on main: Tab never reaches the Clear button
 
@@ -50,4 +55,7 @@ Mechanical files: scripts/draw-wireframes.py
   - Files touched: 1.
   - Lines touched: 4.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
