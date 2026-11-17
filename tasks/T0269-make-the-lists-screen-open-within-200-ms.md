@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 625.0, input: 76, output: 19758, cache_read: 3731583, cache_write: 97975}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T05:22:36Z"
 ---
 # T0269: Make the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x CPU throttling
 
@@ -37,4 +42,7 @@ Make the Lists screen open within 200 ms with 150 lists and 5000 tasks under 4x 
 
 - [2026-11-17] **[Doc]**
   Updated ui-design.md and CHANGELOG.md; T0077 test overlaps and now only needs its doc step.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
