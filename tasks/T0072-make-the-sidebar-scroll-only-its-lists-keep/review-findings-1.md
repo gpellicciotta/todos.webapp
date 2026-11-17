@@ -4,10 +4,13 @@ round: 1
 verdict: approved
 blocking: 0
 reviewer: "@codex"
-reviewed_at: 2026-11-17T04:24:04Z
+reviewed_at: 2026-11-17T04:25:29Z
 reviewed_commit: "f250b61"
 base_commit: "86e5950"
 branch: task/T0072-make-the-sidebar-scroll-only-its-lists-keep
+session: codex-20261117-eaac9e
+session_agent: codex
+session_created_at: 2026-11-17T04:24:04Z
 ---
 # Review Findings: Task T0072 (Round 1)
 
