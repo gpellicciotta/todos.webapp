@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Split the task editor into Content, Status, and History tabs that always open on Content: Content holds the description and the notes, whose "Add or search notes" field also filters them; Status holds the status, Lists, Target count, Due, Overdue behavior, and Repeat, separated by rules, with Delete task last; History holds the history, which loads when the tab first shows, and Details (TSK-11, TSK-13, TSK-17).
 - FrontEnd: Added Move to top and Move to bottom to the Lists screen row menu, and Alt+Home and Alt+End to its rows and the sidebar list links, each announcing the new position and keeping the moved row focused and in view; Settings lists the keys (LST-13).
 - FrontEnd: Rebuilt the task row as a description line of at most 2 lines over a meta line with the due time or repeat interval and the lists, showed the counts as a status-tinted badge on the status icon, turned overdue due text orange while keeping its time, and dropped the note count, people icon, and Overdue chip (OVD-2, TSK-15).
 - FrontEnd: Let list view rows reorder by pressing and dragging past 6 px, by a 400 ms touch hold, and by Alt+Home and Alt+End, and moved the drag handle into the gutter of the hovered or focused row (LV-3).

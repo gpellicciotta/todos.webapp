@@ -719,10 +719,13 @@ Wireframes: [Content](../img/ui/task-editor.svg), [Status](../img/ui/task-editor
 - **[Decided]** Three tabs with underline styling follow the WAI-ARIA tabs pattern, using the vendored tabs.js.
   The tab strip has no More button.
 - The editor always opens on Content, keeping the description focus rule (`TSK-13`).
+  Arrow keys move between the tabs, and Home and End jump to the first and last.
+- A field error on a hidden tab, such as a late validation failure, selects that tab and focuses the field.
 - Content tab: only the description and the notes.
   - Description: a multi-line field of at most 500 characters (`TSK-1`).
   - Notes: an add field, then the note thread, newest first (`NOT-1` to `NOT-6`).
     The field reads "Add or search notes"; typing also filters the thread to the notes that match.
+    The match ignores case; a search without a match shows "No notes match.".
     The thread shows global notes, then those of the current occurrence, then those of earlier ones.
     Each linked note shows its occurrence, such as "#2 · Nov 5 – Nov 5".
 - **[Decided]** Status tab, in order, with a horizontal rule between each part:
@@ -755,7 +758,7 @@ Wireframes: [Content](../img/ui/task-editor.svg), [Status](../img/ui/task-editor
   - A viewer or a deleted task sees the state buttons and the stepper disabled, and no previous period button.
   - [task-editor.js](../../src/js/views/task-editor.js) builds the status part.
 - Lists part: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
-- Configuration part, each group with a bold heading:
+- Configuration part, each group with a bold heading: the field label for Target count and Repeat, "Due" for Due.
   - Target count: a number field from 1 to 999 (`TSK-15`).
   - Due: a date field, an optional time field, and Clear (`TSK-5`, `TSK-6`).
     Overdue behavior, Keep open or Cancel when overdue, shows once a due time is set (`TSK-7`).
@@ -767,7 +770,8 @@ Wireframes: [Content](../img/ui/task-editor.svg), [Status](../img/ui/task-editor
     A recurring task hides Due and Overdue behavior, since its periods set its due times.
     Past its period end, the status shows Ready with count 0 until the task rolls over.
 - History tab: History, then Details.
-  - History lists the occurrences and the events, newest first (`TSK-17`).
+  - History loads when its tab first shows; Refresh history loads it again.
+    History lists the occurrences and the events, newest first (`TSK-17`).
     An occurrence shows its number, period, status, and counts; a closed one still Ready reads Missed.
     A closed one still In progress reads Partly done.
     An event shows its time, what happened, such as Ticked or Period ended, and its occurrence.

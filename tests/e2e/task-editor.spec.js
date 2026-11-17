@@ -60,6 +60,94 @@ async function openEditor(page) {
   return panel;
 }
 
+/**
+ * Select a tab of the open editor by a click.
+ * @param {import('@playwright/test').Locator} panel the editor panel
+ * @param {'Content'|'Status'|'History'} name the tab
+ */
+async function showTab(panel, name) {
+  const tab = panel.getByRole('tablist', { name: 'Task sections' }).getByRole('tab', { name });
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}
+
+for (const viewport of [COMPACT, WIDE]) {
+  test(`the editor splits into Content, Status, and History tabs, edits a field on each, and deletes from Status at ${viewport.width} px`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(viewport);
+    await seed(page);
+    const panel = await openEditor(page);
+    const tabs = panel.getByRole('tablist', { name: 'Task sections' });
+    const tab = (name) => tabs.getByRole('tab', { name });
+    await expect(tabs.getByRole('tab')).toHaveText(['Content', 'Status', 'History']);
+    await expect(tab('Content')).toHaveAttribute('aria-selected', 'true');
+    await expect(panel.getByLabel('Description')).toBeFocused();
+    expect(await tabs.evaluate((list) => list.scrollWidth <= list.clientWidth)).toBe(true);
+
+    // Content: only the description and the notes; the add field also searches the notes.
+    await expect(panel.getByLabel('Target count')).toBeHidden();
+    await expect(panel.getByRole('combobox', { name: 'Add to list' })).toBeHidden();
+    await panel.getByLabel('Description').fill('Buy blue paint');
+    await panel.getByLabel('Description').blur();
+    const row = page.locator('.task-row', { hasText: 'Buy blue paint' });
+    await expect(row).toHaveCount(1);
+    const field = panel.getByRole('textbox', { name: 'Add note' });
+    await expect(field).toHaveAttribute('placeholder', 'Add or search notes');
+    for (const text of ['Two coats.', 'Matte white.']) {
+      await field.fill(text);
+      await panel.getByRole('button', { name: 'Add note' }).click();
+      await expect(field).toHaveValue('');
+    }
+    await field.fill('matte');
+    await expect(panel.locator('.note .note__text')).toHaveText(['Matte white.']);
+    await field.fill('');
+    await expect(panel.locator('.note')).toHaveCount(2);
+
+    // Status by keyboard: the arrow keys move between the tabs; the status, Lists, the groups, then Delete task.
+    await tab('Content').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(tab('Status')).toBeFocused();
+    await expect(tab('Status')).toHaveAttribute('aria-selected', 'true');
+    await expect(panel.getByLabel('Description')).toBeHidden();
+    const tops = await Promise.all([
+      panel.getByRole('group', { name: 'Status', exact: true }), panel.getByRole('combobox', { name: 'Add to list' }),
+      panel.getByLabel('Target count'), panel.getByLabel('Due date', { exact: true }), panel.getByLabel('Repeat'),
+      panel.getByRole('button', { name: 'Delete task' }),
+    ].map(async (control) => (await control.boundingBox()).y));
+    expect(tops).toEqual([...tops].sort((a, b) => a - b));
+    await expect(panel.locator('[role="tabpanel"]:not([hidden]) hr')).toHaveCount(3);
+    await panel.getByRole('button', { name: 'In progress', exact: true }).click();
+    await expect(row).toHaveAttribute('data-status', 'in-progress');
+    const target = panel.getByLabel('Target count');
+    await target.fill('3');
+    await target.press('Tab');
+    await expect(row.locator('.task-row__count')).toHaveText('0/3');
+
+    // History: History, then Details; the history loads when its tab first shows.
+    await page.keyboard.press('Escape');
+    await expect(panel).toHaveCount(0);
+    await row.locator('.task-row__open').click();
+    const reopened = page.locator('[data-editor-slot] .editor-panel');
+    await expect(reopened.getByLabel('Description')).toHaveValue('Buy blue paint');
+    await expect(reopened.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
+    await showTab(reopened, 'History');
+    await expect(reopened.locator('[data-history="events"] li').first()).toContainText('Changed the rules');
+    await reopened.getByRole('button', { name: 'Refresh history' }).click();
+    await expect(reopened.locator('[data-history="occurrences"] li').first()).toContainText('0 of 3');
+    await expect(reopened.locator('.editor-panel__details')).toContainText('Created');
+
+    // Delete task sits at the bottom of Status, closes the editor, and offers Undo.
+    await showTab(reopened, 'Status');
+    await reopened.getByRole('button', { name: 'Delete task' }).click();
+    await expect(reopened).toHaveCount(0);
+    await expect(page.locator('.toast', { hasText: 'Task moved to the recycle bin.' })).toBeVisible();
+    await expect(row).toHaveCount(0);
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(viewport.width);
+    expect(problems).toEqual([]);
+  });
+}
+
 for (const viewport of [COMPACT, WIDE]) {
   test(`the editor opens from a row with focus on the description, and Escape returns to the row at ${viewport.width} px`, async ({ page }) => {
     const problems = watch(page);
@@ -112,6 +200,7 @@ test('every field saves on change without a Save button, and the changes survive
   await description.blur();
   await expect(description).not.toHaveAttribute('aria-invalid', 'true');
   await expect(page.locator('.task-row__description', { hasText: 'Buy blue paint' })).toHaveCount(1);
+  await showTab(panel, 'Status');
   await panel.getByRole('button', { name: 'In progress', exact: true }).click();
   await expect(panel.getByRole('group', { name: 'Overdue behavior' })).toBeHidden();
   await panel.getByLabel('Due date', { exact: true }).fill('2030-05-06');
@@ -130,6 +219,7 @@ test('every field saves on change without a Save button, and the changes survive
   }, id)).toBe('cancel');
   await page.reload();
   await expect(panel.getByLabel('Description')).toHaveValue('Buy blue paint');
+  await showTab(panel, 'Status');
   await expect(panel.locator('.task-editor__status')).toHaveText('In progress');
   await expect(panel.getByRole('button', { name: 'In progress', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
@@ -146,6 +236,7 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   await page.setViewportSize(WIDE);
   const id = await seed(page);
   const panel = await openEditor(page);
+  await showTab(panel, 'Status');
   const target = panel.getByLabel('Target count');
   await expect(target).toHaveValue('1');
   await target.fill('3');
@@ -186,6 +277,7 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   // The local history keeps each rule edit as the service does: the target, then the deadline.
   expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'complete', 'complete', 'complete', 'edit-lifecycle-rules']);
   await page.reload();
+  await showTab(panel, 'Status');
   await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
   await expect(panel.getByLabel('Target count')).toHaveValue('3');
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
@@ -197,6 +289,7 @@ test('the stepper steps a target-3 task to 2 and back to 1, then Ready resets it
   await page.setViewportSize(WIDE);
   const id = await seed(page);
   const panel = await openEditor(page);
+  await showTab(panel, 'Status');
   const target = panel.getByLabel('Target count');
   await target.fill('3');
   await target.press('Tab');
@@ -246,6 +339,7 @@ test('typing a due date by keyboard saves nothing until focus leaves the due fie
     store.close();
     return task['lifecycle-rules']['due-time'];
   }, id);
+  await showTab(panel, 'Status');
   const date = panel.getByLabel('Due date', { exact: true });
   await date.focus();
   await page.keyboard.type('11052026');
@@ -255,7 +349,7 @@ test('typing a due date by keyboard saves nothing until focus leaves the due fie
   expect(await stored()).toBeNull();
   const [year, month, day] = (await date.inputValue()).split('-').map(Number);
   expect(year).toBe(2026);
-  await panel.getByLabel('Description').focus();
+  await panel.getByLabel('Target count').focus();
   const expected = await page.evaluate(([y, m, d]) => new Date(y, m - 1, d, 9, 30).toISOString(), [year, month, day]);
   await expect.poll(stored).toBe(expected);
   expect(problems).toEqual([]);
@@ -266,6 +360,7 @@ test('the Add to list box adds the task to an existing list or a new one, and ch
   await page.setViewportSize(WIDE);
   await seed(page);
   const panel = await openEditor(page);
+  await showTab(panel, 'Status');
   const box = panel.getByRole('combobox', { name: 'Add to list' });
   await box.fill('ho');
   await expect(panel.getByRole('option', { name: 'Home' })).toBeVisible();
@@ -281,6 +376,7 @@ test('the Add to list box adds the task to an existing list or a new one, and ch
   await panel.getByRole('button', { name: 'Remove from Home' }).click();
   await expect(chips).toHaveText(['Garden']);
   await page.reload();
+  await showTab(panel, 'Status');
   await expect(panel.locator('.chip-list .chip')).toHaveText(['Garden']);
   expect(problems).toEqual([]);
 });
@@ -322,17 +418,24 @@ test('Delete task moves it to the recycle bin with an Undo toast, and a deleted 
   await page.setViewportSize(WIDE);
   const id = await seed(page);
   const panel = await openEditor(page);
+  await showTab(panel, 'Status');
   await panel.getByRole('button', { name: 'Delete task' }).click();
   await expect(panel).toHaveCount(0);
   await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(0);
   await page.locator('.toast', { hasText: 'Task moved to the recycle bin.' }).getByRole('button', { name: 'Undo' }).click();
-  await (await openEditor(page)).getByRole('button', { name: 'Delete task' }).click();
+  const again = await openEditor(page);
+  await showTab(again, 'Status');
+  await again.getByRole('button', { name: 'Delete task' }).click();
   await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(0);
   await page.goto(`/#/tasks/${id}`);
   await expect(panel.getByText('This task is in the recycle bin.')).toBeVisible();
   await expect(panel.getByLabel('Description')).toBeDisabled();
+  await showTab(panel, 'Status');
+  await expect(panel.getByLabel('Target count')).toBeDisabled();
   await expect(panel.getByRole('button', { name: 'Delete task' })).toHaveCount(0);
   await panel.getByRole('button', { name: 'Restore' }).click();
+  // Restoring returns to Content and focuses the description.
+  await expect(panel.getByLabel('Description')).toBeFocused();
   await expect(panel.getByLabel('Description')).toBeEnabled();
   await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(1);
   await page.goto('/#/tasks/no-such-task');
@@ -351,6 +454,7 @@ test.describe('recurring tasks in local mode', () => {
     await page.clock.install({ time: new Date('2026-11-04T10:00:00Z') });
     await seed(page);
     const panel = await openEditor(page);
+    await showTab(panel, 'Status');
     await panel.getByLabel('Repeat').selectOption('week');
     await expect(panel.getByLabel('Timezone')).toHaveValue('Europe/Brussels');
     await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Weekly');
@@ -367,7 +471,7 @@ test.describe('recurring tasks in local mode', () => {
     await page.reload();
     await expect(row).toHaveAttribute('data-status', 'ready');
     const reopened = await openEditor(page);
-    await reopened.getByRole('button', { name: 'Show history' }).click();
+    await showTab(reopened, 'History');
     await expect(reopened.locator('[data-history="events"] li').first()).toContainText('Period ended');
     await expect(reopened.locator('[data-history="occurrences"] li')).toHaveCount(2);
     await expect(reopened.locator('[data-history="occurrences"] li').nth(1)).toContainText('Completed');
@@ -384,16 +488,19 @@ test.describe('note links in local mode', () => {
     await page.clock.install({ time: new Date('2026-11-04T10:00:00Z') });
     await seed(page);
     const panel = await openEditor(page);
+    await showTab(panel, 'Status');
     await panel.getByLabel('Repeat').selectOption('day');
     await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Daily');
+    await showTab(panel, 'Content');
     for (const text of ['Watered the roses.', 'Pruned the hedge.']) {
       await panel.getByRole('textbox', { name: 'Add note' }).fill(text);
       await panel.getByRole('button', { name: 'Add note' }).click();
       await expect(panel.locator('.note', { hasText: text }).locator('.note__occurrence')).toContainText('#1');
     }
-    await panel.getByRole('button', { name: 'Show history' }).click();
+    await showTab(panel, 'History');
     const firstOccurrence = panel.locator('[data-history="occurrences"] [data-occurrence="1"]');
     await expect(firstOccurrence.locator('.task-history__note')).toHaveText([/Pruned the hedge\./, /Watered the roses\./]);
+    await showTab(panel, 'Content');
 
     // While the note is edited its text sits in a field, so find it by its identifier.
     const rosesId = await panel.locator('.note', { hasText: 'Watered the roses.' }).getAttribute('data-note-id');
@@ -408,6 +515,7 @@ test.describe('note links in local mode', () => {
     await roses.getByRole('button', { name: 'Save note' }).click();
     await expect(roses.locator('.note__occurrence')).toHaveCount(0);
     await expect(panel.locator('.note').first()).toContainText('Watered the roses.');
+    await showTab(panel, 'History');
     await panel.getByRole('button', { name: 'Refresh history' }).click();
     await expect(firstOccurrence.locator('.task-history__note')).toHaveText([/Pruned the hedge\./]);
 
@@ -420,7 +528,7 @@ test.describe('note links in local mode', () => {
     const hedge = reopened.locator('.note', { hasText: 'Pruned the hedge.' });
     await expect(hedge.locator('.note__occurrence')).toContainText('#1');
     await expect(hedge.getByRole('button', { name: /More actions for your note/ })).toBeVisible();
-    await reopened.getByRole('button', { name: 'Show history' }).click();
+    await showTab(reopened, 'History');
     await expect(reopened.locator('[data-history="occurrences"] [data-occurrence="1"] .task-history__note')).toHaveText([/Pruned the hedge\./]);
     await expect(reopened.locator('[data-history="occurrences"] [data-occurrence="2"] .task-history__note')).toHaveCount(0);
     expect(problems).toEqual([]);

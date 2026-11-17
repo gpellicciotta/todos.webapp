@@ -1,7 +1,7 @@
 /**
  * Task history: the occurrences and events of one task, newest first, inside the task editor.
  *
- * The history loads once the user asks for it, with Show history, and again on each later ask.
+ * The history loads once the editor asks for it, as its History tab first shows, and again on each Refresh history.
  * While connected it reads the server routes `GET /api/tasks/{{task-id}}/occurrences` and `/events`,
  * since the change feed carries neither; in local mode, or when the server cannot answer, it reads the local stores.
  * An occurrence shows its number, period, status, and counts; a closed recurring occurrence still `ready` was missed,

@@ -307,6 +307,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Its body scrolls; sections stack with dividers, and the danger zone sits apart at the end.
 - [Note thread](../../src/demo/visual-style-gallery.html#note-thread): the add note field above an `<ol>` of notes, newest first.
   Each `.note` shows its author, its time, an "edited" mark, its text, and a More button for own notes.
+  The add field reads "Add or search notes"; its text also filters the notes.
+  A `.note-thread__empty` status line in muted `--text-sm` says "No notes match." for an empty result.
 - [Empty state](../../src/demo/visual-style-gallery.html#empty-state): a short sentence, an optional icon, and at most two actions.
   Use it for a first launch, a filter without results, and an empty recycle bin.
 
@@ -330,6 +332,11 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The scrolling options keep `--space-2` of inline padding, so focus rings never clip at their edges.
 - [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
   Compact layouts show the panel alone, as a full screen.
+  The package `.tabs` strip with Content, Status, and History tops the body, with the vendored tabs.js.
+  Each `.task-editor__panel` drops the package panel padding, since its sections keep their own.
+  Content and History keep the section dividers; Status drops them for an `hr.task-editor__rule` between its parts.
+  The parts are the status, Lists, the configuration groups, and Delete task, whose danger zone drops its own border.
+  The header and the tab strip hold no More button.
   Its status part puts four `.icon-button.task-editor__state` buttons on a `.segmented__options` track, one per status.
   The current one sets `aria-pressed`; each enabled one tints its icon by its `data-status`, and a disabled one dims it.
   Each icon names its own status, never the status a click leads to.

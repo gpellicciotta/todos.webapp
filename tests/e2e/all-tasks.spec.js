@@ -346,12 +346,15 @@ test('the status button opens no menu, and the task editor posts start and cance
   const panel = page.locator('[data-editor-slot] .editor-panel');
   await row.locator('.task-row__open').click();
   await expect(panel.getByLabel('Description')).toHaveValue('Book flights');
+  await panel.getByRole('tab', { name: 'Status' }).click();
   await panel.getByRole('button', { name: 'In progress', exact: true }).click();
   await expect(row).toHaveAttribute('data-status', 'in-progress');
 
   const paint = page.locator('.task-row', { hasText: 'Buy paint' });
   await paint.locator('.task-row__open').click();
   await expect(panel.getByLabel('Description')).toHaveValue('Buy paint');
+  // Another task opens on Content again.
+  await panel.getByRole('tab', { name: 'Status' }).click();
   await panel.getByRole('button', { name: 'Cancelled', exact: true }).click();
   await expect(paint).toHaveCount(0);
   const statuses = await page.evaluate(async () => {

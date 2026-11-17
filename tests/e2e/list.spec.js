@@ -348,6 +348,7 @@ test.describe('List screen', () => {
     await gutters.locator('.task-row__open').click();
     const panel = page.locator('[data-editor-slot] .editor-panel');
     await expect(panel.getByLabel('Description')).toHaveValue('Clean the gutters');
+    await panel.getByRole('tab', { name: 'Status' }).click();
     await panel.getByRole('button', { name: 'Cancelled', exact: true }).click();
     await expect(gutters).toHaveCount(0);
 

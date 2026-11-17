@@ -1,10 +1,11 @@
 /**
- * Gallery behavior specimens: working menus, popovers, dialogs, and toasts driven by the modules in src/js/ui/.
+ * Gallery behavior specimens: working menus, popovers, dialogs, toasts, and tabs driven by the modules in src/js/ui/.
  */
 
 import { openDialog } from '../vendor/design/js/dialog.js';
 import { attachMenu } from '../vendor/design/js/menu.js';
 import { attachPopover } from '../vendor/design/js/popover.js';
+import { attachTabs } from '../vendor/design/js/tabs.js';
 import { createToast } from '../vendor/design/js/toast.js';
 
 /**
@@ -88,3 +89,5 @@ wireMenu();
 wirePopover();
 wireDialogs();
 wireToast();
+// The task editor pattern switches its Content, Status, and History tabs as the app does.
+attachTabs(document.getElementById('pattern-editor-tabs'));

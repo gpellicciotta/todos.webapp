@@ -703,7 +703,11 @@ describe('mountTaskEditor', () => {
     panel.update({ name: 'tasks', view: 'tasks', editor: null, params: {} });
     panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
     await editor.idle();
-    expect(document.querySelector('textarea[name="new-note"]').value).toBe('Ask about the primer');
+    const reopened = document.querySelector('textarea[name="new-note"]');
+    expect(reopened.value).toBe('Ask about the primer');
+    // The draft also searches the notes, so clear it for the later tests of this task.
+    reopened.value = '';
+    reopened.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
   it('neither fills nor closes the panel when a read finishes after the editor was destroyed', async () => {
@@ -757,6 +761,182 @@ describe('mountTaskEditor', () => {
     document.querySelector('.note-thread__actions button').click();
     expect(errorOf(note)).toBe('Enter a note.');
     expect(store.addNote).not.toHaveBeenCalled();
+  });
+
+  describe('tabs', () => {
+    /** @returns {HTMLElement[]} the tabs, in order */
+    const tabs = () => [...document.querySelectorAll('.task-editor__tabs [role="tablist"] > [role="tab"]')];
+    /**
+     * Find a tab by its name.
+     * @param {string} name the tab name
+     * @returns {HTMLElement} the tab
+     */
+    const tab = (name) => tabs().find((item) => item.textContent === name);
+    /**
+     * Find the panel of a tab.
+     * @param {string} name the tab name
+     * @returns {HTMLElement} the panel
+     */
+    const panelOf = (name) => document.getElementById(tab(name).getAttribute('aria-controls'));
+    /** @returns {string} the name of the selected tab */
+    const selected = () => tabs().find((item) => item.getAttribute('aria-selected') === 'true').textContent;
+    /**
+     * Name the parts of a panel in order: its sections, its rules, and Delete task.
+     * @param {string} name the tab name
+     * @returns {string[]} the parts
+     */
+    const parts = (name) => [...panelOf(name).querySelectorAll('[data-section], hr, .editor-panel__danger')]
+      .map((part) => part.dataset.section ?? (part.tagName === 'HR' ? 'rule' : 'delete'));
+    /**
+     * Press a key on a control.
+     * @param {HTMLElement} control the control
+     * @param {string} key the key
+     */
+    const press = (control, key) => control.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+    it('shows Content, Status, and History tabs under the header, each linked to its panel, opening on Content', () => {
+      const list = document.querySelector('.task-editor__tabs [role="tablist"]');
+      expect(list.getAttribute('aria-label')).toBe('Task sections');
+      expect(tabs().map((item) => item.textContent)).toEqual(['Content', 'Status', 'History']);
+      for (const item of tabs()) {
+        const tabPanel = panelOf(item.textContent);
+        expect([tabPanel.getAttribute('role'), tabPanel.getAttribute('aria-labelledby')]).toEqual(['tabpanel', item.id]);
+      }
+      expect(selected()).toBe('Content');
+      expect(tabs().map((item) => item.tabIndex)).toEqual([0, -1, -1]);
+      expect(['Content', 'Status', 'History'].map((name) => panelOf(name).hidden)).toEqual([false, true, true]);
+      expect(document.querySelector('.editor-panel__header').nextElementSibling.contains(list)).toBe(true);
+      expect(document.querySelector('.editor-panel__header button[aria-label*="More"]')).toBeNull();
+      expect(document.querySelector('.task-editor__tabs [role="tablist"] button:not([role="tab"])')).toBeNull();
+    });
+
+    it('holds the description and notes on Content, History then Details on History', () => {
+      expect(parts('Content')).toEqual(['description', 'notes']);
+      expect(parts('History')).toEqual(['history', 'details']);
+    });
+
+    it('holds the status, Lists, the configuration groups, and Delete task on Status, with a rule between each part', () => {
+      expect(parts('Status')).toEqual(['status', 'rule', 'lists', 'rule', 'target', 'due', 'overdue', 'repeat', 'rule', 'delete']);
+      expect(panelOf('Status').querySelector('[data-section="due"] .editor-panel__section-title').textContent).toBe('Due');
+    });
+
+    it('moves between the tabs with the arrow keys, Home, and End, following the WAI-ARIA tabs pattern', () => {
+      tab('Content').focus();
+      press(tab('Content'), 'ArrowRight');
+      expect([selected(), document.activeElement]).toEqual(['Status', tab('Status')]);
+      expect(panelOf('Status').hidden).toBe(false);
+      expect(panelOf('Content').hidden).toBe(true);
+      press(tab('Status'), 'End');
+      expect([selected(), document.activeElement]).toEqual(['History', tab('History')]);
+      press(tab('History'), 'ArrowRight');
+      expect(selected()).toBe('Content');
+      press(tab('Content'), 'ArrowLeft');
+      expect(selected()).toBe('History');
+      press(tab('History'), 'Home');
+      expect([selected(), document.activeElement]).toEqual(['Content', tab('Content')]);
+      expect(tabs().map((item) => item.tabIndex)).toEqual([0, -1, -1]);
+    });
+
+    it('opens on Content again for each task, focusing the description (TSK-13)', async () => {
+      tab('Status').click();
+      expect(selected()).toBe('Status');
+      panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't2' } });
+      await editor.idle();
+      expect(selected()).toBe('Content');
+      expect(document.activeElement).toBe(document.querySelector('textarea[name="description"]'));
+      tab('History').click();
+      panel.update({ name: 'tasks', view: 'tasks', editor: null, params: {} });
+      panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+      await editor.idle();
+      expect(selected()).toBe('Content');
+    });
+
+    it('selects the hidden tab of a field error and focuses that field', async () => {
+      let reject;
+      store.updateRules.mockImplementation(() => new Promise((_, fail) => {
+        reject = fail;
+      }));
+      tab('Status').click();
+      const target = document.querySelector('input[name="target-count"]');
+      change(target, '5');
+      await vi.waitFor(() => expect(reject).toBeTypeOf('function'));
+      tab('Content').click();
+      reject(Object.assign(new Error('The target count is too high.'), { name: 'ValidationError' }));
+      await vi.waitFor(() => expect(selected()).toBe('Status'));
+      expect(document.activeElement).toBe(target);
+      expect(errorOf(target)).toBe('The target count is too high.');
+    });
+
+    it('loads the history once its tab first shows', async () => {
+      store.eventsOfTask = vi.fn(async () => []);
+      expect(store.eventsOfTask).not.toHaveBeenCalled();
+      tab('History').click();
+      await vi.waitFor(() => expect(store.eventsOfTask).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(document.querySelector('[data-section="history"] button[data-action="history"]').textContent).toBe('Refresh history'));
+      tab('Content').click();
+      tab('History').click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(store.eventsOfTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes on Escape from any tab', () => {
+      for (const name of ['Status', 'History']) {
+        tab(name).click();
+        tab(name).focus();
+        press(tab(name), 'Escape');
+      }
+      expect(close).toHaveBeenCalledTimes(2);
+    });
+
+    it('deletes from the bottom of Status, closing with the Undo toast, and hides Delete task with its rule on a deleted task', async () => {
+      const danger = panelOf('Status').querySelector('.editor-panel__danger');
+      const rule = danger.previousElementSibling;
+      expect([rule.tagName, danger.hidden, rule.hidden]).toEqual(['HR', false, false]);
+      expect(panelOf('Status').lastElementChild).toBe(danger);
+      store.getTask.mockImplementation(async () => ({ ...TASK, 'deletion-time': '2026-11-05T09:00:00.000Z' }));
+      store.listeners.forEach((listener) => listener({ operation: 'deleteTask', remote: true }));
+      await vi.waitFor(() => expect(danger.hidden).toBe(true));
+      expect(rule.hidden).toBe(true);
+      store.getTask.mockImplementation(async () => ({ ...TASK }));
+      store.listeners.forEach((listener) => listener({ operation: 'restoreTask', remote: true }));
+      await vi.waitFor(() => expect(danger.hidden).toBe(false));
+      store.deleteTask = vi.fn(async () => {});
+      tab('Status').click();
+      danger.querySelector('button').click();
+      await vi.waitFor(() => expect(close).toHaveBeenCalledTimes(1));
+      expect(toaster.show).toHaveBeenCalledWith('Task moved to the recycle bin.', expect.objectContaining({ undo: true }));
+    });
+
+    it('filters the note thread to the notes matching the add field', async () => {
+      const note = (id, text) => ({ id, 'task-id': 't1', text, 'owner-id': null, occurrence: null, 'creation-time': TASK['creation-time'], 'last-update-time': TASK['creation-time'] });
+      store.notesOfTask.mockImplementation(async () => [note('n2', 'Get the matte white'), note('n1', 'Two coats of PAINT')]);
+      store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
+      await vi.waitFor(() => expect(document.querySelectorAll('.note')).toHaveLength(2));
+      const field = document.querySelector('textarea[name="new-note"]');
+      expect(field.placeholder).toBe('Add or search notes');
+      const type = (value) => {
+        field.value = value;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      const shown = () => [...document.querySelectorAll('.note')].map((item) => item.dataset.noteId);
+      const empty = () => document.querySelector('.note-thread__empty');
+      type('paint');
+      expect(shown()).toEqual(['n1']);
+      expect(empty().hidden).toBe(true);
+      type('gloss');
+      expect(shown()).toEqual([]);
+      expect([empty().hidden, empty().textContent]).toEqual([false, 'No notes match.']);
+      type('');
+      expect(shown()).toEqual(['n2', 'n1']);
+      expect(empty().hidden).toBe(true);
+      // A store change keeps the filter of the typed text.
+      type(' MATTE ');
+      store.listeners.forEach((listener) => listener({ operation: 'addNote', remote: true }));
+      await vi.waitFor(() => expect(store.notesOfTask.mock.calls.length).toBeGreaterThan(2));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(shown()).toEqual(['n2']);
+      type('');
+    });
   });
 });
 

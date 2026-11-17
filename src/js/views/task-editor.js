@@ -1,9 +1,12 @@
 /**
  * Task editor: every field of one task, saved on change, with no Save button.
  *
- * Sections, in order: description (`TSK-1`), status (`TSK-3`, `TSK-4`), target count (`TSK-15`),
- * due date and time (`TSK-5`, `TSK-6`), overdue behavior once a due time is set (`TSK-7`), repeat (`TSK-16`), lists (`TSK-8`),
- * notes (`NOT-1` to `NOT-5`), history (`TSK-17`), details (`TSK-12`), and Delete task (`TSK-11`).
+ * Three tabs under the header split the sections, with the vendored tabs.js; each open starts on Content.
+ * Content: description (`TSK-1`) and notes (`NOT-1` to `NOT-6`), whose add field also searches them.
+ * Status, with a rule between each part: status (`TSK-3`, `TSK-4`), then lists (`TSK-8`), then target count (`TSK-15`),
+ * due date and time (`TSK-5`, `TSK-6`), overdue behavior once a due time is set (`TSK-7`), and repeat (`TSK-16`),
+ * then Delete task (`TSK-11`) after a last rule. History: history (`TSK-17`), which loads when its tab first shows,
+ * then details (`TSK-12`). A field error on a hidden tab, such as a late validation failure, selects that tab.
  * The status section names the status, with the done and target counts above target 1, and offers one state button per
  * status, posting the events of `eventsTowardsStatus`. Above target 1 the counts gate Completed and In progress,
  * and a stepper adds or undoes completions. For 24 hours after a period ends, a button completes that period.
@@ -27,6 +30,7 @@ import { browserTimezone, isValidTimezone } from '../core/periods.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
 
 import { DESCRIPTION_MAX } from '../store/tasks.js';
+import { attachTabs } from '../../vendor/design/js/tabs.js';
 import { createEditorField } from './editor-panel.js';
 import { createTaskHistory, readServerOccurrences } from './task-history.js';
 import { createNoteThread } from './notes.js';
@@ -34,7 +38,7 @@ import { countWords, make as el, showsCount, spriteIcon, STATUS_LABELS } from '.
 
 /** Editor strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
-  title: 'Task', description: 'Description', status: 'Status', target: 'Target count',
+  title: 'Task', sections: 'Task sections', content: 'Content', description: 'Description', status: 'Status', target: 'Target count',
   targetHint: 'How many times to do the task before it is completed.',
   targetRange: 'Enter a whole number from 1 to 999.',
   reachTarget: (target) => `Reach ${target} of ${target} to complete`,
@@ -42,7 +46,7 @@ const STRINGS = Object.freeze({
   completions: 'Completions', stepDown: 'Undo a completion', stepUp: 'Add a completion',
   count: (done, target) => `${done} of ${target}`,
   previousPeriod: (day) => `Complete for previous period (${day})`,
-  dueDate: 'Due date', dueTime: 'Due time',
+  due: 'Due', dueDate: 'Due date', dueTime: 'Due time',
   clear: 'Clear', clearLabel: 'Clear the due date', overdue: 'Overdue behavior',
   keep: 'Keep open', cancel: 'Cancel when overdue', lists: 'Lists',
   addToList: 'Add to list', createList: (name) => `Create list "${name}"`,
@@ -205,19 +209,73 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   lock.hidden = true;
   const lockText = el(doc, 'p', 'banner__text');
   lock.append(spriteIcon(doc, 'alert', 'icon banner__icon'), lockText);
-  const fields = el(doc, 'fieldset', 'task-editor__fields');
-  const section = (name, title) => {
+
+  // The tabs follow the WAI-ARIA tabs pattern of the vendored tabs.js; a new mount, also for another task, starts on Content.
+  const tabsRoot = el(doc, 'div', 'tabs task-editor__tabs');
+  tabsRoot.dataset.tabsRoot = '';
+  const tabList = el(doc, 'div', 'tabs__list');
+  tabList.dataset.tabsList = '';
+  tabList.setAttribute('role', 'tablist');
+  tabList.setAttribute('aria-label', STRINGS.sections);
+  tabsRoot.append(tabList);
+  const tabs = {};
+  const panels = {};
+  for (const [name, label] of [['content', STRINGS.content], ['status', STRINGS.status], ['history', STRINGS.history]]) {
+    const tab = el(doc, 'button', 'tabs__tab', label);
+    tab.type = 'button';
+    tab.id = `task-editor-${n}-tab-${name}`;
+    tab.dataset.tabsTab = '';
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', `task-editor-${n}-panel-${name}`);
+    tab.setAttribute('aria-selected', String(name === 'content'));
+    const tabPanel = el(doc, 'div', 'tabs__panel task-editor__panel');
+    tabPanel.id = `task-editor-${n}-panel-${name}`;
+    tabPanel.dataset.tabsPanel = '';
+    tabPanel.dataset.tab = name;
+    tabPanel.setAttribute('role', 'tabpanel');
+    tabPanel.setAttribute('aria-labelledby', tab.id);
+    tabPanel.hidden = name !== 'content';
+    tabList.append(tab);
+    tabsRoot.append(tabPanel);
+    tabs[name] = tab;
+    panels[name] = tabPanel;
+  }
+  // The fields of Content and Status sit in fieldsets, which disable them all for a deleted task or a viewer.
+  const fieldsets = ['content', 'status'].map((name) => panels[name].appendChild(el(doc, 'fieldset', 'task-editor__fields')));
+  const [contentFields, statusFields] = fieldsets;
+  let readOnly = false;
+  // Closing saves typed values, whose errors then select no tab.
+  let closing = false;
+  /**
+   * Select a tab, as a click on it does.
+   * @param {'content'|'status'|'history'} name the tab
+   */
+  const showTab = (name) => tabs[name].click();
+  /**
+   * Add a section to a tab.
+   * @param {HTMLElement} parent the fieldset or panel
+   * @param {string} name the `data-section` name
+   * @param {string} [title] the heading
+   * @returns {HTMLElement} the section
+   */
+  const section = (parent, name, title) => {
     const element = el(doc, 'div', 'editor-panel__section');
     element.dataset.section = name;
     if (title) {
       element.append(el(doc, 'h3', 'editor-panel__section-title', title));
     }
-    fields.append(element);
+    parent.append(element);
     return element;
   };
+  /**
+   * Add the horizontal rule between two parts of a tab.
+   * @param {HTMLElement} parent the fieldset or panel
+   * @returns {HTMLHRElement} the rule
+   */
+  const rule = (parent) => parent.appendChild(el(doc, 'hr', 'task-editor__rule'));
 
   const description = createEditorField(doc, { label: STRINGS.description, name: 'description', tag: 'textarea' });
-  section('description').append(description.element);
+  section(contentFields, 'description').append(description.element);
   /** Save the description; an empty or too long one is a field error. */
   function saveDescription() {
     saved.set(description.control, description.control.value);
@@ -280,8 +338,11 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   previousPeriod.hidden = true;
   const statusControls = el(doc, 'div', 'task-editor__status-controls');
   statusControls.append(stateGroup, stepper, previousPeriod);
-  const statusSection = section('status');
+  const statusSection = section(statusFields, 'status');
   statusSection.append(el(doc, 'h3', 'editor-panel__section-title', STRINGS.status), statusLine, statusControls);
+  rule(statusFields);
+  const listsSection = section(statusFields, 'lists', STRINGS.lists);
+  rule(statusFields);
 
   // What the last fill showed, so a click posts the events from the state the user saw.
   let shownOccurrence = null;
@@ -328,7 +389,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   const target = createEditorField(doc, { label: STRINGS.target, name: 'target-count', type: 'number', hint: STRINGS.targetHint });
   Object.assign(target.control, { min: '1', max: String(TARGET_MAX), step: '1' });
   target.control.inputMode = 'numeric';
-  const targetSection = section('target');
+  const targetSection = section(statusFields, 'target');
   targetSection.append(target.element);
   /** Save the target count through the lifecycle rules; anything but a whole number from 1 to 999 is a field error. */
   function saveTarget() {
@@ -355,7 +416,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   clear.setAttribute('aria-label', STRINGS.clearLabel);
   const dueRow = el(doc, 'div', 'editor-panel__row');
   dueRow.append(date.element, time.element, clear);
-  const dueSection = section('due');
+  const dueSection = section(statusFields, 'due', STRINGS.due);
   dueSection.append(dueRow);
 
   /** Save the due date and time; a time without a date or a year below 1000 is a field error. */
@@ -398,7 +459,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   });
 
   const overdue = segmented(doc, STRINGS.overdue, `overdue-${n}`, [['keep', STRINGS.keep], ['cancel', STRINGS.cancel]]);
-  const overdueSection = section('overdue');
+  const overdueSection = section(statusFields, 'overdue');
   overdueSection.append(overdue);
   overdue.addEventListener('change', (event) => save({ 'overdue-handling': event.target.value }, null, 'updateRules'));
 
@@ -432,7 +493,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   zone.control.setAttribute('list', zones.id);
   const recurrence = el(doc, 'div', 'task-editor__recurrence');
   recurrence.append(interval.element, endDate.element, endCount.element, zone.element, zones);
-  const repeatSection = section('repeat');
+  const repeatSection = section(statusFields, 'repeat');
   repeatSection.append(unit.element, recurrence);
 
   /** Save the repeat unit: Never stops the recurrence, and a first unit also sets interval 1 and the browser's timezone. */
@@ -520,7 +581,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   input.setAttribute('aria-controls', listbox.id);
   const comboBox = el(doc, 'div', 'combo-box');
   comboBox.append(combo.element, listbox);
-  section('lists', STRINGS.lists).append(chips, comboBox);
+  listsSection.append(chips, comboBox);
   let options = [];
   let active = -1;
 
@@ -609,11 +670,13 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   // While connected the store holds only the current occurrence, so the note link choice labels the others from the server.
   const loadOccurrences = () => (api && session?.state?.() === 'connected' ? readServerOccurrences(api, taskId) : Promise.resolve(null));
   const thread = createNoteThread({ document: doc, store, taskId, onError: fail, locale, loadOccurrences });
-  section('notes', STRINGS.notes).append(thread.element);
+  section(contentFields, 'notes', STRINGS.notes).append(thread.element);
+  // History and Details edit nothing, so they sit in no fieldset.
   const history = createTaskHistory({ document: doc, store, taskId, api, session, locale });
-  section('history', STRINGS.history).append(history.element);
+  section(panels.history, 'history', STRINGS.history).append(history.element);
   const details = el(doc, 'p', 'editor-panel__details');
-  section('details', STRINGS.details).append(details);
+  section(panels.history, 'details', STRINGS.details).append(details);
+  const deleteRule = rule(panels.status);
   const danger = el(doc, 'div', 'editor-panel__danger');
   const remove = el(doc, 'button', 'button button--danger');
   remove.type = 'button';
@@ -623,7 +686,40 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     panel.close();
   }, fail));
   danger.append(remove);
-  panel.body.append(banner, lock, fields, danger);
+  panels.status.append(danger);
+  panel.body.append(banner, lock, tabsRoot);
+  const tabControl = attachTabs(tabsRoot);
+  let historyShown = false;
+  /** Load the history once its tab first shows; Refresh history loads it again. */
+  const loadShownHistory = () => {
+    if (!historyShown && !panels.history.hidden) {
+      historyShown = true;
+      history.load();
+    }
+  };
+  for (const type of ['click', 'keydown', 'focusin']) {
+    tabsRoot.addEventListener(type, loadShownHistory);
+  }
+
+  /**
+   * Make a field error on a hidden tab select that tab and focus the field, such as a validation failure the store
+   * reports after the user moved on to another tab.
+   * @param {{element: HTMLElement, control: HTMLElement, setError: Function}} field the field
+   */
+  function revealErrors(field) {
+    const setError = field.setError;
+    field.setError = (message) => {
+      setError(message);
+      const tabPanel = field.element.closest('[role="tabpanel"]');
+      if (message && !closing && tabPanel?.hidden) {
+        showTab(tabPanel.dataset.tab);
+        field.control.focus();
+      }
+    };
+  }
+  for (const field of [description, target, date, unit, interval, endDate, endCount, zone, combo]) {
+    revealErrors(field);
+  }
 
   /**
    * Show the status and its counts, press the state button of the status, and gate the controls.
@@ -649,7 +745,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
           : state === 'in-progress' && done >= target ? STRINGS.belowTarget(target) : null;
       button.setAttribute('aria-pressed', String(state === status));
       // A viewer or a deleted task sees every control disabled, also where the fieldset does not reach, as in tests.
-      button.disabled = fields.disabled || (closedSeries ? state !== 'ready' : reason !== null);
+      button.disabled = readOnly || (closedSeries ? state !== 'ready' : reason !== null);
       button.title = reason ?? STATUS_LABELS[state];
     }
     stepper.hidden = target <= 1 || status === 'ready';
@@ -658,12 +754,12 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     if (countText.textContent !== count) {
       countText.textContent = count;
     }
-    const frozen = fields.disabled || status === 'cancelled' || closedSeries;
+    const frozen = readOnly || status === 'cancelled' || closedSeries;
     stepDown.disabled = frozen || done === 0;
     stepUp.disabled = frozen;
     graceNumber = graceOccurrence(task, now());
     previousPeriod.hidden = graceNumber === null;
-    previousPeriod.disabled = fields.disabled;
+    previousPeriod.disabled = readOnly;
     if (graceNumber !== null) {
       // The previous period ends where the current one starts; a cached one past its end ends at its due time.
       const current = task['current-occurrence'];
@@ -672,7 +768,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
       const day = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: zone }).format(new Date(end - 1));
       previousPeriod.textContent = STRINGS.previousPeriod(day);
     }
-    if (focused && (focused.disabled || focused.closest('[hidden]'))) {
+    // Only a part of the controls counts as hidden; the Status tab itself may be hidden while a store change fills it.
+    if (focused && (focused.disabled || statusControls.contains(focused.closest('[hidden]')))) {
       (stateButtons.find((button) => button.getAttribute('aria-pressed') === 'true' && !button.disabled)
         ?? stateButtons.find((button) => !button.disabled))?.focus();
     }
@@ -701,8 +798,12 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     banner.hidden = !deleted;
     lock.hidden = deleted || !locked;
     lockText.textContent = STRINGS.readOnly(owner?.name || owner?.email || '');
-    fields.disabled = deleted || locked;
+    readOnly = deleted || locked;
+    for (const fieldset of fieldsets) {
+      fieldset.disabled = readOnly;
+    }
     danger.hidden = deleted || !canTrashTask(task, held, userId);
+    deleteRule.hidden = danger.hidden;
     if (!busy(description.control)) {
       put(description.control, task.description);
     }
@@ -751,6 +852,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     details.textContent = [[STRINGS.created, 'creation-time'], [STRINGS.updated, 'last-update-time']]
       .map(([label, key]) => `${label}${format.format(new Date(task[key]))}`).join(' · ');
     if (wasDeleted && !deleted) {
+      showTab('content');
       description.control.focus();
     }
   }
@@ -798,8 +900,9 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     returnFocus: () => [...doc.querySelectorAll('.task-row')].find((row) => row.dataset.taskId === taskId)
       ?.querySelector('[data-role="open"]') ?? null,
     destroy() {
+      closing = true;
       // Closing, such as with Back, fires no change or focusout, so typed values save here, also a fixed invalid one.
-      const typed = (control) => task && !fields.disabled && control.value !== shown.get(control)
+      const typed = (control) => task && !readOnly && control.value !== shown.get(control)
         && control.value !== saved.get(control);
       if (typed(description.control)) {
         saveDescription();
@@ -818,6 +921,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
       destroyed = true;
       unsubscribe();
       thread.destroy();
+      tabControl.destroy();
     },
   };
 }

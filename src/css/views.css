@@ -268,7 +268,28 @@
   }
 }
 
-/* The task editor's sections sit in one fieldset, which disables them all for a deleted task. */
+/* The task editor's tab panels leave the spacing to their sections. */
+.task-editor__panel {
+  padding: 0;
+}
+
+/* Status separates its parts with rules only: the status, the lists, the configuration groups, and Delete task. */
+.task-editor__panel[data-tab='status'] .editor-panel__section {
+  border-block-end: 0;
+}
+
+.task-editor__rule {
+  margin: 0;
+  border: 0;
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.task-editor__panel > .editor-panel__danger {
+  margin-block-start: 0;
+  border-block-start: 0;
+}
+
+/* The fields of Content and of Status sit in fieldsets, which disable them all for a deleted task or a viewer. */
 .task-editor__fields {
   min-inline-size: 0;
   margin: 0;

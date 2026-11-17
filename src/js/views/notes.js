@@ -1,6 +1,8 @@
 /**
  * Note thread of the task editor: the add note field on top, then the notes, newest first (`NOT-1` to `NOT-6`).
  *
+ * The add field also searches: while it holds text, the thread shows only the notes containing it, ignoring case.
+ * A note under edit or a delete question stays shown; "No notes match." stands in for an empty result.
  * The thread shows the global notes, then the notes of the current occurrence, then those of earlier ones (`NOT-6`).
  * Each linked note shows its occurrence, so notes of past periods stay reachable for edits and deletes.
  * Each note shows its author, its time, and "edited" after a change (`NOT-2`).
@@ -22,7 +24,7 @@ import { spriteIcon } from './task-list.js';
 
 /** Thread strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
-  add: 'Add note', placeholder: 'Add a note', list: 'Notes, newest first', you: 'You', edited: 'edited',
+  add: 'Add note', placeholder: 'Add or search notes', noMatch: 'No notes match.', list: 'Notes, newest first', you: 'You', edited: 'edited',
   listLinked: 'Notes on the whole task, then on the current occurrence, then on earlier ones, newest first',
   other: 'Collaborator', formerMember: 'Former member',
   more: 'More actions for your note of ', edit: 'Edit', editLabel: 'Edit note', save: 'Save note',
@@ -102,7 +104,10 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
   const field = createEditorField(doc, { label: STRINGS.add, name: 'new-note', tag: 'textarea' });
   field.control.placeholder = STRINGS.placeholder;
   field.control.value = drafts.get(taskId) ?? '';
-  field.control.addEventListener('input', () => drafts.set(taskId, field.control.value));
+  field.control.addEventListener('input', () => {
+    drafts.set(taskId, field.control.value);
+    render(notes, readOnly, userId, links);
+  });
   const actions = doc.createElement('div');
   actions.className = 'note-thread__actions';
   const addButton = button(doc, 'button button--secondary', STRINGS.add, 'add');
@@ -111,7 +116,11 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
   const list = doc.createElement('ol');
   list.className = 'note-thread__list';
   list.setAttribute('aria-label', STRINGS.list);
-  element.append(add, list);
+  const empty = doc.createElement('p');
+  empty.className = 'note-thread__empty';
+  empty.setAttribute('role', 'status');
+  empty.hidden = true;
+  element.append(add, list, empty);
   let menus = [];
   let notes = [];
   let links = { occurrences: [], current: null };
@@ -132,6 +141,8 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
       await store.addNote(taskId, { text: field.control.value });
       field.control.value = '';
       drafts.delete(taskId);
+      // The cleared field searches no more, so every note shows again.
+      render(notes, readOnly, userId, links);
     }
     catch (failure) {
       onError(failure);
@@ -376,7 +387,17 @@ export function createNoteThread({ document: doc = globalThis.document, store, t
     const shown = links.current === null ? notes : [...global, ...linked.filter((note) => note.occurrence === links.current),
       ...linked.filter((note) => note.occurrence !== links.current)];
     list.setAttribute('aria-label', links.current === null || linked.length === 0 ? STRINGS.list : STRINGS.listLinked);
-    list.replaceChildren(...shown.map(renderNote));
+    // A read-only thread hides the add field, so a draft left in it searches nothing.
+    const query = locked ? '' : field.control.value.trim().toLocaleLowerCase();
+    const matching = shown.filter((note) => !query || note.text.toLocaleLowerCase().includes(query)
+      || note.id === editing?.id || note.id === confirming);
+    list.replaceChildren(...matching.map(renderNote));
+    const none = matching.length === 0 && shown.length > 0;
+    empty.hidden = !none;
+    // The status announces only a change.
+    if (empty.textContent !== (none ? STRINGS.noMatch : '')) {
+      empty.textContent = none ? STRINGS.noMatch : '';
+    }
     if (role) {
       list.querySelector(`[data-note-id="${noteId}"] [data-role="${role}"]`)?.focus();
     }

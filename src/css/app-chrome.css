@@ -742,6 +742,13 @@
   list-style: none;
 }
 
+/* A search of the add field that matches no note says so in muted text. */
+.note-thread__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 .note {
   display: grid;
   gap: var(--space-1);
