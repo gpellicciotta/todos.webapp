@@ -19,7 +19,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0251 Move the view's More menu to a vertical three-dot button beside the account button in the desktop header.
 - [x] T0250 Let task lists, the Lists screen, and the Recycle Bin fill the main area's width instead of a 45rem column.
 - [x] T0249 Sync Delete permanently and Empty recycle bin to the account while connected, queued while offline.
-- [ ] T0248 Add Restore all and Delete all for the entries matching the Recycle Bin filter.
+- [~] T0248 [owner: @claude] Add Restore all and Delete all for the entries matching the Recycle Bin filter.
 - [x] T0247 Add a find field and an All, Lists, Tasks choice to the Recycle Bin to filter its entries.
 - [ ] T0246 [protocol: adhoc] Keep the sync indicator spinning, in the primary blue, for at least one full turn per run instead of flickering.
 - [ ] T0245 Merge the connect screen into the Settings Connection section, keeping #/connect as an alias for the Auth return.

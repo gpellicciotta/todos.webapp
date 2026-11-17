@@ -1,11 +1,11 @@
 ---
 id: T0248
-owner: ~
-needs: [T0247]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0248-add-restore-all-and-delete-all-for-the
+worktree: .plan/work/T0248-add-restore-all-and-delete-all-for-the
+status: active
+started_at: "2026-11-17T02:18:23Z"
 ended_at: —
 review: agent
 preview: none
