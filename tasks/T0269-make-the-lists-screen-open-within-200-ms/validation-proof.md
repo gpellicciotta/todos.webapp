@@ -41,6 +41,22 @@ OK: 131 precached files match VERSION 2026-11-17.19.
   20 passed (28.1s)
 ```
 
+### Review round 1: intermittent Back scroll restore failure is not a regression
+Review saw `lists-many-rows.spec.js:81` fail once: `scrollTop > 11234`, received `10958`.
+Under load the check fails on this branch and on base commit e173243 alike, always at `10958`.
+The restore clamps to the content height before off-screen rows have their real heights; follow-up task T0271.
+
+Command on each checkout: `npx playwright test tests/e2e/lists-many-rows.spec.js --grep "a Back" --repeat-each 80 --workers 8` (exit 1 both)
+```text
+This branch (0932d14):  Received: 10958 ... 34 failed, 46 passed (5.8m)
+Base (e173243):         Received: 10958 ... 23 failed, 57 passed (5.4m)
+```
+
+Affected suite, normal parallel run, repeated: `npx playwright test tests/e2e/lists-many-rows.spec.js tests/e2e/lists.spec.js tests/e2e/lists-find.spec.js --repeat-each 6` (exit 0 on the second run; 1 failed of 120 on the first)
+```text
+  120 passed (2.6m)
+```
+
 ### Known failures unrelated to this task
 Two All tasks perf tests fail on this machine with and without the change (base commit e173243: view open median 302 ms; grouped 282 ms).
 ```
