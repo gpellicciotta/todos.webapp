@@ -11,6 +11,21 @@
 
 Size estimate: 7 files, 400 lines.
 
+Files touched beyond the declared list, logged during execution:
+- src/js/views/notes.js: the notes search the Content tab requires.
+- src/css/views.css and src/css/app-chrome.css: they hold the editor and note thread styles, not app-components.css.
+- src/service-worker.js and src/index.html: they precache and preload tabs.js, as the precache and preload tests require.
+- src/js/views/task-history.js: its docblock now names the tab-driven load.
+- src/demo/visual-style-gallery-behaviors.js: it makes the gallery tabs work.
+- tests/e2e/all-tasks.spec.js and tests/e2e/list.spec.js: their editor status steps select the Status tab first.
+
+Mechanical command: `node scripts/check-sw-version.mjs --update`.
+Mechanical files: scripts/sw-precache-hashes.json
+
+Size note: 15 counted files and 748 changed lines, above the typical line and below the large line.
+The tabs, the moved sections, the notes search, and their tests merge only together.
+Splitting them would ship an editor whose Content tab cannot search notes or whose tests fail.
+
 ### Design Source
 - The Tabs section of T0257's brief governs; revise this spec if sign-off changed it.
 - Brief: ../T0257-design-a-tabbed-task-editor-and-a-clearer/technical-spec.md.
