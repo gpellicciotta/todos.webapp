@@ -134,6 +134,10 @@ const SHORTCUTS = Object.freeze([
   Object.freeze({ keys: ['Shift+Enter', 'Alt+Enter'], action: 'Add the task or list, in the search and add field.' }),
   Object.freeze({ keys: ['Escape'], action: 'Clear the search and add field, or close the editor or a dialog.' }),
   Object.freeze({ keys: ['Alt+Up', 'Alt+Down'], action: "Move the focused list, or the focused task in a list's manual order." }),
+  Object.freeze({
+    keys: ['Alt+Home', 'Alt+End'],
+    action: "Move the focused list, or the focused task in a list's manual order, to the top or bottom.",
+  }),
   Object.freeze({ keys: ['x'], action: 'Tick the focused task, as a click on its status button does; a toast offers Undo.' }),
   Object.freeze({ keys: ['Ctrl+Z', 'Cmd+Z'], action: 'Undo the newest change shown in a toast.' }),
 ]);

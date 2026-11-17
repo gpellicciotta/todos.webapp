@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  applyListOrder, LIST_ORDER_KEY, moveList, moveListTo, onListOrderChange, readListOrder, writeListOrder,
+  applyListOrder, LIST_ORDER_KEY, moveList, moveListTo, moveListToEnd, onListOrderChange, readListOrder, writeListOrder,
 } from '../../src/js/core/list-order.js';
 import { PREFIX } from '../../src/js/core/preferences.js';
 
@@ -66,6 +66,21 @@ describe('moveList and moveListTo', () => {
   it('does not change its input', () => {
     moveList(IDS, 'b', 1);
     expect(IDS).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('moveListToEnd (LST-13)', () => {
+  const IDS = ['a', 'b', 'c', 'd'];
+
+  it('moves a list to the first or the last position', () => {
+    expect(moveListToEnd(IDS, 'c', -1)).toEqual(['c', 'a', 'b', 'd']);
+    expect(moveListToEnd(IDS, 'a', 1)).toEqual(['b', 'c', 'd', 'a']);
+  });
+
+  it('keeps the order of a list already at that end, and of an unknown list', () => {
+    expect(moveListToEnd(IDS, 'a', -1)).toEqual(IDS);
+    expect(moveListToEnd(IDS, 'd', 1)).toEqual(IDS);
+    expect(moveListToEnd(IDS, 'x', 1)).toEqual(IDS);
   });
 });
 

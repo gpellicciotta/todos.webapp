@@ -235,7 +235,7 @@ test('the More button of a list row opens the menu of the list view, and Edit li
   const homeId = await seed(page);
   await page.goto('/#/lists');
   await page.getByRole('button', { name: 'List actions: Home' }).click();
-  await expect(page.getByRole('menuitem')).toHaveText(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
+  await expect(page.getByRole('menuitem')).toHaveText(['Edit list', 'Edit view options', 'Share list', 'Move to bottom', 'Delete list']);
   await page.getByRole('menuitem', { name: 'Edit list' }).click();
   await expect(page).toHaveURL(new RegExp(`#/lists/${homeId}/edit$`));
   await expect(page.locator('[data-editor-slot] .editor-panel').getByRole('textbox', { name: 'Name' })).toHaveValue('Home');
@@ -276,6 +276,61 @@ test('Alt+Up and Alt+Down reorder lists by keyboard, announce the move, and keep
   });
   await expect(names).toHaveText(['Work', 'Home', 'Archive']);
   await expect(sidebar).toHaveText(['Work', 'Home', 'Archive']);
+  expect(problems).toEqual([]);
+});
+
+test('with 124 lists, Move to bottom and Alt+Home move a list to an end, scroll it into view, and the sidebar keeps the order (LST-13)', async ({ page }) => {
+  const problems = watch(page);
+  const total = 124;
+  const nameAt = (index) => `List ${String(index).padStart(3, '0')}`;
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/tasks');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await page.evaluate(async (count) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    for (let index = 1; index <= count; index += 1) {
+      await store.createList({ name: `List ${String(index).padStart(3, '0')}` });
+    }
+    store.close();
+  }, total);
+  await page.goto('/#/lists');
+  const names = page.locator('.lists-view .list-row__name');
+  const sidebar = page.locator('.app__sidebar .nav-item--list .nav-item__label');
+  const live = page.locator('[aria-live="polite"]');
+  await expect(names).toHaveCount(total);
+  await expect(names.first()).toHaveText(nameAt(1));
+  const more = page.getByRole('button', { name: `List actions: ${nameAt(1)}` });
+  await more.click();
+  await expect(page.getByRole('menuitem', { name: 'Move to top' })).toHaveCount(0);
+  await page.getByRole('menuitem', { name: 'Move to bottom' }).click();
+  await expect(names.last()).toHaveText(nameAt(1));
+  await expect(names.first()).toHaveText(nameAt(2));
+  await expect(live.filter({ hasText: `${nameAt(1)} moved to position ${total} of ${total}.` })).toHaveCount(1);
+  await expect(more).toBeFocused();
+  await expect(more).toBeInViewport();
+  await expect(sidebar.last()).toHaveText(nameAt(1));
+  await page.reload();
+  await expect(names.last()).toHaveText(nameAt(1));
+  await expect(sidebar.last()).toHaveText(nameAt(1));
+  await expect(sidebar.first()).toHaveText(nameAt(2));
+  // Alt+Home brings the last row back to the top, from the keyboard alone.
+  const row = page.locator('.lists-view .list-row', { hasText: nameAt(1) });
+  await row.focus();
+  await page.keyboard.press('Alt+Home');
+  await expect(names.first()).toHaveText(nameAt(1));
+  await expect(row).toBeFocused();
+  await expect(row).toBeInViewport();
+  await expect(live.filter({ hasText: `${nameAt(1)} moved to position 1 of ${total}.` })).toHaveCount(1);
+  await expect(sidebar.first()).toHaveText(nameAt(1));
+  // The sidebar takes Alt+End on a focused link too, and keeps focus on it.
+  const link = page.locator('.app__sidebar [data-nav^="list:"]', { hasText: nameAt(1) });
+  await link.focus();
+  await page.keyboard.press('Alt+End');
+  await expect(sidebar.last()).toHaveText(nameAt(1));
+  await expect(link).toBeFocused();
+  await expect(link).toBeInViewport();
+  await expect(names.last()).toHaveText(nameAt(1));
   expect(problems).toEqual([]);
 });
 

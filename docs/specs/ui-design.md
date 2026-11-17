@@ -105,7 +105,7 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
   The Keyboard shortcuts section of Settings lists it.
 - **[Decided]** The list rows are one tab stop with a roving `tabindex`: the last focused row, else the current list, else the first shown row.
   Up, Down, Home, End, PageUp, and PageDown move between the shown rows and stop at the ends; a Page key moves one region height.
-  Alt+Up and Alt+Down keep moving the list (`LST-8`).
+  Alt+Up and Alt+Down keep moving the list, and Alt+Home and Alt+End move it to an end (`LST-8`, `LST-13`).
 - **[Decided]** No match leaves the muted line "No list matches." and no creation action.
   The Lists screen offers Create list.
 - **[Decided]** Rows stay 40 px with 4 px gaps, and the sidebar has no density option.
@@ -608,13 +608,14 @@ Wireframes: [lists.svg](../img/ui/lists.svg) with a few lists, [lists-many.svg](
 - Each row links to its list; without lists, the screen says that a list groups tasks.
 - A shared list shows "Shared by {{owner}}" under its name, or "Shared with 2 people" for the owner; local lists show neither (`SHR-3`).
 - Rows follow the order of this device (`LST-8`); the sidebar shows the same order.
-  Drag a row by its handle, or press Alt+Up or Alt+Down on a row; the rows have no Move up or Move down buttons.
+  Drag a row by its handle, or press Alt+Up, Alt+Down, Alt+Home, or Alt+End on a row; the rows have no move buttons.
   **[Decided]** The handle also shows on touch screens, since it is the only way to reorder by pointer.
   A move announces "{{list}} moved to position 2 of 5." and focus stays on the moved row's control.
 - **[Decided]** Each row ends with a More button, named "List actions: {{list}}", with the menu of the list view (`LST-9`):
   Edit list, Edit view options, Share list, and Delete list, which asks first and then opens All tasks with an Undo toast.
-  The menu comes from [list-actions.js](../../src/js/views/list-actions.js), shared with the List screen.
-- In the sidebar, Alt+Up and Alt+Down on a focused list link move it; the sidebar has no drag handle.
+  Move to top and Move to bottom come before Delete list while reordering is on; a row at an end leaves out that end (`LST-13`).
+  The menu comes from [list-actions.js](../../src/js/views/list-actions.js), shared with the List screen, whose menu has no move entries.
+- In the sidebar, Alt+Up, Alt+Down, Alt+Home, and Alt+End on a focused list link move it; the sidebar has no drag handle.
 - The order is the `todos.lists.order` preference, a JSON array of list identifiers, never stored or synced.
   Unknown identifiers are dropped; lists missing from it, such as new lists, follow in name order.
   [list-order.js](../../src/js/core/list-order.js) holds the helpers; another tab's change arrives as a `storage` event.
@@ -647,9 +648,9 @@ The sidebar and this screen share the rules below.
   and Reset clears it. Local mode and a user without shared lists see no checkbox and ignore a stored choice.
 - **[Decided]** Reordering needs Manual order, an empty field, and no Shared only, as for tasks (`LV-8`, `LST-16`).
   Otherwise drag handles and move entries are hidden.
-  Alt+Up and Alt+Down then announce "Reordering needs Manual order and no search."
+  Alt+Up, Alt+Down, Alt+Home, and Alt+End then announce "Reordering needs Manual order and no search."
 - **[Decided]** Move to top and Move to bottom join the row menu while reordering is available.
-  Alt+Shift+Up and Alt+Shift+Down do the same on a focused row, also in the sidebar.
+  Alt+Home and Alt+End do the same on a focused row, also in the sidebar, as decided in T0257 for task rows.
   Each move announces "{{list}} moved to position 1 of 124."; focus stays on the row, which scrolls into view.
   Reason: a drag across 100 rows is slow, and the two ends cover pinning and parking a list.
   A drag keeps its edge auto-scroll, and a new list still appends at the end.
@@ -1023,13 +1024,13 @@ Wireframe: [import.svg](../img/ui/import.svg).
 - `x` ticks the task of the focused row, as a click on its status button does.
 - Shift+Enter or Alt+Enter in the add and search field adds the typed task, like the Add button.
 - On the Lists screen `/` focuses the find field; `l` focuses the sidebar's find field, or opens Lists where there is none.
-- Alt+Up, Alt+Down, Alt+Shift+Up, and Alt+Shift+Down move a focused list by one place or to an end.
+- Alt+Up, Alt+Down, Alt+Home, and Alt+End move a focused list by one place or to an end.
 - `n` and `/` both focus the view's `[data-shortcut~="add"]` element, the add and search field, and do nothing without it.
 - Ctrl+Z or Cmd+Z, outside text fields and modal dialogs, runs the Undo of the newest toast.
   It never runs another toast action, such as Reload.
 - Page shortcuts never fire while a text field has focus; the add field's keys and Escape in an editor do.
 - The Keyboard shortcuts section lists every shortcut that works today.
-- Drag and drop always has a keyboard alternative: Alt+arrows, Alt+Home, and Alt+End for tasks (`LV-3`), Alt+arrows and menu entries for lists.
+- Drag and drop always has a keyboard alternative: Alt+arrows, Alt+Home, and Alt+End for tasks (`LV-3`), the same keys and menu entries for lists (`LST-13`).
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.
 - Focus moves to the editor's description when it opens, and back to the row when it closes.

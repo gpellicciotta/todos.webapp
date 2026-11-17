@@ -158,11 +158,27 @@ describe('renderShell list order', () => {
     expect(labels(root)).toEqual(['Garden', 'Home', 'Work']);
   });
 
+  it('moves the focused list to the bottom with Alt+End and to the top with Alt+Home, keeps focus, and announces it (LST-13)', async () => {
+    const { root, shell } = render();
+    shell.setLists(LISTS, COUNTS);
+    const link = root.querySelector('[data-nav="list:g"]');
+    link.focus();
+    press(link, 'End');
+    expect(labels(root)).toEqual(['Home', 'Work', 'Garden']);
+    expect(document.activeElement).toBe(root.querySelector('[data-nav="list:g"]'));
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Garden moved to position 3 of 3.'));
+    press(root.querySelector('[data-nav="list:w"]'), 'Home');
+    expect(labels(root)).toEqual(['Work', 'Home', 'Garden']);
+    expect(JSON.parse(localStorage.getItem('todos.lists.order'))).toEqual(['w', 'h', 'g']);
+  });
+
   it('leaves the order alone at the ends and for keys without Alt', () => {
     const { root, shell } = render();
     shell.setLists(LISTS, COUNTS);
     const first = root.querySelector('[data-nav="list:g"]');
     press(first, 'ArrowUp');
+    press(first, 'Home');
+    press(root.querySelector('[data-nav="list:w"]'), 'End');
     press(first, 'ArrowDown', false);
     expect(labels(root)).toEqual(['Garden', 'Home', 'Work']);
     expect(localStorage.getItem('todos.lists.order')).toBeNull();

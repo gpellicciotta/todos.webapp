@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readListOrder } from '../../src/js/core/list-order.js';
+import { createListMenu } from '../../src/js/views/list-actions.js';
 import { mountLists } from '../../src/js/views/lists.js';
 import { freshStore, setListFields } from './store-helpers.js';
 
@@ -118,13 +119,70 @@ describe('mountLists', () => {
     expect(view.querySelector('button[aria-label^="Move up"], button[aria-label^="Move down"]')).toBeNull();
   });
 
-  it('holds Edit list, Edit view options, Share list, and Delete list in the More menu of a row (VO-4)', async () => {
+  it('holds Edit list, Edit view options, Share list, Move to top, Move to bottom, and Delete list in the More menu of a row (VO-4, LST-13)', async () => {
     const view = await mountThree();
     button(view, 'List actions: Home').click();
     const menu = button(view, 'List actions: Home').closest('.list-item').querySelector('.menu');
     expect([...menu.querySelectorAll('.menu__item')].map((item) => item.textContent))
-      .toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
+      .toEqual(['Edit list', 'Edit view options', 'Share list', 'Move to top', 'Move to bottom', 'Delete list']);
     expect(menu.querySelector('[data-action="delete"]').classList.contains('menu__item--danger')).toBe(true);
+  });
+
+  /**
+   * Open the More menu of a row and list its entries.
+   * @param {HTMLElement} view the view element
+   * @param {string} name the list name
+   * @returns {string[]} the entry texts
+   */
+  const menuOf = (view, name) => {
+    button(view, `List actions: ${name}`).click();
+    return [...button(view, `List actions: ${name}`).closest('.list-item').querySelectorAll('.menu__item')].map((item) => item.textContent);
+  };
+
+  it('leaves Move to top out of the first row menu and Move to bottom out of the last (LST-13)', async () => {
+    const view = await mountThree();
+    expect(menuOf(view, 'Garden')).toEqual(['Edit list', 'Edit view options', 'Share list', 'Move to bottom', 'Delete list']);
+    expect(menuOf(view, 'Work')).toEqual(['Edit list', 'Edit view options', 'Share list', 'Move to top', 'Delete list']);
+  });
+
+  it('moves a list to the bottom and the top from its menu, announces it, and keeps focus on its row (LST-13)', async () => {
+    const view = await mountThree();
+    const live = () => document.body.querySelector('[aria-live="polite"]').textContent;
+    button(view, 'List actions: Garden').focus();
+    button(view, 'List actions: Garden').click();
+    button(view, 'List actions: Garden').closest('.list-item').querySelector('[data-action="move-bottom"]').click();
+    await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Work', 'Garden']));
+    await vi.waitFor(() => expect(live()).toBe('Garden moved to position 3 of 3.'));
+    expect(document.activeElement).toBe(button(view, 'List actions: Garden'));
+    expect(readListOrder()).toHaveLength(3);
+    button(view, 'List actions: Work').click();
+    button(view, 'List actions: Work').closest('.list-item').querySelector('[data-action="move-top"]').click();
+    await vi.waitFor(() => expect(names(view)).toEqual(['Work', 'Home', 'Garden']));
+    await vi.waitFor(() => expect(live()).toBe('Work moved to position 1 of 3.'));
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('moves the focused row to the bottom with Alt+End and to the top with Alt+Home, without a menu (LST-13)', async () => {
+    const view = await mountThree();
+    const garden = view.querySelectorAll('.list-row')[0];
+    garden.focus();
+    const end = new KeyboardEvent('keydown', { key: 'End', altKey: true, bubbles: true, cancelable: true });
+    garden.dispatchEvent(end);
+    expect(end.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(names(view)).toEqual(['Home', 'Work', 'Garden']));
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Garden moved to position 3 of 3.'));
+    expect(document.activeElement).toBe(view.querySelector('.list-item:last-child .list-row'));
+    expect(view.querySelector('[aria-expanded="true"]')).toBeNull();
+    expect(view.querySelectorAll('.list-item .menu')).toHaveLength(0);
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', altKey: true, bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(names(view)).toEqual(['Garden', 'Home', 'Work']));
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Garden moved to position 1 of 3.'));
+  });
+
+  it('keeps the move entries out of the List screen menu, which has no row to move (LST-13)', () => {
+    const { menu } = createListMenu({ document, id: 'list-actions' });
+    expect([...menu.querySelectorAll('.menu__item')].map((item) => item.textContent))
+      .toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
   });
 
   it('opens the list editor, the view options, and the sharing section of the row list from its More menu', async () => {
@@ -191,9 +249,10 @@ describe('mountLists', () => {
       view.querySelector(`[data-list-id="${ids[name]}"] .list-item__more`).click();
       return [...view.querySelector(`[data-list-id="${ids[name]}"]`).querySelectorAll('.menu__item')].map((item) => item.textContent);
     };
-    expect(actions('Mine')).toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
-    expect(actions('Editing')).toEqual(['Edit list', 'Edit view options']);
-    expect(actions('Reading')).toEqual(['List details', 'Edit view options']);
+    // The order is Editing, Home, Mine, Reading; the move entries follow it, since the order is the device's own.
+    expect(actions('Mine')).toEqual(['Edit list', 'Edit view options', 'Share list', 'Move to top', 'Move to bottom', 'Delete list']);
+    expect(actions('Editing')).toEqual(['Edit list', 'Edit view options', 'Move to bottom']);
+    expect(actions('Reading')).toEqual(['List details', 'Edit view options', 'Move to top']);
     const sharing = (name) => view.querySelector(`[data-list-id="${ids[name]}"] .list-row__sharing`)?.textContent ?? null;
     expect(sharing('Reading')).toBe('Shared by Sam Roe');
     expect(sharing('Mine')).toBe('Shared with 2 people');
@@ -338,6 +397,36 @@ describe('mountLists find, sort, and the reorder lock (LST-10, LST-11, LST-12)',
     field(bar).value = '';
     field(bar).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await vi.waitFor(() => expect(view.querySelector('.list-item__handle').hidden).toBe(false));
+  });
+
+  it('drops Move to top and Move to bottom while searching or sorted, and announces why on Alt+Home and Alt+End (LST-13)', async () => {
+    const { view, bar } = await mountMany(13);
+    const live = () => document.body.querySelector('[aria-live="polite"]').textContent;
+    const entries = (index) => {
+      const more = view.querySelectorAll('.list-item__more')[index];
+      more.click();
+      return [...more.closest('.list-item').querySelectorAll('.menu__item')].map((item) => item.dataset.action);
+    };
+    expect(entries(1)).toEqual(expect.arrayContaining(['move-top', 'move-bottom']));
+    await type(field(bar), 'list 1');
+    await vi.waitFor(() => expect(rowNames(view)).toHaveLength(5));
+    expect(entries(1)).not.toEqual(expect.arrayContaining(['move-top']));
+    expect(entries(1)).not.toEqual(expect.arrayContaining(['move-bottom']));
+    for (const key of ['Home', 'End']) {
+      const event = new KeyboardEvent('keydown', { key, altKey: true, bubbles: true, cancelable: true });
+      view.querySelectorAll('.list-row')[1].dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      // The announcement clears the region at once and sets the message a moment later.
+      expect(live()).toBe('');
+      await vi.waitFor(() => expect(live()).toBe('Reordering needs Manual order and no search.'));
+    }
+    expect(localStorage.getItem('todos.lists.order')).toBeNull();
+    expect(rowNames(view)[1]).toBe('List 10');
+    bar.querySelector('.info-line__reset').click();
+    bar.querySelector('.lists-find__sort').click();
+    bar.querySelector('.menu [data-sort="name"]').click();
+    await vi.waitFor(() => expect(view.querySelector('.list-item__handle').hidden).toBe(true));
+    expect(entries(1)).not.toEqual(expect.arrayContaining(['move-top']));
   });
 
   it('keeps the handles hidden under another sort', async () => {

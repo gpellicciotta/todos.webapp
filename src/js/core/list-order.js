@@ -3,6 +3,7 @@
  *
  * The order is a device preference of list identifiers (`lists.order`); the store and the sync feed never see it.
  * Stored identifiers come first; lists without one, such as new lists, follow in name order.
+ * A list moves one place, to an index, or to either end (`LST-8`, `LST-13`).
  * A write tells the listeners of this page, and a write in another tab arrives as a `storage` event.
  */
 
@@ -94,6 +95,17 @@ export function moveListTo(ids, id, index) {
  */
 export function moveList(ids, id, step) {
   return moveListTo(ids, id, ids.indexOf(id) + step);
+}
+
+/**
+ * Move an identifier to the first or the last place, for Move to top, Move to bottom, Alt+Home, and Alt+End (`LST-13`).
+ * @param {string[]} ids the identifiers in display order
+ * @param {string} id the moved identifier
+ * @param {-1|1} end -1 for the top, 1 for the bottom
+ * @returns {string[]} a new array
+ */
+export function moveListToEnd(ids, id, end) {
+  return moveListTo(ids, id, end < 0 ? 0 : ids.length - 1);
 }
 
 /**

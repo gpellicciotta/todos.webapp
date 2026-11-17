@@ -6,9 +6,10 @@
  * The button sits in the shell's overlay layer while the screen is open.
  * The button hides while an editor is open, so it never covers the editor panel.
  * Each row also has a More button with the actions of the List screen: Edit list, Edit view options, Share list,
- * and Delete list (`VO-4`).
- * Rows follow the order of this device (`LST-8`): drag a row by its handle, or press Alt+Up or Alt+Down on a row.
- * The order stays on the device and new lists come last.
+ * and Delete list (`VO-4`), plus Move to top and Move to bottom while reordering is on (`LST-13`).
+ * Rows follow the order of this device (`LST-8`): drag a row by its handle, press Alt+Up or Alt+Down on a row, or move
+ * it to an end with Alt+Home, Alt+End, or the menu, all through reorder.js. Each move announces the new position and
+ * keeps focus on the row, which scrolls into view. The order stays on the device and new lists come last.
  * The counts come from core/list-counts.js, shared with the sidebar, and the app passes the sidebar's own read of them
  * (core/list-snapshot.js) so the screen opens without counting 5000 tasks again (`TEC-16`); core/list-find.js and core/list-sort.js hold the
  * find and sort rules of the Many Lists design (`LST-10`, `LST-12`).
@@ -17,7 +18,8 @@
  * for 150 ms; Enter opens the first match, Escape clears, Down enters the rows, and `/` focuses it (`LST-10`).
  * The text lasts for the session in the router memory; the sort persists per device in `todos.view.lists` (`LST-12`).
  * A text with no match offers Create list for a valid new name, which opens the new list's editor (`LST-11`).
- * Reordering needs Manual order, an empty field, and no Shared only; otherwise the handles hide and Alt+Up or Alt+Down says why.
+ * Reordering needs Manual order, an empty field, and no Shared only; otherwise the handles and move entries hide, and
+ * Alt+Up, Alt+Down, Alt+Home, or Alt+End says why.
  * While connected with at least one shared list, the sort menu ends with a Shared only checkbox that the info line names; it persists
  * in `todos.view.lists` beside the sort and Reset clears it (`LST-16`).
  * Long lists stay cheap: up to 200 shown lists render every row, with `content-visibility: auto`; more render only the
@@ -296,10 +298,16 @@ export function mountLists(view, {
     if (!list) {
       return;
     }
-    const menu = createListMenuElement({ document: doc, id: `list-actions-${id}`, name: list.name, list });
+    // Every render rebuilds the rows and drops the menus, so the move entries follow the row's place and the lock (`LST-13`).
+    const index = places.get(id);
+    const movable = reorderable();
+    const moves = { top: movable && index > 0, bottom: movable && index < shown.length - 1 };
+    const menu = createListMenuElement({ document: doc, id: `list-actions-${id}`, name: list.name, list, moves });
     item.append(menu);
     menus.set(id, attachMenu(more, menu, {
-      onSelect: (picked) => runListAction(picked, { listId: id, list, parent: root, opener: more, store, toaster, navigate }),
+      onSelect: (picked) => runListAction(picked, {
+        listId: id, list, parent: root, opener: more, store, toaster, navigate, jump: (end) => reorder.jump(id, end),
+      }),
     }));
   }
 
@@ -662,7 +670,10 @@ export function mountLists(view, {
     if (!refocus) {
       return;
     }
-    entries.get(refocus.id)?.item.querySelector(`[data-role="${refocus.role}"]`)?.focus();
+    const control = entries.get(refocus.id)?.item.querySelector(`[data-role="${refocus.role}"]`);
+    control?.focus();
+    // A move to an end can land far away, so the row scrolls into view even where focus does not scroll it (`LST-13`).
+    control?.scrollIntoView?.({ block: 'nearest' });
     refocus = null;
   }
 
@@ -795,11 +806,11 @@ export function mountLists(view, {
   }
 
   /**
-   * Say why Alt+Up and Alt+Down do nothing while reordering is off.
+   * Say why Alt+Up, Alt+Down, Alt+Home, and Alt+End do nothing while reordering is off.
    * @param {KeyboardEvent} event the key event
    */
   function onRowsKeydown(event) {
-    if (event.altKey && !event.ctrlKey && !event.metaKey && ['ArrowUp', 'ArrowDown'].includes(event.key)
+    if (event.altKey && !event.ctrlKey && !event.metaKey && ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)
       && event.target.closest?.('.list-item') && !reorderable()) {
       event.preventDefault();
       announcer.announce(STRINGS.locked);
@@ -878,7 +889,7 @@ export function mountLists(view, {
   rows.addEventListener('focusin', onRowsFocusin);
   const reorder = attachReorder(rows, {
     enabled: reorderable, onMove: move, scroller, ids: () => shown.map((list) => list.id), midpoints,
-    row: '.list-item', handle: '.list-item__handle', idKey: 'listId',
+    row: '.list-item', handle: '.list-item__handle', idKey: 'listId', ends: true,
   });
 
   /**

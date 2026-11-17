@@ -1,8 +1,8 @@
 /**
  * Reordering of the list view rows (`LV-3`): drag by the handle, press and drag the row, a long hold on touch,
  * Alt+Up and Alt+Down, Alt+Home and Alt+End, and Move up and Move down.
- * The Lists screen reuses it for its list rows, through the row, handle, and identifier options; it drags by the
- * handle only and has no Alt+Home or Alt+End until T0076, since the `press` and `ends` options are off by default.
+ * The Lists screen reuses it for its list rows, through the row, handle, identifier, and `ends` options; it drags by
+ * the handle only, since the `press` option is off by default, and its Move to top and Move to bottom call `jump`.
  *
  * Every move turns into one before or after neighbor for the store's `moveInList`.
  * Neighbors come from the shown tasks, rendered or not, so a move skips the tasks the status filter hides.

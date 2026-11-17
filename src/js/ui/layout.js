@@ -14,7 +14,8 @@
  * The sync indicator opens the end of the top bar, before the bell of the inbox and the user button (see views/sync-indicator.js).
  * The bell of the inbox joins the user menu while connected, and broadcast banners show above every view (see inbox.js).
  * A session banner above the views offers Sign in while the session expired.
- * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it (`LST-8`).
+ * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it one place, and
+ * Alt+Home and Alt+End to the top or bottom (`LST-8`, `LST-13`).
  * Each list shows its open task count from core/list-counts.js, the pass shared with the Lists screen.
  * The wide sidebar keeps the brand, All tasks, and Lists fixed and scrolls only its list rows (`LST-14`).
  * Rows are patched by list identifier, so focus and scroll survive a count change; a route to a list scrolls its row
@@ -28,7 +29,9 @@
 
 import { countOf } from '../core/list-counts.js';
 import { FIND_MAX_LENGTH, findLists } from '../core/list-find.js';
-import { applyListOrder, movedMessage, moveList, onListOrderChange, readListOrder, writeListOrder } from '../core/list-order.js';
+import {
+  applyListOrder, movedMessage, moveList, moveListToEnd, onListOrderChange, readListOrder, writeListOrder,
+} from '../core/list-order.js';
 import { readTheme } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { attachSyncIndicator } from '../views/sync-indicator.js';
@@ -47,6 +50,14 @@ const FIND_FROM = 12;
 
 /** The pause after typing before the rows filter and the match count is announced (`TEC-16`). */
 const FIND_PAUSE_MS = 150;
+
+/** The order change of each Alt key on a list link: one place, or to an end (`LST-8`, `LST-13`). */
+const LIST_MOVES = Object.freeze({
+  ArrowUp: (ids, id) => moveList(ids, id, -1),
+  ArrowDown: (ids, id) => moveList(ids, id, 1),
+  Home: (ids, id) => moveListToEnd(ids, id, -1),
+  End: (ids, id) => moveListToEnd(ids, id, 1),
+});
 
 /** Rows a Page key moves when the region has no measured height. */
 const PAGE_ROWS = 10;
@@ -418,24 +429,29 @@ export function renderShell(root, { session = createSession() } = {}) {
   }
 
   /**
-   * Move the focused list link with Alt+Up and Alt+Down, keeping focus on it and announcing the position.
+   * Move the focused list link one place with Alt+Up and Alt+Down, or to an end with Alt+Home and Alt+End (`LST-13`),
+   * keeping focus on it, scrolled into view, and announcing the position.
    * @param {KeyboardEvent} event the key event
    */
   function onListKeydown(event) {
     const link = event.target.closest?.('[data-nav^="list:"]');
-    if (!link || !event.altKey || event.ctrlKey || event.metaKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) {
+    const move = LIST_MOVES[event.key];
+    if (!link || !event.altKey || event.ctrlKey || event.metaKey || !move) {
       return;
     }
     event.preventDefault();
     const ordered = applyListOrder(shownLists, readListOrder());
     const id = link.dataset.nav.slice('list:'.length);
     const ids = ordered.map((list) => list.id);
-    const next = moveList(ids, id, event.key === 'ArrowUp' ? -1 : 1);
+    const next = move(ids, id);
     if (next.join() === ids.join()) {
       return;
     }
     if (writeListOrder(next)) {
-      [...listNav.querySelectorAll('[data-nav]')].find((candidate) => candidate.dataset.nav === `list:${id}`)?.focus();
+      const moved = [...listNav.querySelectorAll('[data-nav]')].find((candidate) => candidate.dataset.nav === `list:${id}`);
+      moved?.focus();
+      // Focus may have stayed on the link as it moved, so the browser does not scroll it into view by itself.
+      moved?.scrollIntoView?.({ block: 'nearest' });
       announcer ??= createLiveRegion({ document: doc });
       announcer.announce(movedMessage(ordered.find((list) => list.id === id).name, next.indexOf(id) + 1, next.length));
     }
