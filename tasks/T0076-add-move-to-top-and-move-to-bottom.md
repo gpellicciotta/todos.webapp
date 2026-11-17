@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 858.1, input: 162, output: 46277, cache_read: 12216896, cache_write: 180423}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T15:23:59Z"
 ---
 # T0076: Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
 
@@ -70,4 +75,7 @@ The Lists screen reorders through reorder.js, which T0263 rewrites; reuse its Al
   - Files touched: 13.
   - Lines touched: 330.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
