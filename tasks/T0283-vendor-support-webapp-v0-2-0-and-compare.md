@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1800.4, input: 2, output: 8}
+work_duration: 1815.5
 ---
 # T0283: Vendor support.webapp v0.2.1 and compare the screenshots.
 
