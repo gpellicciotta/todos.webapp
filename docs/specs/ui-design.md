@@ -637,21 +637,30 @@ The sidebar and this screen share the rules below.
   [lists.js](../../src/js/views/lists.js) builds the block and the screen.
 - **[Decided]** Rows stay 48 px high (`--row-height`), and there is no density option; find and sort carry the scale.
 - **[Decided]** Rendering: the sidebar renders every row, since 500 plain links are cheap.
-  This screen renders every row too, each with `content-visibility: auto` and `contain-intrinsic-size: auto var(--row-height)`, so unrendered rows count at their real height and a Back restores the scroll.
+  Up to 200 shown lists, this screen renders every row too, each with `content-visibility: auto` and `contain-intrinsic-size: auto var(--row-height)`.
+  Unrendered rows then count at their real height, and a Back restores the scroll.
+  Past 200 shown lists, the screen renders only the rows in view plus 10 rows each side, as task rows do.
+  The rows' padding and a row's top margin stand in for the rows left out, so the scroll height stays true.
+  A resize observer measures the rendered rows; the shortest sets the height of the others.
+  Rows carry `aria-posinset` and `aria-setsize`, so assistive technology reports each row's place among all shown lists.
+  The tab stop, the focused row or open menu, and a dragged row stay rendered out of view.
+  Up, Down, Home, End, PageUp, and PageDown reach every shown list, rendering and scrolling to it.
+  A drag takes its drop slots from the row heights, so it works across rows rendered during the drag.
   Row menus build on first open, so 500 rows hold no 500 menus.
   A click, Enter, Space, or Up or Down on a More button builds its menu just before the menu opens; a render drops the built menus.
   A dragged row and a drop target use `content-visibility: visible`, so their indicators are not clipped.
   The router waits for the first render of a newly mounted screen before it restores the scroll, so a Back lands on the same row.
-  Reason: unlike windowing, this keeps find in page, the tab order, and the restored scroll position true.
+  Reason: 200 lists keep find in page whole; past them, 500 lists render in about 195 ms instead of 393 ms.
+  Known limitation past 200 lists: find in page sees only the rendered rows; the find field searches every list.
 - **[Decided]** Budget: opening Lists takes at most 200 ms with 150 lists and 5000 tasks (`TEC-16`).
-  The check runs under 4x CPU throttling.
-  [performance.spec.js](../../tests/e2e/performance.spec.js) asserts it; with 500 lists the time is recorded, not asserted.
-  If the 500-list time passes twice the 150-list time, a new task adds windowing as for task rows.
+  With 500 lists it takes less than twice the 150-list time of the same run.
+  Both checks run under 4x CPU throttling, and [performance.spec.js](../../tests/e2e/performance.spec.js) asserts them.
+  Measured with windowing: 150 lists open in about 169 ms and 500 lists in about 195 ms, 1.15 times.
 - **[Decided]** Opening reads no tasks of its own: the sidebar and this screen share one read of the lists and counts,
   which lasts until the next store write or the minute timer (`TEC-16`).
   [list-snapshot.js](../../src/js/core/list-snapshot.js) holds it. Before it, counting 5000 tasks and their memberships
   made Lists open in about 389 ms; with it, 150 lists open in about 165 ms and 500 lists in about 360 ms, under 4x throttling.
-  The 500-list time is over twice the 150-list time, so a windowing task follows.
+  The 500-list time was over twice the 150-list time, so the rows past 200 lists are windowed.
 - **[Decided]** Counts: one shared pass builds the open and total count of every list from the tasks and memberships.
   It marks open task identifiers once, then walks the memberships once.
   The cost is tasks plus memberships, never lists times tasks.
@@ -672,9 +681,9 @@ The sidebar and this screen share the rules below.
   Adds one field and one button above 12 lists, and stores nothing new but the sort choice.
 - B. Pinned lists with collapsible groups, such as Pinned, Shared, and Others.
   Familiar, but it needs a stored flag that must sync, and more chrome; revisit if manual order proves too weak.
-- C. Windowing the Lists screen like task rows.
-  A smaller DOM at 500 lists, but it breaks find in page, the tab order, and scroll restore.
-  It stays the fallback.
+- C. Windowing the Lists screen like task rows (chosen past 200 shown lists).
+  A smaller DOM at 500 lists; find in page sees only the rendered rows.
+  Pinned rows keep the tab order, and true row heights keep the restored scroll.
 - D. A command palette on Ctrl+K to jump to a list.
   Quick for experts, but invisible on touch and a new component; the sidebar field with `l` is as fast.
 

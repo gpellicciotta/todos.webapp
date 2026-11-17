@@ -846,7 +846,7 @@
   background-color: var(--color-surface-hover);
 }
 
-/* Rows off screen skip layout and paint, so 500 lists open fast while find in page, the tab order, and the scroll stay true (`TEC-16`). */
+/* Rows off screen skip layout and paint; past 200 lists, lists.js renders only the rows near the view (`TEC-16`). */
 .lists-view__rows > .list-item {
   content-visibility: auto;
   contain-intrinsic-size: auto var(--row-height);

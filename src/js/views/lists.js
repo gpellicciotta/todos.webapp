@@ -20,8 +20,10 @@
  * Reordering needs Manual order, an empty field, and no Shared only; otherwise the handles hide and Alt+Up or Alt+Down says why.
  * While connected with at least one shared list, the sort menu ends with a Shared only checkbox that the info line names; it persists
  * in `todos.view.lists` beside the sort and Reset clears it (`LST-16`).
- * Long lists stay cheap: rows use `content-visibility: auto`, a row's menu builds on its first open, and the rows are one
- * roving tab stop with Up and Down between rows and Right and Left between a row and its More button (`LST-15`, `TEC-16`).
+ * Long lists stay cheap: up to 200 shown lists render every row, with `content-visibility: auto`; more render only the
+ * rows in view plus a buffer, as task rows do, with padding and margins for the rest (`TEC-16`). The focused row, the tab
+ * stop, and a dragged row stay rendered out of view. A row's menu builds on its first open, and the rows are one roving tab
+ * stop with Up and Down between rows, rendered or not, and Right and Left between a row and its More button (`LST-15`).
  * Rows show the sharing state and the owner of others' lists (`SHR-3`).
  */
 
@@ -43,6 +45,12 @@ const FIND_FROM = 12;
 /** Row height in pixels when none is measured, and the rows a page key moves when the screen has no height. */
 const ROW_HEIGHT = 64;
 const PAGE_ROWS = 10;
+
+/** Up to this many shown lists render every row; more render the rows in view plus a buffer, as task rows do (`TEC-16`). */
+const FULL_ROWS = 200;
+/** The rows rendered past each edge of the view, and the height of a row not measured yet: the 48 px `--row-height`. */
+const BUFFER_ROWS = 10;
+const ROW_PX = 48;
 
 /** The row a navigation key moves to, from the focused index, the row count, and the rows per page (`LST-15`). */
 const ROW_STEPS = Object.freeze({
@@ -235,6 +243,22 @@ export function mountLists(view, {
   let refocus = null;
   let tabStopId = null;
   const menus = new Map();
+  // The windowing state: the rendered rows by list id in shown order, each list's place, and the row offsets.
+  let entries = new Map();
+  let places = new Map();
+  let offsets = new Float64Array(1);
+  let handles = false;
+  let rowPx = ROW_PX;
+  let known = new Map();
+  let measureFrame = null;
+  const Observer = doc.defaultView?.ResizeObserver;
+  const sizes = Observer ? new Observer(() => measureLater()) : null;
+
+  /** @returns {boolean} true while the shown lists are too many to render every row */
+  const windowed = () => shown.length > FULL_ROWS;
+
+  /** @returns {HTMLElement|null} the main column, which scrolls the rows */
+  const scroller = () => view.closest('.app__main');
 
   /** @returns {boolean} true when the Shared only item applies: connected, with at least one shared list (`LST-16`) */
   const sharedAvailable = () => Boolean(data) && Boolean(session) && session.state() !== 'local' && data.lists.some(isSharedList);
@@ -279,14 +303,242 @@ export function mountLists(view, {
     }));
   }
 
-  /** Make exactly one row link the tab stop: the last focused row, else the first shown row (`LST-15`). */
+  /**
+   * Destroy the menu behavior of a row that leaves the window; its menu element leaves with the row.
+   * @param {string} id the list id of the row
+   */
+  function dropMenu(id) {
+    menus.get(id)?.destroy();
+    menus.delete(id);
+  }
+
+  /** Make exactly one row link the tab stop: the last focused row, else the first shown row, which stays rendered (`LST-15`). */
   function syncTabStop() {
-    const links = [...rows.querySelectorAll('.list-row')];
-    const wanted = links.find((link) => link.closest('.list-item').dataset.listId === tabStopId) ?? links[0];
-    tabStopId = wanted?.closest('.list-item').dataset.listId ?? null;
-    for (const link of links) {
-      link.tabIndex = link === wanted ? 0 : -1;
+    for (const [id, entry] of entries) {
+      entry.link.tabIndex = id === tabStopId ? 0 : -1;
     }
+  }
+
+  /** Add up the row heights: row `i` starts `offsets[i]` pixels below the top of the rows. */
+  function layout() {
+    offsets = new Float64Array(shown.length + 1);
+    for (let index = 0; index < shown.length; index += 1) {
+      offsets[index + 1] = offsets[index] + (known.get(shown[index].id) ?? rowPx);
+    }
+  }
+
+  /**
+   * Find the row that covers a height below the top of the rows.
+   * @param {number} px the height in pixels
+   * @returns {number} the row index, clamped to the rows
+   */
+  function indexAt(px) {
+    let low = 0;
+    let high = shown.length - 1;
+    while (low < high) {
+      const middle = (low + high + 1) >> 1;
+      if (offsets[middle] <= px) {
+        low = middle;
+      }
+      else {
+        high = middle - 1;
+      }
+    }
+    return low;
+  }
+
+  /**
+   * List the indexes of the rows to render: every row of a short screen, or the rows in view plus the buffer and the
+   * rows that must stay: the tab stop, the focused row or the row of the open menu, a dragged row, and the given ones.
+   * @param {string[]} extra more list ids to render
+   * @returns {number[]} the indexes, in increasing order
+   */
+  function wanted(extra) {
+    if (!windowed()) {
+      return [...shown.keys()];
+    }
+    const box = rows.getBoundingClientRect();
+    const port = scroller()?.getBoundingClientRect();
+    const top = Math.max(port?.top ?? 0, 0) - box.top;
+    const bottom = Math.min(port?.bottom ?? Infinity, doc.defaultView?.innerHeight ?? Infinity) - box.top;
+    const indexes = new Set();
+    for (let index = Math.max(0, indexAt(top) - BUFFER_ROWS); index <= Math.min(shown.length - 1, indexAt(bottom - 0.001) + BUFFER_ROWS); index += 1) {
+      indexes.add(index);
+    }
+    const focused = doc.activeElement?.closest?.('.list-item');
+    const dragged = rows.querySelector('.list-item[data-dragging]');
+    for (const id of [...extra, tabStopId, refocus?.id, rows.contains(focused) ? focused.dataset.listId : null, dragged?.dataset.listId]) {
+      if (places.has(id)) {
+        indexes.add(places.get(id));
+      }
+    }
+    return [...indexes].sort((a, b) => a - b);
+  }
+
+  /**
+   * Set each rendered row's place in the set and the margin that stands in for the rows left out above it, and the
+   * padding that stands in for the rows left out before the first and after the last rendered row.
+   * @param {number[]} indexes the indexes of the rendered rows, in the order of `entries`
+   */
+  function place(indexes) {
+    let previous = indexes[0] - 1;
+    let at = 0;
+    for (const entry of entries.values()) {
+      const index = indexes[at];
+      if (entry.index !== index || entry.size !== shown.length) {
+        entry.item.setAttribute('aria-posinset', String(index + 1));
+        entry.item.setAttribute('aria-setsize', String(shown.length));
+        Object.assign(entry, { index, size: shown.length });
+      }
+      const gap = offsets[index] - offsets[previous + 1];
+      if (entry.gap !== gap) {
+        entry.item.style.marginBlockStart = gap > 0 ? `${gap}px` : '';
+        entry.gap = gap;
+      }
+      previous = index;
+      at += 1;
+    }
+    const windowing = windowed();
+    rows.style.paddingBlockStart = windowing ? `${offsets[indexes[0] ?? 0]}px` : '';
+    rows.style.paddingBlockEnd = windowing ? `${offsets[shown.length] - offsets[(indexes.at(-1) ?? -1) + 1]}px` : '';
+  }
+
+  /**
+   * Find the first rendered row that shows in the scroller, and its top edge, to keep it in place when heights change.
+   * @returns {{item: HTMLElement, top: number}|null} the row and its top edge, or null without rendered rows
+   */
+  function anchorRow() {
+    const port = scroller()?.getBoundingClientRect();
+    for (const entry of entries.values()) {
+      const box = entry.item.getBoundingClientRect();
+      if (!port || box.bottom > port.top) {
+        return { item: entry.item, top: box.top };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Measure the rendered rows after they changed size, such as on their first layout or once the fonts load.
+   * The shortest sets the height of the rows not rendered, and other heights are kept per list. A change moves the
+   * rows after it, and the scroller follows, so the rows in view stay where they were.
+   */
+  function measure() {
+    measureFrame = null;
+    if (destroyed || !data || !windowed() || !rows.isConnected) {
+      return;
+    }
+    const sizes = [...entries].map(([id, entry]) => [id, entry.item.offsetHeight]).filter(([, height]) => height > 0);
+    if (sizes.length === 0) {
+      return;
+    }
+    const base = Math.min(...sizes.map(([, height]) => height));
+    let changed = base !== rowPx;
+    if (changed) {
+      rowPx = base;
+      known = new Map();
+    }
+    for (const [id, height] of sizes) {
+      if (height !== (known.get(id) ?? rowPx)) {
+        if (height === rowPx) {
+          known.delete(id);
+        }
+        else {
+          known.set(id, height);
+        }
+        changed = true;
+      }
+    }
+    if (!changed) {
+      return;
+    }
+    const anchor = anchorRow();
+    layout();
+    draw();
+    const shift = anchor?.item.isConnected ? anchor.item.getBoundingClientRect().top - anchor.top : 0;
+    if (shift !== 0 && scroller()) {
+      scroller().scrollTop += shift;
+    }
+  }
+
+  /** Measure the rows in the next frame, since the size observer may not change the layout it reports. */
+  function measureLater() {
+    measureFrame ??= requestAnimationFrame(measure);
+  }
+
+  /**
+   * Render the rows that show, reusing the rendered rows by list id and moving none of them, so focus stays.
+   * The rows to render are found before any row leaves, so the rows' height and the scroll position hold meanwhile.
+   * @param {string[]} [extra] more list ids to render, such as a row that a key moves focus to
+   * @param {boolean} [fresh] whether the data changed, so every row builds again
+   */
+  function draw(extra = [], fresh = false) {
+    const indexes = wanted(extra);
+    const next = new Map();
+    for (const index of indexes) {
+      const list = shown[index];
+      let entry = fresh ? null : entries.get(list.id);
+      if (!entry) {
+        const built = row(doc, list, countOf(data.counts, list.id), handles);
+        entry = { ...built, link: built.item.querySelector('.list-row'), index: -1, size: -1, gap: -1 };
+        if (windowed()) {
+          sizes?.observe(entry.item);
+        }
+      }
+      next.set(list.id, entry);
+    }
+    for (const [id, entry] of entries) {
+      if (next.get(id) !== entry) {
+        sizes?.unobserve(entry.item);
+        entry.item.remove();
+        dropMenu(id);
+      }
+    }
+    entries = next;
+    // The rows still rendered keep their order, so only new rows go in, before the first kept row after them.
+    let cursor = rows.firstElementChild;
+    const tail = [];
+    for (const entry of entries.values()) {
+      if (entry.item === cursor) {
+        cursor = cursor.nextElementSibling;
+      }
+      else if (cursor) {
+        rows.insertBefore(entry.item, cursor);
+      }
+      else {
+        tail.push(entry.item);
+      }
+    }
+    rows.append(...tail);
+    place(indexes);
+    syncTabStop();
+  }
+
+  /**
+   * Focus the link of a shown row, rendering it first when it is out of the window; the focus scrolls it into view.
+   * @param {number} index the row index among the shown lists
+   */
+  function focusRow(index) {
+    const id = shown[index]?.id;
+    if (id && !entries.has(id)) {
+      draw([id]);
+    }
+    entries.get(id)?.link.focus();
+  }
+
+  /**
+   * The middles of the shown rows from the top of the rows, for a drag: measured while every row renders, else from the offsets.
+   * @returns {number[]} the middles, in the shown order
+   */
+  function midpoints() {
+    if (!windowed()) {
+      const top = rows.getBoundingClientRect().top;
+      return [...entries.values()].map(({ item }) => {
+        const box = item.getBoundingClientRect();
+        return box.top - top + box.height / 2;
+      });
+    }
+    return shown.map((_, index) => (offsets[index] + offsets[index + 1]) / 2);
   }
 
   /**
@@ -322,10 +574,15 @@ export function mountLists(view, {
     const query = text.trim();
     const ordered = applyListOrder(sharedActive() ? lists.filter(isSharedList) : lists, readListOrder());
     shown = findLists(sort === 'manual' ? ordered : sortLists(ordered, sort, counts), query, { descriptions: true });
+    places = new Map(shown.map((list, index) => [list.id, index]));
     destroyMenus();
-    const handles = reorderable();
-    rows.replaceChildren(...shown.map((list) => row(doc, list, countOf(counts, list.id), handles).item));
-    syncTabStop();
+    handles = reorderable();
+    // The data may have changed, so every row builds again; the tab stop falls back to the first shown row.
+    if (!places.has(tabStopId)) {
+      tabStopId = shown[0]?.id ?? null;
+    }
+    layout();
+    draw([], true);
     rows.hidden = shown.length === 0;
     empty.hidden = shown.length > 0;
     emptyText.textContent = lists.length === 0 ? STRINGS.empty : query === '' ? STRINGS.noShared : STRINGS.noMatch(query);
@@ -405,8 +662,7 @@ export function mountLists(view, {
     if (!refocus) {
       return;
     }
-    const item = [...rows.children].find((candidate) => candidate.dataset.listId === refocus.id);
-    item?.querySelector(`[data-role="${refocus.role}"]`)?.focus();
+    entries.get(refocus.id)?.item.querySelector(`[data-role="${refocus.role}"]`)?.focus();
     refocus = null;
   }
 
@@ -532,12 +788,9 @@ export function mountLists(view, {
       find.field.value = '';
       setText('', true);
     }
-    else if (event.key === 'ArrowDown') {
-      const first = rows.querySelector('.list-row');
-      if (first) {
-        event.preventDefault();
-        first.focus();
-      }
+    else if (event.key === 'ArrowDown' && shown.length > 0) {
+      event.preventDefault();
+      focusRow(0);
     }
   }
 
@@ -573,12 +826,11 @@ export function mountLists(view, {
     const onMore = target.matches('.list-item__more');
     if (onLink && event.key in ROW_STEPS) {
       event.preventDefault();
-      const items = [...rows.children].filter((candidate) => !candidate.hidden);
-      const at = items.indexOf(item);
+      const at = places.get(item.dataset.listId) ?? 0;
       const height = item.offsetHeight || ROW_HEIGHT;
       const page = Math.max(1, Math.floor((view.closest('main')?.clientHeight || height * PAGE_ROWS) / height));
-      const index = ROW_STEPS[event.key](at, items.length, page);
-      items[Math.min(items.length - 1, Math.max(0, index))]?.querySelector('.list-row').focus();
+      const index = ROW_STEPS[event.key](at, shown.length, page);
+      focusRow(Math.min(shown.length - 1, Math.max(0, index)));
     }
     else if (onLink && event.key === 'ArrowRight') {
       event.preventDefault();
@@ -624,7 +876,24 @@ export function mountLists(view, {
   rows.addEventListener('keydown', onRowsCapture, true);
   rows.addEventListener('click', onRowsCapture, true);
   rows.addEventListener('focusin', onRowsFocusin);
-  const reorder = attachReorder(rows, { enabled: reorderable, onMove: move, row: '.list-item', handle: '.list-item__handle', idKey: 'listId' });
+  const reorder = attachReorder(rows, {
+    enabled: reorderable, onMove: move, scroller, ids: () => shown.map((list) => list.id), midpoints,
+    row: '.list-item', handle: '.list-item__handle', idKey: 'listId',
+  });
+
+  /**
+   * Render the rows that came into view after a scroll of the rows' scroller or a resize of the window.
+   * The size observer measures rows that change height.
+   * @param {Event} event the scroll or resize event
+   */
+  function onScroll(event) {
+    if (data && windowed() && rows.isConnected && (event.type === 'resize' || event.target === doc || event.target.contains?.(rows))) {
+      draw();
+    }
+  }
+
+  doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
+  doc.defaultView?.addEventListener('resize', onScroll);
   const unsubscribe = store.subscribe(() => refresh());
   const unsubscribeOrder = onListOrderChange(() => refresh());
   // Signing in or out changes whether Shared only applies.
@@ -654,6 +923,12 @@ export function mountLists(view, {
     destroy() {
       destroyed = true;
       clearTimeout(findTimer);
+      doc.removeEventListener('scroll', onScroll, { capture: true });
+      doc.defaultView?.removeEventListener('resize', onScroll);
+      sizes?.disconnect();
+      if (measureFrame !== null) {
+        cancelAnimationFrame(measureFrame);
+      }
       add.remove();
       find.element.remove();
       unsubscribe();

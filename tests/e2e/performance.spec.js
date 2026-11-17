@@ -323,35 +323,44 @@ async function opensLists(page, cdp) {
   return opens.slice(1);
 }
 
-test('Lists opens with 150 lists and 5000 tasks within 200 ms under 4x CPU throttling (TEC-16, LST-15)', async ({ page }, info) => {
-  test.setTimeout(240_000);
+/**
+ * Store 5000 tasks and some lists, then open the Lists screen under throttling and record the times.
+ * @param {import('@playwright/test').Page} page the page
+ * @param {import('@playwright/test').TestInfo} info the test info, which takes the numbers as an annotation
+ * @param {number} lists the number of lists
+ * @returns {Promise<number>} the median opening time in milliseconds
+ */
+async function measureLists(page, info, lists) {
   await page.goto('/#/tasks');
   await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
   await seed(page, COUNT);
-  await seedLists(page, 150);
+  await seedLists(page, lists);
   await page.addInitScript(watchRows);
   const cdp = await page.context().newCDPSession(page);
   const opens = await opensLists(page, cdp);
-  const numbers = `${CPU_RATE}x CPU throttling, 150 lists: Lists open ${opens.map(Math.round).join(', ')} ms (median ${Math.round(median(opens))} ms)`;
+  const numbers = `${CPU_RATE}x CPU throttling, ${lists} lists: Lists open ${opens.map(Math.round).join(', ')} ms (median ${Math.round(median(opens))} ms)`;
   console.log(numbers);
   info.annotations.push({ type: 'performance', description: numbers });
-  expect(median(opens)).toBeLessThan(OPEN_BUDGET_MS);
-});
+  return median(opens);
+}
 
-// 500 lists are recorded, not asserted: the design adds windowing only if they pass twice the 150-list time.
-test('Lists opens with 500 lists and 5000 tasks, recorded under 4x CPU throttling (TEC-16, LST-15)', async ({ page }, info) => {
-  test.setTimeout(240_000);
-  await page.goto('/#/tasks');
-  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
-  await seed(page, COUNT);
-  await seedLists(page, 500);
-  await page.addInitScript(watchRows);
-  const cdp = await page.context().newCDPSession(page);
-  const opens = await opensLists(page, cdp);
-  const numbers = `${CPU_RATE}x CPU throttling, 500 lists: Lists open ${opens.map(Math.round).join(', ')} ms (median ${Math.round(median(opens))} ms)`;
-  console.log(numbers);
-  info.annotations.push({ type: 'performance', description: numbers });
-  expect(opens).toHaveLength(3);
+// Windowed rows keep 500 lists within twice the 150-list time, both measured in this run; serial mode runs
+// the two tests in order in one worker, and a retry runs both again.
+test.describe.serial('Lists with many lists', () => {
+  let median150 = null;
+
+  test('Lists opens with 150 lists and 5000 tasks within 200 ms under 4x CPU throttling (TEC-16, LST-15)', async ({ page }, info) => {
+    test.setTimeout(240_000);
+    median150 = await measureLists(page, info, 150);
+    expect(median150).toBeLessThan(OPEN_BUDGET_MS);
+  });
+
+  test('Lists opens with 500 lists and 5000 tasks within twice the 150-list time under 4x CPU throttling (TEC-16, LST-15)', async ({ page }, info) => {
+    test.setTimeout(240_000);
+    const median500 = await measureLists(page, info, 500);
+    expect(median150).not.toBeNull();
+    expect(median500).toBeLessThan(2 * median150);
+  });
 });
 
 // The lists and their memberships add store reads that no grouping causes, so this test compares the two openings

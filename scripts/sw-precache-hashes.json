@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-17.20",
+  "version": "2026-11-17.21",
   "files": {
     "index.html": "c288e4c102d95b56f1e3e02e66216e6e5402fcbb2d3d3c16fc0efbd8542be9c7",
     "manifest.webmanifest": "1068fc8737a5a80ec8f7d87904cbd600a1563ef5b2091713331aa4ce72c9c288",
@@ -7,7 +7,7 @@
     "css/tokens.css": "93624ca0cececdd5056643d06867b14d391aff348b417b5ed7254c44594b36ae",
     "css/app-components.css": "4aa4725180880c436eca5e53a89d561fc69e69bd0b25e02585cfea22389f5e0e",
     "css/app-chrome.css": "150e472d2d98d73a1517f10937b43a43eac267c75f6e7d36b4045aff811b45bf",
-    "css/views.css": "bad220e4119cdd3ab4b8d3bb2b87b011731e57dbee49626123d318901a7537fe",
+    "css/views.css": "65f33d672330170fc3d262406a1e7cfb1b435f75f93c8add26ac52e1f841c151",
     "img/icons.svg": "f3580626a2cf0d50aaa7b079f755f41a7d235e73f24f972a6cba28e127891471",
     "img/app-icon.svg": "218d7161ec62d7c6d566b541e2f22c275e0b0f8123582f63d2e315a060c9a3d2",
     "img/app-icon-192.png": "98c47d21427e52846ef3258282c3f2572265614587c2b1e78892a45bd801d12d",
@@ -51,7 +51,7 @@
     "js/ui/inbox.js": "47c07816e0389b54d3af9ccd023a2ef75bdb64777a669dec1e3a705a0c0bb709",
     "js/ui/layout.js": "4e574a2341419ed439c52a4de61d496726f3de4da598b7943a32105f215d368d",
     "js/ui/panel-resize.js": "e3def293c68b03885056af16648129a0b5ab106f37e2e33b1a91c7182ea426f8",
-    "js/ui/router.js": "d47ae63667fe809725e7c1ac2016e3dd43f8421136f957083bb242cdb1f06948",
+    "js/ui/router.js": "be01e28562bc7405a30ee8580676550f2023f0b898f076475875fa13a551cf7b",
     "js/ui/user-menu.js": "b075ac207ca5c6b76d7f424150fbf892d855208dd8785cafeb7b466239151dc8",
     "js/ui/view-actions.js": "465469476623ebed7fd31527e376f2099e8e600a0b44929340af1f8dc2199975",
     "js/views/add-bar.js": "a0b0b5f9a4b172a1ad72135dd44a4b0b7f400e44be78e6387dadf92660ccf808",
@@ -61,7 +61,7 @@
     "js/views/list-actions.js": "b4142d7eb1a319140750a191f2009856abd4ad258d11efe42e352431177a4d3a",
     "js/views/list-editor.js": "2b4c9a30560d2d22df65f108c4f3fe21959e350fa566c209e511beffb72e5289",
     "js/views/list.js": "4a7a4642c846dac62e8f44ee5efe6e73be317e608a5a234bc07906ff0a3eb4a9",
-    "js/views/lists.js": "520469ed77b45ed4853918f267ed3b41ab058508bbb82ae5e9ea95444603b5c3",
+    "js/views/lists.js": "bd0ae5bb15c2f6557866a825aac3064b21d2f9fd302c203ae62746704ed95970",
     "js/views/notes.js": "b9f9ccfec4b20ba4f9cd4038993deac62a95655d0a304e197e5a92cab0a70d90",
     "js/views/recycle-bin.js": "f76b26cc60bc0d426e6332e14726c50f6993aabbdba2faca01f6313d74f20333",
     "js/views/reorder.js": "8d78d48f0210c091871c0598e7c2b13da7a318596fdd592e41e8dbc2aa6c2286",
