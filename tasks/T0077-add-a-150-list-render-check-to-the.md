@@ -2,15 +2,18 @@
 id: T0077
 owner: "@claude"
 session: claude-20261117-e11e57
-needs: ['T0269']
+needs: []
 branch: task/T0077-add-a-150-list-render-check-to-the
 worktree: .plan/work/T0077-add-a-150-list-render-check-to-the
-status: suspended
+status: active
 started_at: "2026-11-17T05:08:32Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 183.1, input: 26, output: 5737, cache_read: 838769, cache_write: 56451}
+work_duration: 191.4
 ---
 # T0077: Add a 150-list render check to the performance spec, and record 500 lists
 

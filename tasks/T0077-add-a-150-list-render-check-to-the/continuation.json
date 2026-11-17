@@ -1,0 +1,14 @@
+{"schema": 1,
+ "completed": [
+  {"item": "150-list assertion and 500-list recording added to performance.spec.js", "evidence": "commit b045d0a; playwright --grep 'Lists opens': 500-list test passed"}
+ ],
+ "remaining": [
+  "Lists opens within 200 ms with 150 lists (measured 386 ms median under 4x throttling)",
+  "Measured times written into ui-design.md, windowing follow-up noted if 500 passes twice 150",
+  "CHANGELOG.md entry",
+  "Check steps, validate task file, review"
+ ],
+ "next_action": "Wait for T0269 to speed up the Lists screen, then rerun the Lists perf tests and write the times into ui-design.md",
+ "blocker": {"code": "lists-over-budget", "actor": "worker", "item": "150 lists open within 200 ms under 4x CPU throttling", "unblock": "T0269 completes and the 150-list test passes"},
+ "scope": {"independent": ["Optimize the Lists screen render (T0269)"], "boundaries": "src/js/views/lists.js and related list code; not the performance spec", "acceptance": "150-list perf test median under 200 ms", "dependencies": "T0077 needs T0269", "retained_commits": ["b045d0a"]}
+}
