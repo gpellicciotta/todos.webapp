@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 638.0, input: 62, output: 17446, cache_read: 2974759, cache_write: 95706}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T06:40:33Z"
 ---
 # T0272: Fix All tasks opening over 200 ms with 5000 tasks under 4x CPU throttling, failing since before T0269
 
@@ -35,4 +40,7 @@ Fix All tasks opening over 200 ms with 5000 tasks under 4x CPU throttling, faili
 
 - [2026-11-17] **[Doc]**
   Added changelog bullet and bumped service worker VERSION.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
