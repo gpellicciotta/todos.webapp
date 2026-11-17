@@ -4,8 +4,8 @@ An overview of all tasks and their planning, possibly split by milestone.
 ## Next Milestone
 - [!] T0273 [reason: needs review: duplicate of T0274, already fixed on main; recommend cancelling] [owner: @claude] Fix the gallery filter popover keyboard e2e test, failing on main ba41de1: four Tabs no longer reach Clear.
 - [-] T0280 [protocol: adhoc] [reason: Duplicate of T0282, which fixes the same gallery toast and Settings shortcuts e2e tests.] Fix the gallery toast e2e test, whose aria-live locator also matches the task editor count specimen added in T0258.
-- [~] T0277 [owner: @claude] Replace the todos icons, favicon, and manifest icons with the shared support.webapp hexagon icon set.
-- [ ] T0283 Vendor support.webapp v0.2.0 and compare the screenshots.
+- [x] T0277 Replace the todos icons, favicon, and manifest icons with the shared support.webapp hexagon icon set.
+- [ ] T0283 Vendor support.webapp v0.2.1 and compare the screenshots.
 - [-] T0281 [reason: Duplicate of T0282, which fixes the same gallery toast and Settings shortcuts e2e tests.] Fix the gallery toast e2e test's live-region locator and the Settings shortcut list e2e test, both failing on main.
 - [ ] T0282 Fix the stale e2e tests for the Settings shortcuts list and the gallery toast live region.
 - [-] T0279 [protocol: adhoc] [reason: Duplicate of T0282, which fixes the same gallery toast and Settings shortcuts e2e tests.] Scope the toast test's polite live region locator, which also matches the task editor's count since T0258.
