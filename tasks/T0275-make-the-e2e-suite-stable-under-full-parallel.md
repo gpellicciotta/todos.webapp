@@ -1,6 +1,7 @@
 ---
 id: T0275
 owner: "@claude"
+session: claude-20261117-882fc5
 needs: []
 branch: task/T0275-make-the-e2e-suite-stable-under-full-parallel
 worktree: .plan/work/T0275-make-the-e2e-suite-stable-under-full-parallel
