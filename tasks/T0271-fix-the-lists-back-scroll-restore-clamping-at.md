@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 601.1, input: 62, output: 13053, cache_read: 2255388, cache_write: 91321}
+  worker: {turns: 2, duration_s: 930.2, input: 90, output: 20085, cache_read: 3567892, cache_write: 108207}
   review: {turns: 1, duration_s: 245.5, input: 65239, output: 2984, cache_read: 586496, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T08:45:17Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T08:55:18Z"
 review_session: codex-20261117-904760
 work_duration: 858.4
 ---
@@ -63,4 +62,7 @@ Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibili
   - Files touched: 5.
   - Lines touched: 150.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
