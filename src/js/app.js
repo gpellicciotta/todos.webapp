@@ -176,7 +176,7 @@ async function start() {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
       const options = {
-        store, toaster, session, sync: engine, seen, viewModels, memory: router.memory(), actionBar: shell.actionBar, overlays: shell.overlays,
+        store, toaster, session, sync: engine, seen, viewModels, memory: router.memory(), actionBar: shell.actionBar, actionsSlot: shell.actionsSlot, overlays: shell.overlays,
         navigate: (hash, settings) => router.navigate(hash, settings),
       };
       screen = { element, controller: mount ? mount(element, options) : null };

@@ -295,7 +295,7 @@ test('Edit list renames the list, and deleting it keeps its tasks visible in All
   const problems = watch(page);
   const homeId = await seed(page);
   await page.goto(`/#/lists/${homeId}`);
-  await page.getByRole('button', { name: 'List actions' }).click();
+  await page.getByRole('button', { name: /^[^:]+ actions$/ }).click();
   await page.getByRole('menuitem', { name: 'Edit list' }).click();
   await expect(page).toHaveURL(new RegExp(`#/lists/${homeId}/edit$`));
   const panel = page.locator('[data-editor-slot] .editor-panel');

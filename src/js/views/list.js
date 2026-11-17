@@ -16,6 +16,7 @@ import {
 } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
+import { attachViewActions } from '../ui/view-actions.js';
 import { DEFAULT_HASH, formatRoute } from '../ui/router.js';
 import { addedMessage, createAddBar, createAddHint, editorOpensAfterAdd, notifyIfHidden } from './add-bar.js';
 import { can, listRole, ROLE_LABELS } from '../core/permissions.js';
@@ -77,9 +78,10 @@ async function readData(store, listId) {
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device view state
  * @param {() => Date} [options.now] the clock
  * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
+ * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu on wide layouts; the view header by default
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
-export function mountList(view, { store, toaster, navigate, viewModels, getStorage, now = () => new Date(), actionBar = null }) {
+export function mountList(view, { store, toaster, navigate, viewModels, getStorage, now = () => new Date(), actionBar = null, actionsSlot = null }) {
   const doc = view.ownerDocument;
   const listId = view.dataset.listId;
   const id = `list-view-${(instances += 1)}`;
@@ -133,7 +135,11 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   const announcer = createLiveRegion({ document: doc, parent: root });
   /** The task the last add created, until a render shows its row. */
   let added = null;
-  const behavior = attachMenu(more, menu, { onSelect: act });
+  const behavior = attachMenu(more, menu, { onSelect: act, align: 'end' });
+  const actions = attachViewActions(actionsSlot, {
+    header, more, menu, compactLabel: more.getAttribute('aria-label'), wideLabel: () => `${data?.list?.name ?? ''} actions`.trim(),
+    close: () => behavior.close(),
+  });
   let menuRole = null;
 
   /**
@@ -223,6 +229,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
       return;
     }
     taskList.element.querySelector('.task-list').setAttribute('aria-label', data.list.name);
+    actions.refresh();
     description.textContent = data.list.description ?? '';
     description.hidden = !data.list.description;
     const role = listRole(data.list);
@@ -320,6 +327,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
       reorder.destroy();
       taskList.destroy();
       behavior.destroy();
+      actions.destroy();
       announcer.destroy();
       // An open Delete list dialog would stay in the top layer, unanswered, after Back leaves the view.
       root.querySelector('dialog[open]')?.close('cancel');

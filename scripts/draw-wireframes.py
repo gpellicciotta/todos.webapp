@@ -268,8 +268,17 @@ def sync_indicator(f, right, y):
     return left
 
 
-def user_button(f, right, y, account="local"):
+def view_actions_button(f, x, y):
+    """Draw the 44 px view actions button with three stacked dots, which sits just before the user button."""
+    f.rect(x, y, 44, 44, "control")
+    for offset in (-7, 0, 7):
+        f.circle(x + 22, y + 22 + offset, 2, "icon-fill")
+
+
+def user_button(f, right, y, account="local", extra=0):
     """Draw the circular user button, 44 px, with its right edge at `right`, and the sync indicator before it.
+
+    `extra` leaves room between the two for the view actions button.
 
     A local user shows a person glyph and a connected one its initials. An expired session looks like a local one;
     the sync indicator and the banner above the views offer Sign in. Return the left edge of the indicator.
@@ -282,7 +291,7 @@ def user_button(f, right, y, account="local"):
     else:
         f.circle(cx, cy, 22, "icon-fill" if account == "connected" else "icon")
         f.text(cx, cy + 5, "JD", 14, "on-primary bold" if account == "connected" else "bold", "middle")
-    return sync_indicator(f, right - 44, y)
+    return sync_indicator(f, right - 44 - extra, y)
 
 
 def bin_glyph(f, x, y):
@@ -402,10 +411,14 @@ def sidebar_many(f, current, rows, total, find=None, matches=None):
 
 
 def page_header(f, x, y, right, title, subtitle=None, actions=(), account="local"):
-    """Draw a wide page title with an optional subtitle, right-aligned action buttons, and the user button."""
-    edge = user_button(f, right, y - 6, account) - 8
-    for label, css in reversed(actions):
-        edge = button_right(f, edge, y, label, css) - 8
+    """Draw a wide page title with an optional subtitle, and the user button.
+
+    A view with `actions` shows the three-dot view actions button just before the user button.
+    """
+    extra = 52 if actions else 0
+    edge = user_button(f, right, y - 6, account, extra) - 8
+    if actions:
+        view_actions_button(f, right - 96, y - 6)
     f.text(x, y + 32, fit(title, edge - x - 16, 28), 28, "bold")
     if subtitle:
         f.text(x, y + 60, fit(subtitle, right - x, 14), 14, "muted")
@@ -797,7 +810,7 @@ def list_view():
     more_menu(compact, compact.width - 208, 56, LIST_MENU)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_list(wide)
-    more_menu(wide, MAIN_RIGHT - 200, 76, LIST_MENU)
+    more_menu(wide, MAIN_RIGHT - 96 + 44 - 200, 70, LIST_MENU)
     return (
         "List",
         "Manual order with all statuses shown; the More menu holds the list and view actions.",

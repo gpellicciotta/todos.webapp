@@ -845,3 +845,13 @@
     background-color: var(--color-focus);
   }
 }
+
+/* The view actions slot holds the three-dot button of the current view just before the user button; it hides while empty. */
+.app__view-actions {
+  display: flex;
+  align-items: center;
+}
+
+.app__view-actions[hidden] {
+  display: none;
+}

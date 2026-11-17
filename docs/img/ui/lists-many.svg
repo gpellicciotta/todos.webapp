@@ -33,6 +33,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="0" y="0" width="390" height="60" rx="0" class="bar"/>
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="16" y="37" font-size="20" class="bold">Lists</text>
     <line x1="0" y1="124" x2="390" y2="124" class="rule"/>
     <text x="382" y="97" font-size="13" class="muted" text-anchor="end">7/15 open</text>
@@ -128,6 +129,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="258" y="314.08" width="4" height="75.871" rx="2" class="selected"/>
     <circle cx="1082" cy="44" r="22" class="icon-fill"/>
     <text x="1082" y="49" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
+    <path d="M 1031 52 H 1045 A 5 5 0 0 0 1045 42 A 8 8 0 0 0 1031 44 A 4 4 0 0 0 1031 52 Z" class="icon-line-open"/>
     <text x="304" y="60" font-size="28" class="bold">Lists</text>
     <rect x="304" y="100" width="800" height="60" rx="8" class="bar"/>
     <rect x="922.88" y="108" width="173.12" height="44" rx="6" class="control"/>

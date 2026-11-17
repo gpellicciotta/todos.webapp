@@ -44,6 +44,11 @@
     <circle cx="12" cy="12" r="1"/>
     <circle cx="19" cy="12" r="1"/>
   </symbol>
+  <symbol id="more-vertical" viewBox="0 0 24 24">
+    <circle cx="12" cy="5" r="1"/>
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="12" cy="19" r="1"/>
+  </symbol>
   <symbol id="grip" viewBox="0 0 24 24">
     <circle cx="9" cy="6" r="1"/>
     <circle cx="15" cy="6" r="1"/>

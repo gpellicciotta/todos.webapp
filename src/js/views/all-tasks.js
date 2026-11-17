@@ -22,6 +22,7 @@ import {
 } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
+import { attachViewActions } from '../ui/view-actions.js';
 import { formatRoute } from '../ui/router.js';
 import { addedMessage, createAddBar, createAddHint, editorOpensAfterAdd, notifyIfHidden } from './add-bar.js';
 import { createTaskList, make, spriteIcon } from './task-list.js';
@@ -40,6 +41,7 @@ const STRINGS = Object.freeze({
   noMatch: 'No tasks match ',
   reset: 'Reset',
   actions: 'View actions',
+  wideActions: 'All tasks actions',
   editViewOptions: 'Edit view options',
   addFailed: 'The task could not be added.',
 });
@@ -108,11 +110,12 @@ async function readData(store) {
  * @param {() => Promise<void>} [options.persist] asks for persistent storage
  * @param {{state: () => string}} [options.session] the session; the Shared filter applies while it is connected (`TV-7`)
  * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
+ * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu on wide layouts; the view header by default
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountAllTasks(view, {
   store, toaster, memory = {}, viewModels, navigate = () => {}, getStorage, now = () => new Date(), persist = requestPersistence, session,
-  actionBar = null,
+  actionBar = null, actionsSlot = null,
 }) {
   const doc = view.ownerDocument;
   const model = viewModels?.tasks ?? createViewModel(VIEW, getStorage);
@@ -142,7 +145,10 @@ export function mountAllTasks(view, {
   item.setAttribute('role', 'menuitem');
   menu.append(item);
   header.append(more, menu);
-  const menuBehavior = attachMenu(more, menu, { onSelect: () => navigate(formatRoute('view-options')) });
+  const menuBehavior = attachMenu(more, menu, { onSelect: () => navigate(formatRoute('view-options')), align: 'end' });
+  const actions = attachViewActions(actionsSlot, {
+    header, more, menu, compactLabel: STRINGS.actions, wideLabel: () => STRINGS.wideActions, close: () => menuBehavior.close(),
+  });
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
   const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, text: model.get().filter.text ?? '', now, getStorage });
   const addHint = createAddHint({ document: doc, describe: (text) => addBar.descriptionOf(text) });
@@ -286,6 +292,7 @@ export function mountAllTasks(view, {
     taskList.element.hidden = firstLaunch;
     if (firstLaunch) {
       header.remove();
+      actions.setVisible(false);
       info.element.remove();
       addHint.update({ text: '', shown: 0, viewer: false });
       taskList.render([], {});
@@ -297,6 +304,7 @@ export function mountAllTasks(view, {
     if (!header.isConnected) {
       root.prepend(header);
     }
+    actions.setVisible(true);
     if (!info.element.isConnected) {
       addBlock.append(info.element);
     }
@@ -399,6 +407,7 @@ export function mountAllTasks(view, {
       unfollow();
       unfollowOrder();
       menuBehavior.destroy();
+      actions.destroy();
       unsubscribe();
       clearInterval(timer);
       taskList.destroy();

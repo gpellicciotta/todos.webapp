@@ -25,6 +25,7 @@ describe('mountAllTasks', () => {
 
   afterEach(() => {
     screen?.destroy();
+    vi.restoreAllMocks();
   });
 
   it('moves focus to the add field when Reset in an empty result hides itself', async () => {
@@ -178,6 +179,44 @@ describe('mountAllTasks', () => {
     for (const gone of ['.filter-chip', '.view-controls__sort', '.view-controls__filters']) {
       expect(document.querySelector(gone)).toBeNull();
     }
+  });
+
+  it('puts its menu in the header slot on a wide layout, and leaves the view header without one', async () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: false, media: query }));
+    document.body.innerHTML = '<div data-view="tasks"></div><div class="slot" hidden></div>';
+    const slot = document.querySelector('.slot');
+    const navigate = vi.fn();
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, navigate, actionsSlot: slot, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    expect(slot.hidden).toBe(false);
+    const button = slot.querySelector('.icon-button');
+    expect(button.getAttribute('aria-label')).toBe('All tasks actions');
+    expect(button.querySelector('use').getAttribute('href')).toContain('#more-vertical');
+    expect(document.querySelector('.view-header .icon-button')).toBeNull();
+    button.click();
+    slot.querySelector('.menu__item').click();
+    expect(navigate).toHaveBeenCalledWith('#/tasks/view-options');
+    screen.destroy();
+    screen = null;
+    expect(slot.childElementCount).toBe(0);
+    expect(slot.hidden).toBe(true);
+  });
+
+  it('keeps the horizontal More button in the view header on a compact layout', async () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: query === '(width < 64rem)', media: query }));
+    document.body.innerHTML = '<div data-view="tasks"></div><div class="slot"></div>';
+    const slot = document.querySelector('.slot');
+    screen = mountAllTasks(document.querySelector('[data-view]'), {
+      store: fakeStore(), toaster: { show: vi.fn() }, actionsSlot: slot, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }),
+    });
+    await screen.idle();
+    expect(slot.childElementCount).toBe(0);
+    expect(slot.hidden).toBe(true);
+    const button = document.querySelector('.view-header .view-header__more');
+    expect(button.getAttribute('aria-label')).toBe('View actions');
+    expect(button.querySelector('use').getAttribute('href')).toMatch(/#more$/);
   });
 
   it('narrows the count and offers Reset when the view options change, and Reset restores them (VO-8)', async () => {

@@ -48,10 +48,19 @@ describe('renderShell navigation', () => {
     expect(root.querySelector('.app__banners [data-session-banner]')).not.toBeNull();
   });
 
+  it('holds a hidden view actions slot just before the user button', () => {
+    const { root, shell } = render();
+    const slot = root.querySelector('.app__top-bar [data-view-actions]');
+    expect(shell.actionsSlot).toBe(slot);
+    expect(slot.hidden).toBe(true);
+    expect(slot.nextElementSibling.classList.contains('account-menu')).toBe(true);
+  });
+
   it('has no More button or menu in the top bar, since New list lives in the Lists view', () => {
     const { root } = render();
     expect(root.querySelector('.app__more')).toBeNull();
     expect(root.querySelector('.app__top-bar .menu:not(.account-menu__panel)')).toBeNull();
+    expect(root.querySelector('.app__top-bar .icon-button')).toBeNull();
     expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['H1', 'DIV']);
   });
 

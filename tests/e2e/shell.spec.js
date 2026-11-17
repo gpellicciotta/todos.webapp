@@ -19,6 +19,32 @@ test('list creation stays in the main Lists view', async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
+test('the view menu sits beside the user button from 64rem, and in the view header below it', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/tasks');
+  await ready(page);
+  await page.getByLabel('Search or add a task').fill('Buy paint');
+  await page.keyboard.press('Enter');
+  const header = page.locator('.app__top-bar').getByRole('button', { name: 'All tasks actions' });
+  await expect(header).toBeVisible();
+  await expect(page.locator('.view-header').getByRole('button')).toHaveCount(0);
+  const [button, user] = await Promise.all([header.boundingBox(), page.locator('.account-menu__button').boundingBox()]);
+  expect(button.x + button.width).toBeLessThanOrEqual(user.x);
+  await header.click();
+  await page.getByRole('menuitem', { name: 'Edit view options' }).click();
+  await expect(page).toHaveURL(/#\/tasks\/view-options$/);
+  await page.goto('/#/settings');
+  await expect(page.locator('.app__top-bar').getByRole('button', { name: /actions$/ })).toHaveCount(0);
+  await page.goto('/#/tasks');
+  await page.setViewportSize(COMPACT);
+  await expect(page.locator('.app__top-bar').getByRole('button', { name: /actions$/ })).toBeHidden();
+  await page.locator('.view-header').getByRole('button', { name: 'View actions' }).click();
+  await page.getByRole('menuitem', { name: 'Edit view options' }).click();
+  await expect(page).toHaveURL(/#\/tasks\/view-options$/);
+  expect(problems).toEqual([]);
+});
+
 test('dragging the separators resizes the sidebar and the editor, and the widths survive a reload', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);

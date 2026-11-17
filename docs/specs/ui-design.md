@@ -120,9 +120,14 @@ One DOM holds both layouts; [views.css](../../src/css/views.css) centers the vie
   A skip link opens the page; it focuses the main column without changing the route.
 - The action bar holds the add block of the task views; it joins the page only while a view puts content in it.
 - The overlay layer holds the toast region and the floating New list button.
-- The top bar holds the route title and the account button, with no More menu.
-  The inbox bell precedes the account button while connected.
+- The top bar holds the route title and the account button.
+  From 64rem it also holds the view actions button, a vertical three-dot icon button just before the account button.
+  The inbox bell and the sync indicator precede it.
 - The wide layout shows the title above the main column, with the user button at its right end.
+- **[Decided]** From 64rem, the menu of the current view moves from the view header to the top bar, as in the Google Cloud console.
+  The button is named "All tasks actions" or "{{list}} actions" and opens the same menu as before.
+  Lists, Recycle bin, Settings, Sync log, and Connect have no actions, so the button is hidden.
+  Below 64rem the menu stays in the view header with the horizontal More icon; crossing 64rem closes an open menu.
 - The sync indicator sits beside the user button, before the inbox bell; see Sync Indicator below.
 - A session banner above the view offers Sign in while the session expired.
 - The main column scrolls; the bars and the sidebar stay in place.
@@ -344,7 +349,7 @@ Home                                                              3
 ### View Options
 Wireframe: [view-options.svg](../img/ui/view-options.svg).
 
-- **[Decided]** The More menu opens the view options (`VO-4`).
+- **[Decided]** The view menu opens the view options (`VO-4`); from 64rem it sits in the top bar as the view actions button.
   A list view's menu holds Edit list, Edit view options, Share list, and Delete list.
   The All tasks menu holds Edit view options only, since All tasks acts as a special list without list actions.
 - **[Decided]** The options open where the editors open (`VO-5`):
@@ -487,7 +492,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
 - **[Decided]** The default sort is Created, newest first, so a new task comes first (`TV-13`).
   Sorting by Due time still puts tasks without a due time last (`TV-10`).
 - Grouping by List, Due date, or Status is available here first (`VO-9`); see [View Options](#view-options).
-- A More menu with Edit view options sits in the page header; the shell's top bar has no More menu.
+- A menu with Edit view options sits in the page header below 64rem, and in the top bar as the view actions button from 64rem.
 - An empty result names the active filters and offers Reset.
 - Without any task, the screen shows the first-launch empty state and the add bar, without view controls.
 - A new task joins no list; a Lists filter that hides it brings the "Task added" toast with Show.
@@ -529,6 +534,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - The header shows the list name, its description, the owner and role when shared, and the actions.
   A list shared with the user shows "Shared by {{owner}} · {{role}}" under the description (`SHR-3`).
 - Actions: Edit list, Edit view options, Share list, and Delete list in a More menu; no other action buttons show.
+  The menu sits in the view header below 64rem and in the top bar beside the user button from 64rem.
   The menu offers only what the role allows (`SHR-4`): an editor has no Share list or Delete list, and
   task editors and viewers have List details instead of Edit list.
 - Edit list and List details open the list editor route; Share list opens `#/lists/{{list-id}}/share`, the same editor scrolled to its Sharing section.

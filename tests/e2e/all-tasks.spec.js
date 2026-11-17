@@ -90,7 +90,7 @@ function rows(page) {
  * @returns {Promise<import('@playwright/test').Locator>} the view options
  */
 async function openOptions(page) {
-  await page.getByRole('button', { name: 'View actions' }).click();
+  await page.getByRole('button', { name: /^(All tasks|View) actions$/ }).click();
   await page.getByRole('menuitem', { name: 'Edit view options' }).click();
   await expect(page).toHaveURL(/#\/tasks\/view-options$/);
   const options = page.locator('[data-editor-slot] .view-options');
@@ -324,7 +324,7 @@ test('the All tasks More menu holds only Edit view options (VO-4)', async ({ pag
   const problems = watch(page);
   await openApp(page);
   await seed(page);
-  await page.getByRole('button', { name: 'View actions' }).click();
+  await page.getByRole('button', { name: /^(All tasks|View) actions$/ }).click();
   await expect(page.getByRole('menuitem')).toHaveText(['Edit view options']);
   await page.keyboard.press('Escape');
   expect(problems).toEqual([]);
@@ -344,7 +344,7 @@ test('the view options open beside the rows on a wide layout, with Reset at the 
     .toBeLessThan(WIDE.width / 2);
   await page.getByRole('button', { name: 'Close the view options' }).click();
   await expect(page).toHaveURL(/#\/tasks$/);
-  await expect(page.getByRole('button', { name: 'View actions' })).toBeFocused();
+  await expect(page.getByRole('button', { name: /^(All tasks|View) actions$/ })).toBeFocused();
   expect(problems).toEqual([]);
 });
 

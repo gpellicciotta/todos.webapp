@@ -22,7 +22,7 @@ describe('mountList', () => {
    * @param {() => Storage|null} [getStorage] returns the per-device preferences
    * @returns {Promise<HTMLElement>} the view element
    */
-  async function mount(getStorage = () => null) {
+  async function mount(getStorage = () => null, extra = {}) {
     ({ store } = await freshStore());
     const home = await store.createList({ name: 'Home' });
     const view = document.body.appendChild(document.createElement('div'));
@@ -30,7 +30,7 @@ describe('mountList', () => {
     navigate = vi.fn();
     toaster = { show: vi.fn() };
     models = { list: createViewModel('list', () => null) };
-    screen = mountList(view, { store, toaster, navigate, viewModels: models, getStorage });
+    screen = mountList(view, { store, toaster, navigate, viewModels: models, getStorage, ...extra });
     await screen.idle();
     return view;
   }
@@ -40,6 +40,52 @@ describe('mountList', () => {
     const items = [...view.querySelectorAll('.menu__item')];
     expect(items.map((item) => item.textContent)).toEqual(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
     expect(items.map((item) => item.dataset.action)).toEqual(['edit', 'view-options', 'share', 'delete']);
+  });
+
+  describe('with a header slot', () => {
+    /**
+     * Mount on a wide or compact layout with a header slot.
+     * @param {boolean} compact whether the layout is compact
+     * @returns {Promise<{view: HTMLElement, slot: HTMLElement}>} the view and the slot
+     */
+    async function mountWithSlot(compact) {
+      vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: query === '(width < 64rem)' && compact, media: query }));
+      const slot = document.body.appendChild(document.createElement('div'));
+      const view = await mount(() => null, { actionsSlot: slot });
+      return { view, slot };
+    }
+
+    it('puts the role-filtered menu in the header on a wide layout, named after the list, and keeps Delete list asking first', async () => {
+      const { view, slot } = await mountWithSlot(false);
+      expect(slot.hidden).toBe(false);
+      expect(slot.querySelector('.icon-button').getAttribute('aria-label')).toBe('Home actions');
+      expect(slot.querySelector('.icon-button use').getAttribute('href')).toContain('#more-vertical');
+      expect(view.querySelector('.view-header .icon-button')).toBeNull();
+      expect([...slot.querySelectorAll('.menu__item')].map((item) => item.dataset.action)).toEqual(['edit', 'view-options', 'share', 'delete']);
+      const [home] = await store.listLists();
+      await setListFields(store, home.id, { role: 'viewer', owner: { id: 9, email: 'sam@example.com', name: 'Sam Roe' }, sharing: [] });
+      await vi.waitFor(() => expect([...slot.querySelectorAll('.menu__item')].map((item) => item.textContent)).toEqual(['List details', 'Edit view options']));
+    });
+
+    it('asks before deleting from the header menu', async () => {
+      const { view, slot } = await mountWithSlot(false);
+      slot.querySelector('.icon-button').click();
+      slot.querySelector('[data-action="delete"]').click();
+      expect(view.querySelector('dialog').open).toBe(true);
+      expect(await store.listLists()).toHaveLength(1);
+    });
+
+    it('keeps the horizontal More button in the view header on a compact layout, and empties the slot on destroy', async () => {
+      const compact = await mountWithSlot(true);
+      expect(compact.slot.hidden).toBe(true);
+      expect(compact.view.querySelector('.view-header .list-view__more use').getAttribute('href')).toMatch(/#more$/);
+      screen.destroy();
+      const wide = await mountWithSlot(false);
+      expect(wide.slot.childElementCount).toBeGreaterThan(0);
+      screen.destroy();
+      expect(wide.slot.childElementCount).toBe(0);
+      expect(wide.slot.hidden).toBe(true);
+    });
   });
 
   it('names the owner and the own role of a shared list, and offers a viewer no list changes (SHR-3, SHR-4)', async () => {

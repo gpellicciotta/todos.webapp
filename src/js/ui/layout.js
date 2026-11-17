@@ -10,6 +10,7 @@
  * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
  * the account, Recycle bin, and Settings (see user-menu.js).
  * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
+ * From 64rem, a view's three-dot actions button sits just before the user button (see view-actions.js).
  * The sync indicator opens the end of the top bar, before the bell of the inbox and the user button (see views/sync-indicator.js).
  * The bell of the inbox joins the user menu while connected, and broadcast banners show above every view (see inbox.js).
  * A session banner above the views offers Sign in while the session expired.
@@ -125,7 +126,7 @@ function setCount(element, count) {
  * @param {HTMLElement} root the element that holds the shell
  * @param {object} options shell options
  * @param {object} [options.session] the session the user menu follows, a new one by default
- * @returns {{main: HTMLElement, editor: HTMLElement, actionBar: HTMLElement, overlays: HTMLElement, toastRegion: HTMLElement,
+ * @returns {{main: HTMLElement, editor: HTMLElement, actionBar: HTMLElement, actionsSlot: HTMLElement, overlays: HTMLElement, toastRegion: HTMLElement,
  *   update: Function, setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function, showSync: Function}}
  *   the shell controller
  */
@@ -165,6 +166,11 @@ export function renderShell(root, { session = createSession() } = {}) {
   const listNav = root.querySelector('[data-nav-lists]');
   const menuSlot = root.querySelector('[data-user-menu]');
   attachUserMenu(menuSlot, { session });
+  const actionsSlot = doc.createElement('div');
+  actionsSlot.className = 'app__view-actions';
+  actionsSlot.dataset.viewActions = '';
+  actionsSlot.hidden = true;
+  menuSlot.querySelector('.account-menu').before(actionsSlot);
   attachPanelResize(root);
   let viewKey = null;
   let route = null;
@@ -271,6 +277,7 @@ export function renderShell(root, { session = createSession() } = {}) {
     main,
     editor,
     actionBar,
+    actionsSlot,
     overlays,
     toastRegion: root.querySelector('.toast-region'),
 

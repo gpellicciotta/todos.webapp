@@ -127,7 +127,7 @@ test('an owner invites an email with a role, changes a role, and removes a perso
 test('Share list opens the list editor at its Sharing section (SHR-1)', async ({ page }) => {
   await connect(page, OWNED);
   await open(page, `#/lists/${FAMILY}`);
-  await page.getByRole('button', { name: 'List actions' }).click();
+  await page.getByRole('button', { name: /^[^:]+ actions$/ }).click();
   await page.getByRole('menuitem', { name: 'Share list' }).click();
   await expect(page).toHaveURL(new RegExp(`#/lists/${FAMILY}/share$`));
   await expect(page.locator('[data-section="sharing"]').getByRole('button', { name: 'Invite' })).toBeVisible();
@@ -146,7 +146,7 @@ test('a viewer sees the list read-only, without edit, move, or delete controls (
   await expect(row.locator('.status-button')).toBeDisabled();
   await expect(row.locator('[data-role="more"]')).toBeHidden();
   await expect(row.locator('.task-row__handle')).toHaveCount(0);
-  await page.getByRole('button', { name: 'List actions' }).click();
+  await page.getByRole('button', { name: /^[^:]+ actions$/ }).click();
   await expect(page.getByRole('menuitem')).toHaveText(['List details', 'Edit view options']);
   await page.keyboard.press('Escape');
   await row.locator('.task-row__open').click();

@@ -60,7 +60,7 @@ async function openList(page, { statuses = ['ready', 'in-progress'] } = {}) {
  * @returns {Promise<import('@playwright/test').Locator>} the view options
  */
 async function openOptions(page) {
-  await page.getByRole('button', { name: 'List actions' }).click();
+  await page.getByRole('button', { name: /^[^:]+ actions$/ }).click();
   await page.getByRole('menuitem', { name: 'Edit view options' }).click();
   await expect(page).toHaveURL(/#\/lists\/[^/]+\/view-options$/);
   const options = page.locator('[data-editor-slot] .view-options');
@@ -300,7 +300,7 @@ test.describe('List screen', () => {
   test('the More menu holds Edit list, Edit view options, Share list, and Delete list (VO-4)', async ({ page }) => {
     const problems = watch(page);
     await openList(page);
-    await page.getByRole('button', { name: 'List actions' }).click();
+    await page.getByRole('button', { name: /^[^:]+ actions$/ }).click();
     await expect(page.getByRole('menuitem')).toHaveText(['Edit list', 'Edit view options', 'Share list', 'Delete list']);
     await page.keyboard.press('Escape');
     expect(problems).toEqual([]);
