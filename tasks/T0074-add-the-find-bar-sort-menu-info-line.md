@@ -5,17 +5,22 @@ session: claude-20261117-485dda
 needs: []
 branch: task/T0074-add-the-find-bar-sort-menu-info-line
 worktree: .plan/work/T0074-add-the-find-bar-sort-menu-info-line
-status: active
+status: completed
 started_at: "2026-11-17T04:38:01Z"
-ended_at: —
+ended_at: "2026-11-17T04:51:36Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 699.3, input: 94, output: 40916, cache_read: 6135202, cache_write: 144510}
-review_status: pending
+  review: {turns: 1, duration_s: 105.5, input: 50440, output: 2069, cache_read: 388352, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-17T04:49:49Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-150913
+work_duration: 815.4
+completion-commit: b3ae9dfa5df1be367bdd928c48b0ad71b16d0367
 ---
 # T0074: Add the find bar, sort menu, info line, and Create list offer to the Lists screen
 
@@ -31,7 +36,7 @@ Hide reordering while a sort or find text is active, and announce why.
 - [x] **[Verify]**    Run the new tests, `npm test`, and `npm run lint`; record the passing output.
 - [x] **[Doc]**       Update ui-design.md, the changelog, and the lists module comments.
 - [x] **[Implement]** Add the Lists screen `/` row to the About shortcut list in settings.js, with its unit test.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-07] **[Doc]**
@@ -54,4 +59,11 @@ Hide reordering while a sort or find text is active, and announce why.
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 approved by @codex: [Decided]** Approved with non-blocking verification gaps.
+  - Findings: [review-findings-1.md](T0074-add-the-find-bar-sort-menu-info-line/review-findings-1.md).
+
+- [2026-11-17] **[Complete]**
+  Task completed successfully.
 
