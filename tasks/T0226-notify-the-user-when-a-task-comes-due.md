@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 719.3, input: 132, output: 45925, cache_read: 8353273, cache_write: 135020}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T04:13:03Z"
 ---
 # T0226: Notify the user when a task comes due while the app is open, with opt-in and a lead time
 
@@ -73,4 +78,7 @@ Size estimate: 8 files, 350 lines.
   - Files touched: 8.
   - Lines touched: 381.
   - Reopenings: 0.
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
