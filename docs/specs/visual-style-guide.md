@@ -72,8 +72,12 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
   App styles hold no fixed or sticky positions, which the vendored check enforces, so the gallery shows them in place.
 - **[Decided]** From support.webapp 0.2.0, the top bar and the action bar span every wide column.
   The sidebar and the editor panel sit between them; the panel separators take their columns' grid areas.
-  The brand stays at the top of the sidebar, and the top bar starts with the route title.
-  The app has no `app__nav-toggle` yet, so the wide sidebar stays open; below 64rem the bottom bar navigates.
+  The brand stays at the top of the sidebar, and the top bar starts with the `app__nav-toggle` and the route title.
+  From 64rem the toggle cycles the sidebar through open, an icon rail, and hidden; below 64rem the bottom bar navigates.
+- **[Decided]** The rail shows each list as a `.nav-item__mark` monogram tile in the glyph column.
+  The tile is `--icon-md` square on `--color-surface-sunken`, in muted text, or `--color-primary` for the current list.
+  Rejected: an empty rail below All tasks and Lists, which the shell's label clipping alone would give.
+  The app's `.sidebar` sets its own display, so views.css hides a sidebar with the `hidden` attribute again.
 - **[Decided]** Navigation links carry the shell's `app__nav-item` beside the app's `.nav-item` or `.bottom-nav__item`.
   The app stylesheets follow shell.css, so the app items win equal selectors; the shell's more specific bar rules still apply.
 - **[Decided]** Component styles never scale a token by a bare number, such as `* 2` or `/ 2`.
@@ -286,6 +290,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Recycle bin, Settings, and the account sit in the user menu, so the app leaves `.sidebar__end` and `.sidebar__footer` empty;
   the gallery still shows both, as the optional end group and footer of the component.
   The app's bottom bar holds Tasks and Lists, each an icon above a label; the gallery shows four items to cover the states.
+  The gallery's `.sidebar--rail` specimen shows the icon rail of the nav toggle at every width; the app's rail needs 64rem.
+  In the rail, list rows show their monogram tile; use the tile nowhere else, since the open sidebar shows names.
 - [User menu](../../src/demo/visual-style-gallery.html#user-menu): the package account menu that ends the top bar.
   Its `.account-menu__button` is a 44 px circle with an `.avatar--sm` face.
   The face shows a person icon in local mode, and the initials once signed in.

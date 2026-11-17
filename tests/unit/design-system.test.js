@@ -61,13 +61,14 @@ function uses(names) {
 
 const CONTRACT = JSON.parse(readFileSync(join(VENDOR, 'contract.json'), 'utf8'));
 // Public entry points of ADR-0005: the stylesheets, the look sprite, a module per component key, and the utility modules.
-// The package style guide also tells apps to import sw-update.js, the service worker update pattern.
+// The package style guide also tells apps to import sw-update.js, the service worker update pattern,
+// and app-nav.js, the shell's nav toggle.
 const PUBLIC = new Set([
   'css/style.css',
   'looks/neutral/index.css',
   'looks/neutral/icons.svg',
   ...CONTRACT.components.map((key) => `js/${key}.js`),
-  ...['focus', 'anchor', 'live-region', 'i18n', 'sw-update'].map((name) => `js/${name}.js`),
+  ...['focus', 'anchor', 'live-region', 'i18n', 'sw-update', 'app-nav'].map((name) => `js/${name}.js`),
 ]);
 
 /**

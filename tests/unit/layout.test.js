@@ -60,8 +60,8 @@ describe('renderShell navigation', () => {
     const { root } = render();
     expect(root.querySelector('.app__more')).toBeNull();
     expect(root.querySelector('.app__top-bar .menu:not(.account-menu__panel)')).toBeNull();
-    expect(root.querySelector('.app__top-bar .icon-button')).toBeNull();
-    expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['H1', 'DIV']);
+    expect(root.querySelector('.app__top-bar .icon-button:not(.app__nav-toggle)')).toBeNull();
+    expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['BUTTON', 'H1', 'DIV']);
   });
 
   it('keeps Recycle bin and Settings out of the sidebar and the bottom bar', () => {
@@ -117,11 +117,11 @@ describe('renderShell inbox', () => {
     return { root, shell };
   }
 
-  it('puts the bell before the user button, and keeps the top bar at a title and one menu slot', () => {
+  it('puts the bell before the user button, and keeps the top bar at the nav toggle, a title, and one menu slot', () => {
     const { root } = connected([]);
     const slot = root.querySelector('.app__top-bar').lastElementChild;
     expect(slot.querySelector('.inbox-button').compareDocumentPosition(slot.querySelector('.account-menu__button')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['H1', 'DIV']);
+    expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['BUTTON', 'H1', 'DIV']);
   });
 
   it('shows the broadcast banners beside a lasting notice, and the notice does not replace them', () => {
@@ -292,6 +292,98 @@ describe('renderShell sidebar scroll region and in-place patching (LST-14)', () 
     finally {
       Element.prototype.scrollIntoView = original;
     }
+  });
+});
+
+describe('renderShell navigation toggle and rail', () => {
+  const NO_COUNTS = { all: 0, byList: new Map() };
+
+  /**
+   * Stand in for the wide layout query.
+   * @param {boolean} matches true for a window of at least 64rem
+   * @returns {{matches: boolean, addEventListener: Function, removeEventListener: Function}} the query
+   */
+  const media = (matches) => ({ matches, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+
+  /**
+   * Render the shell with a stand-in layout query.
+   * @param {boolean} [wide] true for a window of at least 64rem
+   * @returns {{root: HTMLElement, shell: object, toggle: HTMLButtonElement, sidebar: HTMLElement}} the parts
+   */
+  function renderAt(wide = true) {
+    const root = document.body.appendChild(document.createElement('div'));
+    const shell = renderShell(root, { navMedia: media(wide) });
+    return { root, shell, toggle: root.querySelector('.app__nav-toggle'), sidebar: root.querySelector('.app__sidebar') };
+  }
+
+  it('opens the top bar with the nav toggle, which controls the sidebar popover', () => {
+    const { root, toggle, sidebar } = renderAt();
+    expect(root.querySelector('.app__top-bar').firstElementChild).toBe(toggle);
+    expect(toggle.matches('button.icon-button[type="button"][data-app-nav-toggle]')).toBe(true);
+    expect(sidebar.id).toBe('app-nav');
+    expect(sidebar.getAttribute('popover')).toBe('auto');
+    expect(toggle.getAttribute('aria-controls')).toBe('app-nav');
+    expect(toggle.getAttribute('popovertarget')).toBe('app-nav');
+    expect(toggle.querySelector('svg.icon[aria-hidden="true"] use').getAttribute('href')).toBe('img/icons.svg#nav-menu');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle.getAttribute('aria-label')).toBe('Collapse navigation');
+  });
+
+  it('cycles the wide sidebar through open, rail, and hidden, and stores each state on the device', () => {
+    const { toggle, sidebar } = renderAt();
+    toggle.click();
+    expect([toggle.getAttribute('aria-expanded'), sidebar.hidden, toggle.getAttribute('aria-label')]).toEqual(['false', false, 'Hide navigation']);
+    expect(localStorage.getItem('todos.view.nav')).toBe('"rail"');
+    toggle.click();
+    expect([toggle.getAttribute('aria-expanded'), sidebar.hidden, toggle.getAttribute('aria-label')]).toEqual(['false', true, 'Show navigation']);
+    expect(localStorage.getItem('todos.view.nav')).toBe('"hidden"');
+    toggle.click();
+    expect([toggle.getAttribute('aria-expanded'), sidebar.hidden, toggle.getAttribute('aria-label')]).toEqual(['true', false, 'Collapse navigation']);
+    expect(localStorage.getItem('todos.view.nav')).toBe('"open"');
+  });
+
+  it('starts in the state stored on the device', () => {
+    localStorage.setItem('todos.view.nav', '"rail"');
+    const rail = renderAt();
+    expect([rail.toggle.getAttribute('aria-expanded'), rail.sidebar.hidden]).toEqual(['false', false]);
+    resetBody();
+    localStorage.setItem('todos.view.nav', '"hidden"');
+    const hidden = renderAt();
+    expect([hidden.toggle.getAttribute('aria-expanded'), hidden.sidebar.hidden]).toEqual(['false', true]);
+  });
+
+  it('keeps the sidebar out of the hidden state below 64rem, where the toggle names the drawer', () => {
+    localStorage.setItem('todos.view.nav', '"hidden"');
+    const { toggle, sidebar } = renderAt(false);
+    expect(sidebar.hidden).toBe(false);
+    expect(toggle.getAttribute('aria-label')).toBe('Open navigation');
+  });
+
+  it('gives each list row a hidden monogram of its first letter, and every sidebar link a title', () => {
+    const { root, shell } = renderAt();
+    shell.setLists([{ id: 'g', name: 'groceries' }, { id: 'e', name: 'Élan' }, { id: 'l', name: '👍🏽 Likes' }], NO_COUNTS);
+    const mark = (id) => root.querySelector(`[data-nav="list:${id}"] .nav-item__mark`);
+    expect([mark('g').textContent, mark('e').textContent, mark('l').textContent]).toEqual(['G', 'É', '👍🏽']);
+    expect(mark('g').getAttribute('aria-hidden')).toBe('true');
+    expect(root.querySelector('[data-nav="list:g"]').firstElementChild).toBe(mark('g'));
+    expect([...root.querySelectorAll('.app__sidebar a')].map((link) => link.title).sort()).toEqual(['All tasks', 'Lists', 'groceries', 'Élan', '👍🏽 Likes'].sort());
+    shell.setLists([{ id: 'g', name: 'Work' }], NO_COUNTS);
+    expect(mark('g').textContent).toBe('W');
+    expect(root.querySelector('.app__nav-list:not([data-nav-lists]) .nav-item__mark')).toBeNull();
+  });
+
+  it('clears the find text when the sidebar becomes a rail', () => {
+    vi.useFakeTimers();
+    const { root, shell, toggle } = renderAt();
+    shell.setLists(Array.from({ length: 14 }, (unused, index) => ({ id: `l${index}`, name: `List ${index}` })), NO_COUNTS);
+    const field = root.querySelector('[data-find-lists]');
+    field.value = 'List 1';
+    field.dispatchEvent(new Event('input'));
+    vi.advanceTimersByTime(150);
+    expect(root.querySelectorAll('[data-nav-lists] li[hidden]').length).toBeGreaterThan(0);
+    toggle.click();
+    expect(field.value).toBe('');
+    expect(root.querySelectorAll('[data-nav-lists] li[hidden]')).toHaveLength(0);
   });
 });
 

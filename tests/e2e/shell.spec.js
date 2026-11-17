@@ -127,6 +127,62 @@ test('the separators stay hidden in the compact layout', async ({ page }) => {
   await expect(page.locator('.panel-resize').last()).toBeHidden();
 });
 
+test('the nav toggle cycles the wide sidebar through open, a rail of list monograms, and hidden, and the state survives a reload', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/');
+  await ready(page);
+  const garden = await createList(page, 'Garden');
+  await createList(page, 'Work');
+  const sidebar = page.locator('.app__sidebar');
+  const toggle = page.locator('.app__top-bar > .app__nav-toggle');
+  const widthOf = () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().width));
+  await expect(sidebar.locator('[data-nav-lists] li')).toHaveCount(2);
+  await expect(toggle).toHaveAccessibleName('Collapse navigation');
+  await expect(sidebar.locator('.nav-item__mark').first()).toBeHidden();
+  expect(await widthOf()).toBe(256);
+  // The toggle's glyph tops the column of the navigation glyphs.
+  const glyphX = async (locator) => Math.round((await locator.locator('.icon').first().boundingBox()).x);
+  expect(await glyphX(toggle)).toBe(await glyphX(sidebar.getByRole('link', { name: /^All tasks/ })));
+
+  await toggle.click();
+  await expect(toggle).toHaveAccessibleName('Hide navigation');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(await widthOf()).toBeLessThan(64);
+  await expect(page.getByRole('separator', { name: 'Resize lists sidebar' })).toBeHidden();
+  const marks = sidebar.locator('[data-nav-lists] .nav-item__mark');
+  await expect(marks).toHaveText(['G', 'W']);
+  for (const mark of await marks.all()) {
+    const box = await mark.boundingBox();
+    const bounds = await sidebar.boundingBox();
+    expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+  }
+  const link = sidebar.getByRole('link', { name: /^Garden/ });
+  await expect(link).toHaveAttribute('title', 'Garden');
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(`#/lists/${garden}$`));
+  await expect(link).toHaveAttribute('aria-current', 'page');
+
+  await page.reload();
+  await ready(page);
+  await expect(toggle).toHaveAccessibleName('Hide navigation');
+  expect(await widthOf()).toBeLessThan(64);
+
+  await toggle.click();
+  await expect(sidebar).toBeHidden();
+  await expect(toggle).toHaveAccessibleName('Show navigation');
+  const main = await page.locator('.app__main').boundingBox();
+  expect(main.x).toBe(0);
+  await toggle.click();
+  await expect(toggle).toHaveAccessibleName('Collapse navigation');
+  expect(await widthOf()).toBe(256);
+
+  await page.setViewportSize(COMPACT);
+  await expect(toggle).toBeHidden();
+  await expect(page.locator('.app__bottom-nav')).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
 /**
  * Collect console errors, page errors, failed requests, and HTTP errors of a page.
  * @param {import('@playwright/test').Page} page the page to watch
@@ -392,7 +448,8 @@ test('every route renders its title and its view, and the sidebar follows the li
   await expect(sidebar.getByRole('link', { name: /All tasks/ })).toHaveText(/^All tasks0 open tasks$/);
   await expect(sidebar.getByRole('link', { name: /All tasks/ }).locator('.nav-item__count > [aria-hidden="true"]')).toHaveText('');
   const id = await createList(page, 'Home');
-  await expect(sidebar.getByRole('link', { name: /^Home/ })).toHaveText(/^Home1\s*1 open tasks$/);
+  // The rail's hidden monogram "H" opens the link text; the label and the count follow it.
+  await expect(sidebar.getByRole('link', { name: /^Home/ })).toHaveText(/^HHome1\s*1 open tasks$/);
   await expect(sidebar.getByRole('link', { name: /All tasks/ })).toHaveText(/^All tasks1\s*1 open tasks$/);
   const routes = [
     ['#/tasks', 'All tasks', 'tasks'],

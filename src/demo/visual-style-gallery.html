@@ -980,6 +980,26 @@
           </nav>
         </div>
 
+        <h3>Nav toggle and icon rail</h3>
+        <p>From 64rem the top bar's nav toggle cycles the sidebar through open, this icon rail, and hidden; its label names the next step.</p>
+        <p>The rail clips the labels and counts, and each list shows the first letter of its name. Work is current, Travel shows hover, and Errands shows focus-visible.</p>
+        <div class="stage stage--compact">
+          <button class="icon-button" type="button" aria-expanded="false" aria-label="Hide navigation"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#nav-menu"/></svg></button>
+          <nav class="sidebar sidebar--rail" aria-label="Main, icon rail">
+            <p class="sidebar__brand"><img class="sidebar__brand-icon" src="../img/todos-icon.svg" alt="" width="24" height="24" aria-hidden="true">ToDo's</p>
+            <ul class="nav-list">
+              <li><a class="nav-item" href="#navigation" title="All tasks"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#tasks"/></svg><span class="nav-item__label">All tasks</span><span class="nav-item__count">24<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item" href="#navigation" title="Lists"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#lists"/></svg><span class="nav-item__label">Lists</span></a></li>
+            </ul>
+            <ul class="nav-list" aria-label="Lists, icon rail">
+              <li><a class="nav-item nav-item--list" href="#navigation" title="Home"><span class="nav-item__mark" aria-hidden="true">H</span><span class="nav-item__label">Home</span><span class="nav-item__count">8<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item nav-item--list" href="#navigation" title="Work" aria-current="page"><span class="nav-item__mark" aria-hidden="true">W</span><span class="nav-item__label">Work</span><span class="nav-item__count">12<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item nav-item--list is-hover" href="#navigation" title="Travel"><span class="nav-item__mark" aria-hidden="true">T</span><span class="nav-item__label">Travel</span><span class="nav-item__count">3<span class="visually-hidden"> open tasks</span></span></a></li>
+              <li><a class="nav-item nav-item--list is-focus" href="#navigation" title="Errands"><span class="nav-item__mark" aria-hidden="true">E</span><span class="nav-item__label">Errands</span><span class="nav-item__count">5<span class="visually-hidden"> open tasks</span></span></a></li>
+            </ul>
+          </nav>
+        </div>
+
         <h3>Pressed and current item feedback</h3>
         <p>Current sidebar items keep hover and active feedback, with the signal edge on the inline start.</p>
         <p>In the bottom bar, Tasks is current and pressed, and Lists shows active.</p>

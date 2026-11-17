@@ -24,6 +24,9 @@
  * counts matches ("4 of 124"), and announces them politely; Enter opens the first match, Escape clears, Down enters the rows,
  * and `l` focuses it (`LST-10`, `LST-15`). The rows are one roving tab stop with Up, Down, Home, End, and Page keys.
  * From 64rem, separators resize the sidebar and the editor panel and the widths stay on the device (see panel-resize.js).
+ * The top bar opens with the vendored nav toggle (app-nav.js): from 64rem each press cycles the sidebar through open,
+ * an icon rail, and hidden, and the state stays on the device (`todos.view.nav`); below 64rem the bottom bar navigates.
+ * The rail shows each list as a monogram of its first letter; entering it clears the find text, which the rail hides.
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
@@ -32,11 +35,12 @@ import { FIND_MAX_LENGTH, findLists } from '../core/list-find.js';
 import {
   applyListOrder, movedMessage, moveList, moveListToEnd, onListOrderChange, readListOrder, writeListOrder,
 } from '../core/list-order.js';
-import { readTheme } from '../core/preferences.js';
+import { readNavState, readTheme, writeNavState } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { attachSyncIndicator } from '../views/sync-indicator.js';
 import { attachInbox } from './inbox.js';
 import { attachPanelResize } from './panel-resize.js';
+import { attachAppNav } from '../../vendor/design/js/app-nav.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachUserMenu } from './user-menu.js';
 
@@ -75,6 +79,10 @@ export const STRINGS = Object.freeze({
   lists: 'Lists',
   findLists: 'Find a list',
   noListMatches: 'No list matches.',
+  nav: Object.freeze({
+    collapse: 'Collapse navigation', hide: 'Hide navigation', show: 'Show navigation',
+    open: 'Open navigation', close: 'Close navigation',
+  }),
   titles: Object.freeze({
     tasks: 'All tasks', lists: 'Lists', list: 'List', bin: 'Recycle bin',
     settings: 'Settings', 'sync-log': 'Sync log',
@@ -132,6 +140,20 @@ function icon(id) {
   return `<svg class="icon" aria-hidden="true" focusable="false"><use href="${ICONS}#${id}"/></svg>`;
 }
 
+/** Splits text into user-perceived characters, so a monogram keeps an accent or a whole emoji. */
+const GRAPHEMES = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+
+/**
+ * Return the monogram of a list name for the rail: its first character, uppercased.
+ * @param {string} name the list name
+ * @returns {string} the monogram, empty for an empty name
+ */
+export function monogramOf(name) {
+  const text = name.trim();
+  const first = GRAPHEMES ? (GRAPHEMES.segment(text)[Symbol.iterator]().next().value?.segment ?? '') : [...text][0] ?? '';
+  return first.toLocaleUpperCase();
+}
+
 /**
  * Return the markup of a sidebar navigation item.
  * @param {object} destination the destination
@@ -139,7 +161,7 @@ function icon(id) {
  */
 function sidebarItem(destination) {
   const count = destination.count ? '<span class="nav-item__count" data-count="all"></span>' : '';
-  return `<li><a class="app__nav-item nav-item" href="${destination.hash}" data-nav="${destination.key}">${icon(destination.icon)}`
+  return `<li><a class="app__nav-item nav-item" href="${destination.hash}" title="${destination.label}" data-nav="${destination.key}">${icon(destination.icon)}`
     + `<span class="nav-item__label">${destination.label}</span>${count}</a></li>`;
 }
 
@@ -166,20 +188,24 @@ function setCount(element, count) {
  * @param {HTMLElement} root the element that holds the shell
  * @param {object} options shell options
  * @param {object} [options.session] the session the user menu follows, a new one by default
+ * @param {{matches: boolean, addEventListener: Function, removeEventListener: Function}} [options.navMedia]
+ *   the wide layout query of the nav toggle, `matchMedia('(width >= 64rem)')` by default
  * @returns {{main: HTMLElement, editor: HTMLElement, actionBar: HTMLElement, actionsSlot: HTMLElement, overlays: HTMLElement, toastRegion: HTMLElement,
  *   update: Function, setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function, showSync: Function}}
  *   the shell controller
  */
-export function renderShell(root, { session = createSession() } = {}) {
+export function renderShell(root, { session = createSession(), navMedia } = {}) {
   const doc = root.ownerDocument;
   root.classList.add('app', 'app--scroll-main');
   root.innerHTML = `
     <a class="skip-link" href="#main">${STRINGS.skip}</a>
     <header class="app__top-bar">
+      <button class="app__nav-toggle icon-button" type="button" popovertarget="app-nav" aria-controls="app-nav"
+        aria-expanded="true" aria-label="${STRINGS.nav.collapse}" data-app-nav-toggle>${icon('nav-menu')}</button>
       <h1 class="app__title" id="app-title"></h1>
       <div class="app__top-actions" data-user-menu></div>
     </header>
-    <nav class="sidebar app__sidebar" aria-label="${STRINGS.main}">
+    <nav class="sidebar app__sidebar" id="app-nav" aria-label="${STRINGS.main}" popover="auto">
       <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/todos-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
       <ul class="nav-list app__nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <div class="sidebar__find" hidden>
@@ -386,6 +412,7 @@ export function renderShell(root, { session = createSession() } = {}) {
       if (parts.label.textContent !== list.name) {
         parts.label.textContent = list.name;
         parts.link.title = list.name;
+        parts.mark.textContent = monogramOf(list.name);
       }
       setCount(parts.count, countOf(shownCounts, list.id).open);
       if (parts.item === cursor) {
@@ -401,8 +428,9 @@ export function renderShell(root, { session = createSession() } = {}) {
 
   /**
    * Create the row of a list; later renders patch it by list identifier.
+   * The monogram shows only in the rail, in the glyph column; the label stays the link's name.
    * @param {{id: string, name: string}} list the list
-   * @returns {{item: HTMLElement, link: HTMLElement, label: HTMLElement, count: HTMLElement}} the row parts
+   * @returns {{item: HTMLElement, link: HTMLElement, mark: HTMLElement, label: HTMLElement, count: HTMLElement}} the row parts
    */
   function createRow(list) {
     const item = doc.createElement('li');
@@ -410,13 +438,16 @@ export function renderShell(root, { session = createSession() } = {}) {
     link.className = 'app__nav-item nav-item nav-item--list';
     link.href = `#/lists/${encodeURIComponent(list.id)}`;
     link.dataset.nav = `list:${list.id}`;
+    const mark = doc.createElement('span');
+    mark.className = 'nav-item__mark';
+    mark.setAttribute('aria-hidden', 'true');
     const label = doc.createElement('span');
     label.className = 'nav-item__label';
     const count = doc.createElement('span');
     count.className = 'nav-item__count';
-    link.append(label, count);
+    link.append(mark, label, count);
     item.append(link);
-    return { item, link, label, count };
+    return { item, link, mark, label, count };
   }
 
   /** Scroll the row of the current list to the nearest edge once, after a route change to that list. */
@@ -498,6 +529,17 @@ export function renderShell(root, { session = createSession() } = {}) {
   findField.addEventListener('input', () => {
     clearTimeout(findTimer);
     findTimer = setTimeout(() => announceFind(applyFilter()), FIND_PAUSE_MS);
+  });
+  attachAppNav(root.querySelector('.app__nav-toggle'), root.querySelector('.app__sidebar'), {
+    media: navMedia,
+    state: readNavState(),
+    labels: STRINGS.nav,
+    onChange(state) {
+      writeNavState(state);
+      if (state === 'rail' && findField.value !== '') {
+        clearFind();
+      }
+    },
   });
   const unsubscribeOrder = onListOrderChange(() => {
     if (root.isConnected) {

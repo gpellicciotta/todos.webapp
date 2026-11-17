@@ -193,6 +193,30 @@ export function writePanelWidths(widths, getStorage) {
   return writePreference('view.panels', { sidebar: widths.sidebar, editor: widths.editor }, getStorage);
 }
 
+/** The wide states of the sidebar that the nav toggle cycles through. */
+const NAV_STATES = ['open', 'rail', 'hidden'];
+
+/**
+ * Read the wide sidebar state of this device: open, an icon rail, or hidden.
+ * A missing, unreadable, or unknown value means open.
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {'open'|'rail'|'hidden'} the state
+ */
+export function readNavState(getStorage) {
+  const stored = readPreference('view.nav', 'open', getStorage);
+  return NAV_STATES.includes(stored) ? stored : 'open';
+}
+
+/**
+ * Store the wide sidebar state of this device (`SYN-13` keeps it out of the account sync).
+ * @param {string} state open, rail, or hidden
+ * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
+ * @returns {boolean} true when stored; false for another value or a failed write
+ */
+export function writeNavState(state, getStorage) {
+  return NAV_STATES.includes(state) && writePreference('view.nav', state, getStorage);
+}
+
 /** Hosts that may use plain `http:`, since their traffic never leaves this machine. */
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 

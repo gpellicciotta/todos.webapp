@@ -195,7 +195,7 @@ test('the syncing icon spins only without reduced motion', async ({ page }) => {
 test('navigation marks the current route with aria-current in the sidebar and the bottom bar', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
   const bottom = '.bottom-nav[aria-label="Main, compact layout"]';
-  for (const nav of ['nav.sidebar', bottom]) {
+  for (const nav of ['nav.sidebar[aria-label="Main, wide layout"]', 'nav.sidebar--rail', bottom]) {
     const current = page.locator(`#navigation ${nav} [aria-current="page"]`);
     await expect(current, nav).toHaveCount(1);
     const [currentGround, otherGround] = await Promise.all([
@@ -213,7 +213,7 @@ test('navigation marks the current route with aria-current in the sidebar and th
 test('the current nav item keeps hover and active feedback and its edge on the inline start', async ({ page }) => {
   await openGallery(page, VIEWPORTS[1], THEMES[0]);
   const ground = (locator) => locator.evaluate((element) => getComputedStyle(element).backgroundColor);
-  const current = page.locator('#navigation nav.sidebar .nav-item[aria-current="page"]');
+  const current = page.locator('#navigation nav.sidebar[aria-label="Main, wide layout"] .nav-item[aria-current="page"]');
   const hovered = page.locator('#navigation .nav-item.is-hover[aria-current="page"]');
   const pressed = page.locator('#navigation .nav-item.is-active[aria-current="page"]');
   const grounds = new Set([await ground(current), await ground(hovered), await ground(pressed)]);

@@ -77,6 +77,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - The sidebar lists each list with its open task count.
   It has no creation action; New list stays on the Lists screen.
 - From 12 lists the sidebar gains a find field and scrolls only its lists; see [Sidebar With Many Lists](#sidebar-with-many-lists).
+- From 64rem the nav toggle collapses the sidebar to an icon rail or hides it; see [Nav Toggle and Icon Rail](#nav-toggle-and-icon-rail).
 - Recycle bin and Settings sit in the user menu, so many lists never push them out of sight.
 - **[Decided]** Routes use the URL hash, such as `#/lists/{{list-id}}`, since GitHub Pages has no route rewrites.
 - Back and forward buttons move between routes; opening the task editor adds a route.
@@ -122,6 +123,27 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
   A renamed list updates its label and `title` in place; a deleted list drops its row; a new list joins at its place in the order.
 - The scroll region is `.sidebar__scroll` inside `.app__sidebar`; the sidebar itself never scrolls.
 
+### Nav Toggle and Icon Rail
+The top bar opens with the `app__nav-toggle` of support.webapp, drawing the `nav-menu` icon.
+The vendored [app-nav.js](../../src/vendor/design/js/app-nav.js) drives it; the sidebar is its `id="app-nav"` popover.
+- **[Decided]** From 64rem each press cycles the sidebar through open, an icon rail, and hidden.
+  The toggle's name names the next step: "Collapse navigation", "Hide navigation", then "Show navigation".
+  `aria-expanded` is true only while the sidebar is open.
+- **[Decided]** Below 64rem the bottom bar navigates, so shell.css hides the toggle and the compact layout stays as it is.
+- **[Decided]** The rail shows each list as a monogram: the first character of its name, uppercased, in an icon-sized tile.
+  The tile sits in the glyph column on the sunken ground; the current list takes the signal color, like the icons.
+  A character is a grapheme, so an accented letter or a whole emoji stays together.
+  Rejected: clipping list rows to nothing, which leaves a rail of two links and no lists.
+  Rejected: one list icon per row, which makes every row look the same.
+- **[Decided]** The open sidebar keeps its look; the monogram shows only in the rail.
+- **[Decided]** The rail clips the brand name, labels, and counts, which stay in the links' accessible names.
+  Every sidebar link carries a `title`, so a hover names the list.
+  Arrow, Home, End, Page, and Alt keys work in the rail as in the open sidebar.
+- **[Decided]** The rail hides the find field, its no-match line, and the sidebar separator; entering it clears the find text.
+  `l` then opens the Lists screen, as it does wherever the field is out of view.
+- **[Decided]** The hidden state gives the main column the full width; the next press opens the sidebar again.
+- **[Decided]** The wide state persists per device in `todos.view.nav` (`SYN-13` keeps it local); a new device starts open.
+
 ### App Shell
 [app.js](../../src/js/app.js), [router.js](../../src/js/ui/router.js), and [layout.js](../../src/js/ui/layout.js) build the shell.
 The vendored [shell.css](../../src/vendor/design/css/shell.css) places its areas, as ADR-0004 of support.webapp defines.
@@ -132,7 +154,7 @@ Settings and the Sync log stay in a centered `--width-main` column.
   A skip link opens the page; it focuses the main column without changing the route.
 - The action bar holds the add block of the task views; it joins the page only while a view puts content in it.
 - The overlay layer holds the toast region and the floating New list button.
-- The top bar holds the route title and the account button.
+- The top bar holds the nav toggle from 64rem, the route title, and the account button.
   From 64rem it also holds the view actions button, a vertical three-dot icon button just before the account button.
   The inbox bell and the sync indicator precede it.
 - The wide layout shows the title above the main column, with the user button at its right end.

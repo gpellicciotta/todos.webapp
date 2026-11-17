@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readPanelWidths, readPreference, readServerUrl, readTheme, writeEnterAdds, writePanelWidths, writePreference,
-  writeServerUrl, writeTheme,
+  DEFAULT_SERVER_URL, parseServerUrl, readEnterAdds, readNavState, readPanelWidths, readPreference, readServerUrl, readTheme, writeEnterAdds, writeNavState,
+  writePanelWidths, writePreference, writeServerUrl, writeTheme,
 } from '../../src/js/core/preferences.js';
 import { BUILD_DATE, VERSION } from '../../src/js/version.js';
 
@@ -156,6 +156,29 @@ describe('panel widths preference', () => {
   });
   it('reports a failed write', () => {
     expect(writePanelWidths({ sidebar: 14, editor: 30 }, () => throwing)).toBe(false);
+  });
+});
+
+describe('navigation state preference', () => {
+  it('defaults to open for a missing, unknown, or unreadable entry', () => {
+    const storage = memoryStorage();
+    expect(readNavState(() => storage)).toBe('open');
+    storage.setItem('todos.view.nav', '"wide"');
+    expect(readNavState(() => storage)).toBe('open');
+    storage.setItem('todos.view.nav', 'not json');
+    expect(readNavState(() => storage)).toBe('open');
+    expect(readNavState(() => throwing)).toBe('open');
+  });
+  it('round-trips open, rail, and hidden under todos.view.nav, and refuses other values', () => {
+    const storage = memoryStorage();
+    for (const state of ['rail', 'hidden', 'open']) {
+      expect(writeNavState(state, () => storage)).toBe(true);
+      expect(storage.data.get('todos.view.nav')).toBe(JSON.stringify(state));
+      expect(readNavState(() => storage)).toBe(state);
+    }
+    expect(writeNavState('wide', () => storage)).toBe(false);
+    expect(readNavState(() => storage)).toBe('open');
+    expect(writeNavState('rail', () => throwing)).toBe(false);
   });
 });
 

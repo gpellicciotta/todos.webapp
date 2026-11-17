@@ -21,11 +21,18 @@
   gap: var(--space-2);
 }
 
-/* The app's sidebar block sets its own display, so the compact layout hides it again, as shell.css does. */
+/*
+ * The app's sidebar block sets its own display, so the compact layout hides it again, as shell.css does,
+ * and so does the wide hidden state of the nav toggle, which sets the sidebar's `hidden` attribute.
+ */
 @media (width < 64rem) {
   .app > .app__sidebar {
     display: none;
   }
+}
+
+.app > .app__sidebar[hidden] {
+  display: none;
 }
 
 /* The bar keeps at least 0.5rem above the add field, more than the shell's default. */

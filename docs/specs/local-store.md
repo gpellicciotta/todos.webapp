@@ -95,6 +95,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - `todos.view.panels` holds `{sidebar, editor}`, the widths of the lists sidebar and the task editor panel in rem.
 - Values outside 12 to 24 for the sidebar and 20 to 40 for the editor, or unreadable entries, fall back to 16 and 25.
 - The entry stays on the device and never syncs (`SYN-13`).
+- `todos.view.nav` holds the wide sidebar state of the nav toggle: `"open"`, `"rail"`, or `"hidden"`.
+- A missing, unreadable, or unknown value means `"open"`; the entry stays on the device and never syncs (`SYN-13`).
 
 ## Rules
 - List names are unique per owner, ignoring case and surrounding spaces, including lists in the recycle bin (`LST-3`).
