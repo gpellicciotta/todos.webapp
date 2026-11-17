@@ -10,7 +10,16 @@
 - docs/specs/visual-style-guide.md
 - docs/specs/ui-design.md
 
+- src/img/icons.svg (undeclared at start: the repeat icon of the meta line)
+- src/service-worker.js (undeclared at start: the VERSION bump for changed precached files)
+- tests/unit/all-tasks.test.js, tests/e2e/task-editor.spec.js, tests/e2e/backup.spec.js (undeclared at start: old badge and Overdue chip text)
+
 Size estimate: 8 files, 400 lines.
+Mechanical command: `node scripts/check-sw-version.mjs --update`.
+Mechanical files: scripts/sw-precache-hashes.json
+Size note: measured 13 counted files and 830 lines, above the typical line and below the large line.
+The new e2e checks for clamping, contrast, and badges, and the rebuilt gallery specimens, carry most lines.
+Splitting them off would leave the row change without its required tests and specimens, so the task stays whole.
 
 ### Design Source
 - The Task Row Layout section of T0257's brief governs; revise this spec if sign-off changed it.

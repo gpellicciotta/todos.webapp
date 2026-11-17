@@ -12,8 +12,8 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1801.8, input: 2, output: 8}
-work_duration: 1830.9
+  worker: {turns: 2, duration_s: 1834.4, input: 10, output: 2008, cache_read: 805305, cache_write: 7309}
+work_duration: 1893.6
 ---
 # T0264: Redesign the task row as a description line plus a meta line, with overdue due text in orange
 
@@ -32,9 +32,9 @@ Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signe
 - [x] **[Implement]** Author failing unit and e2e tests for the two lines, the count badge, the meta line, and overdue color.
 - [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
 - [x] **[Implement]** Implement the description line, the count badge, the meta line, and the overdue style.
-- [ ] **[Verify]**    Run the unit suite and the All tasks and gallery e2e specs and confirm they pass.
+- [x] **[Verify]**    Run the unit suite and the All tasks and gallery e2e specs and confirm they pass.
 - [x] **[Visual]**    Capture rows at 360, 768, and 1440 px, with overdue and recurring rows, in both themes.
-- [ ] **[Doc]**       Update the Task Row section, the gallery, the style guide, and CHANGELOG.md.
+- [x] **[Doc]**       Update the Task Row section, the gallery, the style guide, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -51,4 +51,19 @@ Rebuild the task row as variant C, by the Task Row Layout rules in T0257's signe
   Rebuilt the row as a 2-line clamped description over a meta line, with a status-tinted count badge and orange overdue due text.
   - Added a repeat icon to the sprite.
   - Undeclared files: icons.svg, service-worker.js, hashes, three test files.
+
+- [2026-11-17] **[Verify]**
+  Unit suite, lint, SW check, and the All tasks, gallery, and long-list specs pass; full e2e has one pre-existing T0258 failure, tracked as T0280.
+  - Proof in validation-proof.md, screenshots in screenshots/.
+
+- [2026-11-17] **[Doc]**
+  Size note: 13 counted files and 830 lines, above the typical line; tests and gallery specimens cannot merge separately from the row change.
+  - Files touched: 14.
+  - Lines touched: 838.
+  - Reopenings: 0.
+
+- [2026-11-17] **[Visual]**
+  Captured rows before and after at 360, 768, and 1440 px in both themes; see validation-proof.md.
+  - [After 360 light](T0264-redesign-the-task-row-as-a-description-line/screenshots/after-360-light.png).
+  - [Before 360 light](T0264-redesign-the-task-row-as-a-description-line/screenshots/before-360-light.png).
 
