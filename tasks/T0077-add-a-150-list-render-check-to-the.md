@@ -5,7 +5,7 @@ session: claude-20261117-e11e57
 needs: []
 branch: task/T0077-add-a-150-list-render-check-to-the
 worktree: .plan/work/T0077-add-a-150-list-render-check-to-the
-status: active
+status: suspended
 started_at: "2026-11-17T05:08:32Z"
 ended_at: —
 review: agent
@@ -13,10 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 301.8, input: 54, output: 9073, cache_read: 1927724, cache_write: 128817}
-work_duration: 4355.9
-review_status: pending
+  review: {turns: 1, duration_s: 163.7, input: 37232, output: 2330, cache_read: 650368, cache_write: 0}
+work_duration: 4648.2
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-17T06:23:15Z"
+reviewed_by: "@codex"
+review_session: codex-20261117-3fb6e9
 ---
 # T0077: Add a 150-list render check to the performance spec, and record 500 lists
 
@@ -53,4 +56,13 @@ Update the measured numbers in ui-design.md.
 
 - [2026-11-17] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected because the specified completion check failed, although both target Lists checks passed.
+  - Findings: [review-findings-1.md](T0077-add-a-150-list-render-check-to-the/review-findings-1.md).
+
+- [2026-11-17] **[Verify]**
+  Full npm run test:perf fails on two All tasks checks (274 and 270 ms); they fail before T0269 too, so not a regression here.
+  - Lists checks pass: 158 ms and 364 ms.
+  - Human decision needed on narrowing completion check.
 
