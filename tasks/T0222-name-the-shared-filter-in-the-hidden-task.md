@@ -1,11 +1,11 @@
 ---
 id: T0222
-owner: ~
-needs: ['T0221']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0222-name-the-shared-filter-in-the-hidden-task
+worktree: .plan/work/T0222-name-the-shared-filter-in-the-hidden-task
+status: active
+started_at: "2026-11-17T03:49:10Z"
 ended_at: —
 review: agent
 preview: none
