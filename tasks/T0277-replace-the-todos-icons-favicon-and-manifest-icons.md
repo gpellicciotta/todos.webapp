@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 897.3, input: 122, output: 32372, cache_read: 6009199, cache_write: 107995}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-17T18:36:53Z"
 ---
 # T0277: Replace the todos icons, favicon, and manifest icons with the shared support.webapp hexagon icon set
 
@@ -60,4 +65,7 @@ todos.server T0267 then points its admin favicon and mail logos at these files.
 
 - [2026-11-17] **[Visual]**
   Screenshots: [before icons](T0277-replace-the-todos-icons-favicon-and-manifest-icons/before-icons.png), [after icons](T0277-replace-the-todos-icons-favicon-and-manifest-icons/after-icons.png), [after sidebar](T0277-replace-the-todos-icons-favicon-and-manifest-icons/after-sidebar-light.png).
+
+- [2026-11-17] **[Review]**
+  Round 1 requested (mode: agent).
 
