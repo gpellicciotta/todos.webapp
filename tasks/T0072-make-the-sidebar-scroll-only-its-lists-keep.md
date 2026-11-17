@@ -1,11 +1,11 @@
 ---
 id: T0072
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0072-make-the-sidebar-scroll-only-its-lists-keep
+worktree: .plan/work/T0072-make-the-sidebar-scroll-only-its-lists-keep
+status: active
+started_at: "2026-11-17T04:19:10Z"
 ended_at: —
 review: agent
 preview: none
