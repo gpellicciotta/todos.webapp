@@ -1,10 +1,11 @@
 ---
 id: T0282
 owner: "@claude"
+session: claude-20261117-befa4b
 needs: []
 branch: task/T0282-fix-the-stale-e2e-tests-for-the-settings
 worktree: .plan/work/T0282-fix-the-stale-e2e-tests-for-the-settings
-status: active
+status: suspended
 started_at: "2026-11-17T20:08:55Z"
 ended_at: —
 review: agent
@@ -35,3 +36,15 @@ Size estimate: 2 files, 10 lines.
 ## Execution Log
 - [2026-11-17] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-17] **[Verify]**
+  Found both fixes already on main from T0283 commit 0be6585, including CHANGELOG line 14; completion check passes unchanged.
+  - 17 of 17 e2e tests passed, exit 0.
+  - Proof recorded in validation-proof.md.
+
+- [2026-11-17] **[Review]**
+  Needs human decision: T0283 superseded this task, leaving an empty branch; recommend cancelling it as superseded.
+  - Files touched: 0.
+  - Lines touched: 0.
+  - Reopenings: 0.
+
