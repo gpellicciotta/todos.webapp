@@ -1,11 +1,11 @@
 ---
 id: T0267
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0267-move-scripts-devops-py-onto-support-python-v3
+worktree: .plan/work/T0267-move-scripts-devops-py-onto-support-python-v3
+status: active
+started_at: "2026-11-17T09:44:52Z"
 ended_at: —
 review: agent
 preview: none

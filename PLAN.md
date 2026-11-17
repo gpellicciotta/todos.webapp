@@ -16,7 +16,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0076 [needs: T0263] Add Move to top and Move to bottom to the Lists screen menu and Alt+Home and Alt+End in both list surfaces.
 - [x] T0271 Fix the Lists Back scroll restore clamping at 10958 px with 300 content-visibility rows, flaky in lists-many-rows e2e.
 - [x] T0270 Window the Lists screen rows so 500 lists open within twice the 150-list time.
-- [ ] T0267 Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
+- [~] T0267 [owner: @claude] Move scripts/devops.py onto support-python v3.3.0 DevopsCli, keeping todos-specific release steps as a Project.release override.
 
 ## Backlog
 - [ ] T0273 Fix the gallery filter popover keyboard e2e test, failing on main ba41de1: four Tabs no longer reach Clear.
