@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 719.3, input: 132, output: 45925, cache_read: 8353273, cache_write: 135020}
+  worker: {turns: 2, duration_s: 844.9, input: 152, output: 53963, cache_read: 10100787, cache_write: 152603}
   review: {turns: 1, duration_s: 115.6, input: 49218, output: 3307, cache_read: 550912, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-17T04:13:03Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-17T04:17:31Z"
 review_session: codex-20261117-ce8721
 work_duration: 844.5
 ---
@@ -92,4 +91,7 @@ Size estimate: 8 files, 350 lines.
 
 - [2026-11-17] **[Implement]**
   Round 1 rework: ledger pruned by eligibility instead of capped, delivery recorded after success, timer re-armed after failures; 6 regression tests added.
+
+- [2026-11-17] **[Review]**
+  Round 2 requested (mode: agent).
 
