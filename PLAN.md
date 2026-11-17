@@ -12,6 +12,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0286 [needs: T0283, T0282, T0278, T0275, T0254, T0285, T0284] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
 
 ## Backlog
+- [ ] T0287 Design and add the app nav toggle with a sidebar icon rail that shows list items.
 - [ ] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [ ] T0227 Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [ ] T0266 Sync view options, list order, the Lists screen sort, and Enter adding through the account while connected
