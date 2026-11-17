@@ -11,5 +11,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0286 [needs: T0254, T0285, T0284] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
 
 ## Backlog
+- [ ] T0289 Let the editor panel width limits use the rail or hidden sidebar width instead of the open sidebar width.
+- [ ] T0288 Add the nav toggle and the icon rail of the wide sidebar to the wireframes that draw-wireframes.py renders.
 - [ ] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [ ] T0227 Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
