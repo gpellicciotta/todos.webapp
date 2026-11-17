@@ -307,7 +307,7 @@ describe('Adding tasks in Settings', () => {
   });
 });
 
-describe('Keyboard shortcuts in About', () => {
+describe('Keyboard shortcuts section', () => {
   const EXPECTED = [
     [['n', '/'], 'Focus the search and add field.'],
     [['Enter'], 'Add the task, in the search and add field, while Make Enter add is on; otherwise apply the search.'],
@@ -318,17 +318,17 @@ describe('Keyboard shortcuts in About', () => {
     [['Ctrl+Z', 'Cmd+Z'], 'Undo the newest change shown in a toast.'],
   ];
 
-  /** @returns {HTMLElement} the About section of a freshly mounted Settings screen */
-  function mountAbout() {
+  /** @returns {HTMLElement} the Keyboard shortcuts section of a freshly mounted Settings screen */
+  function mountShortcuts() {
     const view = document.body.appendChild(document.createElement('div'));
     const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
     mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
-    return view.querySelector('section[aria-labelledby="settings-about"]');
+    return view.querySelector('section[aria-labelledby="settings-shortcuts"]');
   }
 
   it('lists the seven shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd', () => {
-    const about = mountAbout();
-    const heading = about.querySelector('h3');
+    const about = mountShortcuts();
+    const heading = about.querySelector('h2');
     expect(heading.textContent).toBe('Keyboard shortcuts');
     const list = about.querySelector('dl.settings__shortcuts');
     const rows = [...list.querySelectorAll(':scope > div')].map((row) => [
@@ -339,28 +339,28 @@ describe('Keyboard shortcuts in About', () => {
   });
 
   it('joins alternative keys with "or", so a screen reader reads each term as text', () => {
-    const terms = [...mountAbout().querySelectorAll('.settings__shortcuts dt')].map((term) => term.textContent);
+    const terms = [...mountShortcuts().querySelectorAll('.settings__shortcuts dt')].map((term) => term.textContent);
     expect(terms).toEqual(['n or /', 'Enter', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'x', 'Ctrl+Z or Cmd+Z']);
   });
 
-  it('sits after the version line and before the source link', () => {
-    const about = mountAbout();
-    const order = [...about.children].map((child) => child.className);
-    const version = order.indexOf('settings__hint');
-    const heading = order.indexOf('settings__subtitle');
-    const list = order.indexOf('settings__shortcuts');
-    const link = order.indexOf('settings__link');
-    expect(version).toBeGreaterThan(-1);
-    expect([version < heading, heading < list, list < link]).toEqual([true, true, true]);
+  it('is its own section, before About, which stays the last section', () => {
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
+    const titles = [...view.querySelectorAll('section > h2')].map((heading) => heading.textContent);
+    expect(titles.slice(-2)).toEqual(['Keyboard shortcuts', 'About']);
+    expect(view.querySelector('section[aria-labelledby="settings-about"] .settings__shortcuts')).toBeNull();
   });
 
-  it('explains the add field syntax after the shortcuts and before the source link', () => {
-    const about = mountAbout();
+  it('explains the add field syntax in About, before the source link', () => {
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, subscribe: () => () => {} };
+    mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
+    const about = view.querySelector('section[aria-labelledby="settings-about"]');
     const syntax = about.querySelector('.settings__syntax');
     expect(syntax.textContent).toBe('In the add field, today, tomorrow, a weekday, or 2026-12-24 sets the due date, '
       + '18:00 or 6 pm the time, and #home a list. A backslash keeps a word as text, such as \\tomorrow.');
     const order = [...about.children];
-    expect(order.indexOf(syntax)).toBeGreaterThan(order.indexOf(about.querySelector('.settings__shortcuts')));
     expect(order.indexOf(syntax)).toBeLessThan(order.indexOf(about.querySelector('.settings__link')));
   });
 });

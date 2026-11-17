@@ -1,5 +1,5 @@
 /**
- * Settings screen: Appearance, Adding tasks, Data, Connection, and About sections on one page.
+ * Settings screen: Appearance, Adding tasks, Data, Connection, Keyboard shortcuts, and About sections on one page.
  *
  * The theme choice applies at once and persists on this device (`todos.theme`).
  * The Make Enter add switch, on by default, sets whether Enter in the add field adds; it persists as `todos.enter-adds`.
@@ -9,7 +9,7 @@
  * Connected, the section names the account, its server, the sync state, and a Sync log link; the URL cannot change (`CON-11`).
  * Delete all data erases this device after an offer to export first and a typed DELETE; it is off while connected (`BAK-15`).
  * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
- * About lists the keyboard shortcuts that work today, from `SHORTCUTS`.
+ * Keyboard shortcuts lists the shortcuts that work today, from `SHORTCUTS`.
  */
 
 import { backupFileName, exportBackup } from '../core/backup.js';
@@ -84,7 +84,7 @@ const STRINGS = Object.freeze({
 });
 
 /**
- * The keyboard shortcuts About lists: alternative keys, and what they do.
+ * The keyboard shortcuts the section lists: alternative keys, and what they do.
  * A task that adds a shortcut adds its row here.
  */
 const SHORTCUTS = Object.freeze([
@@ -552,12 +552,13 @@ function connectionSection(doc, { getStorage, session, sync, toaster, navigate }
 }
 
 /**
- * Create the keyboard shortcut list: one term per shortcut, its keys in `kbd` elements joined by "or".
+ * Create the Keyboard shortcuts section: one term per shortcut, its keys in `kbd` elements joined by "or".
  * @param {Document} doc the document
- * @returns {HTMLElement[]} the heading and the list
+ * @returns {HTMLElement} the section
  */
-function shortcutList(doc) {
-  const heading = make(doc, 'h3', 'settings__subtitle', STRINGS.shortcuts);
+function shortcutsSection(doc) {
+  const element = section(doc, 'shortcuts', STRINGS.shortcuts);
+  element.classList.add('settings__keyboard');
   const list = make(doc, 'dl', 'settings__shortcuts');
   for (const { keys, action } of SHORTCUTS) {
     const term = doc.createElement('dt');
@@ -573,23 +574,22 @@ function shortcutList(doc) {
     row.append(term, make(doc, 'dd', 'settings__shortcut-action', action));
     list.append(row);
   }
-  return [heading, list];
+  element.append(list);
+  return element;
 }
 
 /**
- * Create the About section: the app version, the build date, the keyboard shortcuts, the add field syntax
- * (`TSK-14`), and the source link.
+ * Create the About section: the app version, the build date, the add field syntax (`TSK-14`), and the source link.
  * @param {Document} doc the document
  * @returns {HTMLElement} the section
  */
 function aboutSection(doc) {
   const element = section(doc, 'about', STRINGS.about);
-  element.classList.add('settings__about');
   const link = make(doc, 'a', 'settings__link', STRINGS.source);
   link.href = SOURCE_URL;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  element.append(make(doc, 'p', 'settings__hint', STRINGS.version(VERSION, formatBuildDate(BUILD_DATE))), ...shortcutList(doc),
+  element.append(make(doc, 'p', 'settings__hint', STRINGS.version(VERSION, formatBuildDate(BUILD_DATE))),
     make(doc, 'p', 'settings__hint settings__syntax', STRINGS.syntax), link);
   return element;
 }
@@ -615,7 +615,7 @@ export function mountSettings(view, {
   const root = make(doc, 'div', 'settings');
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, navigate });
   const data = dataSection(doc, store, toaster, { session, sync });
-  root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), data.element, connection.element, aboutSection(doc));
+  root.append(appearanceSection(doc, getStorage, toaster), addingSection(doc, getStorage, toaster), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
   view.replaceChildren(root);
   return {
     /** Follow a route of this view; Settings has no sub-routes of its own. */

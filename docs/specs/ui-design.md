@@ -769,7 +769,8 @@ Settings is one page with these sections:
 - Connection, when local: a short explanation of connected mode and a Connect button.
 - Connection, when connected: account name and email, server, sync state, Sync log, and Disconnect.
 - Connection also holds the server URL, changeable only while disconnected (`CON-12`).
-- About: app version, build date, the keyboard shortcuts, and a link to the requirements and source.
+- Keyboard shortcuts: its own section, before About, listing the shortcuts.
+- About, always the last section: app version, build date, the add field syntax, and a link to the requirements and source.
   The shortcut list names each key in a `kbd` and lists only shortcuts that work today.
   A task that adds a shortcut adds its row to `SHORTCUTS` in [settings.js](../../src/js/views/settings.js).
   [version.js](../../src/js/version.js) holds both; a unit test matches the version to package.json.
@@ -900,7 +901,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 - Ctrl+Z or Cmd+Z, outside text fields and modal dialogs, runs the Undo of the newest toast.
   It never runs another toast action, such as Reload.
 - Page shortcuts never fire while a text field has focus; the add field's keys and Escape in an editor do.
-- The About section lists every shortcut that works today.
+- The Keyboard shortcuts section lists every shortcut that works today.
 - Drag and drop always has a keyboard alternative: Move up and Move down for tasks (`LV-3`), Alt+arrows and menu entries for lists.
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.

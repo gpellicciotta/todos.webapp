@@ -184,12 +184,12 @@ test('a theme that cannot be saved still applies, and a toast says so', async ({
 });
 
 for (const [size, viewport] of [['wide', { width: 1440, height: 900 }], ['compact', { width: 390, height: 844 }]]) {
-  test(`About lists the keyboard shortcuts at ${size} width without a horizontal scroll`, async ({ page }) => {
+  test(`Keyboard shortcuts section lists them at ${size} width without a horizontal scroll`, async ({ page }) => {
     const problems = watch(page);
     await page.setViewportSize(viewport);
     await open(page, '#/settings');
-    const about = page.getByRole('region', { name: 'About' });
-    await expect(about.getByRole('heading', { name: 'Keyboard shortcuts' })).toBeVisible();
+    const about = page.getByRole('region', { name: 'Keyboard shortcuts' });
+    await expect(about.getByRole('heading', { name: 'Keyboard shortcuts', level: 2 })).toBeVisible();
     const terms = about.locator('.settings__shortcuts dt');
     await expect(terms).toHaveText(['n or /', 'Enter', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'x', 'Ctrl+Z or Cmd+Z']);
     await expect(about.locator('.settings__shortcuts kbd')).toHaveCount(11);
