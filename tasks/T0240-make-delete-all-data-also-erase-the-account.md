@@ -13,12 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 763.9, input: 178, output: 47685, cache_read: 14435604, cache_write: 397041}
-  review: {turns: 2, duration_s: 183.6, input: 117896, output: 4172, cache_read: 697472, cache_write: 0}
-review_status: pending
+  review: {turns: 3, duration_s: 256.3, input: 160139, output: 6035, cache_read: 950912, cache_write: 0}
+review_status: approved
 review_round: 3
 review_requested_at: "2026-11-17T10:30:29Z"
-review_session: codex-20261117-9d1d79
-work_duration: 25630.4
+review_session: codex-20261117-cc1be5
+work_duration: 25778.3
+reviewed_by: "@codex"
 ---
 # T0240: Make Delete all data also erase the account's lists and tasks while connected, queued while offline
 
@@ -39,7 +40,7 @@ Make Delete all data erase the account's lists, tasks, and notes too, not only t
 - [x] **[Verify]**    Run the unit, e2e, and contract suites and confirm they pass.
 - [x] **[Visual]**    Capture the connected dialog and the enabled button in light and dark themes.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-16] **[Doc]**
@@ -106,4 +107,8 @@ Make Delete all data erase the account's lists, tasks, and notes too, not only t
 
 - [2026-11-17] **[Review]**
   Round 3 requested (mode: agent).
+
+- [2026-11-17] **[Review]**
+  Round 3 approved by @codex: Approved.
+  - Findings: [review-findings-3.md](T0240-make-delete-all-data-also-erase-the-account/review-findings-3.md).
 
