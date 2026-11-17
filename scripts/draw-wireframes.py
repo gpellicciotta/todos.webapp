@@ -1209,8 +1209,15 @@ def settings_sections(f, x, y, width):
     button(f, left, top, "Import backup")
     top = section("Connection", 328)
     f.text(x + 16, top + 14, "Not connected. Your data stays on this device.", 13)
-    f.text(x + 16, top + 36, fit("Connecting syncs your data across devices and lets you share lists.", width - 32, 13), 13)
-    f.text(x + 16, top + 58, fit("It needs an account, so you are no longer anonymous. Access is by invitation.", width - 32, 13), 13)
+    f.text(
+        x + 16, top + 36, fit("Connecting syncs your data across devices and lets you share lists.", width - 32, 13), 13
+    )
+    f.text(
+        x + 16,
+        top + 58,
+        fit("It needs an account, so you are no longer anonymous. Access is by invitation.", width - 32, 13),
+        13,
+    )
     f.text(x + 16, top + 84, "Server: https://todos.pellicciotta.com", 13, "muted")
     button(f, x + 16, top + 100, "Sign in", "primary")
     field(f, x + 16, top + 160, width - 32, "https://todos.pellicciotta.com", "Server URL")

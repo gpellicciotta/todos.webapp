@@ -140,6 +140,10 @@ test.describe('popover behavior', () => {
     for (let presses = 0; presses < 4; presses++) {
       await page.keyboard.press('Tab');
     }
+    await expect(popover.getByRole('checkbox', { name: 'Finished today only' })).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(chip).toHaveText('Status: To do, In progress, finished today');
+    await page.keyboard.press('Tab');
     await expect(popover.getByRole('button', { name: 'Clear' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(chip).toHaveAttribute('data-active', 'false');

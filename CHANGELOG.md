@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- Tests: Fixed the gallery popover keyboard e2e test tabbing onto the Finished today only choice instead of Clear, and made it toggle that choice.
+- Scripts: Applied Ruff formatting to the wireframe drawing script so `python scripts/devops.py check` passes again.
 - FrontEnd: Made Delete all data available while connected, also erasing the account's lists, tasks, and notes through one queued `erase` entry that waits out offline time and no pull precedes (BAK-15).
 - FrontEnd: Windowed the Lists screen rows past 200 shown lists, rendering the rows in view plus 10 each side, so 500 lists with 5000 tasks open in about 195 ms instead of 393 ms under 4x CPU throttling, while the tab stop, focus, keys, drag, and Back scroll keep working (LST-15, TEC-16).
 - Tests: Made the performance spec assert that 500 lists open within twice the 150-list time of the same run (TEC-16).
