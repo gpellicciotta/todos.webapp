@@ -1,11 +1,11 @@
 ## Technical Specifications
 
 ### Context
-- [preferences.js](../../../src/js/core/preferences.js) keeps every preference in `localStorage`, per device.
-- [view-controls.js](../../../src/js/views/view-controls.js) stores view options as `todos.view.tasks` and `todos.view.list.{{list-id}}`.
+- [preferences.js](../../../../src/js/core/preferences.js) keeps every preference in `localStorage`, per device.
+- [view-controls.js](../../../../src/js/views/view-controls.js) stores view options as `todos.view.tasks` and `todos.view.list.{{list-id}}`.
   Each value is `{filter, order: {field, direction}, group}`; Reset removes the key.
-- [list-order.js](../../../src/js/core/list-order.js) stores the manual list order as `todos.lists.order`, an array of list IDs.
-- [settings.js](../../../src/js/views/settings.js) stores Make Enter add as `todos.enter-adds`; [add-bar.js](../../../src/js/views/add-bar.js) reads it per key press.
+- [list-order.js](../../../../src/js/core/list-order.js) stores the manual list order as `todos.lists.order`, an array of list IDs.
+- [settings.js](../../../../src/js/views/settings.js) stores Make Enter add as `todos.enter-adds`; [add-bar.js](../../../../src/js/views/add-bar.js) reads it per key press.
 - `SYN-13` asks for these settings to follow the account while connected; `TV-12`, `LST-8`, `LST-12`, and `VO-3` point to it.
 - The manual order of tasks in a list is already synced: it is the membership `position`, shared with collaborators.
   This task leaves it unchanged.
@@ -63,7 +63,7 @@ The service rejects any name without the `todos.` prefix, apart from its shared 
 - Local mode never calls the routes.
 
 ### Spec Updates
-- [ui-design.md](../../../docs/specs/ui-design.md): every line that says a synced setting persists per device.
+- [ui-design.md](../../../../docs/specs/ui-design.md): every line that says a synced setting persists per device.
   Search for "per device" and `TV-12`; hits include the view options, the list order, the Lists screen sort, and Make Enter add.
 - Module headers that say "per device": preferences.js, list-order.js, and settings.js.
 
