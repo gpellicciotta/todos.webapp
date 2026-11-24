@@ -1,11 +1,11 @@
 ---
 id: T0292
-owner: ~
-needs: [T0254]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0292-name-icon-buttons-on-hover-and-focus-with
+worktree: .plan/work/T0292-name-icon-buttons-on-hover-and-focus-with
+status: active
+started_at: "2026-11-24T13:58:20Z"
 ended_at: —
 review: agent
 preview: none
