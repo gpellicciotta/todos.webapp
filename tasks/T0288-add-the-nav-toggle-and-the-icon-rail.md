@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 981.3, input: 98, output: 27440, cache_read: 4811510, cache_write: 123805}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T12:39:33Z"
 ---
 # T0288: Add the nav toggle and the icon rail of the wide sidebar to the wireframes that draw-wireframes.py renders
 
@@ -62,4 +67,7 @@ Completion check: `python scripts/devops.py check`.
 
 - [2026-11-24] **[Doc]**
   Embedded nav-rail.svg in ui-design.md, added the toggle to its wide layout sketch, and added a CHANGELOG bullet under v0.5.1-pre.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
