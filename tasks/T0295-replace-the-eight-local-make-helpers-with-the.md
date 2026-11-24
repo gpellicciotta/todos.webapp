@@ -1,11 +1,11 @@
 ---
 id: T0295
-owner: ~
-needs: [T0254]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0295-replace-the-eight-local-make-helpers-with-the
+worktree: .plan/work/T0295-replace-the-eight-local-make-helpers-with-the
+status: active
+started_at: "2026-11-24T12:44:06Z"
 ended_at: —
 review: agent
 preview: none
