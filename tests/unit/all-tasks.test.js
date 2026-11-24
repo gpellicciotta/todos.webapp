@@ -645,4 +645,81 @@ describe('mountAllTasks', () => {
       expect(view.info()).not.toContain('Shared');
     });
   });
+
+  describe('the empty state of a store without tasks', () => {
+    /**
+     * Create a session stand-in whose state a test can change.
+     * @param {string} initial the first state
+     * @returns {{state: () => string, subscribe: Function, set: (state: string) => void, listeners: Set<Function>}} the session
+     */
+    function fakeSession(initial) {
+      let current = initial;
+      const listeners = new Set();
+      return {
+        state: () => current,
+        subscribe(listener) {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+        set(state) {
+          current = state;
+          for (const listener of listeners) {
+            listener(state);
+          }
+        },
+        listeners,
+      };
+    }
+
+    /**
+     * Mount All tasks over a store without tasks.
+     * @param {object} [session] the session, none by default
+     * @returns {Promise<{text: () => string, links: () => string[][]}>} readers of the empty state
+     */
+    async function mountEmpty(session) {
+      document.body.innerHTML = '<div data-view="tasks"></div>';
+      const store = { snapshot: async () => ({ lists: [], tasks: [], memberships: [], notes: [] }), subscribe: () => () => {} };
+      screen = mountAllTasks(document.querySelector('[data-view]'), {
+        store, toaster: { show: vi.fn() }, session, getStorage: () => ({ getItem: () => null, setItem: vi.fn() }), persist: async () => {},
+      });
+      await screen.idle();
+      const empty = () => document.querySelector('[data-view] .empty-state');
+      return {
+        text: () => empty().querySelector('.empty-state__text').textContent,
+        links: () => [...empty().querySelectorAll('a')].map((link) => [link.textContent, link.getAttribute('href')]),
+      };
+    }
+
+    const LOCAL_LINKS = [['Import a backup', '#/settings'], ['Connect to sync across devices', '#/connect']];
+
+    it.each(['connected', 'sign-in-needed'])('offers only Import a backup and names sync while %s', async (state) => {
+      const view = await mountEmpty(fakeSession(state));
+      expect(document.querySelector('.empty-state__title').textContent).toBe('No tasks yet.');
+      expect(view.text()).toBe('Your tasks sync across your devices.');
+      expect(view.links()).toEqual([['Import a backup', '#/settings']]);
+    });
+
+    it('keeps the first-launch text and both links while local or without a session', async () => {
+      for (const session of [fakeSession('local'), undefined]) {
+        const view = await mountEmpty(session);
+        expect(view.text()).toBe('Your tasks stay on this device.');
+        expect(view.links()).toEqual(LOCAL_LINKS);
+        screen.destroy();
+        screen = null;
+      }
+    });
+
+    it('redraws when the session changes, without a store change, and stops listening once destroyed', async () => {
+      const session = fakeSession('local');
+      const view = await mountEmpty(session);
+      session.set('connected');
+      expect(view.text()).toBe('Your tasks sync across your devices.');
+      expect(view.links()).toEqual([['Import a backup', '#/settings']]);
+      session.set('local');
+      expect(view.links()).toEqual(LOCAL_LINKS);
+      screen.destroy();
+      screen = null;
+      expect(session.listeners.size).toBe(0);
+    });
+  });
 });

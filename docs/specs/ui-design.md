@@ -1004,6 +1004,8 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 1. The app opens All tasks in local mode, with no sign-in prompt (`LOC-1`).
 2. The empty state reads "No tasks yet. Your tasks stay on this device."
 3. It offers the add bar, an Import a backup link to Settings, and a Connect to sync across devices link.
+   While connected, the empty state reads "No tasks yet. Your tasks sync across your devices."
+   It then offers only Import a backup, also after every task was deleted, and follows connection changes.
 4. The first added task replaces the empty state; no setup step appears (`LOC-2`).
 5. The app asks for persistent storage after the first task is added, not on load (`TEC-5`).
 

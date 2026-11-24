@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Made the All tasks empty state say tasks sync and drop the Connect link while connected.
 - Docs: Redrew the Sync log wireframe as entry list cards with time and kind chips, Open, and sunken values.
 - FrontEnd: Applied a stored theme before first paint through the vendored `theme-boot.js` and a `color-scheme` meta, storing `todos.theme` plain and removing it for System.
 - FrontEnd: Saved the Settings backup through the vendored `file-download.js` `downloadJson` helper instead of a hand-built object URL and link.

@@ -148,6 +148,37 @@ for (const viewport of [COMPACT, WIDE]) {
   });
 }
 
+test('connected, deleting every task shows an empty state without the Connect link', async ({ page }) => {
+  const problems = watch(page);
+  const server = `http://127.0.0.1:${process.env.E2E_PORT ?? 8754}`;
+  const session = { token: 'session-1', expiry: '2099-01-01T00:00:00Z', name: 'Jane Doe', email: 'jane@example.com', server };
+  await page.addInitScript((value) => localStorage.setItem('todos.session', JSON.stringify(value)), session);
+  await page.route(`${server}/api/**`, (route) => {
+    const { pathname } = new URL(route.request().url());
+    const body = {
+      '/api/notifications': [],
+      '/api/changes': { cursor: 'c1', 'has-more': false, lists: [], tasks: [], memberships: [], notes: [], tombstones: [], protocol: 1 },
+      '/api/users/me': { id: 3, name: 'Jane Doe', email: 'jane@example.com' },
+    }[pathname] ?? {};
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  await openApp(page);
+  await page.getByLabel('Search or add a task').fill('Buy paint');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(1);
+  // Add opens the editor of the new task.
+  const panel = page.locator('[data-editor-slot] .editor-panel');
+  await panel.getByRole('tab', { name: 'Status' }).click();
+  await panel.getByRole('button', { name: 'Delete task' }).click();
+  await expect(panel).toHaveCount(0);
+  const empty = page.locator('[data-view="tasks"] .empty-state');
+  await expect(empty).toContainText('No tasks yet.');
+  await expect(empty).toContainText('Your tasks sync across your devices.');
+  await expect(empty.getByRole('link', { name: 'Import a backup' })).toHaveAttribute('href', '#/settings');
+  await expect(empty.getByRole('link', { name: 'Connect to sync across devices' })).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
 test('Enter or Add adds a task, opens it beside the add bar, keeps the focus there, and asks for persistent storage once (TSK-1, TSK-13, TEC-5)', async ({ page }) => {
   const problems = watch(page);
   await page.addInitScript(() => {

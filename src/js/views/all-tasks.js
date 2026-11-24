@@ -6,6 +6,7 @@
  * The More menu holds Edit view options, which opens the View options panel (`VO-4`); the options live in a view
  * model that the panel shares, and the info line names them and offers Reset (`VO-7`, `VO-8`).
  * A store without tasks shows the first-launch empty state with the add bar, and no sign-in (`LOC-1`).
+ * While connected, that empty state says tasks sync and offers only Import a backup; it follows session changes.
  * The first added task replaces it, and the app then asks the browser for persistent storage (`TEC-5`).
  * An empty result names the active filters and offers Reset.
  * A grouping splits the shown tasks into groups with a header and a count, such as "6 of 10" while filters hide some;
@@ -36,6 +37,7 @@ const STRINGS = Object.freeze({
   label: 'All tasks',
   emptyTitle: 'No tasks yet.',
   emptyText: 'Your tasks stay on this device.',
+  emptyTextConnected: 'Your tasks sync across your devices.',
   importBackup: 'Import a backup',
   connect: 'Connect to sync across devices',
   noMatch: 'No tasks match ',
@@ -109,7 +111,8 @@ async function readData(store, readRecords = () => store.snapshot(['lists', 'tas
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device view state
  * @param {() => Date} [options.now] the clock
  * @param {() => Promise<void>} [options.persist] asks for persistent storage
- * @param {{state: () => string}} [options.session] the session; the Shared filter applies while it is connected (`TV-7`)
+ * @param {{state: () => string, subscribe?: Function}} [options.session] the session; the Shared filter applies while
+ *   it is connected (`TV-7`), and the empty state of a store without tasks follows it
  * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
  * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu on wide layouts; the view header by default
  * @param {() => Promise<object>} [options.readRecords] reads the records to show; the app shares one read between screens (`TEC-16`)
@@ -238,18 +241,20 @@ export function mountAllTasks(view, {
     render();
   }
 
-  /** Fill the empty state of a store without tasks. */
+  /** Fill the empty state of a store without tasks; while connected, it names sync and offers no Connect link. */
   function showFirstLaunch() {
+    const connected = Boolean(session) && session.state() !== 'local';
     empty.replaceChildren(spriteIcon(doc, 'tasks', 'icon empty-state__icon'));
     const title = doc.createElement('p');
     title.className = 'empty-state__title';
     title.textContent = STRINGS.emptyTitle;
     const text = doc.createElement('p');
     text.className = 'empty-state__text';
-    text.textContent = STRINGS.emptyText;
+    text.textContent = connected ? STRINGS.emptyTextConnected : STRINGS.emptyText;
     const actions = doc.createElement('div');
     actions.className = 'empty-state__actions';
-    for (const [href, label] of [['#/settings', STRINGS.importBackup], ['#/connect', STRINGS.connect]]) {
+    const links = [['#/settings', STRINGS.importBackup], ...(connected ? [] : [['#/connect', STRINGS.connect]])];
+    for (const [href, label] of links) {
       const link = doc.createElement('a');
       link.className = 'button button--quiet';
       link.href = href;
@@ -391,6 +396,8 @@ export function mountAllTasks(view, {
   const unsubscribe = store.subscribe(refresh);
   const unfollow = model.subscribe(follow);
   const unfollowOrder = onListOrderChange(() => model.get().group === 'list' && render());
+  // The empty state and the Shared filter depend on the session, which changes without a store change.
+  const unfollowSession = session?.subscribe?.(() => render()) ?? (() => {});
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`).
   const timer = setInterval(tick, REDRAW_MS);
   const first = refresh();
@@ -417,6 +424,7 @@ export function mountAllTasks(view, {
       addBlock.remove();
       unfollow();
       unfollowOrder();
+      unfollowSession();
       menuBehavior.destroy();
       actions.destroy();
       unsubscribe();
