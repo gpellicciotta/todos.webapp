@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1800.4, input: 2, output: 2}
+work_duration: 1811.5
 ---
 # T0294: Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js
 
