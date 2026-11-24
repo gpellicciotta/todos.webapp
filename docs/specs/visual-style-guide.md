@@ -6,7 +6,7 @@ The [ui-design.md](ui-design.md) spec defines screens and behavior; this guide d
 
 ## Status of the System
 The tokens, the font, the controls, the app components, and their gallery sections exist.
-- [design.json](../../design.json): pins the vendored [support.webapp](../../../support.webapp/README.md) design system, version 0.2.1, neutral look.
+- [design.json](../../design.json): pins the vendored [support.webapp](../../../support.webapp/README.md) design system, version 0.5.1, neutral look.
 - [src/vendor/design/](../../src/vendor/design/): the vendored copy; its base and neutral look define every contract token, both themes, and the Inter font face.
 - [style.css](../../src/css/style.css): the only stylesheet a page links, with page-wide base styles.
   It imports only the public [looks/neutral/index.css](../../src/vendor/design/looks/neutral/index.css) of the package, which loads every package component.

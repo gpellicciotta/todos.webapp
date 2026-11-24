@@ -324,7 +324,7 @@ describe('renderShell navigation toggle and rail', () => {
     expect(sidebar.getAttribute('popover')).toBe('auto');
     expect(toggle.getAttribute('aria-controls')).toBe('app-nav');
     expect(toggle.getAttribute('popovertarget')).toBe('app-nav');
-    expect(toggle.querySelector('svg.icon[aria-hidden="true"] use').getAttribute('href')).toBe('img/icons.svg#nav-menu');
+    expect(toggle.querySelector('svg.icon[aria-hidden="true"] use').getAttribute('href')).toBe('img/icons.svg#icon-nav-collapse');
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(toggle.getAttribute('aria-label')).toBe('Collapse navigation');
   });

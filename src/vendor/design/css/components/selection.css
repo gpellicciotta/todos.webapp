@@ -69,3 +69,40 @@
 .selection__bar[hidden] {
   display: none;
 }
+
+/* Table multi-select: borderless fieldset holding a bulk action bar above a data table. */
+.selection--table {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+}
+
+.selection--table > .selection__bar {
+  align-items: center;
+}
+
+.selection__count {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.selection__bar > .selection__count {
+  margin-inline-end: auto;
+}
+
+/* Table cell checkbox target: keeps a 44 px minimum touch target inside dense data tables. */
+.selection__cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.selection__cell:has(:disabled) {
+  cursor: not-allowed;
+}

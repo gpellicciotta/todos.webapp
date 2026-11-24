@@ -1,0 +1,53 @@
+/*
+ * Page base: default ground, body text, headings, links, inline code, and the `hidden` guard.
+ * Loaded after reset.css and before components; element rules use :where() so component classes and app styles win.
+ * Apps opt out of bare element styles by overriding them in their own stylesheet, or by setting data-page-base="off" on <html>.
+ * The `hidden` guard hides elements even when a component sets its own display, while keeping `hidden="until-found"` panels in place.
+ */
+
+:where(:root:not([data-page-base='off']) body) {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-optical-sizing: auto;
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+}
+
+:where(:root:not([data-page-base='off']) :is(h1, h2, h3, h4, h5, h6)) {
+  font-family: var(--font-heading);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+:where(:root:not([data-page-base='off']) h1) {
+  font-size: var(--text-xl);
+}
+
+:where(:root:not([data-page-base='off']) h2) {
+  font-size: var(--text-lg);
+}
+
+:where(:root:not([data-page-base='off']) h3) {
+  font-size: var(--text-base);
+}
+
+:where(:root:not([data-page-base='off']) a) {
+  color: var(--color-link);
+}
+
+:where(:root:not([data-page-base='off']) a:is(:hover, .is-hover)) {
+  color: var(--color-link-hover);
+  text-decoration-thickness: var(--focus-ring-width);
+}
+
+:where(:root:not([data-page-base='off']) code) {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* `hidden` hides even where a component sets its own display; a panel hidden until found keeps its box for find in page. */
+[hidden]:not([hidden='until-found' i]) {
+  display: none;
+}

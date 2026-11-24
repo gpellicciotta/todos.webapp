@@ -141,6 +141,8 @@ test('the nav toggle cycles the wide sidebar through open, a rail of list monogr
   await expect(toggle).toHaveAccessibleName('Collapse navigation');
   await expect(sidebar.locator('.nav-item__mark').first()).toBeHidden();
   expect(await widthOf()).toBe(256);
+  const glyph = () => toggle.locator('use').getAttribute('href');
+  expect(await glyph()).toBe('img/icons.svg#icon-nav-collapse');
   // The toggle's glyph tops the column of the navigation glyphs.
   const glyphX = async (locator) => Math.round((await locator.locator('.icon').first().boundingBox()).x);
   expect(await glyphX(toggle)).toBe(await glyphX(sidebar.getByRole('link', { name: /^All tasks/ })));
@@ -148,6 +150,7 @@ test('the nav toggle cycles the wide sidebar through open, a rail of list monogr
   await toggle.click();
   await expect(toggle).toHaveAccessibleName('Hide navigation');
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(await glyph()).toBe('img/icons.svg#icon-nav-hide');
   expect(await widthOf()).toBeLessThan(64);
   await expect(page.getByRole('separator', { name: 'Resize lists sidebar' })).toBeHidden();
   const marks = sidebar.locator('[data-nav-lists] .nav-item__mark');
@@ -171,15 +174,43 @@ test('the nav toggle cycles the wide sidebar through open, a rail of list monogr
   await toggle.click();
   await expect(sidebar).toBeHidden();
   await expect(toggle).toHaveAccessibleName('Show navigation');
+  expect(await glyph()).toBe('img/icons.svg#icon-nav-menu');
   const main = await page.locator('.app__main').boundingBox();
   expect(main.x).toBe(0);
   await toggle.click();
   await expect(toggle).toHaveAccessibleName('Collapse navigation');
+  expect(await glyph()).toBe('img/icons.svg#icon-nav-collapse');
   expect(await widthOf()).toBe(256);
 
   await page.setViewportSize(COMPACT);
   await expect(toggle).toBeHidden();
   await expect(page.locator('.app__bottom-nav')).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test('a rail entry shows one label tooltip on hover and on focus, without a native title', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/');
+  await ready(page);
+  await createList(page, 'Garden');
+  await page.locator('.app__top-bar > .app__nav-toggle').click();
+  const link = page.locator('.app__sidebar').getByRole('link', { name: /^Garden/ });
+  const tooltip = page.locator('.tooltip--label');
+  await expect(link).toHaveAttribute('title', 'Garden');
+  await link.hover();
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toHaveText('Garden');
+  await expect(link).not.toHaveAttribute('title', /.*/);
+  await page.mouse.move(700, 500);
+  await expect(tooltip).toBeHidden();
+  await expect(link).toHaveAttribute('title', 'Garden');
+  await link.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toHaveText('Garden');
+  await expect(link).not.toHaveAttribute('title', /.*/);
   expect(problems).toEqual([]);
 });
 

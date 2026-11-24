@@ -185,7 +185,8 @@ npx @gpellicciotta/support.webapp@{{version}} vendor --look neutral --to src/ven
 The registry route needs a GitHub Packages token in `.npmrc`.
 A checkout of support.webapp at the release tag runs the same command as `node {{checkout}}/bin/cli.mjs vendor` without one.
 Export it with LF line endings, such as `git -c core.autocrlf=false archive v{{version}}`.
-A CRLF checkout vendors different bytes than the release, and the check cannot tell, since `vendor` hashes what it copies.
+Since 0.5.0 text integrity hashes normalize CRLF to LF, so a CRLF checkout of the vendored copy passes the check.
+An LF export still keeps the vendored bytes identical to the release.
 
 ### Service Worker Install Validation
 The server answers an unknown path with the start page and status 200, so a missing file looks like a good one.

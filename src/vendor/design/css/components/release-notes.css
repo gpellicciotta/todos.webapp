@@ -1,0 +1,121 @@
+/*
+ * Release notes: parsed changelog releases as collapsibles or open blocks, newest first.
+ * Reuses collapsible, badge, chip, and button markup without styling those blocks directly.
+ */
+.release-notes {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.release-notes__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.release-notes__list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.release-notes__release--open {
+  display: grid;
+  gap: var(--space-2);
+  padding-block-end: var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.release-notes__release--open:last-child {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+/* Toggle rows wrap version, tag, status chip, and Latest badge cleanly at phone widths. */
+.release-notes__toggle {
+  flex-wrap: wrap;
+  min-inline-size: 0;
+  padding-block: var(--space-2);
+}
+
+.release-notes__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.release-notes__version {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.release-notes__tag {
+  min-inline-size: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  overflow-wrap: anywhere;
+}
+
+.release-notes__panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Keep hidden panels collapsed while sparing hidden="until-found" for find in page. */
+.release-notes__panel[hidden]:not([hidden='until-found' i]) {
+  display: none;
+}
+
+.release-notes__group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.release-notes__area {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.release-notes__entries {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.release-notes__entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.release-notes__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.release-notes__text {
+  flex: 1 1 var(--width-menu);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.release-notes__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.release-notes__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

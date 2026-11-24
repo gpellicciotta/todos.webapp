@@ -124,7 +124,7 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
 - The scroll region is `.sidebar__scroll` inside `.app__sidebar`; the sidebar itself never scrolls.
 
 ### Nav Toggle and Icon Rail
-The top bar opens with the `app__nav-toggle` of support.webapp, drawing the `nav-menu` icon.
+The top bar opens with the `app__nav-toggle` of support.webapp, drawing the `icon-nav-collapse`, `icon-nav-hide`, `icon-nav-menu`, or `icon-nav-close` glyph of its next step.
 The vendored [app-nav.js](../../src/vendor/design/js/app-nav.js) drives it; the sidebar is its `id="app-nav"` popover.
 - **[Decided]** From 64rem each press cycles the sidebar through open, an icon rail, and hidden.
   The toggle's name names the next step: "Collapse navigation", "Hide navigation", then "Show navigation".

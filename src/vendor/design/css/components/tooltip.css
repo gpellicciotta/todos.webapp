@@ -13,6 +13,13 @@
   z-index: var(--layer-popover);
 }
 
+/* Label tooltip (attachLabelTooltips): the name of an icon-only control, on one line, never in the pointer's way. */
+.tooltip--label {
+  padding-block: var(--space-1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .tooltip:is([hidden], [popover]:not(:popover-open)) {
   display: none;
 }

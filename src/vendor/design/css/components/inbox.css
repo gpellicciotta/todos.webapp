@@ -1,0 +1,97 @@
+/*
+ * Notifications inbox: selectable rows built on selection.js and row.css, with unread accent edge,
+ * badges, source and time chips, row actions, bulk action bar, empty state, and Discard All footer.
+ * Reuses selection, row, badge, chip, button, empty-state, and view-header markup without styling those blocks directly.
+ */
+.inbox {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.inbox [hidden]:not([hidden='until-found' i]) {
+  display: none;
+}
+
+.inbox__list {
+  margin-block: var(--space-2);
+}
+
+.inbox__list > .inbox__item {
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+}
+
+/* Unread rows pair an inline-start accent edge with a bold title and visible Unread badge. */
+.inbox__item:is(.inbox__item--unread, [data-inbox-unread='true']) {
+  box-shadow: inset var(--border-width-strong) 0 0 var(--color-primary);
+}
+
+/* Native checkbox sits inside a full 44 px label target aligned to the row's leading edge. */
+.inbox__select {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-inline-size: var(--target-min);
+  min-block-size: var(--target-min);
+  margin-inline-start: calc(-1 * var(--space-1));
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.inbox__select:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.inbox__main {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.inbox__heading,
+.inbox__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inbox__title {
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.inbox__item:is(.inbox__item--unread, [data-inbox-unread='true']) .inbox__title {
+  font-weight: var(--weight-bold);
+}
+
+.inbox__message {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.inbox__count {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.inbox__footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Keep the checkbox beside the notification text in narrow containers while actions wrap below. */
+@container row-list (width < 36rem) {
+  .inbox__main {
+    flex: 1 1 calc(100% - var(--target-min) - var(--space-3));
+    padding-block: 0;
+  }
+}
+
+/* Forced colors drop box-shadow, so keep a Highlight inline-start border on unread rows. */
+@media (forced-colors: active) {
+  .inbox__item:is(.inbox__item--unread, [data-inbox-unread='true']) {
+    border-inline-start: var(--border-width-strong) solid Highlight;
+  }
+}

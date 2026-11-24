@@ -2,8 +2,20 @@
 // Standalone checker: only Node built-ins may be imported here.
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, lstatSync, existsSync, realpathSync } from 'node:fs';
-import { dirname, join, resolve, relative, isAbsolute, basename } from 'node:path';
+import { dirname, extname, join, resolve, relative, isAbsolute, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const textExtensions = new Set(['.css', '.js', '.mjs', '.json', '.svg', '.html', '.md', '.txt']);
+
+// Normalize CRLF to LF for known text files so LF and CRLF checkouts produce matching hashes.
+export function fileHash(path) {
+    const bytes = readFileSync(path);
+    if (!textExtensions.has(extname(path).toLowerCase())) {
+        return createHash('sha256').update(bytes).digest('hex');
+    }
+    // Byte-level latin1 preserves non-ASCII bytes verbatim while replacing only CRLF pairs.
+    return createHash('sha256').update(bytes.toString('latin1').replaceAll('\r\n', '\n'), 'latin1').digest('hex');
+}
 
 export function inside(root, name) {
     const base = resolve(root);
@@ -89,7 +101,7 @@ export function check(appRoot, pinPath = join(appRoot, 'design.json')) {
         if (!existsSync(file)) {
             integrity.errors.push(`Missing file: ${path}`);
         }
-        else if (!lstatSync(file).isFile() || createHash('sha256').update(readFileSync(file)).digest('hex') !== entry.sha256) {
+        else if (!lstatSync(file).isFile() || fileHash(file) !== entry.sha256) {
             integrity.errors.push(`Changed file: ${path}`);
         }
     }

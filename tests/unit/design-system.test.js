@@ -94,9 +94,16 @@ function vendorReferences() {
 }
 
 describe('the vendored design system', () => {
-  it('is pinned by design.json to release 0.2.1 with the neutral look', () => {
+  it('is pinned by design.json to release 0.5.1 with the neutral look', () => {
     const pin = JSON.parse(readFileSync(join(ROOT, 'design.json'), 'utf8'));
-    expect(pin).toEqual({ version: '0.2.1', look: 'neutral', target: 'src/vendor/design', styles: ['src/css'] });
+    expect(pin).toEqual({ version: '0.5.1', look: 'neutral', target: 'src/vendor/design', styles: ['src/css'] });
+  });
+
+  it('draws every glyph the nav toggle swaps to from the app sprite', () => {
+    const sprite = readFileSync(join(SRC, 'img', 'icons.svg'), 'utf8');
+    for (const name of ['icon-nav-menu', 'icon-nav-collapse', 'icon-nav-hide', 'icon-nav-close']) {
+      expect(sprite, name).toContain(`<symbol id="${name}"`);
+    }
   });
 
   it('passes the vendored integrity and conformance checks', async () => {

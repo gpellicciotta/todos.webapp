@@ -1,0 +1,86 @@
+/*
+ * Help page pattern: search input with clear button, topic filter chips, filtered section cards,
+ * FAQ collapsibles hidden until found with Expand All, no-results empty state, quick links,
+ * feedback actions, and an optional release notes slot.
+ * Reuses view-header, field, icon-button, chip, empty-state, card, list, collapsible, button,
+ * and release-notes markup without styling those blocks directly.
+ */
+.help-page {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+.help-page [hidden]:not([hidden='until-found' i]) {
+  display: none;
+}
+
+.help-page__toolbar {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.help-page__search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.help-page__search-control {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.help-page__filters,
+.help-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.help-page__sections {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+.help-page__subtitle {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.help-page__steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-inline-start: var(--space-6);
+}
+
+.help-page__links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--width-menu)), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.help-page__link {
+  block-size: 100%;
+}
+
+.help-page__faq-list {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.help-page__faq-question {
+  min-inline-size: 0;
+  padding-block: var(--space-2);
+}
+
+.help-page__faq-question-text {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}

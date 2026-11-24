@@ -8,10 +8,13 @@
  * While a modal dialog is open the rest of the page is inert, so toasts wait until it closes.
  * With `undoShortcut`, Ctrl+Z or Cmd+Z outside text fields and modal dialogs runs the newest toast's Undo.
  * Only Undo actions answer it: a toast with another action label, such as Reload, needs `undo: true`.
- * Action buttons carry `data-toast-action`: `undo` for Undo actions and `other` for the rest.
+ * Action buttons carry `data-toast-action`: `undo` for Undo actions, `download` for download actions, and `other` for the rest.
  */
 
+import { createFileDownload } from './file-download.js';
 import { createLiveRegion } from './live-region.js';
+
+const DEFAULT_REVOKE_DELAY = 1000;
 
 /**
  * Create a toaster that shows toasts in a region; the region belongs in the shell overlay layer.
@@ -25,6 +28,7 @@ import { createLiveRegion } from './live-region.js';
  * @param {typeof setTimeout} [options.setTimeout] timer function, for tests
  * @param {typeof clearTimeout} [options.clearTimeout] timer cancel function, for tests
  * @param {() => number} [options.now] clock in milliseconds, for tests
+ * @param {{createObjectURL: (blob: Blob) => string, revokeObjectURL: (url: string) => void}} [options.url] URL API for download actions, global `URL` by default
  * @param {boolean} [options.undoShortcut] let Ctrl+Z or Cmd+Z outside text fields run the newest Undo
  * @returns {{show: (message: string, options?: object) => () => void, undoLatest: () => boolean, destroy: () => void}}
  *   the toaster
@@ -36,12 +40,14 @@ export function createToast(options = {}) {
     const set = options.setTimeout ?? globalThis.setTimeout;
     const clear = options.clearTimeout ?? globalThis.clearTimeout;
     const now = options.now ?? (() => Date.now());
+    const urlApi = options.url ?? globalThis.URL;
     const ownRegion = !options.region;
     const ownLiveRegion = !options.liveRegion;
     const region = options.region ?? doc.createElement('div');
     const liveRegion = options.liveRegion ?? createLiveRegion({ document: doc, setTimeout: set, clearTimeout: clear });
     const toasts = [];
     const held = [];
+    const pendingRevokes = new Set();
     let lastFocus = null;
 
     if (ownRegion) {
@@ -105,6 +111,31 @@ export function createToast(options = {}) {
         }, Math.max(0, toast.remaining));
     }
 
+    /** Prepare a download handle from a `createFileDownload` controller or descriptor. */
+    function prepareDownload(spec) {
+        if (!spec) {
+            return null;
+        }
+        const revokeDelay = spec.revokeDelay ?? DEFAULT_REVOKE_DELAY;
+        const handle = typeof spec.download === 'function' && typeof spec.revoke === 'function'
+            ? spec
+            : createFileDownload(Object.hasOwn(spec, 'source') ? spec.source : spec, spec.filename, {
+                document: doc, url: urlApi, setTimeout: set, clearTimeout: clear, revokeDelay, space: spec.space, type: spec.type
+            });
+        return { handle, label: spec.label, revokeDelay };
+    }
+
+    /** Revoke a download URL immediately on dismissal, or after a brief delay on click. */
+    function releaseDownload(entry, defer) {
+        if (defer) {
+            pendingRevokes.add(entry.handle);
+            entry.handle.revoke({ delay: entry.revokeDelay, onRevoke: () => pendingRevokes.delete(entry.handle) });
+            return;
+        }
+        pendingRevokes.delete(entry.handle);
+        entry.handle.revoke();
+    }
+
     /**
      * Remove a toast once, returning focus if it was inside, and call its `onDismiss`.
      * @param {object} toast toast record
@@ -116,6 +147,9 @@ export function createToast(options = {}) {
         }
         toast.done = true;
         pause(toast);
+        if (toast.download) {
+            releaseDownload(toast.download, reason === 'action');
+        }
         if (held.includes(toast)) {
             held.splice(held.indexOf(toast), 1);
             toast.onDismiss?.(reason);
@@ -145,15 +179,16 @@ export function createToast(options = {}) {
         text.className = 'toast__text';
         text.textContent = message;
         element.append(text);
-        if (toast.onAction) {
+        if (toast.download || toast.onAction) {
             const button = doc.createElement('button');
             button.className = 'button button--quiet';
             button.type = 'button';
-            button.dataset.toastAction = toast.undo ? 'undo' : 'other';
+            button.dataset.toastAction = toast.download ? 'download' : (toast.undo ? 'undo' : 'other');
             button.textContent = actionLabel;
             button.addEventListener('click', () => {
+                toast.download?.handle.download();
                 dismiss(toast, 'action');
-                toast.onAction();
+                toast.onAction?.();
             });
             element.append(button);
         }
@@ -192,18 +227,21 @@ export function createToast(options = {}) {
      * @param {string} message short confirmation, such as "Task moved to the recycle bin."
      * @param {object} [settings] toast settings
      * @param {() => void} [settings.onAction] adds an action button that calls this and dismisses the toast
-     * @param {string} [settings.actionLabel] action button text, `Undo` by default
+     * @param {string} [settings.actionLabel] action button text, `Undo` by default (or the download file name)
+     * @param {object} [settings.download] file download handle or `{ json | blob | source | url, filename, label? }`; persistent by default
      * @param {boolean} [settings.persistent] keep the toast until it is dismissed, without the 8 second expiry
      * @param {boolean} [settings.undo] whether the action is an Undo for Ctrl+Z; true without an `actionLabel`
      * @param {(reason: string) => void} [settings.onDismiss] called once when the toast goes, with its reason
      * @returns {() => void} a function that dismisses the toast
      */
     function show(message, settings = {}) {
+        const download = prepareDownload(settings.download);
         const toast = {
+            download,
             onAction: settings.onAction,
-            undo: Boolean(settings.onAction) && (settings.undo ?? settings.actionLabel === undefined),
+            undo: !download && Boolean(settings.onAction) && (settings.undo ?? settings.actionLabel === undefined),
             onDismiss: settings.onDismiss,
-            persistent: Boolean(settings.persistent),
+            persistent: settings.persistent ?? Boolean(download),
             remaining: duration,
             startedAt: 0,
             timer: null,
@@ -213,7 +251,7 @@ export function createToast(options = {}) {
             returnFocus: null,
         };
         toast.message = message;
-        toast.element = render(toast, message, settings.actionLabel ?? 'Undo');
+        toast.element = render(toast, message, settings.actionLabel ?? download?.label ?? download?.handle.filename ?? 'Undo');
         if (modalOpen()) {
             held.push(toast);
         }
@@ -273,6 +311,10 @@ export function createToast(options = {}) {
         for (const toast of [...held, ...toasts]) {
             dismiss(toast, 'destroy');
         }
+        for (const handle of [...pendingRevokes]) {
+            handle.revoke();
+        }
+        pendingRevokes.clear();
         doc.removeEventListener('focusin', onDocumentFocusin);
         doc.removeEventListener('close', onDialogClose, true);
         doc.removeEventListener('keydown', onShortcut);

@@ -201,7 +201,7 @@ export function renderShell(root, { session = createSession(), navMedia } = {}) 
     <a class="skip-link" href="#main">${STRINGS.skip}</a>
     <header class="app__top-bar">
       <button class="app__nav-toggle icon-button" type="button" popovertarget="app-nav" aria-controls="app-nav"
-        aria-expanded="true" aria-label="${STRINGS.nav.collapse}" data-app-nav-toggle>${icon('nav-menu')}</button>
+        aria-expanded="true" aria-label="${STRINGS.nav.collapse}" data-app-nav-toggle>${icon('icon-nav-collapse')}</button>
       <h1 class="app__title" id="app-title"></h1>
       <div class="app__top-actions" data-user-menu></div>
     </header>

@@ -52,6 +52,19 @@
   <symbol id="icon-nav-menu" viewBox="0 0 24 24">
     <path d="M4 6h16M4 12h16M4 18h16"/>
   </symbol>
+  <symbol id="icon-nav-collapse" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M18.5 15l-3 3 3 3"/>
+  </symbol>
+  <symbol id="icon-nav-hide" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M14 15v6M20 15l-3 3 3 3"/>
+  </symbol>
+  <symbol id="icon-nav-close" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M14 15l6 6M20 15l-6 6"/>
+  </symbol>
+  <symbol id="icon-refresh" viewBox="0 0 24 24">
+    <path d="M20 12a8 8 0 1 1-2.3-5.7"/>
+    <path d="M17.7 2.6v3.7h-3.7"/>
+  </symbol>
   <symbol id="icon-grip" viewBox="0 0 24 24">
     <circle cx="9" cy="6" r="1"/>
     <circle cx="15" cy="6" r="1"/>
@@ -101,6 +114,26 @@
     <circle cx="15" cy="6" r="2"/>
     <circle cx="9" cy="12" r="2"/>
     <circle cx="17" cy="18" r="2"/>
+  </symbol>
+
+  <!-- Admin console: overview, sessions, system events, logs, and broadcast. -->
+  <symbol id="icon-overview" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 12l4-4M7 16h10"/>
+  </symbol>
+  <symbol id="icon-sessions" viewBox="0 0 24 24">
+    <circle cx="8" cy="15" r="4"/>
+    <path d="M11 12l9-9M16 7l3 3"/>
+  </symbol>
+  <symbol id="icon-events" viewBox="0 0 24 24">
+    <path d="M3 12h4l3-7 4 14 3-7h4"/>
+  </symbol>
+  <symbol id="icon-logs" viewBox="0 0 24 24">
+    <rect x="4" y="3" width="16" height="18" rx="2"/>
+    <path d="M8 8h8M8 12h8M8 16h5"/>
+  </symbol>
+  <symbol id="icon-broadcast" viewBox="0 0 24 24">
+    <path d="M4 10v4h3l6 4V6L7 10H4zM17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/>
   </symbol>
 
   <!-- Account: the person of the user button, shown in local mode. -->

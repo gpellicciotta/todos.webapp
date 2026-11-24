@@ -6,6 +6,7 @@
  * keeping ids that belong to no part. The help text stays described while collapsed.
  * States: `setError` sets `aria-invalid`, `setPending` sets `aria-busy` on the field, `setValid` shows the status line.
  * Each state pairs an icon from the look sprite with text; messages reach screen readers through a polite live region.
+ * A blur during a pointer press waits until after the release task, so a new error line cannot shift a pressed button.
  * Keeps the `{element, control, setError}` result of the earlier editor-panel field for easy migration.
  */
 
@@ -17,7 +18,58 @@ const VALIDITY_KEYS = ['valueMissing', 'typeMismatch', 'patternMismatch', 'tooLo
     'stepMismatch', 'badInput', 'customError'];
 // A cleared or destroyed field settles its overtaken checks as not passed, so no unchecked value is sent.
 const SETTLED_FALSE = Promise.resolve(false);
+const pointerStates = new WeakMap();
 let instances = 0;
+
+/**
+ * Acquire the document's shared pointer press state, adding capture listeners on first use.
+ * @param {Document} doc the document
+ * @returns {{readonly pressed: boolean, waiting: Set<Function>, release: () => void}} the shared state handle
+ */
+function acquirePointerState(doc) {
+    let state = pointerStates.get(doc);
+    if (!state) {
+        state = { pressed: false, waiting: new Set(), owners: 0 };
+        const onDown = () => {
+            state.pressed = true;
+        };
+        const onRelease = () => {
+            state.pressed = false;
+            if (state.waiting.size === 0) {
+                return;
+            }
+            const waiting = [...state.waiting];
+            state.waiting.clear();
+            // The release task dispatches the click first, so the checks run after it.
+            setTimeout(() => waiting.forEach((check) => (state.pressed ? state.waiting.add(check) : check())), 0);
+        };
+        const listeners = [
+            [doc, 'pointerdown', onDown, true], [doc, 'pointerup', onRelease, true],
+            [doc, 'pointercancel', onRelease, true], [doc.defaultView, 'blur', onRelease, false]
+        ];
+        listeners.forEach(([target, type, fn, capture]) => target?.addEventListener(type, fn, capture));
+        state.cleanup = () => listeners.forEach(([target, type, fn, capture]) => target?.removeEventListener(type, fn, capture));
+        pointerStates.set(doc, state);
+    }
+    state.owners += 1;
+    let released = false;
+    return {
+        get pressed() {
+            return state.pressed;
+        },
+        waiting: state.waiting,
+        release() {
+            if (released) {
+                return;
+            }
+            released = true;
+            if ((state.owners -= 1) === 0) {
+                state.cleanup();
+                pointerStates.delete(doc);
+            }
+        }
+    };
+}
 
 /**
  * Announce a message through the document's shared polite live region, adding it on first use.
@@ -68,6 +120,16 @@ export function attachField(element, options = {}) {
     // Each check gets a generation; `latest` holds the newest check, or null once an edit makes every check stale.
     let run = 0;
     let latest = null;
+    const pointer = acquirePointerState(doc);
+    let held = null;
+
+    /** Drop any blur check held back for the current pointer press. */
+    function dropHeld() {
+        if (held) {
+            pointer.waiting.delete(held);
+            held = null;
+        }
+    }
 
     // Every part that a state can show needs an id, so the control can name it.
     for (const name of PARTS) {
@@ -116,6 +178,7 @@ export function attachField(element, options = {}) {
      * @param {string|null} message the error, or null when the value is valid
      */
     function setError(message) {
+        dropHeld();
         error = message || null;
         element.removeAttribute('aria-busy');
         if (error) {
@@ -169,6 +232,7 @@ export function attachField(element, options = {}) {
      * @returns {Promise<boolean>} whether the current value is valid
      */
     function validate() {
+        dropHeld();
         const promise = evaluate((run += 1));
         latest = promise;
         return promise;
@@ -213,6 +277,7 @@ export function attachField(element, options = {}) {
         parts.help.hidden = !expanded;
     };
     const onInput = () => {
+        dropHeld();
         count();
         if (error) {
             validate();
@@ -227,6 +292,21 @@ export function attachField(element, options = {}) {
         }
     };
     const onBlur = () => {
+        if (pointer.pressed) {
+            dropHeld();
+            const pending = () => {
+                if (held !== pending) {
+                    return;
+                }
+                held = null;
+                if (control.isConnected && doc.activeElement !== control && !error) {
+                    validate();
+                }
+            };
+            held = pending;
+            pointer.waiting.add(pending);
+            return;
+        }
         validate();
     };
     if (toggle && parts.help) {
@@ -248,6 +328,8 @@ export function attachField(element, options = {}) {
         destroy() {
             run += 1;
             latest = SETTLED_FALSE;
+            dropHeld();
+            pointer.release();
             toggle?.removeEventListener('click', onToggle);
             control.removeEventListener('input', onInput);
             control.removeEventListener('blur', onBlur);

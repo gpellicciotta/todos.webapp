@@ -1,0 +1,89 @@
+/*
+ * Entry list: log lines or events as spaced cards, newest first, in a labeled native list.
+ * Each card shows its message first, then a wrapping row of chips, led by a time chip with the clock icon.
+ * An optional icon button ends the chip row, and expanded details follow the chips inside the card.
+ * A hovered card takes the hover ground, so its sunken chips and details rise to the surface to stay distinct.
+ * The chip row's children other than the action are its chips, so this partial never names the chip block.
+ */
+.entry-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry-list__item {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  transition-property: background-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.entry-list__item:is(:hover, .is-hover) {
+  background-color: var(--color-surface-hover);
+}
+
+.entry-list__item:is(:hover, .is-hover) :is(.entry-list__meta > :not(.entry-list__action), .entry-list__details) {
+  background-color: var(--color-surface);
+}
+
+/* Messages keep their line breaks, so stack traces stay readable; log lines use monospace. */
+.entry-list__message {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.entry-list__message--code {
+  font-family: var(--font-mono);
+}
+
+.entry-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Identifier chips use monospace and may wrap, so a long logger name never widens the page. */
+.entry-list__code {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* An optional icon button, such as a details toggle, ends the chip row; an expanded toggle turns its chevron. */
+.entry-list__action {
+  margin-inline-start: auto;
+}
+
+.entry-list__action .icon {
+  transition-property: transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.entry-list__action [aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+/* Expanded details, such as pretty-printed JSON metadata, follow the chip row inside the card. */
+.entry-list__details {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

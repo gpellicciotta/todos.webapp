@@ -1,0 +1,37 @@
+/*
+ * View header: a screen's page title and an optional muted summary line.
+ * Markup and CSS only; applications choose the heading level and attach any data-* hook or role="status" to the summary.
+ */
+.view-header {
+  display: grid;
+  gap: var(--space-1);
+  margin-block: 0 var(--space-4);
+}
+
+.view-header[hidden]:not([hidden='until-found' i]) {
+  display: none;
+}
+
+/* An empty summary line takes no room while staying mounted as a polite status region. */
+.view-header:has(> .view-header__text:empty) {
+  gap: 0;
+}
+
+.view-header__title {
+  min-inline-size: 0;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.view-header__text {
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}

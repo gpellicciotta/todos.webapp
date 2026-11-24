@@ -2,6 +2,7 @@
  * App shell navigation toggle (ADR-0004): the hamburger at the start of the top bar.
  *
  * On wide screens, each press cycles the sidebar through open, an icon rail, and hidden.
+ * Two-state toggles, from `states: ['open', 'hidden']` or `data-app-nav-states="open hidden"`, skip the rail.
  * Below 64rem, each press opens or closes the sidebar as a drawer under the top bar.
  * State lives in native states and ARIA, which shell.css reads:
  * - the toggle's `aria-expanded` is true while the sidebar is open on wide screens, or while the drawer is open;
@@ -9,9 +10,14 @@
  * - the drawer is the sidebar's `auto` popover, so `:popover-open` shows it with a backdrop.
  * The markup's `popovertarget` keeps the drawer working without the script and keeps toggle presses out of light dismiss.
  * The module cancels that native toggle and drives the popover itself, so it can set focus and labels.
+ * The toggle's glyph shows what a press does: it swaps the fragment of the toggle's sprite `<use>` reference.
+ * In the rail, hovering or focusing a navigation entry shows its clipped label as a tooltip.
  */
 
+import { attachLabelTooltips } from './tooltip.js';
+
 const STATES = ['open', 'rail', 'hidden'];
+const TWO_STATES = ['open', 'hidden'];
 const WIDE_QUERY = '(width >= 64rem)';
 const DEFAULT_LABELS = {
     collapse: 'Collapse navigation',
@@ -19,6 +25,12 @@ const DEFAULT_LABELS = {
     show: 'Show navigation',
     open: 'Open navigation',
     close: 'Close navigation'
+};
+const DEFAULT_ICONS = {
+    collapse: 'nav-collapse',
+    hide: 'nav-hide',
+    show: 'nav-menu',
+    close: 'nav-close'
 };
 
 /**
@@ -29,8 +41,13 @@ const DEFAULT_LABELS = {
  * @param {{matches: boolean, addEventListener: Function, removeEventListener: Function}} [options.media]
  *   the wide layout query, `matchMedia('(width >= 64rem)')` by default
  * @param {'open'|'rail'|'hidden'} [options.state] the first wide state; the markup's state by default
+ * @param {string[]} [options.states] the wide states a press cycles through: `['open', 'rail', 'hidden']` by default,
+ *   or `['open', 'hidden']`; the toggle's space-separated `data-app-nav-states` attribute sets it in markup
+ * @param {{collapse?: string, hide?: string, show?: string, close?: string}} [options.icons]
+ *   the sprite glyph names, without the `icon-` prefix, for a press that collapses to the rail, hides, shows, or closes
  * @param {{collapse?: string, hide?: string, show?: string, open?: string, close?: string}} [options.labels]
  *   the toggle's accessible names: wide open, rail, and hidden, then narrow closed and open
+ * @param {boolean} [options.tooltips] show the entries' clipped labels as tooltips in the rail, true by default
  * @param {(state: string) => void} [options.onChange] called after a press or `setState` changes the wide state
  * @returns {{state: () => string, setState: (state: string) => void, isDrawerOpen: () => boolean, destroy: () => void}}
  *   the controller
@@ -39,6 +56,8 @@ export function attachAppNav(toggle, sidebar, options = {}) {
     const doc = toggle.ownerDocument;
     const media = options.media ?? doc.defaultView.matchMedia(WIDE_QUERY);
     const labels = { ...DEFAULT_LABELS, ...options.labels };
+    const icons = { ...DEFAULT_ICONS, ...options.icons };
+    const states = resolveStates(options.states ?? toggle.dataset.appNavStates?.trim().split(/\s+/) ?? STATES);
     const { onChange } = options;
     if (!sidebar.hasAttribute('popover')) {
         sidebar.setAttribute('popover', 'auto');
@@ -46,6 +65,9 @@ export function attachAppNav(toggle, sidebar, options = {}) {
     let state = options.state ?? markupState();
     let drawerOpen = false;
     let returnFocus = true;
+    const railTooltips = options.tooltips === false
+        ? null
+        : attachLabelTooltips(sidebar, { selector: 'a[href], button', placement: 'inline-end', when: () => media.matches && state === 'rail' });
 
     /**
      * Read the wide state the markup declares.
@@ -55,7 +77,22 @@ export function attachAppNav(toggle, sidebar, options = {}) {
         if (sidebar.hidden) {
             return 'hidden';
         }
-        return toggle.getAttribute('aria-expanded') === 'false' ? 'rail' : 'open';
+        if (toggle.getAttribute('aria-expanded') === 'false') {
+            return states.includes('rail') ? 'rail' : 'hidden';
+        }
+        return 'open';
+    }
+
+    /**
+     * Point the toggle's sprite reference at a glyph, keeping the sprite path.
+     * @param {string} name glyph name without the `icon-` prefix
+     */
+    function renderGlyph(name) {
+        const use = toggle.querySelector('use');
+        const href = use?.getAttribute('href');
+        if (href?.includes('#')) {
+            use.setAttribute('href', `${href.slice(0, href.indexOf('#'))}#icon-${name}`);
+        }
     }
 
     /**
@@ -63,14 +100,17 @@ export function attachAppNav(toggle, sidebar, options = {}) {
      */
     function render() {
         if (media.matches) {
+            const step = { open: states.includes('rail') ? 'collapse' : 'close', rail: 'hide', hidden: 'show' }[state];
             sidebar.hidden = state === 'hidden';
             toggle.setAttribute('aria-expanded', String(state === 'open'));
-            toggle.setAttribute('aria-label', { open: labels.collapse, rail: labels.hide, hidden: labels.show }[state]);
+            toggle.setAttribute('aria-label', { collapse: labels.collapse, close: labels.hide, hide: labels.hide, show: labels.show }[step]);
+            renderGlyph(icons[step]);
         }
         else {
             sidebar.hidden = false;
             toggle.setAttribute('aria-expanded', String(drawerOpen));
             toggle.setAttribute('aria-label', drawerOpen ? labels.close : labels.open);
+            renderGlyph(drawerOpen ? icons.close : icons.show);
         }
     }
 
@@ -109,7 +149,7 @@ export function attachAppNav(toggle, sidebar, options = {}) {
     function onToggleClick(event) {
         event.preventDefault();
         if (media.matches) {
-            setState(STATES[(STATES.indexOf(state) + 1) % STATES.length]);
+            setState(states[(states.indexOf(state) + 1) % states.length]);
         }
         else if (drawerOpen) {
             closeDrawer(true);
@@ -173,8 +213,8 @@ export function attachAppNav(toggle, sidebar, options = {}) {
      * @param {string} next open, rail, or hidden
      */
     function setState(next) {
-        if (!STATES.includes(next)) {
-            throw new RangeError(`The navigation state must be open, rail, or hidden, not ${next}.`);
+        if (!states.includes(next)) {
+            throw new RangeError(`The navigation state must be ${describe(states)}, not ${next}.`);
         }
         state = next;
         render();
@@ -198,6 +238,30 @@ export function attachAppNav(toggle, sidebar, options = {}) {
             sidebar.removeEventListener('keydown', onKeydown);
             sidebar.removeEventListener('click', onSidebarClick);
             media.removeEventListener('change', onMediaChange);
+            railTooltips?.destroy();
         }
     };
+}
+
+/**
+ * Check a list of wide states against the two supported cycles.
+ * @param {string[]} list requested states
+ * @returns {string[]} the matching cycle
+ */
+function resolveStates(list) {
+    for (const cycle of [STATES, TWO_STATES]) {
+        if (list.length === cycle.length && cycle.every((name, index) => list[index] === name)) {
+            return cycle;
+        }
+    }
+    throw new RangeError(`The navigation states must be ${describe(STATES)} in order, or ${describe(TWO_STATES)}, not ${list.join(', ')}.`);
+}
+
+/**
+ * Join state names for a message.
+ * @param {string[]} list state names
+ * @returns {string} the names, such as `open, rail, or hidden`
+ */
+function describe(list) {
+    return list.length === 2 ? list.join(' or ') : `${list.slice(0, -1).join(', ')}, or ${list.at(-1)}`;
 }

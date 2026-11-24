@@ -16,7 +16,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-17.41';
+const VERSION = '2026-11-24.2';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -115,14 +115,17 @@ const PRECACHE = [
   'vendor/design/css/components/detail-panel.css',
   'vendor/design/css/components/dialog.css',
   'vendor/design/css/components/empty-state.css',
+  'vendor/design/css/components/entry-list.css',
   'vendor/design/css/components/error-summary.css',
   'vendor/design/css/components/fab.css',
   'vendor/design/css/components/field-group.css',
   'vendor/design/css/components/field.css',
   'vendor/design/css/components/form.css',
+  'vendor/design/css/components/help-page.css',
   'vendor/design/css/components/icon-button.css',
   'vendor/design/css/components/icon-tile.css',
   'vendor/design/css/components/icon.css',
+  'vendor/design/css/components/inbox.css',
   'vendor/design/css/components/inline-confirm.css',
   'vendor/design/css/components/link-button.css',
   'vendor/design/css/components/list.css',
@@ -132,6 +135,7 @@ const PRECACHE = [
   'vendor/design/css/components/popover.css',
   'vendor/design/css/components/progress.css',
   'vendor/design/css/components/radio.css',
+  'vendor/design/css/components/release-notes.css',
   'vendor/design/css/components/row.css',
   'vendor/design/css/components/segmented.css',
   'vendor/design/css/components/selection.css',
@@ -142,7 +146,9 @@ const PRECACHE = [
   'vendor/design/css/components/toast.css',
   'vendor/design/css/components/toolbar.css',
   'vendor/design/css/components/tooltip.css',
+  'vendor/design/css/components/view-header.css',
   'vendor/design/css/deprecated.css',
+  'vendor/design/css/page.css',
   'vendor/design/css/reset.css',
   'vendor/design/css/shell.css',
   'vendor/design/css/style.css',
@@ -151,6 +157,7 @@ const PRECACHE = [
   'vendor/design/js/app-nav.js',
   'vendor/design/js/dialog.js',
   'vendor/design/js/field.js',
+  'vendor/design/js/file-download.js',
   'vendor/design/js/focus.js',
   'vendor/design/js/icon.js',
   'vendor/design/js/live-region.js',
@@ -159,6 +166,7 @@ const PRECACHE = [
   'vendor/design/js/sw-update.js',
   'vendor/design/js/tabs.js',
   'vendor/design/js/toast.js',
+  'vendor/design/js/tooltip.js',
   'vendor/design/looks/neutral/fonts.css',
   'vendor/design/looks/neutral/fonts/InterVariable.woff2',
   'vendor/design/looks/neutral/icons.svg',
