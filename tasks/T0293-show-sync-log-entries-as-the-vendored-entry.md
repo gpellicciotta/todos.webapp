@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 805.5, input: 136, output: 25838, cache_read: 6165044, cache_write: 114194}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T13:54:52Z"
 ---
 # T0293: Show sync log entries as the vendored entry list cards
 
@@ -60,4 +65,7 @@ Completion check: `python scripts/devops.py check`.
   - Files touched: 7.
   - Lines touched: 184.
   - Reopenings: 0.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
