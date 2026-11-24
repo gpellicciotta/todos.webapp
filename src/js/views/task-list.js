@@ -36,6 +36,9 @@
 import { applyEvent, displayTask, dueTimeOf, isRecurring, isStale, recurrenceLabel, statusOf } from '../core/occurrences.js';
 import { isOverdue } from '../core/overdue.js';
 import { can, taskRole } from '../core/permissions.js';
+import { make } from '../ui/dom.js';
+
+export { make };
 
 const ICONS = 'img/icons.svg';
 const SVG = 'http://www.w3.org/2000/svg';
@@ -146,23 +149,6 @@ export function spriteIcon(doc, id, className = 'icon') {
   use.setAttribute('href', `${ICONS}#${id}`);
   svg.append(use);
   return svg;
-}
-
-/**
- * Create an element with a class and optional text.
- * @param {Document} doc the document
- * @param {string} tag the tag name
- * @param {string} className the class
- * @param {string} [text] the text content
- * @returns {HTMLElement} the element
- */
-export function make(doc, tag, className, text) {
-  const element = doc.createElement(tag);
-  element.className = className;
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
 }
 
 /**

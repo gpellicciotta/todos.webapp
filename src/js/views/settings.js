@@ -28,6 +28,7 @@ import { BUILD_DATE, VERSION } from '../version.js';
 import { openImportDialog, plural } from './import-dialog.js';
 import { SYNC_STRINGS } from './sync-indicator.js';
 import { spriteIcon } from './task-list.js';
+import { make } from '../ui/dom.js';
 
 /** Event on the window that tells the reminders of this tab that a Reminders choice changed. */
 export const REMINDERS_EVENT = 'todos-reminders-changed';
@@ -142,23 +143,6 @@ const SHORTCUTS = Object.freeze([
   Object.freeze({ keys: ['x'], action: 'Tick the focused task, as a click on its status button does; a toast offers Undo.' }),
   Object.freeze({ keys: ['Ctrl+Z', 'Cmd+Z'], action: 'Undo the newest change shown in a toast.' }),
 ]);
-
-/**
- * Create an element with a class and optional text.
- * @param {Document} doc the document
- * @param {string} tag the tag name
- * @param {string} className the class
- * @param {string} [text] the text content
- * @returns {HTMLElement} the element
- */
-function make(doc, tag, className, text) {
-  const element = doc.createElement(tag);
-  element.className = className;
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
-}
 
 /**
  * Create a settings section with its heading.

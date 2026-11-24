@@ -12,6 +12,7 @@
 import { actionLink } from '../sync/inbox.js';
 import { anchorPanel } from '../../vendor/design/js/anchor.js';
 import { attachPopover } from '../../vendor/design/js/popover.js';
+import { make } from './dom.js';
 
 const ICONS = 'img/icons.svg';
 const MAX_BADGE = 99;
@@ -31,23 +32,6 @@ export const INBOX_STRINGS = Object.freeze({
   dismiss: (title) => `Dismiss ${title}`,
   failed: 'The service could not be reached. Try again.',
 });
-
-/**
- * Create an element with a class and optional text.
- * @param {Document} doc the document
- * @param {string} tag the tag name
- * @param {string} className the class
- * @param {string} [text] the text content
- * @returns {HTMLElement} the element
- */
-function make(doc, tag, className, text) {
-  const element = doc.createElement(tag);
-  element.className = className;
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
-}
 
 /**
  * Create a decorative sprite icon.

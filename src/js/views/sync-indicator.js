@@ -13,6 +13,7 @@
 
 import { anchorPanel } from '../../vendor/design/js/anchor.js';
 import { attachPopover } from '../../vendor/design/js/popover.js';
+import { make } from '../ui/dom.js';
 
 const ICONS = 'img/icons.svg';
 const LOG_HASH = '#/settings/sync-log';
@@ -68,23 +69,6 @@ const LOOKS = Object.freeze({
   error: { state: 'error', icon: 'sync-error' },
   'update-required': { state: 'update-required', icon: 'alert' },
 });
-
-/**
- * Create an element with a class and optional text.
- * @param {Document} doc the document
- * @param {string} tag the tag name
- * @param {string} className the class
- * @param {string} [text] the text content
- * @returns {HTMLElement} the element
- */
-function make(doc, tag, className, text) {
-  const element = doc.createElement(tag);
-  element.className = className;
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
-}
 
 /**
  * Create a decorative sprite icon.

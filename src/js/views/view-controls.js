@@ -15,6 +15,7 @@ import { onSettingsChange, PREFIX, readPreference, removePreference, touchesSett
 import { DEFAULT_FILTER, DEFAULT_ORDER, DUE_OPTIONS, GROUPINGS, NO_LIST, SORT_FIELDS } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { spriteIcon, STATUS_LABELS } from './task-list.js';
+import { make } from '../ui/dom.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MANUAL = 'manual';
@@ -541,23 +542,6 @@ export function createViewModel(view, getStorage) {
       return () => countListeners.delete(listener);
     },
   };
-}
-
-/**
- * Create an element with a class and optional text.
- * @param {Document} doc the document
- * @param {string} tag the tag name
- * @param {string} className the class
- * @param {string} [text] the text
- * @returns {HTMLElement} the element
- */
-function make(doc, tag, className, text) {
-  const element = doc.createElement(tag);
-  element.className = className;
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
 }
 
 /**

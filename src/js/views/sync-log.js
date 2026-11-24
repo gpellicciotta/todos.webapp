@@ -8,6 +8,7 @@
  */
 
 import { readPreference, writePreference } from '../core/preferences.js';
+import { make } from '../ui/dom.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LOG_DAYS = 30;
@@ -34,23 +35,6 @@ export const LOG_STRINGS = Object.freeze({
   unknownItem: 'An item',
   undoneChanges: (count) => `${count} queued ${count === 1 ? 'change was' : 'changes were'} undone`,
 });
-
-/**
- * Create an element with a class and optional text.
- * @param {Document} doc the document
- * @param {string} tag the tag name
- * @param {string} className the class
- * @param {string} [text] the text content
- * @returns {HTMLElement} the element
- */
-function make(doc, tag, className, text) {
-  const element = doc.createElement(tag);
-  element.className = className;
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
-}
 
 /**
  * Create the marker of the last visit to the Sync log, kept per device.

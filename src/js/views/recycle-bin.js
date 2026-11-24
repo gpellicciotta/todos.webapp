@@ -17,6 +17,7 @@ import { FIND_MAX_LENGTH, foldText } from '../core/list-find.js';
 import { RETENTION_DAYS } from '../store/bin.js';
 import { formatRoute } from '../ui/router.js';
 import { spriteIcon } from './task-list.js';
+import { make } from '../ui/dom.js';
 
 const DAY_MS = 86_400_000;
 const REDRAW_MS = 60_000;
@@ -118,23 +119,6 @@ export function describeDeletion(entry, now) {
  */
 function nameOf(entry) {
   return entry.type === 'list' ? entry.name : entry.description;
-}
-
-/**
- * Create an element with a class and optional text.
- * @param {Document} doc the document
- * @param {string} tag the tag name
- * @param {string} className the class
- * @param {string} [text] the text content
- * @returns {HTMLElement} the element
- */
-function make(doc, tag, className, text) {
-  const element = doc.createElement(tag);
-  element.className = className;
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
 }
 
 /**
