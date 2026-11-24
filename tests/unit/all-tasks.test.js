@@ -122,7 +122,9 @@ describe('mountAllTasks', () => {
       time = new Date(2026, 10, 4, 10, 1);
       vi.advanceTimersByTime(60_000);
       expect(document.querySelector('.task-row')).toBe(row);
-      expect(row.querySelector('.task-row__due--overdue').textContent).toBe('Today 10:00');
+      // Rows show the time of day in the default locale, such as "10:00" or "10:00 AM".
+      const clock = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(2026, 10, 4, 10, 0));
+      expect(row.querySelector('.task-row__due--overdue').textContent).toBe(`Today ${clock}`);
       expect(document.querySelector('.task-list-frame .menu, .status-menu')).toBeNull();
       expect(document.activeElement).toBe(focused);
     }

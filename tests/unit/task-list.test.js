@@ -19,6 +19,16 @@ function at(day, hours, minutes = 0) {
 }
 
 /**
+ * Format a time of day as rows show it in the default locale, such as "10:00" or "10:00 AM".
+ * @param {number} hours the hours
+ * @param {number} [minutes] the minutes
+ * @returns {string} the clock text
+ */
+function clock(hours, minutes = 0) {
+  return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(2026, 10, 4, hours, minutes));
+}
+
+/**
  * Count the menus that show; task rows open none.
  * @returns {number} the showing menus
  */
@@ -119,7 +129,7 @@ describe('createTaskList', () => {
     expect([...open.children].map((child) => child.className)).toEqual(['task-row__description', 'task-row__meta']);
     const meta = open.querySelector('.task-row__meta');
     expect([...meta.children].map((child) => child.className)).toEqual(['task-row__due task-row__due--overdue', 'task-row__lists']);
-    expect(meta.querySelector('.task-row__due').textContent).toBe('Yesterday 10:00');
+    expect(meta.querySelector('.task-row__due').textContent).toBe(`Yesterday ${clock(10)}`);
     expect(meta.querySelector('.task-row__due use').getAttribute('href')).toBe('img/icons.svg#clock');
     expect([...meta.querySelectorAll('.task-row__list')].map((name) => name.textContent)).toEqual(['Home', 'Errands']);
     expect(meta.querySelector('.task-row__more-lists').textContent).toBe('+1 more lists');
@@ -136,9 +146,9 @@ describe('createTaskList', () => {
     ], ctx);
     const dueOf = (id) => document.querySelector(`.task-row[data-task-id="${id}"] .task-row__due`);
     expect(dueOf('late').classList.contains('task-row__due--overdue')).toBe(true);
-    expect(dueOf('late').textContent).toBe('Today 08:00');
+    expect(dueOf('late').textContent).toBe(`Today ${clock(8)}`);
     expect(dueOf('soon').classList.contains('task-row__due--overdue')).toBe(false);
-    expect(dueOf('soon').textContent).toBe('Today 18:00');
+    expect(dueOf('soon').textContent).toBe(`Today ${clock(18)}`);
     expect(dueOf('done').classList.contains('task-row__due--overdue')).toBe(false);
     expect(document.querySelector('.chip--overdue')).toBeNull();
     expect(document.querySelector('.task-list').textContent).not.toContain('Overdue');
@@ -522,13 +532,13 @@ describe('createTaskList', () => {
     const due = shapeTask({ id: 't4', description: 'Pay the rent', status: 'ready', 'due-time': at(4, 10) });
     list.render([...tasks, due], ctx);
     const before = [...document.querySelectorAll('.task-row')];
-    expect(before[3].querySelector('.task-row__due').textContent).toBe('Today 10:00');
+    expect(before[3].querySelector('.task-row__due').textContent).toBe(`Today ${clock(10)}`);
     expect(before[3].querySelector('.task-row__due--overdue')).toBeNull();
     const focused = before[3].querySelector('.task-row__open');
     focused.focus();
     list.tick(new Date(2026, 10, 4, 10, 1));
     [...document.querySelectorAll('.task-row')].forEach((row, index) => expect(row).toBe(before[index]));
-    expect(before[3].querySelector('.task-row__due--overdue').textContent).toBe('Today 10:00');
+    expect(before[3].querySelector('.task-row__due--overdue').textContent).toBe(`Today ${clock(10)}`);
     expect(document.activeElement).toBe(focused);
   });
 
