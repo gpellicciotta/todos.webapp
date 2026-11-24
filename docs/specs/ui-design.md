@@ -973,7 +973,9 @@ Wireframe: [sync-log.svg](../img/ui/sync-log.svg).
 - Entry kinds: overwritten value, rejected change, lost access, and sync error.
 - Overwritten value entries show the item, the field, the lost value, and the kept value.
 - Rejected change entries show the item, the reason, and the change that was undone (`SYN-9`).
-- Each entry links to its item while that item still exists.
+- Each entry is a card of the vendored entry list: the item first, then chips for the time and the kind.
+- The values follow the chips as text-only details, such as the lost and the kept value.
+- An Open link ends the chip row while the item still exists.
 - Opening the sync log clears the sync indicator dot, and it stays clear while the screen is open.
 - An entry about an item shows the task description or the list name; a deleted or unknown item shows a plain label.
 - An empty log reads "Nothing to show." and the screen ends with "Entries stay for 30 days."

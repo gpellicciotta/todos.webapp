@@ -219,6 +219,10 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
   The rows emit `inbox:action` events; the app's inbox view answers them with service requests.
   The app puts the inbox in a `.popover.inbox-panel` with a scroll limit and an offline note.
   `attachNotices` shows one broadcast `.banner`, typed by severity, with Dismiss and a "View all" link.
+- Entry list: the package cards of [entry-list.css](../../src/vendor/design/css/components/entry-list.css), newest first, in a labeled native list.
+  Each Sync log card shows its item, then a clock time chip and a status chip naming the kind.
+  Overwritten values take the warning chip; rejected changes, lost access, and sync errors take the danger chip.
+  An Open link ends the chip row while the item exists; the values follow as text-only details.
 - [Toast](../../src/demo/visual-style-gallery.html#toast): a short message at the bottom with an optional Undo, announced through a live region.
   Never use a toast as the only place an error appears.
   `createToast().show(message, { onAction })` in [toast.js](../../src/vendor/design/js/toast.js) adds an Undo button.

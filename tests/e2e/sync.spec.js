@@ -140,11 +140,11 @@ test('an overwritten value shows the dot; opening the Sync log clears it and lis
   await page.locator('.sync-panel').getByRole('link', { name: 'Sync log' }).click();
   await expect(page).toHaveURL(/#\/settings\/sync-log$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sync log');
-  const entry = page.locator('.sync-log-entry');
+  const entry = page.getByRole('list', { name: 'Sync log entries' }).locator('.entry-list__item');
   await expect(entry).toHaveCount(1);
-  await expect(entry).toContainText('Overwritten value');
-  await expect(entry).toContainText('Lost: Fri 10:00 · Kept: Today 18:00');
-  await expect(entry).toContainText('A task');
+  await expect(entry.locator('.entry-list__message')).toContainText('A task');
+  await expect(entry.locator('.entry-list__meta .chip--status')).toHaveText('Overwritten value');
+  await expect(entry.locator('.entry-list__details')).toHaveText('Lost: Fri 10:00 · Kept: Today 18:00');
   await expect(indicator(page).locator('.sync-indicator__dot')).toHaveCount(0);
 });
 

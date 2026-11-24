@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-24.6",
+  "version": "2026-11-24.7",
   "files": {
     "index.html": "292211c60ff27a1adcde71a3ec37980fb868615e3a55b7035bfc244baac6d377",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
@@ -7,7 +7,7 @@
     "css/tokens.css": "93624ca0cececdd5056643d06867b14d391aff348b417b5ed7254c44594b36ae",
     "css/app-components.css": "2bc55f9d101c0cdd6c555817375c1dbe1d659a1b38d51a2f4e6eef5467a700ff",
     "css/app-chrome.css": "8f87a8132f15f4e35145f3adacad7d98e4af7105ab6976cdae4b9ea63e33d76e",
-    "css/views.css": "9cca241c764c68826ba6932b65910df41609aff85c5f73e1b6fc75ca7561456c",
+    "css/views.css": "ab1ff3ee0c9fe9e5c4b51663d9a39f0038eb37145f321f081fe51e49cea10829",
     "img/icons.svg": "b45bfc596f7f90825abfdec932f6a9c952ae26f461ccce3a5ab3ca10ae14a370",
     "favicon.ico": "b96599914f178b58d7ceb0e1cd75225aef583d5f6ca19dfb30df1d9d1ff47525",
     "img/todos-icon.svg": "7e95b6217191d93a972b44445928afef047ac56236e47e1a10579d1cfdfbe079",
@@ -76,7 +76,7 @@
     "js/views/settings.js": "9503c1174f20e0b8ec4b203582bc61f1b394139b8cc2c5e9e7b39413f75c6d02",
     "js/views/sharing.js": "62fbc978c4e0af4e2ff2c9ce88045a752c9349fe7c2d3487f6bca9d28b8e2687",
     "js/views/sync-indicator.js": "d97a0cbcacd324e76d73ad077a0a65081faceb1a111a213289f24ff32675eb71",
-    "js/views/sync-log.js": "251742a311f3a4a37ccf7faa31334ef2590a87c5716ccaddfabead0c6c2199b2",
+    "js/views/sync-log.js": "b045bae868dac5b4e3efccb147c13de644bcd2b14f59d9a58eeec2ca349fc4a1",
     "js/views/task-editor.js": "cf6105513584d9b83f6bc4a3db25a0df0b5b059a39c1a6e341c797728ca18a18",
     "js/views/task-history.js": "b8552fd96b4024a90ac04c092ec4e3fcdc0f0cd111d711eeaef8ac524271327a",
     "js/views/task-list.js": "a28ba7ea529272bae059bef07fbdcf114c8e25647d385bf2892eb92461d22328",

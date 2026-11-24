@@ -44,7 +44,7 @@ describe('the Sync log screen', () => {
     const { view, screen } = await mount();
     await screen.idle();
     expect(view.querySelector('.sync-log__empty').textContent).toContain('Nothing');
-    expect(view.querySelectorAll('.sync-log-entry')).toHaveLength(0);
+    expect(view.querySelectorAll('.entry-list__item')).toHaveLength(0);
     expect(view.textContent).toContain('Entries stay for 30 days.');
   });
 
@@ -58,10 +58,34 @@ describe('the Sync log screen', () => {
     clock.tick(1000);
     await store.queue.appendLog([{ kind: 'overwritten', target: { type: 'rules', id: 't2' }, field: 'due-time', sent: '2026-11-06T10:00:00Z', kept: '2026-11-07T18:00:00Z' }]);
     await screen.update();
-    const kinds = [...view.querySelectorAll('.sync-log-entry')].map((entry) => entry.dataset.kind);
-    expect(kinds).toEqual(['overwritten', 'rejected', 'lost-access', 'error']);
-    const titles = [...view.querySelectorAll('.sync-log-entry__kind')].map((node) => node.textContent);
-    expect(titles).toEqual(['Overwritten value', 'Rejected change', 'Lost access', 'Sync error']);
+    const list = view.querySelector('ul.entry-list');
+    expect(list.getAttribute('role')).toBe('list');
+    expect(list.getAttribute('aria-label')).toBe('Sync log entries');
+    const cards = [...list.children];
+    expect(cards.every((card) => card.matches('li.entry-list__item'))).toBe(true);
+    expect(cards.map((card) => card.dataset.kind)).toEqual(['overwritten', 'rejected', 'lost-access', 'error']);
+    const chips = cards.map((card) => card.querySelector('.entry-list__meta .chip--status'));
+    expect(chips.map((chip) => chip.textContent)).toEqual(['Overwritten value', 'Rejected change', 'Lost access', 'Sync error']);
+    expect(chips.map((chip) => chip.dataset.severity)).toEqual(['warning', 'error', 'error', 'error']);
+  });
+
+  it('shows the message first, then a chip row led by a time chip with the clock icon', async () => {
+    const { store, view, screen } = await mount();
+    await store.queue.appendLog([{ kind: 'error', message: 'Syncing failed. It will try again.', detail: 'Server unavailable' }]);
+    await screen.update();
+    const card = view.querySelector('.entry-list__item');
+    const [message, meta, details] = card.children;
+    expect(message.matches('p.entry-list__message')).toBe(true);
+    expect(message.textContent).toBe('Syncing failed. It will try again.');
+    expect(meta.matches('div.entry-list__meta')).toBe(true);
+    const timeChip = meta.firstElementChild;
+    expect(timeChip.matches('span.chip')).toBe(true);
+    expect(timeChip.querySelector('svg.icon use').getAttribute('href')).toContain('icon-clock');
+    const time = timeChip.querySelector('time');
+    expect(time.textContent).toMatch(/^Today /u);
+    expect(Number.isNaN(new Date(time.getAttribute('datetime')).getTime())).toBe(false);
+    expect(details.matches('.entry-list__details')).toBe(true);
+    expect(details.textContent).toBe('Server unavailable');
   });
 
   it('names and links the task of a rule edit and of an adopted event (SYN-8, SYN-9)', async () => {
@@ -71,7 +95,7 @@ describe('the Sync log screen', () => {
     clock.tick(1000);
     await store.queue.appendLog([{ kind: 'rejected', operation: 'adopt-event', target: { type: 'event', id: 'e1', 'task-id': task.id }, status: 409, message: 'The service refused a local row, which stays on this device.' }]);
     await screen.update();
-    const items = [...view.querySelectorAll('.sync-log-entry')].map((entry) => [entry.querySelector('.sync-log-entry__item').textContent.split(' · ')[0], entry.querySelector('a')?.getAttribute('href')]);
+    const items = [...view.querySelectorAll('.entry-list__item')].map((entry) => [entry.querySelector('.entry-list__message').textContent.split(' · ')[0], entry.querySelector('.entry-list__action a')?.getAttribute('href')]);
     expect(items).toEqual([['Water the plants', `#/tasks/${task.id}`], ['Water the plants', `#/tasks/${task.id}`]]);
   });
 
@@ -80,20 +104,26 @@ describe('the Sync log screen', () => {
     const task = await store.createTask({ description: 'Buy paint' });
     await store.queue.appendLog([{ kind: 'overwritten', target: { type: 'task', id: task.id }, field: 'description', sent: 'Buy primer', kept: 'Buy paint' }]);
     await screen.update();
-    const entry = view.querySelector('.sync-log-entry');
-    expect(entry.querySelector('.sync-log-entry__item').textContent).toBe('Buy paint · Description');
-    expect(entry.querySelector('.sync-log-entry__detail').textContent).toBe('Lost: Buy primer · Kept: Buy paint');
-    expect(entry.querySelector('a').getAttribute('href')).toBe(`#/tasks/${task.id}`);
+    const entry = view.querySelector('.entry-list__item');
+    expect(entry.querySelector('.entry-list__message').textContent).toBe('Buy paint · Description');
+    expect(entry.querySelector('.entry-list__details').textContent).toBe('Lost: Buy primer · Kept: Buy paint');
+    const meta = entry.querySelector('.entry-list__meta');
+    const link = meta.lastElementChild.querySelector('a');
+    expect(meta.lastElementChild.matches('.entry-list__action')).toBe(true);
+    expect(link.textContent).toBe('Open');
+    expect(link.getAttribute('aria-label')).toBe('Open Buy paint');
+    expect(link.getAttribute('href')).toBe(`#/tasks/${task.id}`);
   });
 
   it('names the reason and the undone change of a rejected change', async () => {
     const { store, view, screen } = await mount();
     await store.queue.appendLog([{ kind: 'rejected', operation: 'update-task', target: { type: 'task', id: 'gone' }, fields: { status: 'completed' }, status: 403, message: 'The service refused a task change, so it was undone.' }]);
     await screen.update();
-    const entry = view.querySelector('.sync-log-entry');
-    expect(entry.textContent).toContain('The service refused a task change, so it was undone.');
-    expect(entry.querySelector('.sync-log-entry__detail').textContent).toContain('status: completed');
+    const entry = view.querySelector('.entry-list__item');
+    expect(entry.querySelector('.entry-list__message').textContent).toContain('The service refused a task change, so it was undone.');
+    expect(entry.querySelector('.entry-list__details').textContent).toBe('Undone: status: completed');
     expect(entry.querySelector('a')).toBeNull();
+    expect(entry.querySelector('.entry-list__action')).toBeNull();
   });
 
   it('links a list while it exists and not after', async () => {
@@ -101,7 +131,7 @@ describe('the Sync log screen', () => {
     const list = await store.createList({ name: 'Home' });
     await store.queue.appendLog([{ kind: 'lost-access', target: { type: 'list', id: list.id }, name: 'Home', undone: 1, message: 'You no longer have access to Home. 1 change was undone.' }]);
     await screen.update();
-    expect(view.querySelector('.sync-log-entry a').getAttribute('href')).toBe(`#/lists/${list.id}`);
+    expect(view.querySelector('.entry-list__item .entry-list__action a').getAttribute('href')).toBe(`#/lists/${list.id}`);
   });
 
   it('leaves out entries older than 30 days', async () => {

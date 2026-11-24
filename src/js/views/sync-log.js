@@ -1,13 +1,16 @@
 /**
  * Sync log screen: what sync overwrote, refused, or lost in the last 30 days, newest first (`SYN-8`, `SYN-9`).
  *
- * Each entry shows its kind and time, then the item and the values: an overwritten value names the lost and the kept value,
- * a rejected change its reason and the change that was undone, a lost list its name, and an error its detail.
- * An entry links to its item while that item still exists. Values render as text only, so they can be copied back by hand.
+ * Entries are `.entry-list` cards of the vendored entry-list.css: the item first, then chips for the time and the kind.
+ * The details name the values: an overwritten value its lost and kept value, a rejected change the change that was undone,
+ * a lost list the undone changes, and an error its detail.
+ * An Open link ends the chip row while the item still exists. Values render as text only, so they can be copied back by hand.
  * Opening the screen marks the log as seen, which clears the dot of the sync indicator (see sync-indicator.js).
  */
 
 import { readPreference, writePreference } from '../core/preferences.js';
+import { createDomBuilders } from '../../vendor/design/js/dom-builders.js';
+import { createIcon } from '../../vendor/design/js/icon.js';
 import { make } from '../ui/dom.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -15,11 +18,15 @@ const LOG_DAYS = 30;
 const SEEN_KEY = 'sync-log.seen';
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/u;
 
+/** Severity of the kind chip per entry kind; kinds where sync undid or failed something take the danger tone. */
+const KIND_SEVERITY = Object.freeze({ overwritten: 'warning', rejected: 'error', 'lost-access': 'error', error: 'error', erased: 'info' });
+
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 export const LOG_STRINGS = Object.freeze({
   intro: 'Values that sync overwrote or undid in the last 30 days.',
   empty: 'Nothing to show. Sync overwrote or undid nothing in the last 30 days.',
   retention: 'Entries stay for 30 days.',
+  listLabel: 'Sync log entries',
   kinds: Object.freeze({
     overwritten: 'Overwritten value', rejected: 'Rejected change', 'lost-access': 'Lost access', error: 'Sync error', erased: 'Account data erased',
   }),
@@ -199,7 +206,8 @@ export function mountSyncLog(view, { store, seen, now = () => new Date(), sync }
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'sync-log');
   const intro = make(doc, 'p', 'sync-log__intro', LOG_STRINGS.intro);
-  const list = make(doc, 'ul', 'sync-log__list');
+  const dom = createDomBuilders(doc);
+  const list = dom.h('ul', { class: 'entry-list sync-log__list', role: 'list', 'aria-label': LOG_STRINGS.listLabel });
   const empty = make(doc, 'p', 'sync-log__empty', LOG_STRINGS.empty);
   const note = make(doc, 'p', 'sync-log__note', LOG_STRINGS.retention);
   empty.hidden = true;
@@ -209,31 +217,24 @@ export function mountSyncLog(view, { store, seen, now = () => new Date(), sync }
   let latest = 0;
 
   /**
-   * Build the row of an entry.
+   * Build the card of an entry: the item, then the time and kind chips and the Open link, then the values.
    * @param {object} entry the log entry
    * @param {Date} current the current time
-   * @returns {Promise<HTMLLIElement>} the row
+   * @returns {Promise<HTMLLIElement>} the card
    */
-  async function row(entry, current) {
+  async function card(entry, current) {
     const item = await findItem(store, entry);
     const lines = describeEntry(entry, item);
-    const element = make(doc, 'li', 'sync-log-entry');
-    element.dataset.kind = entry.kind;
-    const head = make(doc, 'div', 'sync-log-entry__head');
-    const time = make(doc, 'time', 'sync-log-entry__time', formatTime(entry.time, current));
-    time.dateTime = entry.time;
-    head.append(make(doc, 'h2', 'sync-log-entry__kind', LOG_STRINGS.kinds[entry.kind] ?? entry.kind), time);
-    element.append(head, make(doc, 'p', 'sync-log-entry__item', lines.item));
-    if (lines.detail) {
-      element.append(make(doc, 'p', 'sync-log-entry__detail', lines.detail));
-    }
-    if (item.href) {
-      const link = make(doc, 'a', 'sync-log-entry__link', LOG_STRINGS.open);
-      link.href = item.href;
-      link.setAttribute('aria-label', `${LOG_STRINGS.open} ${item.name}`);
-      element.append(link);
-    }
-    return element;
+    const kind = LOG_STRINGS.kinds[entry.kind] ?? entry.kind;
+    const timeChip = dom.h('span', { class: 'chip' }, createIcon(doc, 'clock'), dom.h('time', { datetime: entry.time }, formatTime(entry.time, current)));
+    const kindChip = dom.severityChip(KIND_SEVERITY[entry.kind] ?? 'info', kind);
+    const action = item.href
+      ? dom.h('span', { class: 'entry-list__action' }, dom.h('a', { href: item.href, 'aria-label': `${LOG_STRINGS.open} ${item.name}` }, LOG_STRINGS.open))
+      : null;
+    return dom.h('li', { class: 'entry-list__item', 'data-kind': entry.kind },
+      dom.h('p', { class: 'entry-list__message' }, lines.item || kind),
+      dom.h('div', { class: 'entry-list__meta' }, timeChip, kindChip, action),
+      lines.detail ? dom.h('p', { class: 'entry-list__details' }, lines.detail) : null);
   }
 
   /**
@@ -245,7 +246,7 @@ export function mountSyncLog(view, { store, seen, now = () => new Date(), sync }
     const current = now();
     const cutoff = current.getTime() - LOG_DAYS * DAY_MS;
     const entries = (await store.queue.log()).filter((entry) => new Date(entry.time).getTime() >= cutoff).reverse();
-    const rows = await Promise.all(entries.map((entry) => row(entry, current)));
+    const rows = await Promise.all(entries.map((entry) => card(entry, current)));
     if (destroyed || ticket !== latest) {
       return;
     }
