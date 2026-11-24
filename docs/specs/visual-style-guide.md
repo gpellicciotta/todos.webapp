@@ -182,6 +182,8 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
   Never place two signal buttons side by side.
 - [Icon button](../../src/demo/visual-style-gallery.html#icon-button): a square `--target-min` button with one icon and an `aria-label` naming the action and its object.
   Toggles set `aria-pressed`; the pressed state adds the signal outline and keeps hover and active grounds.
+  On hover and keyboard focus, a `.tooltip--label` below the button shows its name; the floating button shows one too.
+  Add a `title` only for a hint that says more than the name; the button then shows the title instead.
 - [Field](../../src/demo/visual-style-gallery.html#field): label, control, optional hint, character counter, and error message.
   Editors build it with `createEditorField`, a wrapper of `createField` in [field.js](../../src/vendor/design/js/field.js) that keeps the editor's errors.
   Use it for text, search, date, and time inputs, textareas, and selects.

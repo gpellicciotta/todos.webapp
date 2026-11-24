@@ -239,7 +239,7 @@ test('a rail entry shows one label tooltip on hover and on focus, without a nati
   await createList(page, 'Garden');
   await page.locator('.app__top-bar > .app__nav-toggle').click();
   const link = page.locator('.app__sidebar').getByRole('link', { name: /^Garden/ });
-  const tooltip = page.locator('.tooltip--label');
+  const tooltip = page.locator('.tooltip--label:visible');
   await expect(link).toHaveAttribute('title', 'Garden');
   await link.hover();
   await expect(tooltip).toBeVisible();
@@ -254,6 +254,49 @@ test('a rail entry shows one label tooltip on hover and on focus, without a nati
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toHaveText('Garden');
   await expect(link).not.toHaveAttribute('title', /.*/);
+  expect(problems).toEqual([]);
+});
+
+test('an icon button shows its name in a label tooltip on hover and on focus, without a native title', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/tasks');
+  await ready(page);
+  await page.getByLabel('Search or add a task').fill('Buy paint');
+  await page.keyboard.press('Enter');
+  const more = page.locator('.app__top-bar').getByRole('button', { name: 'All tasks actions' });
+  const tooltip = page.locator('.tooltip--label:visible');
+  await expect(more).not.toHaveAttribute('title', /.*/);
+  await more.hover();
+  await expect(tooltip).toHaveCount(1);
+  await expect(tooltip).toHaveText('All tasks actions');
+  const [box, tip] = await Promise.all([more.boundingBox(), tooltip.boundingBox()]);
+  expect(tip.y).toBeGreaterThanOrEqual(box.y + box.height);
+  await page.mouse.move(700, 500);
+  await expect(tooltip).toBeHidden();
+  await more.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(more).toBeFocused();
+  await expect(tooltip).toHaveText('All tasks actions');
+  await page.keyboard.press('Escape');
+  await expect(tooltip).toBeHidden();
+  expect(problems).toEqual([]);
+});
+
+test('a task status button keeps its native hint title and shows no label tooltip', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await page.goto('/#/tasks');
+  await ready(page);
+  await page.getByLabel('Search or add a task').fill('Buy paint');
+  await page.keyboard.press('Enter');
+  const status = page.locator('.status-button').first();
+  await expect(status).toHaveAttribute('title', /.+/);
+  const hint = await status.getAttribute('title');
+  await status.hover();
+  await expect(page.locator('.tooltip--label:visible')).toHaveCount(0);
+  await expect(status).toHaveAttribute('title', hint);
   expect(problems).toEqual([]);
 });
 

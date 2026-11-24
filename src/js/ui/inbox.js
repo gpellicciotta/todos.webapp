@@ -209,6 +209,8 @@ export function attachInbox(slot, { inbox, session, banners, toaster, announce }
   function renderButton() {
     button.hidden = !connected();
     bell.setCount(button.hidden ? 0 : inbox.unreadCount());
+    // The title only repeats the name, which the shell label tooltip shows on hover and focus.
+    button.removeAttribute('title');
     if (button.hidden) {
       popover.close('close');
     }

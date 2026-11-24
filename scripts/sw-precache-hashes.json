@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-24.7",
+  "version": "2026-11-24.8",
   "files": {
     "index.html": "292211c60ff27a1adcde71a3ec37980fb868615e3a55b7035bfc244baac6d377",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
@@ -56,8 +56,8 @@
     "js/sync/settings.js": "ac20c3af0d1d86beb6398702dac20c262cfa2654896ec6242cdb36fec426dca4",
     "js/sync/sync-log.js": "09ccfb3ae3f8ec9183c9a93df71b8adc881cd5ae16a4723c305130c83a1852c9",
     "js/ui/dom.js": "297c7fcc7f329f8025baa9916957b5b40892418375d8369c0d5d49a16ac12752",
-    "js/ui/inbox.js": "f5e8ae0c1ed1d36c3ec7739849b6999bcf9d9c057bcd99bc0705a02b273e5edd",
-    "js/ui/layout.js": "d6067584b729104c7dbed9510d174f1b2808a8fe0ef54065388dbac930f8c779",
+    "js/ui/inbox.js": "28c45427998d7380fe8baf142e3968565ead6e84998e7a32f0d6c576197003b8",
+    "js/ui/layout.js": "4c6238bc6535164c661a0e490abcaf6110a696abf1b9b6f036956f2090b7d672",
     "js/ui/panel-resize.js": "dd3761b101e7a1edd52fe4e0c99b9ffb4a66598db21c0083b1388ec84aa01c0d",
     "js/ui/router.js": "be01e28562bc7405a30ee8580676550f2023f0b898f076475875fa13a551cf7b",
     "js/ui/user-menu.js": "d91dc5c6d40a3d69d73821516e4f636fa5350256d8adbfd392407e5e18753746",
@@ -69,7 +69,7 @@
     "js/views/list-actions.js": "dd69d186c8ecd3fe19345d611909ee452d41be578e252306114e794efe8e8b5d",
     "js/views/list-editor.js": "2b4c9a30560d2d22df65f108c4f3fe21959e350fa566c209e511beffb72e5289",
     "js/views/list.js": "ec8b3c9d00d2765b76f2de115ac0bd667dc9c2f210f2d62be9e27d1d41bd365f",
-    "js/views/lists.js": "1e6043b521e11a1edb8c2fa0dca0db03101a0a19297e3dabd3f7f1e4efcfa524",
+    "js/views/lists.js": "28fc3893e9d3b63f1ed85ed2179ec34db2cc1b42ef0799891f53f118b0b1c407",
     "js/views/notes.js": "38591620e2a4e47273c9114143f1814f5c15e458a655ee974e9c63b492304cdd",
     "js/views/recycle-bin.js": "6d499ebf93013410b299872339d0f0083939209cbfa604218925b4c962a283a1",
     "js/views/reorder.js": "bea69609ead59146073101fa06745fceb00a10c9023ead9a442ae1651acc7734",

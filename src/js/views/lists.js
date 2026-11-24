@@ -228,7 +228,6 @@ export function mountLists(view, {
   const add = make(doc, 'a', 'fab');
   add.href = formatRoute('list-new');
   add.setAttribute('aria-label', STRINGS.newList);
-  add.title = STRINGS.newList;
   add.append(spriteIcon(doc, 'plus'));
   const rows = make(doc, 'ul', 'lists-view__rows');
   rows.setAttribute('aria-label', STRINGS.lists);

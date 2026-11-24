@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.5.1-pre
+- FrontEnd: Named icon buttons and the floating button in the vendored label tooltip on hover and focus, and dropped titles that repeated their names.
 - FrontEnd: Showed Sync log entries as the vendored entry list cards: the item, then time and kind chips, an Open link, and the values as details (SYN-8, SYN-9).
 - FrontEnd: Replaced the eight local `make` element helpers with one in `src/js/ui/dom.js` over the vendored `dom-builders.js` `h` builder, without markup changes.
 - Docs: Drew the nav toggle at the start of every wide wireframe and added `nav-rail.svg`, All tasks with the sidebar as an icon rail of glyphs and list monograms.

@@ -461,3 +461,63 @@ describe('renderShell areas (ADR-0004)', () => {
     expect(location.hash).toBe('#/lists');
   });
 });
+
+describe('renderShell label tooltips', () => {
+  /**
+   * Hover a control with a mouse pointer.
+   * @param {Element} control the control to hover
+   */
+  function hover(control) {
+    control.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
+  }
+
+  /**
+   * Find the shown label tooltips in the document.
+   * @returns {HTMLElement[]} the label tooltips that are not hidden
+   */
+  function shown() {
+    return [...document.querySelectorAll('.tooltip--label')].filter((element) => !element.hidden);
+  }
+
+  it('names a hovered icon button with one shared label tooltip', () => {
+    const { root } = render();
+    const toggle = root.querySelector('.app__nav-toggle');
+    hover(toggle);
+    expect(shown().map((element) => element.textContent)).toEqual([toggle.getAttribute('aria-label')]);
+    const more = root.querySelector('.app__main').appendChild(document.createElement('button'));
+    more.className = 'icon-button';
+    more.setAttribute('aria-label', 'All tasks actions');
+    hover(more);
+    expect(shown().map((element) => element.textContent)).toEqual(['All tasks actions']);
+  });
+
+  it('names a floating button in the overlay layer', () => {
+    const { root } = render();
+    const fab = root.querySelector('.app__overlays').appendChild(document.createElement('a'));
+    fab.className = 'fab';
+    fab.href = '#/lists/new';
+    fab.setAttribute('aria-label', 'New list');
+    hover(fab);
+    expect(shown().map((element) => element.textContent)).toEqual(['New list']);
+  });
+
+  it('skips a control whose title holds a hint, which keeps its title', () => {
+    const { root } = render();
+    const status = root.querySelector('.app__main').appendChild(document.createElement('button'));
+    status.className = 'icon-button status-button';
+    status.setAttribute('aria-label', 'Mark Buy paint done');
+    status.title = 'Press to mark it done';
+    hover(status);
+    expect(shown()).toEqual([]);
+    expect(status.title).toBe('Press to mark it done');
+  });
+
+  it('removes its tooltip when the shell is destroyed', () => {
+    const { root, shell } = render();
+    const before = document.querySelectorAll('.tooltip--label').length;
+    shell.destroy();
+    expect(document.querySelectorAll('.tooltip--label')).toHaveLength(before - 1);
+    hover(root.querySelector('.app__nav-toggle'));
+    expect(shown()).toEqual([]);
+  });
+});

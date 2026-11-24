@@ -151,6 +151,11 @@ describe('inbox button', () => {
     expect(bell(slot).querySelector('[data-inbox-count]').hidden).toBe(true);
   });
 
+  it('keeps no native title on the bell, whose name the shell label tooltip shows', async () => {
+    const { slot } = await mount();
+    expect(bell(slot).hasAttribute('title')).toBe(false);
+  });
+
   it('caps the badge at 99+ and keeps the full count in the name', async () => {
     const many = Array.from({ length: 120 }, (_, index) => raw(index + 1));
     const { slot } = await mount({ notifications: many });

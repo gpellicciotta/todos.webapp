@@ -27,6 +27,8 @@
  * The top bar opens with the vendored nav toggle (app-nav.js): from 64rem each press cycles the sidebar through open,
  * an icon rail, and hidden, and the state stays on the device (`todos.view.nav`); below 64rem the bottom bar navigates.
  * The rail shows each list as a monogram of its first letter; entering it clears the find text, which the rail hides.
+ * Each icon button and floating button shows its name in the vendored label tooltip on mouse hover and keyboard focus.
+ * A control whose `title` holds a hint beyond its name, such as a task status button, keeps the title and skips the tooltip.
  * The theme follows the system unless the device stores a preference, which `data-theme` applies.
  */
 
@@ -42,9 +44,13 @@ import { attachInbox } from './inbox.js';
 import { attachPanelResize } from './panel-resize.js';
 import { attachAppNav } from '../../vendor/design/js/app-nav.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
+import { attachLabelTooltips } from '../../vendor/design/js/tooltip.js';
 import { attachUserMenu } from './user-menu.js';
 
 const ICONS = 'img/icons.svg';
+
+/** The icon-only controls the shell names in a label tooltip: icon buttons and the floating button. */
+const LABELLED_CONTROLS = '.icon-button, .fab';
 
 /** The largest count shown as a number; a larger count reads "999+" (`LST-14`). */
 const MAX_SHOWN_COUNT = 999;
@@ -191,7 +197,8 @@ function setCount(element, count) {
  * @param {{matches: boolean, addEventListener: Function, removeEventListener: Function}} [options.navMedia]
  *   the wide layout query of the nav toggle, `matchMedia('(width >= 64rem)')` by default
  * @returns {{main: HTMLElement, editor: HTMLElement, actionBar: HTMLElement, actionsSlot: HTMLElement, overlays: HTMLElement, toastRegion: HTMLElement,
- *   update: Function, setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function, showSync: Function}}
+ *   update: Function, setLists: Function, showBanner: Function, showNotice: Function, showInbox: Function, showSync: Function,
+ *   destroy: Function}}
  *   the shell controller
  */
 export function renderShell(root, { session = createSession(), navMedia } = {}) {
@@ -541,6 +548,12 @@ export function renderShell(root, { session = createSession(), navMedia } = {}) 
       }
     },
   });
+  // One delegated controller names every icon-only control of the shell, including those views add later.
+  // The rail entries of the sidebar get their tooltips from the nav controller, the innermost root.
+  const labelTooltips = attachLabelTooltips(root, {
+    selector: LABELLED_CONTROLS,
+    when: (control) => !control.hasAttribute('title'),
+  });
   const unsubscribeOrder = onListOrderChange(() => {
     if (root.isConnected) {
       renderLists();
@@ -672,6 +685,11 @@ export function renderShell(root, { session = createSession(), navMedia } = {}) 
       return attachSyncIndicator(menuSlot, {
         engine, session, readLog, seen, checkForUpdate, banners: sessionBanner, announce: (message) => announcer.announce(message),
       });
+    },
+
+    /** Tear the shell down: remove the shared label tooltip and its listeners. */
+    destroy() {
+      labelTooltips.destroy();
     },
   };
 }

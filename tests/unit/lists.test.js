@@ -38,7 +38,7 @@ describe('mountLists', () => {
     expect(button.tagName).toBe('A');
     expect(button.getAttribute('href')).toBe('#/lists/new');
     expect(button.getAttribute('aria-label')).toBe('New list');
-    expect(button.title).toBe('New list');
+    expect(button.hasAttribute('title')).toBe(false);
     expect(button.textContent.trim()).toBe('');
     expect(button.querySelector('svg.icon use').getAttribute('href')).toContain('#plus');
     expect(view.querySelectorAll('.fab')).toHaveLength(1);

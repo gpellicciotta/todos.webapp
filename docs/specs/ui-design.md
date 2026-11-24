@@ -167,6 +167,14 @@ Settings and the Sync log stay in a centered `--width-main` column.
   Lists, Recycle bin, Settings, and Sync log have no actions, so the button is hidden.
   Below 64rem the menu stays in the view header with the horizontal More icon; crossing 64rem closes an open menu.
 - The sync indicator sits beside the user button, before the inbox bell; see Sync Indicator below.
+- **[Decided]** Mouse hover and keyboard focus name each icon button and the floating button in a label tooltip.
+  The shell attaches the vendored `attachLabelTooltips` once, so controls that views add later need no setup.
+  The tooltip shows the accessible name and stays `aria-hidden`; Escape closes it.
+  A control whose `title` holds a hint beyond its name keeps that title and skips the tooltip.
+  Examples: the task status buttons, the Add button, and the task editor's status buttons.
+  The inbox bell and the New list button carry no `title`, which would only repeat their names.
+  Rail entries get their tooltips from the nav toggle's controller instead.
+  Rejected: native `title` hints on every icon button, which wait a second and never show on focus.
 - A session banner above the view offers Sign in while the session expired.
 - The main column scrolls; the bars and the sidebar stay in place.
 - [user-menu.js](../../src/js/ui/user-menu.js) builds the user menu; see User Menu below.
