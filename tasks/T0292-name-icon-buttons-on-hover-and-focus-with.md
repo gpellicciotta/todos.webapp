@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 725.5, input: 98, output: 20984, cache_read: 4169108, cache_write: 97771}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T14:10:36Z"
 ---
 # T0292: Name icon buttons on hover and focus with the vendored label tooltips instead of native titles
 
@@ -58,4 +63,7 @@ Completion check: `python scripts/devops.py check`.
 
 - [2026-11-24] **[Doc]**
   Documented label tooltips in ui-design.md App Shell and the visual style guide icon button entry, and added a CHANGELOG bullet.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
