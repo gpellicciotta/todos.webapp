@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [ ] T0298 Make the due text unit tests independent of the locale clock format so the Pages workflow passes on CI.
+- [x] T0298 Make the due text unit tests independent of the locale clock format so the Pages workflow passes on CI.
 - [x] T0296 Redraw the Sync log wireframe as entry list cards with time and kind chips.
 - [x] T0297 Show a connected empty state in All tasks without the Connect link once all tasks are deleted while connected.
 - [x] T0289 Let the editor panel width limits use the rail or hidden sidebar width instead of the open sidebar width.
