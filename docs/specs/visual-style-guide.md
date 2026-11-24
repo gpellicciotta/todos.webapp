@@ -13,7 +13,7 @@ The tokens, the font, the controls, the app components, and their gallery sectio
 - [tokens.css](../../src/css/tokens.css): the app-local size tokens only.
 - [app-components.css](../../src/css/app-components.css): the app-local controls the package lacks, then the task list, task row, and status button.
   The app-local controls: the disabled chip remove button, choices, the filter chip, the in-view dialog, and the error banner.
-- [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox bell and panel, floating button, editor panel, note thread, and empty state.
+- [app-chrome.css](../../src/css/app-chrome.css): navigation, sync indicator, user menu, inbox panel, floating button, editor panel, note thread, and empty state.
 - [shell.css](../../src/vendor/design/css/shell.css): the vendored app shell, which places every area of the page.
 - [views.css](../../src/css/views.css): how the views fill the shell areas, full width for row views, at the `--width-main` column for reading views.
 - [icons.svg](../../src/img/icons.svg): the icon sprite, one `<symbol>` per icon on a 24 px grid.
@@ -212,6 +212,13 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
   `[data-dialog-close]` buttons close it with their value; `confirmDialog` resolves to a boolean.
 - [Banner](../../src/demo/visual-style-gallery.html#banner): a full-width notice above the content with an icon, one or two sentences, and an optional action.
   Errors use `--error`, `role="alert"`, the danger outline, and an alert icon.
+- Inbox: the package bell, inbox, and notices, from [inbox.js](../../src/vendor/design/js/inbox.js) and [notices.js](../../src/vendor/design/js/notices.js).
+  `createUnreadButton` draws the bell with a danger count badge, capped at "99+", whose name carries the count.
+  `createInbox` draws selectable rows with type and Unread badges, time chips, row actions, a bulk bar, and Clear all.
+  Unread rows add a signal edge and bold titles, so unread never relies on color alone.
+  The rows emit `inbox:action` events; the app's inbox view answers them with service requests.
+  The app puts the inbox in a `.popover.inbox-panel` with a scroll limit and an offline note.
+  `attachNotices` shows one broadcast `.banner`, typed by severity, with Dismiss and a "View all" link.
 - [Toast](../../src/demo/visual-style-gallery.html#toast): a short message at the bottom with an optional Undo, announced through a live region.
   Never use a toast as the only place an error appears.
   `createToast().show(message, { onAction })` in [toast.js](../../src/vendor/design/js/toast.js) adds an Undo button.

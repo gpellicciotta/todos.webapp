@@ -221,17 +221,27 @@ Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
 - The menu reads the session each time it opens and when the session changes.
 
 ### Inbox
+- The bell, panel rows, and banner come from the vendored package: `createUnreadButton`, `createInbox`, and `attachNotices`.
 - Connected only: a bell icon button sits before the user button, at least 44 px wide, named "Inbox" (`NTF-1`, `NTF-2`).
   Local mode and an expired session show no bell and send no request (`LOC-1`, `LOC-3`).
 - Unread notifications show their count in a badge on the bell, capped at "99+"; the accessible name reads "Inbox, 3 unread".
 - Click or Enter opens a panel under the bell, its end edge lined up with the bell's; Escape, an outside click, or Tab away closes it.
-- The panel header holds the title and Clear all. Rows follow, most recent first; each shows its title, message, and time in the device timezone.
+  The package inbox sits in the panel only while it is open, so a closed panel adds nothing to the page.
+- The panel header holds the title and an unread and total summary, such as "2 unread · 3 total".
+- Rows follow, most recent first; each shows its title, type and Unread badges, message, and a relative time chip.
+  The chip's tooltip holds the full time in the device timezone.
 - Each row offers Open for a safe action link (`NTF-7`), Mark read while unread, and Discard; unread rows carry a signal edge.
+  Open opens a new tab without access to the app.
+- Row checkboxes and Select all choose rows for the bulk Mark read and Discard, which send one request per notification.
+- Clear all, at the end of the panel, discards every notification.
 - An empty inbox reads "No notifications", with Clear all disabled; an unreachable service adds "Offline. Showing the last inbox." (`NTF-6`).
 - A change the service does not accept leaves the panel as it was and shows a toast, "The service could not be reached. Try again."
-- A notification marked as a banner and still unread also shows a banner above every view, below any lasting notice (`NTF-3`).
+  A bulk action shows one toast, and keeps the changes the service accepted.
+- An unread notification marked as a banner also shows a banner above every view, below any lasting notice (`NTF-3`).
+  Only one shows at a time: the most severe, then the newest. Dismissing it shows the next.
   It holds the title, the message, Open for a safe link, and Dismiss, which marks the notification read.
-  A new banner is announced through the polite live region once.
+  With more than one, its "View all N alerts" link opens the inbox panel.
+  A newly shown banner is announced through the polite live region once.
 
 ### Routes
 - `#/tasks`: all tasks.

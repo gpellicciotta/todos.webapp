@@ -42,9 +42,9 @@ describe('renderShell navigation', () => {
     const engine = { state: () => ({ status: 'synced', pending: 0 }), subscribe: () => () => {}, syncNow: vi.fn() };
     shell.showSync({ engine, readLog: async () => [], seen: { get: () => null, subscribe: () => () => {} }, checkForUpdate: vi.fn() });
     const slot = root.querySelector('.app__top-bar').lastElementChild;
-    const order = [...slot.children].map((child) => ['sync-indicator', 'inbox-button', 'account-menu'].find((name) => child.classList.contains(name)));
-    expect(order.indexOf('sync-indicator')).toBeLessThan(order.indexOf('inbox-button'));
-    expect(order.indexOf('inbox-button')).toBeLessThan(order.indexOf('account-menu'));
+    const order = [...slot.children].map((child) => ['sync-indicator', 'app__notifications-button', 'account-menu'].find((name) => child.classList.contains(name)));
+    expect(order.indexOf('sync-indicator')).toBeLessThan(order.indexOf('app__notifications-button'));
+    expect(order.indexOf('app__notifications-button')).toBeLessThan(order.indexOf('account-menu'));
     expect(root.querySelector('.app__banners [data-session-banner]')).not.toBeNull();
   });
 
@@ -120,7 +120,7 @@ describe('renderShell inbox', () => {
   it('puts the bell before the user button, and keeps the top bar at the nav toggle, a title, and one menu slot', () => {
     const { root } = connected([]);
     const slot = root.querySelector('.app__top-bar').lastElementChild;
-    expect(slot.querySelector('.inbox-button').compareDocumentPosition(slot.querySelector('.account-menu__button')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(slot.querySelector('.app__notifications-button').compareDocumentPosition(slot.querySelector('.account-menu__button')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['BUTTON', 'H1', 'DIV']);
   });
 

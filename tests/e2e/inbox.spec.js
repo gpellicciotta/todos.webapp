@@ -77,40 +77,46 @@ test('a connected app shows the bell with the unread count, and the panel lists 
   await open(page);
   const bell = page.getByRole('button', { name: 'Inbox, 1 unread' });
   await expect(bell).toBeVisible();
+  await expect(bell.locator('[data-inbox-count]')).toHaveText('1');
   await bell.click();
-  const rows = page.locator('.inbox-item');
+  const rows = page.locator('.inbox-panel [data-inbox-item]');
   await expect(rows).toHaveCount(2);
   await expect(rows.first()).toContainText('Title 2');
   await expect(rows.first()).toContainText('Message 2');
+  await expect(rows.first()).toHaveAttribute('data-inbox-unread', 'true');
   expect(calls[0]).toEqual({ method: 'GET', path: '/api/notifications', authorization: 'Bearer session-1' });
 });
 
-test('mark read, discard, and clear all change the inbox and the badge', async ({ page }) => {
+test('mark read, discard, bulk mark read, and clear all change the inbox and the badge', async ({ page }) => {
   await connect(page);
-  await mockInbox(page, [notification(3), notification(2), notification(1)]);
+  await mockInbox(page, [notification(4), notification(3), notification(2), notification(1)]);
   await open(page);
-  await page.getByRole('button', { name: 'Inbox, 3 unread' }).click();
-  await page.locator('.inbox-item[data-id="3"]').getByRole('button', { name: 'Mark read' }).click();
-  await expect(page.locator('.inbox-item[data-id="3"]')).toHaveAttribute('data-read', 'true');
-  await expect(page.getByRole('button', { name: 'Inbox, 2 unread' })).toBeVisible();
-  await page.locator('.inbox-item[data-id="2"]').getByRole('button', { name: 'Discard' }).click();
-  await expect(page.locator('.inbox-item')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Clear all' }).click();
-  await expect(page.locator('.inbox-item')).toHaveCount(0);
-  await expect(page.locator('.inbox-panel')).toContainText('No notifications');
+  await page.getByRole('button', { name: 'Inbox, 4 unread' }).click();
+  const panel = page.locator('.inbox-panel');
+  await panel.getByRole('button', { name: 'Mark read: Title 4' }).click();
+  await expect(panel.locator('[data-inbox-item="4"]')).not.toHaveAttribute('data-inbox-unread', 'true');
+  await expect(page.getByRole('button', { name: 'Inbox, 3 unread' })).toBeVisible();
+  await panel.getByRole('button', { name: 'Discard: Title 3' }).click();
+  await expect(panel.locator('[data-inbox-item]')).toHaveCount(3);
+  await panel.getByRole('checkbox', { name: 'Select Title 2' }).check();
+  await panel.getByRole('checkbox', { name: 'Select Title 1' }).check();
+  await panel.getByRole('group', { name: 'Bulk actions' }).getByRole('button', { name: 'Mark read' }).click();
   await expect(page.getByRole('button', { name: 'Inbox', exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: 'Clear all' }).click();
+  await expect(panel.locator('[data-inbox-item]')).toHaveCount(0);
+  await expect(panel).toContainText('No notifications');
 });
 
 test('a broadcast with a banner shows above the view until it is dismissed', async ({ page }) => {
   await connect(page);
   const { calls } = await mockInbox(page, [notification(5, { title: 'Scheduled Maintenance', message: 'Sunday at 02:00 UTC.', banner: true })]);
   await open(page);
-  const banner = page.locator('.app__broadcasts .banner');
+  const banner = page.locator('.app__broadcasts [data-notices-banner]');
   await expect(banner).toContainText('Scheduled Maintenance');
   await expect(banner).toContainText('Sunday at 02:00 UTC.');
   await page.goto('/#/lists');
   await expect(banner).toBeVisible();
-  await banner.getByRole('button', { name: 'Dismiss Scheduled Maintenance' }).click();
+  await banner.getByRole('button', { name: 'Dismiss' }).click();
   await expect(banner).toHaveCount(0);
   expect(calls.some((call) => call.method === 'POST' && call.path === '/api/notifications/5/read')).toBe(true);
   await expect(page.getByRole('button', { name: 'Inbox', exact: true })).toBeVisible();
@@ -119,7 +125,7 @@ test('a broadcast with a banner shows above the view until it is dismissed', asy
 test('local mode shows no bell and sends no request to the service', async ({ page }) => {
   const { calls } = await mockInbox(page, [notification(1, { banner: true })]);
   await open(page);
-  await expect(page.locator('.inbox-button')).toBeHidden();
+  await expect(page.locator('.app__notifications-button')).toBeHidden();
   await expect(page.locator('.banner')).toHaveCount(0);
   expect(calls).toEqual([]);
 });
@@ -128,6 +134,6 @@ test('an expired session shows no bell and sends no request', async ({ page }) =
   await page.addInitScript((session) => localStorage.setItem('todos.session', JSON.stringify({ ...session, expiry: '2020-01-01T00:00:00Z' })), SESSION);
   const { calls } = await mockInbox(page, [notification(1)]);
   await open(page);
-  await expect(page.locator('.inbox-button')).toBeHidden();
+  await expect(page.locator('.app__notifications-button')).toBeHidden();
   expect(calls).toEqual([]);
 });

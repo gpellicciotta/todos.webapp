@@ -1,21 +1,28 @@
 /**
  * Inbox view: the bell button with its popover panel, and the broadcast banners above the views (`NTF-1` to `NTF-5`).
  *
+ * The view builds on the vendored package: `createUnreadButton` draws the bell, `createInbox` the panel's rows,
+ * and `attachNotices` the broadcast banner. sync/inbox.js stays the service adapter; the view answers the package's
+ * `inbox:action` events with its requests.
  * The bell sits before the user button, shows the unread count in a badge, and appears only while connected,
  * so local mode shows nothing of it (`LOC-1`). Its panel lists the notifications, most recent first, each with
- * Open for a safe action link, Mark read while unread, and Discard; Clear all discards every one.
- * An unread notification that asks for a banner also shows a banner with Dismiss, which marks it read.
+ * Open for a safe action link, Mark read while unread, and Discard; checked rows take the same actions in bulk,
+ * one request each, and Clear all discards every one.
+ * An unread notification that asks for a banner also shows as a banner with Dismiss, which marks it read.
+ * The banner area shows the most severe, then newest, one; with more, its "View all" link opens the panel.
+ * The package inbox sits in the panel only while the panel is open, so a closed panel and local mode add
+ * no header, empty state, or controls to the page.
  * A change the service does not accept leaves the view as it was and shows a toast.
  * All texts come from the service, so they render as text only.
  */
 
 import { actionLink } from '../sync/inbox.js';
 import { anchorPanel } from '../../vendor/design/js/anchor.js';
+import { createInbox, createUnreadButton, INBOX_ACTION_EVENT } from '../../vendor/design/js/inbox.js';
+import { tabbableIn } from '../../vendor/design/js/focus.js';
+import { attachNotices } from '../../vendor/design/js/notices.js';
 import { attachPopover } from '../../vendor/design/js/popover.js';
 import { make } from './dom.js';
-
-const ICONS = 'img/icons.svg';
-const MAX_BADGE = 99;
 
 /** Inbox strings, for the strings module of TEC-13 to absorb. */
 export const INBOX_STRINGS = Object.freeze({
@@ -23,70 +30,99 @@ export const INBOX_STRINGS = Object.freeze({
   buttonUnread: (count) => `Inbox, ${count} unread`,
   title: 'Inbox',
   empty: 'No notifications',
+  emptyText: 'Announcements and messages from the service show here.',
   offline: 'Offline. Showing the last inbox.',
   clearAll: 'Clear all',
   open: 'Open',
   markRead: 'Mark read',
   discard: 'Discard',
-  dismissText: 'Dismiss',
-  dismiss: (title) => `Dismiss ${title}`,
+  selectAll: 'Select all',
+  clearSelection: 'Clear selection',
+  dismiss: 'Dismiss',
+  viewAll: (count) => `View all ${count} alerts`,
   failed: 'The service could not be reached. Try again.',
 });
 
+/** The package inbox and bell labels, taken from the app strings. */
+const INBOX_LABELS = Object.freeze({
+  title: INBOX_STRINGS.title,
+  listLabel: INBOX_STRINGS.title,
+  emptyTitle: INBOX_STRINGS.empty,
+  emptyText: INBOX_STRINGS.emptyText,
+  discardAll: INBOX_STRINGS.clearAll,
+  open: INBOX_STRINGS.open,
+  markRead: INBOX_STRINGS.markRead,
+  discard: INBOX_STRINGS.discard,
+  selectAll: INBOX_STRINGS.selectAll,
+  clearSelection: INBOX_STRINGS.clearSelection,
+  unreadButton: INBOX_STRINGS.button,
+  unreadButtonCount: (count) => INBOX_STRINGS.buttonUnread(count),
+});
+
+/** The package banner labels, taken from the app strings. */
+const NOTICE_LABELS = Object.freeze({
+  dismiss: INBOX_STRINGS.dismiss,
+  open: INBOX_STRINGS.open,
+  viewAll: INBOX_STRINGS.viewAll,
+});
+
 /**
- * Create a decorative sprite icon.
- * @param {Document} doc the document
- * @param {string} id the symbol identifier
- * @param {string} [className] the classes
- * @returns {SVGElement} the icon
+ * Turn an app notification into the record shape of the package.
+ * The package tells read from unread by a set read time; the app keeps only the flag.
+ * The action address is already resolved against the server, and null when it is not safe (`NTF-7`).
+ * @param {object} item the notification of sync/inbox.js
+ * @param {string|undefined} server the server URL
+ * @returns {object} the package notification
  */
-function icon(doc, id, className = 'icon') {
-  const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', className);
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-  const use = doc.createElementNS('http://www.w3.org/2000/svg', 'use');
-  use.setAttribute('href', `${ICONS}#${id}`);
-  svg.append(use);
-  return svg;
+function toPackage(item, server) {
+  return {
+    id: item.id,
+    title: item.title,
+    message: item.message,
+    type: item.type,
+    banner: item.banner,
+    'creation-time': item.creationTime,
+    'read-time': item.read ? 'read' : null,
+    'action-url': actionLink(item, server),
+  };
 }
 
 /**
- * Create a button.
- * @param {Document} doc the document
- * @param {string} label the text
- * @param {string} action the `data-action` value
- * @returns {HTMLButtonElement} the button
+ * Make the matching links open in a new tab, without access to this page.
+ * @param {HTMLElement} root the element holding the links
+ * @param {string} selector the links
  */
-function actionButton(doc, label, action) {
-  const button = make(doc, 'button', 'button button--secondary', label);
-  button.type = 'button';
-  button.dataset.action = action;
-  return button;
+function openInNewTab(root, selector) {
+  for (const link of root.querySelectorAll(selector)) {
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+  }
 }
 
 /**
- * Create the Open link of a notification.
- * @param {Document} doc the document
- * @param {string} href the address
- * @returns {HTMLAnchorElement} the link
+ * Run a change for each notification in order.
+ * @param {Array<number>} ids the notification identifiers
+ * @param {(id: number) => Promise<boolean>} change the change of one notification
+ * @returns {Promise<boolean>} true when the service accepted every change
  */
-function openLink(doc, href) {
-  const link = make(doc, 'a', 'button button--secondary', INBOX_STRINGS.open);
-  link.href = href;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  return link;
+async function each(ids, change) {
+  let accepted = true;
+  for (const id of ids) {
+    accepted = (await change(id)) && accepted;
+  }
+  return accepted;
 }
 
 /**
- * Format a time in the device timezone (`TEC-14`).
- * @param {string|null} iso the ISO time
- * @returns {string} the text, empty without a valid time
+ * Describe the focused control of a row, so the same control can take focus after a rebuild.
+ * @param {HTMLElement|null} control the focused element
+ * @returns {string|null} the selector of the control within its row
  */
-function formatTime(iso) {
-  const date = new Date(iso ?? '');
-  return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+function controlSelector(control) {
+  if (control?.dataset.inboxAction) {
+    return `[data-inbox-action="${control.dataset.inboxAction}"]`;
+  }
+  return control?.hasAttribute('data-selection-item') ? '[data-selection-item]' : null;
 }
 
 /**
@@ -103,31 +139,36 @@ function formatTime(iso) {
 export function attachInbox(slot, { inbox, session, banners, toaster, announce }) {
   const doc = slot.ownerDocument;
   const announced = new Set();
+  const connected = () => session.state() === 'connected';
 
-  const button = make(doc, 'button', 'icon-button inbox-button');
-  button.type = 'button';
-  button.title = INBOX_STRINGS.button;
-  button.append(icon(doc, 'bell'));
+  const bell = createUnreadButton(doc, { labels: INBOX_LABELS });
+  const button = bell.element;
 
   const panel = make(doc, 'div', 'popover inbox-panel');
   panel.id = 'inbox-panel';
   panel.tabIndex = -1;
   panel.setAttribute('role', 'group');
   panel.setAttribute('aria-label', INBOX_STRINGS.title);
-  const header = make(doc, 'div', 'inbox-panel__header');
-  const heading = make(doc, 'h2', 'inbox-panel__title', INBOX_STRINGS.title);
-  const clearAll = actionButton(doc, INBOX_STRINGS.clearAll, 'clear-all');
-  header.append(heading, clearAll);
+  const list = createInbox(doc, { labels: INBOX_LABELS, headingLevel: 2 });
   const note = make(doc, 'p', 'inbox-panel__note', INBOX_STRINGS.offline);
-  const list = make(doc, 'ul', 'inbox-list');
-  const empty = make(doc, 'p', 'inbox-panel__empty', INBOX_STRINGS.empty);
-  panel.append(header, note, list, empty);
+  list.element.querySelector('.view-header').after(note);
+  const discardAll = list.element.querySelector('[data-inbox-discard-all]');
   slot.prepend(button, panel);
-  const popover = attachPopover(button, panel, { align: 'end' });
+  const popover = attachPopover(button, panel, {
+    align: 'end',
+    initialFocus: null,
+    onOpen: () => {
+      panel.append(list.element);
+      anchorPanel(panel, button, undefined, 'end');
+      (tabbableIn(panel)[0] ?? panel).focus();
+    },
+    onClose: () => list.element.remove(),
+  });
 
   /**
    * Run a change; a refusal shows a toast.
    * @param {Promise<boolean>} change the change
+   * @returns {Promise<void>} resolves once the change settled
    */
   async function settle(change) {
     if (!(await change)) {
@@ -135,134 +176,97 @@ export function attachInbox(slot, { inbox, session, banners, toaster, announce }
     }
   }
 
-  /**
-   * Build the row of a notification.
-   * @param {object} item the notification
-   * @returns {HTMLLIElement} the row
-   */
-  function row(item) {
-    const element = make(doc, 'li', 'inbox-item');
-    element.dataset.id = String(item.id);
-    element.dataset.read = String(item.read);
-    element.dataset.type = item.type;
-    const time = make(doc, 'time', 'inbox-item__time', formatTime(item.creationTime));
-    if (item.creationTime) {
-      time.dateTime = item.creationTime;
-    }
-    const actions = make(doc, 'div', 'inbox-item__actions');
-    const href = actionLink(item, session.account()?.server);
-    if (href) {
-      actions.append(openLink(doc, href));
-    }
-    if (!item.read) {
-      actions.append(actionButton(doc, INBOX_STRINGS.markRead, 'read'));
-    }
-    actions.append(actionButton(doc, INBOX_STRINGS.discard, 'discard'));
-    element.append(
-      ...(item.title ? [make(doc, 'p', 'inbox-item__title', item.title)] : []),
-      make(doc, 'p', 'inbox-item__message', item.message), time, actions,
-    );
-    return element;
-  }
+  const notices = attachNotices(banners, {
+    document: doc,
+    toaster,
+    labels: NOTICE_LABELS,
+    // A modified click on "View all" opens the app in a new tab; a plain click opens the panel here.
+    inboxHref: doc.defaultView?.location?.pathname || '/',
+    isSignedIn: connected,
+    onDiscardInbox: (id) => settle(inbox.markRead(id)),
+    onNavigate: (href, { kind }) => {
+      if (kind === 'all') {
+        popover.open();
+      }
+    },
+  });
 
   /**
-   * Keep focus inside the open panel when a rebuild removed the focused control.
+   * Keep focus inside the open panel when a rebuild removed, hid, or disabled the focused control.
    * @param {string|null} id the identifier of the row that held focus
-   * @param {string|null} action the action of the focused control
+   * @param {string|null} control the selector of the focused control within its row
    */
-  function restoreFocus(id, action) {
-    const target = (id && (panel.querySelector(`[data-id="${id}"] [data-action="${action}"]`)
-      ?? panel.querySelector(`[data-id="${id}"] button`)))
-      || (id && list.querySelector('[data-action]'))
-      || (!clearAll.disabled ? clearAll : panel);
+  function restoreFocus(id, control) {
+    const row = id ? [...list.element.querySelectorAll('[data-inbox-item]')].find((item) => item.dataset.inboxItem === id) : null;
+    const target = (row && ((control && row.querySelector(control)) ?? row.querySelector('[data-inbox-action]')))
+      ?? list.element.querySelector('[data-inbox-item] [data-inbox-action]')
+      ?? (discardAll.disabled ? null : discardAll)
+      ?? panel;
     target.focus();
   }
 
   /** Show the unread count on the bell, and hide the bell without a connection. */
   function renderButton() {
-    const unread = inbox.unreadCount();
-    button.hidden = session.state() !== 'connected';
-    button.setAttribute('aria-label', unread > 0 ? INBOX_STRINGS.buttonUnread(unread) : INBOX_STRINGS.button);
-    button.querySelector('.inbox-button__badge')?.remove();
-    if (unread > 0) {
-      button.append(make(doc, 'span', 'inbox-button__badge', unread > MAX_BADGE ? `${MAX_BADGE}+` : String(unread)));
-    }
+    button.hidden = !connected();
+    bell.setCount(button.hidden ? 0 : inbox.unreadCount());
     if (button.hidden) {
       popover.close('close');
     }
   }
 
-  /** Rebuild the rows of the panel. */
-  function renderPanel() {
+  /**
+   * Rebuild the rows of the panel.
+   * @param {string|undefined} server the server URL
+   */
+  function renderPanel(server) {
     const focused = doc.activeElement && panel.contains(doc.activeElement) ? doc.activeElement : null;
-    const id = focused?.closest('[data-id]')?.dataset.id ?? null;
-    const action = focused?.dataset.action ?? null;
-    const items = inbox.list();
-    list.replaceChildren(...items.map(row));
-    empty.hidden = items.length > 0;
-    clearAll.disabled = items.length === 0;
+    const id = focused?.closest('[data-inbox-item]')?.dataset.inboxItem ?? null;
+    const control = controlSelector(focused);
+    list.setNotifications(inbox.list().map((item) => toPackage(item, server)));
+    openInNewTab(list.element, '[data-inbox-action="open"]');
     note.hidden = inbox.status() !== 'offline';
     if (popover.isOpen()) {
       anchorPanel(panel, button, undefined, 'end');
-      if (focused && !focused.isConnected) {
-        restoreFocus(id, action);
+      if (focused && (!focused.isConnected || focused.disabled || focused.closest('[hidden]'))) {
+        restoreFocus(id, control);
       }
     }
   }
 
-  /** Show a banner for each unread notification that asks for one, announcing the new ones. */
-  function renderBanners() {
-    const items = session.state() === 'connected' ? inbox.banners() : [];
-    banners.replaceChildren(...items.map((item) => {
-      const text = make(doc, 'p', 'banner__text');
-      if (item.title) {
-        text.append(make(doc, 'strong', 'banner__title', item.title), doc.createTextNode(' '));
-      }
-      text.append(doc.createTextNode(item.message));
-      const banner = make(doc, 'div', 'banner');
-      banner.dataset.id = String(item.id);
-      banner.append(icon(doc, 'alert', 'icon banner__icon'), text);
-      const href = actionLink(item, session.account()?.server);
-      if (href) {
-        banner.append(openLink(doc, href));
-      }
-      const dismiss = actionButton(doc, INBOX_STRINGS.dismissText, 'dismiss');
-      dismiss.setAttribute('aria-label', INBOX_STRINGS.dismiss(item.title ?? item.message));
-      banner.append(dismiss);
-      return banner;
-    }));
-    for (const item of items) {
-      if (!announced.has(item.id)) {
-        announced.add(item.id);
-        announce(item.title ? `${item.title}. ${item.message}` : item.message);
-      }
+  /**
+   * Show the banner of the unread notifications that ask for one, announcing a newly shown one.
+   * @param {string|undefined} server the server URL
+   */
+  function renderBanners(server) {
+    const items = connected() ? inbox.banners() : [];
+    notices.setInboxNotifications(items.map((item) => toPackage(item, server)));
+    openInNewTab(banners, '[data-notices-action]');
+    const shownId = banners.querySelector('[data-notices-source="inbox"]')?.dataset.noticesId;
+    const shown = items.find((item) => String(item.id) === shownId);
+    if (shown && !announced.has(shown.id)) {
+      announced.add(shown.id);
+      announce(shown.title ? `${shown.title}. ${shown.message}` : shown.message);
     }
   }
 
   /** Bring the whole view up to date. */
   function render() {
+    const server = session.account()?.server;
     renderButton();
-    renderPanel();
-    renderBanners();
+    renderPanel(server);
+    renderBanners(server);
   }
 
-  panel.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action]');
-    const id = Number(target?.closest('[data-id]')?.dataset.id);
-    if (target?.dataset.action === 'read') {
-      settle(inbox.markRead(id));
-    }
-    else if (target?.dataset.action === 'discard') {
-      settle(inbox.discard(id));
-    }
-    else if (target?.dataset.action === 'clear-all') {
+  list.element.addEventListener(INBOX_ACTION_EVENT, (event) => {
+    const { action, ids } = event.detail;
+    if (action === 'discard-all') {
       settle(inbox.clearAll());
     }
-  });
-  banners.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action="dismiss"]');
-    if (target) {
-      settle(inbox.markRead(Number(target.closest('[data-id]').dataset.id)));
+    else if (action === 'mark-read') {
+      settle(each(ids, inbox.markRead));
+    }
+    else if (action === 'discard') {
+      settle(each(ids, inbox.discard));
     }
   });
   const stopInbox = inbox.subscribe(render);
@@ -275,6 +279,9 @@ export function attachInbox(slot, { inbox, session, banners, toaster, announce }
       stopInbox();
       stopSession();
       popover.destroy();
+      list.destroy();
+      bell.destroy();
+      notices.destroy();
       button.remove();
       panel.remove();
       banners.replaceChildren();

@@ -82,6 +82,10 @@ All notable changes to this project are documented here.
 - FrontEnd: Drew the nav toggle from the `icon-nav-collapse`, `icon-nav-hide`, `icon-nav-menu`, and `icon-nav-close` glyphs of the app sprite.
 - Tests: Pinned release 0.5.1, required the toggle glyphs in the sprite, and checked the toggle glyph per state and one rail tooltip per entry.
 - FrontEnd: Let the task editor grow into the room the icon rail or a hidden sidebar frees, up to 40rem, and clamped it back when the sidebar reopens, keeping the stored widths.
+- FrontEnd: Rebuilt the inbox bell, panel rows, and broadcast banner on the vendored `inbox.js` and `notices.js`, adding type badges, relative time chips, bulk Mark read and Discard, and an unread summary (NTF-1 to NTF-4).
+- FrontEnd: Showed one broadcast banner at a time, the most severe and newest first, with a "View all N alerts" link that opens the inbox panel (NTF-3).
+- FrontEnd: Dropped the app's `inbox-*` styles that the package's `inbox.css` replaces.
+- Tests: Moved the inbox unit and e2e tests to the package markup and added bulk action, banner order, and closed panel checks.
 
 ## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.
