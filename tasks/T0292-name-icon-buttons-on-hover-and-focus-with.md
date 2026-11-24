@@ -5,17 +5,22 @@ session: claude-20261124-e05175
 needs: []
 branch: task/T0292-name-icon-buttons-on-hover-and-focus-with
 worktree: .plan/work/T0292-name-icon-buttons-on-hover-and-focus-with
-status: active
+status: completed
 started_at: "2026-11-24T13:58:20Z"
-ended_at: —
+ended_at: "2026-11-24T14:14:45Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 725.5, input: 98, output: 20984, cache_read: 4169108, cache_write: 97771}
-review_status: pending
+  review: {turns: 1, duration_s: 242.7, input: 134184, output: 9357, cache_read: 1398186}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-24T14:10:36Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261124-a65b4d
+work_duration: 984.9
+completion-commit: 476f44a1f731140564ab9b2938ef0a30ba29fe73
 ---
 # T0292: Name icon buttons on hover and focus with the vendored label tooltips instead of native titles
 
@@ -33,7 +38,7 @@ Completion check: `python scripts/devops.py check`.
 - [x] **[Implement]** Attach the label tooltips in the shell and drop the titles that repeat names.
 - [x] **[Verify]**    Run the completion check and capture before and after screenshots of a hovered button.
 - [x] **[Doc]**       Update the UI design spec, the visual style guide, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-24] **[Doc]**
@@ -66,4 +71,11 @@ Completion check: `python scripts/devops.py check`.
 
 - [2026-11-24] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-24] **[Review]**
+  Round 1 approved by @gemini: Approved.
+  - Findings: [review-findings-1.md](T0292-name-icon-buttons-on-hover-and-focus-with/review-findings-1.md).
+
+- [2026-11-24] **[Complete]**
+  Task completed successfully.
 

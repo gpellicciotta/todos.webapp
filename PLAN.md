@@ -7,11 +7,11 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0295 Replace the eight local make helpers with the vendored dom-builders.js.
 - [x] T0294 Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js.
 - [x] T0293 Show sync log entries as the vendored entry list cards.
-- [~] T0292 [owner: @claude] Name icon buttons on hover and focus with the vendored label tooltips instead of native titles.
+- [x] T0292 Name icon buttons on hover and focus with the vendored label tooltips instead of native titles.
 - [ ] T0291 Download the Settings backup through the vendored file-download.js helper.
 - [ ] T0290 Apply the stored theme before first paint with the vendored theme-boot.js.
 - [x] T0254 Vendor support.webapp v0.5.1 and adapt the app to its shell, nav toggle, and component changes.
-- [ ] T0286 [needs: T0290, T0291, T0292] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
+- [ ] T0286 [needs: T0290, T0291] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
 
 ## Backlog
 - [ ] T0296 Redraw the Sync log wireframe as entry list cards with time and kind chips.
