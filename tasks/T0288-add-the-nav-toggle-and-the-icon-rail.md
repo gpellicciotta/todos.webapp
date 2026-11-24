@@ -1,11 +1,11 @@
 ---
 id: T0288
-owner: ~
-needs: ['T0254']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0288-add-the-nav-toggle-and-the-icon-rail
+worktree: .plan/work/T0288-add-the-nav-toggle-and-the-icon-rail
+status: active
+started_at: "2026-11-24T12:23:03Z"
 ended_at: —
 review: agent
 preview: none
