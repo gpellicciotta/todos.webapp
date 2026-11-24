@@ -415,3 +415,29 @@ def test_find_wireframe_shows_results_and_the_create_offer(output):
     assert wide_labels.count("Reset") == 1
     assert wide_labels.count("4 of 124") == 1  # the sidebar field counts its own matches
     assert 'Create list "Garden shed"' not in wide_labels
+
+
+def test_sync_log_cards_show_the_item_then_time_and_kind_chips_then_sunken_details(output):
+    _, groups = frames(output / "sync-log.svg")
+    for group in groups:
+        texts = list(group.iter(f"{SVG}text"))
+        labels = [t.text for t in texts]
+        assert "Values that sync overwrote or undid in the last 30 days." in " ".join(labels)
+        assert "Entries stay for 30 days." in labels
+        ys = {t.text: float(t.get("y")) for t in texts}
+        item, time, kind = "Buy paint for the hallway · Due time", "◷ Today 09:14", "Overwritten value"
+        assert ys[item] < ys[time] and ys[time] == ys[kind], "the chips follow the item on one row"
+        assert labels.index(time) < labels.index(kind), "the time chip comes before the kind chip"
+        chips = [
+            r
+            for r in group.iter(f"{SVG}rect")
+            if r.get("class") == "chip" and abs(float(r.get("y")) + 16 - ys[time]) < 0.5
+        ]
+        assert len(chips) >= 2, "the time and the kind sit in chips"
+        assert labels.count("Open") == 1, "only the item that still exists offers Open"
+        assert ys["Open"] == ys[time]
+        detail = ys["Lost: Fri 10:00 · Kept: Today 18:00"]
+        assert any(
+            r.get("class") == "bar" and float(r.get("y")) < detail < float(r.get("y")) + float(r.get("height"))
+            for r in group.iter(f"{SVG}rect")
+        ), "the values sit in a sunken details box"

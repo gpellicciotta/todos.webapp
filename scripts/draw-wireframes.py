@@ -1421,47 +1421,58 @@ def settings():
     return "Settings", "Theme, Make Enter add, backups, connection, server URL, and app version.", compact, wide
 
 
+LOG_INTRO = "Values that sync overwrote or undid in the last 30 days."
+LOG_RETENTION = "Entries stay for 30 days."
+
+# Each entry: the kind, the time, the item line, the values, and whether the item still exists, which offers Open.
 LOG_ENTRIES = [
-    ("Overwritten value", "Today 09:14", "Buy paint for the hallway · Due time", "Lost: Fri 10:00 · Kept: Today 18:00"),
-    ("Rejected change", "Today 08:02", "Buy oat milk · in Groceries", "No access anymore; status change undone"),
-    ("Lost access", "Today 08:02", "Groceries, shared by Ann", "2 queued changes were undone"),
-    ("Sync error", "Yesterday 22:40", "Server unavailable", "Retried and synced at 22:45"),
+    (
+        "Overwritten value",
+        "Today 09:14",
+        "Buy paint for the hallway · Due time",
+        "Lost: Fri 10:00 · Kept: Today 18:00",
+        True,
+    ),
+    ("Rejected change", "Today 08:02", "Buy oat milk · No access anymore", "Undone: status: completed", False),
+    ("Lost access", "Today 08:02", "Groceries", "2 queued changes were undone", False),
+    ("Sync error", "Yesterday 22:40", "Server unavailable", "Retried and synced at 22:45", False),
 ]
 
 
-def log_entry(f, x, y, width, kind, time, item, detail):
-    """Draw one sync log entry card; return the next y."""
-    f.rect(x, y, width, 96, "box", radius=8)
-    f.text(x + 16, y + 28, kind, 15, "bold")
-    f.text(x + width - 16, y + 28, time, 12, "muted", "end")
-    f.text(x + 16, y + 54, fit(item, width - 32, 14), 14)
-    f.text(x + 16, y + 78, fit(detail, width - 32, 13), 13, "muted")
-    return y + 108
+def log_entry(f, x, y, width, kind, time, item, detail, exists):
+    """Draw one sync log entry card: the item, a chip row, and the values in a sunken box; return the next y.
+
+    The chip row holds the time chip, then the kind chip, and ends with an Open link while the item still exists.
+    """
+    f.rect(x, y, width, 118, "box", radius=8)
+    f.text(x + 16, y + 28, fit(item, width - 32, 15), 15)
+    left = chip_left(f, x + 16, y + 40, "◷ " + time)
+    chip_left(f, left + 8, y + 40, kind)
+    if exists:
+        f.text(x + width - 16, y + 56, "Open", 13, "bold", "end")
+    f.rect(x + 12, y + 74, width - 24, 32, "bar", radius=4)
+    f.text(x + 22, y + 95, fit(detail, width - 44, 13), 13, "muted")
+    return y + 130
 
 
 def sync_log():
     """The sync log while connected."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     top_bar(compact, "Sync log", "connected", back=True)
-    y = 76
+    compact.text(16, 88, "Values that sync overwrote or undid", 13, "muted")
+    compact.text(16, 106, "in the last 30 days.", 13, "muted")
+    y = 120
     for entry in LOG_ENTRIES:
         y = log_entry(compact, 12, y, compact.width - 24, *entry)
-    compact.text(16, y + 20, "Entries stay for 30 days.", 13, "muted")
+    compact.text(16, y + 8, LOG_RETENTION, 13, "muted")
     bottom_nav(compact, "Settings")
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     sidebar(wide, "Settings")
-    page_header(
-        wide,
-        MAIN_LEFT,
-        28,
-        MAIN_RIGHT,
-        "Sync log",
-        "Values that sync overwrote or undid in the last 30 days.",
-        account="connected",
-    )
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Sync log", LOG_INTRO, account="connected")
     y = 116
     for entry in LOG_ENTRIES:
         y = log_entry(wide, MAIN_LEFT, y, 720, *entry)
+    wide.text(MAIN_LEFT, y + 8, LOG_RETENTION, 13, "muted")
     return (
         "Sync log",
         "What conflict resolution overwrote and what the service rejected, with links to the items.",
