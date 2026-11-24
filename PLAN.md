@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [ ] T0289 Let the editor panel width limits use the rail or hidden sidebar width instead of the open sidebar width.
+- [~] T0289 [owner: @claude] Let the editor panel width limits use the rail or hidden sidebar width instead of the open sidebar width.
 - [ ] T0288 Add the nav toggle and the icon rail of the wide sidebar to the wireframes that draw-wireframes.py renders.
 - [ ] T0295 Replace the eight local make helpers with the vendored dom-builders.js.
 - [ ] T0294 Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js.

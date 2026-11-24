@@ -1,11 +1,11 @@
 ---
 id: T0289
-owner: ~
-needs: ['T0254']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0289-let-the-editor-panel-width-limits-use-the
+worktree: .plan/work/T0289-let-the-editor-panel-width-limits-use-the
+status: active
+started_at: "2026-11-24T12:06:49Z"
 ended_at: —
 review: agent
 preview: none
