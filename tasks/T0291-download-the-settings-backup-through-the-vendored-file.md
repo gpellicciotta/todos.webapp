@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 519.9, input: 60, output: 9946, cache_read: 1927992, cache_write: 64974}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T14:23:53Z"
 ---
 # T0291: Download the Settings backup through the vendored file-download.js helper
 
@@ -54,4 +59,7 @@ Completion check: `python scripts/devops.py check`.
 
 - [2026-11-24] **[Doc]**
   Added a FrontEnd bullet to CHANGELOG.md under v0.5.1-pre.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
