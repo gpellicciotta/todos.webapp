@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 734.2, input: 94, output: 21034, cache_read: 3702571, cache_write: 87135}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T14:44:25Z"
 ---
 # T0290: Apply the stored theme before first paint with the vendored theme-boot.js
 
@@ -54,4 +59,7 @@ Keep `applyTheme` for the `theme-color` metas and live changes from Settings.
   - Files touched: 9.
   - Lines touched: 94.
   - Reopenings: 0.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
