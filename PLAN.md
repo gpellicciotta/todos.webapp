@@ -2,7 +2,13 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [!] T0254 [reason: needs review: superseded. main already vendors support.webapp 0.2.1 (T0283); tag v0.2.0 first contains T0049's switch commit c8d661b. No change left to make; close as obsolete.] [owner: @claude, session: claude-20261117-fc9300] [protocol: adhoc] Vendor the support.webapp release with the rectangular switch from its T0049.
+- [ ] T0295 [needs: T0254] Replace the eight local make helpers with the vendored dom-builders.js.
+- [ ] T0294 [needs: T0254] Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js.
+- [ ] T0293 [needs: T0254] Show sync log entries as the vendored entry list cards.
+- [ ] T0292 [needs: T0254] Name icon buttons on hover and focus with the vendored label tooltips instead of native titles.
+- [ ] T0291 [needs: T0254] Download the Settings backup through the vendored file-download.js helper.
+- [ ] T0290 [needs: T0254] Apply the stored theme before first paint with the vendored theme-boot.js.
+- [ ] T0254 Vendor support.webapp v0.5.1 and adapt the app to its shell, nav toggle, and component changes.
 - [ ] T0286 [needs: T0254] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
 
 ## Backlog
