@@ -25,7 +25,7 @@ completion-commit: 0426b1bf832b613673a942aeadc0c01123e3fd0a
 # T0291: Download the Settings backup through the vendored file-download.js helper
 
 ## Goals
-Replace the hand-built object URL and hidden link in `saveBackup` of [settings.js](../../src/js/views/settings.js) with `downloadJson`.
+Replace the hand-built object URL and hidden link in `saveBackup` of [settings.js](../../../src/js/views/settings.js) with `downloadJson`.
 Keep the file name, the two-space JSON, the `application/json` type, and the confirmation toast.
 This refactor changes no behavior.
 Completion check: `python scripts/devops.py check`.

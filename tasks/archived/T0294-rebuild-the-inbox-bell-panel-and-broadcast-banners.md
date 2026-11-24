@@ -25,10 +25,10 @@ completion-commit: a7e1e1e97d29f546cffecfdc1f686ab34d42794f
 # T0294: Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js
 
 ## Goals
-Replace the hand-built bell, panel rows, and banners of [ui/inbox.js](../../src/js/ui/inbox.js) with the package modules.
+Replace the hand-built bell, panel rows, and banners of [ui/inbox.js](../../../src/js/ui/inbox.js) with the package modules.
 Use `createUnreadButton` for the bell, `createInbox` inside the existing popover, and `attachNotices` for banners.
 Keep NTF-1 to NTF-5: connected-only bell, newest first, Open, Mark read, Discard, Clear all, and banner Dismiss.
-Keep [sync/inbox.js](../../src/js/sync/inbox.js) as the service adapter, answering the package's `inbox:action` events.
+Keep [sync/inbox.js](../../../src/js/sync/inbox.js) as the service adapter, answering the package's `inbox:action` events.
 Drop the `inbox-*` rules of app-chrome.css that the package's inbox.css replaces.
 Completion check: `python scripts/devops.py check`.
 

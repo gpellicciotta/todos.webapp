@@ -3,21 +3,21 @@
 ### Source
 - Vendor support.webapp tag `v0.5.1` (commit 08df4fe), released 2026-11-24.
 - Run from the app root: `node {{support-webapp-v0.5.1}}/bin/cli.mjs vendor --look neutral --to src/vendor/design`.
-- Export the checkout with `git -c core.autocrlf=false archive v0.5.1`, as [devops.md](../../../docs/devops.md) prescribes.
+- Export the checkout with `git -c core.autocrlf=false archive v0.5.1`, as [devops.md](../../../../docs/devops.md) prescribes.
 - v0.5.0 normalizes CRLF to LF in text integrity hashes; relax the LF-only warning in devops.md accordingly.
 
 ### Package Changes That Reach the App
 - v0.3.0 refreshed only the bright look; the app uses `neutral`, so nothing changes there.
 - `style.css` now imports `page.css`, `view-header.css`, `inbox.css`, `entry-list.css`, and other new partials.
-- `.view-header` collides: [app-components.css](../../../src/css/app-components.css) defines a flex header with a More button.
+- `.view-header` collides: [app-components.css](../../../../src/css/app-components.css) defines a flex header with a More button.
   - The package draws a grid with `margin-block-end: var(--space-4)` and an optional muted summary line.
   - Keep the app's header layout; drop app rules the package now covers, and override the rest.
 - `page.css` adds body text, heading, link, and code styles plus a `[hidden]` guard; check every screen for shifts.
 - `shell.css` adds sidebar end lists, nav badges, brand logos, hidden top bar parts, and banner dismiss.
 - The nav toggle now swaps its `<use>` fragment to the next step: `nav-collapse`, `nav-hide`, `nav-menu`, or `nav-close`.
-  - The app sprite [icons.svg](../../../src/img/icons.svg) has only `nav-menu`; add the three glyphs from the neutral look sprite.
+  - The app sprite [icons.svg](../../../../src/img/icons.svg) has only `nav-menu`; add the three glyphs from the neutral look sprite.
 - In the rail, `app-nav.js` shows each entry's clipped label through `attachLabelTooltips`.
-  - Sidebar entries carry `title` in [layout.js](../../../src/js/ui/layout.js) (lines 164 and 414).
+  - Sidebar entries carry `title` in [layout.js](../../../../src/js/ui/layout.js) (lines 164 and 414).
   - Drop those `title` attributes where the package tooltip replaces them, so the rail shows one tooltip.
 - `field.js` defers blur validation until pointer release; check the task editor and Settings forms.
 - New icons (`icon-refresh`, admin screen glyphs, nav glyphs) arrive in the look sprite only.

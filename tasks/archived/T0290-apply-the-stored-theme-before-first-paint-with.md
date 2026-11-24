@@ -26,7 +26,7 @@ completion-commit: 8128df6e6af638395cbb0cbc724c3e37a09175ea
 
 ## Goals
 Load the vendored `js/theme-boot.js` as a classic script in the head of index.html, so a stored theme paints first.
-Today [app.js](../../src/js/app.js) applies the theme only once the module graph runs, after the first paint.
+Today [app.js](../../../src/js/app.js) applies the theme only once the module graph runs, after the first paint.
 Store `todos.theme` as plain `light` or `dark`, which theme-boot reads; `readTheme` already accepts both forms.
 Add `<meta name="color-scheme">`, which theme-boot updates, as the package's starter index.html does.
 Keep `applyTheme` for the `theme-color` metas and live changes from Settings.

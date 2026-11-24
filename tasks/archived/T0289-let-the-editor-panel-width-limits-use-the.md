@@ -27,7 +27,7 @@ completion-commit: 19debd159deee21eb978386afbfe24a2586003dc
 ## Goals
 The task editor's maximum width subtracts the stored open sidebar width, even while the sidebar is a rail or hidden.
 At 1100 px with a 16rem sidebar in the rail, the editor stops at 28.75rem instead of 40rem.
-Make [panel-resize.js](../../src/js/ui/panel-resize.js) use the sidebar's shown width: the rail track, or 0 when hidden.
+Make [panel-resize.js](../../../src/js/ui/panel-resize.js) use the sidebar's shown width: the rail track, or 0 when hidden.
 Recompute the limits and the applied widths whenever the nav toggle changes the sidebar state.
 Keep the stored open width, so reopening the sidebar restores it.
 Completion check: `python scripts/devops.py check`.
