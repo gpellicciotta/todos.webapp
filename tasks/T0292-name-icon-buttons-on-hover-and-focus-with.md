@@ -1,6 +1,7 @@
 ---
 id: T0292
 owner: "@claude"
+session: claude-20261124-e05175
 needs: []
 branch: task/T0292-name-icon-buttons-on-hover-and-focus-with
 worktree: .plan/work/T0292-name-icon-buttons-on-hover-and-focus-with
@@ -21,12 +22,12 @@ Keep `title` hints that say more than the name, such as task status buttons; tho
 Completion check: `python scripts/devops.py check`.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read attachLabelTooltips in the vendored tooltip.js and every icon button with a title.
-- [ ] **[Implement]** Write the unit and e2e tests of the technical spec.
-- [ ] **[Verify]**    Run them and confirm they fail on main.
-- [ ] **[Implement]** Attach the label tooltips in the shell and drop the titles that repeat names.
-- [ ] **[Verify]**    Run the completion check and capture before and after screenshots of a hovered button.
-- [ ] **[Doc]**       Update the UI design spec, the visual style guide, and CHANGELOG.md.
+- [x] **[Read]**      Read attachLabelTooltips in the vendored tooltip.js and every icon button with a title.
+- [x] **[Implement]** Write the unit and e2e tests of the technical spec.
+- [x] **[Verify]**    Run them and confirm they fail on main.
+- [x] **[Implement]** Attach the label tooltips in the shell and drop the titles that repeat names.
+- [x] **[Verify]**    Run the completion check and capture before and after screenshots of a hovered button.
+- [x] **[Doc]**       Update the UI design spec, the visual style guide, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -35,3 +36,26 @@ Completion check: `python scripts/devops.py check`.
 
 - [2026-11-24] **[Decided]**
   Planned after reviewing support.webapp v0.5.1 for modules the app can reuse.
+
+- [2026-11-24] **[Decided]**
+  Selector covers .icon-button and .fab, so the New list button keeps a hover name after losing its title; the shell gained destroy().
+
+- [2026-11-24] **[Implement]**
+  Touched undeclared tests/unit/inbox-ui.test.js and tests/unit/lists.test.js for the dropped titles.
+  - Size note: 10 counted files, 147 lines; the two tests guard the dropped titles.
+
+- [2026-11-24] **[Verify]**
+  Completion check passed; screenshots linked in validation-proof.md: before-hover.png and after-hover.png.
+  - Files touched: 10.
+  - Lines touched: 147.
+  - Reopenings: 0.
+
+- [2026-11-24] **[Read]**
+  attachLabelTooltips delegates from one root; the rail controller on the sidebar claims rail events first, so the shell root adds no second sidebar controller.
+
+- [2026-11-24] **[Verify]**
+  New unit and e2e tooltip tests failed on main as expected; outputs recorded in validation-proof.md.
+
+- [2026-11-24] **[Doc]**
+  Documented label tooltips in ui-design.md App Shell and the visual style guide icon button entry, and added a CHANGELOG bullet.
+
