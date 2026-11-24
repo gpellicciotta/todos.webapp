@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 928.2, input: 88, output: 20687, cache_read: 4832966, cache_write: 121169}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T11:59:02Z"
 ---
 # T0254: Vendor support.webapp v0.5.1 and adapt the app to its shell, nav toggle, and component changes
 
@@ -61,4 +66,7 @@ Completion check: `python scripts/devops.py check`, plus the screenshot comparis
 
 - [2026-11-24] **[Doc]**
   Updated devops.md, the style guide, ui-design.md, and CHANGELOG.md.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
