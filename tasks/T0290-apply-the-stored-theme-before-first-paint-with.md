@@ -1,6 +1,7 @@
 ---
 id: T0290
 owner: "@claude"
+session: claude-20261124-6a2935
 needs: []
 branch: task/T0290-apply-the-stored-theme-before-first-paint-with
 worktree: .plan/work/T0290-apply-the-stored-theme-before-first-paint-with
@@ -21,12 +22,12 @@ Add `<meta name="color-scheme">`, which theme-boot updates, as the package's sta
 Keep `applyTheme` for the `theme-color` metas and live changes from Settings.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the vendored theme-boot.js and the starter template index.html of support.webapp v0.5.1.
-- [ ] **[Implement]** Write the unit and e2e tests of the technical spec.
-- [ ] **[Verify]**    Run them and confirm they fail on main.
-- [ ] **[Implement]** Add the boot script and color-scheme meta, store the theme plain, and precache the script.
-- [ ] **[Verify]**    Run the completion check.
-- [ ] **[Doc]**       Update the UI design spec and CHANGELOG.md.
+- [x] **[Read]**      Read the vendored theme-boot.js and the starter template index.html of support.webapp v0.5.1.
+- [x] **[Implement]** Write the unit and e2e tests of the technical spec.
+- [x] **[Verify]**    Run them and confirm they fail on main.
+- [x] **[Implement]** Add the boot script and color-scheme meta, store the theme plain, and precache the script.
+- [x] **[Verify]**    Run the completion check.
+- [x] **[Doc]**       Update the UI design spec and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -35,3 +36,22 @@ Keep `applyTheme` for the `theme-color` metas and live changes from Settings.
 
 - [2026-11-24] **[Decided]**
   Planned after reviewing support.webapp v0.5.1 for modules the app can reuse.
+
+- [2026-11-24] **[Decided]**
+  Synced the color-scheme meta in applyTheme too, as vendored theme-switch.js does, so a live switch to System undoes the boot value.
+
+- [2026-11-24] **[Implement]**
+  Touched four undeclared files: layout.js and its test for the meta, and the precache and public-entry tests that must accept theme-boot.js.
+
+- [2026-11-24] **[Verify]**
+  Size note: 9 counted files and 94 changed lines cross the 8-file typical line; the four undeclared files are fix-ups this change requires.
+
+- [2026-11-24] **[Verify]**
+  Unit and e2e tests failed before the change, and python scripts/devops.py check passed after it; see validation-proof.md.
+
+- [2026-11-24] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 9.
+  - Lines touched: 94.
+  - Reopenings: 0.
+

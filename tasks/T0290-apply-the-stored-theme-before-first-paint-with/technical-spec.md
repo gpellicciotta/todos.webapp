@@ -12,6 +12,8 @@
 - src/service-worker.js
 - tests/unit/preferences.test.js
 - docs/specs/ui-design.md
+- Added during execution: src/js/ui/layout.js, tests/unit/layout.test.js
+- Added during execution: tests/unit/design-system.test.js, tests/unit/precache.test.js
 - Added, uncounted: tests/e2e/theme-boot.spec.js
 
 Mechanical command: node scripts/check-sw-version.mjs --update
