@@ -1,11 +1,11 @@
 ---
 id: T0294
-owner: ~
-needs: [T0254]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0294-rebuild-the-inbox-bell-panel-and-broadcast-banners
+worktree: .plan/work/T0294-rebuild-the-inbox-bell-panel-and-broadcast-banners
+status: active
+started_at: "2026-11-24T13:01:44Z"
 ended_at: —
 review: agent
 preview: none

@@ -5,7 +5,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0289 Let the editor panel width limits use the rail or hidden sidebar width instead of the open sidebar width.
 - [x] T0288 Add the nav toggle and the icon rail of the wide sidebar to the wireframes that draw-wireframes.py renders.
 - [x] T0295 Replace the eight local make helpers with the vendored dom-builders.js.
-- [ ] T0294 Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js.
+- [~] T0294 [owner: @claude] Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js.
 - [ ] T0293 Show sync log entries as the vendored entry list cards.
 - [ ] T0292 Name icon buttons on hover and focus with the vendored label tooltips instead of native titles.
 - [ ] T0291 Download the Settings backup through the vendored file-download.js helper.
