@@ -4,15 +4,18 @@ owner: "@claude-code"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-24T15:09:36Z"
-ended_at: —
+ended_at: "2026-11-24T15:20:26Z"
 review: agent
 preview: none
 protocol: standard
-review_status: pending
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-24T15:17:14Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261124-268481
+completion-commit: 30a58b83ab6dd35fbc3dae37cbff23145fff0261
 ---
 # T0297: Show a connected empty state in All tasks without the Connect link once all tasks are deleted while connected
 
@@ -32,7 +35,7 @@ Size estimate: 4 files, 120 lines.
 - [x] **[Verify]**    Run the unit tests, the All tasks e2e suite, and the connected e2e scenario.
 - [x] **[Visual]**    Capture before and after screenshots of the connected empty state in the browser.
 - [x] **[Doc]**       Update the First Launch flow in ui-design.md and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-24] **[Doc]**
@@ -51,4 +54,23 @@ Size estimate: 4 files, 120 lines.
 
 - [2026-11-24] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-24] **[Review]**
+  Round 1 approved by @gemini: Approved.
+  - Findings: [review-findings-1.md](T0297-show-a-connected-empty-state-in-all-tasks/review-findings-1.md).
+
+- [2026-11-24] **[Implement]**
+  Added unit tests for the connected, sign-in-needed, and local empty states and the session redraw; they failed as expected.
+
+- [2026-11-24] **[Implement]**
+  Added an e2e case that connects, deletes the only task, and expects no Connect link; it failed as expected.
+
+- [2026-11-24] **[Implement]**
+  Made showFirstLaunch follow the session and subscribed the screen to session changes.
+
+- [2026-11-24] **[Doc]**
+  Described the connected empty state in the First Launch flow and added a CHANGELOG entry.
+
+- [2026-11-24] **[Complete]**
+  Task completed successfully.
 

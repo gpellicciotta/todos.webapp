@@ -21,6 +21,8 @@ AssertionError: expected 'Your tasks stay on this device.' to be 'Your tasks syn
 ```
 
 ### Red phase: e2e scenario
+The e2e specs keep their service mocks per file, so the new case inlines its session and mock like `backup.spec.js`.
+
 Command: `npx playwright test tests/e2e/all-tasks.spec.js -g "deleting every task"` before the fix (exit 1)
 
 ```text
