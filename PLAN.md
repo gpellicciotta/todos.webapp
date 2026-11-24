@@ -9,7 +9,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0291 [needs: T0254] Download the Settings backup through the vendored file-download.js helper.
 - [ ] T0290 [needs: T0254] Apply the stored theme before first paint with the vendored theme-boot.js.
 - [ ] T0254 Vendor support.webapp v0.5.1 and adapt the app to its shell, nav toggle, and component changes.
-- [ ] T0286 [needs: T0254] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
+- [ ] T0286 [needs: T0254, T0290, T0291, T0292, T0293, T0294, T0295] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
 
 ## Backlog
 - [ ] T0289 Let the editor panel width limits use the rail or hidden sidebar width instead of the open sidebar width.
