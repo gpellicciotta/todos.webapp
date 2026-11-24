@@ -1,7 +1,7 @@
 /**
  * Preferences in `localStorage`, under keys that start with `todos.`.
  *
- * Values are stored as JSON. Storage that is missing, blocked, or full never throws:
+ * Values are stored as JSON, apart from the plain `theme` that the vendored theme-boot.js reads. Storage that is missing, blocked, or full never throws:
  * reads return the fallback and writes report failure, so the app works in private windows.
  * The views store their filters, grouping, and sort here (`TV-12`), All tasks once and each list on its own; Settings stores `theme`, `enter-adds`, and `server-url`.
  * The names in `SYNCED_SETTINGS` follow the account while connected (`SYN-13`); sync/settings.js uploads and downloads them.
@@ -209,13 +209,26 @@ export function readTheme(getStorage = () => globalThis.localStorage) {
 }
 
 /**
- * Store the theme preference of this device.
+ * Store the theme preference of this device: `light` or `dark` plain, as the vendored theme-boot.js reads it before first paint.
+ * `system` removes the key, so the page follows the system theme.
  * @param {'system'|'light'|'dark'} theme the theme
  * @param {() => Storage} [getStorage] returns the storage, `localStorage` by default
  * @returns {boolean} true when stored
  */
-export function writeTheme(theme, getStorage) {
-  return THEMES.includes(theme) && writePreference('theme', theme, getStorage);
+export function writeTheme(theme, getStorage = () => globalThis.localStorage) {
+  if (!THEMES.includes(theme)) {
+    return false;
+  }
+  if (theme === 'system') {
+    return removePreference('theme', getStorage);
+  }
+  try {
+    getStorage().setItem(`${PREFIX}theme`, theme);
+  }
+  catch {
+    return false;
+  }
+  return true;
 }
 
 /**

@@ -34,7 +34,8 @@ function precacheList() {
 
 /**
  * Follow the references from css/style.css and the app modules to the vendored files the app loads:
- * CSS `@import` and `url()`, module imports, and page-relative `vendor/` paths in app code, such as the look sprite.
+ * CSS `@import` and `url()`, module imports, page-relative `vendor/` paths in app code, such as the look sprite,
+ * and `src` or `href` vendor paths in index.html, such as the theme boot script.
  * @returns {string[]} web paths relative to src/, under vendor/
  */
 function loadedVendorFiles() {
@@ -56,6 +57,9 @@ function loadedVendorFiles() {
     }
   };
   visit('css/style.css');
+  for (const match of readFileSync(join(ROOT, 'index.html'), 'utf8').matchAll(/\b(?:src|href)="(vendor\/design\/[^"]+)"/g)) {
+    visit(match[1]);
+  }
   walk(join(ROOT, 'js')).forEach(visit);
   return [...seen].filter((path) => path.startsWith('vendor/')).sort();
 }

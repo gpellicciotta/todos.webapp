@@ -208,7 +208,12 @@ Settings and the Sync log stay in a centered `--width-main` column.
   The timer's first run cancels overdue `cancel` tasks.
 - A start-up failure replaces the view with an error banner asking for a reload.
 - The theme follows the system unless `localStorage` holds `todos.theme` as `light` or `dark`, plain or as JSON.
+  Settings stores it plain, and choosing System removes the key.
+  The vendored `theme-boot.js` loads as a classic script in the head and applies a plain value before first paint.
+  It sets `data-theme` on `<html>` and the `color-scheme` meta, which defaults to `light dark`.
+  The app then applies the stored theme again, reading the older JSON form too.
   A stored theme also sets every `theme-color` meta, so the browser bar matches it.
+  A theme chosen in Settings updates `data-theme`, the `color-scheme` meta, and the `theme-color` metas at once.
 
 ### User Menu
 Wireframe: [user-menu.svg](../img/ui/user-menu.svg).

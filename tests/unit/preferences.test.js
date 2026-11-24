@@ -70,14 +70,32 @@ describe('theme preference', () => {
     expect(readTheme(() => storage)).toBe('system');
   });
 
-  it('stores light, dark, and system under todos.theme', () => {
+  it('stores light and dark plain under todos.theme, which the vendored theme-boot.js reads', () => {
     const storage = memoryStorage();
-    for (const theme of ['dark', 'light', 'system']) {
+    for (const theme of ['dark', 'light']) {
       expect(writeTheme(theme, () => storage)).toBe(true);
-      expect(storage.data.get('todos.theme')).toBe(JSON.stringify(theme));
+      expect(storage.data.get('todos.theme')).toBe(theme);
       expect(readTheme(() => storage)).toBe(theme);
     }
     expect(writeTheme('dark', () => throwing)).toBe(false);
+    expect(writeTheme('purple', () => storage)).toBe(false);
+    expect(storage.data.get('todos.theme')).toBe('light');
+  });
+
+  it('removes todos.theme for system, so theme-boot.js leaves the page on the system theme', () => {
+    const storage = memoryStorage();
+    writeTheme('dark', () => storage);
+    expect(writeTheme('system', () => storage)).toBe(true);
+    expect(storage.data.has('todos.theme')).toBe(false);
+    expect(readTheme(() => storage)).toBe('system');
+  });
+
+  it('still reads a theme stored as JSON before the plain form', () => {
+    const storage = memoryStorage();
+    for (const theme of ['dark', 'light', 'system']) {
+      storage.setItem('todos.theme', JSON.stringify(theme));
+      expect(readTheme(() => storage)).toBe(theme);
+    }
   });
 });
 

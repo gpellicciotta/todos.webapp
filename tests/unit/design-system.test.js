@@ -69,6 +69,8 @@ const PUBLIC = new Set([
   'looks/neutral/icons.svg',
   ...CONTRACT.components.map((key) => `js/${key}.js`),
   ...['focus', 'anchor', 'live-region', 'i18n', 'sw-update', 'app-nav'].map((name) => `js/${name}.js`),
+  // The theme-switch component's pre-paint boot script, which index.html loads as a classic script.
+  'js/theme-boot.js',
 ]);
 
 /**

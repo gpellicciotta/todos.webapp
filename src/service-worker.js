@@ -16,7 +16,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-24.9';
+const VERSION = '2026-11-24.10';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -171,6 +171,7 @@ const PRECACHE = [
   'vendor/design/js/selection.js',
   'vendor/design/js/sw-update.js',
   'vendor/design/js/tabs.js',
+  'vendor/design/js/theme-boot.js',
   'vendor/design/js/toast.js',
   'vendor/design/js/tooltip.js',
   'vendor/design/looks/neutral/fonts.css',

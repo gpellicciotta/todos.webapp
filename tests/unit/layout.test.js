@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { renderShell } from '../../src/js/ui/layout.js';
+import { applyTheme, renderShell } from '../../src/js/ui/layout.js';
 import { resetBody } from './dom-reset.js';
 
 afterEach(() => {
@@ -17,6 +17,31 @@ function render() {
   const root = document.body.appendChild(document.createElement('div'));
   return { root, shell: renderShell(root, { navigate: vi.fn() }) };
 }
+
+describe('applyTheme', () => {
+  afterEach(() => {
+    document.head.querySelectorAll('meta[name="color-scheme"]').forEach((meta) => meta.remove());
+    delete document.documentElement.dataset.theme;
+  });
+
+  it('keeps the color-scheme meta that theme-boot.js set in step with live theme changes', () => {
+    const meta = document.head.appendChild(document.createElement('meta'));
+    meta.name = 'color-scheme';
+    meta.content = 'dark';
+    document.documentElement.dataset.theme = 'dark';
+    applyTheme(document, 'light');
+    expect(meta.content).toBe('light');
+    expect(document.documentElement.dataset.theme).toBe('light');
+    applyTheme(document, 'system');
+    expect(meta.content).toBe('light dark');
+    expect(document.documentElement.dataset.theme).toBeUndefined();
+  });
+
+  it('applies a theme on a page without a color-scheme meta', () => {
+    expect(() => applyTheme(document, 'dark')).not.toThrow();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+});
 
 describe('renderShell navigation', () => {
   it('keeps list creation out of the sidebar', () => {

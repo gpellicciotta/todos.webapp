@@ -114,7 +114,8 @@ export function readThemePreference(getStorage) {
 }
 
 /**
- * Apply a theme preference to the page through `data-theme` on `<html>`, and to the browser bar color.
+ * Apply a theme preference to the page through `data-theme` on `<html>`, the `color-scheme` meta, and the browser bar color.
+ * The vendored theme-boot.js applies a stored theme before first paint; this keeps the page in step with later changes.
  * A stored theme gives every `theme-color` meta that theme's color, whatever the system scheme.
  * @param {Document} doc the document
  * @param {'light'|'dark'|'system'} preference the preference; `system` removes the attribute
@@ -127,6 +128,7 @@ export function applyTheme(doc, preference) {
   else {
     delete doc.documentElement.dataset.theme;
   }
+  doc.querySelector('meta[name="color-scheme"]')?.setAttribute('content', pinned ? preference : 'light dark');
   const metas = [...doc.querySelectorAll('meta[name="theme-color"]')];
   for (const meta of metas) {
     meta.dataset.color ??= meta.content;
