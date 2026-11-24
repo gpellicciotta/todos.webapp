@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 674.9, input: 84, output: 23908, cache_read: 3604448, cache_write: 100884}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T12:18:13Z"
 ---
 # T0289: Let the editor panel width limits use the rail or hidden sidebar width instead of the open sidebar width
 
@@ -54,4 +59,7 @@ Completion check: `python scripts/devops.py check`.
   - Files touched: 5.
   - Lines touched: 150.
   - Reopenings: 0.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
