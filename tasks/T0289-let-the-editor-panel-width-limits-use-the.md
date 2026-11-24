@@ -1,6 +1,7 @@
 ---
 id: T0289
 owner: "@claude"
+session: claude-20261124-aba724
 needs: []
 branch: task/T0289-let-the-editor-panel-width-limits-use-the
 worktree: .plan/work/T0289-let-the-editor-panel-width-limits-use-the
@@ -22,12 +23,12 @@ Keep the stored open width, so reopening the sidebar restores it.
 Completion check: `python scripts/devops.py check`.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read panel-resize.js, the attachAppNav wiring in layout.js, and the rail track in the vendored shell.css.
-- [ ] **[Implement]** Write the unit and e2e tests of the technical spec.
-- [ ] **[Verify]**    Run them and confirm they fail on main.
-- [ ] **[Implement]** Measure the shown sidebar width for the editor limits and refresh them on nav state changes.
-- [ ] **[Verify]**    Run the completion check.
-- [ ] **[Doc]**       Update the UI design spec and CHANGELOG.md.
+- [x] **[Read]**      Read panel-resize.js, the attachAppNav wiring in layout.js, and the rail track in the vendored shell.css.
+- [x] **[Implement]** Write the unit and e2e tests of the technical spec.
+- [x] **[Verify]**    Run them and confirm they fail on main.
+- [x] **[Implement]** Measure the shown sidebar width for the editor limits and refresh them on nav state changes.
+- [x] **[Verify]**    Run the completion check.
+- [x] **[Doc]**       Update the UI design spec and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -36,3 +37,21 @@ Completion check: `python scripts/devops.py check`.
 
 - [2026-11-24] **[Decided]**
   Specified and moved to Next Milestone after T0254, which changes the nav toggle; T0286 waits on it.
+
+- [2026-11-24] **[Decided]**
+  Observed the sidebar hidden attribute and toggle aria-expanded instead of wiring refresh into layout.js; media changes skip onChange.
+
+- [2026-11-24] **[Decided]**
+  Kept the sidebar-yields-first rule on reopening; at 1100 px the sidebar shows 12rem, and 1440 px restores both stored widths.
+
+- [2026-11-24] **[Verify]**
+  Ran python scripts/devops.py check with exit code 0; new tests failed on main first.
+  - Vitest: 1789 passed; Playwright: 276 passed.
+  - pytest: 190 passed; ESLint and Ruff clean.
+
+- [2026-11-24] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 5.
+  - Lines touched: 150.
+  - Reopenings: 0.
+
