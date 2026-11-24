@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1800.4, input: 2, output: 2}
+  worker: {turns: 2, duration_s: 1827.6, input: 12, output: 1556, cache_read: 865012, cache_write: 5102}
 work_duration: 1811.5
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T13:32:45Z"
 ---
 # T0294: Rebuild the inbox bell, panel, and broadcast banners on the vendored inbox.js and notices.js
 
@@ -69,4 +72,7 @@ Completion check: `python scripts/devops.py check`.
   Captured the open panel and banner at 390 and 1440 px.
   - Before: [390](T0294-rebuild-the-inbox-bell-panel-and-broadcast-banners/before-390-light.png), [1440](T0294-rebuild-the-inbox-bell-panel-and-broadcast-banners/before-1440-light.png).
   - After: [390](T0294-rebuild-the-inbox-bell-panel-and-broadcast-banners/after-390-light.png), [1440](T0294-rebuild-the-inbox-bell-panel-and-broadcast-banners/after-1440-light.png).
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
