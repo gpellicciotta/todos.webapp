@@ -13,8 +13,12 @@
 - tests/e2e/sync.spec.js
 - docs/specs/ui-design.md
 - docs/specs/visual-style-guide.md
+- src/service-worker.js (added during execution: VERSION bump for the precache check)
 
 Size estimate: 6 files, 160 lines
+
+Mechanical command: node scripts/check-sw-version.mjs --update
+Mechanical files: scripts/sw-precache-hashes.json
 
 ### Tests
 - Unit: sync-log-view.test.js expects an `.entry-list` with one `.entry-list__item` per entry, newest first, and a time chip.
