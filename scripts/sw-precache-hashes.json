@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-24.10",
+  "version": "2026-11-24.11",
   "files": {
     "index.html": "adf3187157ea8367820cfc9a4061efcbedae2f23bff8f15a890bcef7dd3c6f13",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
@@ -63,7 +63,7 @@
     "js/ui/user-menu.js": "d91dc5c6d40a3d69d73821516e4f636fa5350256d8adbfd392407e5e18753746",
     "js/ui/view-actions.js": "465469476623ebed7fd31527e376f2099e8e600a0b44929340af1f8dc2199975",
     "js/views/add-bar.js": "a0b0b5f9a4b172a1ad72135dd44a4b0b7f400e44be78e6387dadf92660ccf808",
-    "js/views/all-tasks.js": "83e2dbcdf832dd63d0353c18147ecb7355c27208167350409f44ba1190bdfe78",
+    "js/views/all-tasks.js": "aa60902ea221b6691b420cc8ef8d76ffd2c9ff4008082da7dea8a85832b9adf7",
     "js/views/editor-panel.js": "7ae285ac1704cfc5082eb8c6a914c93196d319e5e953659276f187e40f0fa878",
     "js/views/import-dialog.js": "472dd443453bf7a02c586be80a65c7274248b0042a75561df7e7f067f84ea6e2",
     "js/views/list-actions.js": "dd69d186c8ecd3fe19345d611909ee452d41be578e252306114e794efe8e8b5d",
