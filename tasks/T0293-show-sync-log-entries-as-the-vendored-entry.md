@@ -1,11 +1,11 @@
 ---
 id: T0293
-owner: ~
-needs: [T0254]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0293-show-sync-log-entries-as-the-vendored-entry
+worktree: .plan/work/T0293-show-sync-log-entries-as-the-vendored-entry
+status: active
+started_at: "2026-11-24T13:41:16Z"
 ended_at: —
 review: agent
 preview: none
