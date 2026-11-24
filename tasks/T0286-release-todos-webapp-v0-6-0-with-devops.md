@@ -1,11 +1,11 @@
 ---
 id: T0286
-owner: ~
-needs: ['T0254', 'T0290', 'T0291', 'T0292', 'T0293', 'T0294', 'T0295', 'T0288', 'T0289']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0286-release-todos-webapp-v0-6-0-with-devops
+worktree: .plan/work/T0286-release-todos-webapp-v0-6-0-with-devops
+status: active
+started_at: "2026-11-24T14:48:52Z"
 ended_at: —
 review: agent
 preview: none

@@ -11,7 +11,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0291 Download the Settings backup through the vendored file-download.js helper.
 - [x] T0290 Apply the stored theme before first paint with the vendored theme-boot.js.
 - [x] T0254 Vendor support.webapp v0.5.1 and adapt the app to its shell, nav toggle, and component changes.
-- [ ] T0286 Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
+- [~] T0286 [owner: @claude] Release todos.webapp v0.6.0 with devops release, push main, the tag, and plan, and publish the GitHub release.
 
 ## Backlog
 - [ ] T0296 Redraw the Sync log wireframe as entry list cards with time and kind chips.
