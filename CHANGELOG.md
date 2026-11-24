@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.5.1-pre
+## v0.6.0 [released: 2026-11-24]
 - FrontEnd: Made the All tasks empty state say tasks sync and drop the Connect link while connected.
 - Docs: Redrew the Sync log wireframe as entry list cards with time and kind chips, Open, and sunken values.
 - FrontEnd: Applied a stored theme before first paint through the vendored `theme-boot.js` and a `color-scheme` meta, storing `todos.theme` plain and removing it for System.
