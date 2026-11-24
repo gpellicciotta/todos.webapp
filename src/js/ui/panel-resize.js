@@ -5,6 +5,7 @@
  * and double-click or Enter restores the default. The width applies as `--width-sidebar` or `--width-side-panel`
  * on the app root, so the vendored shell.css stays unchanged. Widths persist per device (`todos.view.panels`).
  * Below 64rem the separators hide through CSS and the compact layout stays as it is.
+ * The editor's limits count the sidebar as shown: its icon rail, or nothing while hidden.
  */
 
 import { readPanelWidths, writePanelWidths } from '../core/preferences.js';
@@ -61,6 +62,8 @@ export function attachPanelResize(root, { getStorage } = {}) {
   const doc = root.ownerDocument;
   const win = doc.defaultView;
   const slot = root.querySelector('[data-editor-slot]');
+  const nav = root.querySelector('.app__sidebar');
+  const toggle = root.querySelector('.app__nav-toggle');
   const desired = readPanelWidths(getStorage);
   const widths = { ...desired };
   const separators = {};
@@ -72,8 +75,25 @@ export function attachPanelResize(root, { getStorage } = {}) {
   const viewportRem = () => win.innerWidth / remPx();
   /** @returns {boolean} true while the editor panel is open */
   const editorOpen = () => Boolean(slot) && !slot.hidden;
+  /**
+   * Return the shown sidebar width: the rail as rendered, 0 when hidden, else the open width.
+   * The rail is measured, so it follows the vendored rail track; the nav toggle sets both states only from 64rem.
+   * @returns {number} the width in rem
+   */
+  function sidebarShown() {
+    if (!nav || viewportRem() < WIDE_REM) {
+      return widths.sidebar;
+    }
+    if (nav.hidden) {
+      return 0;
+    }
+    if (toggle?.getAttribute('aria-expanded') === 'false') {
+      return nav.getBoundingClientRect().width / remPx();
+    }
+    return widths.sidebar;
+  }
   /** @returns {number} the shown width in rem of the panel next to the given one, 0 when closed */
-  const otherOf = (kind) => (kind === 'sidebar' ? (editorOpen() ? widths.editor : 0) : widths.sidebar);
+  const otherOf = (kind) => (kind === 'sidebar' ? (editorOpen() ? widths.editor : 0) : sidebarShown());
   const limits = (kind) => limitsOf(kind, otherOf(kind), viewportRem());
 
   /**
@@ -83,7 +103,7 @@ export function attachPanelResize(root, { getStorage } = {}) {
   function apply() {
     const wide = viewportRem() >= WIDE_REM;
     widths.sidebar = clampWidth('sidebar', desired.sidebar, editorOpen() ? desired.editor : 0, viewportRem());
-    widths.editor = clampWidth('editor', desired.editor, widths.sidebar, viewportRem());
+    widths.editor = clampWidth('editor', desired.editor, sidebarShown(), viewportRem());
     const px = remPx();
     for (const kind of Object.keys(PANELS)) {
       if (wide) {
@@ -203,11 +223,14 @@ export function attachPanelResize(root, { getStorage } = {}) {
   const onResize = () => apply();
   win.addEventListener('resize', onResize);
   cleanups.push(() => win.removeEventListener('resize', onResize));
-  if (slot) {
-    const observer = new win.MutationObserver(apply);
-    observer.observe(slot, { attributes: true, attributeFilter: ['hidden'] });
-    cleanups.push(() => observer.disconnect());
+  // An opening editor, or a nav toggle step to open, rail, or hidden, changes the room of the other panel.
+  const observer = new win.MutationObserver(apply);
+  for (const [target, attribute] of [[slot, 'hidden'], [nav, 'hidden'], [toggle, 'aria-expanded']]) {
+    if (target) {
+      observer.observe(target, { attributes: true, attributeFilter: [attribute] });
+    }
   }
+  cleanups.push(() => observer.disconnect());
 
   return {
     refresh: apply,

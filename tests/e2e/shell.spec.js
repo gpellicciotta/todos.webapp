@@ -118,6 +118,49 @@ test('dragging the separators resizes the sidebar and the editor, and the widths
   expect(problems).toEqual([]);
 });
 
+test('the editor limits follow the rail and hidden sidebar, and reopening restores the stored widths', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.goto('/');
+  await ready(page);
+  const id = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const task = await store.createTask({ description: 'Sand the fence' });
+    store.close();
+    return task.id;
+  });
+  await page.goto(`/#/tasks/${id}`);
+  const editor = page.getByRole('separator', { name: 'Resize task editor' });
+  const toggle = page.locator('.app__top-bar > .app__nav-toggle');
+  const widthOf = (selector) => page.locator(selector).evaluate((element) => Math.round(element.getBoundingClientRect().width));
+  await expect(editor).toBeVisible();
+  // Open at 68.75rem: the 16rem sidebar leaves the editor 28.75rem.
+  await expect(editor).toHaveAttribute('aria-valuemax', '460');
+  await toggle.click();
+  await expect(toggle).toHaveAccessibleName('Hide navigation');
+  await expect(editor).toHaveAttribute('aria-valuemax', '640');
+  await editor.focus();
+  await page.keyboard.press('End');
+  expect(await widthOf('[data-editor-slot]')).toBe(640);
+  await toggle.click();
+  await expect(page.locator('.app__sidebar')).toBeHidden();
+  await expect(editor).toHaveAttribute('aria-valuemax', '640');
+  expect(await widthOf('[data-editor-slot]')).toBe(640);
+  // Reopening clamps the editor back; the sidebar yields first, as on a window resize.
+  await toggle.click();
+  await expect(toggle).toHaveAccessibleName('Collapse navigation');
+  await expect(editor).toHaveAttribute('aria-valuemax', '524');
+  expect(await widthOf('[data-editor-slot]')).toBe(524);
+  expect(await widthOf('.app__sidebar')).toBe(192);
+  // The stored widths stay, so a wider window shows both again.
+  await page.setViewportSize(WIDE);
+  await expect(editor).toHaveAttribute('aria-valuenow', '640');
+  expect(await widthOf('.app__sidebar')).toBe(256);
+  expect(await widthOf('[data-editor-slot]')).toBe(640);
+  expect(problems).toEqual([]);
+});
+
 test('the separators stay hidden in the compact layout', async ({ page }) => {
   await page.setViewportSize(COMPACT);
   await page.goto('/#/lists/new');

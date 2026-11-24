@@ -79,6 +79,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Vendored support.webapp 0.5.1, adding the nav toggle's next-step glyphs, rail label tooltips, `page.css`, and the view header partial, with no visible change except the toggle glyph.
 - FrontEnd: Drew the nav toggle from the `icon-nav-collapse`, `icon-nav-hide`, `icon-nav-menu`, and `icon-nav-close` glyphs of the app sprite.
 - Tests: Pinned release 0.5.1, required the toggle glyphs in the sprite, and checked the toggle glyph per state and one rail tooltip per entry.
+- FrontEnd: Let the task editor grow into the room the icon rail or a hidden sidebar frees, up to 40rem, and clamped it back when the sidebar reopens, keeping the stored widths.
 
 ## v0.5.0 [released: 2026-11-15]
 - FrontEnd: Moved tasks to the todos.server shape of lifecycle rules, occurrences, and events, in database version 5.

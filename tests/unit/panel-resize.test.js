@@ -187,6 +187,73 @@ describe('persistence', () => {
   });
 });
 
+describe('nav states', () => {
+  const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const WIDE_MEDIA = { matches: true, addEventListener() {}, removeEventListener() {} };
+
+  /**
+   * Render the shell at 1100 px with a wide nav toggle and a 4rem rail.
+   * @returns {{root: HTMLElement, editor: HTMLElement, toggle: HTMLButtonElement, nav: HTMLElement}} the parts
+   */
+  function renderNav() {
+    window.innerWidth = 1100;
+    const root = document.body.appendChild(document.createElement('div'));
+    const shell = renderShell(root, { navigate: vi.fn(), navMedia: WIDE_MEDIA });
+    shell.editor.hidden = false;
+    const nav = root.querySelector('.app__sidebar');
+    // happy-dom lays nothing out: the rail measures 4rem.
+    nav.getBoundingClientRect = () => ({ width: 4 * REM, height: 0, top: 0, left: 0, right: 4 * REM, bottom: 0, x: 0, y: 0 });
+    return { root, editor: root.querySelector('[data-panel="editor"]'), toggle: root.querySelector('.app__nav-toggle'), nav };
+  }
+
+  it('limits the editor by the 4rem rail instead of the 16rem open sidebar', async () => {
+    expect(limitsOf('editor', 4, 68.75).max).toBe(40);
+    expect(limitsOf('editor', 16, 68.75).max).toBe(28.75);
+    const { root, editor, toggle } = renderNav();
+    await tick();
+    expect(editor.getAttribute('aria-valuemax')).toBe(String(28.75 * REM));
+    toggle.click();
+    await tick();
+    expect(editor.getAttribute('aria-valuemax')).toBe(String(40 * REM));
+    press(editor, 'End');
+    expect(width(root, '--width-side-panel')).toBe('40rem');
+  });
+  it('ignores the stored sidebar width while the sidebar is hidden', async () => {
+    localStorage.setItem('todos.view.panels', JSON.stringify({ sidebar: 24, editor: 25 }));
+    const { root, editor, toggle, nav } = renderNav();
+    await tick();
+    expect(width(root, '--width-sidebar')).toBe('19.75rem');
+    expect(editor.getAttribute('aria-valuemax')).toBe(String(25 * REM));
+    toggle.click();
+    toggle.click();
+    await tick();
+    expect(nav.hidden).toBe(true);
+    expect(editor.getAttribute('aria-valuemax')).toBe(String(40 * REM));
+    press(editor, 'End');
+    expect(width(root, '--width-side-panel')).toBe('40rem');
+    expect(JSON.parse(localStorage.getItem('todos.view.panels'))).toEqual({ sidebar: 24, editor: 40 });
+  });
+  it('reclamps the editor when the sidebar reopens and keeps the stored widths for a wider window', async () => {
+    const { root, editor, toggle } = renderNav();
+    toggle.click();
+    await tick();
+    press(editor, 'End');
+    expect(width(root, '--width-side-panel')).toBe('40rem');
+    toggle.click();
+    toggle.click();
+    await tick();
+    // The sidebar yields first, as on a window resize.
+    expect(editor.getAttribute('aria-valuemax')).toBe(String(32.75 * REM));
+    expect(width(root, '--width-side-panel')).toBe('32.75rem');
+    expect(width(root, '--width-sidebar')).toBe('12rem');
+    expect(JSON.parse(localStorage.getItem('todos.view.panels'))).toEqual({ sidebar: 16, editor: 40 });
+    window.innerWidth = 1440;
+    window.dispatchEvent(new Event('resize'));
+    expect(width(root, '--width-sidebar')).toBe('16rem');
+    expect(width(root, '--width-side-panel')).toBe('40rem');
+  });
+});
+
 describe('compact layout and restoration', () => {
   const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 

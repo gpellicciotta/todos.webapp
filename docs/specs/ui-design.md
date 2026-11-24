@@ -64,6 +64,9 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - A 2 px line in the focus color shows on hover, focus, and drag.
 - Limits: sidebar 12rem to 24rem, editor 20rem to 40rem, and the main column keeps at least 24rem.
 - A window resize or an opening editor clamps the shown widths; the sidebar yields first.
+- **[Decided]** The editor's limits count the sidebar as shown: the measured icon rail, or nothing while hidden.
+  A nav toggle step reclamps the shown widths, and reopening the sidebar yields first as on a window resize.
+  Reason: at 1100 px with a 16rem sidebar, the rail would otherwise stop the editor at 28.75rem instead of 40rem.
 - The chosen widths stay as they are, so widening the window or closing the editor restores them; only a drag or key step changes them.
 - Below 64rem the width tokens are cleared on the app root, so the compact layout and the popovers keep their defaults.
 - Pointer drag updates every animation frame; arrow keys step 1rem; Home and End jump to the limits.

@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-24.2",
+  "version": "2026-11-24.3",
   "files": {
     "index.html": "d0344a615ae910a97f817b11fa92a16aacf8f5b28897d64e8b11577465d90201",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
@@ -57,7 +57,7 @@
     "js/sync/sync-log.js": "09ccfb3ae3f8ec9183c9a93df71b8adc881cd5ae16a4723c305130c83a1852c9",
     "js/ui/inbox.js": "47c07816e0389b54d3af9ccd023a2ef75bdb64777a669dec1e3a705a0c0bb709",
     "js/ui/layout.js": "d6067584b729104c7dbed9510d174f1b2808a8fe0ef54065388dbac930f8c779",
-    "js/ui/panel-resize.js": "e3def293c68b03885056af16648129a0b5ab106f37e2e33b1a91c7182ea426f8",
+    "js/ui/panel-resize.js": "dd3761b101e7a1edd52fe4e0c99b9ffb4a66598db21c0083b1388ec84aa01c0d",
     "js/ui/router.js": "be01e28562bc7405a30ee8580676550f2023f0b898f076475875fa13a551cf7b",
     "js/ui/user-menu.js": "b075ac207ca5c6b76d7f424150fbf892d855208dd8785cafeb7b466239151dc8",
     "js/ui/view-actions.js": "465469476623ebed7fd31527e376f2099e8e600a0b44929340af1f8dc2199975",
