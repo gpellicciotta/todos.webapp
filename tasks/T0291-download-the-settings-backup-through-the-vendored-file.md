@@ -1,11 +1,11 @@
 ---
 id: T0291
-owner: ~
-needs: [T0254]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0291-download-the-settings-backup-through-the-vendored-file
+worktree: .plan/work/T0291-download-the-settings-backup-through-the-vendored-file
+status: active
+started_at: "2026-11-24T14:15:03Z"
 ended_at: —
 review: agent
 preview: none
