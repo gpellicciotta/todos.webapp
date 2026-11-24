@@ -1,11 +1,11 @@
 ---
 id: T0254
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0254-vendor-support-webapp-v0-5-1-and-adapt
+worktree: .plan/work/T0254-vendor-support-webapp-v0-5-1-and-adapt
+status: active
+started_at: "2026-11-24T11:43:22Z"
 ended_at: —
 review: agent
 preview: none
