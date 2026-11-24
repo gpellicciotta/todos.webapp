@@ -677,6 +677,45 @@ describe('Delete all data in Settings', () => {
   });
 });
 
+describe('Export backup in Settings', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('downloads one application/json file under the backup name, revokes its URL, and names it in a toast', async () => {
+    vi.useFakeTimers({ now: new Date(2026, 10, 24, 12) });
+    const view = document.body.appendChild(document.createElement('div'));
+    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
+    const store = { snapshot: vi.fn(async () => ({ lists: [], tasks: [], memberships: [], notes: [] })) };
+    const toaster = { show: vi.fn() };
+    const blobs = [];
+    const url = {
+      createObjectURL: vi.fn((blob) => {
+        blobs.push(blob);
+        return 'blob:backup-1';
+      }),
+      revokeObjectURL: vi.fn(),
+    };
+    const clicked = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function () {
+      clicked.push({ href: this.getAttribute('href'), download: this.getAttribute('download') });
+    });
+    mountSettings(view, { session, store, toaster, getStorage: () => null, url });
+    [...view.querySelectorAll('button')].find((button) => button.textContent === 'Export backup').click();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(url.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(blobs[0].type).toBe('application/json');
+    expect(JSON.parse(await blobs[0].text())).toMatchObject({ lists: [], tasks: [] });
+    expect(await blobs[0].text()).toContain('\n  "lists": []');
+    expect(clicked).toEqual([{ href: 'blob:backup-1', download: 'todos-backup-2026-11-24.json' }]);
+    expect(url.revokeObjectURL).toHaveBeenCalledTimes(1);
+    expect(url.revokeObjectURL).toHaveBeenCalledWith('blob:backup-1');
+    expect(document.querySelector('a[download]')).toBeNull();
+    expect(toaster.show).toHaveBeenCalledWith('Saved todos-backup-2026-11-24.json with 0 lists and 0 tasks.');
+  });
+});
+
 describe('Adding tasks in Settings', () => {
   afterEach(() => {
     document.body.innerHTML = '';

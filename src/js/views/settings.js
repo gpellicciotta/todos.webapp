@@ -23,6 +23,7 @@ import {
 } from '../core/preferences.js';
 import { createSession } from '../sync/session.js';
 import { confirmDialog } from '../../vendor/design/js/dialog.js';
+import { downloadJson } from '../../vendor/design/js/file-download.js';
 import { applyTheme } from '../ui/layout.js';
 import { BUILD_DATE, VERSION } from '../version.js';
 import { openImportDialog, plural } from './import-dialog.js';
@@ -372,20 +373,14 @@ function remindersSection(doc, getStorage, toaster, notification, now) {
  * @param {Document} doc the document
  * @param {object} store the store facade
  * @param {{show: (message: string) => void}} [toaster] shows the confirmation
+ * @param {{createObjectURL: (blob: Blob) => string, revokeObjectURL: (url: string) => void}} [url] the URL API, global `URL` by default
  * @returns {Promise<void>}
  */
-async function saveBackup(doc, store, toaster) {
+async function saveBackup(doc, store, toaster, url) {
   const now = new Date();
   const backup = await exportBackup(store, { now, appVersion: VERSION });
   const name = backupFileName(now);
-  const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
-  const link = make(doc, 'a', 'visually-hidden');
-  link.href = url;
-  link.download = name;
-  doc.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadJson(backup, name, { document: doc, url });
   toaster?.show(STRINGS.exported(name, backup.lists.length, backup.tasks.length));
 }
 
@@ -398,9 +393,10 @@ async function saveBackup(doc, store, toaster) {
  * @param {object} store the store facade
  * @param {{show: (message: string) => void}} [toaster] shows the confirmations
  * @param {{state: () => string, subscribe: Function}} [session] the session; the dialog closes when it leaves local mode
+ * @param {{createObjectURL: Function, revokeObjectURL: Function}} [url] the URL API for the backup, global `URL` by default
  * @returns {Promise<void>}
  */
-async function askDeleteAll(doc, parent, opener, store, toaster, session) {
+async function askDeleteAll(doc, parent, opener, store, toaster, session, url) {
   const isLocal = () => (session?.state() ?? 'local') === 'local';
   const startedLocal = isLocal();
   const snapshot = await store.snapshot();
@@ -422,7 +418,7 @@ async function askDeleteAll(doc, parent, opener, store, toaster, session) {
   const exportButton = button(doc, 'button button--secondary', STRINGS.exportBackup, async () => {
     exportButton.disabled = true;
     try {
-      await saveBackup(doc, store, toaster);
+      await saveBackup(doc, store, toaster, url);
     }
     catch (error) {
       console.error('Export failed:', error);
@@ -502,9 +498,10 @@ async function askDeleteAll(doc, parent, opener, store, toaster, session) {
  * @param {object} store the store facade
  * @param {{show: (message: string) => void}} [toaster] shows the confirmations
  * @param {{session: object, sync?: object}} [connection] the session and the sync engine, for importing while connected
+ * @param {{createObjectURL: Function, revokeObjectURL: Function}} [url] the URL API for the backup, global `URL` by default
  * @returns {{element: HTMLElement, destroy: () => void}} the section
  */
-function dataSection(doc, store, toaster, connection = {}) {
+function dataSection(doc, store, toaster, connection = {}, url) {
   const element = section(doc, 'data', STRINGS.data);
   const actions = make(doc, 'div', 'settings__actions');
   const exportButton = make(doc, 'button', 'button button--secondary', STRINGS.exportBackup);
@@ -512,7 +509,7 @@ function dataSection(doc, store, toaster, connection = {}) {
   exportButton.addEventListener('click', async () => {
     exportButton.disabled = true;
     try {
-      await saveBackup(doc, store, toaster);
+      await saveBackup(doc, store, toaster, url);
     }
     catch (error) {
       console.error('Export failed:', error);
@@ -532,7 +529,7 @@ function dataSection(doc, store, toaster, connection = {}) {
     }
     opening = true;
     try {
-      await askDeleteAll(doc, element, deleteButton, store, toaster, connection.session);
+      await askDeleteAll(doc, element, deleteButton, store, toaster, connection.session, url);
     }
     catch (error) {
       console.error('Opening Delete all data failed:', error);
@@ -990,10 +987,11 @@ function aboutSection(doc) {
  * @param {(url: string) => void} [options.assign] opens the Auth URL, `location.assign` by default
  * @param {{permission: string, requestPermission: () => Promise<string>}|null} [options.notification] the Notification API, which `globalThis.Notification` supplies by default
  * @param {() => number} [options.now] the clock in Unix milliseconds
+ * @param {{createObjectURL: Function, revokeObjectURL: Function}} [options.url] the URL API for the backup, global `URL` by default
  * @returns {{update: (route?: object) => void, destroy: () => void}} the screen
  */
 export function mountSettings(view, {
-  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, api,
+  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, api, url,
   notification = globalThis.Notification ?? null, now = Date.now, navigate = (hash, { replace = false } = {}) => {
     const { location } = view.ownerDocument.defaultView;
     if (replace) {
@@ -1007,7 +1005,7 @@ export function mountSettings(view, {
   const doc = view.ownerDocument;
   const root = make(doc, 'div', 'settings');
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign, store, api });
-  const data = dataSection(doc, store, toaster, { session, sync });
+  const data = dataSection(doc, store, toaster, { session, sync }, url);
   const adding = addingSection(doc, getStorage, toaster);
   root.append(appearanceSection(doc, getStorage, toaster), adding.element, remindersSection(doc, getStorage, toaster, notification, now), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
   view.replaceChildren(root);

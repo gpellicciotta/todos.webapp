@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-24.8",
+  "version": "2026-11-24.9",
   "files": {
     "index.html": "292211c60ff27a1adcde71a3ec37980fb868615e3a55b7035bfc244baac6d377",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
@@ -73,7 +73,7 @@
     "js/views/notes.js": "38591620e2a4e47273c9114143f1814f5c15e458a655ee974e9c63b492304cdd",
     "js/views/recycle-bin.js": "6d499ebf93013410b299872339d0f0083939209cbfa604218925b4c962a283a1",
     "js/views/reorder.js": "bea69609ead59146073101fa06745fceb00a10c9023ead9a442ae1651acc7734",
-    "js/views/settings.js": "9503c1174f20e0b8ec4b203582bc61f1b394139b8cc2c5e9e7b39413f75c6d02",
+    "js/views/settings.js": "f023ec4dcd4e0df23d9a83c4c9d51f72f4e1aebcbe6cf0d6da0597909079a7dd",
     "js/views/sharing.js": "62fbc978c4e0af4e2ff2c9ce88045a752c9349fe7c2d3487f6bca9d28b8e2687",
     "js/views/sync-indicator.js": "d97a0cbcacd324e76d73ad077a0a65081faceb1a111a213289f24ff32675eb71",
     "js/views/sync-log.js": "b045bae868dac5b4e3efccb147c13de644bcd2b14f59d9a58eeec2ca349fc4a1",
