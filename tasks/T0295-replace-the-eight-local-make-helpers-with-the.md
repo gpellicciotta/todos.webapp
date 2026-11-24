@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 563.1, input: 66, output: 14015, cache_read: 2204232, cache_write: 71305}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-24T12:53:38Z"
 ---
 # T0295: Replace the eight local make helpers with the vendored dom-builders.js
 
@@ -56,4 +61,7 @@ Completion check: `python scripts/devops.py check`.
 
 - [2026-11-24] **[Doc]**
   Added a FrontEnd bullet under v0.5.1-pre in CHANGELOG.md.
+
+- [2026-11-24] **[Review]**
+  Round 1 requested (mode: agent).
 
