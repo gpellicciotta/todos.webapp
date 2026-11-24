@@ -18,6 +18,8 @@ CANVAS_WIDTH = MARGIN * 2 + COMPACT_WIDTH + GAP + WIDE_WIDTH
 CANVAS_HEIGHT = TOP + WIDE_HEIGHT + MARGIN
 
 SIDEBAR_WIDTH = 264
+RAIL_WIDTH = 68
+NAV_TOGGLE = (12, 22)
 MAIN_LEFT = SIDEBAR_WIDTH + 40
 MAIN_RIGHT = 1104
 EDITOR_LEFT = 1020
@@ -46,6 +48,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
 .icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
 .icon-line { stroke: #444444; stroke-width: 2; }
 .icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tooltip { fill: #222222; stroke: #222222; }
 """
 
 LISTS = [("Home", 8), ("Work", 12), ("Travel", 3), ("Errands", 5), ("Reading", 2)]
@@ -359,6 +362,67 @@ def bottom_nav(f, current):
         f.text(cx, top + 48, label, 12, "bold" if label == current else "", "middle")
 
 
+def nav_toggle(f):
+    """Draw the 44 px nav toggle that opens the wide top row, with a plain three-line glyph.
+
+    The real glyph shows the next step: collapse while open, hide in the rail, and menu while hidden.
+    """
+    x, y = NAV_TOGGLE
+    f.rect(x, y, 44, 44, "control")
+    for offset in (15, 22, 29):
+        f.path(f"M {x + 13:g} {y + offset:g} H {x + 31:g}", "icon-line-open")
+
+
+def sidebar_head(f):
+    """Draw the open sidebar's ground and its top row: the nav toggle, then the brand."""
+    f.rect(0, 0, SIDEBAR_WIDTH, f.height, "bar", radius=0)
+    nav_toggle(f)
+    f.text(NAV_TOGGLE[0] + 52, 52, "ToDo's", 22, "bold")
+
+
+def all_tasks_glyph(f, cx, cy):
+    """Draw the 18 px All tasks glyph, a check mark, centered on (cx, cy)."""
+    f.path(f"M {cx - 8:g} {cy:g} L {cx - 3:g} {cy + 6:g} L {cx + 8:g} {cy - 6:g}", "icon-line-open")
+
+
+def lists_glyph(f, cx, cy):
+    """Draw the 18 px Lists glyph, three bulleted lines, centered on (cx, cy); unlike the toggle, it has bullets."""
+    for offset in (-6, 0, 6):
+        f.circle(cx - 7, cy + offset, 1.5, "icon-fill")
+        f.path(f"M {cx - 2:g} {cy + offset:g} H {cx + 8:g}", "icon-line-open")
+
+
+def rail(f, current, lists=LISTS):
+    """Draw the sidebar as an icon rail: the toggle, the destination glyphs, and a monogram tile per list.
+
+    The rail clips the brand, the labels, and the counts. A monogram is the list name's first character, uppercased;
+    the current list's tile takes the signal look. Return the top of each list's 44 px row, by name.
+    """
+    f.rect(0, 0, RAIL_WIDTH, f.height, "bar", radius=0)
+    nav_toggle(f)
+    cx = RAIL_WIDTH / 2
+    y = 80
+    for label, glyph in (("All tasks", all_tasks_glyph), ("Lists", lists_glyph)):
+        if label == current:
+            f.rect(cx - 22, y, 44, 40, "selected")
+        glyph(f, cx, y + 20)
+        y += 44
+    rows = {}
+    for name, _ in lists:
+        rows[name] = y
+        f.rect(cx - 16, y + 4, 32, 32, "signal" if name == current else "box")
+        f.text(cx, y + 25, name[0].upper(), 14, "bold", "middle")
+        y += 44
+    return rows
+
+
+def rail_tooltip(f, top, name):
+    """Draw the hover tooltip that names the list of the rail row at `top`, just right of the rail."""
+    width = text_width(name, 13) + 20
+    f.rect(RAIL_WIDTH + 8, top + 6, width, 28, "tooltip", radius=4)
+    f.text(RAIL_WIDTH + 18, top + 25, name, 13, "on-primary")
+
+
 def nav_item(f, y, label, count, selected, indent=0):
     """Draw one 40 px sidebar item at y and return the y of the next item."""
     if selected:
@@ -371,8 +435,7 @@ def nav_item(f, y, label, count, selected, indent=0):
 
 def sidebar(f, current, lists=LISTS):
     """Draw the wide sidebar with the destinations and the lists; the user menu holds the rest."""
-    f.rect(0, 0, SIDEBAR_WIDTH, f.height, "bar", radius=0)
-    f.text(24, 46, "ToDo's", 22, "bold")
+    sidebar_head(f)
     y = nav_item(f, 80, "All tasks", 24 if lists else 0, current == "All tasks")
     y = nav_item(f, y, "Lists", None, current == "Lists")
     if lists:
@@ -389,8 +452,7 @@ def sidebar_many(f, current, rows, total, find=None, matches=None):
     thumb shows the position. A zero open count is left out. `rows` are (name, open count) pairs, `total` is the
     number of lists, and `matches` is the number of lists the find text leaves.
     """
-    f.rect(0, 0, SIDEBAR_WIDTH, f.height, "bar", radius=0)
-    f.text(24, 46, "ToDo's", 22, "bold")
+    sidebar_head(f)
     y = nav_item(f, 80, "All tasks", 24, current == "All tasks")
     y = nav_item(f, y, "Lists", None, current == "Lists")
     f.rect(12, y, SIDEBAR_WIDTH - 24, 40, "control")
@@ -666,26 +728,33 @@ def wide_all_tasks(
     info="24 tasks",
     reset=False,
     more=True,
+    left=MAIN_LEFT,
+    nav=sidebar,
 ):
-    """Draw the wide All tasks screen as a background or main view, with the view's More button unless `more` is off."""
-    sidebar(f, "All tasks")
-    page_header(f, MAIN_LEFT, 28, right, "All tasks", None, [("⋯", "control")] if more else [], account)
-    add_bar(f, MAIN_LEFT, 92, right - MAIN_LEFT, typed or "Search or add a task", typed is not None, info, reset)
+    """Draw the wide All tasks screen as a background or main view, with the view's More button unless `more` is off.
+
+    `nav` draws the sidebar, open or as a rail, and `left` is the main column's left edge beside it.
+    Return what `nav` returns.
+    """
+    drawn = nav(f, "All tasks")
+    page_header(f, left, 28, right, "All tasks", None, [("⋯", "control")] if more else [], account)
+    add_bar(f, left, 92, right - left, typed or "Search or add a task", typed is not None, info, reset)
     top = 92 + 60 + 30 + 40
     if grouped:
-        grouped_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, True, f.height - 24)
+        grouped_rows(f, left, top, right - left, True, f.height - 24)
     elif typed:
         matches = [task for task in TASKS if typed in task["text"].lower()]
-        task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, matches, True, f.height - 24)
+        task_rows(f, left, top, right - left, matches, True, f.height - 24)
         f.text(
-            MAIN_LEFT + 8,
+            left + 8,
             top - 24,
             f"Add creates \u201c{typed}\u201d as a new task; matching tasks stay listed above.",
             13,
             "muted",
         )
     else:
-        task_rows(f, MAIN_LEFT, top, right - MAIN_LEFT, TASKS, True, f.height - 24, selected=selected)
+        task_rows(f, left, top, right - left, TASKS, True, f.height - 24, selected=selected)
+    return drawn
 
 
 def wide_list(f, account="connected", right=MAIN_RIGHT):
@@ -818,6 +887,21 @@ def list_view():
     return (
         "List",
         "Manual order with all statuses shown; the More menu holds the list and view actions.",
+        compact,
+        wide,
+    )
+
+
+def nav_rail():
+    """All tasks with the wide sidebar collapsed to an icon rail, the pointer resting on one list's monogram."""
+    compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
+    compact_task_screen(compact, "All tasks", TASKS)
+    wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
+    rows = wide_all_tasks(wide, left=RAIL_WIDTH + 40, nav=rail)
+    rail_tooltip(wide, rows["Travel"], "Travel")
+    return (
+        "Nav rail",
+        "The nav toggle collapses the wide sidebar to glyphs and list monograms, and a hover names the list; the next press hides it, and the main column takes the full width.",
         compact,
         wide,
     )
@@ -1496,6 +1580,7 @@ SCREENS = {
     "sync-log.svg": sync_log,
     "connect.svg": connect,
     "import.svg": import_dialog,
+    "nav-rail.svg": nav_rail,
 }
 
 

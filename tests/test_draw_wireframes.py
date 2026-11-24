@@ -30,7 +30,9 @@ SCREENS = {
     "sync-log.svg",
     "connect.svg",
     "import.svg",
+    "nav-rail.svg",
 }
+COMMITTED = ROOT / "docs" / "img" / "ui"
 GRAY = re.compile(r"^#([0-9a-f]{2})\1\1$")
 
 
@@ -131,6 +133,103 @@ def test_output_is_reproducible(output, tmp_path):
     subprocess.run([sys.executable, str(SCRIPT), str(tmp_path)], check=True)
     for path in output.iterdir():
         assert (tmp_path / path.name).read_bytes() == path.read_bytes()
+
+
+def test_output_matches_the_committed_wireframes(output):
+    # Git may check the SVG files out with CRLF line ends, so compare with LF line ends.
+    assert {p.name for p in COMMITTED.glob("*.svg")} == SCREENS
+    for path in output.iterdir():
+        committed = (COMMITTED / path.name).read_bytes().replace(b"\r\n", b"\n")
+        assert committed == path.read_bytes(), f"{path.name} is stale; rerun the script into docs/img/ui"
+
+
+def nav_toggles(frame):
+    """Return the 44 px nav toggle buttons drawn at the start of a frame's top row."""
+    module = load_script()
+    x, y = module.NAV_TOGGLE
+    return [
+        r
+        for r in frame.iter(f"{SVG}rect")
+        if r.get("class") == "control"
+        and (float(r.get("x")), float(r.get("y")), float(r.get("width")), float(r.get("height"))) == (x, y, 44, 44)
+    ]
+
+
+def glyph_lines(frame, left, top, right, bottom):
+    """Return the horizontal glyph lines, paths of the form `M x y H x2`, that lie inside a box."""
+    lines = []
+    for p in frame.iter(f"{SVG}path"):
+        match = re.fullmatch(r"M (\S+) (\S+) H (\S+)", p.get("d", ""))
+        if match:
+            x1, y, x2 = map(float, match.groups())
+            if left < min(x1, x2) and max(x1, x2) < right and top < y < bottom:
+                lines.append((x1, y, x2))
+    return lines
+
+
+@pytest.mark.parametrize("name", sorted(SCREENS))
+def test_every_wide_frame_starts_with_the_nav_toggle(output, name):
+    # Below 64rem the bottom bar navigates and the toggle is hidden, so only the wide frame draws it.
+    x, y = load_script().NAV_TOGGLE
+    _, (compact, wide) = frames(output / name)
+    assert len(nav_toggles(wide)) == 1, name
+    assert len(glyph_lines(wide, x, y, x + 44, y + 44)) == 3, f"{name}: the toggle draws a three-line glyph"
+    assert not nav_toggles(compact), name
+    title = [t for t in wide.iter(f"{SVG}text") if t.get("font-size") == "28"]
+    assert title and all(float(t.get("x")) > x + 44 for t in title), name
+
+
+def test_nav_rail_shows_glyphs_monograms_and_one_hovered_label(output):
+    module = load_script()
+    root, (compact, wide) = frames(output / "nav-rail.svg")
+    rail = module.RAIL_WIDTH
+    bars = [r for r in wide.iter(f"{SVG}rect") if r.get("class") == "bar" and r.get("x") == "0" and r.get("y") == "0"]
+    assert [float(r.get("width")) for r in bars] == [rail]
+    rail_texts = [t.text for t in wide.iter(f"{SVG}text") if float(t.get("x")) < rail]
+    assert rail_texts == [name[0].upper() for name, _ in module.LISTS], "the rail holds only list monograms"
+    assert "ToDo's" not in labels_of(wide)
+    current = [r for r in wide.iter(f"{SVG}rect") if r.get("class") == "selected" and float(r.get("x")) < rail]
+    assert len(current) == 1, "the rail marks All tasks as the current destination"
+    glyphs = [p for p in wide.iter(f"{SVG}path") if bounds_of_path(p) and bounds_of_path(p)[2] < rail]
+    assert len(glyphs) >= 3 + 2, "the rail draws the toggle glyph and the two destination glyphs"
+    tooltips = [r for r in wide.iter(f"{SVG}rect") if r.get("class") == "tooltip"]
+    assert len(tooltips) == 1
+    left, top, right, bottom = bounds(tooltips[0], module.text_width)
+    assert left >= rail
+    inside = [
+        t.text
+        for t in wide.iter(f"{SVG}text")
+        if left <= float(t.get("x")) <= right and top <= float(t.get("y")) <= bottom
+    ]
+    assert len(inside) == 1 and inside[0] in {name for name, _ in module.LISTS}
+    title = [t for t in wide.iter(f"{SVG}text") if t.text == "All tasks" and t.get("font-size") == "28"]
+    assert [float(t.get("x")) for t in title] == [rail + 40], "the main column widens into the room the rail frees"
+    assert "Tasks" in labels_of(compact) and "Lists" in labels_of(compact)
+    caption = [t.text for t in root.findall(f"{SVG}text") if t.get("y") == "72"]
+    assert "hides" in caption[0], "the caption names the hidden state"
+
+
+def bounds_of_path(path):
+    """Return the (left, top, right, bottom) box of a path of absolute M, L, H, V, and Q commands, else None."""
+    tokens = re.findall(r"[A-Za-z]|-?\d+(?:\.\d+)?", path.get("d", ""))
+    if any(t.isalpha() and t not in "MLHVQZ" for t in tokens):
+        return None
+    xs, ys, command, index = [], [], None, 0
+    for token in tokens:
+        if token.isalpha():
+            command, index = token, 0
+            continue
+        value = float(token)
+        if command in "Hh":
+            xs.append(value)
+        elif command in "Vv":
+            ys.append(value)
+        else:
+            (xs if index % 2 == 0 else ys).append(value)
+            index += 1
+    if not xs or not ys:
+        return None
+    return min(xs), min(ys), max(xs), max(ys)
 
 
 def circles(frame):

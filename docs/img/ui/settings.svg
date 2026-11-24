@@ -22,6 +22,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
 .icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
 .icon-line { stroke: #444444; stroke-width: 2; }
 .icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tooltip { fill: #222222; stroke: #222222; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">Settings</text>
@@ -78,7 +79,11 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
   <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
     <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
     <rect x="0" y="0" width="264" height="900" rx="0" class="bar"/>
-    <text x="24" y="46" font-size="22" class="bold">ToDo's</text>
+    <rect x="12" y="22" width="44" height="44" rx="6" class="control"/>
+    <path d="M 25 37 H 43" class="icon-line-open"/>
+    <path d="M 25 44 H 43" class="icon-line-open"/>
+    <path d="M 25 51 H 43" class="icon-line-open"/>
+    <text x="64" y="52" font-size="22" class="bold">ToDo's</text>
     <text x="28" y="106" font-size="14">All tasks</text>
     <text x="236" y="106" font-size="13" class="muted" text-anchor="end">24</text>
     <text x="28" y="150" font-size="14">Lists</text>
