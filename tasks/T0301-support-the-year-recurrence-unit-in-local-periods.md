@@ -4,7 +4,7 @@ owner: ~
 needs: []
 branch: —
 worktree: —
-status: ready
+status: suspended
 started_at: —
 ended_at: —
 review: agent

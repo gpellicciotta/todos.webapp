@@ -1,10 +1,10 @@
 ---
 id: T0227
 owner: ~
-needs: ['T0226']
+needs: []
 branch: —
 worktree: —
-status: ready
+status: suspended
 started_at: —
 ended_at: —
 review: agent
