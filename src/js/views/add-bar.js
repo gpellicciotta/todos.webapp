@@ -6,6 +6,7 @@
  * and focuses the field again, so the next task can follow; the task editor of a wide screen leaves it there.
  * Enter adds too while the device's Make Enter add preference is on, its default; when it is off, or for a viewer,
  * Enter reports the search at once and never adds.
+ * Below 64rem the button shows only its plus icon.
  * The button reads "Add anyway" while the typed text equals a known description, ignoring case and spaces.
  * A viewer, who cannot add tasks, sees "Search tasks" and no Add button (`VO-14`).
  * The field holds at most 500 characters; a counter appears from 450.
@@ -79,7 +80,9 @@ export function createAddBar({
   const counter = element.querySelector('.field__counter');
   const button = element.querySelector('button');
   const preview = element.querySelector('.add-bar__preview');
-  const buttonText = doc.createTextNode(STRINGS.add);
+  // Compact layouts hide the text visually, leaving a square plus button that keeps it as its name.
+  const buttonText = doc.createElement('span');
+  buttonText.className = 'add-bar__label';
   button.append(spriteIcon(doc, 'plus'), buttonText);
   input.value = text;
   let busy = false;
@@ -111,7 +114,7 @@ export function createAddBar({
     input.placeholder = name;
     button.hidden = readOnly;
     const parsed = parse(input.value);
-    buttonText.data = parsed.description && known.has(normalizeDescription(parsed.description)) ? STRINGS.addAnyway : STRINGS.add;
+    buttonText.textContent = parsed.description && known.has(normalizeDescription(parsed.description)) ? STRINGS.addAnyway : STRINGS.add;
     preview.textContent = readOnly ? '' : describeQuickAdd(parsed, now());
     preview.hidden = preview.textContent === '';
   }

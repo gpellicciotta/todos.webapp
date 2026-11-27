@@ -480,14 +480,26 @@ for (const viewport of [COMPACT, WIDE]) {
     await expect(page.locator('.task-row')).toHaveCount(5);
     expect(await rows(page)).toEqual(['Write the report', 'Water the plants', 'Call the plumber', 'Buy paint', 'Book flights']);
 
-    // Reset on the info line restores every option.
-    await page.locator('.info-line__reset').click();
+    // Reset restores every option: on the info line when wide, in the view options when compact.
+    if (viewport === WIDE) {
+      await page.locator('.info-line__reset').click();
+    }
+    else {
+      const panel = await openOptions(page);
+      await panel.getByRole('button', { name: 'Reset' }).click();
+      await panel.getByRole('button', { name: 'Show 6 tasks' }).click();
+    }
     await expect(page.locator('.task-row')).toHaveCount(6);
     await expect(page.locator(INFO)).toHaveText('6 tasks');
     await search.fill('nothing like this');
     await expect(page.locator('.add-hint')).toHaveText('No task matches. Add creates it.');
     await expect(page.locator('.task-row')).toHaveCount(0);
-    await page.locator('.info-line__reset').click();
+    if (viewport === WIDE) {
+      await page.locator('.info-line__reset').click();
+    }
+    else {
+      await search.press('Escape');
+    }
     await expect(page.locator('.task-row')).toHaveCount(6);
     await expect(search).toHaveValue('');
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -495,6 +507,54 @@ for (const viewport of [COMPACT, WIDE]) {
     expect(problems).toEqual([]);
   });
 }
+
+for (const width of [320, COMPACT.width]) {
+  test(`at ${width} px the add bar is one row ending in a + button, with no info line (VO-2, VO-7)`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize({ width, height: COMPACT.height });
+    await openApp(page);
+    await seed(page);
+    const field = page.getByLabel('Search or add a task');
+    const button = page.locator('.add-bar button[type="submit"]');
+    const homeId = await page.evaluate(async () => {
+      const { openStore } = await import('/js/store/db.js');
+      const store = await openStore({ broadcast: true });
+      const home = (await store.listLists()).find((list) => list.name === 'Home');
+      store.close();
+      return home.id;
+    });
+    for (const hash of ['#/tasks', `#/lists/${homeId}`]) {
+      await page.goto(`/${hash}`);
+      await expect(page.locator('.task-row').first()).toBeVisible();
+      await expect(page.locator('.info-line')).toBeHidden();
+      for (const [text, name] of [['', 'Add'], ['Buy paint', 'Add anyway'], ['Something new', 'Add']]) {
+        await field.fill(text);
+        await expect(button).toHaveAccessibleName(name);
+        const input = await field.boundingBox();
+        const box = await button.boundingBox();
+        expect([box.width, box.height]).toEqual([44, 44]);
+        expect(box.y).toBe(input.y);
+        expect(box.x).toBeGreaterThanOrEqual(input.x + input.width);
+        expect((await button.locator('.add-bar__label').boundingBox()).width).toBeLessThanOrEqual(1);
+      }
+      await field.fill('');
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    expect(problems).toEqual([]);
+  });
+}
+
+test('from 64rem the Add button keeps its text, and the info line shows', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await openApp(page);
+  await seed(page);
+  const label = page.locator('.add-bar__label');
+  await expect(label).toHaveText('Add');
+  expect((await label.boundingBox()).width).toBeGreaterThan(20);
+  await expect(page.locator(INFO)).toBeVisible();
+  expect(problems).toEqual([]);
+});
 
 test('the All tasks More menu holds only Edit view options (VO-4)', async ({ page }) => {
   const problems = watch(page);

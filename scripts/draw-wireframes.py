@@ -650,20 +650,21 @@ def task_rows(f, x, y, width, tasks, wide, bottom, handle=False, selected=None):
 def add_bar(f, x, y, width, placeholder="Search or add a task", typed=False, info=None, reset=False):
     """Draw the add bar and return its bottom edge.
 
-    A text field that also searches, and an Add button. The subtle info line sits under the field: inside the
-    pinned bar on compact layouts, below the box on wide layouts.
+    A text field that also searches, and an Add button. The compact bar, as wide as the frame, is one line that ends
+    in a square plus button. Wide layouts spell Add out and show the subtle info line below the box.
     """
     pinned = width == f.width
-    height = 60 + (28 if info and pinned else 0)
+    height = 60
     f.rect(x, y, width, height, "bar", radius=0 if pinned else 8)
-    add_left = button_right(f, x + width - 8, y + 8, "Add", "primary")
+    if pinned:
+        add_left = x + width - 52
+        button(f, add_left, y + 8, "+", "primary", 20, 44, (44 - text_width("+", 20)) / 2)
+    else:
+        add_left = button_right(f, x + width - 8, y + 8, "Add", "primary")
     field(f, x + 8, y + 8, add_left - x - 16, placeholder, muted=not typed)
-    if info:
-        if pinned:
-            info_line(f, x + 16, y + 74, x + width - 16, info, reset)
-        else:
-            info_line(f, x + 8, y + 82, x + width - 8, info, reset)
-            height += 30
+    if info and not pinned:
+        info_line(f, x + 8, y + 82, x + width - 8, info, reset)
+        height += 30
     return y + height
 
 
@@ -675,17 +676,15 @@ def compact_task_screen(
     back=False,
     nav="Tasks",
     grouped=False,
-    info="24 tasks",
-    reset=False,
 ):
-    """Draw a compact task list screen with rows, the pinned add bar and info line, and bottom navigation."""
+    """Draw a compact task list screen with rows, the pinned add bar, and bottom navigation."""
     top_bar(f, title, account, back)
-    top = f.height - 64 - 88
+    top = f.height - 64 - 60
     if grouped:
         grouped_rows(f, 0, 68, f.width, False, top)
     else:
         task_rows(f, 0, 68, f.width, tasks, False, top)
-    add_bar(f, 0, top, f.width, info=info, reset=reset)
+    add_bar(f, 0, top, f.width)
     bottom_nav(f, nav)
 
 
@@ -863,7 +862,7 @@ def view_options():
     view_options_fields(wide, left, 76, width)
     return (
         "View options",
-        "Opens from the More menu where the editors open; changes apply at once, and the info line reports them.",
+        "Opens from the More menu where the editors open; changes apply at once, and the wide info line reports them.",
         compact,
         wide,
     )
@@ -875,9 +874,9 @@ def list_view():
     top_bar(compact, "Home", "connected", back=True)
     compact.text(16, 88, fit("Chores and repairs around the house", 300, 14), 14, "muted")
     compact.text(16, 110, "Shared with 2 people · You own this list", 13, "muted")
-    top = compact.height - 64 - 88
+    top = compact.height - 64 - 60
     task_rows(compact, 0, 124, compact.width, HOME_TASKS, False, top)
-    add_bar(compact, 0, top, compact.width, info="8 tasks")
+    add_bar(compact, 0, top, compact.width)
     bottom_nav(compact, "Lists")
     more_menu(compact, compact.width - 208, 56, LIST_MENU)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)

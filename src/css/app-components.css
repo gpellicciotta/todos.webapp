@@ -755,13 +755,39 @@
   white-space: nowrap;
 }
 
+/* A zero basis keeps the button on the field's line at every width. */
 .add-bar__field {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-inline-size: 0;
 }
 
+/*
+ * Compact layouts keep the add block to one line: a square plus button whose text stays its accessible name,
+ * and no info line, since the view options show and reset every option.
+ */
 @media (width < 64rem) {
   .task-view > .add-block {
     order: 1;
+  }
+
+  .add-bar > .button {
+    inline-size: var(--target-min);
+    min-inline-size: var(--target-min);
+    padding-inline: 0;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .add-bar__label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .add-bar + .info-line {
+    display: none;
   }
 }

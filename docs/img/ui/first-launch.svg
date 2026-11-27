@@ -45,9 +45,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <rect x="215.4" y="388" width="149.6" height="44" rx="6" class="control"/>
     <text x="290.2" y="414.9" font-size="14" text-anchor="middle">Connect to sync</text>
     <rect x="0" y="720" width="390" height="60" rx="0" class="bar"/>
-    <rect x="326.48" y="728" width="55.52" height="44" rx="6" class="primary"/>
-    <text x="354.24" y="754.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
-    <rect x="8" y="728" width="310.48" height="44" rx="6" class="control"/>
+    <rect x="338" y="728" width="44" height="44" rx="6" class="primary"/>
+    <text x="360" y="757" font-size="20" class="on-primary" text-anchor="middle">+</text>
+    <rect x="8" y="728" width="322" height="44" rx="6" class="control"/>
     <text x="20" y="755" font-size="14" class="muted">Add a task</text>
     <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
     <rect x="57.5" y="788" width="80" height="48" rx="24" class="selected"/>

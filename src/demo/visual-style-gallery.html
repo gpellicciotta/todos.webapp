@@ -1222,7 +1222,7 @@
         <h2 id="task-list-title">Task list</h2>
         <p>The view header with its More button, the search field, the add bar with its info line, and the task rows of All tasks.</p>
         <p>The info line names the count and every active option, and ends with Reset while any option differs from its default.</p>
-        <p>Compact layouts move the add bar and its info line below the rows.</p>
+        <p>Compact layouts move the add bar below the rows, show Add as a plus button, and leave out the info line.</p>
         <div class="pattern-frame">
           <div class="task-view">
             <div class="view-header">
@@ -1239,7 +1239,7 @@
                   <label class="field__label visually-hidden" for="pattern-add">Add a task</label>
                   <input class="field__control" id="pattern-add" type="text" placeholder="Add a task" maxlength="500">
                 </div>
-                <button class="button" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg>Add</button>
+                <button class="button" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#plus"/></svg><span class="add-bar__label">Add</span></button>
               </div>
               <div class="info-line">
                 <p class="info-line__text">12 of 24 tasks · Status: open · Sorted by Description</p>

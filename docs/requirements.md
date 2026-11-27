@@ -170,14 +170,14 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 
 ### View Options
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.
-- VO-2: At rest the view shows only the search and add field and a subtle line of active filters and task count.
+- VO-2: At rest the view shows the search and add field, plus a subtle line on wide layouts.
 - VO-3: Typing in the field filters the view to matching tasks; Add, its shortcuts, or Enter create a task.
   A setting turns Enter adding off, so Enter only searches; it syncs as `SYN-13` describes.
 - VO-4: The More menu of the task view and of each list view offers "Edit view options".
 - VO-5: View options open in the side panel on wide layouts and as a full screen on compact layouts.
 - VO-6: View options hold every filter, the grouping choice, the sort choice, and a Reset button.
-- VO-7: The subtle line names the task count, each active filter, any grouping, and any sort other than the default.
-- VO-8: Reset, in the panel or on the subtle line, restores every option to its default.
+- VO-7: The subtle line, shown on wide layouts only, names the task count, active filters, grouping, and non-default sort.
+- VO-8: Reset, in the panel or on the subtle line of wide layouts, restores every option to its default.
 - VO-9: Users group the view by list, due date, or status, or not at all; the task view offers all three.
 - VO-10: A group shows its name and its task count; search, filters, and sort apply inside each group.
   While search or filters hide tasks of a group, the count reads shown of total, such as "6 of 10".

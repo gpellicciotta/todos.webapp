@@ -352,6 +352,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - Search and add: one field with an Add button, and under it a 12 px muted info line of the task count and active options.
   Leave at least 32 px between this block and the rows; the options themselves live in the view options panel.
   The `.info-line` wraps to two lines, then truncates; its quiet Reset button shows only while an option differs from its default.
+  Below 64rem the bar stays one line, with a square plus button and no info line.
+  `.add-bar__label` keeps the button text as its accessible name.
 - View options: the editor panel with Reset at the top, a `.view-options__row` accordion of filters, Group by, and Sort by.
   Each row shows its value at the end, and opening one row closes the other.
   Group by is a native select; Sort by is a native select with a segmented Ascending and Descending toggle.

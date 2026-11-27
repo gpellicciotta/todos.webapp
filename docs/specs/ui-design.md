@@ -36,7 +36,6 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 |                                      |
 +--------------------------------------+
 | [Search or add a task..........] [+] |  add bar
-| 24 tasks                             |  info line
 +--------------------------------------+
 | Tasks                    Lists       |  bottom navigation
 +--------------------------------------+
@@ -403,7 +402,12 @@ Home                                                              3
   The field names the adding keys in `aria-keyshortcuts`, and the Add button's tooltip names them too.
   Both follow the switch from the field's next focus; a viewer's field names no keys (`VO-14`).
   Keyboard users can also Tab to Add and press Enter or Space.
-- **[Decided]** The info line sits right under the field (`VO-7`):
+- **[Decided]** Compact layouts keep the add bar to one line, to leave the screen to the rows:
+  - The Add button is a 44 px square with the plus icon, beside the field at every width.
+    Its text stays as its accessible name, including "Add anyway".
+  - There is no info line; the view options show and reset every option (`VO-6`, `VO-8`).
+  - Rejected: a button floating over the rows only while nothing matches, which would hide adding a similar task.
+- **[Decided]** From 64rem the info line sits right under the field (`VO-7`):
   - It starts with the count, such as "24 tasks", or "12 of 24 tasks" while filters or text narrow the view.
   - It names each active filter, such as "Status: open", so hidden tasks never surprise.
   - A Status filter of every status, the default, hides nothing, so the line leaves it out.
@@ -411,7 +415,7 @@ Home                                                              3
   - It is 12 px muted text on one line; it wraps to two lines, then truncates, and the view options show the rest.
   - **[Decided]** A quiet Reset link ends the line while any option differs from its default (`VO-8`).
     Reset also clears the search text, since the line names it.
-- **[Decided]** The field and its info line form one block, the content of the action bar, so the rows scroll above it.
+- **[Decided]** The field and any info line form one action bar block, so rows scroll above it.
 - When a matching task has exactly the typed text, the Add button reads "Add anyway".
   The check ignores case and surrounding spaces, and covers every non-deleted task the view options show.
 - With no match, the rows give way to the line "No task matches. Add creates it."

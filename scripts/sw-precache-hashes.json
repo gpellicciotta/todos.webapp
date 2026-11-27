@@ -1,11 +1,11 @@
 {
-  "version": "2026-11-28.1",
+  "version": "2026-11-28.2",
   "files": {
     "index.html": "adf3187157ea8367820cfc9a4061efcbedae2f23bff8f15a890bcef7dd3c6f13",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
     "css/style.css": "a3d0c3b32ac129d6aa3ff1799eae8b8fee68af9986afc32743fda11f8e16379a",
     "css/tokens.css": "93624ca0cececdd5056643d06867b14d391aff348b417b5ed7254c44594b36ae",
-    "css/app-components.css": "2bc55f9d101c0cdd6c555817375c1dbe1d659a1b38d51a2f4e6eef5467a700ff",
+    "css/app-components.css": "4d74aa7c70f0fa67af522d8c8474f4631c9d098bdadd5e26b1c89c6bbd119002",
     "css/app-chrome.css": "f172c4d7d5993764a2c1ed799c685cd2a898ed4d15750ec3688a8160ba86256f",
     "css/views.css": "ab1ff3ee0c9fe9e5c4b51663d9a39f0038eb37145f321f081fe51e49cea10829",
     "img/icons.svg": "b45bfc596f7f90825abfdec932f6a9c952ae26f461ccce3a5ab3ca10ae14a370",
@@ -62,7 +62,7 @@
     "js/ui/router.js": "be01e28562bc7405a30ee8580676550f2023f0b898f076475875fa13a551cf7b",
     "js/ui/user-menu.js": "d91dc5c6d40a3d69d73821516e4f636fa5350256d8adbfd392407e5e18753746",
     "js/ui/view-actions.js": "465469476623ebed7fd31527e376f2099e8e600a0b44929340af1f8dc2199975",
-    "js/views/add-bar.js": "a0b0b5f9a4b172a1ad72135dd44a4b0b7f400e44be78e6387dadf92660ccf808",
+    "js/views/add-bar.js": "a616f8aba56a04167be93892cccae32944ee59995cc24da9e6194249685fec0f",
     "js/views/all-tasks.js": "aa60902ea221b6691b420cc8ef8d76ffd2c9ff4008082da7dea8a85832b9adf7",
     "js/views/editor-panel.js": "7ae285ac1704cfc5082eb8c6a914c93196d319e5e953659276f187e40f0fa878",
     "js/views/import-dialog.js": "472dd443453bf7a02c586be80a65c7274248b0042a75561df7e7f067f84ea6e2",
