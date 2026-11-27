@@ -2,6 +2,9 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
+- [ ] T0311 [needs: T0309, T0310] Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings.
+- [ ] T0310 [needs: T0309] Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use.
+- [ ] T0309 Write the welcome, getting started, and FAQ help docs in docs/tutorial as Markdown.
 - [x] T0308 Drop the non-clickable ToDo's logo and name from the sidebar.
 - [ ] T0299 Specify ADR-0006 goals, logs, statuses, and backup format 3 in the local store and backup format specs.
 - [ ] T0300 Specify the ADR-0006 task editor sections, task row marks, and log form in the UI design and wireframes.
