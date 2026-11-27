@@ -91,7 +91,7 @@ Wireframes: [lists-many.svg](../img/ui/lists-many.svg) and [lists-find.svg](../i
 
 The wide sidebar must stay usable from 12 lists up to 500.
 The [Lists Overview](#lists-overview) section decides finding, ordering, and rendering for both surfaces.
-- **[Decided]** Only the lists scroll: the brand, All tasks, Lists, and the find field stay fixed above them.
+- **[Decided]** Only the lists scroll: All tasks, Lists, and the find field stay fixed above them.
   The rows take the rest of the height with a thin scrollbar.
   `overscroll-behavior: contain` keeps the page still at the ends.
   Reason: All tasks, Lists, and Find stay in reach at any scroll depth.
@@ -140,7 +140,7 @@ The vendored [app-nav.js](../../src/vendor/design/js/app-nav.js) drives it; the 
   Rejected: clipping list rows to nothing, which leaves a rail of two links and no lists.
   Rejected: one list icon per row, which makes every row look the same.
 - **[Decided]** The open sidebar keeps its look; the monogram shows only in the rail.
-- **[Decided]** The rail clips the brand name, labels, and counts, which stay in the links' accessible names.
+- **[Decided]** The rail clips the labels and counts, which stay in the links' accessible names.
   Every sidebar link carries a `title`, so a hover names the list.
   Arrow, Home, End, Page, and Alt keys work in the rail as in the open sidebar.
 - **[Decided]** The rail hides the find field, its no-match line, and the sidebar separator; entering it clears the find text.

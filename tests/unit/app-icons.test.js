@@ -99,9 +99,10 @@ describe('head icon links', () => {
 });
 
 describe('in-app logos', () => {
-  it('show the flat SVG in the sidebar brand of the app and the gallery', () => {
-    expect(read('src/js/ui/layout.js')).toContain(`src="${FLAT_SVG}"`);
-    expect(read('src/demo/visual-style-gallery.html')).toContain(`src="../${FLAT_SVG}"`);
+  it('leave the sidebar of the app, the gallery, and the app styles without a brand', () => {
+    for (const path of ['src/js/ui/layout.js', 'src/demo/visual-style-gallery.html', 'src/css/app-chrome.css']) {
+      expect(read(path), path).not.toContain('sidebar__brand');
+    }
   });
 
   it('use the flat 192 px PNG for the sign-in logo and reminder notifications', () => {

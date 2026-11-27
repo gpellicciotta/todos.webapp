@@ -17,7 +17,7 @@
  * The sidebar lists follow the order of this device; Alt+Up and Alt+Down on a list link move it one place, and
  * Alt+Home and Alt+End to the top or bottom (`LST-8`, `LST-13`).
  * Each list shows its open task count from core/list-counts.js, the pass shared with the Lists screen.
- * The wide sidebar keeps the brand, All tasks, and Lists fixed and scrolls only its list rows (`LST-14`).
+ * The wide sidebar keeps All tasks and Lists fixed and scrolls only its list rows (`LST-14`).
  * Rows are patched by list identifier, so focus and scroll survive a count change; a route to a list scrolls its row
  * to the nearest edge once. A count of 0 shows nothing and a count above 999 reads "999+"; hidden text keeps the number.
  * From 12 lists, or while it holds text, a find field above the rows filters them by name once typing pauses for 150 ms,
@@ -215,7 +215,6 @@ export function renderShell(root, { session = createSession(), navMedia } = {}) 
       <div class="app__top-actions" data-user-menu></div>
     </header>
     <nav class="sidebar app__sidebar" id="app-nav" aria-label="${STRINGS.main}" popover="auto">
-      <p class="sidebar__brand"><img class="sidebar__brand-icon" src="img/todos-icon.svg" alt="" width="24" height="24" aria-hidden="true">${STRINGS.app}</p>
       <ul class="nav-list app__nav-list">${DESTINATIONS.map(sidebarItem).join('')}</ul>
       <div class="sidebar__find" hidden>
         <input class="field__control" type="search" maxlength="${FIND_MAX_LENGTH}" autocomplete="off" spellcheck="false" enterkeyhint="go"

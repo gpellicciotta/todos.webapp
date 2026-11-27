@@ -225,7 +225,15 @@ describe('renderShell sidebar scroll region and in-place patching (LST-14)', () 
   const hidden = (root, id) => row(root, id).querySelector('.nav-item__count .visually-hidden').textContent;
   const lists = (...ids) => ids.map((id) => ({ id, name: id.toUpperCase() }));
 
-  it('holds only the list rows in a scroll region below the fixed brand, All tasks, and Lists items', () => {
+  it('starts the sidebar with the destinations, without a logo or app name', () => {
+    const { root } = render();
+    const sidebar = root.querySelector('.app__sidebar');
+    expect(sidebar.firstElementChild.classList.contains('nav-list')).toBe(true);
+    expect(sidebar.querySelector('img')).toBeNull();
+    expect(sidebar.textContent).not.toContain("ToDo's");
+  });
+
+  it('holds only the list rows in a scroll region below the fixed All tasks and Lists items', () => {
     const { root } = render();
     const region = root.querySelector('.app__sidebar .sidebar__scroll');
     expect(region).not.toBeNull();

@@ -214,7 +214,7 @@ The page shows a lasting Update toast, "A new version is ready", through the ven
 ### App Icons
 The icons are the shared todos hexagon of the support.webapp [app icons spec](https://github.com/gpellicciotta/support.webapp/blob/main/docs/specs/app-icons.md).
 They are copies from support.webapp `src/img/app-icons/` at tag v0.2.0; never edit them here.
-- `blue-flat`: [favicon.ico](../src/favicon.ico), the [SVG favicon](../src/img/todos-icon.svg) and sidebar brand, and `img/todos-icon-{128,192}.png`.
+- `blue-flat`: [favicon.ico](../src/favicon.ico), the [SVG favicon](../src/img/todos-icon.svg), and `img/todos-icon-{128,192}.png`.
 - The 192 px flat PNG is the sign-in logo and the reminder icon; todos.server uses the 128 px one in mail.
 - `blue-dimensional`: [img/install/](../src/img/install/) holds the apple touch icon and the manifest's `any` and `maskable` PNGs.
 

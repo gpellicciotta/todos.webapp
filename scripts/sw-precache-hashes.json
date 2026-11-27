@@ -1,12 +1,12 @@
 {
-  "version": "2026-11-24.13",
+  "version": "2026-11-28.1",
   "files": {
     "index.html": "adf3187157ea8367820cfc9a4061efcbedae2f23bff8f15a890bcef7dd3c6f13",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
     "css/style.css": "a3d0c3b32ac129d6aa3ff1799eae8b8fee68af9986afc32743fda11f8e16379a",
     "css/tokens.css": "93624ca0cececdd5056643d06867b14d391aff348b417b5ed7254c44594b36ae",
     "css/app-components.css": "2bc55f9d101c0cdd6c555817375c1dbe1d659a1b38d51a2f4e6eef5467a700ff",
-    "css/app-chrome.css": "8f87a8132f15f4e35145f3adacad7d98e4af7105ab6976cdae4b9ea63e33d76e",
+    "css/app-chrome.css": "f172c4d7d5993764a2c1ed799c685cd2a898ed4d15750ec3688a8160ba86256f",
     "css/views.css": "ab1ff3ee0c9fe9e5c4b51663d9a39f0038eb37145f321f081fe51e49cea10829",
     "img/icons.svg": "b45bfc596f7f90825abfdec932f6a9c952ae26f461ccce3a5ab3ca10ae14a370",
     "favicon.ico": "b96599914f178b58d7ceb0e1cd75225aef583d5f6ca19dfb30df1d9d1ff47525",
@@ -57,7 +57,7 @@
     "js/sync/sync-log.js": "09ccfb3ae3f8ec9183c9a93df71b8adc881cd5ae16a4723c305130c83a1852c9",
     "js/ui/dom.js": "297c7fcc7f329f8025baa9916957b5b40892418375d8369c0d5d49a16ac12752",
     "js/ui/inbox.js": "28c45427998d7380fe8baf142e3968565ead6e84998e7a32f0d6c576197003b8",
-    "js/ui/layout.js": "c57a9613f22bc06559504d3cfa197e207795f5efffeda2f8c9ec502c20d6cbeb",
+    "js/ui/layout.js": "e91fb5aa3ad3b8904fba8123dea66da2332bb4eae3295226edc57d497d7ef5e0",
     "js/ui/panel-resize.js": "dd3761b101e7a1edd52fe4e0c99b9ffb4a66598db21c0083b1388ec84aa01c0d",
     "js/ui/router.js": "be01e28562bc7405a30ee8580676550f2023f0b898f076475875fa13a551cf7b",
     "js/ui/user-menu.js": "d91dc5c6d40a3d69d73821516e4f636fa5350256d8adbfd392407e5e18753746",

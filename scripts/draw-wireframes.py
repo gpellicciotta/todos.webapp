@@ -374,10 +374,9 @@ def nav_toggle(f):
 
 
 def sidebar_head(f):
-    """Draw the open sidebar's ground and its top row: the nav toggle, then the brand."""
+    """Draw the open sidebar's ground and its top row, which holds the nav toggle."""
     f.rect(0, 0, SIDEBAR_WIDTH, f.height, "bar", radius=0)
     nav_toggle(f)
-    f.text(NAV_TOGGLE[0] + 52, 52, "ToDo's", 22, "bold")
 
 
 def all_tasks_glyph(f, cx, cy):
@@ -395,7 +394,7 @@ def lists_glyph(f, cx, cy):
 def rail(f, current, lists=LISTS):
     """Draw the sidebar as an icon rail: the toggle, the destination glyphs, and a monogram tile per list.
 
-    The rail clips the brand, the labels, and the counts. A monogram is the list name's first character, uppercased;
+    The rail clips the labels and the counts. A monogram is the list name's first character, uppercased;
     the current list's tile takes the signal look. Return the top of each list's 44 px row, by name.
     """
     f.rect(0, 0, RAIL_WIDTH, f.height, "bar", radius=0)
@@ -448,7 +447,7 @@ def sidebar(f, current, lists=LISTS):
 def sidebar_many(f, current, rows, total, find=None, matches=None):
     """Draw the wide sidebar for many lists.
 
-    The brand, All tasks, Lists, and the find field stay fixed; only the list rows below scroll, and a scrollbar
+    All tasks, Lists, and the find field stay fixed; only the list rows below scroll, and a scrollbar
     thumb shows the position. A zero open count is left out. `rows` are (name, open count) pairs, `total` is the
     number of lists, and `matches` is the number of lists the find text leaves.
     """

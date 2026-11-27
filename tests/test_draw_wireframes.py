@@ -374,6 +374,13 @@ def labels_of(group):
 
 
 @pytest.mark.parametrize("name", sorted(SCREENS))
+def test_sidebar_has_no_app_name(output, name):
+    _, groups = frames(output / name)
+    for group in groups:
+        assert "ToDo's" not in labels_of(group), name
+
+
+@pytest.mark.parametrize("name", sorted(SCREENS))
 def test_sidebar_has_no_creation_action(output, name):
     # List creation sits behind the floating plus of the Lists screen (commit 718553e), not in the sidebar.
     _, groups = frames(output / name)

@@ -94,7 +94,6 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <path d="M 25 37 H 43" class="icon-line-open"/>
     <path d="M 25 44 H 43" class="icon-line-open"/>
     <path d="M 25 51 H 43" class="icon-line-open"/>
-    <text x="64" y="52" font-size="22" class="bold">ToDo's</text>
     <rect x="12" y="80" width="240" height="40" rx="6" class="selected"/>
     <text x="28" y="106" font-size="14" class="bold">All tasks</text>
     <text x="236" y="106" font-size="13" class="muted" text-anchor="end">24</text>

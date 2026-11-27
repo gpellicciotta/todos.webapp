@@ -59,8 +59,7 @@ test('every icon of the head, the manifest, and the logos loads online and offli
   const icons = await page.evaluate(async () => {
     const links = [...document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')].map((link) => link.getAttribute('href'));
     const manifest = await (await fetch(document.querySelector('link[rel="manifest"]').href)).json();
-    const brand = document.querySelector('.sidebar__brand-icon').getAttribute('src');
-    return [...links, ...manifest.icons.map((icon) => icon.src), brand, 'img/todos-icon-192.png', 'img/todos-icon-128.png'];
+    return [...links, ...manifest.icons.map((icon) => icon.src), 'img/todos-icon-192.png', 'img/todos-icon-128.png'];
   });
   expect(icons).toContain('favicon.ico');
   const fetchAll = () => page.evaluate((paths) => Promise.all(paths.map(async (path) => {
@@ -76,7 +75,6 @@ test('every icon of the head, the manifest, and the logos loads online and offli
   await page.reload();
   await ready(page);
   expect(await fetchAll()).toEqual(expected);
-  await expect.poll(() => page.locator('.sidebar__brand-icon').first().evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
   await context.setOffline(false);
   expect(problems).toEqual([]);
 });

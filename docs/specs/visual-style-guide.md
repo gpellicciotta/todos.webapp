@@ -72,7 +72,8 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
   App styles hold no fixed or sticky positions, which the vendored check enforces, so the gallery shows them in place.
 - **[Decided]** From support.webapp 0.2.0, the top bar and the action bar span every wide column.
   The sidebar and the editor panel sit between them; the panel separators take their columns' grid areas.
-  The brand stays at the top of the sidebar, and the top bar starts with the `app__nav-toggle` and the route title.
+  The sidebar starts with All tasks, without a logo or app name, which would not be clickable.
+  The top bar starts with the `app__nav-toggle` and the route title.
   From 64rem the toggle cycles the sidebar through open, an icon rail, and hidden; below 64rem the bottom bar navigates.
 - **[Decided]** The rail shows each list as a `.nav-item__mark` monogram tile in the glyph column.
   The tile is `--icon-md` square on `--color-surface-sunken`, in muted text, or `--color-primary` for the current list.

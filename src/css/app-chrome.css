@@ -148,11 +148,6 @@
     display: grid;
   }
 
-  .app:has(> .app__top-bar > .app__nav-toggle[aria-expanded='false']) > .app__sidebar .sidebar__brand {
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
   .app:has(> .app__top-bar > .app__nav-toggle[aria-expanded='false']) > .app__sidebar :is(.sidebar__find, .sidebar__find-empty),
   .app:has(> .app__top-bar > .app__nav-toggle[aria-expanded='false']) > .panel-resize--sidebar {
     display: none;
@@ -169,7 +164,7 @@
   overflow: hidden;
 }
 
-.sidebar--rail :is(.nav-item, .sidebar__brand) {
+.sidebar--rail .nav-item {
   overflow: hidden;
   white-space: nowrap;
 }
@@ -200,7 +195,7 @@
 }
 
 /*
- * The app's sidebar holds the brand, All tasks, and Lists fixed, and only the list rows scroll (`LST-14`).
+ * The app's sidebar holds All tasks and Lists fixed, and only the list rows scroll (`LST-14`).
  * The scroll region takes the remaining height, keeps the page still at its ends, and shows a thin scrollbar.
  */
 .app__sidebar.sidebar {
@@ -249,23 +244,6 @@
   padding: var(--space-2) var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-}
-
-.sidebar__brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  padding: var(--space-2) var(--space-3) var(--space-3);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
-}
-
-.sidebar__brand-icon {
-  flex: none;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
 }
 
 .sidebar__end {

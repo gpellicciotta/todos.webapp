@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.6.1-pre
+- FrontEnd: Removed the non-clickable logo and app name from the top of the sidebar, which now starts with All tasks.
 - Tests: Made the task row due text tests follow the default locale clock, so the Pages workflow passes on CI again.
 
 ## v0.6.0 [released: 2026-11-24]
