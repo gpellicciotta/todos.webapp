@@ -1,0 +1,18 @@
+Source: [ADR-0006](https://github.com/gpellicciotta/todos.server/blob/main/docs/adrs/ADR-0006-tasks-as-goals-with-windows-and-a-log.md) of todos.server.
+
+### Declared Files
+- src/js/sync/queue.js
+- src/js/sync/push.js
+- src/js/sync/pull.js
+- src/js/sync/merge.js
+- tests/unit/queue.test.js
+- tests/unit/push.test.js
+- tests/unit/pull.test.js
+- tests/contract/sync.contract.test.js
+
+### Tests
+- Unit: queue, push, pull, and merge tests cover logs, undos, double undos, aliases, and unknown types.
+- Integration: the contract tests log, undo, and read entries and progress back from a real server.
+
+Completion check: `npx vitest run tests/unit/queue.test.js tests/unit/push.test.js tests/unit/pull.test.js` and `npm run test:contract`
+Size estimate: 8 files, 400 lines
