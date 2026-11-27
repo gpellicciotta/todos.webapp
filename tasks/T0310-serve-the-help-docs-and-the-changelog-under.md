@@ -37,3 +37,7 @@ Details are in [technical-spec.md](T0310-serve-the-help-docs-and-the-changelog-u
 
 - [2026-11-28] **[Decided]**
   Mapped help paths at serve and deploy time instead of committing copies, which `plan tasks stop` changelog edits would break.
+
+- [2026-11-28] **[Decided]**
+  The user accepted that Help works offline only after a first online visit, so help files stay out of the precache.
+

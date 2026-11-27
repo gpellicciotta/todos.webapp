@@ -38,3 +38,7 @@ Details are in [technical-spec.md](T0311-add-a-help-screen-to-the-user-menu/tech
 
 - [2026-11-28] **[Decided]**
   Kept the screen, the Settings removal, specs, and wireframes together: either half alone shows the shortcuts twice or nowhere.
+
+- [2026-11-28] **[Decided]**
+  The user chose the GitHub issues link for Report a problem, over an email link.
+
