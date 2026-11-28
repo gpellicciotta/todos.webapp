@@ -12,14 +12,13 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 1363.0, input: 200, output: 127876, cache_read: 21135500, cache_write: 294997}
+  worker: {turns: 4, duration_s: 1460.6, input: 216, output: 133865, cache_read: 23338774, cache_write: 302794}
   review: {turns: 3, duration_s: 193.5, input: 81938, output: 5463, cache_read: 867456, cache_write: 0}
-review_status: rejected
-review_round: 3
-review_requested_at: "2026-11-28T01:53:26Z"
+review_status: pending
+review_round: 4
+review_requested_at: "2026-11-28T01:59:59Z"
 review_session: codex-20261128-3ca49b
 work_duration: 1619.7
-reviewed_by: "@codex"
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -103,4 +102,7 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Implement]**
   Legacy uncomplete conversion now tracks checked logs and undo-logs as live checks, so it undoes the latest live check.
+
+- [2026-11-28] **[Review]**
+  Round 4 requested (mode: agent).
 
