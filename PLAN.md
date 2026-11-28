@@ -14,7 +14,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0316 [needs: T0304, T0305, T0312] Remove the legacy target-count and completion-count fields once every reader uses goals and progress.
 - [!] T0227 [reason: Waiting for the push dispatch of todos.server T0261.] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [x] T0310 Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use.
-- [ ] T0311 Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings.
+- [~] T0311 [owner: @claude] Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings.
 - [x] T0299 Specify ADR-0006 goals, logs, statuses, and backup format 3 in the local store and backup format specs.
 - [x] T0302 Port the ADR-0006 fold to the local occurrences module, passing the shared fold test vectors.
 - [-] T0303 [reason: Split into T0313, T0314, T0315, and T0316 to stay under the large size line.] Store ADR-0006 goals, start times, logs, and undos locally, migrating the database and local legacy events.

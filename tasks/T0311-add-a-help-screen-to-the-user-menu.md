@@ -1,11 +1,11 @@
 ---
 id: T0311
-owner: ~
-needs: [T0309, T0310]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0311-add-a-help-screen-to-the-user-menu
+worktree: .plan/work/T0311-add-a-help-screen-to-the-user-menu
+status: active
+started_at: "2026-11-28T02:07:45Z"
 ended_at: —
 review: agent
 preview: none
