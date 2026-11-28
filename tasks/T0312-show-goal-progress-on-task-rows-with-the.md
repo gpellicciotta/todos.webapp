@@ -5,20 +5,22 @@ session: claude-20261128-75bfc6
 needs: []
 branch: task/T0312-show-goal-progress-on-task-rows-with-the
 worktree: .plan/work/T0312-show-goal-progress-on-task-rows-with-the
-status: active
+status: completed
 started_at: "2026-11-28T06:04:37Z"
-ended_at: —
+ended_at: "2026-11-28T06:41:16Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1663.1, input: 202, output: 94343, cache_read: 18324577, cache_write: 248503}
-  review: {turns: 1, duration_s: 101.8, input: 30234, output: 2468, cache_read: 384000, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 143.4, input: 63690, output: 3530, cache_read: 523776, cache_write: 0}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-28T06:40:31Z"
-review_session: codex-20261128-54d021
-work_duration: 1669.8
+review_session: codex-20261128-4b2055
+work_duration: 2199.8
+reviewed_by: "@codex"
+completion-commit: dfc050ae15d5aea69da3460bf7be369c2689b92b
 ---
 # T0312: Show goal progress on task rows, with the quick log, Failed status, and upcoming tasks
 
@@ -38,7 +40,7 @@ Capture before and after screenshots of the lists and view options in light and 
 - [x] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [x] **[Visual]**    Capture before and after screenshots of the lists and view options in both themes.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -86,4 +88,11 @@ Capture before and after screenshots of the lists and view options in light and 
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 approved by @codex: [Decided]** Approve.
+  - Findings: [review-findings-2.md](T0312-show-goal-progress-on-task-rows-with-the/review-findings-2.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
