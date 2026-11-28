@@ -8,7 +8,7 @@
  * A screen puts its add block in the action bar, which joins the shell only while it holds content.
  * Banner slots hide while empty, so the banner area takes no room without a banner.
  * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
- * the account, Recycle bin, and Settings (see user-menu.js).
+ * the account, Recycle bin, Settings, and Help (see user-menu.js).
  * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
  * From 64rem, a view's three-dot actions button sits just before the user button (see view-actions.js).
  * The sync indicator opens the end of the top bar, before the bell of the inbox and the user button (see views/sync-indicator.js).
@@ -91,7 +91,7 @@ export const STRINGS = Object.freeze({
   }),
   titles: Object.freeze({
     tasks: 'All tasks', lists: 'Lists', list: 'List', bin: 'Recycle bin',
-    settings: 'Settings', 'sync-log': 'Sync log',
+    settings: 'Settings', help: 'Help', 'sync-log': 'Sync log',
   }),
 });
 
@@ -101,8 +101,8 @@ const DESTINATIONS = [
   { key: 'lists', hash: '#/lists', icon: 'lists', label: 'Lists', short: 'Lists' },
 ];
 
-/** Navigation destination of each view; the Recycle bin and Settings destinations sit in the user menu. */
-const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin', settings: 'settings', 'sync-log': 'settings' };
+/** Navigation destination of each view; the Recycle bin, Settings, and Help destinations sit in the user menu. */
+const NAV_OF_VIEW = { tasks: 'tasks', lists: 'lists', list: 'lists', bin: 'bin', settings: 'settings', help: 'help', 'sync-log': 'settings' };
 
 /**
  * Read the device's theme preference; storage that is missing or blocked means the system theme.

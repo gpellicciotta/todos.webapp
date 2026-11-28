@@ -89,13 +89,13 @@ describe('renderShell navigation', () => {
     expect([...root.querySelector('.app__top-bar').children].map((child) => child.tagName)).toEqual(['BUTTON', 'H1', 'DIV']);
   });
 
-  it('keeps Recycle bin and Settings out of the sidebar and the bottom bar', () => {
+  it('keeps Recycle bin, Settings, and Help out of the sidebar and the bottom bar', () => {
     const { root } = render();
     const sidebar = [...root.querySelectorAll('.app__sidebar a')].map((link) => link.getAttribute('href'));
     const bottom = [...root.querySelectorAll('.app__bottom-nav a')].map((link) => link.getAttribute('href'));
     expect(sidebar).toEqual(['#/tasks', '#/lists']);
     expect(bottom).toEqual(['#/tasks', '#/lists']);
-    expect([...root.querySelectorAll('.account-menu__panel .menu__item')].map((link) => link.getAttribute('href'))).toEqual(['#/connect', '#/bin', '#/settings']);
+    expect([...root.querySelectorAll('.account-menu__panel .menu__item')].map((link) => link.getAttribute('href'))).toEqual(['#/connect', '#/bin', '#/settings', '#/help']);
   });
 
   it('marks the panel link of the current route, also for the screens under Settings', () => {

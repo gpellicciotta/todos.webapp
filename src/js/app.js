@@ -32,6 +32,7 @@ import { applyTheme, readThemePreference, renderShell, STRINGS } from './ui/layo
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
 import { mountAllTasks } from './views/all-tasks.js';
 import { createEditorPanel } from './views/editor-panel.js';
+import { mountHelp } from './views/help.js';
 import { mountList } from './views/list.js';
 import { mountListEditor } from './views/list-editor.js';
 import { mountLists } from './views/lists.js';
@@ -53,7 +54,7 @@ const MESSAGES = Object.freeze({
 
 /** Screens that fill a view, by view name. */
 const SCREENS = {
-  tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, 'sync-log': mountSyncLog,
+  tasks: mountAllTasks, lists: mountLists, list: mountList, bin: mountRecycleBin, settings: mountSettings, help: mountHelp, 'sync-log': mountSyncLog,
 };
 
 /** Editors of the editor panel, by the editor name of their routes. */

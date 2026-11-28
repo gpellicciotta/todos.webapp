@@ -674,47 +674,25 @@
   color: var(--color-danger);
 }
 
-.settings__link {
-  justify-self: start;
-  color: var(--color-link);
-}
-
-/* Keyboard shortcuts: the list, stacked in a narrow card and in two columns from a 36rem card. */
-.settings__keyboard {
-  container: settings-keyboard / inline-size;
-}
-
-.settings__shortcuts {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.settings__shortcuts > div {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.settings__shortcut-action {
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
-@container settings-keyboard (width >= 36rem) {
-  .settings__shortcuts {
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: var(--space-2) var(--space-4);
-  }
-
-  /* The rows hand their cells to the list's grid, so every key column lines up. */
-  .settings__shortcuts > div {
-    display: contents;
-  }
-}
-
 .settings [hidden] {
   display: none;
+}
+
+/* Help: the vendored help page in a reading column; the parts of a Markdown panel read as subheadings. */
+.help__part {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.help-page__section ul,
+.help-page__section ol {
+  margin: 0 0 var(--space-3);
+  padding-inline-start: var(--space-5);
+}
+
+.help-page__section p {
+  margin-block: 0 var(--space-3);
 }
 
 /* List view: the description and the list actions. */

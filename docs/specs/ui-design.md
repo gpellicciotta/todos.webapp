@@ -11,7 +11,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Same app in both modes: connected mode adds controls but never moves or renames existing ones.
 - Forgiving: deletions go to the recycle bin, and a toast offers Undo.
 - Honest sync: the sync indicator always tells whether data is only local, pending, or synced.
-- Quiet chrome: the account, Recycle bin, and Settings sit behind the user button, since they are needed only now and then.
+- Quiet chrome: the account, Recycle bin, Settings, and Help sit behind the user button, since they are needed only now and then.
 - Keyboard and touch parity: every drag keeps a keyboard alternative, with no visible button required.
   Every hover or shortcut action stays reachable by a visible control.
 
@@ -74,7 +74,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - They persist per device in `todos.view.panels` as `{sidebar, editor}` in rem, saved when a drag or key step ends (`SYN-13` keeps them local).
 
 ### Navigation Rules
-- Destinations: All tasks, Lists, each single list, Recycle bin, and Settings.
+- Destinations: All tasks, Lists, each single list, Recycle bin, Settings, and Help.
 - The compact bottom bar holds Tasks and Lists; the wide sidebar holds the same plus every list.
 - The sidebar lists each list with its open task count.
   It has no creation action; New list stays on the Lists screen.
@@ -106,7 +106,7 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
   The rows filter and the count updates once typing pauses for 150 ms; the polite live region then announces "4 of 124 lists match." or "No list matches.".
 - **[Decided]** The `l` key focuses the sidebar field outside text fields (`LST-15`).
   Where there is no field to focus, below 12 lists or on a compact layout, it opens the Lists screen instead.
-  The Keyboard shortcuts section of Settings lists it.
+  The FAQ of the Help screen lists it.
 - **[Decided]** The list rows are one tab stop with a roving `tabindex`: the last focused row, else the current list, else the first shown row.
   Up, Down, Home, End, PageUp, and PageDown move between the shown rows and stop at the ends; a Page key moves one region height.
   Alt+Up and Alt+Down keep moving the list, and Alt+Home and Alt+End move it to an end (`LST-8`, `LST-13`).
@@ -227,9 +227,9 @@ Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
 - Click, Enter, Space, or ArrowDown open the menu at its first item.
   The menu hangs under the button, its end edge lined up with the button's.
 - ArrowUp and ArrowDown move between the items; Escape, an outside click, Tab, or choosing an item closes the menu.
-- The menu shows the user name, then three items with icons: the connection state, Recycle bin, and Settings.
+- The menu shows the user name, then four items with icons: the connection state, Recycle bin, Settings, and Help.
 - The state item reads "Local only", "Connected", or "Sign in needed" (`CON-13`) and opens Settings at the Connection section.
-  The item of the current route is marked; Settings is current on `#/settings` and `#/connect`.
+  The item of the current route is marked; Settings is current on `#/settings` and `#/connect`, and Help on `#/help`.
 - Expired session: the menu says Sign in needed; the Sign in button sits in the session banner (see Sync Indicator).
 - Local mode has no Sign in text on the page (`LOC-1`); Sign in stays reachable from Settings and the empty states.
 - The menu reads the session each time it opens and when the session changes.
@@ -1055,11 +1055,7 @@ Settings is one page with these sections:
   Keep and Erase (danger) sit in their own row under the question; the polite live region reads the question.
   Either answer resumes syncing; a failed answer keeps the question with an error toast.
 - Connection also holds the server URL, changeable only while disconnected (`CON-12`).
-- Keyboard shortcuts: its own section, before About, listing the shortcuts.
-- About, always the last section: app version, build date, the add field syntax, and a link to the requirements and source.
-  The shortcut list names each key in a `kbd` and lists only shortcuts that work today.
-  A task that adds a shortcut adds its row to `SHORTCUTS` in [settings.js](../../src/js/views/settings.js).
-  [version.js](../../src/js/version.js) holds both; a unit test matches the version to package.json.
+- The keyboard shortcuts, the add field syntax, the version, and the source link moved to Help; Settings has no Keyboard shortcuts or About section.
 - The theme applies at once; a theme the browser cannot store shows a toast saying it lasts until reload.
 - Sign in sends the browser to Auth; connected, the section shows "Signed in as {{name}} ({{email}})" and the server.
 - Not invited and error show the status line, its hint, and Sign in to try again.
@@ -1073,6 +1069,27 @@ Settings is one page with these sections:
   A failure keeps the dialog open and the session, with an error toast.
 - The server URL defaults to `https://todos.pellicciotta.com`; an invalid address shows an error, and empty restores it.
 - It takes https, or http on `localhost`, `127.0.0.1`, or `[::1]`; the query and fragment are dropped.
+
+### Help
+Wireframe: [help.svg](../img/ui/help.svg). Open it from the user menu, route `#/help` (`HLP-1`).
+
+Help is the vendored help page in the centered `--width-main` column, with no view actions and no editor.
+- A search field, then topic chips: All topics, App info, Welcome, Tutorial, FAQ, and Release notes.
+  Search filters every panel by its text and opens the FAQ entries that match; a no-results state offers Reset Search (`HLP-3`).
+- Links set the filters: `#/help?q=shortcut` fills the search, `#/help?topic=faq` shows one topic (`all`, `info`, `welcome`, `tutorial`, `faq`, or `release-notes`),
+  and both combine. An unknown topic shows all topics; a link without a query clears both. The router keeps the query out of the route name.
+- Five cards, in this order (`HLP-2`):
+  - Application Info & Support: the version and build date, the storage mode, and two links that open in a new tab.
+    The storage line reads "Local only: your data stays on this device", or names the connected account and server.
+    The links are Requirements and source code, and Report a problem, which opens the GitHub issues page.
+  - Welcome to ToDo's, Getting Started Tutorial, and FAQ: the Markdown docs of `docs/tutorial`, each titled by its level-1 heading.
+    Welcome and the tutorial show each part under a subheading; each FAQ question is a collapsed entry, with Expand All.
+  - Release notes: the releases of `CHANGELOG.md`, grouped by area, with the version in development marked.
+- The docs and the changelog load from `help/` when the screen opens, in parallel; each card shows a loading state until its file arrives.
+  A failed file shows "This help could not load. Check the connection and try again." with Retry in that card only.
+- After one visit the service worker serves the files offline (`HLP-4`).
+- The Markdown renderer ([markdown.js](../../src/js/ui/markdown.js)) builds nodes with `textContent` only, so doc text never becomes markup.
+  A task that adds a shortcut updates the FAQ answer in [faq.md](../tutorial/faq.md).
 
 ### Sync Log
 Wireframe: [sync-log.svg](../img/ui/sync-log.svg).
@@ -1207,7 +1224,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 - Ctrl+Z or Cmd+Z, outside text fields and modal dialogs, runs the Undo of the newest toast.
   It never runs another toast action, such as Reload.
 - Page shortcuts never fire while a text field has focus; the add field's keys and Escape in an editor do.
-- The Keyboard shortcuts section lists every shortcut that works today.
+- The FAQ of the Help screen lists every shortcut that works today.
 - Drag and drop always has a keyboard alternative: Alt+arrows, Alt+Home, and Alt+End for tasks (`LV-3`), the same keys and menu entries for lists (`LST-13`).
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.

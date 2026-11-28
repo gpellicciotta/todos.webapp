@@ -383,6 +383,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Configuration ends with the Danger zone: Cancel task, which reads Uncancel once cancelled, and Delete task.
   The Danger zone drops its own border, after the last rule.
   T0306 and T0307 build this layout; until then the app keeps the earlier three-tab editor.
+- Help: the vendored `createHelpPage` pattern of `help-page.js`, with search, topic chips, section cards, FAQ collapsibles, and release notes.
+  Markdown panels render through `ui/markdown.js`, and `views.css` adds only the `.help__part` subheading and the list spacing.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.
   A destructive row action swaps its buttons for it, as the last note of the note thread shows.
 

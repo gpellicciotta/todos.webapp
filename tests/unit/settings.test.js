@@ -804,63 +804,27 @@ describe('Adding tasks in Settings', () => {
   });
 });
 
-describe('Keyboard shortcuts section', () => {
-  const EXPECTED = [
-    [['n', '/'], 'Focus the search and add field.'],
-    [['l'], 'Focus the find field of the sidebar lists, or open Lists where there is none.'],
-    [['/'], 'On the Lists screen, focus its find field.'],
-    [['Enter'], 'Add the task, in the search and add field, while Make Enter add is on; otherwise apply the search.'],
-    [['Shift+Enter', 'Alt+Enter'], 'Add the task or list, in the search and add field.'],
-    [['Escape'], 'Clear the search and add field, or close the editor or a dialog.'],
-    [['Alt+Up', 'Alt+Down'], "Move the focused list, or the focused task in a list's manual order."],
-    [['Alt+Home', 'Alt+End'], "Move the focused list, or the focused task in a list's manual order, to the top or bottom."],
-    [['x'], 'Tick the focused task, as a click on its status button does; a toast offers Undo.'],
-    [['Ctrl+Z', 'Cmd+Z'], 'Undo the newest change shown in a toast.'],
-  ];
-
-  /** @returns {HTMLElement} the Keyboard shortcuts section of a freshly mounted Settings screen */
-  function mountShortcuts() {
+describe('sections that moved to Help', () => {
+  /** @returns {HTMLElement} a freshly mounted Settings screen */
+  function mountScreen() {
     const view = document.body.appendChild(document.createElement('div'));
     const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
     mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
-    return view.querySelector('section[aria-labelledby="settings-shortcuts"]');
+    return view;
   }
 
-  it('lists the ten shortcuts under a Keyboard shortcuts heading, in order, with each key in a kbd', () => {
-    const about = mountShortcuts();
-    const heading = about.querySelector('h2');
-    expect(heading.textContent).toBe('Keyboard shortcuts');
-    const list = about.querySelector('dl.settings__shortcuts');
-    const rows = [...list.querySelectorAll(':scope > div')].map((row) => [
-      [...row.querySelectorAll('dt kbd')].map((key) => key.textContent),
-      row.querySelector('dd').textContent,
-    ]);
-    expect(rows).toEqual(EXPECTED);
+  it('keeps Appearance, Adding tasks, Reminders, Data, and Connection, with no Keyboard shortcuts or About section', () => {
+    const titles = [...mountScreen().querySelectorAll('section > h2')].map((heading) => heading.textContent);
+    expect(titles).toEqual(['Appearance', 'Adding tasks', 'Reminders', 'Data', 'Connection']);
   });
 
-  it('joins alternative keys with "or", so a screen reader reads each term as text', () => {
-    const terms = [...mountShortcuts().querySelectorAll('.settings__shortcuts dt')].map((term) => term.textContent);
-    expect(terms).toEqual(['n or /', 'l', '/', 'Enter', 'Shift+Enter or Alt+Enter', 'Escape', 'Alt+Up or Alt+Down', 'Alt+Home or Alt+End', 'x', 'Ctrl+Z or Cmd+Z']);
-  });
-
-  it('is its own section, before About, which stays the last section', () => {
-    const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
-    mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
-    const titles = [...view.querySelectorAll('section > h2')].map((heading) => heading.textContent);
-    expect(titles.slice(-2)).toEqual(['Keyboard shortcuts', 'About']);
-    expect(view.querySelector('section[aria-labelledby="settings-about"] .settings__shortcuts')).toBeNull();
-  });
-
-  it('explains the add field syntax in About, before the source link', () => {
-    const view = document.body.appendChild(document.createElement('div'));
-    const session = { state: () => 'local', account: () => null, serverUrl: () => 'https://todos.example.com', subscribe: () => () => {} };
-    mountSettings(view, { session, toaster: { show: vi.fn() }, getStorage: () => null });
-    const about = view.querySelector('section[aria-labelledby="settings-about"]');
-    const syntax = about.querySelector('.settings__syntax');
-    expect(syntax.textContent).toBe('In the add field, today, tomorrow, a weekday, or 2026-12-24 sets the due date, '
-      + '18:00 or 6 pm the time, and #home a list. A backslash keeps a word as text, such as \\tomorrow.');
-    const order = [...about.children];
-    expect(order.indexOf(syntax)).toBeLessThan(order.indexOf(about.querySelector('.settings__link')));
+  it('shows no shortcut list, version line, add field syntax, or source link', () => {
+    const view = mountScreen();
+    expect(view.querySelector('.settings__shortcuts')).toBeNull();
+    expect(view.querySelector('kbd')).toBeNull();
+    expect(view.querySelector('.settings__syntax')).toBeNull();
+    expect(view.querySelector('.settings__link')).toBeNull();
+    expect(view.textContent).not.toContain('Version ');
+    expect(view.textContent).not.toContain('Requirements and source code');
   });
 });

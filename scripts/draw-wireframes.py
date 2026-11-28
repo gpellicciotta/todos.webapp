@@ -345,17 +345,30 @@ def settings_glyph(f, x, y):
         f.circle(x + knob, y + row, 2.5, "icon")
 
 
+def help_glyph(f, x, y):
+    """Draw the 18 px Help icon, a circle holding a question mark, with its top left at (x, y)."""
+    f.circle(x + 9, y + 9, 8, "icon")
+    f.path(
+        f"M {x + 6.5:g} {y + 7:g} Q {x + 6.5:g} {y + 4:g} {x + 9:g} {y + 4:g} Q {x + 11.5:g} {y + 4:g} {x + 11.5:g} {y + 6.5:g} "
+        f"Q {x + 11.5:g} {y + 8.5:g} {x + 9:g} {y + 9.5:g} V {y + 11:g}",
+        "icon-line-open",
+    )
+    f.circle(x + 9, y + 13.5, 0.8, "icon-fill")
+
+
 def user_panel(f, right, y, name, status):
     """Draw the open user panel with its right edge at `right` and its top at `y`; the button sits above it.
 
-    Recycle bin and Settings are buttons with icons, the first one marking the current route.
+    Recycle bin, Settings, and Help are buttons with icons, the first one marking the current route.
     """
     left = right - 200
-    f.rect(left, y, 200, 184, "frame", radius=8)
+    f.rect(left, y, 200, 236, "frame", radius=8)
     f.text(left + 16, y + 30, name, 14, "bold")
     f.text(left + 16, y + 50, status, 12, "muted")
     f.line(left + 12, y + 62, right - 12, y + 62)
-    for index, (label, glyph) in enumerate((("Recycle bin", bin_glyph), ("Settings", settings_glyph))):
+    for index, (label, glyph) in enumerate(
+        (("Recycle bin", bin_glyph), ("Settings", settings_glyph), ("Help", help_glyph))
+    ):
         top = y + 72 + index * 52
         f.rect(left + 8, top, 184, 44, "signal" if index == 0 else "control")
         glyph(f, left + 22, top + 13)
@@ -910,7 +923,7 @@ def user_menu():
     user_panel(wide, MAIN_RIGHT, 28 - 6 + 44 + 4, "Jane Doe", "Connected")
     return (
         "User menu",
-        "The circular user button ends the top bar; its panel holds the name, the state, Recycle bin, and Settings.",
+        "The circular user button ends the top bar; its panel holds the name, the state, Recycle bin, Settings, and Help.",
         compact,
         wide,
     )
@@ -1577,9 +1590,6 @@ def settings_sections(f, x, y, width):
         button(f, x + 16, top + 100, "Sign in", "primary")
     if shown(top, 226):
         field(f, x + 16, top + 160, width - 32, "https://todos.pellicciotta.com", "Server URL")
-    top = section("About", 72)
-    if shown(top, 8):
-        f.text(x + 16, top + 4, "Version 1.0.0 · Built 3 Nov 2026", 13, "muted")
     return y
 
 
@@ -1601,7 +1611,90 @@ def settings():
     wide.text(MAIN_LEFT + 680, 256, "a denial or no support leaves it off and says why.", 13, "muted")
     return (
         "Settings",
-        "Theme, Make Enter add, reminders, backups, connection, server URL, and app version.",
+        "Theme, Make Enter add, reminders, backups, connection, and server URL.",
+        compact,
+        wide,
+    )
+
+
+def help_sections(f, x, y, width):
+    """Draw the Help page: search, topic chips, and the five panels, clipped where the page runs past the frame; return the bottom edge."""
+    limit = f.height - (64 if f.width < 500 else 0)
+
+    def card(title, height):
+        nonlocal y
+        if y + 40 > limit:
+            y += height + 12
+            return None
+        f.rect(x, y, width, min(height, limit - y), "box", radius=8)
+        f.text(x + 16, y + 30, title, 16, "bold")
+        top = y + 44
+        y += height + 12
+        return top
+
+    def shown(top, bottom):
+        return top is not None and top + bottom <= limit
+
+    def line(top, dy, text, css="muted"):
+        if shown(top, dy + 4):
+            f.text(x + 16, top + dy, fit(text, width - 32, 13), 13, css)
+
+    y = field(f, x, y, width, "Search guides, FAQ, or release notes", "Search help", muted=True) + 12
+    cx = x
+    for index, label in enumerate(("All topics", "App info", "Welcome", "Tutorial", "FAQ", "Release notes")):
+        if cx + text_width(label, 12) + 16 > x + width:
+            cx, y = x, y + 32
+        cx = chip_left(f, cx, y, label, "signal" if index == 0 else "chip") + 8
+    y += 24 + 16
+    top = card("Application Info & Support", 188)
+    line(top, 14, "Version 1.0.0 · Built 3 Nov 2026")
+    line(top, 36, "Local only: your data stays on this device")
+    if shown(top, 144):
+        button(f, x + 16, top + 52, "Requirements and source code")
+        button(f, x + 16, top + 104, "Report a problem")
+    top = card("Welcome to ToDo's", 116)
+    line(top, 14, "ToDo's is a personal task manager that works offline.", "")
+    line(top, 36, "Tasks · Statuses · Lists · Due times · Repeating tasks")
+    top = card("Getting Started Tutorial", 116)
+    line(top, 14, "1. Add your first task", "")
+    line(top, 36, "2. Set a due date, time, and list by typing")
+    top = card("Frequently Asked Questions", 188)
+    if shown(top, 36):
+        button_right(f, x + width - 16, top - 36, "Expand All", "control", 13, 32)
+    for row, question in enumerate(
+        (
+            "Do I need an account to use ToDo's?",
+            "Where are my lists and tasks stored?",
+            "Which keyboard shortcuts can I use?",
+        )
+    ):
+        if shown(top, row * 44 + 44):
+            f.rect(x + 16, top + row * 44, width - 32, 36, "control")
+            f.text(x + 28, top + row * 44 + 23, fit(question, width - 80, 13), 13)
+            f.text(x + width - 28, top + row * 44 + 23, "⌄", 13, "", "end")
+    top = card("Release notes", 116)
+    line(top, 14, "v0.6.1 · in development", "bold")
+    line(top, 36, "Core: Supported the year recurrence unit in local periods.")
+    return y
+
+
+def help_screen():
+    """Help: search and topic chips over the five panels, opened from the user menu."""
+    compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
+    top_bar(compact, "Help")
+    help_sections(compact, 12, 72, compact.width - 24)
+    bottom_nav(compact, "Help")
+    wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
+    sidebar(wide, "Help")
+    page_header(wide, MAIN_LEFT, 28, MAIN_RIGHT, "Help")
+    help_sections(wide, MAIN_LEFT, 96, 640)
+    wide.text(MAIN_LEFT + 680, 140, "Search filters every panel and opens the FAQ", 13, "muted")
+    wide.text(MAIN_LEFT + 680, 160, "questions that match; a chip shows one topic.", 13, "muted")
+    wide.text(MAIN_LEFT + 680, 188, "Each panel loads its file on its own; a failed", 13, "muted")
+    wide.text(MAIN_LEFT + 680, 208, "one shows Retry. After one visit, Help works offline.", 13, "muted")
+    return (
+        "Help",
+        "Application info and support links, the welcome, the tutorial, the FAQ, and the release notes, with search and topics.",
         compact,
         wide,
     )
@@ -1776,6 +1869,7 @@ SCREENS = {
     "list-editor.svg": list_editor,
     "recycle-bin.svg": recycle_bin,
     "settings.svg": settings,
+    "help.svg": help_screen,
     "sync-log.svg": sync_log,
     "connect.svg": connect,
     "import.svg": import_dialog,

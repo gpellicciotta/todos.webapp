@@ -17,6 +17,10 @@ All notable changes to this project are documented here.
 - DevOps: Served the help docs and the changelog under `help/` locally and on Pages, and cached them for offline use after a first visit.
 - Tests: Made the task row due text tests follow the default locale clock, so the Pages workflow passes on CI again.
 - Docs: Wrote the welcome, getting started, and FAQ help docs in `docs/tutorial` as Markdown for the Help screen.
+- FrontEnd: Added a Help screen to the user menu at #/help, with Application Info & Support, Welcome, Getting Started Tutorial, FAQ, and Release notes panels, search, and topic chips.
+- FrontEnd: Moved the keyboard shortcuts, the add field syntax, the version, and the source link from Settings to Help, and added a Report a problem link.
+- FrontEnd: Opened Help filtered by link, with `#/help?q=` for the search and `#/help?topic=` for the topic, and let the router carry a hash query.
+- Docs: Added the Help requirements HLP-1 to HLP-4, the Help screen spec and wireframe, and a four-item user menu.
 
 ## v0.6.0 [released: 2026-11-24]
 - FrontEnd: Made the All tasks empty state say tasks sync and drop the Connect link while connected.

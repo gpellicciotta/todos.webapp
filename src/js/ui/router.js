@@ -26,6 +26,7 @@ const ROUTES = [
   { name: 'list-task', path: 'lists/:listId/tasks/:taskId', view: 'list', editor: 'task' },
   { name: 'bin', path: 'bin', view: 'bin', editor: null },
   { name: 'settings', path: 'settings', view: 'settings', editor: null },
+  { name: 'help', path: 'help', view: 'help', editor: null },
   { name: 'sync-log', path: 'settings/sync-log', view: 'sync-log', editor: null },
   // The alias of the Auth return: it opens Settings, which scrolls to the Connection section and replaces the address.
   { name: 'connect', path: 'connect', view: 'settings', editor: null },
@@ -58,17 +59,21 @@ function match(pattern, segments) {
 
 /**
  * Parse a URL hash into a route.
- * @param {string} hash the hash, such as `#/lists/{{list-id}}/edit`
- * @returns {{name: string, params: object, view: string, editor: string|null, viewKey: string, hash: string}|null}
+ * @param {string} hash the hash, such as `#/lists/{{list-id}}/edit`, or `#/help?q=shortcut` with a query
+ * @returns {{name: string, params: object, view: string, editor: string|null, viewKey: string, hash: string, query: string}|null}
  *   the route, or null for an unknown route
  */
 export function parseRoute(hash) {
   if (!hash.startsWith('#/')) {
     return null;
   }
+  // A query after the path, such as `#/help?q=shortcut`, travels with the route and never changes which route it is.
+  const queryAt = hash.indexOf('?');
+  const path = queryAt >= 0 ? hash.slice(0, queryAt) : hash;
+  const query = queryAt >= 0 ? hash.slice(queryAt + 1) : '';
   let segments;
   try {
-    segments = hash.slice(2).split('/').map(decodeURIComponent);
+    segments = path.slice(2).split('/').map(decodeURIComponent);
   }
   catch {
     return null;
@@ -77,7 +82,7 @@ export function parseRoute(hash) {
     const params = match(route.segments, segments);
     if (params) {
       const viewKey = params.listId ? `${route.view}/${params.listId}` : route.view;
-      return { name: route.name, params, view: route.view, editor: route.editor, viewKey, hash };
+      return { name: route.name, params, view: route.view, editor: route.editor, viewKey, hash, query };
     }
   }
   return null;

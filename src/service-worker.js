@@ -18,7 +18,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-28.3';
+const VERSION = '2026-11-28.6';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -82,6 +82,7 @@ const PRECACHE = [
   'js/ui/dom.js',
   'js/ui/inbox.js',
   'js/ui/layout.js',
+  'js/ui/markdown.js',
   'js/ui/panel-resize.js',
   'js/ui/router.js',
   'js/ui/user-menu.js',
@@ -89,6 +90,7 @@ const PRECACHE = [
   'js/views/add-bar.js',
   'js/views/all-tasks.js',
   'js/views/editor-panel.js',
+  'js/views/help.js',
   'js/views/import-dialog.js',
   'js/views/list-actions.js',
   'js/views/list-editor.js',
@@ -158,11 +160,13 @@ const PRECACHE = [
   'vendor/design/js/account-menu.js',
   'vendor/design/js/anchor.js',
   'vendor/design/js/app-nav.js',
+  'vendor/design/js/collapsible.js',
   'vendor/design/js/dialog.js',
   'vendor/design/js/dom-builders.js',
   'vendor/design/js/field.js',
   'vendor/design/js/file-download.js',
   'vendor/design/js/focus.js',
+  'vendor/design/js/help-page.js',
   'vendor/design/js/icon.js',
   'vendor/design/js/inbox.js',
   'vendor/design/js/inline-confirm.js',
@@ -170,12 +174,14 @@ const PRECACHE = [
   'vendor/design/js/menu.js',
   'vendor/design/js/notices.js',
   'vendor/design/js/popover.js',
+  'vendor/design/js/release-notes.js',
   'vendor/design/js/selection.js',
   'vendor/design/js/sw-update.js',
   'vendor/design/js/tabs.js',
   'vendor/design/js/theme-boot.js',
   'vendor/design/js/toast.js',
   'vendor/design/js/tooltip.js',
+  'vendor/support-js/changelog-parser.mjs',
   'vendor/design/looks/neutral/fonts.css',
   'vendor/design/looks/neutral/fonts/InterVariable.woff2',
   'vendor/design/looks/neutral/icons.svg',

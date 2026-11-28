@@ -30,6 +30,7 @@ SCREENS = {
     "list-editor.svg",
     "recycle-bin.svg",
     "settings.svg",
+    "help.svg",
     "sync-log.svg",
     "connect.svg",
     "import.svg",
@@ -264,7 +265,15 @@ def test_top_bar_ends_with_the_user_button():
 @pytest.mark.parametrize("name", sorted(SCREENS))
 def test_navigation_holds_no_recycle_bin_or_settings_entry(output, name):
     # The user menu holds those two; only their own screens and the user menu screen may name them.
-    if name in {"recycle-bin.svg", "settings.svg", "user-menu.svg", "import.svg", "sync-log.svg", "connect.svg"}:
+    if name in {
+        "recycle-bin.svg",
+        "settings.svg",
+        "help.svg",
+        "user-menu.svg",
+        "import.svg",
+        "sync-log.svg",
+        "connect.svg",
+    }:
         return
     _, groups = frames(output / name)
     for group in groups:
@@ -592,3 +601,29 @@ def test_sync_log_cards_show_the_item_then_time_and_kind_chips_then_sunken_detai
             r.get("class") == "bar" and float(r.get("y")) < detail < float(r.get("y")) + float(r.get("height"))
             for r in group.iter(f"{SVG}rect")
         ), "the values sit in a sunken details box"
+
+
+def test_user_panel_lists_the_state_recycle_bin_settings_and_help(output):
+    _, groups = frames(output / "user-menu.svg")
+    for group in groups:
+        labels = [t.text for t in group.iter(f"{SVG}text")]
+        assert labels[labels.index("Recycle bin") :][:3] == ["Recycle bin", "Settings", "Help"]
+
+
+def test_settings_holds_no_keyboard_shortcuts_or_about_section(output):
+    _, groups = frames(output / "settings.svg")
+    for group in groups:
+        labels = [t.text for t in group.iter(f"{SVG}text")]
+        assert "Keyboard shortcuts" not in labels
+        assert "About" not in labels
+
+
+def test_help_shows_search_topic_chips_and_the_five_panels(output):
+    _, groups = frames(output / "help.svg")
+    for group in groups:
+        labels = [t.text for t in group.iter(f"{SVG}text")]
+        for chip in ("All topics", "App info", "Welcome", "Tutorial", "FAQ", "Release notes"):
+            assert chip in labels, chip
+        for panel in ("Application Info & Support", "Welcome to ToDo's", "Getting Started Tutorial"):
+            assert panel in labels, panel
+        assert any("Search" in label for label in labels)

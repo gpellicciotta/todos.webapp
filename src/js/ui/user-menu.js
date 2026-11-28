@@ -1,10 +1,10 @@
 /**
  * User menu: the vendored account menu at the end of the top bar, kept current with the session.
  *
- * The menu is the one place for what the user needs only now and then: the account, Recycle bin, and Settings.
+ * The menu is the one place for what the user needs only now and then: the account, Recycle bin, Settings, and Help.
  * Local mode shows the person icon named Local User. A connected account shows its initials and its name.
- * The button's hover text and accessible name are the user name. The menu shows the name, then three items,
- * each with its icon: the connection state, which opens Connect, then Recycle bin and Settings.
+ * The button's hover text and accessible name are the user name. The menu shows the name, then four items,
+ * each with its icon: the connection state, which opens Connect, then Recycle bin, Settings, and Help.
  * The items carry `data-nav`, so the shell marks the current route.
  * An expired session says Sign in needed; the Sign in button sits in the session banner (see views/sync-indicator.js).
  * The menu re-reads the session when it changes and each time it opens.
@@ -24,12 +24,14 @@ export const USER_STRINGS = Object.freeze({
   signInNeeded: 'Sign in needed',
   bin: 'Recycle bin',
   settings: 'Settings',
+  help: 'Help',
 });
 
 /** Menu items after the status item: the route, the navigation key the shell marks, the icon, and the label. */
 const LINKS = [
   { hash: '#/bin', nav: 'bin', icon: 'bin', label: USER_STRINGS.bin },
   { hash: '#/settings', nav: 'settings', icon: 'settings', label: USER_STRINGS.settings },
+  { hash: '#/help', nav: 'help', icon: 'help', label: USER_STRINGS.help },
 ];
 
 /**

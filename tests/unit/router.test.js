@@ -17,6 +17,7 @@ const ROUTES = [
   ['#/lists/new', 'list-new', {}, 'lists', 'list'],
   ['#/bin', 'bin', {}, 'bin', null],
   ['#/settings', 'settings', {}, 'settings', null],
+  ['#/help', 'help', {}, 'help', null],
   ['#/settings/sync-log', 'sync-log', {}, 'sync-log', null],
   ['#/connect', 'connect', {}, 'settings', null],
 ];
@@ -77,6 +78,13 @@ describe('parseRoute and formatRoute', () => {
     const route = parseRoute(hash);
     expect(route).toMatchObject({ name, params, view, editor });
     expect(formatRoute(route.name, route.params)).toBe(hash);
+  });
+
+  it('reads the query of a hash into the route, and keeps the route name', () => {
+    expect(parseRoute('#/help?q=shortcut&topic=faq')).toMatchObject({ name: 'help', view: 'help', query: 'q=shortcut&topic=faq' });
+    expect(parseRoute('#/help')).toMatchObject({ name: 'help', query: '' });
+    expect(parseRoute('#/help?')).toMatchObject({ name: 'help', query: '' });
+    expect(parseRoute('#/nope?q=a')).toBeNull();
   });
 
   it('keys the view by its list, so editor routes share the view key', () => {

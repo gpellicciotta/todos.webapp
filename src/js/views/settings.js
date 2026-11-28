@@ -1,5 +1,5 @@
 /**
- * Settings screen: Appearance, Adding tasks, Reminders, Data, Connection, Keyboard shortcuts, and About sections on one page.
+ * Settings screen: Appearance, Adding tasks, Reminders, Data, and Connection sections on one page.
  *
  * The theme choice applies at once and persists on this device (`todos.theme`).
  * The Make Enter add switch, on by default, sets whether Enter in the add field adds; it persists as `todos.enter-adds`,
@@ -13,7 +13,7 @@
  * Delete all data erases this device after an offer to export first and a typed DELETE; connected, it also erases the account's data (`BAK-15`).
  * Disconnect asks first; with pending changes it offers Sync and disconnect (`CON-7`, `CON-10`, `TEC-18`).
  * While a connect waits on a local Delete all data, the section asks whether to erase the account too (`BAK-15`).
- * Keyboard shortcuts lists the shortcuts that work today, from `SHORTCUTS`.
+ * The keyboard shortcuts, the add field syntax, the version, and the source link live on the Help screen (see views/help.js).
  */
 
 import { backupFileName, exportBackup } from '../core/backup.js';
@@ -25,7 +25,7 @@ import { createSession } from '../sync/session.js';
 import { confirmDialog } from '../../vendor/design/js/dialog.js';
 import { downloadJson } from '../../vendor/design/js/file-download.js';
 import { applyTheme } from '../ui/layout.js';
-import { BUILD_DATE, VERSION } from '../version.js';
+import { VERSION } from '../version.js';
 import { openImportDialog, plural } from './import-dialog.js';
 import { SYNC_STRINGS } from './sync-indicator.js';
 import { spriteIcon } from './task-list.js';
@@ -33,8 +33,6 @@ import { make } from '../ui/dom.js';
 
 /** Event on the window that tells the reminders of this tab that a Reminders choice changed. */
 export const REMINDERS_EVENT = 'todos-reminders-changed';
-
-const SOURCE_URL = 'https://github.com/gpellicciotta/todos.webapp';
 
 /** Screen strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
@@ -116,34 +114,7 @@ const STRINGS = Object.freeze({
   countFailed: 'The pending changes could not be counted, so you are still connected. Try again.',
   serverUrl: 'Server URL',
   serverUrlError: `Enter an https address, or http on this computer, such as ${DEFAULT_SERVER_URL}.`,
-  about: 'About',
-  version: (version, built) => `Version ${version} · Built ${built}`,
-  source: 'Requirements and source code',
-  shortcuts: 'Keyboard shortcuts',
-  syntax: 'In the add field, today, tomorrow, a weekday, or 2026-12-24 sets the due date, '
-    + '18:00 or 6 pm the time, and #home a list. A backslash keeps a word as text, such as \\tomorrow.',
-  or: ' or ',
 });
-
-/**
- * The keyboard shortcuts the section lists: alternative keys, and what they do.
- * A task that adds a shortcut adds its row here.
- */
-const SHORTCUTS = Object.freeze([
-  Object.freeze({ keys: ['n', '/'], action: 'Focus the search and add field.' }),
-  Object.freeze({ keys: ['l'], action: 'Focus the find field of the sidebar lists, or open Lists where there is none.' }),
-  Object.freeze({ keys: ['/'], action: 'On the Lists screen, focus its find field.' }),
-  Object.freeze({ keys: ['Enter'], action: 'Add the task, in the search and add field, while Make Enter add is on; otherwise apply the search.' }),
-  Object.freeze({ keys: ['Shift+Enter', 'Alt+Enter'], action: 'Add the task or list, in the search and add field.' }),
-  Object.freeze({ keys: ['Escape'], action: 'Clear the search and add field, or close the editor or a dialog.' }),
-  Object.freeze({ keys: ['Alt+Up', 'Alt+Down'], action: "Move the focused list, or the focused task in a list's manual order." }),
-  Object.freeze({
-    keys: ['Alt+Home', 'Alt+End'],
-    action: "Move the focused list, or the focused task in a list's manual order, to the top or bottom.",
-  }),
-  Object.freeze({ keys: ['x'], action: 'Tick the focused task, as a click on its status button does; a toast offers Undo.' }),
-  Object.freeze({ keys: ['Ctrl+Z', 'Cmd+Z'], action: 'Undo the newest change shown in a toast.' }),
-]);
 
 /**
  * Create a settings section with its heading.
@@ -185,16 +156,6 @@ function button(doc, className, text, onClick) {
  */
 function formatDay(iso) {
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
-}
-
-/**
- * Format the build date as in "4 Nov 2026".
- * @param {string} isoDate the ISO date
- * @returns {string} the date
- */
-function formatBuildDate(isoDate) {
-  const [year, month, day] = isoDate.split('-').map(Number);
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(year, month - 1, day));
 }
 
 /**
@@ -931,49 +892,6 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign, st
 }
 
 /**
- * Create the Keyboard shortcuts section: one term per shortcut, its keys in `kbd` elements joined by "or".
- * @param {Document} doc the document
- * @returns {HTMLElement} the section
- */
-function shortcutsSection(doc) {
-  const element = section(doc, 'shortcuts', STRINGS.shortcuts);
-  element.classList.add('settings__keyboard');
-  const list = make(doc, 'dl', 'settings__shortcuts');
-  for (const { keys, action } of SHORTCUTS) {
-    const term = doc.createElement('dt');
-    keys.forEach((key, index) => {
-      if (index > 0) {
-        term.append(STRINGS.or);
-      }
-      const kbd = doc.createElement('kbd');
-      kbd.textContent = key;
-      term.append(kbd);
-    });
-    const row = doc.createElement('div');
-    row.append(term, make(doc, 'dd', 'settings__shortcut-action', action));
-    list.append(row);
-  }
-  element.append(list);
-  return element;
-}
-
-/**
- * Create the About section: the app version, the build date, the add field syntax (`TSK-14`), and the source link.
- * @param {Document} doc the document
- * @returns {HTMLElement} the section
- */
-function aboutSection(doc) {
-  const element = section(doc, 'about', STRINGS.about);
-  const link = make(doc, 'a', 'settings__link', STRINGS.source);
-  link.href = SOURCE_URL;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  element.append(make(doc, 'p', 'settings__hint', STRINGS.version(VERSION, formatBuildDate(BUILD_DATE))),
-    make(doc, 'p', 'settings__hint settings__syntax', STRINGS.syntax), link);
-  return element;
-}
-
-/**
  * Mount the Settings screen into its view element.
  * @param {HTMLElement} view the `[data-view="settings"]` element
  * @param {object} [options] screen options
@@ -1007,7 +925,7 @@ export function mountSettings(view, {
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign, store, api });
   const data = dataSection(doc, store, toaster, { session, sync }, url);
   const adding = addingSection(doc, getStorage, toaster);
-  root.append(appearanceSection(doc, getStorage, toaster), adding.element, remindersSection(doc, getStorage, toaster, notification, now), data.element, connection.element, shortcutsSection(doc), aboutSection(doc));
+  root.append(appearanceSection(doc, getStorage, toaster), adding.element, remindersSection(doc, getStorage, toaster, notification, now), data.element, connection.element);
   view.replaceChildren(root);
   return {
     /**

@@ -296,6 +296,12 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - SHR-7: Edits to shared lists made offline queue and sync like other changes.
 - SHR-8: A user who loses access to a shared list no longer sees it after the next sync.
 
+### Help
+- HLP-1: The user menu has a Help item, after Settings, that opens the Help screen at `#/help`.
+- HLP-2: Help shows Application Info & Support, Welcome to ToDo's, Getting Started Tutorial, FAQ, and Release notes, in this order.
+- HLP-3: A search field and topic chips filter the panels, a search opens the FAQ entries that match, and `#/help?q=` and `#/help?topic=` links set the filters.
+- HLP-4: The docs and the changelog load when Help opens, a failed file offers Retry in its own panel, and Help works offline after one visit.
+
 ---
 
 ## Technical Requirements

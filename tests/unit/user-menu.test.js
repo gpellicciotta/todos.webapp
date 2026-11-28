@@ -113,7 +113,7 @@ describe('attachUserMenu in local mode', () => {
     expect(slot.querySelector('.user-menu__sign-in')).toBeNull();
   });
 
-  it('opens a menu with the name, Local only, Recycle bin, and Settings', () => {
+  it('opens a menu with the name, Local only, Recycle bin, Settings, and Help', () => {
     const { slot } = mount();
     const { button, panel, items } = parts(slot);
     click(button);
@@ -124,6 +124,7 @@ describe('attachUserMenu in local mode', () => {
       ['Local only', '#/connect', 'connect'],
       ['Recycle bin', '#/bin', 'bin'],
       ['Settings', '#/settings', 'settings'],
+      ['Help', '#/help', 'help'],
     ]);
     expect(document.activeElement).toBe(items[0]);
   });
@@ -136,7 +137,7 @@ describe('attachUserMenu in local mode', () => {
       expect(item.classList.contains('button')).toBe(false);
     }
     expect(items.map((item) => item.querySelector('svg.icon use').getAttribute('href'))).toEqual([
-      `${SPRITE}#icon-sync-local`, `${SPRITE}#icon-bin`, `${SPRITE}#icon-settings`,
+      `${SPRITE}#icon-sync-local`, `${SPRITE}#icon-bin`, `${SPRITE}#icon-settings`, `${SPRITE}#icon-help`,
     ]);
   });
 
@@ -183,7 +184,7 @@ describe('attachUserMenu when connected', () => {
     const { slot } = mount(ACCOUNT);
     const { panel, items } = parts(slot);
     expect(panel.querySelector('.account-menu__name').textContent).toBe('Ada Lovelace');
-    expect(items.map((item) => item.textContent.trim())).toEqual(['Connected', 'Recycle bin', 'Settings']);
+    expect(items.map((item) => item.textContent.trim())).toEqual(['Connected', 'Recycle bin', 'Settings', 'Help']);
     expect(items[0].querySelector('use').getAttribute('href')).toBe(`${SPRITE}#icon-sync-synced`);
   });
 
@@ -204,12 +205,12 @@ describe('attachUserMenu when the session expired', () => {
     expect(slot.querySelector('.user-menu__sign-in')).toBeNull();
   });
 
-  it('keeps the account name, says Sign in needed, and keeps Recycle bin and Settings', () => {
+  it('keeps the account name, says Sign in needed, and keeps Recycle bin, Settings, and Help', () => {
     const { slot } = mount(EXPIRED);
     const { button, items } = parts(slot);
     expect(button.title).toBe('Ada Lovelace');
     expect(items.map((item) => [item.textContent.trim(), item.getAttribute('href')])).toEqual([
-      ['Sign in needed', '#/connect'], ['Recycle bin', '#/bin'], ['Settings', '#/settings'],
+      ['Sign in needed', '#/connect'], ['Recycle bin', '#/bin'], ['Settings', '#/settings'], ['Help', '#/help'],
     ]);
     expect(items[0].querySelector('use').getAttribute('href')).toBe(`${SPRITE}#icon-sync-sign-in`);
   });
