@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 245.8, input: 60, output: 16401, cache_read: 2028090, cache_write: 74818}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T00:25:21Z"
 ---
 # T0268: Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox
 
@@ -35,4 +40,7 @@ Add the Reminders section to the settings wireframe and check real notifications
 
 - [2026-11-28] **[Doc]**
   Updated CHANGELOG.md and devops docs.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
