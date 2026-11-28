@@ -1,11 +1,11 @@
 ---
 id: T0312
-owner: ~
-needs: [T0307]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0312-show-goal-progress-on-task-rows-with-the
+worktree: .plan/work/T0312-show-goal-progress-on-task-rows-with-the
+status: active
+started_at: "2026-11-28T06:04:37Z"
 ended_at: —
 review: agent
 preview: none
