@@ -121,10 +121,10 @@ describe('merging a pulled row', () => {
 
   it('keeps a local expire while the server copy is still open past its deadline with handling cancel', () => {
     const due = '2026-11-05T08:00:00.000Z';
-    const local = { ...empty(), tasks: [task('t1', { due, handling: 'cancel', status: 'cancelled' })] };
+    const local = { ...empty(), tasks: [task('t1', { due, handling: 'cancel', status: 'failed' })] };
     const server = task('t1', { due, handling: 'cancel', revision: 11 });
     const merged = applied(local, plan(local, feed({ tasks: [server] })).changes).tasks.get('t1');
-    expect(merged['current-occurrence']).toMatchObject({ status: 'cancelled', 'close-time': NOW.toISOString() });
+    expect(merged['current-occurrence']).toMatchObject({ status: 'failed', 'close-time': NOW.toISOString() });
     const kept = task('t1', { due, handling: 'keep', revision: 12 });
     expect(statusOf(applied(local, plan(local, feed({ tasks: [kept] })).changes).tasks.get('t1'))).toBe('ready');
   });

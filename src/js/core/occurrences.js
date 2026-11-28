@@ -15,7 +15,7 @@
 import { localDate, nextPeriod, periodContaining } from './periods.js';
 
 /** Occurrence statuses, in lifecycle order; `ready` replaces the former `todo`. */
-export const STATUSES = Object.freeze(['ready', 'in-progress', 'completed', 'cancelled']);
+export const STATUSES = Object.freeze(['ready', 'in-progress', 'completed', 'failed', 'cancelled']);
 
 /** Statuses of an open occurrence that can still become overdue. */
 export const OPEN_STATUSES = Object.freeze(['ready', 'in-progress']);
@@ -225,8 +225,22 @@ function opened(rules, number, period) {
  * @returns {object} the occurrence, without `task-id`
  */
 export function firstOccurrence(rules, startTime) {
-  const period = isRecurring(rules) ? periodContaining(startTime, ruleOf(rules)) : { start: startTime, end: rules['due-time'] ?? null };
-  return opened(rules, 1, period);
+  const own = rules['start-time'] ?? null;
+  const at = own ?? startTime;
+  const period = isRecurring(rules) ? periodContaining(at, ruleOf(rules)) : { start: at, end: rules['due-time'] ?? null };
+  // A recurring occurrence 1 that starts at the rule's start time begins there, so its first period is shorter.
+  return opened(rules, 1, own && isRecurring(rules) ? { ...period, start: own } : period);
+}
+
+/**
+ * Tell whether a task is upcoming: the current moment lies before occurrence 1 starts (`TSK-20`).
+ * @param {object} task the task
+ * @param {Date|number|string} now the current time
+ * @returns {boolean} true while the task awaits its start time
+ */
+export function isUpcoming(task, now) {
+  const current = task['current-occurrence'];
+  return current.occurrence === 1 && Date.parse(current['start-time']) > new Date(now).getTime();
 }
 
 /**
@@ -336,11 +350,12 @@ function applyEventToCount(occurrence, event, rules) {
       if (!OPEN_STATUSES.includes(status)) {
         return null;
       }
-      next.status = 'cancelled';
+      // The verdict of the counts; the store refolds the occurrence for other measures.
+      next.status = occurrence['goal-direction'] === 'at-most' && count <= occurrence['target-count'] ? 'completed' : 'failed';
       next['close-time'] = time;
       return next;
     case 'reopen':
-      if (status !== 'cancelled' && status !== 'failed') {
+      if ((status !== 'cancelled' && status !== 'failed') || (status === 'failed' && occurrence['goal-direction'] === 'at-most')) {
         return null;
       }
       next.status = statusFromCount(count, occurrence['target-count']);
@@ -926,6 +941,12 @@ function editRulesOfTask(task, edit, time) {
     occurrence['due-time'] = rules['due-time'];
   }
   if (open || !isRecurring(rules)) {
+    // The goal snapshot of the open occurrence follows a goal edit; closed occurrences keep theirs.
+    if (open) {
+      for (const field of ['goal-direction', 'goal-measure', 'goal-unit']) {
+        occurrence[field] = rules[field];
+      }
+    }
     occurrence['target-count'] = rules['target-count'];
     if (occurrence.status !== 'cancelled' && occurrence['completion-count'] > 0) {
       occurrence.status = statusFromCount(occurrence['completion-count'], occurrence['target-count']);
@@ -963,16 +984,19 @@ export function overdueHandlingOf(task) {
 }
 
 /**
- * Tell whether overdue handling must expire a task now: a one-off task past its deadline,
- * with handling `cancel`, whose occurrence is still open below target (`OVD-4`).
+ * Tell whether overdue handling must expire a task now: a one-off task past its deadline whose occurrence is still open,
+ * and whose goal is `at-most`, or `at-least` under handling `fail` (`OVD-4`).
+ * An `at-least` goal under `keep` stays open and overdue; the store writes `expire` once per occurrence.
  * @param {object} task the task
  * @param {Date|number} now the current time
  * @returns {boolean} true when an `expire` event applies
  */
 export function shouldExpire(task, now) {
   const due = dueTimeOf(task);
-  return overdueHandlingOf(task) === 'cancel' && Boolean(due) && OPEN_STATUSES.includes(statusOf(task))
-    && Date.parse(due) < new Date(now).getTime();
+  if (!due || isRecurring(task['lifecycle-rules']) || !OPEN_STATUSES.includes(statusOf(task)) || Date.parse(due) >= new Date(now).getTime()) {
+    return false;
+  }
+  return task['current-occurrence']['goal-direction'] === 'at-most' || ['fail', 'cancel'].includes(overdueHandlingOf(task));
 }
 
 /**

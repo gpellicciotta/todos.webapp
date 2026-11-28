@@ -301,7 +301,7 @@ describe('mountAllTasks', () => {
     expect(show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
     expect(show.mock.calls[0][1].actionLabel).toBe('Show');
     show.mock.calls[0][1].onAction();
-    expect(viewModels.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed', 'cancelled']);
+    expect(viewModels.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed', 'failed', 'cancelled']);
   });
 
   it('adds the task to no list while the Lists filter selects lists, and toasts that the filter hides it', async () => {

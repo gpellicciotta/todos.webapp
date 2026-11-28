@@ -412,6 +412,8 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
 - `isOverdue(task, now)` is true when the current occurrence's `due-time` is before `now` and it is `ready` or `in-progress` (`OVD-1`).
   An `at-most` occurrence is overdue only before `expire` closes it, since the hourly run closes it at its due time.
 - `applyOverdueHandling(store, now)` writes an `expire` event via `expireTask` for each overdue `fail` task with an `at-least` goal, and for each overdue `at-most` task (`OVD-4`).
+  `expireTask` refolds the occurrence, so the verdict follows the goal, and writes `expire` once per occurrence; a reopened `at-least` task stays open and overdue.
+  Until sync and backups carry `fail` (T0304, T0305), a rule that still holds `cancel` counts as `fail`.
 - The `expire` event never joins the change queue, since the service writes its own on its hourly run.
 - It never changes deleted, `completed`, `failed`, or `cancelled` tasks (`OVD-6`).
 - `startOverdueTimer` runs it once on start, then every minute; the returned function stops it (`OVD-5`).
@@ -451,7 +453,10 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
   - `created`: one `{from, to}` range (`TV-5`).
   - `text`: text in the description or any note, ignoring case and surrounding spaces (`TV-6`).
   - `shared`: true for tasks in a shared list, false for the others (`TV-7`).
+  - `showUpcoming`: false hides every upcoming task; on by default, so a view stores only the choice to hide them (`TV-15`).
+  - `finishedToday` narrows `completed`, `failed`, and `cancelled` tasks to those whose occurrence closed today (`TV-14`).
 - A filter with several values matches any of them; an empty or missing value applies no filter.
+- An upcoming task shows only while `showUpcoming` is not false and it starts within 24 hours (`TV-15`); `isUpcoming(task, now)` computes the flag.
 - `overdue` uses `isOverdue` from overdue.js, so the filter and the flag agree (`OVD-1`).
 - Today and this week use local midnights; weeks start on Monday unless `ctx.weekStart` says otherwise.
 - Ranges are inclusive; a date-only bound covers that whole local day.

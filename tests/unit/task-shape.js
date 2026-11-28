@@ -11,7 +11,7 @@ export function shapeTask({
   status = 'ready', 'due-time': dueTime = null, 'overdue-handling': handling = 'keep', 'target-count': target = 1,
   'completion-count': count = status === 'completed' ? target : 0, ...fields
 } = {}) {
-  const closed = status === 'completed' || status === 'cancelled';
+  const closed = ['completed', 'failed', 'cancelled'].includes(status);
   return {
     'owner-id': null,
     'creation-time': '2026-11-01T09:00:00.000Z',

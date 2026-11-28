@@ -18,15 +18,20 @@ import {
   applyEvent, applyRuleEdit, byEventOrder, eventsTowardsStatus, firstOccurrence, foldLogCache, freshOccurrence, GRACE_MS, graceOccurrence, isRecurring,
   isPeriodEnd, isStale, makeEvent, mirrorOccurrence, mirrorRules, normalizeRules, planRollOver, refoldOccurrence, RULE_FIELDS, shouldExpire, STATUSES, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
-import { isValidTimezone } from '../core/periods.js';
+import { isValidTimezone, localDate } from '../core/periods.js';
 import { keyBetween, keysBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
 import { uuid7 } from '../lib/uuid7.js';
 import { request, StoreError, STORES, transact, ValidationError } from './idb.js';
 
 export { STATUSES };
 export const DESCRIPTION_MAX = 500;
+/** The overdue handlings of backup formats 1 and 2; the store reads `cancel` as `fail`. */
 export const OVERDUE_HANDLINGS = ['keep', 'cancel'];
 export const RECURRENCE_UNITS = ['day', 'week', 'month'];
+/** The rule fields that stay local until the sync and backup tasks of ADR-0006 carry them. */
+const LOCAL_RULE_FIELDS = Object.freeze(['start-time', 'goal-direction', 'goal-measure', 'goal-unit']);
+const GOAL_DIRECTIONS = Object.freeze(['at-least', 'at-most']);
+const GOAL_MEASURES = Object.freeze(['checks', 'time', 'amount', 'reading']);
 
 /** The event types that the log fold reads; the store writes completions as the first of them. */
 const LOG_TYPES = Object.freeze(['log', 'undo-log']);
@@ -86,15 +91,17 @@ function checkField(field, value) {
       return description;
     }
     case 'status': {
-      if (!STATUSES.includes(value)) {
+      // `failed` is never set by hand; the fold or an `expire` sets it.
+      if (!STATUSES.includes(value) || value === 'failed') {
         throw new ValidationError(field, 'invalid', `Unknown status: ${value}.`);
       }
       return value;
     }
     case 'overdue-handling': {
-      if (!OVERDUE_HANDLINGS.includes(value)) {
+      if (!['keep', 'fail', 'cancel'].includes(value)) {
         throw new ValidationError(field, 'invalid', `Unknown overdue handling: ${value}.`);
       }
+      // `cancel` is the former name of `fail`; both stay as given until sync and backups carry `fail` (T0304, T0305).
       return value;
     }
     case 'due-time': {
@@ -131,6 +138,21 @@ function checkRule(field, value) {
       return value;
     case 'due-time':
       return checkField('due-time', value);
+    case 'start-time': {
+      if (optional || value === '') {
+        return null;
+      }
+      const time = typeof value === 'string' ? Date.parse(value) : NaN;
+      return Number.isNaN(time) ? fail('it is an ISO date and time') : new Date(time).toISOString();
+    }
+    case 'goal-direction':
+      return GOAL_DIRECTIONS.includes(value) ? value : fail('it is at-least or at-most');
+    case 'goal-measure':
+      return GOAL_MEASURES.includes(value) ? value : fail('it is checks, time, amount, or reading');
+    case 'goal-unit': {
+      const unit = optional ? '' : typeof value === 'string' ? value.trim() : fail('it is text');
+      return unit.length > 20 ? fail('it holds at most 20 characters') : unit || null;
+    }
     case 'overdue-handling':
       return optional ? null : checkField('overdue-handling', value);
     case 'recurrence-unit':
@@ -169,7 +191,31 @@ function checkRule(field, value) {
  * @returns {object} the normalized fields that the edit holds
  */
 function checkRuleEdit(edit) {
-  return Object.fromEntries(RULE_FIELDS.filter((field) => field in edit).map((field) => [field, checkRule(field, edit[field])]));
+  return Object.fromEntries([...RULE_FIELDS, ...LOCAL_RULE_FIELDS].filter((field) => field in edit).map((field) => [field, checkRule(field, edit[field])]));
+}
+
+/**
+ * Check the rules that span fields: the start before the deadline and the end date, a window end for `at-most`,
+ * and a unit only for `amount` and `reading` goals (see docs/specs/local-store.md, Goals).
+ * @param {object} rules the full rules
+ * @returns {object} the rules, with `goal-unit` cleared for goals that have none
+ * @throws {ValidationError} naming the field that breaks a rule
+ */
+function checkGoalRules(rules) {
+  const start = rules['start-time'] ? Date.parse(rules['start-time']) : null;
+  const fail = (field, rule) => {
+    throw new ValidationError(field, 'invalid', `Not a valid ${field}: ${rule}.`);
+  };
+  if (start !== null && rules['due-time'] && start >= Date.parse(rules['due-time'])) {
+    fail('start-time', 'it lies before the due time');
+  }
+  if (start !== null && rules['recurrence-end-date'] && localDate(rules['start-time'], rules.timezone || 'UTC') > rules['recurrence-end-date']) {
+    fail('start-time', 'it lies before the recurrence end date');
+  }
+  if (rules['goal-direction'] === 'at-most' && !rules['due-time'] && !isRecurring(rules)) {
+    fail('goal-direction', 'an at-most goal needs a due time or a recurrence');
+  }
+  return ['amount', 'reading'].includes(rules['goal-measure']) ? rules : { ...rules, 'goal-unit': null };
 }
 
 /**
@@ -262,6 +308,7 @@ function applyUserEvents(ctx, task, types, time, { placed = true } = {}) {
   const events = [];
   for (const type of types) {
     // An unplaced event names no occurrence, so the service assigns the period containing its time.
+    refuseBeforeStart(occurrence, type, time);
     const event = makeEvent({ id: newEventId(ctx), 'task-id': task.id, type, 'creation-time': time, occurrence: placed ? occurrence.occurrence : null });
     const next = applyEvent(occurrence, event, task['lifecycle-rules']);
     if (!next) {
@@ -271,6 +318,19 @@ function applyUserEvents(ctx, task, types, time, { placed = true } = {}) {
     events.push(event);
   }
   return { task: { ...task, 'current-occurrence': occurrence }, events };
+}
+
+/**
+ * Refuse an event placed before occurrence 1 starts: an upcoming task takes no events (`TSK-20`).
+ * @param {object} occurrence the occurrence the event joins
+ * @param {string} type the event type
+ * @param {string} time the ISO time of the event
+ * @throws {StoreError} with code `conflict` for an event before the start of occurrence 1
+ */
+function refuseBeforeStart(occurrence, type, time) {
+  if (occurrence.occurrence === 1 && Date.parse(time) < Date.parse(occurrence['start-time'])) {
+    throw new StoreError('conflict', `A ${type} event cannot come before the task starts at ${occurrence['start-time']}.`);
+  }
 }
 
 /**
@@ -564,7 +624,7 @@ export async function createTask(ctx, input, { lists = [] } = {}) {
       edit[field] = input[field];
     }
   }
-  const rules = checkRecurrence(normalizeRules(checkRuleEdit(edit)));
+  const rules = checkGoalRules(checkRecurrence(normalizeRules(checkRuleEdit(edit))));
   const status = input.status === undefined ? 'ready' : checkField('status', input.status);
   const created = {
     id: input.id ?? uuid7(() => ctx.now().getTime()),
@@ -889,6 +949,9 @@ function postLogEvent(ctx, id, type, extra, { occurrence: named } = {}) {
         time = new Date(due - 1).toISOString();
       }
     }
+    if (number === current.occurrence) {
+      refuseBeforeStart(current, type, time);
+    }
     const event = { ...makeEvent({ id: newEventId(ctx), 'task-id': id, type, 'creation-time': time, occurrence: placed }), ...extra };
     await putEvents(tx, [event]);
     if (previous) {
@@ -933,6 +996,26 @@ export function undoLog(ctx, id, targetEventId) {
 }
 
 /**
+ * Move the start of occurrence 1 after a `start-time` edit, which applies only while occurrence 1 is the only
+ * occurrence, is open, and holds no user events (see docs/specs/local-store.md, Rule Edits).
+ * @param {{keyRange: typeof IDBKeyRange}} ctx store context
+ * @param {IDBTransaction} tx a transaction covering `TASK_STORES`
+ * @param {object} stored the task before the edit
+ * @param {object} updated the task after the rule edit
+ * @returns {Promise<object>} the task with occurrence 1 placed by the new start time
+ * @throws {StoreError} with code `conflict` when the edit does not apply
+ */
+async function moveStart(ctx, tx, stored, updated) {
+  const current = stored['current-occurrence'];
+  const events = await request(tx.objectStore(STORES.events).getAll(ctx.keyRange.bound([stored.id], [stored.id, []])));
+  if (current.occurrence !== 1 || current['close-time'] !== null || events.some((event) => USER_EVENT_TYPES.includes(event.type))) {
+    throw new StoreError('conflict', 'The start time changes only while occurrence 1 is open and holds no events.');
+  }
+  const first = firstOccurrence(updated['lifecycle-rules'], stored['creation-time']);
+  return { ...updated, 'current-occurrence': { ...updated['current-occurrence'], 'start-time': first['start-time'], 'due-time': first['due-time'] } };
+}
+
+/**
  * Edit the lifecycle rules of a task; target and deadline edits move the open occurrence.
  * @param {{db: IDBDatabase, now: () => Date}} ctx store context
  * @param {string} id the task identifier
@@ -948,11 +1031,18 @@ export function updateRules(ctx, id, edit = {}) {
     if (isLocal(ctx)) {
       ({ task: stored } = await rollOverInside(ctx, tx, stored, now));
     }
-    const updated = { ...stored, ...applyRuleEdit(stored, checked, time), 'last-update-time': time };
-    checkRecurrence(updated['lifecycle-rules']);
+    let updated = { ...stored, ...applyRuleEdit(stored, checked, time), 'last-update-time': time };
+    updated['lifecycle-rules'] = checkGoalRules(checkRecurrence(updated['lifecycle-rules']));
+    if ('start-time' in checked && (checked['start-time'] ?? null) !== (stored['lifecycle-rules']['start-time'] ?? null)) {
+      updated = await moveStart(ctx, tx, stored, updated);
+    }
+    const goalFields = ['goal-direction', 'goal-measure'];
+    if (goalFields.some((field) => stored['lifecycle-rules'][field] !== updated['lifecycle-rules'][field]) && updated['current-occurrence']['close-time'] === null) {
+      updated = { ...updated, 'current-occurrence': await refoldStored(ctx, tx, updated, updated['current-occurrence']) };
+    }
     await putTask(tx, updated);
     const [old, rules] = [stored['lifecycle-rules'], updated['lifecycle-rules']];
-    const details = Object.fromEntries(RULE_FIELDS.filter((field) => (old[field] ?? null) !== (rules[field] ?? null))
+    const details = Object.fromEntries([...RULE_FIELDS, ...LOCAL_RULE_FIELDS].filter((field) => (old[field] ?? null) !== (rules[field] ?? null))
       .map((field) => [field, { old: old[field] ?? null, new: rules[field] ?? null }]));
     if (Object.keys(details).length > 0) {
       // The local history keeps the edit as the service does; the service writes its own event, so this one stays local.
@@ -979,10 +1069,15 @@ export function expireTask(ctx, id, { now = ctx.now() } = {}) {
     }
     const time = now.toISOString();
     const occurrence = stored['current-occurrence'];
+    const earlier = await request(tx.objectStore(STORES.events).getAll(ctx.keyRange.bound([id], [id, []])));
+    if (earlier.some((event) => event.type === 'expire' && event.occurrence === occurrence.occurrence)) {
+      // `expire` never repeats for an occurrence, so a reopened one stays open and overdue.
+      return null;
+    }
     const event = makeEvent({ id: newEventId(ctx), 'task-id': id, type: 'expire', 'creation-time': time, occurrence: occurrence.occurrence });
-    const task = { ...stored, 'current-occurrence': applyEvent(occurrence, event, stored['lifecycle-rules']), 'last-update-time': time };
-    await putTask(tx, task);
     await putEvents(tx, [event]);
+    const task = { ...stored, 'current-occurrence': await refoldStored(ctx, tx, stored, occurrence), 'last-update-time': time };
+    await putTask(tx, task);
     return task;
   });
 }

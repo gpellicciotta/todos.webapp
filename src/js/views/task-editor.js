@@ -829,7 +829,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
       }
     }
     recurrence.hidden = !recurring;
-    overdue.querySelector(`input[value="${overdueHandlingOf(task) ?? 'keep'}"]`).checked = true;
+    const handling = overdueHandlingOf(task) ?? 'keep';
+    overdue.querySelector(`input[value="${handling === 'fail' ? 'cancel' : handling}"]`).checked = true;
     const joined = lists.filter((list) => members.includes(list.id));
     chips.replaceChildren(...joined.map((list) => {
       const item = doc.createElement('li');

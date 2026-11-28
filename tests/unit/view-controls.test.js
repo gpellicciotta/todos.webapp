@@ -25,13 +25,13 @@ const LISTS = [{ id: 'l-home', name: 'Home' }, { id: 'l-work', name: 'Work' }];
 describe('stored view state (TV-12)', () => {
   it('starts with every status checked and created newest first, or manual order in a list view', () => {
     expect(loadViewState('tasks', () => memoryStorage())).toEqual({
-      filter: { statuses: ['ready', 'in-progress', 'completed', 'cancelled'] },
+      filter: { statuses: ['ready', 'in-progress', 'completed', 'failed', 'cancelled'] },
       order: { field: 'creation-time', direction: 'desc' },
       group: 'none',
     });
     expect(defaultViewState()).toEqual(loadViewState('tasks', () => memoryStorage()));
     expect(loadViewState('list', () => memoryStorage())).toEqual({
-      filter: { statuses: ['ready', 'in-progress', 'completed', 'cancelled'] },
+      filter: { statuses: ['ready', 'in-progress', 'completed', 'failed', 'cancelled'] },
       order: { field: 'manual', direction: 'asc' },
       group: 'none',
     });
@@ -122,7 +122,7 @@ describe('stored view state (TV-12)', () => {
 describe('describeFilters', () => {
   it('names each active filter with its value', () => {
     expect(describeFilters({ statuses: ['ready', 'in-progress'] }, LISTS)).toEqual(['Status: open']);
-    expect(describeFilters({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'] }, LISTS)).toEqual([]);
+    expect(describeFilters({ statuses: ['ready', 'in-progress', 'completed', 'failed', 'cancelled'] }, LISTS)).toEqual([]);
     expect(describeFilters({
       statuses: ['completed'], lists: ['l-home'], due: ['this-week'], created: { from: '2026-11-01' }, text: 'paint',
     }, LISTS)).toEqual(['Search: paint', 'Lists: Home', 'Status: completed', 'Due: this week', 'Created: from 2026-11-01']);
@@ -203,7 +203,7 @@ describe('the Shared filter (TV-7)', () => {
 });
 
 describe('the Finished today only choice (TV-14)', () => {
-  const all = ['ready', 'in-progress', 'completed', 'cancelled'];
+  const all = ['ready', 'in-progress', 'completed', 'failed', 'cancelled'];
 
   it('names the choice after the status value, in the info line and in empty results', () => {
     const line = (filter) => describeInfoLine({ shown: 3, total: 9, state: { filter, order: defaultViewState().order }, lists: LISTS });
@@ -241,7 +241,7 @@ describe('isDefaultViewState (VO-8)', () => {
     expect(isDefaultViewState({ ...state, filter: { ...state.filter, text: 'paint' } })).toBe(false);
     expect(isDefaultViewState({ ...state, filter: { statuses: [] } })).toBe(false);
     expect(isDefaultViewState({ ...state, filter: { statuses: ['ready', 'in-progress'] } })).toBe(false);
-    expect(isDefaultViewState({ ...state, filter: { statuses: ['cancelled', 'completed', 'in-progress', 'ready'] } })).toBe(true);
+    expect(isDefaultViewState({ ...state, filter: { statuses: ['cancelled', 'failed', 'completed', 'in-progress', 'ready'] } })).toBe(true);
     expect(isDefaultViewState({ ...state, filter: { ...state.filter, due: ['today'] } })).toBe(false);
     expect(isDefaultViewState({ ...state, order: { field: 'status', direction: 'asc' } })).toBe(false);
     expect(isDefaultViewState({ ...state, group: 'status' })).toBe(false);
@@ -447,7 +447,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'All', 'Any', 'Any']);
     const statuses = [...panel.body.querySelectorAll('[data-region="statuses"] input')];
     expect(statuses.map((input) => [input.value, input.checked])).toEqual([
-      ['ready', true], ['in-progress', true], ['completed', true], ['cancelled', true], ['true', false],
+      ['ready', true], ['in-progress', true], ['completed', true], ['failed', true], ['cancelled', true], ['true', false],
     ]);
   });
 
@@ -605,8 +605,9 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('tasks');
     const region = panel.body.querySelector('[data-region="statuses"]');
     toggle(region.querySelector('input[value="completed"]'), false);
-    expect(models.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'cancelled']);
-    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('3 statuses');
+    expect(models.tasks.get().filter.statuses).toEqual(['ready', 'in-progress', 'failed', 'cancelled']);
+    expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('4 statuses');
+    toggle(region.querySelector('input[value="failed"]'), false);
     toggle(region.querySelector('input[value="cancelled"]'), false);
     expect(panel.body.querySelector('[data-row="statuses"] .view-options__value').textContent).toBe('Open');
     for (const status of ['ready', 'in-progress']) {
@@ -620,10 +621,11 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('tasks');
     const region = panel.body.querySelector('[data-region="statuses"]');
     const labels = [...region.querySelectorAll('label')].map((label) => label.textContent.trim());
-    expect(labels).toEqual(['To do', 'In progress', 'Completed', 'Cancelled', 'Finished today only']);
+    expect(labels).toEqual(['To do', 'In progress', 'Completed', 'Failed', 'Cancelled', 'Finished today only']);
     const choice = region.querySelector('input[data-toggle="finishedToday"]');
     expect(choice.type).toBe('checkbox');
     expect(choice.checked).toBe(false);
+    toggle(region.querySelector('input[value="failed"]'), false);
     toggle(region.querySelector('input[value="cancelled"]'), false);
     toggle(choice, true);
     expect(models.tasks.get().filter).toEqual({ statuses: ['ready', 'in-progress', 'completed'], finishedToday: true });
@@ -737,5 +739,22 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     listener();
     await vi.waitFor(() => expect(panel.body.querySelectorAll('[data-region="lists"] input')).toHaveLength(4));
     expect(panel.body.querySelector('[data-region="lists"] input[value="l-work"]').checked).toBe(true);
+  });
+});
+
+describe('the Show upcoming option (TV-15)', () => {
+  it('is on by default and stores only the choice to hide upcoming tasks', () => {
+    const storage = new Map();
+    const getStorage = () => ({ getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) });
+    expect(defaultViewState().filter.showUpcoming).toBeUndefined();
+    expect(isDefaultViewState(defaultViewState())).toBe(true);
+    const hidden = { ...defaultViewState(), filter: { ...defaultViewState().filter, showUpcoming: false } };
+    expect(isDefaultViewState(hidden)).toBe(false);
+    saveViewState('tasks', hidden, getStorage);
+    expect(loadViewState('tasks', getStorage).filter.showUpcoming).toBe(false);
+    for (const value of [true, 'no', 0, null]) {
+      storage.set('todos.view.tasks', JSON.stringify({ filter: { statuses: ['ready'], showUpcoming: value } }));
+      expect(loadViewState('tasks', getStorage).filter.showUpcoming).toBeUndefined();
+    }
   });
 });

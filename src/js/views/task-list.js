@@ -62,7 +62,7 @@ const MAX_PASSES = 4;
 
 /** Status names, in lifecycle order. */
 export const STATUS_LABELS = Object.freeze({
-  ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
+  ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', failed: 'Failed', cancelled: 'Cancelled',
 });
 
 /** The event that undoes a tick, for the Undo toast. */

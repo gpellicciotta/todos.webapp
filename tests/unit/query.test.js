@@ -79,7 +79,7 @@ describe('filterTasks', () => {
   });
 
   it('defaults to every status', () => {
-    expect(DEFAULT_FILTER).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'] });
+    expect(DEFAULT_FILTER).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'failed', 'cancelled'] });
     expect(ids(filterTasks(tasks, DEFAULT_FILTER, ctx))).toEqual(['t1', 't2', 't3', 't4', 't5', 't6']);
   });
 
@@ -201,7 +201,7 @@ describe('the Finished today only choice (TV-14)', () => {
   ];
 
   it('keeps open tasks and the tasks finished today, and drops the tasks finished earlier', () => {
-    const statuses = ['ready', 'in-progress', 'completed', 'cancelled'];
+    const statuses = ['ready', 'in-progress', 'completed', 'failed', 'cancelled'];
     expect(ids(filterTasks(finished, { statuses, finishedToday: true }, ctx))).toEqual(['f1', 'f2', 'f3', 'f5']);
     expect(ids(filterTasks(finished, { statuses }, ctx))).toHaveLength(6);
   });
@@ -248,7 +248,7 @@ describe('the Finished today only choice (TV-14)', () => {
     const fresh = task('n', { 'creation-time': '2026-11-04T12:00:00.000Z' });
     expect(hidingFilters(fresh, { statuses: [], finishedToday: true }, { now: NOW })).toEqual([]);
     const filter = { statuses: ['completed'], finishedToday: true, due: ['today'] };
-    expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'], due: ['today'] });
+    expect(clearFilters(filter, ['statuses'])).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'failed', 'cancelled'], due: ['today'] });
     expect(clearFilters(filter, ['due'])).toEqual({ statuses: ['completed'], finishedToday: true });
   });
 });
@@ -430,7 +430,7 @@ describe('queries over the local store', () => {
 
 describe('performance', () => {
   it('filters and sorts 5000 tasks in under 50 ms', () => {
-    const statuses = ['ready', 'in-progress', 'completed', 'cancelled'];
+    const statuses = ['ready', 'in-progress', 'completed', 'failed', 'cancelled'];
     const words = ['paint', 'plumber', 'door', 'rent', 'book', 'plants', 'garden', 'report'];
     const many = [];
     const listsByTask = new Map();
@@ -498,7 +498,7 @@ describe('exact match and hidden task helpers', () => {
 
   it('clears the named filters, restoring the default statuses', () => {
     const filter = { statuses: ['completed'], due: ['today'], lists: [HOME] };
-    expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'cancelled'], lists: [HOME] });
+    expect(clearFilters(filter, ['statuses', 'due'])).toEqual({ statuses: ['ready', 'in-progress', 'completed', 'failed', 'cancelled'], lists: [HOME] });
     expect(filter.due).toEqual(['today']);
   });
 });
@@ -588,5 +588,50 @@ describe('groupTasks (VO-9 to VO-12)', () => {
     const elapsed = performance.now() - start;
     expect(groups.reduce((sum, group) => sum + group.tasks.length, 0)).toBe(5000);
     expect(elapsed, `took ${elapsed.toFixed(1)} ms`).toBeLessThan(50);
+  });
+});
+
+describe('failed and upcoming tasks (TV-3, TV-14, TV-15)', () => {
+  const HOUR = 3_600_000;
+  const upcoming = (id, hours) => {
+    const created = task(id);
+    created['current-occurrence']['start-time'] = new Date(NOW.getTime() + hours * HOUR).toISOString();
+    return created;
+  };
+  const closedAt = (id, status, closeTime) => {
+    const closed = task(id, { status });
+    closed['current-occurrence']['close-time'] = closeTime;
+    return closed;
+  };
+
+  it('filters on the failed status', () => {
+    const failed = closedAt('f1', 'failed', local(2026, 10, 3, 9));
+    expect(ids(filterTasks([failed, ...tasks], { statuses: ['failed'] }, ctx))).toEqual(['f1']);
+  });
+
+  it('narrows failed tasks to those finished today, like completed and cancelled ones', () => {
+    const list = [closedAt('today', 'failed', local(2026, 10, 4, 8)), closedAt('old', 'failed', local(2026, 10, 3, 8)), task('open')];
+    expect(ids(filterTasks(list, { finishedToday: true }, ctx))).toEqual(['today', 'open']);
+  });
+
+  it('includes failed in the default filter', () => {
+    expect(DEFAULT_FILTER.statuses).toContain('failed');
+  });
+
+  it('shows a task that starts within 24 hours, and hides one that starts later', () => {
+    const list = [upcoming('soon', 23), upcoming('edge', 24), upcoming('later', 24.5), task('open')];
+    expect(ids(filterTasks(list, DEFAULT_FILTER, ctx))).toEqual(['soon', 'edge', 'open']);
+  });
+
+  it('hides every upcoming task while Show upcoming is off', () => {
+    const list = [upcoming('soon', 2), task('open')];
+    expect(ids(filterTasks(list, { showUpcoming: false }, ctx))).toEqual(['open']);
+    expect(ids(filterTasks(list, { showUpcoming: true }, ctx))).toEqual(['soon', 'open']);
+  });
+
+  it('stops hiding a task once its start time has passed', () => {
+    const list = [upcoming('later', 30)];
+    expect(filterTasks(list, {}, ctx)).toEqual([]);
+    expect(ids(filterTasks(list, {}, { ...ctx, now: new Date(NOW.getTime() + 7 * HOUR) }))).toEqual(['later']);
   });
 });

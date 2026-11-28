@@ -137,3 +137,55 @@ describe('connected display rule', () => {
     expect(posted.at(-1).fields).toMatchObject({ type: 'log', checked: true, occurrence: 1 });
   });
 });
+
+describe('start times place the first occurrence and the events', () => {
+  const HOUR = 3_600_000;
+  const startIn = (clock, hours) => new Date(clock.now + hours * HOUR).toISOString();
+
+  it('starts a one-off occurrence 1 at the start time, upcoming until then, and refuses events before it', async () => {
+    const opened = await freshStore();
+    store = opened.store;
+    const start = startIn(opened.clock, 5);
+    const task = await store.createTask({ description: 'Later', 'lifecycle-rules': { 'start-time': start } });
+    expect(task['current-occurrence']).toMatchObject({ occurrence: 1, 'start-time': start, status: 'ready' });
+    await expect(store.logEntry(task.id, { checked: true })).rejects.toMatchObject({ code: 'conflict' });
+    await expect(store.postEvent(task.id, 'start')).rejects.toMatchObject({ code: 'conflict' });
+    await expect(store.updateTask(task.id, { status: 'completed' })).rejects.toMatchObject({ code: 'conflict' });
+    await expect(store.createTask({ description: 'Done early', status: 'completed', 'lifecycle-rules': { 'start-time': start } })).rejects.toMatchObject({ code: 'conflict' });
+    opened.clock.tick(5 * HOUR);
+    const { task: done } = await store.logEntry(task.id, { checked: true });
+    expect(done['current-occurrence']).toMatchObject({ status: 'completed' });
+  });
+
+  it('keeps a recurring occurrence 1 from the start time to the end of its period', async () => {
+    const opened = await freshStore();
+    store = opened.store;
+    const start = startIn(opened.clock, 24);
+    const task = await store.createTask({ description: 'Weekly', 'lifecycle-rules': { ...WEEKLY, 'start-time': start } });
+    expect(task['current-occurrence']).toMatchObject({ 'start-time': start, 'due-time': WEEK_ENDS[0] });
+  });
+
+  it('moves occurrence 1 with a start time edit while it holds no events, and refuses it afterwards', async () => {
+    const opened = await freshStore();
+    store = opened.store;
+    const first = startIn(opened.clock, 5);
+    const task = await store.createTask({ description: 'Later', 'lifecycle-rules': { 'start-time': first } });
+    const second = startIn(opened.clock, 8);
+    const moved = await store.updateRules(task.id, { 'start-time': second });
+    expect(moved['current-occurrence']['start-time']).toBe(second);
+    const cleared = await store.updateRules(task.id, { 'start-time': null });
+    expect(cleared['current-occurrence']['start-time']).toBe(new Date(opened.clock.now).toISOString());
+    await store.postEvent(task.id, 'start');
+    await expect(store.updateRules(task.id, { 'start-time': first })).rejects.toMatchObject({ code: 'conflict' });
+  });
+
+  it('names the field of a start time that breaks a rule', async () => {
+    const opened = await freshStore();
+    store = opened.store;
+    const start = startIn(opened.clock, 5);
+    await expect(store.createTask({ description: 'Bad', 'due-time': startIn(opened.clock, 2), 'lifecycle-rules': { 'start-time': start } }))
+      .rejects.toMatchObject({ field: 'start-time' });
+    await expect(store.createTask({ description: 'Bad', 'lifecycle-rules': { 'start-time': 'soon' } })).rejects.toMatchObject({ field: 'start-time' });
+    await expect(store.createTask({ description: 'Bad', 'lifecycle-rules': { 'goal-direction': 'at-most' } })).rejects.toMatchObject({ field: 'goal-direction' });
+  });
+});

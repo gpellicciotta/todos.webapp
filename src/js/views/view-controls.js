@@ -153,6 +153,10 @@ export function sanitizeViewState(raw, kind = 'tasks') {
     if (stored.finishedToday === true) {
       state.filter.finishedToday = true;
     }
+    // Show upcoming is on by default, so only the choice to hide them is stored (`TV-15`).
+    if (stored.showUpcoming === false) {
+      state.filter.showUpcoming = false;
+    }
     const lists = Array.isArray(stored.lists) ? stored.lists.filter((id) => typeof id === 'string') : [];
     if (lists.length > 0) {
       state.filter.lists = lists;
@@ -225,7 +229,7 @@ export function isDefaultViewState(state, kind = 'tasks') {
   const fallback = defaultViewState(kind).order;
   const statuses = filter.statuses ?? [];
   return !(typeof filter.text === 'string' && filter.text.trim())
-    && hasExactly(statuses, DEFAULT_FILTER.statuses) && filter.finishedToday !== true
+    && hasExactly(statuses, DEFAULT_FILTER.statuses) && filter.finishedToday !== true && filter.showUpcoming !== false
     && !filter.lists?.length && !filter.due?.length && !filter.created && typeof filter.shared !== 'boolean'
     && (state.group ?? NONE) === NONE
     && order.field === fallback.field && (order.field === MANUAL || order.direction === fallback.direction);

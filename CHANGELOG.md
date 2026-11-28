@@ -28,6 +28,9 @@ All notable changes to this project are documented here.
 - FrontEnd: Moved the keyboard shortcuts, the add field syntax, the version, and the source link from Settings to Help, and added a Report a problem link.
 - FrontEnd: Opened Help filtered by link, with `#/help?q=` for the search and `#/help?topic=` for the topic, and let the router carry a hash query.
 - Docs: Added the Help requirements HLP-1 to HLP-4, the Help screen spec and wireframe, and a four-item user menu.
+- Store: Placed occurrence 1 by the rule's start time, kept upcoming tasks free of events, and validated start time and goal fields in `createTask` and `updateRules`.
+- Store: Expired overdue tasks by goal, failing `fail` tasks and closing `at-most` tasks with their verdict once per occurrence, and refused a reopen of an `at-most` occurrence.
+- Core: Added `failed` to the status filter, Finished today only, and the group names, and filtered upcoming tasks by the 24 hour window and a stored Show upcoming option.
 
 ## v0.6.0 [released: 2026-11-24]
 - FrontEnd: Made the All tasks empty state say tasks sync and drop the Connect link while connected.

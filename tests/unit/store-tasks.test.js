@@ -198,7 +198,7 @@ describe('events and rules', () => {
   it('expires an overdue task with handling cancel through a system event', async () => {
     const task = await store.createTask({ description: 'Late', 'due-time': '2026-11-04T08:00:00Z', 'overdue-handling': 'cancel' });
     const expired = await store.expireTask(task.id);
-    expect(expired['current-occurrence']).toMatchObject({ status: 'cancelled', 'close-time': '2026-11-04T09:00:00.000Z' });
+    expect(expired['current-occurrence']).toMatchObject({ status: 'failed', 'close-time': '2026-11-04T09:00:00.000Z' });
     expect((await store.eventsOfTask(task.id)).map((event) => [event.type, event['owner-id']])).toEqual([['create', null], ['expire', null]]);
     await expect(store.expireTask(task.id)).resolves.toBeNull();
   });

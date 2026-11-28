@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyOverdueHandling, isOverdue, startOverdueTimer } from '../../src/js/core/overdue.js';
+import { filterTasks } from '../../src/js/core/query.js';
 import { freshStore } from './store-helpers.js';
 import { shapeTask } from './task-shape.js';
 
@@ -54,19 +55,19 @@ describe('applyOverdueHandling', () => {
   it('expires overdue cancel tasks through an expire event and leaves every other task unchanged', async () => {
     const past = new Date(clock.now + 30_000).toISOString();
     const future = new Date(clock.now + 3_600_000).toISOString();
-    const cancel = await store.createTask({ description: 'Cancel me', 'due-time': past, 'overdue-handling': 'cancel' });
+    const cancel = await store.createTask({ description: 'Cancel me', 'due-time': past, 'overdue-handling': 'fail' });
     const started = await store.createTask({
-      description: 'Started', status: 'in-progress', 'due-time': past, 'overdue-handling': 'cancel',
+      description: 'Started', status: 'in-progress', 'due-time': past, 'overdue-handling': 'fail',
     });
     const keep = await store.createTask({ description: 'Keep me', 'due-time': past });
-    const later = await store.createTask({ description: 'Later', 'due-time': future, 'overdue-handling': 'cancel' });
+    const later = await store.createTask({ description: 'Later', 'due-time': future, 'overdue-handling': 'fail' });
     const done = await store.createTask({
-      description: 'Done', status: 'completed', 'due-time': past, 'overdue-handling': 'cancel',
+      description: 'Done', status: 'completed', 'due-time': past, 'overdue-handling': 'fail',
     });
     const dropped = await store.createTask({
-      description: 'Dropped', status: 'cancelled', 'due-time': past, 'overdue-handling': 'cancel',
+      description: 'Dropped', status: 'cancelled', 'due-time': past, 'overdue-handling': 'fail',
     });
-    const trashed = await store.createTask({ description: 'Trashed', 'due-time': past, 'overdue-handling': 'cancel' });
+    const trashed = await store.createTask({ description: 'Trashed', 'due-time': past, 'overdue-handling': 'fail' });
     await store.deleteTask(trashed.id);
     const untouched = [keep, later, done, dropped, await store.getTask(trashed.id)];
 
@@ -76,7 +77,7 @@ describe('applyOverdueHandling', () => {
     expect(cancelled.map((task) => task.id).sort()).toEqual([cancel.id, started.id].sort());
     for (const id of [cancel.id, started.id]) {
       expect(await store.getTask(id)).toMatchObject({
-        'current-occurrence': { status: 'cancelled', 'close-time': '2026-11-04T09:01:00.000Z' },
+        'current-occurrence': { status: 'failed', 'close-time': '2026-11-04T09:01:00.000Z' },
         'last-update-time': '2026-11-04T09:01:00.000Z',
       });
       expect((await store.eventsOfTask(id)).at(-1)).toMatchObject({ type: 'expire', 'owner-id': null, 'creation-time': '2026-11-04T09:01:00.000Z' });
@@ -88,9 +89,9 @@ describe('applyOverdueHandling', () => {
 
   it('leaves a task alone that was completed or deleted after the first read', async () => {
     const past = new Date(clock.now + 30_000).toISOString();
-    const completed = await store.createTask({ description: 'Done meanwhile', 'due-time': past, 'overdue-handling': 'cancel' });
-    const deleted = await store.createTask({ description: 'Gone meanwhile', 'due-time': past, 'overdue-handling': 'cancel' });
-    const open = await store.createTask({ description: 'Still open', 'due-time': past, 'overdue-handling': 'cancel' });
+    const completed = await store.createTask({ description: 'Done meanwhile', 'due-time': past, 'overdue-handling': 'fail' });
+    const deleted = await store.createTask({ description: 'Gone meanwhile', 'due-time': past, 'overdue-handling': 'fail' });
+    const open = await store.createTask({ description: 'Still open', 'due-time': past, 'overdue-handling': 'fail' });
     const snapshot = await store.listTasks();
     await store.updateTask(completed.id, { status: 'completed' });
     await store.deleteTask(deleted.id);
@@ -105,7 +106,7 @@ describe('applyOverdueHandling', () => {
   });
 
   it('returns no tasks when nothing is overdue', async () => {
-    await store.createTask({ description: 'Open', 'overdue-handling': 'cancel' });
+    await store.createTask({ description: 'Open', 'overdue-handling': 'fail' });
     expect(await applyOverdueHandling(store, new Date(clock.now))).toEqual([]);
   });
 });
@@ -127,16 +128,16 @@ describe('startOverdueTimer', () => {
 
   it('runs on start and then every minute, cancelling a task right after its due time', async () => {
     const overdueOnStart = await store.createTask({
-      description: 'Missed while closed', 'due-time': new Date(NOW - 60_000).toISOString(), 'overdue-handling': 'cancel',
+      description: 'Missed while closed', 'due-time': new Date(NOW - 60_000).toISOString(), 'overdue-handling': 'fail',
     });
     const dueSoon = await store.createTask({
-      description: 'Due soon', 'due-time': new Date(NOW + 30_000).toISOString(), 'overdue-handling': 'cancel',
+      description: 'Due soon', 'due-time': new Date(NOW + 30_000).toISOString(), 'overdue-handling': 'fail',
     });
 
     const stop = startOverdueTimer({ store });
     await stop.idle();
     const statusOf = async (id) => (await store.getTask(id))['current-occurrence'].status;
-    expect(await statusOf(overdueOnStart.id)).toBe('cancelled');
+    expect(await statusOf(overdueOnStart.id)).toBe('failed');
     expect(await statusOf(dueSoon.id)).toBe('ready');
 
     await vi.advanceTimersByTimeAsync(59_999);
@@ -146,7 +147,7 @@ describe('startOverdueTimer', () => {
     await vi.advanceTimersByTimeAsync(1);
     await stop.idle();
     expect(await store.getTask(dueSoon.id)).toMatchObject({
-      'current-occurrence': { status: 'cancelled' },
+      'current-occurrence': { status: 'failed' },
       'last-update-time': '2026-11-04T09:01:00.000Z',
     });
 
@@ -165,5 +166,78 @@ describe('startOverdueTimer', () => {
     stop();
     expect(onError).toHaveBeenCalledTimes(2);
     expect(onError.mock.calls[0][0].message).toBe('boom');
+  });
+});
+
+describe('expiry by goal (OVD-4)', () => {
+  let store;
+  let clock;
+
+  beforeEach(async () => {
+    ({ store, clock } = await freshStore());
+  });
+
+  afterEach(() => {
+    store.close();
+  });
+
+  const due = () => new Date(clock.now + 30_000).toISOString();
+  const statusOf = async (id) => (await store.getTask(id))['current-occurrence'].status;
+
+  it('leaves an at-least task under keep open and overdue', async () => {
+    const task = await store.createTask({ description: 'Keep', 'due-time': due(), 'overdue-handling': 'keep' });
+    clock.tick(60_000);
+    expect(await applyOverdueHandling(store, new Date(clock.now))).toEqual([]);
+    expect(await statusOf(task.id)).toBe('ready');
+    expect(isOverdue(await store.getTask(task.id), new Date(clock.now))).toBe(true);
+  });
+
+  it('fails an at-least task under fail, and expires once per occurrence when it is reopened', async () => {
+    const task = await store.createTask({ description: 'Fail', 'due-time': due(), 'overdue-handling': 'fail' });
+    clock.tick(60_000);
+    expect(await applyOverdueHandling(store, new Date(clock.now))).toHaveLength(1);
+    expect(await statusOf(task.id)).toBe('failed');
+    await store.postEvent(task.id, 'reopen');
+    expect(await statusOf(task.id)).toBe('ready');
+    clock.tick(60_000);
+    expect(await applyOverdueHandling(store, new Date(clock.now))).toEqual([]);
+    expect(await statusOf(task.id)).toBe('ready');
+    expect((await store.eventsOfTask(task.id)).filter((event) => event.type === 'expire')).toHaveLength(1);
+  });
+
+  it('closes an at-most task at its due time with the verdict of its progress, whatever the handling', async () => {
+    const rules = { 'goal-direction': 'at-most', 'target-count': 2 };
+    const within = await store.createTask({ description: 'Within', 'due-time': due(), 'lifecycle-rules': rules });
+    const over = await store.createTask({ description: 'Over', 'due-time': due(), 'lifecycle-rules': rules });
+    const none = await store.createTask({ description: 'None', 'due-time': due(), 'lifecycle-rules': rules });
+    await store.logEntry(within.id, { checked: true });
+    for (let i = 0; i < 3; i += 1) {
+      await store.logEntry(over.id, { checked: true });
+    }
+    clock.tick(60_000);
+    expect(await applyOverdueHandling(store, new Date(clock.now))).toHaveLength(3);
+    expect([await statusOf(within.id), await statusOf(over.id), await statusOf(none.id)]).toEqual(['completed', 'failed', 'completed']);
+  });
+
+  it('cannot reopen an at-most occurrence, and an undo changes its verdict', async () => {
+    const task = await store.createTask({ description: 'Limit', 'due-time': due(), 'lifecycle-rules': { 'goal-direction': 'at-most', 'target-count': 1 } });
+    const entries = [];
+    for (let i = 0; i < 2; i += 1) {
+      entries.push((await store.logEntry(task.id, { checked: true })).event.id);
+    }
+    clock.tick(60_000);
+    await applyOverdueHandling(store, new Date(clock.now));
+    expect(await statusOf(task.id)).toBe('failed');
+    await expect(store.postEvent(task.id, 'reopen')).rejects.toMatchObject({ code: 'conflict' });
+    await store.undoLog(task.id, entries[1]);
+    expect(await statusOf(task.id)).toBe('completed');
+  });
+
+  it('shows an overdue fail task as failed through the failed filter, end to end', async () => {
+    const task = await store.createTask({ description: 'Missed', 'due-time': due(), 'overdue-handling': 'fail' });
+    clock.tick(60_000);
+    await applyOverdueHandling(store, new Date(clock.now));
+    const shown = filterTasks(await store.listTasks(), { statuses: ['failed'] }, { now: new Date(clock.now) });
+    expect(shown.map((found) => found.id)).toEqual([task.id]);
   });
 });

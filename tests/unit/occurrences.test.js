@@ -57,7 +57,7 @@ const fresh = (rules = {}) => firstOccurrence({ ...DEFAULT_RULES, ...rules }, ST
 
 describe('statuses', () => {
   it('uses ready instead of todo, in lifecycle order', () => {
-    expect(STATUSES).toEqual(['ready', 'in-progress', 'completed', 'cancelled']);
+    expect(STATUSES).toEqual(['ready', 'in-progress', 'completed', 'failed', 'cancelled']);
   });
 
   it('derives the status from the count', () => {
@@ -109,7 +109,7 @@ describe('folding events', () => {
   });
 
   it('expires an open occurrence below target, and nothing else', () => {
-    expect(applyEvent(fresh(), event('a', 'expire', 5))).toMatchObject({ status: 'cancelled', 'close-time': at(5) });
+    expect(applyEvent(fresh(), event('a', 'expire', 5))).toMatchObject({ status: 'failed', 'close-time': at(5) });
     expect(applyEvent(applyEvent(fresh(), event('b', 'complete', 1)), event('c', 'expire', 5))).toBeNull();
     const offline = [event('x', 'expire', 5), event('y', 'complete', 1)];
     expect(foldEvents(fresh(), offline)).toMatchObject({ status: 'completed', 'completion-count': 1 });
@@ -120,8 +120,9 @@ describe('status edits as events', () => {
   const reach = (events, rules = {}) => foldEvents(fresh(rules), events.map((type, i) => event(`p${i}`, type, i)), { ...DEFAULT_RULES, ...rules });
 
   it('maps each status edit onto the events that reach it', () => {
-    for (const from of STATUSES) {
-      for (const to of STATUSES) {
+    const byHand = STATUSES.filter((status) => status !== 'failed');
+    for (const from of byHand) {
+      for (const to of byHand) {
         const start = reach(eventsTowardsStatus(fresh(), from));
         const types = eventsTowardsStatus(start, to);
         const end = foldEvents(start, types.map((type, i) => event(`q${i}`, type, 100 + i)));

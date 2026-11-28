@@ -7,7 +7,7 @@
  * Callers pass live tasks from `listTasks()`; the store already leaves out tasks in the recycle bin.
  */
 
-import { dueTimeOf, STATUSES, statusOf } from './occurrences.js';
+import { dueTimeOf, isUpcoming, STATUSES, statusOf } from './occurrences.js';
 import { isOverdue } from './overdue.js';
 
 /** The value of the Lists filter that selects tasks in no list. */
@@ -33,12 +33,15 @@ const DUE_GROUPS = Object.freeze([
   ['later', 'Later'], ['no-due', 'No due date'],
 ]);
 const STATUS_GROUPS = Object.freeze({
-  ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', cancelled: 'Cancelled',
+  ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', failed: 'Failed', cancelled: 'Cancelled',
 });
 const NO_LIST_LABEL = 'No list';
 
 /** The statuses that the Finished today only choice narrows to tasks finished today (`TV-14`). */
-const FINISHED = new Set(['completed', 'cancelled']);
+const FINISHED = new Set(['completed', 'failed', 'cancelled']);
+
+/** Views show an upcoming task only when it starts within this time (`TV-15`). */
+export const UPCOMING_WINDOW_MS = 24 * 3_600_000;
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
@@ -168,7 +171,8 @@ function isSet(value) {
  * @param {object} [filter] the filter
  * @param {string[]} [filter.lists] list identifiers, or `NO_LIST` for tasks in no list
  * @param {string[]} [filter.statuses] statuses
- * @param {boolean} [filter.finishedToday] true to keep completed and cancelled tasks only when last updated today
+ * @param {boolean} [filter.finishedToday] true to keep completed, failed, and cancelled tasks only when finished today
+ * @param {boolean} [filter.showUpcoming] false to hide upcoming tasks; they show by default when they start within 24 hours
  * @param {Array<string|{from?: any, to?: any}>} [filter.due] `overdue`, `today`, `this-week`, `none`, or inclusive ranges
  * @param {{from?: any, to?: any}} [filter.created] an inclusive creation time range
  * @param {string} [filter.text] text to find in the description or the notes, ignoring case
@@ -195,6 +199,12 @@ export function filterTasks(tasks, filter = {}, ctx = {}) {
   if (isSet(filter.statuses)) {
     const wanted = new Set(filter.statuses);
     tests.push((task) => wanted.has(statusOf(task)));
+  }
+  {
+    // An upcoming task shows only while Show upcoming is on and it starts within 24 hours (`TV-15`).
+    const now = new Date(ctx.now ?? Date.now()).getTime();
+    tests.push((task) => !isUpcoming(task, now)
+      || (filter.showUpcoming !== false && Date.parse(task['current-occurrence']['start-time']) - now <= UPCOMING_WINDOW_MS));
   }
   if (filter.finishedToday === true) {
     // A finished task's occurrence closed when it finished (`TV-14`).

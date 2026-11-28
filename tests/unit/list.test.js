@@ -200,7 +200,7 @@ describe('mountList', () => {
     expect(field.value).toBe('');
     expect(toaster.show.mock.calls[0][0]).toBe('Task added. Status: completed hides it.');
     toaster.show.mock.calls[0][1].onAction();
-    expect(models.list.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed', 'cancelled']);
+    expect(models.list.get().filter.statuses).toEqual(['ready', 'in-progress', 'completed', 'failed', 'cancelled']);
     await vi.waitFor(() => expect(view.querySelectorAll('.task-row')).toHaveLength(1));
   });
 
