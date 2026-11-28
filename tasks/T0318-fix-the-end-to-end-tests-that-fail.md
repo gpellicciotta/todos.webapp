@@ -1,11 +1,11 @@
 ---
 id: T0318
-owner: ~
-needs: [T0306]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0318-fix-the-end-to-end-tests-that-fail
+worktree: .plan/work/T0318-fix-the-end-to-end-tests-that-fail
+status: active
+started_at: "2026-11-28T04:17:19Z"
 ended_at: —
 review: agent
 preview: none
