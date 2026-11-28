@@ -7,6 +7,7 @@ All notable changes to this project are documented here.
 ## v0.6.1-pre
 - Docs: Specified ADR-0006 in the local store and backup format specs: goals, the log, the fold, `failed`, store version 6, and backup format 3.
 - Docs: Specified the ADR-0006 interface: goal rows and marks, a four-tab task editor opening on Status, the quick log, and Show upcoming, with wireframes.
+- Core: Ported the ADR-0006 fold to occurrences.js as `foldLog` and `foldInPlace`, passing the shared fold test vectors.
 - FrontEnd: Kept the compact add bar to one line with a plus button, and removed its filter summary and Reset.
 - FrontEnd: Removed the non-clickable logo and app name from the top of the sidebar, which now starts with All tasks.
 - Tests: Made the task row due text tests follow the default locale clock, so the Pages workflow passes on CI again.

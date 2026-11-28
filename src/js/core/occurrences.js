@@ -472,6 +472,221 @@ export function foldEvents(occurrence, events, rules = DEFAULT_RULES) {
   return ordered.reduce((current, event) => applyEvent(current, event, rules) ?? current, occurrence);
 }
 
+/** The event types that take part in the ADR-0006 fold; `complete` and `uncomplete` fold only in place. */
+const FOLD_TYPES = Object.freeze(['log', 'start', 'unstart', 'cancel', 'reopen', 'expire', 'roll-over', 'end-recurrence']);
+
+/**
+ * Convert a decimal to whole thousandths, so sums stay exact.
+ * @param {number} value the decimal, with at most 3 decimals
+ * @returns {number} the thousandths
+ */
+const toThousandths = (value) => Math.round(value * 1000);
+
+/**
+ * Fold the events of one occurrence as ADR-0006 says, a pure function of its goal snapshot, its events, and a carried reading.
+ * An `undo-log` is retroactive: the `log` it names is treated as never logged. An event whose precondition fails is ignored.
+ * See docs/specs/local-store.md, Fold.
+ * @param {object} input the occurrence to fold
+ * @param {{direction: string, measure: string, target: number}} input.goal the goal snapshot
+ * @param {boolean} [input.recurring] whether the occurrence recurs, so meeting its target leaves it open
+ * @param {object[]} [input.events] the stored events of the occurrence, in any order
+ * @param {number|null} [input.carriedReading] the reading carried in from the previous occurrence
+ * @returns {{entries: string[], progress: number|null, 'time-spent-seconds': number, status: string, 'close-time': string|null,
+ *   'carried-reading': number|null}} the cache; `progress` is null only for a reading goal without a reading,
+ *   and `carried-reading` is the reading for the next occurrence
+ */
+export function foldLog({ goal, recurring = false, events = [], carriedReading = null }) {
+  const atLeast = goal.direction !== 'at-most';
+  const target = toThousandths(goal.target);
+  const carried = carriedReading === null || carriedReading === undefined ? null : toThousandths(carriedReading);
+  const undone = new Set(events.filter((event) => event.type === 'undo-log').map((event) => event['target-event-id']));
+  const endsLast = (event) => (recurring ? isPeriodEnd(event.type) : !atLeast && event.type === 'expire');
+  const ordered = events.filter((event) => FOLD_TYPES.includes(event.type) && !(event.type === 'log' && undone.has(event.id)))
+    .sort((a, b) => endsLast(a) - endsLast(b) || byEventOrder(a, b));
+  const state = { status: 'ready', closed: 'none', closeTime: null, checks: 0, applied: 0, seconds: 0, sum: 0, own: null, starts: false };
+  const progress = () => {
+    switch (goal.measure) {
+      case 'time':
+        return state.seconds * 1000;
+      case 'amount':
+        return state.sum;
+      case 'reading':
+        return state.own ?? carried;
+      default:
+        return state.checks * 1000;
+    }
+  };
+  const meets = (value) => value !== null && (atLeast ? value >= target : value <= target);
+  const close = (status, how, time) => {
+    state.closeTime = status === state.status && state.closeTime !== null ? state.closeTime : time;
+    state.status = status;
+    state.closed = how;
+  };
+  const refresh = (time) => {
+    if (state.closed !== 'none' && state.closed !== 'completion') {
+      return;
+    }
+    const own = goal.measure === 'reading' ? state.own : progress();
+    let status = state.applied > 0 || state.starts ? 'in-progress' : 'ready';
+    if (atLeast && meets(own)) {
+      status = 'completed';
+    }
+    if (status === 'completed' && !recurring) {
+      close(status, 'completion', time);
+    }
+    else {
+      Object.assign(state, { status, closed: 'none', closeTime: null });
+    }
+  };
+  const verdict = () => (meets(progress()) ? 'completed' : 'failed');
+  const canReopen = () => {
+    if (state.status === 'cancelled') {
+      return true;
+    }
+    return recurring ? state.closed === 'end-recurrence' : state.closed === 'verdict' && atLeast && state.status === 'failed';
+  };
+  const entries = [];
+  for (const event of ordered) {
+    const time = event['creation-time'];
+    switch (event.type) {
+      case 'log': {
+        entries.push(event.id);
+        let applied = false;
+        if (event.checked && state.status !== 'cancelled') {
+          state.checks += 1;
+          applied = true;
+        }
+        if (event['time-spent-seconds'] !== undefined && event['time-spent-seconds'] !== null) {
+          state.seconds += event['time-spent-seconds'];
+          applied = true;
+        }
+        if (event.amount !== undefined && event.amount !== null) {
+          state.sum += toThousandths(event.amount);
+          state.own = toThousandths(event.amount);
+          applied = true;
+        }
+        state.applied += applied ? 1 : 0;
+        refresh(time);
+        break;
+      }
+      case 'start':
+        if (state.status === 'ready') {
+          state.starts = true;
+          refresh(time);
+        }
+        break;
+      case 'unstart':
+        if (state.status === 'in-progress' && state.applied === 0) {
+          state.starts = false;
+          refresh(time);
+        }
+        break;
+      case 'cancel':
+        if (state.status !== 'cancelled') {
+          close('cancelled', 'cancel', time);
+        }
+        break;
+      case 'reopen':
+        if (canReopen()) {
+          Object.assign(state, { closed: 'none', closeTime: null });
+          refresh(time);
+        }
+        break;
+      default:
+        // `expire`, `roll-over`, and `end-recurrence` close an open occurrence with its verdict.
+        if (state.closed === 'none') {
+          close(verdict(), event.type === 'end-recurrence' ? 'end-recurrence' : 'verdict', time);
+        }
+    }
+  }
+  const total = progress();
+  return {
+    entries,
+    progress: total === null ? null : total / 1000,
+    'time-spent-seconds': state.seconds,
+    status: state.status,
+    'close-time': state.closeTime,
+    'carried-reading': goal.measure === 'reading' && total !== null ? total / 1000 : null,
+  };
+}
+
+/**
+ * Fold the events of an occurrence in place, as stored before the store upgrade: `complete` and `uncomplete` count,
+ * and the verdicts follow the ADR-0006 fold, so `expire`, or a period end below target, gives `failed`.
+ * @param {object} input the occurrence to fold
+ * @param {number} input.target the target count
+ * @param {boolean} [input.recurring] whether the occurrence recurs
+ * @param {object[]} [input.events] the stored events, in any order
+ * @returns {{progress: number, status: string, 'close-time': string|null}} the folded count, status, and close time
+ */
+export function foldInPlace({ target, recurring = false, events = [] }) {
+  const ordered = [...events].sort((a, b) => (recurring ? isPeriodEnd(a.type) - isPeriodEnd(b.type) : 0) || byEventOrder(a, b));
+  let count = 0;
+  let status = 'ready';
+  let closeTime = null;
+  const fromCount = (value) => (value >= target ? 'completed' : value > 0 ? 'in-progress' : 'ready');
+  for (const event of ordered) {
+    const time = event['creation-time'];
+    const open = status === 'ready' || status === 'in-progress';
+    let next;
+    switch (event.type) {
+      case 'complete':
+        if (status === 'cancelled') {
+          continue;
+        }
+        count += 1;
+        next = status === 'failed' ? 'failed' : fromCount(count);
+        break;
+      case 'uncomplete':
+        if (count <= 0 || status === 'cancelled') {
+          continue;
+        }
+        count -= 1;
+        next = status === 'failed' ? 'failed' : fromCount(count);
+        break;
+      case 'start':
+        if (status !== 'ready') {
+          continue;
+        }
+        next = 'in-progress';
+        break;
+      case 'unstart':
+        if (status !== 'in-progress' || count !== 0) {
+          continue;
+        }
+        next = 'ready';
+        break;
+      case 'cancel':
+        if (status === 'cancelled') {
+          continue;
+        }
+        next = 'cancelled';
+        break;
+      case 'reopen':
+        if (status !== 'cancelled' && status !== 'failed') {
+          continue;
+        }
+        next = fromCount(count);
+        break;
+      case 'expire':
+      case 'roll-over':
+      case 'end-recurrence':
+        if (event.type === 'expire' ? !open : closeTime !== null) {
+          continue;
+        }
+        next = count >= target ? 'completed' : 'failed';
+        break;
+      default:
+        continue;
+    }
+    const closes = isPeriodEnd(event.type) || event.type === 'expire' || next === 'failed' || next === 'cancelled'
+      || (next === 'completed' && !recurring);
+    closeTime = closes ? (next === status && closeTime !== null ? closeTime : time) : null;
+    status = next;
+  }
+  return { progress: count, status, 'close-time': closeTime };
+}
+
 /**
  * Pick the next event that moves an occurrence towards a status, as the todos.server status mapping does.
  * @param {object} occurrence the occurrence

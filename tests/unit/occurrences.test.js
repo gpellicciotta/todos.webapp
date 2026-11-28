@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   applyEvent,
@@ -8,6 +9,8 @@ import {
   eventsTowardsStatus,
   firstOccurrence,
   foldEvents,
+  foldInPlace,
+  foldLog,
   freshOccurrence,
   fromLegacyTask,
   graceOccurrence,
@@ -360,5 +363,86 @@ describe('recurring tasks', () => {
     expect(['day', 'week', 'month'].map((unit) => recurrenceLabel({ 'recurrence-unit': unit, 'recurrence-interval': 1 }))).toEqual(['Daily', 'Weekly', 'Monthly']);
     expect(recurrenceLabel({ 'recurrence-unit': 'week', 'recurrence-interval': 2 })).toBe('Every 2 weeks');
     expect(recurrenceLabel(DEFAULT_RULES)).toBeNull();
+  });
+});
+
+describe('fold test vectors', () => {
+  const { vectors } = JSON.parse(readFileSync(new URL('../fixtures/fold-test-vectors.json', import.meta.url), 'utf8'));
+
+  /**
+   * Convert a vector event to the stored event shape.
+   * @param {object} event the vector event, with `time`
+   * @param {number} occurrence the occurrence number
+   * @returns {object} the event
+   */
+  const stored = ({ time, ...rest }, occurrence) => ({ occurrence, 'creation-time': time, ...rest });
+
+  it('runs the shared vectors', () => {
+    expect(vectors.length).toBeGreaterThan(0);
+    for (const vector of vectors) {
+      let carried = vector['carried-reading'];
+      for (const occurrence of vector.occurrences) {
+        const { expected, goal } = occurrence;
+        const source = vector.fold === 'migration' ? expected.migration.converted : occurrence.events;
+        const events = source.map((event) => stored(event, occurrence.number));
+        const folded = foldLog({ goal, recurring: occurrence.recurring, events, carriedReading: carried });
+        const where = `${vector.name}, occurrence ${occurrence.number}`;
+        expect(folded.entries, `${where} entries`).toEqual(expected.entries);
+        expect(folded.progress, `${where} progress`).toBe(expected.progress);
+        expect(folded['time-spent-seconds'], `${where} time`).toBe(expected['time-spent-seconds']);
+        expect(folded.status, `${where} status`).toBe(expected.status);
+        expect(folded['close-time'], `${where} close time`).toBe(expected['close-time']);
+        carried = folded['carried-reading'];
+        if (vector.fold === 'migration') {
+          const inPlace = foldInPlace({
+            target: goal.target,
+            recurring: occurrence.recurring,
+            events: occurrence.events.map((event) => stored(event, occurrence.number)),
+          });
+          expect(inPlace.progress, `${where} in-place progress`).toBe(expected.migration['in-place'].progress);
+          expect(inPlace.status, `${where} in-place status`).toBe(expected.migration['in-place'].status);
+          expect(inPlace['close-time'], `${where} in-place close time`).toBe(expected.migration['in-place']['close-time']);
+        }
+      }
+    }
+  });
+});
+
+describe('the log fold', () => {
+  const goal = (fields) => ({ direction: 'at-least', measure: 'checks', target: 1, unit: null, ...fields });
+  const log = (id, minutes, fields = {}) => ({ id, type: 'log', 'creation-time': at(minutes), ...fields });
+
+  it('sums decimal amounts exactly', () => {
+    const events = [log('e1', 1, { amount: 0.1 }), log('e2', 2, { amount: 0.2 })];
+    const folded = foldLog({ goal: goal({ measure: 'amount', target: 0.3 }), events });
+    expect(folded.progress).toBe(0.3);
+    expect(folded.status).toBe('completed');
+  });
+
+  it('orders events with equal times by identifier', () => {
+    const events = [log('e2', 1, { amount: 5 }), log('e1', 1, { amount: 9 })];
+    const folded = foldLog({ goal: goal({ measure: 'reading', target: 100 }), events });
+    expect(folded.entries).toEqual(['e1', 'e2']);
+    expect(folded.progress).toBe(5);
+    expect(folded['carried-reading']).toBe(5);
+  });
+
+  it('ignores the legacy complete and uncomplete events', () => {
+    const events = [{ id: 'm1', type: 'complete', 'creation-time': at(1) }];
+    expect(foldLog({ goal: goal(), events }).status).toBe('ready');
+  });
+
+  it('keeps a carried reading from completing an open occurrence', () => {
+    const folded = foldLog({ goal: goal({ measure: 'reading', target: 50 }), recurring: true, events: [], carriedReading: 80 });
+    expect(folded.progress).toBe(80);
+    expect(folded.status).toBe('ready');
+  });
+
+  it('folds the legacy events in place with the new verdicts', () => {
+    const events = [
+      { id: 'm1', type: 'complete', 'creation-time': at(1) },
+      { id: 'x1', type: 'expire', 'creation-time': at(9) },
+    ];
+    expect(foldInPlace({ target: 2, recurring: false, events })).toEqual({ progress: 1, status: 'failed', 'close-time': at(9) });
   });
 });

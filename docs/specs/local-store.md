@@ -322,6 +322,9 @@ Every entry is one append-only `log` event; the store never edits or removes it.
 - `tests/fixtures/fold-test-vectors.json` holds event sequences with their expected caches.
   The file copies todos.server `docs/specs/fold-test-vectors.json`; refresh it by hand when the server's copy changes.
   The occurrences unit test runs every case.
+- `foldLog({goal, recurring, events, carriedReading})` runs the fold above and returns `entries`, `progress`, `time-spent-seconds`, `status`, `close-time`, and `carried-reading`.
+  Sums run in whole thousandths. `foldInPlace({target, recurring, events})` folds stored `complete` and `uncomplete` events with the new verdicts, until the store upgrade converts them.
+  The store still uses the former functions until the store upgrade lands.
 
 ### Closing Recurring Occurrences
 - A recurring occurrence stays open until its period ends, or until `cancel`.
