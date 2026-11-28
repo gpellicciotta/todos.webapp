@@ -1106,6 +1106,13 @@ Help is the vendored help page in the centered `--width-main` column, with no vi
   A failed file shows "This help could not load. Check the connection and try again." with Retry in that card only.
 - After one visit the service worker serves the files offline (`HLP-4`).
 - The Markdown renderer ([markdown.js](../../src/js/ui/markdown.js)) builds nodes with `textContent` only, so doc text never becomes markup.
+- **[Decided]** The docs stay Markdown, with tables, icons, and screenshots (`HLP-5`).
+  - Rejected: HTML docs, which would need markup in the page that the renderer never builds from text.
+  - A link under the app's public address, such as `https://todos.pellicciotta.com/#/bin`, opens that screen in place.
+    Outside the app the same link opens the live app.
+  - `#/settings?section=data` opens Settings at that section and focuses its heading; `adding` and `reminders` work too.
+  - An icon draws the app's own symbol in its status color; the files in `docs/tutorial/img/icons` show it elsewhere.
+  - A screenshot shows at phone width, in the light or dark theme of the app.
   A task that adds a shortcut updates the FAQ answer in [faq.md](../tutorial/faq.md).
 
 ### Sync Log

@@ -18,7 +18,7 @@ beforeEach(async () => {
   work = await mkdtemp(join(tmpdir(), 'stage-site-'));
   repo = join(work, 'repo');
   await mkdir(join(repo, 'src', 'css'), { recursive: true });
-  await mkdir(join(repo, 'docs', 'tutorial'), { recursive: true });
+  await mkdir(join(repo, 'docs', 'tutorial', 'img'), { recursive: true });
   await writeFile(join(repo, 'src', 'index.html'), '<!doctype html>');
   await writeFile(join(repo, 'src', 'css', 'style.css'), 'body {}');
   await writeFile(join(repo, 'CHANGELOG.md'), '# Changelog');
@@ -34,12 +34,15 @@ afterEach(async () => {
 });
 
 describe('HELP_FILES', () => {
-  it('maps the three tutorial docs and the changelog to help paths', () => {
+  it('maps the three tutorial docs, their screenshots, and the changelog to help paths', () => {
     expect(HELP_FILES).toEqual({
       'help/welcome.md': 'docs/tutorial/welcome.md',
       'help/getting-started.md': 'docs/tutorial/getting-started.md',
       'help/faq.md': 'docs/tutorial/faq.md',
       'help/CHANGELOG.md': 'CHANGELOG.md',
+      ...Object.fromEntries(['add-task', 'all-tasks', 'lists', 'quick-log', 'recycle-bin', 'settings-connection', 'settings-data', 'task-editor', 'toast-undo', 'view-options']
+        .flatMap((name) => [`help/img/${name}.png`, `help/img/${name}-dark.png`])
+        .map((path) => [path, path.replace('help/', 'docs/tutorial/')])),
     });
   });
 

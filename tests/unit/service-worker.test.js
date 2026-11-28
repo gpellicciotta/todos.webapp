@@ -355,6 +355,16 @@ describe('service worker help files', () => {
     expect(result.body).toBe('cached-css');
   });
 
+  it('serves a help screenshot network first and keeps it for offline use', async () => {
+    const url = 'https://todos.example/help/img/add-task.png';
+    const store = new Map();
+    const fresh = new Response('png', { headers: { 'content-type': 'image/png' } });
+    expect((await ask(url, { store, network: () => fresh, mode: 'no-cors' })).handled).toBe(true);
+    expect(store.has(url)).toBe(true);
+    const offline = await ask(url, { store, network: null, mode: 'no-cors' });
+    expect(offline.body).toBe(store.get(url));
+  });
+
   it('does not treat other markdown paths as help files', async () => {
     const url = 'https://todos.example/docs/readme.md';
     const store = new Map();

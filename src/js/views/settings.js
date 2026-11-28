@@ -120,6 +120,9 @@ const STRINGS = Object.freeze({
   serverUrlError: `Enter an https address, or http on this computer, such as ${DEFAULT_SERVER_URL}.`,
 });
 
+/** The sections that a link such as `#/settings?section=data` may name. */
+const SECTIONS = Object.freeze(['appearance', 'adding', 'reminders', 'data', 'connection']);
+
 /**
  * Create a settings section with its heading.
  * @param {Document} doc the document
@@ -947,17 +950,21 @@ export function mountSettings(view, {
   view.replaceChildren(root);
   return {
     /**
-     * Follow a route of this view. `#/connect`, the Auth return alias, scrolls the Connection section into view,
-     * focuses its heading, and replaces the address with `#/settings`, so Back never returns to the alias.
-     * @param {{name?: string}} [route] the route
+     * Follow a route of this view. A link that names a section, `#/settings?section=data`, or `#/connect`, the Auth return
+     * alias, scrolls that section into view, focuses its heading, and replaces the address with `#/settings`,
+     * so Back never returns to the link.
+     * @param {{name?: string, query?: string}} [route] the route
      */
     update(route) {
-      if (route?.name === 'connect') {
+      const key = route?.name === 'connect' ? 'connection' : new URLSearchParams(route?.query ?? '').get('section');
+      const heading = SECTIONS.includes(key) ? root.querySelector(`#settings-${key}`) : null;
+      if (heading) {
         navigate('#/settings', { replace: true });
         // The router restores the scroll position and the shell focuses the main area once this route renders; go after both.
         setTimeout(() => {
-          connection.element.scrollIntoView?.({ block: 'start' });
-          connection.heading.focus({ preventScroll: true });
+          heading.tabIndex = -1;
+          heading.closest('section').scrollIntoView?.({ block: 'start' });
+          heading.focus({ preventScroll: true });
         }, 0);
       }
     },

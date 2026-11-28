@@ -8,8 +8,9 @@
  * path with the start page and status 200, and caching that as a stylesheet leaves the app unstyled until the next VERSION.
  * Same-origin GET requests are served cache first, except that cached HTML never answers a non-navigation request
  * for any file but the start page; page navigations fall back to the cached start page.
- * Help files (`help/*.md`: the tutorial docs and the changelog) are served network first instead: each OK answer is
- * stored, and the stored copy answers when the network fails. They are not precached, so Help works offline after one visit.
+ * Help files (`help/*.md`, the tutorial docs and the changelog, and `help/img/*.png`, their screenshots) are served
+ * network first instead: each OK answer is stored, and the stored copy answers when the network fails.
+ * They are not precached, so Help works offline after one visit.
  * A pushed reminder (Web Push, while connected) shows as a notification with the tag of the local reminder of the same due time.
  * A clicked reminder notification focuses an open window and posts `{type: 'open-task', taskId}` to it, or opens one at the task.
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
@@ -19,7 +20,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-28.27';
+const VERSION = '2026-11-28.29';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -219,13 +220,15 @@ function isHtml(response) {
 }
 
 /**
- * Tell whether a URL is a help file: a Markdown file under `help/`, at the site root or under the worker's base path.
+ * Tell whether a URL is a help file: a Markdown file under `help/`, or a screenshot under `help/img/`,
+ * at the site root or under the worker's base path.
  * @param {URL} url the request URL
- * @returns {boolean} true for `help/*.md`
+ * @returns {boolean} true for `help/*.md` and `help/img/*.png`
  */
 function isHelpFile(url) {
   const base = new URL('./', self.location.href).pathname;
-  return url.pathname.startsWith(`${base}help/`) && url.pathname.endsWith('.md');
+  const isDoc = url.pathname.startsWith(`${base}help/`) && url.pathname.endsWith('.md');
+  return isDoc || (url.pathname.startsWith(`${base}help/img/`) && url.pathname.endsWith('.png'));
 }
 
 /**

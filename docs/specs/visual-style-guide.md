@@ -165,6 +165,7 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - Control minimums: `--width-menu` for menus and popovers; the package sets the narrowest segmented option.
 - `--width-chip-max`: the widest list chip in a task row; longer list names truncate.
 - `--width-field-label` and `--width-field-label-min`: the label column of the task editor, in wide and narrow panels.
+- `--width-help-shot`: a screenshot in the help, the width of the phone it was taken on.
 - Text minimums: `--width-text-min` before a banner's action wraps, and for the task editor's right-hand column.
   The package sets the lowest textarea.
 
@@ -401,7 +402,9 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The Danger zone drops its own border, after the last rule.
   The progress box, meter, Log form, and entries of Status are built in [task-editor.js](../../src/js/views/task-editor.js); the rules sit in [progress.js](../../src/js/core/progress.js).
 - Help: the vendored `createHelpPage` pattern of `help-page.js`, with search, topic chips, section cards, FAQ collapsibles, and release notes.
-  Markdown panels render through `ui/markdown.js`, and `views.css` adds only the `.help__part` subheading and the list spacing.
+  Markdown panels render through `ui/markdown.js`; `views.css` adds the `.help__part` subheading and the list spacing.
+- [Help content](../../src/demo/visual-style-gallery.html#help-content): `.help__icon`, `.help__table`, and `.help__shot`.
+  An icon takes the color of its status; a screenshot shows the image of the current theme, `--width-help-shot` wide.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.
   A destructive row action swaps its buttons for it, as the last note of the note thread shows.
 

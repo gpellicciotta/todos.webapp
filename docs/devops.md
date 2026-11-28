@@ -101,6 +101,7 @@ The Help screen fetches the tutorial docs and the changelog from `help/` paths, 
 | `help/getting-started.md` | [getting-started.md](tutorial/getting-started.md)   |
 | `help/faq.md`             | [faq.md](tutorial/faq.md)                           |
 | `help/CHANGELOG.md`       | [CHANGELOG.md](../CHANGELOG.md)                     |
+| `help/img/*.png`          | The screenshots listed in `HELP_SHOTS`              |
 
 - `serve.mjs` maps these paths to the source files when it serves the default `src/` root; a custom `--root` does not.
 - [stage-site.mjs](../scripts/stage-site.mjs) copies `src/` and the help files into a new folder, as Pages deploys them:
@@ -108,6 +109,13 @@ The Help screen fetches the tutorial docs and the changelog from `help/` paths, 
 - No copies are committed, so editing a doc or the changelog needs no sync step.
 - The worker fetches help files network first and stores each OK answer, so Help works offline after one online visit.
   They are not precached, and a changed help file needs no `VERSION` bump.
+- Take the screenshots again after changing a screen that the help shows, and check them:
+  ```bash
+  node scripts/capture-help-images.mjs
+  ```
+  [capture-help-images.mjs](../scripts/capture-help-images.mjs) writes `docs/tutorial/img`, in light and dark, from placeholder tasks.
+  It also writes the icon files that the docs show, with [help-icons.mjs](../scripts/help-icons.mjs).
+- A new screenshot joins `HELP_SHOTS` in [site-files.mjs](../scripts/site-files.mjs) and the script.
 
 ### Auth Integration
 [auth.js](../src/js/sync/auth.js) holds the sign-in contract; [session.js](../src/js/sync/session.js) stores the session.

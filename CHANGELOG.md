@@ -5,6 +5,10 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.7.2-pre
+- FrontEnd: Added links to app screens, status icons, and screenshots to the Welcome page, tutorial, and FAQ.
+- FrontEnd: Listed the keyboard shortcuts in a table, and corrected how the help describes overdue tasks and new lists.
+- FrontEnd: Opened Settings at a named section from links such as `#/settings?section=data`.
+- DevOps: Added `scripts/capture-help-images.mjs`, which takes the help screenshots in light and dark.
 - FrontEnd: Showed the task's description above the task editor's tabs.
 - FrontEnd: Moved Details to the top of the History tab, and showed occurrences and events as tables.
 - FrontEnd: Showed the newest 20 occurrences and events, with Load more, reading the service page by page.

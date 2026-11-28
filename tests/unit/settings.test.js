@@ -502,6 +502,23 @@ describe('Connection section phases', () => {
     expect(section.scrollIntoView).toHaveBeenCalled();
   });
 
+  it.each(['appearance', 'adding', 'reminders', 'data'])('scrolls to the section that a link names, such as %s, and replaces the address', async (key) => {
+    const { view, navigate } = mount();
+    const heading = view.querySelector(`#settings-${key}`);
+    const section = heading.closest('section');
+    section.scrollIntoView = vi.fn();
+    screen.update({ name: 'settings', view: 'settings', params: {}, query: `section=${key}` });
+    expect(navigate).toHaveBeenCalledWith('#/settings', { replace: true });
+    await vi.waitFor(() => expect(document.activeElement).toBe(heading));
+    expect(section.scrollIntoView).toHaveBeenCalled();
+  });
+
+  it('ignores a link to an unknown section', () => {
+    const { navigate } = mount();
+    screen.update({ name: 'settings', view: 'settings', params: {}, query: 'section=nothing' });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('leaves the focus alone on the plain settings route', () => {
     const { navigate } = mount();
     const before = document.activeElement;

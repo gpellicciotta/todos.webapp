@@ -874,6 +874,95 @@
   margin-block: 0 var(--space-3);
 }
 
+/* Help icons are the app's own, in the colors of the task rows. */
+.help__icon {
+  display: inline-flex;
+  color: var(--color-text-muted);
+  vertical-align: text-bottom;
+}
+
+.help__icon[data-icon='status-in-progress'] {
+  color: var(--color-status-in-progress);
+}
+
+.help__icon[data-icon='status-completed'] {
+  color: var(--color-status-completed);
+}
+
+.help__icon[data-icon='status-failed'] {
+  color: var(--color-status-failed);
+}
+
+.help__icon[data-icon='status-cancelled'] {
+  color: var(--color-status-cancelled);
+}
+
+/* A help table wraps its text between words, keeping each key whole, and scrolls only when it cannot get narrower. */
+.help__table-wrap {
+  overflow-x: auto;
+  margin-block-end: var(--space-3);
+}
+
+.help__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.help__table th,
+.help__table td {
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-block-end: var(--border-width) solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.help__table tr > :last-child {
+  padding-inline-end: 0;
+}
+
+.help__table code {
+  white-space: nowrap;
+}
+
+/* A help screenshot shows at the width of a phone, in the theme of the app. */
+.help__shot {
+  margin: 0 0 var(--space-3);
+}
+
+.help__shot-image {
+  display: block;
+  inline-size: var(--width-help-shot);
+  max-inline-size: 100%;
+  block-size: auto;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.help__shot-image--dark {
+  display: none;
+}
+
+:root[data-theme='dark'] .help__shot-image--light {
+  display: none;
+}
+
+:root[data-theme='dark'] .help__shot-image--dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .help__shot-image--light {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) .help__shot-image--dark {
+    display: block;
+  }
+}
+
 /* List view: the description and the list actions. */
 .list-view__description {
   flex: 1 1 auto;

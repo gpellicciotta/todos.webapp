@@ -306,6 +306,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - HLP-2: Help shows Application Info & Support, Welcome to ToDo's, Getting Started Tutorial, FAQ, and Release notes, in this order.
 - HLP-3: A search field and topic chips filter the panels, a search opens the FAQ entries that match, and `#/help?q=` and `#/help?topic=` links set the filters.
 - HLP-4: The docs and the changelog load when Help opens, a failed file offers Retry in its own panel, and Help works offline after one visit.
+- HLP-5: The docs link to the screens they describe, show status icons and screenshots in the current theme, and list shortcuts in a table.
 
 ---
 
