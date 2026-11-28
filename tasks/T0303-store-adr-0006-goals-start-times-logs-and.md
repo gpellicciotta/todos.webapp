@@ -19,6 +19,7 @@ Upgrade the IndexedDB database: goal fields and `start-time` on rules, `progress
 Convert local `complete` and `uncomplete` events and closed statuses as the todos.server migration does, with the in-place fold check.
 Add store actions to log and undo entries, place events by `start-time`, and apply the expiry rules by goal.
 Filter on `failed`, and compute the `upcoming` flag.
+Cover `failed` in the finished-today filter, and persist the Show upcoming view option (`TV-14`, `TV-15`).
 
 ## Task Execution Steps
 - [ ] **[Read]**      Read local-store.md, the store modules, and the database upgrade code.
