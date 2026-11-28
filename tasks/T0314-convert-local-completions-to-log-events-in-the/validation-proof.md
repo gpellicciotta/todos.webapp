@@ -62,3 +62,32 @@ Exit code: 0
 ```
 New tests: `log entries in a backup` in backup.test.js and `rolling back queued log entries` in queue.test.js.
 The red-phase output of round 1 was not kept verbatim; the new tests were written with the fixes and pass.
+
+### Rework after review round 2
+Failing first, with the fix reverted: `npx vitest run tests/unit/occurrences.test.js tests/unit/backup.test.js tests/unit/queue.test.js`
+Exit code: 1
+
+```
+Test Files  3 failed (3)
+Tests  4 failed | 184 passed (188)
+FAIL  backup.test.js > mixed legacy and log histories in a backup > rebuilds time spent and live entries when the file holds a legacy completion beside a log
+FAIL  occurrences.test.js > the log cache of mixed legacy and log histories > rebuilds time, live entries, and undos next to legacy completions
+FAIL  occurrences.test.js > the log cache of mixed legacy and log histories > lets an uncomplete undo the latest legacy check, and drops an ignored one
+FAIL  queue.test.js > rolling back a log beside legacy events > keeps the legacy check, drops the rejected time, and keeps the live entries
+```
+
+Command: `npm test`
+Exit code: 0
+
+```
+ Test Files  69 passed (69)
+      Tests  1901 passed (1901)
+```
+
+Command: `npm run lint`
+Exit code: 0
+
+```
+> todos-webapp@0.6.1-pre lint
+> eslint .
+```

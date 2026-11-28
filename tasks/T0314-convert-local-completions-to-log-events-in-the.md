@@ -13,12 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1203.1, input: 178, output: 120731, cache_read: 18069554, cache_write: 282908}
-  review: {turns: 1, duration_s: 68.7, input: 34190, output: 1867, cache_read: 324736, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 133.2, input: 62303, output: 3706, cache_read: 641024, cache_write: 0}
+review_status: rejected
 review_round: 2
 review_requested_at: "2026-11-28T01:49:16Z"
-review_session: codex-20261128-5bdb63
-work_duration: 1033.5
+review_session: codex-20261128-be17ab
+work_duration: 1373.7
+reviewed_by: "@codex"
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -76,4 +77,11 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 rejected by @codex: [Decided]** Reject: mixed legacy and log histories still rebuild incorrect caches.
+  - Findings: [review-findings-2.md](T0314-convert-local-completions-to-log-events-in-the/review-findings-2.md).
+
+- [2026-11-28] **[Implement]**
+  foldLogCache now converts legacy complete and uncomplete to log form before folding, so mixed histories rebuild time, entries, and undos.
 
