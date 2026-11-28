@@ -22,8 +22,10 @@ SCREENS = {
     "lists-many.svg",
     "lists-find.svg",
     "task-editor.svg",
-    "task-editor-status.svg",
+    "task-editor-notes.svg",
+    "task-editor-configuration.svg",
     "task-editor-history.svg",
+    "quick-log.svg",
     "list-editor.svg",
     "recycle-bin.svg",
     "settings.svg",
@@ -297,12 +299,37 @@ def test_import_wireframe_fills_the_compact_main_view_between_the_bars(output):
     assert "Import backup" in labels and "Tasks" in labels and "Lists" in labels
 
 
-@pytest.mark.parametrize("name", ["task-editor.svg", "task-editor-status.svg", "task-editor-history.svg"])
-def test_task_editor_has_three_tabs_and_the_row_has_no_more_button(output, name):
+EDITOR_SCREENS = ["task-editor.svg", "task-editor-notes.svg", "task-editor-configuration.svg", "task-editor-history.svg"]
+TABS = ["Status", "Notes", "Configuration", "History"]
+
+
+def tab_texts(group):
+    """Return the tab strip texts of an editor frame, keyed by name, from the row that holds all four tabs."""
+    rows = {}
+    for t in group.iter(f"{SVG}text"):
+        if t.text in TABS:
+            rows.setdefault(t.get("y"), {})[t.text] = t
+    return next(row for row in rows.values() if set(row) == set(TABS))
+
+
+def ys_of(group, wide):
+    """Return the baseline of each text of a frame, keeping only the editor panel's texts on the wide frame."""
+    module = load_script()
+    return {
+        t.text: float(t.get("y"))
+        for t in group.iter(f"{SVG}text")
+        if not wide or float(t.get("x")) >= module.EDITOR_LEFT
+    }
+
+
+@pytest.mark.parametrize("name", EDITOR_SCREENS)
+def test_task_editor_has_four_tabs_in_order_and_the_row_has_no_more_button(output, name):
     _, groups = frames(output / name)
     for group in groups:
-        labels = labels_of(group)
-        assert labels.count("Content") == 1 and "Status" in labels and "History" in labels
+        tabs = tab_texts(group)
+        xs = [float(tabs[n].get("x")) for n in TABS]
+        assert xs == sorted(xs)
+        assert "Content" not in labels_of(group)
         assert "⋯" not in [
             t.text for t in group.iter(f"{SVG}text") if float(t.get("y")) < 140 and float(t.get("x")) > 1000
         ]
@@ -312,28 +339,53 @@ def test_task_editor_has_three_tabs_and_the_row_has_no_more_button(output, name)
     ]
 
 
-def test_content_tab_holds_only_description_and_notes(output):
+@pytest.mark.parametrize("name, current", list(zip(EDITOR_SCREENS, TABS)))
+def test_each_editor_screen_underlines_its_own_tab(output, name, current):
+    _, groups = frames(output / name)
+    for group in groups:
+        tabs = tab_texts(group)
+        y = float(tabs["Status"].get("y"))
+        underlines = [
+            r
+            for r in group.iter(f"{SVG}rect")
+            if r.get("class") == "primary" and r.get("height") == "3" and y < float(r.get("y")) < y + 24
+        ]
+        assert len(underlines) == 1, name
+        left = float(underlines[0].get("x"))
+        right = left + float(underlines[0].get("width"))
+        assert left <= float(tabs[current].get("x")) <= right, f"{name}: {current} is not underlined"
+
+
+def test_status_tab_shows_the_status_read_only_with_progress_log_and_entries(output):
     _, groups = frames(output / "task-editor.svg")
-    for group in groups:
-        labels = labels_of(group)
-        assert "Description" in labels and "Notes" in labels
-        assert "Lists" not in labels[labels.index("Description") :]
-        assert "Delete task" not in labels
-        assert "Add or search notes" in labels
-
-
-def test_status_tab_orders_status_lists_configuration_then_delete(output):
-    _, groups = frames(output / "task-editor-status.svg")
-    for group in groups:
-        ys = {
-            t.text: float(t.get("y"))
-            for t in group.iter(f"{SVG}text")
-            if float(t.get("x")) > 1000 or group is groups[0]
-        }
-        order = ["2 of 3", "Lists", "Target count", "Due", "Repeat"]
+    for wide, group in enumerate(groups):
+        ys = ys_of(group, wide)
+        order = ["In progress, not on track", "1,720 of max 1,600 kcal", "Log", "Today's entries · 4"]
         assert [ys[k] for k in order] == sorted(ys[k] for k in order)
-        delete = [t for t in group.iter(f"{SVG}text") if t.text == "Delete task"]
-        assert len(delete) == 1 and float(delete[0].get("y")) > ys["Repeat"]
+        assert "Undo" in ys and "Amount" in ys
+        for gone in ["Ready", "To do", "Cancelled", "Lists", "Delete task", "Description", "Add or search notes"]:
+            assert gone not in ys, f"{gone} belongs to another tab"
+
+
+def test_notes_tab_holds_only_the_notes(output):
+    _, groups = frames(output / "task-editor-notes.svg")
+    for wide, group in enumerate(groups):
+        ys = ys_of(group, wide)
+        assert "Add or search notes" in ys
+        for gone in ["Description", "Lists", "Delete task", "Log"]:
+            assert gone not in ys, gone
+
+
+def test_configuration_tab_orders_its_parts_and_ends_with_the_danger_zone(output):
+    _, groups = frames(output / "task-editor-configuration.svg")
+    for wide, group in enumerate(groups):
+        ys = ys_of(group, wide)
+        order = ["Description", "Lists", "Goal", "Recurrence", "Time window", "Danger zone"]
+        assert [ys[k] for k in order] == sorted(ys[k] for k in order)
+        assert ys["Cancel task"] > ys["Danger zone"] and ys["Delete task"] > ys["Danger zone"]
+        for choice in ["Check", "At least", "At most", "Measure", "Target", "Never", "Year"]:
+            assert choice in ys, choice
+        assert "Repeat" not in ys and "Target count" not in ys
         rules = [
             float(line.get("y1"))
             for line in group.iter(f"{SVG}line")
@@ -341,8 +393,94 @@ def test_status_tab_orders_status_lists_configuration_then_delete(output):
             and float(line.get("y1")) > 140
             and float(line.get("x2")) - float(line.get("x1")) > 300
         ]
-        assert any(ys["2 of 3"] < r < ys["Lists"] for r in rules)
-        assert any(ys["Lists"] < r < ys["Target count"] for r in rules)
+        for upper, lower in zip(order, order[1:]):
+            assert any(ys[upper] < r < ys[lower] for r in rules), f"no rule between {upper} and {lower}"
+
+
+def test_history_tab_lists_entries_undos_and_verdicts(output):
+    _, groups = frames(output / "task-editor-history.svg")
+    for wide, group in enumerate(groups):
+        texts = " ".join(ys_of(group, wide))
+        assert "logged" in texts and "undid" in texts and "Failed" in texts
+
+
+def brace_of(group):
+    """Return the tip (x, y) and the box of the one curly brace of a frame; the tip is its point with the largest x."""
+    braces = [p for p in group.iter(f"{SVG}path") if "Q" in p.get("d", "") and p.get("class") == "icon-line-open"]
+    assert len(braces) == 1
+    numbers = [float(n) for n in re.findall(r"-?\d+(?:\.\d+)?", braces[0].get("d"))]
+    points = list(zip(numbers[0::2], numbers[1::2]))
+    return max(points), bounds_of_path(braces[0])
+
+
+def test_view_options_brace_ties_finished_today_to_the_three_finished_statuses(output):
+    _, groups = frames(output / "view-options.svg")
+    for group in groups:
+        texts = {t.text: t for t in group.iter(f"{SVG}text")}
+        for label in ["Failed", "Show upcoming", "Finished today only"]:
+            assert label in texts, label
+        (tip_x, tip_y), (_, top, _, bottom) = brace_of(group)
+        finished = texts["Finished today only"]
+        box = [
+            r
+            for r in group.iter(f"{SVG}rect")
+            if r.get("width") == "16" and abs(float(r.get("x")) + 28 - float(finished.get("x"))) < 0.5
+        ]
+        assert len(box) == 1
+        assert float(box[0].get("y")) + 8 == tip_y, "the checkbox middle meets the brace tip"
+        assert tip_x < float(box[0].get("x")), "the checkbox sits right of the brace"
+        for status in ["Completed", "Failed", "Cancelled"]:
+            assert top < float(texts[status].get("y")) - 5 < bottom, f"the brace spans {status}"
+        for status in ["To do", "In progress"]:
+            assert not top < float(texts[status].get("y")) - 5 < bottom, f"the brace leaves out {status}"
+
+
+def test_in_progress_icon_fills_the_bottom_half():
+    module = load_script()
+    frame = module.Frame(100, 100)
+    module.status_icon(frame, 50, 50, "in-progress")
+    assert '<path d="M41 50 A9 9 0 0 0 59 50 Z" class="icon-fill"/>' in frame.items
+
+
+def test_failed_and_cancelled_icons_are_filled_with_a_light_mark():
+    module = load_script()
+    for status, mark in [("failed", "M46 46 L54 54 M54 46 L46 54"), ("cancelled", "M45 50 L55 50")]:
+        frame = module.Frame(100, 100)
+        module.status_icon(frame, 50, 50, status)
+        assert '<circle cx="50" cy="50" r="9" class="icon-fill"/>' in frame.items, status
+        assert f'<path d="{mark}" class="icon-mark"/>' in frame.items, status
+
+
+def test_rows_show_goal_progress_over_limit_and_failed(output):
+    # The wide All tasks frame shows a search, so the unfiltered wide rows come from the editor screen.
+    _, (compact, _) = frames(output / "all-tasks.svg")
+    _, (_, wide) = frames(output / "task-editor.svg")
+    for group in (compact, wide):
+        labels = labels_of(group)
+        assert "2 h 50 / 3 h 20 min" in labels
+        assert "⚠ 1,720 / max 1,600 kcal · 120 over" in labels
+        assert "◷ Yesterday 17:00 · Failed" in labels
+        meters = [r for r in group.iter(f"{SVG}rect") if r.get("height") == "5"]
+        assert len(meters) >= 4, "each goal row draws a meter track and its fill"
+
+
+def test_list_ends_with_the_upcoming_group(output):
+    _, groups = frames(output / "list.svg")
+    for group in groups:
+        texts = {t.text: float(t.get("y")) for t in group.iter(f"{SVG}text")}
+        assert "Upcoming · 1" in texts and "▷ Starts tomorrow 07:00" in texts
+        rows = [y for text, y in texts.items() if text in {"Fix the squeaky door", "Paint the garden fence"}]
+        assert rows and max(rows) < texts["Upcoming · 1"] < texts["▷ Starts tomorrow 07:00"]
+        assert [c for c in group.iter(f"{SVG}circle") if c.get("class") == "icon-dashed"]
+
+
+def test_quick_log_opens_under_the_row_of_a_time_goal(output):
+    _, groups = frames(output / "quick-log.svg")
+    for group in groups:
+        texts = {t.text: float(t.get("y")) for t in group.iter(f"{SVG}text")}
+        for label in ["Log for Sport", "Time spent", "h", "min", "+ More", "Cancel", "Log"]:
+            assert label in texts, label
+        assert texts["Sport"] < texts["Log for Sport"]
 
 
 def test_row_list_pills_are_right_aligned_and_due_text_left_aligned(output):

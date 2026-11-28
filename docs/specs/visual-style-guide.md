@@ -43,9 +43,14 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
 - **[Decided]** Errors and dangers use deep orange on borders, error text, alert icons, overdue due text, and Delete controls.
   Replaces the earlier decision that errors use the signal color. Every error still keeps its alert icon and text.
   Rejected: red, which could not pair with a red signal and reads as harsher in a calm tool.
-- **[Decided]** Status icons add color to their shapes: blue for In progress, green for Completed, the danger color for Cancelled.
+- **[Decided]** Status icons add color to their shapes: blue or orange for In progress, green, red, and gray for the rest.
+  In progress turns orange when not on track; Completed is green, Failed red, and Cancelled gray.
   To do keeps the muted text color. Shapes and text still carry the status, so color never does alone.
   The in-progress sky blue stays clearly apart from the navy signal color; a unit test checks the distance.
+- **[Decided]** ADR-0006 changes the status colors; the Task Row section of [ui-design.md](ui-design.md) defines them.
+  Failed takes red, Cancelled turns gray, and in progress turns orange when not on track.
+  Goal meters add yellow and green for "at least" goals, and orange for "at most" goals.
+  Red now marks Failed only; T0307 adds the tokens and their contrast checks.
 - **[Decided]** Inter, self-hosted as one variable font, sets all text.
   Rejected: the system font stack, which renders differently on every platform.
 - **[Decided]** The service worker caches the font, so offline pages look the same as online ones.
@@ -108,7 +113,9 @@ Definitions live in the vendored [look.css](../../src/vendor/design/looks/neutra
 - Signal: `--color-primary` for the main action, `--color-on-primary` for text on it.
 - Danger: `--color-danger` for error borders, error text, alert icons, overdue due text, Delete outlines and menu items, filled Delete buttons, and the focus glow of those controls.
 - Danger states: `--color-danger-hover` and `--color-danger-active` for the filled Delete button, `--color-on-danger` for its text.
-- Status: `--color-status-in-progress` (sky blue), `--color-status-completed` (green), and `--color-status-cancelled` (the danger color) for status icons; each reaches 3:1 on every ground.
+- Status: `--color-status-in-progress` (sky blue), `--color-status-completed` (green), and `--color-status-cancelled` for status icons; each reaches 3:1 on every ground.
+  ADR-0006 turns `--color-status-cancelled` gray and adds tokens for Failed (red) and not on track (orange).
+  T0307 adds those tokens and the yellow, green, and orange meter tokens, with their contrast checks.
 - Signal states: `--color-primary-hover` and `--color-primary-active` for the hovered and pressed main action.
 - Links: `--color-link` for links and quiet buttons.
 - Focus: `--focus-glow` on every interactive element, a solid `--color-focus` contour plus a soft halo, on `box-shadow`.
@@ -240,18 +247,22 @@ The app keeps its own rules only where the package has no counterpart, in [app-c
 Defined in [app-components.css](../../src/css/app-components.css) and [app-chrome.css](../../src/css/app-chrome.css), on top of the controls.
 App states use attributes the app sets, such as `data-status` and `aria-current`, never gallery classes.
 
-- [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button` that ticks on click.
-  A tick posts `complete`: at target 1 while open, and above target 1 unless cancelled, also past the target.
-  It opens no menu; the task editor's state buttons hold the other status actions.
+- [Status button](../../src/demo/visual-style-gallery.html#status-button): an `.icon-button.status-button`.
+  For Check and checks goals, a click logs a check: a `log` event with `checked: true`.
+  It logs at target 1 while open, and above target 1 unless cancelled or failed, also past the target.
+  For time, amount, and reading goals, a click opens the quick log under the row instead.
+  It opens no menu; the task editor holds the other status actions.
   Its tooltip names the status, with the counts above target 1, such as "In progress, 2 of 3 done".
   Its `aria-label` names the click action, such as "Mark Buy paint completed" or "Tick French exercises, 2 of 3 done".
   A button whose click does nothing sets `aria-disabled="true"`, with no hover ground and a default cursor.
   It keeps its status color, and its `aria-label` drops the verb, such as "Water the plants, completed".
   The icon shapes differ, so status never relies on color. The app sets `data-status` on the button, which colors the icon:
   - `ready`: an empty circle, in the muted text color.
-  - `in-progress`: a circle with a filled bottom half, in blue.
-  - `completed`: a filled circle with a check, in green, with struck-through muted text.
-  - `cancelled`: a filled circle with a dash, in the danger color, with struck-through muted text.
+  - `in-progress`: a circle with a filled bottom half, in blue on track and orange when not on track.
+  - `completed`: a filled green circle with a white check, with struck-through muted text.
+  - `failed`: a filled red circle with a white cross, with muted text that is not struck through.
+  - `cancelled`: a filled gray circle with a white dash, with struck-through muted text.
+  - Upcoming: a dashed gray ring, with muted text and a disabled button.
 
   Read-only rows disable the button but keep its icon at full icon contrast.
 - [Task row](../../src/demo/visual-style-gallery.html#task-row): a `.task-row` in a `.task-list`, at least `--row-height`.
@@ -272,7 +283,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   A 1.5 px ring in `--row-ground`, the row's current ground, separates it from the icon.
   Below 36rem of list width, rows drop the handle.
   States use attributes the app sets:
-  - Status: `data-status` mutes and strikes through completed and cancelled text.
+  - Status: `data-status` mutes completed, failed, cancelled, and upcoming text, and strikes through completed and cancelled text.
   - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.
     A selected row keeps hover and press feedback.
   - Just added: the `task-row--added` class shows the same ground and edge for two seconds after an add.
@@ -361,16 +372,17 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The scrolling options keep `--space-2` of inline padding, so focus glows never clip at their edges.
 - [Task editor](../../src/demo/visual-style-gallery.html#task-editor): the editor panel beside the rows, with the selected row marked.
   Compact layouts show the panel alone, as a full screen.
-  The package `.tabs` strip with Content, Status, and History tops the body, with the vendored tabs.js.
+  The package `.tabs` strip with Status, Notes, Configuration, and History tops the body, with the vendored tabs.js.
   Each `.task-editor__panel` drops the package panel padding, since its sections keep their own.
-  Content and History keep the section dividers; Status drops them for an `hr.task-editor__rule` between its parts.
-  The parts are the status, Lists, the configuration groups, and Delete task, whose danger zone drops its own border.
+  Status and Configuration use an `hr.task-editor__rule` between their parts; Notes and History keep the section dividers.
   The header and the tab strip hold no More button.
-  Its status part puts four `.icon-button.task-editor__state` buttons on a `.segmented__options` track, one per status.
-  The current one sets `aria-pressed`; each enabled one tints its icon by its `data-status`, and a disabled one dims it.
-  Each icon names its own status, never the status a click leads to.
-  Above target 1, a `.task-editor__stepper` holds minus and plus icon buttons around a polite live count, such as "1 of 3".
-  Complete for previous period is a secondary button under them, shown only during the grace period.
+  Status shows the status as an icon and text, with no state buttons, since logging decides it.
+  It holds the progress box, the actions that apply, the Log form, and the entries with Undo.
+  A checks goal centers a `.task-editor__stepper` under the progress, with a polite live count, such as "1 of 3".
+  Check off previous period is a secondary button there, shown only during the grace period.
+  Configuration ends with the Danger zone: Cancel task, which reads Uncancel once cancelled, and Delete task.
+  The Danger zone drops its own border, after the last rule.
+  T0306 and T0307 build this layout; until then the app keeps the earlier three-tab editor.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.
   A destructive row action swaps its buttons for it, as the last note of the note thread shows.
 
@@ -384,7 +396,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - Symbols hold no colors: filled parts set `fill="currentColor"` and `stroke="none"`.
 - Mark decorative icons with `aria-hidden="true"`; buttons carry the accessible name, not the icon.
 - Keep one stroke width and one 24 px grid across the set.
-- Status icons: `status-ready`, `status-in-progress`, `status-completed`, and `status-cancelled`.
+- Status icons: `status-ready`, `status-in-progress`, `status-completed`, `status-failed`, `status-cancelled`, and `status-upcoming`.
+  T0307 adds `status-failed` and `status-upcoming`, and redraws `status-cancelled` as a filled gray circle.
 - Sync icons: `sync-local`, `sync-synced`, `sync-syncing`, `sync-offline`, `sync-sign-in`, and `sync-error`.
 
 ---

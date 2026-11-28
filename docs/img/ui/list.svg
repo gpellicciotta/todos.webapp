@@ -22,6 +22,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
 .icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
 .icon-line { stroke: #444444; stroke-width: 2; }
 .icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-dashed { fill: #ffffff; stroke: #444444; stroke-width: 2; stroke-dasharray: 3 3; }
+.meter { fill: #dddddd; stroke: none; }
+.meter-fill { fill: #444444; stroke: none; }
 .tooltip { fill: #222222; stroke: #222222; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
@@ -42,7 +45,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="16" y="110" font-size="13" class="muted">Shared with 2 people · You own this list</text>
     <line x1="0" y1="192" x2="390" y2="192" class="rule"/>
     <circle cx="22" cy="148" r="9" class="icon"/>
-    <path d="M22 139 A9 9 0 0 1 22 157 Z" class="icon-fill"/>
+    <path d="M13 148 A9 9 0 0 0 31 148 Z" class="icon-fill"/>
     <text x="48" y="153" font-size="15">Call the plumber about the leak</text>
     <text x="48" y="176" font-size="12" class="bold">◷ Overdue</text>
     <line x1="0" y1="260" x2="390" y2="260" class="rule"/>
@@ -59,7 +62,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="48" y="357" font-size="15">Replace the smoke detector batteries</text>
     <line x1="0" y1="424" x2="390" y2="424" class="rule"/>
     <circle cx="22" cy="400" r="9" class="icon"/>
-    <path d="M22 391 A9 9 0 0 1 22 409 Z" class="icon-fill"/>
+    <path d="M13 400 A9 9 0 0 0 31 400 Z" class="icon-fill"/>
     <rect x="25" y="404" width="24.8" height="15" rx="7" class="chip"/>
     <text x="37.4" y="415" font-size="10" class="bold" text-anchor="middle">2/3</text>
     <text x="48" y="405" font-size="15">Sort the winter clothes</text>
@@ -71,10 +74,16 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <path d="M18 496 l3 3 l5 -6" class="icon-mark"/>
     <text x="48" y="501" font-size="15" class="muted">Paint the garden fence</text>
     <line x1="0" y1="568" x2="390" y2="568" class="rule"/>
-    <circle cx="22" cy="544" r="9" class="icon"/>
-    <line x1="17.05" y1="544" x2="26.95" y2="544" class="icon-line"/>
+    <circle cx="22" cy="544" r="9" class="icon-fill"/>
+    <path d="M17 544 L27 544" class="icon-mark"/>
     <text x="48" y="549" font-size="15" class="muted">Buy a new lawn mower</text>
     <line x1="48" y1="544" x2="199.2" y2="544" class="icon-line"/>
+    <text x="8" y="590" font-size="12" class="bold">Upcoming · 1</text>
+    <line x1="0" y1="600" x2="390" y2="600" class="rule"/>
+    <line x1="0" y1="668" x2="390" y2="668" class="rule"/>
+    <circle cx="22" cy="624" r="9" class="icon-dashed"/>
+    <text x="48" y="629" font-size="15" class="muted">Start the spring planting</text>
+    <text x="48" y="652" font-size="12" class="muted">▷ Starts tomorrow 07:00</text>
     <rect x="0" y="720" width="390" height="60" rx="0" class="bar"/>
     <rect x="338" y="728" width="44" height="44" rx="6" class="primary"/>
     <text x="360" y="757" font-size="20" class="on-primary" text-anchor="middle">+</text>
@@ -105,7 +114,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="28" y="150" font-size="14">Lists</text>
     <rect x="12" y="168" width="240" height="40" rx="6" class="selected"/>
     <text x="44" y="194" font-size="14" class="bold">Home</text>
-    <text x="236" y="194" font-size="13" class="muted" text-anchor="end">8</text>
+    <text x="236" y="194" font-size="13" class="muted" text-anchor="end">9</text>
     <text x="44" y="238" font-size="14">Work</text>
     <text x="236" y="238" font-size="13" class="muted" text-anchor="end">12</text>
     <text x="44" y="282" font-size="14">Travel</text>
@@ -128,10 +137,10 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1068.24" y="146.9" font-size="14" class="on-primary" text-anchor="middle">Add</text>
     <rect x="312" y="120" width="720.48" height="44" rx="6" class="control"/>
     <text x="324" y="147" font-size="14" class="muted">Search or add a task</text>
-    <text x="312" y="194" font-size="12" class="muted">8 tasks</text>
+    <text x="312" y="194" font-size="12" class="muted">9 tasks</text>
     <line x1="304" y1="310" x2="1104" y2="310" class="rule"/>
     <circle cx="326" cy="266" r="9" class="icon"/>
-    <path d="M326 257 A9 9 0 0 1 326 275 Z" class="icon-fill"/>
+    <path d="M317 266 A9 9 0 0 0 335 266 Z" class="icon-fill"/>
     <text x="352" y="271" font-size="15">Call the plumber about the leak</text>
     <text x="352" y="294" font-size="12" class="bold">◷ Overdue</text>
     <line x1="304" y1="378" x2="1104" y2="378" class="rule"/>
@@ -151,7 +160,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="352" y="475" font-size="15">Replace the smoke detector batteries</text>
     <line x1="304" y1="542" x2="1104" y2="542" class="rule"/>
     <circle cx="326" cy="518" r="9" class="icon"/>
-    <path d="M326 509 A9 9 0 0 1 326 527 Z" class="icon-fill"/>
+    <path d="M317 518 A9 9 0 0 0 335 518 Z" class="icon-fill"/>
     <rect x="329" y="522" width="24.8" height="15" rx="7" class="chip"/>
     <text x="341.4" y="533" font-size="10" class="bold" text-anchor="middle">2/3</text>
     <text x="352" y="523" font-size="15">Sort the winter clothes</text>
@@ -163,11 +172,17 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <path d="M322 614 l3 3 l5 -6" class="icon-mark"/>
     <text x="352" y="619" font-size="15" class="muted">Paint the garden fence</text>
     <line x1="304" y1="686" x2="1104" y2="686" class="rule"/>
-    <circle cx="326" cy="662" r="9" class="icon"/>
-    <line x1="321.05" y1="662" x2="330.95" y2="662" class="icon-line"/>
+    <circle cx="326" cy="662" r="9" class="icon-fill"/>
+    <path d="M321 662 L331 662" class="icon-mark"/>
     <text x="352" y="667" font-size="15" class="muted">Buy a new lawn mower</text>
     <line x1="352" y1="662" x2="503.2" y2="662" class="icon-line"/>
-    <text x="304" y="718" font-size="13" class="muted">Press and drag a row, or use Alt+Up, Alt+Down, Alt+Home, and Alt+End; the black line marks the drop spot.</text>
+    <text x="312" y="708" font-size="12" class="bold">Upcoming · 1</text>
+    <line x1="304" y1="718" x2="1104" y2="718" class="rule"/>
+    <line x1="304" y1="786" x2="1104" y2="786" class="rule"/>
+    <circle cx="326" cy="742" r="9" class="icon-dashed"/>
+    <text x="352" y="747" font-size="15" class="muted">Start the spring planting</text>
+    <text x="352" y="770" font-size="12" class="muted">▷ Starts tomorrow 07:00</text>
+    <text x="304" y="818" font-size="13" class="muted">Press and drag a row, or use Alt+Up, Alt+Down, Alt+Home, and Alt+End; the black line marks the drop spot.</text>
     <rect x="852" y="70" width="200" height="176" rx="8" class="frame"/>
     <text x="868" y="103" font-size="14">Edit list</text>
     <text x="868" y="143" font-size="14">Edit view options</text>

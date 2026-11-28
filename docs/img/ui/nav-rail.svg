@@ -22,6 +22,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
 .icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
 .icon-line { stroke: #444444; stroke-width: 2; }
 .icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-dashed { fill: #ffffff; stroke: #444444; stroke-width: 2; stroke-dasharray: 3 3; }
+.meter { fill: #dddddd; stroke: none; }
+.meter-fill { fill: #444444; stroke: none; }
 .tooltip { fill: #222222; stroke: #222222; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
@@ -39,7 +42,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="16" y="37" font-size="20" class="bold">All tasks</text>
     <line x1="0" y1="136" x2="390" y2="136" class="rule"/>
     <circle cx="22" cy="92" r="9" class="icon"/>
-    <path d="M22 83 A9 9 0 0 1 22 101 Z" class="icon-fill"/>
+    <path d="M13 92 A9 9 0 0 0 31 92 Z" class="icon-fill"/>
     <text x="48" y="97" font-size="15">Call the plumber about the leak</text>
     <text x="48" y="120" font-size="12" class="bold">◷ Overdue</text>
     <text x="382" y="120" font-size="12" class="muted" text-anchor="end">Home</text>
@@ -60,7 +63,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="382" y="324" font-size="12" class="muted" text-anchor="end">Travel · Errands · Home</text>
     <line x1="0" y1="408" x2="390" y2="408" class="rule"/>
     <circle cx="22" cy="364" r="9" class="icon"/>
-    <path d="M22 355 A9 9 0 0 1 22 373 Z" class="icon-fill"/>
+    <path d="M13 364 A9 9 0 0 0 31 364 Z" class="icon-fill"/>
     <rect x="25" y="368" width="24.8" height="15" rx="7" class="chip"/>
     <text x="37.4" y="379" font-size="10" class="bold" text-anchor="middle">2/3</text>
     <text x="48" y="369" font-size="15">Prepare slides for the team review</text>
@@ -68,20 +71,30 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="382" y="392" font-size="12" class="muted" text-anchor="end">Work</text>
     <line x1="0" y1="476" x2="390" y2="476" class="rule"/>
     <circle cx="22" cy="432" r="9" class="icon"/>
-    <text x="48" y="437" font-size="15">Send the invoice to the client</text>
-    <text x="382" y="460" font-size="12" class="muted" text-anchor="end">Work</text>
+    <path d="M13 432 A9 9 0 0 0 31 432 Z" class="icon-fill"/>
+    <text x="48" y="437" font-size="15">Sport</text>
+    <text x="48" y="460" font-size="12" class="muted">↻ Weekly</text>
+    <rect x="111.76" y="452" width="32" height="5" rx="2" class="meter"/>
+    <rect x="111.76" y="452" width="27.2" height="5" rx="2" class="meter-fill"/>
+    <text x="149.76" y="460" font-size="12" class="muted">2 h 50 / 3 h 20 min</text>
     <line x1="0" y1="544" x2="390" y2="544" class="rule"/>
     <circle cx="22" cy="500" r="9" class="icon"/>
-    <text x="48" y="505" font-size="15">Water the plants</text>
+    <path d="M13 500 A9 9 0 0 0 31 500 Z" class="icon-fill"/>
+    <text x="48" y="505" font-size="15">Calories</text>
     <text x="48" y="528" font-size="12" class="muted">↻ Daily</text>
+    <rect x="105.04" y="520" width="32" height="5" rx="2" class="meter"/>
+    <rect x="105.04" y="520" width="32" height="5" rx="2" class="meter-fill"/>
+    <text x="143.04" y="528" font-size="12" class="bold">⚠ 1,720 / max 1,600 kcal · 120 over</text>
     <line x1="0" y1="612" x2="390" y2="612" class="rule"/>
-    <circle cx="22" cy="568" r="9" class="icon"/>
-    <text x="48" y="573" font-size="15">Read chapter 4 of the novel</text>
-    <text x="382" y="596" font-size="12" class="muted" text-anchor="end">Reading</text>
+    <circle cx="22" cy="568" r="9" class="icon-fill"/>
+    <path d="M18 564 L26 572 M26 564 L18 572" class="icon-mark"/>
+    <text x="48" y="573" font-size="15" class="muted">Submit the grant report</text>
+    <text x="48" y="596" font-size="12" class="bold">◷ Yesterday 17:00 · Failed</text>
+    <text x="382" y="596" font-size="12" class="muted" text-anchor="end">Work</text>
     <line x1="0" y1="680" x2="390" y2="680" class="rule"/>
     <circle cx="22" cy="636" r="9" class="icon"/>
-    <text x="48" y="641" font-size="15">Fix the bike light</text>
-    <text x="382" y="664" font-size="12" class="muted" text-anchor="end">Errands</text>
+    <text x="48" y="641" font-size="15">Send the invoice to the client</text>
+    <text x="382" y="664" font-size="12" class="muted" text-anchor="end">Work</text>
     <rect x="0" y="720" width="390" height="60" rx="0" class="bar"/>
     <rect x="338" y="728" width="44" height="44" rx="6" class="primary"/>
     <text x="360" y="757" font-size="20" class="on-primary" text-anchor="middle">+</text>
@@ -136,7 +149,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="116" y="174" font-size="12" class="muted">24 tasks</text>
     <line x1="108" y1="290" x2="1104" y2="290" class="rule"/>
     <circle cx="130" cy="246" r="9" class="icon"/>
-    <path d="M130 237 A9 9 0 0 1 130 255 Z" class="icon-fill"/>
+    <path d="M121 246 A9 9 0 0 0 139 246 Z" class="icon-fill"/>
     <text x="156" y="251" font-size="15">Call the plumber about the leak</text>
     <text x="156" y="274" font-size="12" class="bold">◷ Overdue</text>
     <rect x="1053.12" y="258" width="42.88" height="24" rx="12" class="chip"/>
@@ -167,7 +180,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="963.36" y="478" font-size="12" text-anchor="middle">Travel</text>
     <line x1="108" y1="562" x2="1104" y2="562" class="rule"/>
     <circle cx="130" cy="518" r="9" class="icon"/>
-    <path d="M130 509 A9 9 0 0 1 130 527 Z" class="icon-fill"/>
+    <path d="M121 518 A9 9 0 0 0 139 518 Z" class="icon-fill"/>
     <rect x="133" y="522" width="24.8" height="15" rx="7" class="chip"/>
     <text x="145.4" y="533" font-size="10" class="bold" text-anchor="middle">2/3</text>
     <text x="156" y="523" font-size="15">Prepare slides for the team review</text>
@@ -176,23 +189,32 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1074.56" y="546" font-size="12" text-anchor="middle">Work</text>
     <line x1="108" y1="630" x2="1104" y2="630" class="rule"/>
     <circle cx="130" cy="586" r="9" class="icon"/>
-    <text x="156" y="591" font-size="15">Send the invoice to the client</text>
-    <rect x="1053.12" y="598" width="42.88" height="24" rx="12" class="chip"/>
-    <text x="1074.56" y="614" font-size="12" text-anchor="middle">Work</text>
+    <path d="M121 586 A9 9 0 0 0 139 586 Z" class="icon-fill"/>
+    <text x="156" y="591" font-size="15">Sport</text>
+    <text x="156" y="614" font-size="12" class="muted">↻ Weekly</text>
+    <rect x="219.76" y="606" width="32" height="5" rx="2" class="meter"/>
+    <rect x="219.76" y="606" width="27.2" height="5" rx="2" class="meter-fill"/>
+    <text x="257.76" y="614" font-size="12" class="muted">2 h 50 / 3 h 20 min</text>
     <line x1="108" y1="698" x2="1104" y2="698" class="rule"/>
     <circle cx="130" cy="654" r="9" class="icon"/>
-    <text x="156" y="659" font-size="15">Water the plants</text>
+    <path d="M121 654 A9 9 0 0 0 139 654 Z" class="icon-fill"/>
+    <text x="156" y="659" font-size="15">Calories</text>
     <text x="156" y="682" font-size="12" class="muted">↻ Daily</text>
+    <rect x="213.04" y="674" width="32" height="5" rx="2" class="meter"/>
+    <rect x="213.04" y="674" width="32" height="5" rx="2" class="meter-fill"/>
+    <text x="251.04" y="682" font-size="12" class="bold">⚠ 1,720 / max 1,600 kcal · 120 over</text>
     <line x1="108" y1="766" x2="1104" y2="766" class="rule"/>
-    <circle cx="130" cy="722" r="9" class="icon"/>
-    <text x="156" y="727" font-size="15">Read chapter 4 of the novel</text>
-    <rect x="1032.96" y="734" width="63.04" height="24" rx="12" class="chip"/>
-    <text x="1064.48" y="750" font-size="12" text-anchor="middle">Reading</text>
+    <circle cx="130" cy="722" r="9" class="icon-fill"/>
+    <path d="M126 718 L134 726 M134 718 L126 726" class="icon-mark"/>
+    <text x="156" y="727" font-size="15" class="muted">Submit the grant report</text>
+    <text x="156" y="750" font-size="12" class="bold">◷ Yesterday 17:00 · Failed</text>
+    <rect x="1053.12" y="734" width="42.88" height="24" rx="12" class="chip"/>
+    <text x="1074.56" y="750" font-size="12" text-anchor="middle">Work</text>
     <line x1="108" y1="834" x2="1104" y2="834" class="rule"/>
     <circle cx="130" cy="790" r="9" class="icon"/>
-    <text x="156" y="795" font-size="15">Fix the bike light</text>
-    <rect x="1032.96" y="802" width="63.04" height="24" rx="12" class="chip"/>
-    <text x="1064.48" y="818" font-size="12" text-anchor="middle">Errands</text>
+    <text x="156" y="795" font-size="15">Send the invoice to the client</text>
+    <rect x="1053.12" y="802" width="42.88" height="24" rx="12" class="chip"/>
+    <text x="1074.56" y="818" font-size="12" text-anchor="middle">Work</text>
     <rect x="76" y="262" width="63.68" height="28" rx="4" class="tooltip"/>
     <text x="86" y="281" font-size="13" class="on-primary">Travel</text>
   </g>

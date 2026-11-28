@@ -22,6 +22,9 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
 .icon-mark { fill: none; stroke: #ffffff; stroke-width: 2; }
 .icon-line { stroke: #444444; stroke-width: 2; }
 .icon-line-open { fill: none; stroke: #444444; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-dashed { fill: #ffffff; stroke: #444444; stroke-width: 2; stroke-dasharray: 3 3; }
+.meter { fill: #dddddd; stroke: none; }
+.meter-fill { fill: #444444; stroke: none; }
 .tooltip { fill: #222222; stroke: #222222; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
@@ -108,7 +111,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="236" y="106" font-size="13" class="muted" text-anchor="end">24</text>
     <text x="28" y="150" font-size="14">Lists</text>
     <text x="44" y="194" font-size="14">Home</text>
-    <text x="236" y="194" font-size="13" class="muted" text-anchor="end">8</text>
+    <text x="236" y="194" font-size="13" class="muted" text-anchor="end">9</text>
     <text x="44" y="238" font-size="14">Work</text>
     <text x="236" y="238" font-size="13" class="muted" text-anchor="end">12</text>
     <text x="44" y="282" font-size="14">Travel</text>

@@ -204,7 +204,9 @@ Settings and the Sync log stay in a centered `--width-main` column.
   - Local mode never calls the routes, and disconnecting keeps the current settings on the device.
 - The page title reads "{{route title}} · ToDo's"; a list route shows the list name.
 - On start the app opens the store, purges expired bin entries, then starts the overdue timer.
-  The timer's first run cancels overdue `cancel` tasks.
+  The timer's first run expires overdue tasks: `fail` tasks below target turn `failed`.
+  "At most" tasks get their verdict at their due time: `completed` within the limit, else `failed`.
+  A reading goal without any reading, its own or carried, ends `failed`.
 - A start-up failure replaces the view with an error banner asking for a reload.
 - The theme follows the system unless `localStorage` holds `todos.theme` as `light` or `dark`, plain or as JSON.
   Settings stores it plain, and choosing System removes the key.
@@ -283,64 +285,96 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 ## Shared Components
 
 ### Task Row
-Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/list.svg).
+Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg), [list.svg](../img/ui/list.svg), and [quick-log.svg](../img/ui/quick-log.svg).
 
 ```text
 | [status 2/3] Description text, wrapping to at most 2 lines                              |
-|              [clock] Tomorrow 18:00 · Home · Errands                                    |
+|              [clock] Tomorrow 18:00 · [meter] 2 h 50 / 3 h 20 min    Home · Errands     |
 ```
 - **[Decided]** Variant C of the row design, signed off by the user (see T0257).
 - Line 1 holds the status button with its count badge, then the description, which wraps to at most 2 lines.
 - Line 2, the meta line, shows only with content, in small muted text:
-  - a clock icon and the due text, or a repeat icon and the interval, such as Daily;
+  - a start text, a clock icon and the due text, or a repeat icon and the interval, such as Daily;
+  - a meter and the progress text of a time, amount, or reading goal, such as "2 h 50 / 3 h 20 min";
+  - a timer icon and the logged time of other tasks, such as "6 h 15 min spent";
   - the lists, right-aligned on the same line: plain text joined by " · " below 48rem of list width, small pills from 48rem.
-  - The due or repeat text stays left-aligned; list text that does not fit ends in an ellipsis.
+  - The left texts stay left-aligned; list text that does not fit ends in an ellipsis.
 - The description clamps to 2 lines with an ellipsis on every width.
 - A row is 48 px high without a meta line and grows with its content; the whole row opens the task editor.
   The status button stays on the first line; the row has no trailing control, so the text takes the room.
 - Overdue due text and its clock use the danger color (orange) at regular weight; in-time ones stay muted (`OVD-2`).
   The due text always shows, such as "Yesterday 16:00", so overdue never relies on color alone.
 - The row has no note count, people icon, status menu, More button, or row menu; those live in the editor.
-  - Add to list and Remove from a list sit in the Lists section of the editor's Status tab (`TSK-8`).
-  - Delete task sits at the bottom of the Status tab, with an Undo toast (`TSK-11`).
+  - Add to list and Remove from a list sit in the Lists part of the editor's Configuration tab (`TSK-8`).
+  - Delete task sits in the Danger zone of the Configuration tab, with an Undo toast (`TSK-11`).
   - Drags and the Alt keys move rows, as in [Task Reordering](#task-reordering) (`LV-3`).
-- A click on the status button ticks, the most frequent change (`TSK-4`); `x` on the focused row does the same:
+- A click on the status button runs the goal's most frequent change (`TSK-4`); `x` on the focused row does too.
+  - A Check goal or a checks goal logs a check: a `log` event with `checked: true`.
+  - A time, amount, or reading goal opens the [Quick Log](#quick-log) under the row.
+- Checks per status:
 
-  | Status      | Click at target 1 | Click above target 1               |
-  | :---------- | :---------------- | :--------------------------------- |
-  | Ready       | `complete`        | `complete`, so 1 of 3, In progress |
-  | In progress | `complete`        | `complete`; Completed at target    |
-  | Completed   | nothing           | `complete`, so 4 of 3              |
-  | Cancelled   | nothing           | nothing; the count stays           |
+  | Status      | Click at target 1 | Click above target 1                 |
+  | :---------- | :---------------- | :----------------------------------- |
+  | Ready       | logs a check      | logs a check, so 1 of 3, In progress |
+  | In progress | logs a check      | logs a check; Completed at target    |
+  | Completed   | nothing           | logs a check, so 4 of 3              |
+  | Failed      | nothing           | nothing                              |
+  | Cancelled   | nothing           | nothing; the count stays             |
 
+- An open "at most" checks goal always logs a check, such as a fourth coffee of at most 3.
 - A closed recurring series takes no click; the editor reopens it.
-- Every tick shows an Undo toast, which Ctrl+Z also runs, since a target 1 row cannot untick.
-  It shows also when the row stays in view; Undo posts `uncomplete`.
+- Every logged check shows an Undo toast, which Ctrl+Z also runs, since a target 1 row cannot untick.
+  It shows also when the row stays in view; Undo posts `undo-log` of that entry.
   It reads "Task marked completed." when the status changes, and "Ticked, 2 of 3 done." when only the count does.
 - Above target 1, a corner badge on the status icon shows the counts, such as "2/3" (`TSK-15`).
   The badge is part of the status button, so a tap on it ticks.
   It is a pill on the icon's bottom-right corner: a light tint of the status color with dark text in both themes.
   A ring in the row ground separates it from the icon; the row shows no other count.
-- The status button's name states the action and the counts, such as "Tick French exercises, 2 of 3 done".
-- The tooltip names the status and the counts above target 1.
+  Above an "at most" limit, the badge takes an orange tint, such as "4/3".
+- The status button's name states the action and the progress, such as "Tick French exercises, 2 of 3 done".
+  A goal row's name states the log action, such as "Log time for Sport, 2 h 50 of 3 h 20".
+- The tooltip names the status and the progress above target 1, or for a goal row.
 - A row whose click does nothing marks its status button `aria-disabled="true"`.
   The button stays focusable for the row keys and keeps its status color, without a hover ground.
   Its name drops the verb, such as "Water the plants, completed".
   Its tooltip reads "Open the task to change its status."
 - There is no right-click, long-press, Down, Up, Shift+F10, or Menu key menu on a row.
-  These inputs keep their browser defaults; the editor's state buttons hold every other status action.
-- The status icons differ in shape, not only in color:
+  These inputs keep their browser defaults; the editor holds every other status action.
+- **[Decided]** The status icons differ in shape, not only in color:
   - `ready`: an empty circle, in the muted text color.
-  - `in-progress`: a circle with a filled bottom half, in blue.
-  - `completed`: a filled circle with a check, in green, and struck-through muted text.
-  - `cancelled`: a filled circle with a dash, in the danger color, and struck-through muted text.
+  - `in-progress`: a circle with a filled bottom half, in blue when on track and orange when not (`TSK-22`).
+  - `completed`: a filled green circle with a white check, and struck-through muted text.
+  - `failed`: a filled red circle with a white cross, and muted text that is not struck through.
+  - `cancelled`: a filled gray circle with a white dash, and struck-through muted text.
+  - Upcoming: a dashed gray ring, with muted text.
+- **[Decided]** Red marks Failed only; over-limit and behind-pace marks use orange.
+- A failed row's meta line ends in "Failed", such as "Yesterday 17:00 · Failed", in the danger color.
+- **[Decided]** Goal rows color their meter by progress, and "approaching" starts at 80% of the target (`TSK-22`):
+  - At least: blue below 80%, yellow from 80%, and green once the target is reached.
+  - At most: gray below 80%, and orange from 80%; landing exactly on the limit stays orange.
+  - Above an "at most" limit, the text adds an alert icon and the overage.
+    For example: "⚠ 1,720 / max 1,600 kcal · 120 over".
+  - Yellow fills meters and icons only; text in that state uses a dark amber, which reaches 4.5:1.
+  - A carried reading reads "79.8 kg (carried) / max 80 kg"; the status stays To do until a new reading.
+- **[Decided]** On track follows the pace of the window (`TSK-22`):
+  - A Check goal stays on track until it is overdue.
+  - An "at least" goal is on track while its progress share is at least the share of the window gone.
+    For example, 1 of 3 checks with half the week gone is behind pace.
+  - An "at least" goal without a window end is always on track; an overdue one never is.
+  - An "at most" goal goes off track only above its limit.
+  - Behind pace, the meta line adds "behind pace", so color never carries it alone.
+- A task before its start time is upcoming (`TSK-20`).
+  - Views show it only when it starts within 24 hours and View options › Show upcoming is on (`TV-15`).
+  - Upcoming rows form a group at the end of the rows, under a header such as "Upcoming · 1".
+  - Its meta line reads "▷ Starts tomorrow 07:00"; its status button is disabled, with the start as tooltip.
 - A recurring task shows its repeat text instead of a due text (`TSK-16`); it is never overdue.
-- Past its period end, until it rolls over, a recurring row shows Ready with count 0, such as "0/3".
+- Past its period end, until it rolls over, a recurring row shows Ready with progress 0, such as "0/3".
+  A reading goal keeps the carried reading, such as "79.8 kg (carried) / max 80 kg".
   The minute tick redraws such a row when its period ends.
 - The meta line shows at most two list names and a "+n" count; the list view leaves out its own list.
 - A viewer has a disabled status button and no `x` (`SHR-4`).
 - **[Decided]** Add to list, Remove from this list, and Complete for previous period move to the editor.
-  Delete task moves to the editor's Status tab.
+  Delete task moves to the Danger zone of the editor's Configuration tab.
 - [task-list.js](../../src/js/views/task-list.js) renders the rows.
   After a change, focus stays on that row's status button.
   A row that leaves the view passes focus to the row now at its place.
@@ -357,6 +391,20 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg) and [list.svg](../img/ui/li
 - Keyboard on a focused row: Alt+Up and Alt+Down move one place; Alt+Home and Alt+End move to the top or bottom.
 - Lists use the same Alt+Home and Alt+End, replacing the planned Alt+Shift+Up and Alt+Shift+Down.
 - **[Decided]** Every drag keeps a keyboard alternative but needs no visible button.
+
+### Quick Log
+Wireframe: [quick-log.svg](../img/ui/quick-log.svg).
+
+- The status button of a time, amount, or reading goal opens the quick log under its row (`TSK-21`).
+- It is a non-modal pop-up, the row's width on compact layouts, titled after the task, such as "Log for Sport".
+- The goal's own field comes first: Time spent as hours and minutes, or Amount or Reading with the goal's unit.
+- "+ More" reveals the other fields: Time spent, Amount, Check, and Label; one entry may hold any mix of them.
+- Log posts one `log` event and closes the pop-up; Cancel and Escape close it without a change.
+  Focus then returns to the status button.
+- **[Decided]** A duration above 12 hours asks in place first, as ADR-0006 asks of clients.
+  The question reads "Log 14 h 0 min? That is more than 12 hours.", with Change and Log anyway.
+- Each log shows an Undo toast, such as "Logged 45 min on Sport."; Undo posts `undo-log` of that entry.
+- Values follow the service limits: whole minutes, amounts with at most 3 decimals, and labels of at most 100 characters.
 
 ### Add Bar
 - One text field and an Add button; Add, Shift+Enter, Alt+Enter, or Enter creates the task (`TSK-1`, `VO-3`).
@@ -459,7 +507,10 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
     Each row shows its value at the right; opening one row closes the other.
     A row value starts with an uppercase letter, such as "Open"; list names stay as typed.
     Due keeps its quick options and a From and To range; Created has From and To.
-    Status ends with a "Finished today only" checkbox (`TV-14`); see [Finished today only](#finished-today-only).
+    Status lists To do and In progress, then Completed, Failed, and Cancelled (`TV-3`).
+    A curly brace ties those last three to the "Finished today only" checkbox at their right (`TV-14`).
+    The checkbox middle sits level with the brace tip; see [Finished today only](#finished-today-only).
+    A "Show upcoming" checkbox follows, on by default (`TV-15`); see [Task Row](#task-row).
   - Group by: a select with None, List, Due date, and Status (`VO-9`).
   - Sort by: a field select and an Ascending or Descending toggle (`TV-9`).
     Grouped by List, All tasks adds Manual order first; each list group then keeps its list's manual order.
@@ -477,25 +528,26 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   The entry shared by every list view of earlier versions is no longer read.
 
 #### Differences between the views
-| Option      | All tasks                    | List view                                      |
-| :---------- | :--------------------------- | :--------------------------------------------- |
+| Option      | All tasks                    | List view                                             |
+| :---------- | :--------------------------- | :---------------------------------------------------- |
 | More menu   | Edit view options            | Edit list, Edit view options, Share list, Delete list |
-| Lists       | filter row                   | not offered                                    |
-| Group by    | None, List, Due date, Status | None, Due date, Status (`LV-11`)               |
-| Sort by     | five; Manual order by List   | adds Manual order, the default (`LV-6`)        |
-| Defaults    | all, created newest first    | all, manual order                              |
-| Persistence | one entry for All tasks      | one entry per list (`TV-12`)                   |
+| Lists       | filter row                   | not offered                                           |
+| Group by    | None, List, Due date, Status | None, Due date, Status (`LV-11`)                      |
+| Sort by     | five; Manual order by List   | adds Manual order, the default (`LV-6`)               |
+| Defaults    | all, created newest first    | all, manual order                                     |
+| Persistence | one entry for All tasks      | one entry per list (`TV-12`)                          |
 
 #### Finished today only
-- A checkbox after the four statuses in the Status row, in All tasks and every list view (`TV-14`).
-- It narrows Completed and Cancelled to tasks finished today; To do and In progress are unaffected.
-  - All four statuses with the choice show the open tasks and the work finished today.
+- **[Decided]** A checkbox right of a curly brace around Completed, Failed, and Cancelled (`TV-14`).
+  It shows in the Status row of All tasks and every list view.
+- It narrows Completed, Failed, and Cancelled to tasks finished today; To do and In progress are unaffected.
+  - All five statuses with the choice show the open tasks and the work finished today.
   - An empty status filter with the choice does the same.
   - With only open statuses checked, it changes nothing.
 - **[Decided]** A finished task counts as finished today when its current occurrence's `close-time` falls on the current local day.
   A completed recurring occurrence stays open until its period ends, so it falls back to `last-update-time`.
 - The info line and the row value add ", finished today", such as "Status: 3 statuses, finished today".
-  A filter of every status, all four checked or none, reads "Status: all, finished today".
+  A filter of every status, all five checked or none, reads "Status: all, finished today".
 - It persists with the other options and counts as a change, so Reset shows and clears it (`TV-12`, `VO-8`).
 - Show in the hidden-task toast resets the Status filter, the choice included.
 - Both views render again on the minute tick while it is on, so yesterday's tasks leave at midnight.
@@ -519,13 +571,13 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
   - Due date: Overdue, Earlier, Today, Tomorrow, This week, Later, No due date.
     Earlier holds finished tasks due before today, since a finished task is never overdue.
     This week runs to the end of the week that starts on Monday.
-  - Status: To do, In progress, Completed, Cancelled.
+  - Status: To do, In progress, Completed, Failed, Cancelled.
 - Search, filters, and sort apply inside each group; empty groups are left out.
 - While a list view is grouped, drag handles and move entries are hidden, as for any sort (`LV-8`).
   Each group keeps the sort of the view, so the manual order still applies inside it.
 
 #### Design alternatives
-- **A. Search and add in one field, view options in the side panel (chosen).**
+- **A.** Search and add in one field, view options in the side panel (chosen).
   Nothing but the field and a quiet line shows at rest; options sit behind the More menu, where list actions already live.
   Costs two taps to change a filter, which suits settings changed rarely.
 - B. A quiet bar with Search and View buttons, with the panel as a popover or sheet.
@@ -769,7 +821,7 @@ The sidebar and this screen share the rules below.
   and "Sorted by Name" after a sort; the fields are `type="search"` and named "Find a list" (`TEC-15`).
 
 #### Design alternatives
-- **A. Find, sort, and manual order on a flat list (chosen).**
+- **A.** Find, sort, and manual order on a flat list (chosen).
   Adds one field and one button above 12 lists, and stores nothing new but the sort choice.
 - B. Pinned lists with collapsible groups, such as Pinned, Shared, and Others.
   Familiar, but it needs a stored flag that must sync, and more chrome; revisit if manual order proves too weak.
@@ -780,74 +832,113 @@ The sidebar and this screen share the rules below.
   Quick for experts, but invisible on touch and a new component; the sidebar field with `l` is as fast.
 
 ### Task Editor
-Wireframes: [Content](../img/ui/task-editor.svg), [Status](../img/ui/task-editor-status.svg), and [History](../img/ui/task-editor-history.svg).
+Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-notes.svg), [Configuration](../img/ui/task-editor-configuration.svg), and [History](../img/ui/task-editor-history.svg).
 
 - Wide layouts open it as a right panel next to the rows; compact layouts open it as a full screen.
 - Fields save on change, with no Save button; invalid values show a field error and are not saved.
-- **[Decided]** Three tabs with underline styling follow the WAI-ARIA tabs pattern, using the vendored tabs.js.
+- **[Decided]** Four tabs with underline styling follow the WAI-ARIA tabs pattern, using the vendored tabs.js.
+  The tabs are Status, Notes, Configuration, and History, each as wide as its name (`TSK-18`).
   The tab strip has no More button.
-- The editor always opens on Content, keeping the description focus rule (`TSK-13`).
+- **[Decided]** The editor always opens on Status, the most used tab.
   Arrow keys move between the tabs, and Home and End jump to the first and last.
 - A field error on a hidden tab, such as a late validation failure, selects that tab and focuses the field.
-- Content tab: only the description and the notes.
-  - Description: a multi-line field of at most 500 characters (`TSK-1`).
-  - Notes: an add field, then the note thread, newest first (`NOT-1` to `NOT-6`).
-    The field reads "Add or search notes"; typing also filters the thread to the notes that match.
-    The match ignores case; a search without a match shows "No notes match.".
-    The thread shows global notes, then those of the current occurrence, then those of earlier ones.
-    Each linked note shows its occurrence, such as "#2 · Nov 5 – Nov 5".
-- **[Decided]** Status tab, in order, with a horizontal rule between each part:
-  1. The active status, the first part.
-  2. Lists.
-  3. The configuration groups: Target count, Due with Overdue behavior, and Repeat.
-  4. Delete task, after a last rule, away from the notes.
-- Status part:
-  - Four icon buttons in a group: Ready, In progress, Completed, and Cancelled (`TSK-3`, `TSK-4`).
-    The current one is pressed (`aria-pressed`); each has its status name as accessible name and tooltip.
-    **[Decided]** The Ready button reads "To do", the label the status line and rows use for `ready`.
-    Each icon names its own status, so no control previews the status a click leads to.
-  - A text line stays, such as "In progress, 2 of 3 done".
-  - A button posts the events of `eventsTowardsStatus` in occurrences.js:
-    Ready resets the count to 0, with one `uncomplete` per completion or `unstart`.
-    Cancelled posts `cancel` and keeps the count; leaving Cancelled posts `reopen` first.
-  - Above target 1, Completed is disabled below target, with the tooltip "Reach 3 of 3 to complete".
-    In progress is disabled at or above target, with the tooltip "Step below 3 of 3 to be in progress".
-    The stepper moves between the two.
-  - At target 1, every button applies; Completed to In progress posts `uncomplete` then `start`.
-  - Above target 1 and outside Ready, a second line shows the stepper `[−] 2 of 3 [+]`.
-    Minus reads "Undo a completion" and plus "Add a completion"; the count between them is a polite live region.
-    It is read-only while cancelled; minus is disabled at 0; plus always applies.
-    Minus from 1 posts `uncomplete` then `start`, so the task stays In progress at 0.
-    The stepper never previews a status icon.
-  - A closed recurring series enables only Ready, which posts `reopen` and opens a fresh period.
-  - For 24 hours after a period ends, a Complete for previous period button names that occurrence (`TSK-16`).
-    Its label names the last day of that period in the task's timezone, such as "Complete for previous period (5 Nov)".
-  - A focused control that becomes disabled or hidden passes the focus to the pressed state button.
-  - A viewer or a deleted task sees the state buttons and the stepper disabled, and no previous period button.
-  - [task-editor.js](../../src/js/views/task-editor.js) builds the status part.
-- Lists part: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
-- Configuration part, each group with a bold heading: the field label for Target count and Repeat, "Due" for Due.
-  - Target count: a number field from 1 to 999 (`TSK-15`).
+
+#### Status Tab
+- **[Decided]** Status shows the current status and only the actions that change it; it has no status buttons.
+  What is logged decides the status, as ADR-0006 defines.
+- The status line shows the status icon and its name, such as "In progress, not on track".
+  A muted line under it names the window, such as "Today, Thu 27 Nov" or "Due Fri 12 Dec".
+- The progress box follows: the progress and target in large text, a meter, and a line on what comes next.
+  - Above an "at most" limit, the box turns orange and reads "120 kcal over the limit".
+    It adds that the window fails if the progress stays above the limit at its end.
+  - A checks goal marks the current pace on its meter, such as "pace now: 1.5".
+    Behind pace, it reads "Behind pace: half the week is gone, 1 of 3 done."
+- Actions show only while their events apply:
+  - Check off, the main button of a Check goal, logs one check.
+  - A checks goal shows the stepper `[−] 1 of 3 [+]`, centered under the progress box.
+    Plus logs a check; minus undoes the latest live check; the count is a polite live region.
+  - Mark started posts `start` while the task is To do.
+    It then reads Unmark started, which posts `unstart` while no entry applies and progress is 0 or empty.
+    A carried reading counts as progress, so it hides Unmark started.
+  - Reopen posts `reopen` on an "at least" one-off task that failed at its due time.
+    The task then stays open and overdue, since `expire` never repeats.
+    A failed "at most" task offers no Reopen; undoing its entries changes its verdict instead.
+  - For 24 hours after a period ends, a button checks off that period (`TSK-16`).
+    Its label names the period's last day in the task's timezone, such as "Check off previous period (5 Nov)".
+- The Log form follows, under a rule: the goal's own field, Label (optional), and Log (`TSK-21`).
+  - "+ Time spent", "+ Amount", and "+ Check" reveal the fields the goal does not show first.
+    One entry may hold any mix of them, as in the [Quick Log](#quick-log).
+  - Time takes hours and minutes; above 12 hours, Log asks in place first, as the quick log does.
+  - An amount or reading takes at most 3 decimals and shows the goal's unit.
+- The entries follow, under a rule: the live entries of the current period, newest first, with their total.
+  - Each entry shows its time, label, author when connected, value, and Undo.
+  - Undo posts `undo-log` of that entry; any task editor may undo any entry, also a collaborator's.
+  - Entries of earlier periods sit in the History tab.
+- A cancelled task reads Cancelled, with "Uncancel in Configuration".
+  Checks are then disabled, while time and amounts still log, as ADR-0006 allows.
+- A focused control that becomes disabled or hidden passes the focus to the status line.
+- A viewer or a deleted task sees the status, progress, and entries, without actions, the Log form, or Undo.
+- [task-editor.js](../../src/js/views/task-editor.js) builds the Status tab.
+
+#### Notes Tab
+- An add field, then the note thread, newest first (`NOT-1` to `NOT-6`).
+  The field reads "Add or search notes"; typing also filters the thread to the notes that match.
+  The match ignores case; a search without a match shows "No notes match.".
+  The thread shows global notes, then those of the current occurrence, then those of earlier ones.
+  Each linked note shows its occurrence, such as "#2 · Nov 5 – Nov 5".
+
+#### Configuration Tab
+- **[Decided]** The parts come in this order, with a horizontal rule between each:
+  1. Description: a multi-line field of at most 500 characters (`TSK-1`).
+  2. Lists: chips with a remove button, plus an Add to list combo box that can also create a list (`TSK-8`).
+  3. Goal, then Recurrence, then Time window.
+  4. Danger zone, last, on every task.
+- Each part has a bold heading.
+- **[Decided]** Goal is a segmented control of Check, At least, and At most (`TSK-15`).
+  - Check is a plain check-off, the default: at least 1 check, with no other field.
+  - At least and At most add Measure, Target, and Unit.
+  - Measure: Checks, Time spent, Amount (sum), or Reading (latest).
+  - Target: a whole number for checks, hours and minutes for time, and up to 3 decimals for amounts and readings.
+    Checks and time allow 1 to 999,999,999,999; amounts and readings allow 0 to 999,999,999,999.999.
+  - Unit: a label of at most 20 characters, such as kcal or kg, for Amount and Reading only.
+  - A muted line says what succeeds, such as "Each week succeeds at 3 h 20 min or more."
+  - At most needs a due time or a recurrence, or Goal shows "At most needs a due time or a recurrence."
+- **[Decided]** Recurrence, renamed from Repeat, offers Never, Day, Week, Month, or Year (`TSK-16`).
+  A first choice also sets every 1 and the browser's timezone; Never stops the recurrence.
+  A recurring task then shows Every (1 to 99), Ends on (a date), Ends after (a count), and Timezone.
+  Timezone takes an IANA name, with the browser's zones as suggestions.
+- Time window holds Starts, Due, and When overdue (`TSK-5`, `TSK-20`).
+  - Starts: an optional date and time field; before it, the task is upcoming.
+    It must lie before the due time and before the recurrence end date.
+    It stays editable while period 1 is the only period, open, and free of user events, such as a start or a log.
+    Otherwise it reads as text.
   - Due: a date field, an optional time field, and Clear (`TSK-5`, `TSK-6`).
-    Overdue behavior, Keep open or Cancel when overdue, shows once a due time is set (`TSK-7`).
-  - Repeat: Never, Daily, Weekly, or Monthly (`TSK-16`).
-    A first choice also sets every 1 and the browser's timezone; Never stops the recurrence.
-    A recurring task then shows Every (1 to 99), Ends on (a date), Ends after (a count), and Timezone.
-    Timezone takes an IANA name, with the browser's zones as suggestions.
-  - Target count, due time, overdue behavior, and the repeat fields save as lifecycle rule edits.
-    A recurring task hides Due and Overdue behavior, since its periods set its due times.
-    Past its period end, the status shows Ready with count 0 until the task rolls over.
-- History tab: History, then Details.
-  - History loads when its tab first shows; Refresh history loads it again.
-    History lists the occurrences and the events, newest first (`TSK-17`).
-    An occurrence shows its number, period, status, and counts; a closed one still Ready reads Missed.
-    A closed one still In progress reads Partly done.
-    An event shows its time, what happened, such as Ticked or Period ended, and its occurrence.
-    Under each occurrence come its notes, newest first, each with its time.
-    An open history shows note changes without a refresh.
-    While connected it reads the server routes; in local mode, or when they fail, it reads the local stores.
-    [task-history.js](../../src/js/views/task-history.js) builds it.
-  - Details: created, last updated, and owner when connected (`TSK-12`).
+    A recurring task hides Due and When overdue, since its periods set its windows.
+  - When overdue: Keep open or Fail, shown for "at least" goals with a due time (`TSK-7`).
+    "At most" goals always get a verdict at their due time.
+- **[Decided]** The Danger zone holds Cancel task and Delete task, on every task.
+  - Cancel task posts `cancel` and then reads Uncancel, which posts `reopen`.
+    It is disabled on a closed occurrence, such as a finished one-off task, since the service refuses `cancel` there.
+    Its tooltip then reads "A finished task cannot be cancelled."
+  - Delete task moves the task to the recycle bin and shows the Undo toast (`TSK-11`).
+- Goal, recurrence, start time, due time, and overdue behavior save as lifecycle rule edits.
+  Past its period end, the status shows Ready with progress 0 until the task rolls over.
+  A reading goal shows the carried reading instead, such as "79.8 kg (carried)".
+
+#### History Tab
+- History, then Details.
+- History loads when its tab first shows; Refresh history loads it again.
+  History lists the occurrences and the events, newest first (`TSK-17`).
+  An occurrence shows its number, period, status, and progress, such as "26 Nov · Failed, 1,910 / max 1,600".
+  An event shows its time and what happened, such as "You logged Croissant · 320 kcal" or "Period ended".
+  An undo reads "Ann undid Cake · 300 kcal"; the undone entry stays listed, struck through.
+  Under each occurrence come its notes, newest first, each with its time.
+  An open history shows note changes without a refresh.
+  While connected it reads the server routes; in local mode, or when they fail, it reads the local stores.
+  [task-history.js](../../src/js/views/task-history.js) builds it.
+- Details: created, last updated, and owner when connected (`TSK-12`).
+
+#### Shared Editor Rules
 - Each note shows its author when connected: You for own notes, Collaborator for others, Former member for a deleted account.
 - Each note shows its time, and "edited" after a change; only own notes have Edit and Delete.
 - The user's own notes have Edit and Delete in a More menu; deleting a note asks in place first.
@@ -855,9 +946,9 @@ Wireframes: [Content](../img/ui/task-editor.svg), [Status](../img/ui/task-editor
   Options carry the history labels; while connected, the edit form reads earlier periods from the server.
   It shows the current link as text, works by keyboard, and saves with Save note on any task.
 - A viewer sees all fields read-only and a banner naming the list owner (`SHR-4`).
-  Only the task owner or the owner of a list holding the task sees Delete task.
+  Only the task owner or the owner of a list holding the task sees the Danger zone.
 - A deleted task opens read-only with a Restore button (`BIN-6`).
-  It hides Clear, Add to list, the chip remove buttons, the add note field, and Delete task.
+  It hides Clear, Add to list, the chip remove buttons, the add note field, and the Danger zone.
 - [task-editor.js](../../src/js/views/task-editor.js) and [notes.js](../../src/js/views/notes.js) build it.
 - Escape closes the editor, also from a text field, whose change saves first; the value saves once.
 - A due time without a date shows "Enter a date to set a time." on the date field.
@@ -1016,9 +1107,19 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 ### Creating and Organizing Offline
 1. The user adds tasks with the add bar in All tasks or in a list.
 2. New list on the Lists screen, its Create list offer, or the editor's Add to list box creates a list.
-3. The Lists section of the editor's Status tab adds a task to lists and removes it from them.
+3. The Lists part of the editor's Configuration tab adds a task to lists and removes it from them.
 4. In a list with manual order, the user drags rows or uses the Alt keys.
 5. Every step works offline; the user menu stays at Local only.
+
+### Logging Progress
+Wireframe: [quick-log.svg](../img/ui/quick-log.svg).
+
+1. The user taps the status button of Sport, a weekly time goal; the quick log opens under the row.
+2. They enter 45 min and select Log; a toast offers Undo (`TSK-21`).
+3. The row's meter and text update; from 80% the meter turns yellow, and at the target the row completes.
+4. Calories, a daily "at most" goal, turns orange from 80% and names the overage above the limit (`TSK-22`).
+5. In the editor's Status tab, the user undoes the Pizza entry; the progress drops below the limit.
+6. At the period end, the period closes as Completed or Failed, and History shows the verdict.
 
 ### Connecting
 Wireframe: [connect.svg](../img/ui/connect.svg).
@@ -1098,7 +1199,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ## Accessibility and Input
 - Every screen works with keyboard alone, in a logical tab order (`TEC-15`).
 - Shortcuts: `n` and `/` focus the add and search field, `l` focuses the sidebar find field, and Escape closes the editor or a dialog.
-- `x` ticks the task of the focused row, as a click on its status button does.
+- `x` acts on the task of the focused row, as a click on its status button does.
 - Shift+Enter or Alt+Enter in the add and search field adds the typed task, like the Add button.
 - On the Lists screen `/` focuses the find field; `l` focuses the sidebar's find field, or opens Lists where there is none.
 - Alt+Up, Alt+Down, Alt+Home, and Alt+End move a focused list by one place or to an end.
@@ -1110,7 +1211,7 @@ Wireframe: [import.svg](../img/ui/import.svg).
 - Drag and drop always has a keyboard alternative: Alt+arrows, Alt+Home, and Alt+End for tasks (`LV-3`), the same keys and menu entries for lists (`LST-13`).
 - Status, overdue, and sync state never rely on color alone: each has an icon and a text label.
 - Touch targets are at least 44 by 44 px, including chips and row buttons.
-- Focus moves to the editor's description when it opens, and back to the row when it closes.
+- Focus moves to the editor's Status tab when it opens, and back to the row when it closes.
   After an add from the add field, focus stays in the add field on every layout (`TSK-13`).
 - Live regions announce toasts, sync state changes, and moved rows.
 

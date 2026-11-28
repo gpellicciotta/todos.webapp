@@ -22,9 +22,11 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 ## Glossary
 - **List:** A named tag on tasks, with an optional description; the unit of sharing.
 - **Task:** A piece of work with a description, lifecycle rules, occurrences, and events.
-- **Lifecycle rules:** A task's target count, due time, overdue behavior, and recurrence.
+- **Lifecycle rules:** A task's goal, start time, due time, overdue behavior, and recurrence.
+- **Goal:** What counts as achieved in a window: Check, or at least or at most a target of a measure.
+- **Entry:** One `log` event: a check, time spent, an amount, or a mix, with an optional label.
 - **Occurrence:** One run of a task; the current occurrence holds the task's status and due time.
-- **Event:** An action on a task, such as `complete` or `cancel`; events decide the status.
+- **Event:** An action on a task, such as `log`, `undo-log`, or `cancel`; events decide the status.
 - **Membership:** The link between a task and one list, holding the task's position in that list.
 - **Note:** A timestamped text entry attached to one task.
 - **Owner:** The creator of a list or task; in local mode, the single local user.
@@ -71,37 +73,55 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 
 ### Tasks
 - TSK-1: Users create a task with a description of 1 to 500 characters.
-- TSK-2: A new task has status `ready` and overdue behavior `keep` unless the user picks otherwise.
-- TSK-3: A task status is one of `ready`, `in-progress`, `completed`, or `cancelled`.
-- TSK-4: Users change a task status through events, offered only while their preconditions hold.
-  One click on a task row's status button posts `complete` and never lowers the count.
-  It does nothing once cancelled, or once completed at target 1; above target 1 the count may pass the target.
-  Every tick shows an Undo toast; the row offers no other status action.
-  The editor's Status tab has one button per status; each posts the events that reach it.
-  A stepper there corrects the count above target 1.
+- TSK-2: A new task has status `ready`, the goal Check, and overdue behavior `keep` unless the user picks otherwise.
+- TSK-3: A task status is one of `ready`, `in-progress`, `completed`, `failed`, or `cancelled`.
+  Only a closed window is `failed`; `cancelled` means that a user dropped the task.
+- TSK-4: What users log decides a task status, through events offered only while their preconditions hold.
+  One click on a row's status button logs a check for Check and checks goals, and never lowers the count.
+  It does nothing once cancelled, failed, or completed at target 1; above target 1 the count may pass the target.
+  For time, amount, and reading goals, the click opens the quick log instead (`TSK-21`).
+  Every logged check shows an Undo toast; the row offers no other status action.
+  The editor's Status tab shows the status as text, with no button per status.
+  It offers Check off, a stepper for checks goals, Mark started, and Reopen for a failed "at least" task.
+  Cancel task and Uncancel sit in the Danger zone of the Configuration tab.
 - TSK-5: Users set, change, or clear an optional due time.
 - TSK-6: A due date without a time of day means 23:59 local time on that date.
-- TSK-7: Users set the overdue behavior to `keep` or `cancel` on a task with a due time.
+- TSK-7: Users set the overdue behavior to `keep` or `fail` on an "at least" task with a due time.
 - TSK-8: Users add a task to one or more lists and remove it from any of them, in the task editor.
 - TSK-9: A task created inside a list view starts as a member of that list.
 - TSK-10: A task in no list stays visible in the task view.
-- TSK-11: Deleting a task, from the task editor, moves it to the recycle bin and hides it from every list and view.
+- TSK-11: Deleting a task, from the editor's Danger zone, moves it to the recycle bin and hides it everywhere.
 - TSK-12: Every task records its creation time and last update time, which every change of it or its parts moves.
 - TSK-13: A task added from the add field opens in the editor on a wide screen; the field keeps the focus.
   A compact screen opens no editor, so tasks can be added in a row.
 - TSK-14: A due date, a time, and list tags typed in the add field set the new task's due time and lists.
   A preview line under the field names what the add will set; the parser works offline, in US English.
-- TSK-15: Users set a task's target count, the completions it takes to be completed, from 1 to 999.
-  Above target 1, rows show the counts as a badge on the status icon, such as `2/3`, and the editor as a stepper.
-- TSK-16: Users make a task repeat daily, weekly, or monthly, every 1 to 99 units, in an IANA timezone.
+- TSK-15: Users set a task's goal: Check, At least, or At most a target of a measure.
+  The measure counts checks, sums time spent or amounts, or takes the latest reading.
+  Checks and time targets are whole numbers from 1 to 999,999,999,999.
+  Amount and reading targets run from 0 to 999,999,999,999.999, with up to 3 decimals and a unit of 20 characters.
+  An "at most" goal needs a due time or a recurrence.
+  Above target 1, rows show a checks goal's counts as a badge on the status icon, such as `2/3`.
+- TSK-16: Users make a task recur daily, weekly, monthly, or yearly, every 1 to 99 units, in an IANA timezone.
   A recurrence may end on a date or after a number of periods; a recurring task comes back as to do each period.
   Rows show the repeat text, such as "Weekly", on the meta line; past its period end a task shows as to do until it rolls over.
   For 24 hours after a period ends, users can still complete that period from the editor's Status tab.
-- TSK-18: The task editor groups its fields in three tabs: Content, Status, and History.
-  Content holds the description and notes; Status holds the status, lists, configuration, and Delete task.
-  It opens on Content.
+- TSK-18: The task editor groups its fields in four tabs: Status, Notes, Configuration, and History.
+  Status holds the status, progress, Log form, and entries; Notes holds the notes.
+  Configuration holds the description, lists, goal, recurrence, time window, and Danger zone.
+  It opens on Status.
 - TSK-19: A task row shows a status button, its description, and a meta line with the due or repeat text on the left and the lists on the right.
   Overdue due text uses the danger color and stays as text; a row has no menu or More button.
+  Goal rows add a meter and their progress, and failed rows say Failed (`TSK-22`).
+- TSK-20: Users set an optional start time; before it, a task is upcoming and takes no events.
+  The start time lies before the due time and the recurrence end.
+  It changes only while period 1 is the only period, open, and free of user events.
+- TSK-21: Users log entries: a check, time spent, an amount, or a mix, with an optional label of 100 characters.
+  The editor lists the current period's entries, each with Undo; logging above 12 hours asks first.
+- TSK-22: Rows and the editor show progress against the goal, and whether the task is on track.
+  "Approaching" starts at 80% of the target: yellow for "at least" goals, orange for "at most" goals.
+  A reached "at least" target turns green; an "at most" overage shows in orange with an alert icon.
+  Red marks Failed only; in progress shows orange when not on track, judged by the share of the window gone.
 - TSK-17: Users see a task's history: its occurrences and events, newest first.
   It reads the server while connected, and the local stores in local mode.
 
@@ -120,9 +140,11 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - OVD-1: A task is overdue when its due time has passed and its status is `ready` or `in-progress`.
 - OVD-2: Views mark overdue tasks visibly.
 - OVD-3: An overdue task with behavior `keep` stays open and keeps its overdue mark.
-- OVD-4: An overdue task with behavior `cancel` expires to `cancelled` within one minute while the app is open.
-- OVD-5: On start, the app expires every task that became overdue with behavior `cancel` while it was closed.
-- OVD-6: Overdue handling never changes deleted, `completed`, or `cancelled` tasks.
+- OVD-4: An overdue task with behavior `fail` expires to `failed` within one minute while the app is open.
+  An "at most" task gets its verdict at its due time: `completed` within its limit, else `failed`.
+  A reading goal without any reading, its own or carried, ends `failed`; recurring periods close the same way.
+- OVD-5: On start, the app expires every task that became overdue with behavior `fail` while it was closed.
+- OVD-6: Overdue handling never changes deleted, `completed`, `failed`, or `cancelled` tasks.
 
 ### Reminders
 - REM-1: Reminders are off by default; Settings turns them on, which asks the browser for notification permission from the click.
@@ -165,8 +187,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - TV-12: The app remembers the last used filters, grouping, and order, for All tasks and for each list on its own.
   They sync as `SYN-13` describes.
 - TV-13: The task view orders by creation time, newest first, until the user picks another order.
-- TV-14: Users limit the completed and cancelled tasks they see to those finished today.
+- TV-14: Users limit the completed, failed, and cancelled tasks they see to those finished today.
   A task finished when its current occurrence closed.
+- TV-15: While Show upcoming is on, views show tasks starting within 24 hours in a group at the end.
+  Show upcoming is on by default; tasks that start later stay hidden.
 
 ### View Options
 - VO-1: The task view and the list view share one set of options for search, filter, group, and sort.
