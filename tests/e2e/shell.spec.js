@@ -19,7 +19,7 @@ test('list creation stays in the main Lists view', async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
-test('the view menu sits beside the user button from 64rem, and in the view header below it', async ({ page }) => {
+test('the view menu sits beside the user button at every width, and leaves no empty row below the top bar', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
   await page.goto('/#/tasks');
@@ -38,8 +38,21 @@ test('the view menu sits beside the user button from 64rem, and in the view head
   await expect(page.locator('.app__top-bar').getByRole('button', { name: /actions$/ })).toHaveCount(0);
   await page.goto('/#/tasks');
   await page.setViewportSize(COMPACT);
-  await expect(page.locator('.app__top-bar').getByRole('button', { name: /actions$/ })).toBeHidden();
-  await page.locator('.view-header').getByRole('button', { name: 'View actions' }).click();
+  for (const width of [COMPACT.width, 360]) {
+    await page.setViewportSize({ width, height: COMPACT.height });
+    await expect(header).toBeVisible();
+    await expect(page.locator('.view-header')).toBeHidden();
+    const [actions, account, bar, row] = await Promise.all([header.boundingBox(), page.locator('.account-menu__button').boundingBox(),
+      page.locator('.app__top-bar').boundingBox(), page.locator('.app__view[data-view="tasks"] .task-row').first().boundingBox()]);
+    expect(actions.x + actions.width).toBeLessThanOrEqual(account.x);
+    expect(actions.y).toBeLessThan(bar.y + bar.height);
+    expect(actions.width).toBeGreaterThanOrEqual(44);
+    // The rows start one gutter below the top bar, with no row of their own for the button.
+    expect(row.y - (bar.y + bar.height)).toBeLessThan(24);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  }
+  await header.click();
+  await expect(page.getByRole('menuitem', { name: 'Edit view options' })).toBeInViewport({ ratio: 1 });
   await page.getByRole('menuitem', { name: 'Edit view options' }).click();
   await expect(page).toHaveURL(/#\/tasks\/view-options$/);
   expect(problems).toEqual([]);

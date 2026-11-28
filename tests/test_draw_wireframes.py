@@ -296,6 +296,14 @@ def test_lists_float_new_list_and_no_screen_keeps_a_more_button_in_the_top_bar(o
         assert "⋮" not in compact_labels, name
 
 
+@pytest.mark.parametrize("name", ["all-tasks.svg", "list.svg", "user-menu.svg", "nav-rail.svg"])
+def test_compact_task_screens_draw_the_view_actions_button_in_the_top_bar(output, name):
+    _, (compact, _) = frames(output / name)
+    dots = [(cx, cy) for cx, cy, r in circles(compact) if r == 2 and cy < 60]
+    assert len(dots) == 3 and len({cx for cx, _ in dots}) == 1, name
+    assert "⋯" not in [t.text for t in compact.iter(f"{SVG}text") if float(t.get("y")) < 140], name
+
+
 def test_import_wireframe_fills_the_compact_main_view_between_the_bars(output):
     _, groups = frames(output / "import.svg")
     compact = groups[0]

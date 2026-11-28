@@ -10,7 +10,7 @@
  * The sidebar and the bottom bar hold the task destinations; the user menu at the end of the top bar holds
  * the account, Recycle bin, Settings, and Help (see user-menu.js).
  * The current route is marked with `aria-current="page"` in the sidebar, the bottom bar, and the user menu.
- * From 64rem, a view's three-dot actions button sits just before the user button (see view-actions.js).
+ * A view's three-dot actions button sits just before the user button (see view-actions.js).
  * The sync indicator opens the end of the top bar, before the bell of the inbox and the user button (see views/sync-indicator.js).
  * The bell of the inbox joins the user menu while connected, and broadcast banners show above every view (see inbox.js).
  * A session banner above the views offers Sign in while the session expired.

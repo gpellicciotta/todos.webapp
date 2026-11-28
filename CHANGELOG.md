@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.7.2-pre
+- FrontEnd: Moved the three-dot actions button of All tasks and of a list into the top bar on phones too.
 - FrontEnd: Moved the task editor's labels into a left column, with fields, choices, and buttons in a right-hand column.
 - FrontEnd: Kept the words of the pace mark inside the progress box, which cut them off late in a window.
 

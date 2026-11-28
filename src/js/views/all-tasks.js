@@ -43,7 +43,7 @@ const STRINGS = Object.freeze({
   noMatch: 'No tasks match ',
   reset: 'Reset',
   actions: 'View actions',
-  wideActions: 'All tasks actions',
+  slotActions: 'All tasks actions',
   editViewOptions: 'Edit view options',
   addFailed: 'The task could not be added.',
 });
@@ -114,7 +114,7 @@ async function readData(store, readRecords = () => store.snapshot(['lists', 'tas
  * @param {{state: () => string, subscribe?: Function}} [options.session] the session; the Shared filter applies while
  *   it is connected (`TV-7`), and the empty state of a store without tasks follows it
  * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
- * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu on wide layouts; the view header by default
+ * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu; the view header by default
  * @param {() => Promise<object>} [options.readRecords] reads the records to show; the app shares one read between screens (`TEC-16`)
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
@@ -152,7 +152,7 @@ export function mountAllTasks(view, {
   header.append(more, menu);
   const menuBehavior = attachMenu(more, menu, { onSelect: () => navigate(formatRoute('view-options')), align: 'end' });
   const actions = attachViewActions(actionsSlot, {
-    header, more, menu, compactLabel: STRINGS.actions, wideLabel: () => STRINGS.wideActions, close: () => menuBehavior.close(),
+    header, more, menu, headerLabel: STRINGS.actions, slotLabel: () => STRINGS.slotActions, close: () => menuBehavior.close(),
   });
   const info = createInfoLine({ document: doc, onReset: () => model.reset() });
   const addBar = createAddBar({ document: doc, onAdd: add, onSearch: setText, text: model.get().filter.text ?? '', now, getStorage });

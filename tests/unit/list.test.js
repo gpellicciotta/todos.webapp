@@ -75,16 +75,15 @@ describe('mountList', () => {
       expect(await store.listLists()).toHaveLength(1);
     });
 
-    it('keeps the horizontal More button in the view header on a compact layout, and empties the slot on destroy', async () => {
-      const compact = await mountWithSlot(true);
-      expect(compact.slot.hidden).toBe(true);
-      expect(compact.view.querySelector('.view-header .list-view__more use').getAttribute('href')).toMatch(/#more$/);
+    it('puts the menu in the header on a compact layout too, and empties the slot on destroy', async () => {
+      const { view, slot } = await mountWithSlot(true);
+      expect(slot.hidden).toBe(false);
+      expect(slot.querySelector('.icon-button').getAttribute('aria-label')).toBe('Home actions');
+      expect(slot.querySelector('.icon-button use').getAttribute('href')).toContain('#more-vertical');
+      expect(view.querySelector('.view-header .icon-button')).toBeNull();
       screen.destroy();
-      const wide = await mountWithSlot(false);
-      expect(wide.slot.childElementCount).toBeGreaterThan(0);
-      screen.destroy();
-      expect(wide.slot.childElementCount).toBe(0);
-      expect(wide.slot.hidden).toBe(true);
+      expect(slot.childElementCount).toBe(0);
+      expect(slot.hidden).toBe(true);
     });
   });
 

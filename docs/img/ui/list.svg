@@ -39,7 +39,11 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="30" y="35" font-size="16" text-anchor="middle">&lt;</text>
     <circle cx="360" cy="30" r="22" class="icon-fill"/>
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
-    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
+    <path d="M 257 38 H 271 A 5 5 0 0 0 271 28 A 8 8 0 0 0 257 30 A 4 4 0 0 0 257 38 Z" class="icon-line-open"/>
+    <rect x="286" y="8" width="44" height="44" rx="6" class="control"/>
+    <circle cx="308" cy="23" r="2" class="icon-fill"/>
+    <circle cx="308" cy="30" r="2" class="icon-fill"/>
+    <circle cx="308" cy="37" r="2" class="icon-fill"/>
     <text x="60" y="37" font-size="20" class="bold">Home</text>
     <text x="16" y="88" font-size="14" class="muted">Chores and repairs around the house</text>
     <text x="16" y="110" font-size="13" class="muted">Shared with 2 people · You own this list</text>

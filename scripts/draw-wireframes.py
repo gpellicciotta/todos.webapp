@@ -383,14 +383,19 @@ def fab(f, right, bottom):
     f.text(right - 28, bottom - 28 + 9, "+", 28, "on-primary bold", "middle")
 
 
-def top_bar(f, title, account="local", back=False):
-    """Draw the compact top bar: an optional back button, the title, and the user button."""
+def top_bar(f, title, account="local", back=False, actions=False):
+    """Draw the compact top bar: an optional back button, the title, and the user button.
+
+    A view with `actions` shows the three-dot view actions button just before the user button.
+    """
     f.rect(0, 0, f.width, 60, "bar", radius=0)
     x = 16
     if back:
         icon_button(f, 8, 8, "<")
         x = 60
-    right = user_button(f, f.width - 8, 8, account) - 8
+    right = user_button(f, f.width - 8, 8, account, 52 if actions else 0) - 8
+    if actions:
+        view_actions_button(f, f.width - 8 - 96, 8)
     f.text(x, 37, fit(title, right - x - 8, 20), 20, "bold")
 
 
@@ -777,7 +782,7 @@ def compact_task_screen(
     grouped=False,
 ):
     """Draw a compact task list screen with rows, the pinned add bar, and bottom navigation."""
-    top_bar(f, title, account, back)
+    top_bar(f, title, account, back, actions=True)
     top = f.height - 64 - 60
     if grouped:
         grouped_rows(f, 0, 68, f.width, False, top)
@@ -971,7 +976,7 @@ def view_options():
 def list_view():
     """One list in manual order, with the More menu open."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
-    top_bar(compact, "Home", "connected", back=True)
+    top_bar(compact, "Home", "connected", back=True, actions=True)
     compact.text(16, 88, fit("Chores and repairs around the house", 300, 14), 14, "muted")
     compact.text(16, 110, "Shared with 2 people · You own this list", 13, "muted")
     top = compact.height - 64 - 60

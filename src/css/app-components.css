@@ -1042,6 +1042,11 @@
   margin-block: 0;
 }
 
+/* A header with nothing to show, its menu in the top bar, takes no row. */
+.view-header:not(:has(> :not([hidden]))) {
+  display: none;
+}
+
 .view-header__title {
   flex: 1 1 auto;
   min-inline-size: 0;

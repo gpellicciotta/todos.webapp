@@ -79,7 +79,7 @@ async function readData(store, listId) {
  * @param {() => Storage} [options.getStorage] returns the storage of the per-device view state
  * @param {() => Date} [options.now] the clock
  * @param {HTMLElement} [options.actionBar] the shell's action bar, which takes the add block; the view by default
- * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu on wide layouts; the view header by default
+ * @param {HTMLElement} [options.actionsSlot] the top bar slot that takes the More menu; the view header by default
  * @returns {{update: (route: object) => void, idle: () => Promise<void>, destroy: () => void}} the screen
  */
 export function mountList(view, { store, toaster, navigate, viewModels, getStorage, now = () => new Date(), actionBar = null, actionsSlot = null }) {
@@ -140,7 +140,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   let added = null;
   const behavior = attachMenu(more, menu, { onSelect: act, align: 'end' });
   const actions = attachViewActions(actionsSlot, {
-    header, more, menu, compactLabel: more.getAttribute('aria-label'), wideLabel: () => `${data?.list?.name ?? ''} actions`.trim(),
+    header, more, menu, headerLabel: more.getAttribute('aria-label'), slotLabel: () => `${data?.list?.name ?? ''} actions`.trim(),
     close: () => behavior.close(),
   });
   let menuRole = null;

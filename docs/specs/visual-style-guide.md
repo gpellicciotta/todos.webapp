@@ -365,7 +365,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 ---
 
 ## Patterns
-- [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the view header and its More button, the search field, an `.add-block`, and rows.
+- [Task list](../../src/demo/visual-style-gallery.html#task-list): a `.task-view` with the search field, an `.add-block`, and rows; the top bar holds its title and actions button.
+  A list shows its description and owner in a `.view-header` above the rows, which takes no row while empty.
   The add block holds the add bar and the info line; the app puts it in the shell's action bar, under the rows.
   From 64rem the action bar spans every column, so the add block runs between the window's content gutters.
 - Manual ordering: press and drag a row, or hold it on touch; the hovered or focused row shows a gutter handle.

@@ -38,7 +38,11 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="360" cy="30" r="22" class="icon"/>
     <circle cx="360" cy="25" r="5" class="icon"/>
     <path d="M 351 42 Q 360 26 369 42" class="icon-line"/>
-    <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
+    <path d="M 257 38 H 271 A 5 5 0 0 0 271 28 A 8 8 0 0 0 257 30 A 4 4 0 0 0 257 38 Z" class="icon-line-open"/>
+    <rect x="286" y="8" width="44" height="44" rx="6" class="control"/>
+    <circle cx="308" cy="23" r="2" class="icon-fill"/>
+    <circle cx="308" cy="30" r="2" class="icon-fill"/>
+    <circle cx="308" cy="37" r="2" class="icon-fill"/>
     <text x="16" y="37" font-size="20" class="bold">All tasks</text>
     <line x1="0" y1="136" x2="390" y2="136" class="rule"/>
     <circle cx="22" cy="92" r="9" class="icon"/>
