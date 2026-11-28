@@ -1,11 +1,11 @@
 ---
 id: T0302
-owner: ~
-needs: [T0299]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0302-port-the-adr-0006-fold-to-the-local
+worktree: .plan/work/T0302-port-the-adr-0006-fold-to-the-local
+status: active
+started_at: "2026-11-28T00:14:02Z"
 ended_at: —
 review: agent
 preview: none
