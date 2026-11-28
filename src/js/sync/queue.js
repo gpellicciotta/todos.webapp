@@ -10,7 +10,7 @@
  */
 
 import {
-  applyEvent, applyRuleEdit, byEventOrder, firstOccurrence, firstRules, replayableRuleEdits, RULE_FIELDS, ruleEditOf, syncedRules, USER_EVENT_TYPES,
+  applyEvent, applyRuleEdit, byEventOrder, firstOccurrence, firstRules, foldLogCache, replayableRuleEdits, RULE_FIELDS, ruleEditOf, syncedRules, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { request, STORES, transact } from '../store/idb.js';
 import { eventsOfWrite } from '../store/tasks.js';
@@ -21,7 +21,7 @@ const TASK_FIELDS = ['description'];
 const NOTE_FIELDS = ['text', 'occurrence'];
 const OPERATIONS = new Set([
   'createList', 'updateList', 'deleteList', 'restoreList', 'createTask', 'updateTask', 'deleteTask', 'restoreTask',
-  'postEvent', 'updateRules', 'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
+  'postEvent', 'logEntry', 'undoLog', 'updateRules', 'addToList', 'removeFromList', 'moveInList', 'addNote', 'editNote', 'deleteNote',
   'purgeForever', 'restoreEntries', 'purgeEntries', 'emptyBin', 'deleteAllData',
 ]);
 
@@ -141,6 +141,8 @@ function readBefore(ctx, operation, args) {
     case 'updateTask':
     case 'restoreTask':
     case 'postEvent':
+    case 'logEntry':
+    case 'undoLog':
     case 'updateRules':
       return named(STORES.tasks, args[0]);
     case 'addToList':
@@ -237,6 +239,24 @@ export function eventUndoMode(before, after, event) {
   return before.occurrence !== after.occurrence || before['start-time'] !== after['start-time'] ? 'replace' : 'fold';
 }
 
+/** The fields that a `log` or an `undo-log` adds to the request of an event. */
+const LOG_FIELDS = Object.freeze(['checked', 'time-spent-seconds', 'amount', 'label', 'target-event-id']);
+
+/**
+ * Return the request fields of an event: its identifier, type, time, and the log fields it holds.
+ * @param {object} event the event
+ * @returns {object} the fields without `occurrence`
+ */
+function eventFields(event) {
+  const fields = { id: event.id, type: event.type, 'creation-time': event['creation-time'] };
+  for (const name of LOG_FIELDS) {
+    if (event[name] !== undefined && event[name] !== null) {
+      fields[name] = event[name];
+    }
+  }
+  return fields;
+}
+
 /**
  * Build the entries of events, one request each; each undo holds the occurrence before its event.
  * @param {string} taskId the task
@@ -252,7 +272,7 @@ function eventEntries(taskId, base, rules, events, mode = 'fold') {
     const before = occurrence;
     occurrence = applyEvent(occurrence, event, rules) ?? occurrence;
     // An unplaced event, past the period end of a recurring task, lets the service assign the period containing its time.
-    const fields = { id: event.id, type: event.type, 'creation-time': event['creation-time'] };
+    const fields = eventFields(event);
     if (event.occurrence !== null && event.occurrence !== undefined) {
       fields.occurrence = event.occurrence;
     }
@@ -291,7 +311,7 @@ function replayEntries(taskId, events) {
     if (!USER_EVENT_TYPES.includes(event.type)) {
       return [];
     }
-    const fields = { id: event.id, type: event.type, 'creation-time': time };
+    const fields = eventFields(event);
     if (event.occurrence !== null && event.occurrence !== undefined) {
       fields.occurrence = event.occurrence;
     }
@@ -413,6 +433,8 @@ async function describe(ctx, operation, args, before, result) {
         ...eventEntries(result.id, eventBase(before, result), result['lifecycle-rules'], eventsOfWrite(result)),
       ] : [];
     case 'postEvent':
+    case 'logEntry':
+    case 'undoLog':
       return eventEntries(result.task.id, before['current-occurrence'], before['lifecycle-rules'], [result.event],
         eventUndoMode(before['current-occurrence'], result.task['current-occurrence'], result.event));
     case 'updateRules':
@@ -768,9 +790,19 @@ function planUndo(data, undo, later = []) {
         // An event in place changes only the count, status, and close time; the other fields stay the stored ones.
         // An event that opened another occurrence gives back the whole occurrence before it.
         const current = task['current-occurrence'];
-        const base = undo.mode === 'replace' ? undo.before
-          : { ...current, 'completion-count': undo.before['completion-count'], status: undo.before.status, 'close-time': undo.before['close-time'] };
-        const occurrence = rechain(changes, laterEvents(later, undo.taskId), base, task['lifecycle-rules']);
+        let occurrence;
+        const known = data.events.some((event) => event['task-id'] === undo.taskId && event.id === undo.id);
+        if (undo.mode === 'replace' || !known) {
+          // An entry converted by the upgrade has no stored event: the old count, status, and close time come back instead.
+          const base = undo.mode === 'replace' ? undo.before
+            : { ...current, 'completion-count': undo.before['completion-count'], status: undo.before.status, 'close-time': undo.before['close-time'] };
+          occurrence = rechain(changes, laterEvents(later, undo.taskId), base, task['lifecycle-rules']);
+        }
+        else {
+          // The surviving events, later queued ones included, give the cache back: counts, time spent, and live entries.
+          const survivors = data.events.filter((event) => event['task-id'] === undo.taskId && event.id !== undo.id);
+          occurrence = foldLogCache(current, survivors, task['lifecycle-rules']);
+        }
         changes.put.tasks = [{ ...task, 'current-occurrence': occurrence }];
       }
       break;

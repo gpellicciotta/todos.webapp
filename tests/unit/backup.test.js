@@ -142,9 +142,10 @@ describe('exportBackup', () => {
     expect(backup.events.map((event) => [event.type, event['creation-time'], event.details])).toEqual([
       ['create', '2026-11-04T09:00:01.000Z', null],
       ['edit-lifecycle-rules', '2026-11-04T09:00:02.000Z', { 'target-count': { old: 1, new: 3 } }],
-      ['complete', '2026-11-04T09:00:03.000Z', null],
+      ['log', '2026-11-04T09:00:03.000Z', null],
     ]);
-    expect(backup.events.map((event) => Object.keys(event))).toEqual(Array(3).fill(['id', 'task-id', 'occurrence', 'creation-time', 'owner-id', 'type', 'details']));
+    const base = ['id', 'task-id', 'occurrence', 'creation-time', 'owner-id', 'type', 'details'];
+    expect(backup.events.map((event) => Object.keys(event))).toEqual([base, base, [...base, 'checked']]);
     expect(backup.events).toEqual(await store.eventsOfTask(task.id));
     expect(backup.notes).toEqual([{
       id: note.id, 'task-id': task.id, text: 'Blue', 'owner-id': 7, occurrence: null,
@@ -165,7 +166,7 @@ describe('exportBackup', () => {
       [1, '2026-11-02T00:00:00.000Z', '2026-11-09T00:00:00.000Z', 'completed', '2026-11-09T00:00:00.000Z'],
       [2, '2026-11-09T00:00:00.000Z', '2026-11-16T00:00:00.000Z', 'ready', null],
     ]);
-    expect(backup.events.map((event) => [event.type, event.occurrence])).toEqual([['create', 1], ['complete', 1], ['roll-over', 1]]);
+    expect(backup.events.map((event) => [event.type, event.occurrence])).toEqual([['create', 1], ['log', 1], ['roll-over', 1]]);
   });
 
   it('exports an empty store as empty arrays', async () => {
@@ -1138,5 +1139,107 @@ describe('format 1 import while connected', () => {
     expect(await store.getList(L1)).toMatchObject({ name: 'Old name', description: 'Old description' });
     await store.queue.undo(store, entries.find((entry) => entry.operation === 'create-task'));
     expect(await store.getTask(T103)).toBeUndefined();
+  });
+});
+
+describe('log entries in a backup', () => {
+  it('exports every log field and undo relationship, and an overwrite import restores them with their caches', async () => {
+    const { store: source, clock } = await freshStore();
+    const { store: target } = await freshStore();
+    try {
+      const task = await source.createTask({ description: 'Run', 'lifecycle-rules': { 'target-count': 2 } });
+      clock.tick();
+      await source.logEntry(task.id, { 'time-spent-seconds': 600, amount: 2.5, label: 'Park' });
+      clock.tick();
+      const { event: check } = await source.logEntry(task.id, { checked: true, label: 'Loop' });
+      clock.tick();
+      await source.logEntry(task.id, { checked: true });
+      clock.tick();
+      await source.undoLog(task.id, check.id);
+      const options = { now: new Date('2026-11-09T12:00:00.000Z'), appVersion: '0.1.0-pre' };
+      const text = JSON.stringify(await exportBackup(source, options), null, 2);
+      const exported = JSON.parse(text).events;
+      expect(exported.filter((event) => event.type === 'log').map((event) => [event['time-spent-seconds'], event.amount, event.label, event.checked]))
+        .toEqual([[600, 2.5, 'Park', undefined], [undefined, undefined, 'Loop', true], [undefined, undefined, undefined, true]]);
+      expect(exported.find((event) => event.type === 'undo-log')['target-event-id']).toBe(check.id);
+      await importBackup(target, parseBackup(text), 'overwrite');
+      const restored = await target.getTask(task.id);
+      expect(restored['current-occurrence']).toMatchObject({ progress: 1, 'time-spent-seconds': 600, status: 'in-progress' });
+      expect(restored['current-occurrence'].entries).toHaveLength(2);
+      expect(await target.snapshot()).toEqual(await source.snapshot());
+    }
+    finally {
+      source.close();
+      target.close();
+    }
+  });
+
+  it('rejects a log field on another event type and a log without content', () => {
+    const backup = JSON.parse(JSON.stringify(fixture()));
+    const event = { id: 'e1', 'task-id': backup.tasks[0].id, occurrence: 1, 'creation-time': '2026-11-04T09:00:00.000Z', 'owner-id': null, details: null };
+    const bad = (extra) => parseBackup(JSON.stringify({ ...backup, 'format-version': 2, events: [{ ...event, ...extra }] }));
+    expect(() => bad({ type: 'start', amount: 1 })).toThrow();
+    expect(() => bad({ type: 'log' })).toThrow();
+  });
+});
+
+describe('mixed legacy and log histories in a backup', () => {
+  it('rebuilds time spent and live entries when the file holds a legacy completion beside a log', async () => {
+    const { store: source, clock } = await freshStore();
+    const { store: target } = await freshStore();
+    try {
+      const task = await source.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+      clock.tick();
+      await source.logEntry(task.id, { checked: true });
+      clock.tick();
+      await source.logEntry(task.id, { 'time-spent-seconds': 60 });
+      const options = { now: new Date('2026-11-09T12:00:00.000Z'), appVersion: '0.1.0-pre' };
+      const file = JSON.parse(JSON.stringify(await exportBackup(source, options)));
+      file.events = file.events.map((event) => (event.checked ? { ...event, type: 'complete', checked: undefined } : event));
+      await importBackup(target, parseBackup(JSON.stringify(file)), 'overwrite');
+      const current = (await target.getTask(task.id))['current-occurrence'];
+      expect(current).toMatchObject({ progress: 1, 'time-spent-seconds': 60 });
+      expect(current.entries).toHaveLength(2);
+    }
+    finally {
+      source.close();
+      target.close();
+    }
+  });
+});
+
+describe('legacy uncomplete events beside checked logs in a backup', () => {
+  it('undoes the latest live check, a logged one with time, and keeps the right entries and totals', async () => {
+    const { store: source, clock } = await freshStore();
+    const { store: target } = await freshStore();
+    try {
+      const task = await source.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+      clock.tick();
+      await source.logEntry(task.id, { checked: true });
+      clock.tick();
+      await source.logEntry(task.id, { checked: true, 'time-spent-seconds': 45 });
+      clock.tick();
+      await source.postEvent(task.id, 'uncomplete');
+      const options = { now: new Date('2026-11-09T12:00:00.000Z'), appVersion: '0.1.0-pre' };
+      const file = JSON.parse(JSON.stringify(await exportBackup(source, options)));
+      let first = true;
+      file.events = file.events.map((event) => {
+        if (event.type === 'log' && first) {
+          first = false;
+          return { ...event, type: 'complete', checked: undefined };
+        }
+        return event.type === 'undo-log' ? { ...event, type: 'uncomplete', 'target-event-id': undefined } : event;
+      });
+      await importBackup(target, parseBackup(JSON.stringify(file)), 'overwrite');
+      const current = (await target.getTask(task.id))['current-occurrence'];
+      expect(current).toMatchObject({ progress: 1, 'time-spent-seconds': 0 });
+      expect(current.entries).toHaveLength(1);
+      expect(current.entries[0].checked).toBe(true);
+      expect(current.entries[0]['time-spent-seconds']).toBeUndefined();
+    }
+    finally {
+      source.close();
+      target.close();
+    }
   });
 });

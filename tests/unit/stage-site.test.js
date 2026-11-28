@@ -106,7 +106,8 @@ describe('stage-site command line', () => {
     expect(result.status).toBe(0);
     expect(existsSync(join(out, 'index.html'))).toBe(true);
     expect(existsSync(join(out, 'help', 'CHANGELOG.md'))).toBe(true);
-  });
+    // The staging run takes about 0.5 s alone, but spawns a process, so it needs room when 69 test files start together.
+  }, 30_000);
 
   it('exits 1 for a non-empty output folder', async () => {
     const out = join(work, 'busy2');

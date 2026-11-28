@@ -85,6 +85,8 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 
 ### Format 2
 Format 2 has the layout of format 3 with the former goal, log, and status model; import converts it before validation of the converted values.
+Until the format 3 export lands, the app writes format 2 and its events also carry `log` and `undo-log` types with their `checked`, `time-spent-seconds`, `amount`, `label`, and `target-event-id` fields, so no entry is lost.
+Import validates those fields, and rebuilds each occurrence cache and its live entries with the log fold.
 - Rules: `target-count` N becomes an `at-least` goal of N `checks`; `start-time` and `goal-unit` are null.
   `overdue-handling` `cancel` becomes `fail`.
 - Occurrences are never read, since import rebuilds them.

@@ -519,7 +519,7 @@ export function planDisconnect(data, userId, { newId = (time) => uuid7(() => Dat
 /**
  * Make the local events of a kept task reproduce its current occurrence, so a later adoption replays its status.
  * A pulled task holds only the events made on this device; when they fold to another count or status,
- * they give way to one `complete` per completion, a `start` for an untouched `in-progress`, and a `cancel` for `cancelled`.
+ * they give way to one checked `log` per completion, a `start` for an untouched `in-progress`, and a `cancel` for `cancelled`.
  * @param {object} task the kept task
  * @param {object[]} own its stored events
  * @param {(time: string) => string} newId returns a new event identifier for an event time
@@ -536,8 +536,11 @@ export function localEventsOf(task, own, newId) {
     return { put, delete: [] };
   }
   const count = Math.max(0, current['completion-count']);
-  const types = [...Array(count).fill('complete'), ...(current.status === 'in-progress' && count === 0 ? ['start'] : []), ...(current.status === 'cancelled' ? ['cancel'] : [])];
+  const types = [...Array(count).fill('log'), ...(current.status === 'in-progress' && count === 0 ? ['start'] : []), ...(current.status === 'cancelled' ? ['cancel'] : [])];
   const time = current['close-time'] ?? task['last-update-time'] ?? task['creation-time'];
-  put.push(...types.map((type) => makeEvent({ id: newId(time), 'task-id': task.id, type, 'creation-time': time, occurrence: current.occurrence })));
+  put.push(...types.map((type) => ({
+    ...makeEvent({ id: newId(time), 'task-id': task.id, type, 'creation-time': time, occurrence: current.occurrence }),
+    ...(type === 'log' ? { checked: true } : {}),
+  })));
   return { put, delete: users };
 }

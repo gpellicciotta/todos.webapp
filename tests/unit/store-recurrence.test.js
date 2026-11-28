@@ -41,7 +41,7 @@ describe('local roll-over', () => {
       [1, 'completed', 1, WEEK_ENDS[0]], [2, 'ready', 0, WEEK_ENDS[1]], [3, 'ready', 0, null],
     ]);
     expect((await store.eventsOfTask(task.id)).map((e) => [e.type, e.occurrence])).toEqual([
-      ['create', 1], ['complete', 1], ['roll-over', 1], ['roll-over', 2],
+      ['create', 1], ['log', 1], ['roll-over', 1], ['roll-over', 2],
     ]);
     expect(await store.queue.all()).toEqual([]);
     expect(await store.rollOverTask(task.id)).toBeNull();
@@ -125,7 +125,7 @@ describe('connected display rule', () => {
     const { task: after } = await store.postEvent(task.id, 'complete');
     expect(after['current-occurrence']).toMatchObject({ occurrence: 2, status: 'completed', 'completion-count': 1, 'due-time': WEEK_ENDS[1] });
     const posted = (await store.queue.all()).filter((entry) => entry.operation === 'post-event');
-    expect(posted.at(-1).fields).toEqual({ id: posted.at(-1).fields.id, type: 'complete', 'creation-time': '2026-11-11T09:00:00.000Z' });
+    expect(posted.at(-1).fields).toEqual({ id: posted.at(-1).fields.id, type: 'log', checked: true, 'creation-time': '2026-11-11T09:00:00.000Z' });
   });
 
   it('names the cached occurrence for grace completion before the server rolls over', async () => {
@@ -134,6 +134,6 @@ describe('connected display rule', () => {
     const { task: after } = await store.postEvent(task.id, 'complete', { occurrence: 1 });
     expect(after['current-occurrence']).toMatchObject({ occurrence: 1, 'completion-count': 1 });
     const posted = (await store.queue.all()).filter((entry) => entry.operation === 'post-event');
-    expect(posted.at(-1).fields).toMatchObject({ type: 'complete', occurrence: 1 });
+    expect(posted.at(-1).fields).toMatchObject({ type: 'log', checked: true, occurrence: 1 });
   });
 });

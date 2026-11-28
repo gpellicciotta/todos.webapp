@@ -15,7 +15,7 @@
  */
 
 import {
-  applyEvent, applyRuleEdit, eventsTowardsStatus, firstOccurrence, freshOccurrence, GRACE_MS, graceOccurrence, isRecurring,
+  applyEvent, applyRuleEdit, byEventOrder, eventsTowardsStatus, firstOccurrence, foldLogCache, freshOccurrence, GRACE_MS, graceOccurrence, isRecurring,
   isPeriodEnd, isStale, makeEvent, mirrorOccurrence, mirrorRules, normalizeRules, planRollOver, refoldOccurrence, RULE_FIELDS, shouldExpire, STATUSES, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { isValidTimezone } from '../core/periods.js';
@@ -27,6 +27,13 @@ export { STATUSES };
 export const DESCRIPTION_MAX = 500;
 export const OVERDUE_HANDLINGS = ['keep', 'cancel'];
 export const RECURRENCE_UNITS = ['day', 'week', 'month'];
+
+/** The event types that the log fold reads; the store writes completions as the first of them. */
+const LOG_TYPES = Object.freeze(['log', 'undo-log']);
+/** The user events that `postEvent` accepts: the log events have their own actions. */
+const POSTED_TYPES = USER_EVENT_TYPES.filter((type) => !LOG_TYPES.includes(type));
+/** The most seconds that the entries of one occurrence add up to. */
+const TIME_TOTAL_MAX = 999_999_999_999;
 
 /** The stores a task write covers: the task, its occurrences, and its events. */
 export const TASK_STORES = [STORES.tasks, STORES.occurrences, STORES.events];
@@ -209,7 +216,10 @@ function newEventId(ctx) {
 export async function putTask(tx, task) {
   const occurrence = mirrorOccurrence(task['current-occurrence']);
   await request(tx.objectStore(STORES.tasks).put({ ...task, 'lifecycle-rules': mirrorRules(task['lifecycle-rules']), 'current-occurrence': occurrence }));
-  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': task.id, ...occurrence }, [task.id, occurrence.occurrence]));
+  // Only the task embeds the live entries of its current occurrence.
+  const cache = { ...occurrence };
+  delete cache.entries;
+  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': task.id, ...cache }, [task.id, occurrence.occurrence]));
 }
 
 /**
@@ -220,7 +230,9 @@ export async function putTask(tx, task) {
  * @returns {Promise<void>}
  */
 async function putOccurrence(tx, taskId, occurrence) {
-  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': taskId, ...mirrorOccurrence(occurrence) }, [taskId, occurrence.occurrence]));
+  const cache = mirrorOccurrence(occurrence);
+  delete cache.entries;
+  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': taskId, ...cache }, [taskId, occurrence.occurrence]));
 }
 
 /**
@@ -241,7 +253,8 @@ export async function putEvents(tx, events) {
  * @param {object} task the task
  * @param {string[]} types the event types
  * @param {string} time the ISO time of the action
- * @returns {{task: object, events: object[]}} the task after the events, and the events
+ * @returns {{task: object, events: object[]}} the task after the events, and the events; `complete` and `uncomplete`
+ *   stay as they are until `finishEvents` writes them as logs
  * @throws {StoreError} with code `conflict` when an event's precondition fails
  */
 function applyUserEvents(ctx, task, types, time, { placed = true } = {}) {
@@ -258,6 +271,83 @@ function applyUserEvents(ctx, task, types, time, { placed = true } = {}) {
     events.push(event);
   }
   return { task: { ...task, 'current-occurrence': occurrence }, events };
+}
+
+/**
+ * Write `complete` as a checked `log`, and `uncomplete` as an `undo-log` of the latest live check at its place.
+ * @param {{keyRange: typeof IDBKeyRange}} ctx store context
+ * @param {IDBTransaction} tx a transaction covering the events store
+ * @param {object} task the task
+ * @param {object[]} events the events of one action, in order
+ * @returns {Promise<object[]>} the events to store
+ * @throws {StoreError} with code `conflict` when an `uncomplete` finds no live check
+ */
+async function convertCompletions(ctx, tx, task, events) {
+  if (!events.some((event) => event.type === 'complete' || event.type === 'uncomplete')) {
+    return events;
+  }
+  const stored = (await request(tx.objectStore(STORES.events).getAll(ctx.keyRange.bound([task.id], [task.id, []])))).sort(byEventOrder);
+  const undone = new Set(stored.filter((event) => event.type === 'undo-log').map((event) => event['target-event-id']));
+  const live = new Map();
+  const checks = (event) => {
+    const number = event.occurrence ?? task['current-occurrence'].occurrence;
+    return live.get(number) ?? live.set(number, []).get(number);
+  };
+  for (const event of stored) {
+    // Events stored by an import may still be `complete` and `uncomplete`; they count the same.
+    if (event.type === 'complete' || (event.type === 'log' && event.checked && !undone.has(event.id))) {
+      checks(event).push(event.id);
+    }
+    else if (event.type === 'uncomplete') {
+      checks(event).pop();
+    }
+  }
+  return events.map((event) => {
+    if (event.type === 'complete') {
+      checks(event).push(event.id);
+      return { ...event, type: 'log', checked: true };
+    }
+    if (event.type === 'uncomplete') {
+      const target = checks(event).pop();
+      if (target === undefined) {
+        throw new StoreError('conflict', 'An uncomplete event needs a live check to undo.');
+      }
+      return { ...event, type: 'undo-log', 'target-event-id': target };
+    }
+    return event;
+  });
+}
+
+/**
+ * Fold the stored events of an occurrence into its cache, with the log fold; the current occurrence also embeds its live entries.
+ * An occurrence that holds events stored as `complete` or `uncomplete`, such as an import, folds the former way instead.
+ * @param {{keyRange: typeof IDBKeyRange}} ctx store context
+ * @param {IDBTransaction} tx a transaction covering the events store
+ * @param {object} task the task
+ * @param {object} occurrence the occurrence to fold
+ * @returns {Promise<object>} the occurrence with the folded count, progress, status, close time, and time spent
+ */
+async function refoldStored(ctx, tx, task, occurrence) {
+  const all = await request(tx.objectStore(STORES.events).getAll(ctx.keyRange.bound([task.id], [task.id, []])));
+  return foldLogCache(occurrence, all, task['lifecycle-rules']);
+}
+
+/**
+ * Store the events of an action and the task, converting completions to logs and refolding the occurrence when logs joined it.
+ * @param {{keyRange: typeof IDBKeyRange}} ctx store context
+ * @param {IDBTransaction} tx a transaction covering `TASK_STORES`
+ * @param {object} task the task after the events
+ * @param {object[]} events the events of the action
+ * @returns {Promise<{task: object, events: object[]}>} the stored task and events
+ */
+async function finishEvents(ctx, tx, task, events) {
+  const converted = await convertCompletions(ctx, tx, task, events);
+  await putEvents(tx, converted);
+  const current = task['current-occurrence'];
+  const logged = converted.some((event) => LOG_TYPES.includes(event.type) && event.occurrence === current.occurrence);
+  const updated = logged ? { ...task, 'current-occurrence': await refoldStored(ctx, tx, task, current) } : task;
+  await putTask(tx, updated);
+  return { task: updated, events: converted };
 }
 
 /**
@@ -490,13 +580,13 @@ export async function createTask(ctx, input, { lists = [] } = {}) {
   const { task, events } = applyUserEvents(ctx, created, eventsTowardsStatus(created['current-occurrence'], status, rules), time);
   return transact(ctx.db, [STORES.lists, STORES.memberships, ...TASK_STORES], 'readwrite', async (tx) => {
     await request(tx.objectStore(STORES.tasks).add(task));
-    await putTask(tx, task);
-    await putEvents(tx, [create, ...events]);
+    await putEvents(tx, [create]);
+    const done = await finishEvents(ctx, tx, task, events);
     for (const listId of lists) {
       await mustGetLiveList(tx, listId);
       await putMembership(tx, ctx.keyRange, task.id, listId, time);
     }
-    return remember(task, events);
+    return remember(done.task, done.events);
   });
 }
 
@@ -532,9 +622,8 @@ export function updateTask(ctx, id, changes = {}, { when } = {}) {
     if (status !== undefined) {
       ({ task: updated, events } = applyUserEvents(ctx, updated, eventsTowardsStatus(updated['current-occurrence'], status, updated['lifecycle-rules']), time));
     }
-    await putTask(tx, updated);
-    await putEvents(tx, events);
-    return remember(updated, events);
+    const done = await finishEvents(ctx, tx, updated, events);
+    return remember(done.task, done.events);
   });
 }
 
@@ -605,9 +694,8 @@ async function postForPrevious(ctx, tx, task, type, number, now) {
       throw refuse('its grace period has ended');
     }
     const event = makeEvent({ id: newEventId(ctx), 'task-id': task.id, type, 'creation-time': now.toISOString(), occurrence: number });
-    await putTask(tx, task);
-    await putEvents(tx, [event]);
-    return { event, task: remember(task, [event]) };
+    const done = await finishEvents(ctx, tx, task, [event]);
+    return { event: done.events[0], task: remember(done.task, done.events) };
   }
   const previous = await request(tx.objectStore(STORES.occurrences).get([task.id, number]));
   const due = Date.parse(previous?.['due-time'] ?? '');
@@ -626,10 +714,11 @@ async function postForPrevious(ctx, tx, task, type, number, now) {
   if (!applyEvent(open, event, task['lifecycle-rules'])) {
     throw new StoreError('conflict', `A ${type} event does not apply to a ${open.status} occurrence.`);
   }
-  await putOccurrence(tx, task.id, refoldOccurrence(occurrence, [...events, event], task['lifecycle-rules']));
+  const [stored] = await convertCompletions(ctx, tx, task, [event]);
+  await putEvents(tx, [stored]);
+  await putOccurrence(tx, task.id, await refoldStored(ctx, tx, task, occurrence));
   await putTask(tx, task);
-  await putEvents(tx, [event]);
-  return { event, task: remember(task, [event]) };
+  return { event: stored, task: remember(task, [stored]) };
 }
 
 /**
@@ -647,7 +736,7 @@ async function postForPrevious(ctx, tx, task, type, number, now) {
  * @throws {StoreError} with code `conflict` when the precondition fails, and `invalid` for other types
  */
 export function postEvent(ctx, id, type, { occurrence: named } = {}) {
-  if (!USER_EVENT_TYPES.includes(type)) {
+  if (!POSTED_TYPES.includes(type)) {
     throw new StoreError('invalid', `Clients cannot post a ${type} event.`);
   }
   return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
@@ -690,10 +779,157 @@ export function postEvent(ctx, id, type, { occurrence: named } = {}) {
     else {
       result = applyUserEvents(ctx, task, [type], time);
     }
-    await putTask(tx, result.task);
-    await putEvents(tx, result.events);
-    return { event: result.events[0], task: remember(result.task, result.events) };
+    const done = await finishEvents(ctx, tx, result.task, result.events);
+    return { event: done.events[0], task: remember(done.task, done.events) };
   });
+}
+
+/**
+ * Validate the fields of a log entry.
+ * @param {object} input `checked`, `time-spent-seconds`, `amount`, and `label`; at least one of the first three
+ * @returns {object} the event fields to store
+ * @throws {ValidationError} naming the field that breaks a rule, or `entry` when the entry holds nothing to log
+ */
+function checkEntry(input) {
+  const fail = (field, rule) => {
+    throw new ValidationError(field, 'invalid', `Not a valid ${field}: ${rule}.`);
+  };
+  const given = (field) => input[field] !== undefined && input[field] !== null;
+  const entry = {};
+  if (given('checked') && typeof input.checked !== 'boolean') {
+    fail('checked', 'it is true or false');
+  }
+  if (input.checked === true) {
+    entry.checked = true;
+  }
+  if (given('time-spent-seconds')) {
+    const seconds = input['time-spent-seconds'];
+    if (!Number.isInteger(seconds) || seconds < 1 || seconds > 2_147_483_647) {
+      fail('time-spent-seconds', 'it is a whole number from 1 to 2,147,483,647');
+    }
+    entry['time-spent-seconds'] = seconds;
+  }
+  if (given('amount')) {
+    const { amount } = input;
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0 || amount > 999_999_999_999.999 || Math.abs(amount * 1000 - Math.round(amount * 1000)) > 1e-6) {
+      fail('amount', 'it is a decimal from 0 to 999,999,999,999.999 with at most 3 decimals');
+    }
+    entry.amount = amount;
+  }
+  if (given('label')) {
+    const label = typeof input.label === 'string' ? input.label.trim() : fail('label', 'it is text');
+    if (label.length > 100) {
+      fail('label', 'it holds at most 100 characters');
+    }
+    if (label) {
+      entry.label = label;
+    }
+  }
+  if (!('checked' in entry || 'time-spent-seconds' in entry || 'amount' in entry)) {
+    throw new ValidationError('entry', 'required', 'An entry needs a check, a time spent, or an amount.');
+  }
+  return entry;
+}
+
+/**
+ * Write a `log` or `undo-log` event, and refold the occurrence it joins with the log fold.
+ * The event joins the current occurrence, or the previous one of a recurring task within its grace period.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date, local?: () => boolean}} ctx store context
+ * @param {string} id the task identifier
+ * @param {'log'|'undo-log'} type the event type
+ * @param {object} extra the log fields of the event
+ * @param {{occurrence?: number}} options the occurrence a `log` names, the current one by default; an `undo-log` joins its target's
+ * @returns {Promise<{event: object, task: object}>} the stored event and the updated task
+ * @throws {StoreError} with code `conflict` for an undo of an event that is no `log` of the task, a closed grace period,
+ *   or a time total above the limit
+ */
+function postLogEvent(ctx, id, type, extra, { occurrence: named } = {}) {
+  return transact(ctx.db, TASK_STORES, 'readwrite', async (tx) => {
+    const stored = await mustGetLiveTask(tx, id);
+    const now = ctx.now();
+    let task = { ...stored, 'last-update-time': now.toISOString() };
+    if (isLocal(ctx)) {
+      ({ task } = await rollOverInside(ctx, tx, task, now));
+    }
+    const current = task['current-occurrence'];
+    let number = named ?? current.occurrence;
+    if (type === 'undo-log') {
+      const target = await request(tx.objectStore(STORES.events).get([id, extra['target-event-id']]));
+      if (target?.type !== 'log') {
+        throw new StoreError('conflict', 'An undo needs the identifier of a log entry of the task.');
+      }
+      number = target.occurrence ?? current.occurrence;
+    }
+    const refuse = (reason) => new StoreError('conflict', `A ${type} event cannot join occurrence ${number}: ${reason}.`);
+    let time = now.toISOString();
+    let placed = number;
+    let previous = null;
+    if (number !== current.occurrence) {
+      if (!isRecurring(task['lifecycle-rules']) || number !== current.occurrence - 1) {
+        throw refuse('only the current occurrence, or the previous one of a recurring task, takes entries');
+      }
+      previous = await request(tx.objectStore(STORES.occurrences).get([id, number]));
+      const due = Date.parse(previous?.['due-time'] ?? '');
+      if (!previous || !(now.getTime() <= due + GRACE_MS)) {
+        throw refuse('its grace period has ended');
+      }
+      // So the entry folds before the roll-over that closed the occurrence.
+      time = isLocal(ctx) ? new Date(Math.min(now.getTime(), due - 1)).toISOString() : time;
+    }
+    else if (isStale(task, now)) {
+      const due = Date.parse(current['due-time']);
+      if (named === undefined && type === 'log') {
+        // Past the period end before the service rolled over: the service assigns the period containing the time.
+        placed = null;
+      }
+      else if (now.getTime() > due + GRACE_MS) {
+        throw refuse('its grace period has ended');
+      }
+      else {
+        time = new Date(due - 1).toISOString();
+      }
+    }
+    const event = { ...makeEvent({ id: newEventId(ctx), 'task-id': id, type, 'creation-time': time, occurrence: placed }), ...extra };
+    await putEvents(tx, [event]);
+    if (previous) {
+      const { 'task-id': taskId, ...base } = previous;
+      await putOccurrence(tx, taskId, await refoldStored(ctx, tx, task, base));
+    }
+    else if (placed !== null) {
+      task = { ...task, 'current-occurrence': await refoldStored(ctx, tx, task, current) };
+      if (task['current-occurrence']['time-spent-seconds'] > TIME_TOTAL_MAX) {
+        throw new StoreError('conflict', `The time spent on an occurrence adds up to at most ${TIME_TOTAL_MAX} seconds.`);
+      }
+    }
+    await putTask(tx, task);
+    return { event, task: remember(task, [event]) };
+  });
+}
+
+/**
+ * Add an entry to a task: a `log` event holding a check, a time spent, an amount, or several, and an optional label.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date}} ctx store context
+ * @param {string} id the task identifier
+ * @param {{checked?: boolean, 'time-spent-seconds'?: number, amount?: number, label?: string}} input the entry
+ * @param {{occurrence?: number}} [options] the occurrence the entry names, the current one by default
+ * @returns {Promise<{event: object, task: object}>} the stored event and the updated task
+ * @throws {ValidationError} for a broken field, or an entry with nothing to log
+ */
+export function logEntry(ctx, id, input = {}, options = {}) {
+  return postLogEvent(ctx, id, 'log', checkEntry(input), options);
+}
+
+/**
+ * Undo one entry with an `undo-log` event; the fold then treats the entry as never logged.
+ * A second undo of the same entry is accepted and changes nothing.
+ * @param {{db: IDBDatabase, keyRange: typeof IDBKeyRange, now: () => Date}} ctx store context
+ * @param {string} id the task identifier
+ * @param {string} targetEventId the identifier of the `log` to undo
+ * @returns {Promise<{event: object, task: object}>} the stored event and the updated task
+ * @throws {StoreError} with code `conflict` when the target is no `log` of the task
+ */
+export function undoLog(ctx, id, targetEventId) {
+  return postLogEvent(ctx, id, 'undo-log', { 'target-event-id': targetEventId });
 }
 
 /**

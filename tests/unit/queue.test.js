@@ -105,8 +105,8 @@ describe('queued events and rule edits', () => {
       lists: [],
     });
     expect(events.map((entry) => [entry.operation, entry.fields.type, entry.fields['creation-time'], entry.fields.occurrence])).toEqual([
-      ['post-event', 'complete', '2026-11-04T09:00:01.000Z', 1],
-      ['post-event', 'uncomplete', '2026-11-04T09:00:02.000Z', 1],
+      ['post-event', 'log', '2026-11-04T09:00:01.000Z', 1],
+      ['post-event', 'undo-log', '2026-11-04T09:00:02.000Z', 1],
       ['post-event', 'start', '2026-11-04T09:00:02.000Z', 1],
     ]);
     const stored = await store.eventsOfTask(task.id);
@@ -235,5 +235,141 @@ describe('queued note links', () => {
     const edit = (await store.queue.all()).find((entry) => entry.operation === 'edit-note');
     await store.queue.undo(store, { ...edit, undo: { kind: 'note-text', taskId: oneOff.id, id: note.id, from: 'Hi', to: 'Hello' } });
     expect((await store.notesOfTask(oneOff.id))[0].text).toBe('Hi');
+  });
+});
+
+describe('queued log entries', () => {
+  it('queues a log with its fields as one post-event, and an undo-log with its target', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Run' });
+    await store.queue.clear();
+    clock.tick();
+    const { event } = await store.logEntry(task.id, { checked: true, 'time-spent-seconds': 90, amount: 1.5, label: 'Park' });
+    clock.tick();
+    const { event: undo } = await store.undoLog(task.id, event.id);
+    const [log, undoLog] = await store.queue.all();
+    expect(log).toMatchObject({
+      operation: 'post-event',
+      target: { type: 'event', id: event.id, 'task-id': task.id },
+      fields: { id: event.id, type: 'log', checked: true, 'time-spent-seconds': 90, amount: 1.5, label: 'Park', occurrence: 1 },
+    });
+    expect(undoLog.fields).toEqual({ id: undo.id, type: 'undo-log', 'target-event-id': event.id, 'creation-time': undo['creation-time'], occurrence: 1 });
+  });
+
+  it('queues a tick as a checked log and an untick as an undo-log of the latest live check', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Tick' });
+    await store.queue.clear();
+    clock.tick();
+    const { event } = await store.postEvent(task.id, 'complete');
+    clock.tick();
+    await store.postEvent(task.id, 'uncomplete');
+    const [log, undo] = await store.queue.all();
+    expect(log.fields).toMatchObject({ type: 'log', checked: true });
+    expect(undo.fields).toMatchObject({ type: 'undo-log', 'target-event-id': event.id });
+  });
+
+  it('rolls back a rejected log, so the entry leaves the occurrence and the events', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Tick' });
+    await store.queue.clear();
+    clock.tick();
+    await store.logEntry(task.id, { checked: true });
+    const [entry] = await store.queue.all();
+    await store.queue.undo(store, entry);
+    const after = await store.getTask(task.id);
+    expect(after['current-occurrence']).toMatchObject({ progress: 0, 'completion-count': 0, status: 'ready', 'close-time': null });
+    expect(after['current-occurrence'].entries ?? []).toEqual([]);
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
+  });
+});
+
+describe('rolling back queued log entries', () => {
+  it('removes the time of a rejected time-only log and keeps the later entries', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Run', 'lifecycle-rules': { 'target-count': 2 } });
+    await store.queue.clear();
+    clock.tick();
+    await store.logEntry(task.id, { 'time-spent-seconds': 600 });
+    clock.tick();
+    const { event: later } = await store.logEntry(task.id, { checked: true, 'time-spent-seconds': 60 });
+    const [first] = await store.queue.all();
+    await store.queue.undo(store, first);
+    const occurrence = (await store.getTask(task.id))['current-occurrence'];
+    expect(occurrence).toMatchObject({ 'time-spent-seconds': 60, progress: 1, 'completion-count': 1, status: 'in-progress' });
+    expect(occurrence.entries.map((entry) => entry.id)).toEqual([later.id]);
+  });
+
+  it('brings the target back into the entries when an undo is rejected', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Tick' });
+    clock.tick();
+    const { event } = await store.logEntry(task.id, { checked: true, 'time-spent-seconds': 30 });
+    await store.queue.clear();
+    clock.tick();
+    await store.undoLog(task.id, event.id);
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 0, 'time-spent-seconds': 0, entries: [] });
+    const [undo] = await store.queue.all();
+    await store.queue.undo(store, undo);
+    const occurrence = (await store.getTask(task.id))['current-occurrence'];
+    expect(occurrence).toMatchObject({ progress: 1, 'time-spent-seconds': 30, status: 'completed' });
+    expect(occurrence.entries.map((entry) => entry.id)).toEqual([event.id]);
+  });
+
+  it('rebuilds the occurrence after rolling back every queued log and undo in turn', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+    await store.queue.clear();
+    clock.tick();
+    const { event } = await store.logEntry(task.id, { checked: true, amount: 1.5 });
+    clock.tick();
+    await store.logEntry(task.id, { 'time-spent-seconds': 90 });
+    clock.tick();
+    await store.undoLog(task.id, event.id);
+    for (let entry = (await store.queue.all())[0]; entry; entry = (await store.queue.all())[0]) {
+      await store.queue.undo(store, entry);
+      await store.queue.remove([entry.seq]);
+    }
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 0, 'time-spent-seconds': 0, status: 'ready', entries: [] });
+    expect((await store.eventsOfTask(task.id)).map((e) => e.type)).toEqual(['create']);
+  });
+});
+
+describe('rolling back a log beside legacy events', () => {
+  it('keeps the legacy check, drops the rejected time, and keeps the live entries', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 2 } });
+    await store.applyChanges(() => ({
+      changes: { put: { events: [{ id: 'legacy-1', 'task-id': task.id, occurrence: 1, 'creation-time': '2026-11-04T09:00:30.000Z', 'owner-id': null, type: 'complete', details: null }] } },
+      result: null,
+    }));
+    await store.queue.clear();
+    clock.tick(60_000);
+    await store.logEntry(task.id, { 'time-spent-seconds': 90 });
+    const [entry] = await store.queue.all();
+    await store.queue.undo(store, entry);
+    const occurrence = (await store.getTask(task.id))['current-occurrence'];
+    expect(occurrence).toMatchObject({ progress: 1, 'time-spent-seconds': 0, status: 'in-progress' });
+    expect(occurrence.entries.map((item) => item.id)).toEqual(['legacy-1']);
+  });
+});
+
+describe('rolling back a log after a legacy uncomplete that undoes a checked log', () => {
+  it('keeps the legacy check and drops the checked log that the uncomplete undid', async () => {
+    const { store, clock } = await freshStore(TRACKED);
+    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+    const legacy = (id, type, time) => ({ id, 'task-id': task.id, occurrence: 1, 'creation-time': time, 'owner-id': null, type, details: null });
+    await store.applyChanges(() => ({ changes: { put: { events: [legacy('legacy-1', 'complete', '2026-11-04T09:00:30.000Z')] } }, result: null }));
+    clock.tick(60_000);
+    await store.logEntry(task.id, { checked: true, 'time-spent-seconds': 45 });
+    await store.applyChanges(() => ({ changes: { put: { events: [legacy('legacy-2', 'uncomplete', '2026-11-04T09:01:30.000Z')] } }, result: null }));
+    await store.queue.clear();
+    clock.tick(90_000);
+    await store.logEntry(task.id, { 'time-spent-seconds': 90 });
+    const [entry] = await store.queue.all();
+    await store.queue.undo(store, entry);
+    const occurrence = (await store.getTask(task.id))['current-occurrence'];
+    expect(occurrence).toMatchObject({ progress: 1, 'time-spent-seconds': 0 });
+    expect(occurrence.entries.map((item) => item.id)).toEqual(['legacy-1']);
   });
 });

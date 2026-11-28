@@ -293,6 +293,14 @@ Every entry is one append-only `log` event; the store never edits or removes it.
 - Any user who may edit the task may undo any entry; events keep their `owner-id`.
 - `start` and `unstart` stay: they say "I have begun" before anything is logged.
 - Connected, a `log` and an `undo-log` join the change queue as `post-event` entries with their identifiers.
+- Store actions:
+  - `logEntry(id, {checked, time-spent-seconds, amount, label}, {occurrence})` validates the fields, throws a `ValidationError` naming the field or `entry`, and writes a `log`.
+  - `undoLog(id, targetEventId)` writes an `undo-log` that joins the occurrence of its target.
+  - Both join the current occurrence, or the previous one of a recurring task within its grace period, and return `{event, task}`.
+  - `postEvent(id, 'complete')` writes a checked `log`, and `postEvent(id, 'uncomplete')` an `undo-log` of the latest live check, or throws a `conflict` StoreError without one.
+    `createTask` and `updateTask` write their status events the same way.
+  - The current occurrence embeds `entries`, its live `log` events oldest first; the `occurrences` store keeps no `entries`.
+  - A time total above 999,999,999,999 seconds throws a `conflict` StoreError.
 
 ---
 
@@ -326,8 +334,10 @@ Every entry is one append-only `log` event; the store never edits or removes it.
   The file copies todos.server `docs/specs/fold-test-vectors.json`; refresh it by hand when the server's copy changes.
   The occurrences unit test runs every case.
 - `foldLog({goal, recurring, events, carriedReading})` runs the fold above and returns `entries`, `progress`, `time-spent-seconds`, `status`, `close-time`, and `carried-reading`.
-  Sums run in whole thousandths. `foldInPlace({target, recurring, events})` folds stored `complete` and `uncomplete` events with the new verdicts, until the store upgrade converts them.
-  The store still uses the former functions until the store upgrade lands.
+  Sums run in whole thousandths. `foldInPlace({target, recurring, events})` folds `complete` and `uncomplete` events, or a checked `log` and an `undo-log` at its own place, with the new verdicts; the store upgrade uses it to verify each occurrence.
+- The store refolds with `foldLog` whenever a `log` or `undo-log` joins an occurrence, and keeps the live entries in the cache.
+  The former functions still apply `start`, `cancel`, `reopen`, and the closing events, and count a checked `log` like `complete` and an `undo-log` like `uncomplete`; they also accept `failed`, which `reopen` opens again.
+  An occurrence that holds an imported `complete` or `uncomplete` folds the former way until a later task converts imports.
 
 ### Closing Recurring Occurrences
 - A recurring occurrence stays open until its period ends, or until `cancel`.
@@ -383,11 +393,16 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
   - A user `cancel` keeps `cancelled`, and `completed` stays `completed`.
 - The upgrade verifies each occurrence with an in-place fold, which applies each `undo-log` at its own place.
   It must reproduce the old count, the mapped status, and the close time; a mismatch aborts the transaction and keeps version 5.
+  The open then fails with an `upgrade-failed` StoreError that names the occurrence, and the console shows the cause.
 - The real fold then runs with retroactive undo; occurrences where it differs keep its result, and the upgrade counts them.
+  The current occurrence of each task with events embeds its live `entries`.
+- An occurrence without events keeps its stored cache.
+- The conversion runs after the version 5 and goal field steps, for every database older than version 6; a database already at version 6 is not converted.
 - Queued entries convert in step:
   - A queued `post-event` of `complete` or `uncomplete` keeps its type, since the service accepts both as aliases.
   - A queued `update-rules` of `target-count` becomes `goal-target`; `cancel` for `overdue-handling` becomes `fail`.
-- The upgrade writes no sync log record; counts go to the console.
+    Its undo data keeps `target-count`, which the store still applies.
+- The upgrade writes no sync log record; the console shows the counts of refolded occurrences, converted events, dropped uncompletes, and occurrences refolded differently.
 - Older web apps cannot read version 6; the open fails with a `blocked` or version error, and the app asks to update.
 
 ---

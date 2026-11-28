@@ -15,6 +15,9 @@
  */
 
 import { RULE_FIELDS, USER_EVENT_TYPES } from '../core/occurrences.js';
+
+/** The fields that a `log` or an `undo-log` adds to the request of an event. */
+const LOG_FIELDS = ['checked', 'time-spent-seconds', 'amount', 'label', 'target-event-id'];
 import { judge, SyncStop } from './api.js';
 
 const NAME_MAX = 100;
@@ -177,7 +180,10 @@ async function runStep(api, { kind, record }) {
       break;
     case 'event':
       request = ['POST', `/api/tasks/${record['task-id']}/events`, {
-        body: { id: record.id, type: record.type, 'creation-time': record['creation-time'], occurrence: record.occurrence, import: true },
+        body: {
+          id: record.id, type: record.type, ...pick(record, LOG_FIELDS.filter((name) => record[name] !== undefined && record[name] !== null)),
+          'creation-time': record['creation-time'], occurrence: record.occurrence, import: true,
+        },
       }];
       break;
     case 'note':

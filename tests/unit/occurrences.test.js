@@ -11,6 +11,7 @@ import {
   foldEvents,
   foldInPlace,
   foldLog,
+  foldLogCache,
   freshOccurrence,
   fromLegacyTask,
   graceOccurrence,
@@ -26,6 +27,7 @@ import {
   statusFromCount,
   statusOf,
   toLegacyTask,
+  USER_EVENT_TYPES,
 } from '../../src/js/core/occurrences.js';
 
 const START = '2026-11-01T09:00:00.000Z';
@@ -479,5 +481,97 @@ describe('goal fields and their mirrors', () => {
   it('resets progress with the count when a recurring period refolds or the display rule applies', () => {
     const open = { ...fresh(), 'completion-count': 1, progress: 1, status: 'completed' };
     expect(refoldOccurrence(open, [], DEFAULT_RULES)).toMatchObject({ 'completion-count': 0, progress: 0 });
+  });
+});
+
+describe('log events in the in-place fold and the former fold', () => {
+  const check = (id, minutes) => ({ id, type: 'log', checked: true, 'creation-time': at(minutes) });
+  const undo = (id, minutes, target) => ({ id, type: 'undo-log', 'target-event-id': target, 'creation-time': at(minutes) });
+
+  it('lists log and undo-log among the user events', () => {
+    expect(USER_EVENT_TYPES).toEqual(expect.arrayContaining(['log', 'undo-log']));
+  });
+
+  it('folds a checked log and an undo-log in place like complete and uncomplete', () => {
+    const events = [check('a', 1), check('b', 2), undo('c', 3, 'b'), check('d', 4)];
+    const legacy = [event('a', 'complete', 1), event('b', 'complete', 2), event('c', 'uncomplete', 3), event('d', 'complete', 4)];
+    expect(foldInPlace({ target: 2, events })).toEqual(foldInPlace({ target: 2, events: legacy }));
+    expect(foldInPlace({ target: 2, events })).toMatchObject({ progress: 2, status: 'completed', 'close-time': at(4) });
+  });
+
+  it('ignores a log without a check in place', () => {
+    const events = [{ id: 'a', type: 'log', amount: 3, 'creation-time': at(1) }];
+    expect(foldInPlace({ target: 1, events })).toEqual({ progress: 0, status: 'ready', 'close-time': null });
+  });
+
+  it('counts a checked log like a completion in the former fold', () => {
+    const once = applyEvent(fresh({ 'target-count': 2 }), check('a', 1));
+    expect(once).toMatchObject({ 'completion-count': 1, progress: 1, status: 'in-progress' });
+    const twice = applyEvent(once, check('b', 2));
+    expect(twice).toMatchObject({ 'completion-count': 2, status: 'completed' });
+    expect(applyEvent(twice, undo('c', 3, 'b'))).toMatchObject({ 'completion-count': 1, status: 'in-progress', 'close-time': null });
+  });
+
+  it('accepts a log without a check, or on a cancelled task, and leaves the occurrence unchanged', () => {
+    const open = fresh();
+    expect(applyEvent(open, { id: 'a', type: 'log', 'time-spent-seconds': 60, 'creation-time': at(1) })).toEqual(open);
+    const cancelled = applyEvent(open, event('x', 'cancel', 1));
+    expect(applyEvent(cancelled, check('b', 2))).toEqual(cancelled);
+  });
+
+  it('refuses an undo-log below zero, and lets a failed occurrence reopen', () => {
+    expect(applyEvent(fresh(), undo('c', 1, 'a'))).toBeNull();
+    const failed = { ...fresh(), status: 'failed', 'close-time': at(5) };
+    expect(applyEvent(failed, event('r', 'reopen', 6))).toMatchObject({ status: 'ready', 'close-time': null });
+    expect(applyEvent(failed, check('b', 6))).toMatchObject({ status: 'failed', 'completion-count': 1 });
+  });
+});
+
+describe('the log cache of mixed legacy and log histories', () => {
+  const occurrence = () => ({ ...fresh({ 'target-count': 3 }), occurrence: 1 });
+  const stored = (id, type, minutes, fields = {}) => ({ id, type, occurrence: 1, 'creation-time': at(minutes), ...fields });
+
+  it('rebuilds time, live entries, and undos next to legacy completions', () => {
+    const events = [
+      stored('c1', 'complete', 1),
+      stored('l1', 'log', 2, { 'time-spent-seconds': 60 }),
+      stored('c2', 'complete', 3),
+      stored('u1', 'undo-log', 4, { 'target-event-id': 'l1' }),
+      stored('l2', 'log', 5, { 'time-spent-seconds': 30, checked: true }),
+    ];
+    const cache = foldLogCache(occurrence(), events, DEFAULT_RULES);
+    expect(cache).toMatchObject({ progress: 3, 'completion-count': 3, 'time-spent-seconds': 30, status: 'completed' });
+    expect(cache.entries.map((entry) => entry.id)).toEqual(['c1', 'c2', 'l2']);
+  });
+
+  it('lets an uncomplete undo the latest legacy check, and drops an ignored one', () => {
+    const events = [stored('x0', 'uncomplete', 0), stored('c1', 'complete', 1), stored('c2', 'complete', 2), stored('n1', 'uncomplete', 3), stored('l1', 'log', 4, { amount: 2 })];
+    const cache = foldLogCache(occurrence(), events, DEFAULT_RULES);
+    expect(cache).toMatchObject({ progress: 1, status: 'in-progress' });
+    expect(cache.entries.map((entry) => entry.id)).toEqual(['c1', 'l1']);
+  });
+});
+
+describe('legacy uncomplete events beside checked logs', () => {
+  const stored = (id, type, minutes, fields = {}) => ({ id, type, occurrence: 1, 'creation-time': at(minutes), ...fields });
+  const target3 = () => ({ ...fresh({ 'target-count': 3 }), occurrence: 1 });
+
+  it('undoes the latest live check, which may be a checked log with time', () => {
+    const events = [stored('a', 'complete', 1), stored('b', 'log', 2, { checked: true, 'time-spent-seconds': 45 }), stored('n', 'uncomplete', 3)];
+    const cache = foldLogCache(target3(), events, DEFAULT_RULES);
+    expect(cache).toMatchObject({ progress: 1, 'time-spent-seconds': 0 });
+    expect(cache.entries.map((entry) => entry.id)).toEqual(['a']);
+  });
+
+  it('skips a check that an earlier undo-log already took back', () => {
+    const events = [
+      stored('a', 'complete', 1),
+      stored('b', 'log', 2, { checked: true, amount: 3 }),
+      stored('u', 'undo-log', 3, { 'target-event-id': 'b' }),
+      stored('n', 'uncomplete', 4),
+    ];
+    const cache = foldLogCache(target3(), events, DEFAULT_RULES);
+    expect(cache).toMatchObject({ progress: 0, status: 'ready' });
+    expect(cache.entries).toEqual([]);
   });
 });

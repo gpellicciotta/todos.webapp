@@ -21,7 +21,7 @@ export const STATUSES = Object.freeze(['ready', 'in-progress', 'completed', 'can
 export const OPEN_STATUSES = Object.freeze(['ready', 'in-progress']);
 
 /** Event types that clients post; the service and the system write the others. */
-export const USER_EVENT_TYPES = Object.freeze(['complete', 'uncomplete', 'start', 'unstart', 'cancel', 'reopen']);
+export const USER_EVENT_TYPES = Object.freeze(['complete', 'uncomplete', 'log', 'undo-log', 'start', 'unstart', 'cancel', 'reopen']);
 
 /** The goal fields of rules and occurrence snapshots, with the defaults of today's simple task (ADR-0006). */
 export const GOAL_DEFAULTS = Object.freeze({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null });
@@ -297,13 +297,20 @@ function applyEventToCount(occurrence, event, rules) {
   }
   switch (event.type) {
     case 'complete':
-    case 'uncomplete': {
-      const changed = count + (event.type === 'complete' ? 1 : -1);
+    case 'uncomplete':
+    case 'log':
+    case 'undo-log': {
+      // A checked `log` counts like `complete` and an `undo-log` like `uncomplete`, at their own place; the log fold is the real one.
+      const check = event.type === 'complete' || (event.type === 'log' && event.checked === true);
+      if ((event.type === 'log' && !check) || (event.type === 'log' && status === 'cancelled')) {
+        break;
+      }
+      const changed = count + (check ? 1 : -1);
       if (status === 'cancelled' || changed < 0) {
         return null;
       }
       next['completion-count'] = changed;
-      next.status = statusFromCount(changed, occurrence['target-count']);
+      next.status = status === 'failed' ? 'failed' : statusFromCount(changed, occurrence['target-count']);
       break;
     }
     case 'start':
@@ -333,7 +340,7 @@ function applyEventToCount(occurrence, event, rules) {
       next['close-time'] = time;
       return next;
     case 'reopen':
-      if (status !== 'cancelled') {
+      if (status !== 'cancelled' && status !== 'failed') {
         return null;
       }
       next.status = statusFromCount(count, occurrence['target-count']);
@@ -345,7 +352,7 @@ function applyEventToCount(occurrence, event, rules) {
       return next;
     case 'end-recurrence':
       // Below target, the series ended unmet.
-      next.status = count >= occurrence['target-count'] ? 'completed' : 'cancelled';
+      next.status = status === 'failed' ? 'failed' : count >= occurrence['target-count'] ? 'completed' : 'cancelled';
       next['close-time'] = next.status === status && occurrence['close-time'] ? occurrence['close-time'] : time;
       return next;
     default:
@@ -672,7 +679,74 @@ export function foldLog({ goal, recurring = false, events = [], carriedReading =
 }
 
 /**
- * Fold the events of an occurrence in place, as stored before the store upgrade: `complete` and `uncomplete` count,
+ * Return the events of one occurrence with each `complete` as a checked `log`, and each applied `uncomplete` as an `undo-log`
+ * of the latest live check at its place; an `uncomplete` that the former fold ignores is left out, as in the store upgrade.
+ * @param {object} occurrence the occurrence, whose goal snapshot the former fold needs
+ * @param {object[]} events the events of the occurrence
+ * @param {object} rules the lifecycle rules
+ * @returns {object[]} the events, unchanged when none is legacy
+ */
+function logForm(occurrence, events, rules) {
+  if (!events.some((event) => event.type === 'complete' || event.type === 'uncomplete')) {
+    return events;
+  }
+  const recurring = isRecurring(rules);
+  const ordered = [...events].sort((a, b) => (recurring ? isPeriodEnd(a.type) - isPeriodEnd(b.type) : 0) || byEventOrder(a, b));
+  let old = { ...occurrence, 'completion-count': 0, status: 'ready', 'close-time': null };
+  const live = [];
+  const converted = [];
+  for (const event of ordered) {
+    const next = applyEvent(old, event, rules);
+    const counted = next !== null && next['completion-count'] > old['completion-count'];
+    if (event.type === 'complete') {
+      converted.push({ ...event, type: 'log', checked: true });
+    }
+    else if (event.type === 'uncomplete') {
+      if (next) {
+        converted.push({ ...event, type: 'undo-log', 'target-event-id': live.pop() });
+      }
+    }
+    else {
+      converted.push(event);
+    }
+    // Every counted check is live until an undo names it, whichever form it is stored in.
+    if (counted && (event.type === 'complete' || event.type === 'log')) {
+      live.push(event.id);
+    }
+    else if (event.type === 'undo-log' && live.includes(event['target-event-id'])) {
+      live.splice(live.indexOf(event['target-event-id']), 1);
+    }
+    old = next ?? old;
+  }
+  return converted;
+}
+
+/**
+ * Fold the events of an occurrence into its cache with the log fold: the count, progress, status, close time, and time spent,
+ * and the live `entries`. Events stored as `complete` or `uncomplete`, such as an old import, count as the checks and undos
+ * that the upgrade makes of them, so mixed histories rebuild time, entries, and undos too.
+ * @param {object} occurrence the occurrence, whose goal snapshot and number the fold uses
+ * @param {object[]} events the events of the task; only those naming this occurrence count
+ * @param {object} rules the lifecycle rules
+ * @returns {object} the occurrence with its refolded cache
+ */
+export function foldLogCache(occurrence, events, rules) {
+  const own = logForm(occurrence, events.filter((event) => event.occurrence === occurrence.occurrence), rules);
+  const goal = { direction: occurrence['goal-direction'] ?? 'at-least', measure: occurrence['goal-measure'] ?? 'checks', target: occurrence['goal-target'] ?? occurrence['target-count'] };
+  const folded = foldLog({ goal, recurring: isRecurring(rules), events: own });
+  const byId = new Map(own.map((event) => [event.id, event]));
+  return mirrorOccurrence({
+    ...occurrence,
+    'completion-count': folded.progress ?? 0,
+    status: folded.status,
+    'close-time': folded['close-time'],
+    'time-spent-seconds': folded['time-spent-seconds'],
+    entries: folded.entries.map((id) => byId.get(id)),
+  });
+}
+
+/**
+ * Fold the events of an occurrence in place: `complete` and `uncomplete`, or a checked `log` and an `undo-log` at its own place, count,
  * and the verdicts follow the ADR-0006 fold, so `expire`, or a period end below target, gives `failed`.
  * @param {object} input the occurrence to fold
  * @param {number} input.target the target count
@@ -691,6 +765,11 @@ export function foldInPlace({ target, recurring = false, events = [] }) {
     const open = status === 'ready' || status === 'in-progress';
     let next;
     switch (event.type) {
+      case 'log':
+        if (!event.checked) {
+          continue;
+        }
+      // falls through: a checked log counts like a completion
       case 'complete':
         if (status === 'cancelled') {
           continue;
@@ -698,6 +777,7 @@ export function foldInPlace({ target, recurring = false, events = [] }) {
         count += 1;
         next = status === 'failed' ? 'failed' : fromCount(count);
         break;
+      case 'undo-log':
       case 'uncomplete':
         if (count <= 0 || status === 'cancelled') {
           continue;

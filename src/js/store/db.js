@@ -9,7 +9,7 @@ import * as bin from './bin.js';
 import * as bulk from './bulk.js';
 import { StoreError, STORES } from './idb.js';
 import * as lists from './lists.js';
-import { migrateToGoals, migrateToLifecycle } from './migrate.js';
+import { migrateToGoals, migrateToLifecycle, migrateToLog } from './migrate.js';
 import * as notes from './notes.js';
 import * as tasks from './tasks.js';
 import { createQueue, isTracked, trackChange } from '../sync/queue.js';
@@ -25,7 +25,7 @@ export const DB_VERSION = 6;
  * @param {number} oldVersion the version before the upgrade, 0 for a new database
  * @param {IDBTransaction} tx the version-change transaction
  */
-function upgrade(db, oldVersion, tx) {
+function upgrade(db, oldVersion, tx, fail) {
   if (oldVersion < 1) {
     db.createObjectStore(STORES.lists, { keyPath: 'id' });
     db.createObjectStore(STORES.tasks, { keyPath: 'id' });
@@ -51,19 +51,19 @@ function upgrade(db, oldVersion, tx) {
     db.createObjectStore(STORES.occurrences);
     db.createObjectStore(STORES.events);
     if (oldVersion >= 1) {
-      migrateToLifecycle(tx);
+      // The events convert to logs once the version 5 records exist; the version 5 conversion already writes the goal fields.
+      migrateToLifecycle(tx, () => migrateToLog(tx, fail));
     }
   }
   if (oldVersion === 5) {
-    // Rules and occurrences gain the goal fields, with the counts kept as mirrors (ADR-0006); events stay as they are.
-    // The version 5 conversion of older databases already writes them.
-    migrateToGoals(tx);
+    // Rules and occurrences gain the goal fields, with the counts kept as mirrors (ADR-0006), then the events convert to logs.
+    migrateToGoals(tx, () => migrateToLog(tx, fail));
   }
 }
 
 /** Facade operations that change data; subscribers hear of each one once it commits. */
 const WRITES = [
-  'createList', 'updateList', 'createTask', 'updateTask', 'postEvent', 'updateRules', 'expireTask', 'rollOverTask',
+  'createList', 'updateList', 'createTask', 'updateTask', 'postEvent', 'logEntry', 'undoLog', 'updateRules', 'expireTask', 'rollOverTask',
   'addToList', 'removeFromList', 'moveInList',
   'addNote', 'editNote', 'deleteNote', 'deleteList', 'deleteTask', 'restoreList', 'restoreTask',
   'purgeForever', 'restoreEntries', 'purgeEntries', 'emptyBin', 'deleteAllData', 'purgeExpired', 'applyChanges',
@@ -82,7 +82,10 @@ export function openDatabase(factory, name, onVersionChange = () => {}) {
   return new Promise((resolve, reject) => {
     const req = factory.open(name, DB_VERSION);
     let blocked = false;
-    req.onupgradeneeded = (event) => upgrade(req.result, event.oldVersion, req.transaction);
+    let failure = null;
+    req.onupgradeneeded = (event) => upgrade(req.result, event.oldVersion, req.transaction, (error) => {
+      failure = new StoreError('upgrade-failed', `The update to the new data format failed and kept your data as it was: ${error.message}`);
+    });
     req.onblocked = () => {
       blocked = true;
       reject(new StoreError('blocked', "Close other tabs of ToDo's to finish the update."));
@@ -99,7 +102,7 @@ export function openDatabase(factory, name, onVersionChange = () => {}) {
       };
       resolve(db);
     };
-    req.onerror = () => reject(req.error);
+    req.onerror = () => reject(failure ?? req.error);
   });
 }
 
@@ -165,6 +168,8 @@ export async function openStore({
     createTask: (input, options) => tasks.createTask(ctx, input, options),
     updateTask: (id, changes, options) => tasks.updateTask(ctx, id, changes, options),
     postEvent: (id, type, options) => tasks.postEvent(ctx, id, type, options),
+    logEntry: (id, input, options) => tasks.logEntry(ctx, id, input, options),
+    undoLog: (id, targetEventId) => tasks.undoLog(ctx, id, targetEventId),
     updateRules: (id, edit) => tasks.updateRules(ctx, id, edit),
     expireTask: (id, options) => tasks.expireTask(ctx, id, options),
     rollOverTask: (id, options) => tasks.rollOverTask(ctx, id, options),

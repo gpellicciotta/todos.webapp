@@ -17,6 +17,13 @@ All notable changes to this project are documented here.
 - DevOps: Served the help docs and the changelog under `help/` locally and on Pages, and cached them for offline use after a first visit.
 - Tests: Made the task row due text tests follow the default locale clock, so the Pages workflow passes on CI again.
 - Docs: Wrote the welcome, getting started, and FAQ help docs in `docs/tutorial` as Markdown for the Help screen.
+- Store: Converted `complete` and `uncomplete` events to `log` and `undo-log` in the version 6 upgrade, mapped closed statuses to `failed`, and aborted on any mismatch with the old fold.
+- Store: Added `logEntry` and `undoLog`, and wrote ticks and unticks as a checked `log` and an `undo-log` of the latest live check, with live `entries` embedded in the current occurrence.
+- Sync: Queued log entries with their fields, and converted queued rule edits to `goal-target` and `fail` in the upgrade.
+- Backup: Carried `log` and `undo-log` events with their fields in format 2 export and import, rebuilding occurrence caches with the log fold.
+- Sync: Rebuilt the occurrence from the surviving events when a queued log or undo is rejected, restoring time totals and live entries.
+- Core: Rebuilt occurrence caches of mixed legacy and log histories with the log fold, so time, entries, and undos survive imports and rollbacks.
+- Core: Made a legacy uncomplete undo the latest live check of any form, skipping checks that an undo-log already took back.
 - FrontEnd: Added a Help screen to the user menu at #/help, with Application Info & Support, Welcome, Getting Started Tutorial, FAQ, and Release notes panels, search, and topic chips.
 - FrontEnd: Moved the keyboard shortcuts, the add field syntax, the version, and the source link from Settings to Help, and added a Report a problem link.
 - FrontEnd: Opened Help filtered by link, with `#/help?q=` for the search and `#/help?topic=` for the topic, and let the router carry a hash query.

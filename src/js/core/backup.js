@@ -13,7 +13,7 @@
 
 import {
   applyEvent, applyRuleEdit, byEventOrder, eventsTowardsOccurrence, eventsTowardsStatus, fromLegacyTask, isPeriodEnd,
-  isRecurring, makeEvent, normalizeRules, planRollOver, replayEvents, RULE_FIELDS, rulesShapeProblem, STATUSES, statusFromCount, statusOf, toLegacyTask,
+  foldLogCache, isRecurring, makeEvent, normalizeRules, planRollOver, replayEvents, RULE_FIELDS, rulesShapeProblem, STATUSES, statusFromCount, statusOf, toLegacyTask,
 } from './occurrences.js';
 import { isValidTimezone } from './periods.js';
 import { NAME_MAX, DESCRIPTION_MAX as LIST_DESCRIPTION_MAX } from '../store/lists.js';
@@ -58,7 +58,7 @@ const TYPES = ['lists', 'tasks', 'memberships', 'notes'];
 export const FORMAT_STATUSES = ['todo', 'in-progress', 'completed', 'cancelled'];
 /** The event types of format 2, as the service's `TaskEvent` schema lists them. */
 export const EVENT_TYPES = [
-  'create', 'complete', 'uncomplete', 'start', 'unstart', 'cancel', 'reopen',
+  'create', 'complete', 'uncomplete', 'log', 'undo-log', 'start', 'unstart', 'cancel', 'reopen',
   'edit-task', 'edit-lifecycle-rules', 'expire', 'roll-over', 'end-recurrence',
 ];
 const ID_MAX = 128;
@@ -103,6 +103,65 @@ function compare(a, b) {
   return a < b ? -1 : 1;
 }
 
+/** The fields that only a `log` or an `undo-log` event holds; they ride along in format 2 events until format 3 lands. */
+const LOG_FIELDS = ['checked', 'time-spent-seconds', 'amount', 'label', 'target-event-id'];
+
+/**
+ * Return the event fields a backup writes: the format 2 fields, and the log fields that the event holds.
+ * @param {object} event the stored event
+ * @returns {object} the exported event
+ */
+function exportEvent(event) {
+  return { ...pick(event, FIELDS.events), ...Object.fromEntries(LOG_FIELDS.filter((field) => event[field] !== undefined && event[field] !== null).map((field) => [field, event[field]])) };
+}
+
+/**
+ * Check the log fields of an event record; other event types hold none.
+ * @param {object} raw the raw event
+ * @param {string} path its path
+ * @returns {object} the checked log fields that the record holds
+ */
+function checkLogFields(raw, path) {
+  const held = LOG_FIELDS.filter((field) => raw[field] !== undefined && raw[field] !== null);
+  if (raw.type !== 'log' && raw.type !== 'undo-log') {
+    if (held.length > 0) {
+      fail(`${path}.${held[0]}`, 'is only allowed on log and undo-log events');
+    }
+    return {};
+  }
+  const fields = {};
+  if (raw.type === 'undo-log') {
+    fields['target-event-id'] = checkId(raw['target-event-id'], `${path}.target-event-id`);
+    return fields;
+  }
+  if (raw['target-event-id'] !== undefined && raw['target-event-id'] !== null) {
+    fail(`${path}.target-event-id`, 'is only allowed on undo-log events');
+  }
+  if (raw.checked !== undefined && raw.checked !== null) {
+    if (raw.checked !== true) {
+      fail(`${path}.checked`, 'must be true when present');
+    }
+    fields.checked = true;
+  }
+  if (raw['time-spent-seconds'] !== undefined && raw['time-spent-seconds'] !== null) {
+    fields['time-spent-seconds'] = checkInteger(raw['time-spent-seconds'], `${path}.time-spent-seconds`, 1, 2_147_483_647);
+  }
+  if (raw.amount !== undefined && raw.amount !== null) {
+    const { amount } = raw;
+    if (typeof amount !== 'number' || !(amount >= 0 && amount <= 999_999_999_999.999) || Math.abs(amount * 1000 - Math.round(amount * 1000)) > 1e-6) {
+      fail(`${path}.amount`, 'must be a number from 0 to 999999999999.999 with at most 3 decimals');
+    }
+    fields.amount = amount;
+  }
+  if (raw.label !== undefined && raw.label !== null) {
+    fields.label = checkText(raw.label, `${path}.label`, 1, 100);
+  }
+  if (!('checked' in fields || 'time-spent-seconds' in fields || 'amount' in fields)) {
+    fail(path, 'a log needs a check, a time spent, or an amount');
+  }
+  return fields;
+}
+
 /**
  * Copy the given fields of a record, in that order.
  * @param {object} record the record
@@ -111,6 +170,15 @@ function compare(a, b) {
  */
 function pick(record, fields) {
   return Object.fromEntries(fields.map((field) => [field, record[field] ?? null]));
+}
+
+/**
+ * Return an occurrence without its live `entries`, which only the task embeds.
+ * @param {object} occurrence the occurrence
+ * @returns {object} the occurrence without `entries`
+ */
+function dropEntries(occurrence) {
+  return Object.fromEntries(Object.entries(occurrence).filter(([name]) => name !== 'entries'));
 }
 
 /**
@@ -493,6 +561,7 @@ export function validateBackup(data) {
       'owner-id': checkOwnerId(raw['owner-id'], `${path}.owner-id`),
       type: checkEnum(raw.type, `${path}.type`, EVENT_TYPES),
       details: checkDetails(raw, path),
+      ...checkLogFields(raw, path),
     }), (event) => event.id, 'id');
   }
 
@@ -685,7 +754,7 @@ export async function exportBackup(store, { now = new Date(), appVersion }) {
     'lifecycle-rules': tasks.map((task) => ({ 'task-id': task.id, ...rulesOf(task['lifecycle-rules']) })),
     occurrences: [...occurrences.values()].map((occurrence) => pick(occurrence, FIELDS.occurrences))
       .sort((a, b) => compare(a['task-id'], b['task-id']) || a.occurrence - b.occurrence),
-    events: (data.events ?? []).filter((event) => known.has(event['task-id'])).map((event) => pick(event, FIELDS.events))
+    events: (data.events ?? []).filter((event) => known.has(event['task-id'])).map(exportEvent)
       .sort((a, b) => compare(a['task-id'], b['task-id']) || byEventOrder(a, b)),
     memberships: data.memberships.map((m) => pick(m, FIELDS.memberships)).sort((a, b) => compare(a['list-id'], b['list-id'])
       || compare(a.position, b.position) || compare(a['task-id'], b['task-id'])),
@@ -895,12 +964,16 @@ function rebuildTask(record, stored, { overwrite, time, fileEvents, fileOccurren
     'deletion-time': record['deletion-time'],
   };
   const final = [...replay.events, ...replay.added];
+  // Logs carry what the former fold cannot, such as time spent and live entries, so the log fold gives their caches.
+  const hasLogs = (number) => final.some((event) => event.occurrence === number && (event.type === 'log' || event.type === 'undo-log'));
+  const folded = (occurrence) => (hasLogs(occurrence.occurrence) ? foldLogCache(occurrence, final, replay.rules) : occurrence);
+  task['current-occurrence'] = folded(task['current-occurrence']);
   const finalIds = new Set(final.map((event) => event.id));
   const numbers = new Set(replay.occurrences.map((occurrence) => occurrence.occurrence));
   return {
     task,
     occurrences: replay.occurrences.filter((occurrence) => occurrence.occurrence !== replay.current.occurrence)
-      .map((occurrence) => ({ 'task-id': record.id, ...occurrence })),
+      .map((occurrence) => ({ 'task-id': record.id, ...dropEntries(folded(occurrence)) })),
     put: overwrite ? final : final.filter((event) => !localIds.has(event.id)),
     remove: overwrite ? local.filter((event) => !finalIds.has(event.id)) : [],
     dropOccurrences: (storeOccurrences.get(record.id) ?? []).map((occurrence) => occurrence.occurrence).filter((number) => !numbers.has(number)),
@@ -915,12 +988,13 @@ function rebuildTask(record, stored, { overwrite, time, fileEvents, fileOccurren
  * @returns {boolean} true when the events, the occurrences, and the current occurrence all match
  */
 function rebuildMatches(record, stored, context) {
+  const exportEventText = (event) => JSON.stringify(exportEvent(event));
   const rebuilt = rebuildTask(record, stored, context);
   const text = (records, names) => records.map((item) => JSON.stringify(pick(item, names))).sort().join('\n');
   const local = { events: context.storeEvents.get(record.id) ?? [], occurrences: context.storeOccurrences.get(record.id) ?? [] };
   const current = { 'task-id': record.id, ...rebuilt.task['current-occurrence'] };
   return rebuilt.remove.length === 0 && rebuilt.dropOccurrences.length === 0
-    && text(rebuilt.put, FIELDS.events) === text(local.events, FIELDS.events)
+    && rebuilt.put.map(exportEventText).sort().join('\n') === local.events.map(exportEventText).sort().join('\n')
     && text([...rebuilt.occurrences, current], FIELDS.occurrences) === text(local.occurrences, FIELDS.occurrences)
     && JSON.stringify(pick(rebuilt.task['current-occurrence'], FIELDS.occurrences.slice(1)))
       === JSON.stringify(pick(stored['current-occurrence'], FIELDS.occurrences.slice(1)));

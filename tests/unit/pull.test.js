@@ -247,6 +247,6 @@ describe('disconnecting', () => {
     const upload = fakeService();
     await adopt({ store, api: createApi({ session: fakeSession(), fetch: upload.fetch }), account: ACCOUNT });
     const posted = upload.calls.filter((call) => call.path === '/api/tasks/t1/events').map((call) => call.body.type);
-    expect(posted).toEqual(['complete']);
+    expect(posted).toEqual(['log']);
   });
 });

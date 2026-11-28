@@ -382,11 +382,11 @@ describe('disconnecting', () => {
     };
     const { put, delete: removed } = planDisconnect(local, 7, { newId });
     const types = (taskId) => put.events.filter((row) => row['task-id'] === taskId).map((row) => row.type);
-    expect(types('done')).toEqual(['complete']);
-    expect(types('ticked')).toEqual(['create', 'complete', 'complete']);
+    expect(types('done')).toEqual(['log']);
+    expect(types('ticked')).toEqual(['create', 'log', 'log']);
     expect(types('mine')).toEqual([]);
     expect(removed.events).toEqual([]);
-    expect(put.events.find((row) => row.type === 'complete')).toMatchObject({ 'creation-time': T0, occurrence: 1 });
+    expect(put.events.find((row) => row.type === 'log')).toMatchObject({ checked: true, 'creation-time': T0, occurrence: 1 });
   });
 
   it('replaces local events that fold to another status than the pulled occurrence', () => {

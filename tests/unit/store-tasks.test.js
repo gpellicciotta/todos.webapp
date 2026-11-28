@@ -62,7 +62,7 @@ describe('createTask', () => {
   it('reaches a given starting status through events', async () => {
     const task = await store.createTask({ description: 'Done already', status: 'completed' });
     expect(task['current-occurrence']).toMatchObject({ status: 'completed', 'completion-count': 1 });
-    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create', 'complete']);
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create', 'log']);
   });
 
   it('rejects an impossible date-only due time', async () => {
@@ -130,7 +130,7 @@ describe('updateTask', () => {
       await expect(store.updateTask(task.id, { status })).resolves.toMatchObject({ 'current-occurrence': { status } });
     }
     expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual([
-      'create', 'complete', 'cancel', 'reopen', 'uncomplete', 'start', 'unstart', 'cancel', 'reopen', 'complete', 'uncomplete', 'start', 'unstart',
+      'create', 'log', 'cancel', 'reopen', 'undo-log', 'start', 'unstart', 'cancel', 'reopen', 'log', 'undo-log', 'start', 'unstart',
     ]);
   });
 
@@ -170,7 +170,7 @@ describe('events and rules', () => {
     for (let tick = 0; tick < 3; tick++) {
       clock.tick();
       const { event, task: after } = await store.postEvent(task.id, 'complete');
-      expect(event).toMatchObject({ 'task-id': task.id, type: 'complete', occurrence: 1, 'owner-id': null, details: null });
+      expect(event).toMatchObject({ 'task-id': task.id, type: 'log', checked: true, occurrence: 1, 'owner-id': null, details: null });
       expect(event.id[14]).toBe('7');
       counts.push([after['current-occurrence']['completion-count'], after['current-occurrence'].status]);
     }
@@ -514,5 +514,126 @@ describe('goal fields', () => {
     expect(edited['lifecycle-rules']['goal-target']).toBe(2);
     const [stored] = await store.occurrencesOfTask(task.id);
     expect(stored).toMatchObject({ 'target-count': 2, 'goal-target': 2, 'completion-count': 1, progress: 1, 'time-spent-seconds': 0 });
+  });
+});
+
+describe('log entries', () => {
+  it('writes complete and uncomplete as a checked log and an undo-log of the latest live check', async () => {
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 2 } });
+    clock.tick();
+    const first = await store.postEvent(task.id, 'complete');
+    clock.tick();
+    const second = await store.postEvent(task.id, 'complete');
+    expect(first.event).toMatchObject({ type: 'log', checked: true, occurrence: 1 });
+    expect(second.task['current-occurrence']).toMatchObject({ progress: 2, 'completion-count': 2, status: 'completed' });
+    expect(second.task['current-occurrence'].entries.map((entry) => entry.id)).toEqual([first.event.id, second.event.id]);
+    clock.tick();
+    const undone = await store.postEvent(task.id, 'uncomplete');
+    expect(undone.event).toMatchObject({ type: 'undo-log', 'target-event-id': second.event.id, occurrence: 1 });
+    expect(undone.task['current-occurrence']).toMatchObject({ progress: 1, status: 'in-progress', 'close-time': null });
+    expect(undone.task['current-occurrence'].entries.map((entry) => entry.id)).toEqual([first.event.id]);
+    expect((await store.occurrencesOfTask(task.id))[0]).not.toHaveProperty('entries');
+  });
+
+  it('refuses an uncomplete without a live check', async () => {
+    const task = await store.createTask({ description: 'Fresh' });
+    await expect(store.postEvent(task.id, 'uncomplete')).rejects.toMatchObject({ code: 'conflict' });
+  });
+
+  it('writes the completions of a task created or updated with a status as logs', async () => {
+    const task = await store.createTask({ description: 'Done', status: 'completed' });
+    expect((await store.eventsOfTask(task.id)).map((event) => [event.type, event.checked])).toEqual([['create', undefined], ['log', true]]);
+    expect(task['current-occurrence']).toMatchObject({ status: 'completed', progress: 1 });
+    clock.tick();
+    const reopened = await store.updateTask(task.id, { status: 'ready' });
+    expect(reopened['current-occurrence']).toMatchObject({ status: 'ready', progress: 0, 'close-time': null, entries: [] });
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create', 'log', 'undo-log']);
+  });
+
+  it('logs time and an amount without a check, summing time on the occurrence', async () => {
+    const task = await store.createTask({ description: 'Run', 'lifecycle-rules': { 'target-count': 2 } });
+    clock.tick();
+    const { event, task: after } = await store.logEntry(task.id, { 'time-spent-seconds': 600, amount: 2.5, label: '  Park  ' });
+    expect(event).toMatchObject({ type: 'log', 'time-spent-seconds': 600, amount: 2.5, label: 'Park', occurrence: 1 });
+    expect(event).not.toHaveProperty('checked');
+    clock.tick();
+    await store.logEntry(task.id, { checked: true, 'time-spent-seconds': 60 });
+    const current = (await store.getTask(task.id))['current-occurrence'];
+    expect(current).toMatchObject({ 'time-spent-seconds': 660, progress: 1, status: 'in-progress' });
+    expect(current.entries).toHaveLength(2);
+    expect(after['last-update-time']).toBe('2026-11-04T09:00:01.000Z');
+  });
+
+  it('validates the fields of an entry', async () => {
+    const task = await store.createTask({ description: 'Run' });
+    const bad = async (entry, field) => expect(store.logEntry(task.id, entry)).rejects.toMatchObject({ field, code: expect.any(String) });
+    await bad({}, 'entry');
+    await bad({ label: 'only a label' }, 'entry');
+    await bad({ checked: false }, 'entry');
+    await bad({ 'time-spent-seconds': 0 }, 'time-spent-seconds');
+    await bad({ 'time-spent-seconds': 1.5 }, 'time-spent-seconds');
+    await bad({ 'time-spent-seconds': 2_147_483_648 }, 'time-spent-seconds');
+    await bad({ amount: -1 }, 'amount');
+    await bad({ amount: 1.2345 }, 'amount');
+    await bad({ amount: 1_000_000_000_000 }, 'amount');
+    await bad({ checked: true, label: 'x'.repeat(101) }, 'label');
+    expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
+  });
+
+  it('refuses a time total above the limit with a conflict', async () => {
+    const task = await store.createTask({ description: 'Long' });
+    await store.logEntry(task.id, { 'time-spent-seconds': 2_147_483_647 });
+    for (let i = 0; i < 464; i++) {
+      clock.tick();
+      await store.logEntry(task.id, { 'time-spent-seconds': 2_147_483_647 });
+    }
+    clock.tick();
+    await expect(store.logEntry(task.id, { 'time-spent-seconds': 2_147_483_647 })).rejects.toMatchObject({ code: 'conflict' });
+    expect((await store.getTask(task.id))['current-occurrence']['time-spent-seconds']).toBeLessThanOrEqual(999_999_999_999);
+  });
+
+  it('applies the time of a log whose check is ignored on a cancelled task', async () => {
+    const task = await store.createTask({ description: 'Stopped', status: 'cancelled' });
+    clock.tick();
+    const { task: after } = await store.logEntry(task.id, { checked: true, 'time-spent-seconds': 30 });
+    expect(after['current-occurrence']).toMatchObject({ status: 'cancelled', progress: 0, 'time-spent-seconds': 30 });
+  });
+
+  it('undoes an entry by its identifier, retroactively, and accepts a second undo', async () => {
+    const task = await store.createTask({ description: 'Water' });
+    clock.tick();
+    const { event } = await store.logEntry(task.id, { checked: true });
+    clock.tick();
+    const undone = await store.undoLog(task.id, event.id);
+    expect(undone.event).toMatchObject({ type: 'undo-log', 'target-event-id': event.id, occurrence: 1 });
+    expect(undone.task['current-occurrence']).toMatchObject({ progress: 0, status: 'ready', 'close-time': null, entries: [] });
+    clock.tick();
+    const again = await store.undoLog(task.id, event.id);
+    expect(again.task['current-occurrence']).toMatchObject({ progress: 0, status: 'ready' });
+    expect((await store.eventsOfTask(task.id)).map((entry) => entry.type)).toEqual(['create', 'log', 'undo-log', 'undo-log']);
+  });
+
+  it('refuses an undo of an unknown event, of another task, or of an undo', async () => {
+    const task = await store.createTask({ description: 'Water' });
+    const other = await store.createTask({ description: 'Other' });
+    clock.tick();
+    const { event } = await store.logEntry(other.id, { checked: true });
+    clock.tick();
+    const mine = await store.logEntry(task.id, { checked: true });
+    clock.tick();
+    const { event: undo } = await store.undoLog(task.id, mine.event.id);
+    await expect(store.undoLog(task.id, '0192f1a2-0000-7000-8000-00000000ffff')).rejects.toMatchObject({ code: 'conflict' });
+    await expect(store.undoLog(task.id, event.id)).rejects.toMatchObject({ code: 'conflict' });
+    await expect(store.undoLog(task.id, undo.id)).rejects.toMatchObject({ code: 'conflict' });
+  });
+
+  it('keeps unticking through the status mapping working on converted checks', async () => {
+    const task = await store.createTask({ description: 'Both', 'lifecycle-rules': { 'target-count': 2 } });
+    await store.logEntry(task.id, { checked: true });
+    clock.tick();
+    await store.logEntry(task.id, { checked: true });
+    clock.tick();
+    const after = await store.updateTask(task.id, { status: 'ready' });
+    expect(after['current-occurrence']).toMatchObject({ progress: 0, status: 'ready' });
   });
 });
