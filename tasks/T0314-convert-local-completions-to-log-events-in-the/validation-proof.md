@@ -91,3 +91,31 @@ Exit code: 0
 > todos-webapp@0.6.1-pre lint
 > eslint .
 ```
+
+### Rework after review round 3
+Failing first, with the fix reverted: `npx vitest run tests/unit/occurrences.test.js tests/unit/backup.test.js tests/unit/queue.test.js`
+Exit code: 1
+
+```
+Test Files  3 failed (3)
+Tests  3 failed | 189 passed (192)
+FAIL  backup.test.js > legacy uncomplete events beside checked logs in a backup > undoes the latest live check, a logged one with time, and keeps the right entries and totals
+FAIL  occurrences.test.js > legacy uncomplete events beside checked logs > undoes the latest live check, which may be a checked log with time
+FAIL  queue.test.js > rolling back a log after a legacy uncomplete that undoes a checked log > keeps the legacy check and drops the checked log that the uncomplete undid
+```
+
+Command: `npm test`
+Exit code: 0
+
+```
+ Test Files  69 passed (69)
+      Tests  1905 passed (1905)
+```
+
+Command: `npm run lint`
+Exit code: 0
+
+```
+> todos-webapp@0.6.1-pre lint
+> eslint .
+```

@@ -101,3 +101,6 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
   - Test uncomplete after a checked log, and after an undo-log.
   - Record verbatim failing-first output in the validation proof.
 
+- [2026-11-28] **[Implement]**
+  Legacy uncomplete conversion now tracks checked logs and undo-logs as live checks, so it undoes the latest live check.
+
