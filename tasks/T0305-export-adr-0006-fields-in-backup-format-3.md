@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1080.7, input: 180, output: 101026, cache_read: 17313871, cache_write: 264438}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T05:57:11Z"
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
 
@@ -56,4 +61,7 @@ Keep merge imports per row, as `BAK-6` requires.
 - [2026-11-28] **[Verify]**
   Backup unit, whole unit, lint, backup end-to-end, and precache checks pass.
   - 128 backup tests, 2112 unit tests, 12 end-to-end tests.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
