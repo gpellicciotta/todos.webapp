@@ -14,7 +14,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [!] T0227 [reason: Waiting for the push dispatch of todos.server T0261.] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [x] T0309 Write the welcome, getting started, and FAQ help docs in docs/tutorial as Markdown.
-- [ ] T0310 Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use.
+- [~] T0310 [owner: @claude] Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use.
 - [ ] T0311 [needs: T0310] Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings.
 - [x] T0308 Drop the non-clickable ToDo's logo and name from the sidebar.
 - [x] T0300 Specify the ADR-0006 task editor sections, task row marks, and log form in the UI design and wireframes.

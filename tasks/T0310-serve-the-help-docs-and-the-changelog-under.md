@@ -1,11 +1,11 @@
 ---
 id: T0310
-owner: ~
-needs: ['T0309']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0310-serve-the-help-docs-and-the-changelog-under
+worktree: .plan/work/T0310-serve-the-help-docs-and-the-changelog-under
+status: active
+started_at: "2026-11-28T00:34:10Z"
 ended_at: —
 review: agent
 preview: none
