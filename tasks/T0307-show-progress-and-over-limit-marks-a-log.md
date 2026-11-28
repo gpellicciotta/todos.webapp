@@ -1,11 +1,11 @@
 ---
 id: T0307
-owner: ~
-needs: [T0306]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0307-show-progress-and-over-limit-marks-a-log
+worktree: .plan/work/T0307-show-progress-and-over-limit-marks-a-log
+status: active
+started_at: "2026-11-28T04:57:02Z"
 ended_at: —
 review: agent
 preview: none
