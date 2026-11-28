@@ -264,3 +264,126 @@ describe('service worker cached HTML', () => {
     expect(await answerFrom('no-cors', cached)).toBe(cached);
   });
 });
+
+describe('service worker help files', () => {
+  const HELP = 'https://todos.example/help/faq.md';
+
+  /**
+   * Send a GET request to a worker whose cache and network the test controls.
+   * @param {string} url the request URL
+   * @param {{store: Map<string, Response>, network: (() => Response)|null, mode?: string}} setup the cache content and the network
+   * @returns {Promise<{body: Response|string|null, handled: boolean, store: Map<string, Response>}>} the answer
+   */
+  async function ask(url, { store, network, mode = 'cors' }) {
+    const handlers = {};
+    const cache = {
+      match: async (request) => store.get(typeof request === 'string' ? request : request.url),
+      put: async (request, response) => {
+        store.set(request.url, response);
+      },
+    };
+    const context = {
+      URL,
+      Promise,
+      Request,
+      self: {
+        location: new URL('https://todos.example/service-worker.js'),
+        addEventListener: (type, handler) => {
+          handlers[type] = handler;
+        },
+      },
+      caches: { open: async () => cache },
+      fetch: async () => {
+        if (!network) {
+          throw new TypeError('offline');
+        }
+        return network();
+      },
+    };
+    runInNewContext(SOURCE, context);
+    let answer = null;
+    handlers.fetch({ request: { url, method: 'GET', mode }, respondWith: (promise) => {
+      answer = promise;
+    } });
+    const body = answer ? await answer.catch(() => 'rejected') : null;
+    return { body, handled: answer !== null, store };
+  }
+
+  const markdown = (text) => new Response(text, { headers: { 'content-type': 'text/markdown' } });
+
+  it('stores a fetched help file and returns the network answer', async () => {
+    const store = new Map();
+    const result = await ask(HELP, { store, network: () => markdown('# FAQ') });
+    expect(await result.body.text()).toBe('# FAQ');
+    expect(store.has(HELP)).toBe(true);
+  });
+
+  it('serves the cached copy when the network fails', async () => {
+    const store = new Map([[HELP, 'cached-faq']]);
+    const result = await ask(HELP, { store, network: null });
+    expect(result.body).toBe('cached-faq');
+  });
+
+  it('goes to the network first when a copy is cached', async () => {
+    const store = new Map([[HELP, 'stale']]);
+    const result = await ask(HELP, { store, network: () => markdown('fresh') });
+    expect(await result.body.text()).toBe('fresh');
+  });
+
+  it('rejects when offline and nothing is cached', async () => {
+    const result = await ask(HELP, { store: new Map(), network: null });
+    expect(result.body).toBe('rejected');
+  });
+
+  it('does not store an HTML answer, which is the server start page', async () => {
+    const store = new Map();
+    const result = await ask(HELP, { store, network: () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } }) });
+    expect(result.handled).toBe(true);
+    expect(store.size).toBe(0);
+  });
+
+  it('does not store a non-OK answer', async () => {
+    const store = new Map();
+    await ask(HELP, { store, network: () => new Response('', { status: 404, headers: { 'content-type': 'text/plain' } }) });
+    expect(store.size).toBe(0);
+  });
+
+  it('keeps cache first for app files', async () => {
+    const url = 'https://todos.example/css/style.css';
+    const store = new Map([[url, 'cached-css']]);
+    const result = await ask(url, { store, network: () => markdown('network') });
+    expect(result.body).toBe('cached-css');
+  });
+
+  it('does not treat other markdown paths as help files', async () => {
+    const url = 'https://todos.example/docs/readme.md';
+    const store = new Map();
+    await ask(url, { store, network: () => markdown('x') });
+    expect(store.size).toBe(0);
+  });
+
+  it('serves help files under the Pages subpath', async () => {
+    const handlers = {};
+    const store = new Map();
+    const context = {
+      URL,
+      Promise,
+      Request,
+      self: {
+        location: new URL('https://todos.example/todos.webapp/service-worker.js'),
+        addEventListener: (type, handler) => {
+          handlers[type] = handler;
+        },
+      },
+      caches: { open: async () => ({ match: async () => undefined, put: async (request) => store.set(request.url, true) }) },
+      fetch: async () => markdown('# FAQ'),
+    };
+    runInNewContext(SOURCE, context);
+    let answer = null;
+    handlers.fetch({ request: { url: 'https://todos.example/todos.webapp/help/CHANGELOG.md', method: 'GET', mode: 'cors' }, respondWith: (promise) => {
+      answer = promise;
+    } });
+    await answer;
+    expect(store.has('https://todos.example/todos.webapp/help/CHANGELOG.md')).toBe(true);
+  });
+});

@@ -8,6 +8,8 @@
  * path with the start page and status 200, and caching that as a stylesheet leaves the app unstyled until the next VERSION.
  * Same-origin GET requests are served cache first, except that cached HTML never answers a non-navigation request
  * for any file but the start page; page navigations fall back to the cached start page.
+ * Help files (`help/*.md`: the tutorial docs and the changelog) are served network first instead: each OK answer is
+ * stored, and the stored copy answers when the network fails. They are not precached, so Help works offline after one visit.
  * A clicked reminder notification focuses an open window and posts `{type: 'open-task', taskId}` to it, or opens one at the task.
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
  * a navigation to `/admin` reaches the server and never falls back to the app shell.
@@ -16,7 +18,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-28.2';
+const VERSION = '2026-11-28.3';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -207,6 +209,41 @@ function isHtml(response) {
 }
 
 /**
+ * Tell whether a URL is a help file: a Markdown file under `help/`, at the site root or under the worker's base path.
+ * @param {URL} url the request URL
+ * @returns {boolean} true for `help/*.md`
+ */
+function isHelpFile(url) {
+  const base = new URL('./', self.location.href).pathname;
+  return url.pathname.startsWith(`${base}help/`) && url.pathname.endsWith('.md');
+}
+
+/**
+ * Answer from the network and keep the answer, or fall back to the copy kept from an earlier load.
+ * Help files stay out of PRECACHE, so Help works offline after its first online visit.
+ * An HTML answer is the server's start page for an unknown path, and is never stored.
+ * @param {Cache} cache the current cache
+ * @param {Request} request the help file request
+ * @returns {Promise<Response>} the network answer, or the cached copy when the network fails
+ */
+async function networkFirst(cache, request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok && !isHtml(response)) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  }
+  catch (error) {
+    const cached = await cache.match(request);
+    if (cached) {
+      return cached;
+    }
+    throw error;
+  }
+}
+
+/**
  * Fetch one precache entry and store it, or throw when the server answered wrongly.
  * @param {Cache} cache the cache to fill
  * @param {string} path the entry, relative to the worker
@@ -285,6 +322,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin || isServerPath(url)) {
+    return;
+  }
+  if (isHelpFile(url)) {
+    event.respondWith(caches.open(CACHE).then((cache) => networkFirst(cache, request)));
     return;
   }
   event.respondWith(caches.open(CACHE).then(async (cache) => {

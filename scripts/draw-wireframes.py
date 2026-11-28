@@ -1582,6 +1582,7 @@ def settings_sections(f, x, y, width):
         f.text(x + 16, top + 4, "Version 1.0.0 · Built 3 Nov 2026", 13, "muted")
     return y
 
+
 def settings():
     """Settings in local mode."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)

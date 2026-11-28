@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-28.2",
+  "version": "2026-11-28.3",
   "files": {
     "index.html": "adf3187157ea8367820cfc9a4061efcbedae2f23bff8f15a890bcef7dd3c6f13",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
@@ -25,7 +25,7 @@
     "js/core/list-find.js": "e5449c970dd79497d9490303768d3635897e5e70e2300e0dc49db64be4e59c97",
     "js/core/list-order.js": "150a35774b0d52dedfbee93045d877eabb8e63ce27ee109edf35fd9ae0240796",
     "js/core/list-sort.js": "c23e33f85adc017a636d89c2069a97f9df4dc21acd1706800fd62b0baf5a89ea",
-    "js/core/occurrences.js": "2e5118a6df68eef8aa66fbd459258ab8a034ec06b99141880bd633f948b3f9aa",
+    "js/core/occurrences.js": "e25b9c98f33c62bc75f4eacf152884eeac4b86b170f704c740c6165f2ea8b8c0",
     "js/core/periods.js": "ded940cccc3c07f7a9490f780001fa9843635f968373de45870cac23f214b83c",
     "js/core/overdue.js": "3e54094a6bd825939f63b02aea254bd00da1b738eed814f22f75d8ecb21494f9",
     "js/core/permissions.js": "4fc3031d3f9e5087019360c035c093affab254915ea68e82adc6ec2862856018",

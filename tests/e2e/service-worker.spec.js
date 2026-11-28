@@ -112,3 +112,31 @@ test('a second tab open during the update shows a lasting Reload toast', async (
     await versions.close();
   }
 });
+
+// Help files are fetched through the app, cached after the first load, and readable offline (TEC-1).
+
+test('help files and the changelog load, then read offline from the cache', async ({ page, context }) => {
+  await page.goto('/');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+
+  const read = (path) => page.evaluate(async (target) => {
+    const response = await fetch(target);
+    return { status: response.status, type: response.headers.get('content-type'), text: await response.text() };
+  }, path);
+
+  const faq = await read('help/faq.md');
+  const changelog = await read('help/CHANGELOG.md');
+  expect(faq.status).toBe(200);
+  expect(faq.type).toContain('text/markdown');
+  expect(changelog.text).toContain('# Changelog');
+
+  await context.setOffline(true);
+  try {
+    expect(await read('help/faq.md')).toEqual(faq);
+    expect(await read('help/CHANGELOG.md')).toEqual(changelog);
+  }
+  finally {
+    await context.setOffline(false);
+  }
+});

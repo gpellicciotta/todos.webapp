@@ -1,6 +1,7 @@
 """Tests for scripts/draw-wireframes.py, which draws the UI wireframes as SVG files."""
 
 import importlib.util
+import itertools
 import re
 import subprocess
 import sys
@@ -299,7 +300,12 @@ def test_import_wireframe_fills_the_compact_main_view_between_the_bars(output):
     assert "Import backup" in labels and "Tasks" in labels and "Lists" in labels
 
 
-EDITOR_SCREENS = ["task-editor.svg", "task-editor-notes.svg", "task-editor-configuration.svg", "task-editor-history.svg"]
+EDITOR_SCREENS = [
+    "task-editor.svg",
+    "task-editor-notes.svg",
+    "task-editor-configuration.svg",
+    "task-editor-history.svg",
+]
 TABS = ["Status", "Notes", "Configuration", "History"]
 
 
@@ -393,7 +399,7 @@ def test_configuration_tab_orders_its_parts_and_ends_with_the_danger_zone(output
             and float(line.get("y1")) > 140
             and float(line.get("x2")) - float(line.get("x1")) > 300
         ]
-        for upper, lower in zip(order, order[1:]):
+        for upper, lower in itertools.pairwise(order):
             assert any(ys[upper] < r < ys[lower] for r in rules), f"no rule between {upper} and {lower}"
 
 

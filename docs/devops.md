@@ -91,6 +91,24 @@ Test offline use by hand:
 [pwa.spec.js](../tests/e2e/pwa.spec.js) runs the same check with `context.setOffline(true)`.
 It also checks the manifest type and fields, and Chromium's installability errors.
 
+### Help Files
+The Help screen fetches the tutorial docs and the changelog from `help/` paths, which live outside `src/`.
+[site-files.mjs](../scripts/site-files.mjs) lists them; the list is explicit, so no other repository file is served.
+
+| Served path               | Repository source                                   |
+| :------------------------ | :-------------------------------------------------- |
+| `help/welcome.md`         | [welcome.md](tutorial/welcome.md)                   |
+| `help/getting-started.md` | [getting-started.md](tutorial/getting-started.md)   |
+| `help/faq.md`             | [faq.md](tutorial/faq.md)                           |
+| `help/CHANGELOG.md`       | [CHANGELOG.md](../CHANGELOG.md)                     |
+
+- `serve.mjs` maps these paths to the source files when it serves the default `src/` root; a custom `--root` does not.
+- [stage-site.mjs](../scripts/stage-site.mjs) copies `src/` and the help files into a new folder, as Pages deploys them:
+  `node scripts/stage-site.mjs _site`. The folder must not exist or must be empty; `_site/` is git-ignored.
+- No copies are committed, so editing a doc or the changelog needs no sync step.
+- The worker fetches help files network first and stores each OK answer, so Help works offline after one online visit.
+  They are not precached, and a changed help file needs no `VERSION` bump.
+
 ### Auth Integration
 [auth.js](../src/js/sync/auth.js) holds the sign-in contract; [session.js](../src/js/sync/session.js) stores the session.
 1. Sign in opens `https://auth.pellicciotta.com/sign-in?app-name=todos&app-redirect-url={{app}}/#/connect&app-state={{state}}`.
@@ -229,7 +247,7 @@ The checkbox glyph is Lucide's; [NOTICE.md](../NOTICE.md) keeps its ISC notice f
 It runs on every push to `main`, and by hand from the Actions tab.
 - The test job runs `npm ci`, `npm run check:sw`, the vendored design check, `npm test`, `npm run lint`, and `npm run test:e2e`.
 - The deploy job runs only after the test job passes, in the `github-pages` environment.
-- It uploads `src/` unchanged, since the app has no build step.
+- It runs `node scripts/stage-site.mjs _site` and uploads `_site/`: `src/` as committed, plus the help files; see Help Files.
 - Only one deployment runs at a time; a newer run waits for the current one.
 
 The site is served at the default address, `https://gpellicciotta.github.io/todos.webapp/`.

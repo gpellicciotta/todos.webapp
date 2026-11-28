@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contentType, resolveRequest, startServer } from '../../scripts/serve.mjs';
+import { HELP_FILES } from '../../scripts/site-files.mjs';
+import { contentType, resolveHelp, resolveRequest, startServer } from '../../scripts/serve.mjs';
 
 let root;
 
@@ -99,6 +100,76 @@ describe('startServer', () => {
   it('answers 405 for methods other than GET and HEAD', async () => {
     const response = await fetch(`${base}/index.html`, { method: 'POST' });
     expect(response.status).toBe(405);
+  });
+});
+
+describe('help paths', () => {
+  let server;
+  let base;
+  const REPO = fileURLToPath(new URL('../../', import.meta.url));
+
+  beforeAll(async () => {
+    server = await startServer({ port: 0, host: '127.0.0.1' });
+    base = `http://127.0.0.1:${server.address().port}`;
+  });
+
+  afterAll(async () => {
+    server.closeAllConnections();
+    await new Promise((resolve) => server.close(resolve));
+  });
+
+  it('maps each help path to its repository source', async () => {
+    for (const [path, source] of Object.entries(HELP_FILES)) {
+      expect(await resolveHelp(`/${path}`)).toEqual({ status: 200, file: join(REPO, source) });
+    }
+    expect(await resolveHelp('/help/faq.md?v=1')).toEqual({ status: 200, file: join(REPO, 'docs/tutorial/faq.md') });
+  });
+
+  it('does not map other paths', async () => {
+    expect(await resolveHelp('/help/secret.md')).toBeNull();
+    expect(await resolveHelp('/help/../package.json')).toBeNull();
+    expect(await resolveHelp('/index.html')).toBeNull();
+  });
+
+  it('serves a help file as markdown with no caching', async () => {
+    const response = await fetch(`${base}/help/faq.md`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.text()).toContain('#');
+  });
+
+  it('serves the changelog under help/', async () => {
+    const response = await fetch(`${base}/help/CHANGELOG.md`);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('# Changelog');
+  });
+
+  it('answers HEAD without a body', async () => {
+    const response = await fetch(`${base}/help/welcome.md`, { method: 'HEAD' });
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('');
+  });
+
+  it('answers 404 for other help paths', async () => {
+    expect((await fetch(`${base}/help/other.md`)).status).toBe(404);
+    expect((await fetch(`${base}/help/`)).status).toBe(404);
+  });
+
+  it('does not map help paths for a custom root', async () => {
+    const custom = await startServer({ root, port: 0, host: '127.0.0.1' });
+    try {
+      const response = await fetch(`http://127.0.0.1:${custom.address().port}/help/faq.md`);
+      expect(response.status).toBe(404);
+    }
+    finally {
+      custom.closeAllConnections();
+      await new Promise((resolve) => custom.close(resolve));
+    }
+  });
+
+  it('maps .md to text/markdown', () => {
+    expect(contentType('faq.md')).toBe('text/markdown; charset=utf-8');
   });
 });
 

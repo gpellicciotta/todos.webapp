@@ -637,7 +637,7 @@ def test_the_release_override_returns_false_for_a_declined_release(monkeypatch):
 def test_cli_server_start_and_stop_run_through_devops_cli(tmp_path):
     # A scratch copy keeps the server state in its own work/ folder, never in the repository's.
     (tmp_path / "scripts").mkdir()
-    for name in ("devops.py", "serve.mjs"):
+    for name in ("devops.py", "serve.mjs", "site-files.mjs"):
         shutil.copy(SCRIPTS / name, tmp_path / "scripts" / name)
     shutil.copy(ROOT / "package.json", tmp_path / "package.json")
     (tmp_path / "src").mkdir()

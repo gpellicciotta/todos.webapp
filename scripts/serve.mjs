@@ -3,6 +3,7 @@
  * Static development server for the web app.
  *
  * Serves the files under a root folder, `src/` by default, on localhost with caching disabled.
+ * With the default root, it also serves the help docs and the changelog at `help/` paths (see site-files.mjs).
  * It uses Node.js built-ins only, so it runs right after cloning without `npm install`.
  *
  * Usage: node scripts/serve.mjs [--port <port>] [--host <host>] [--root <folder>]
@@ -15,6 +16,7 @@ import { createServer } from 'node:http';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { HELP_FILES } from './site-files.mjs';
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -28,8 +30,10 @@ const CONTENT_TYPES = {
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
 };
 
+const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DEFAULT_ROOT = fileURLToPath(new URL('../src/', import.meta.url));
 
 const USAGE = `Usage: node scripts/serve.mjs [options]
@@ -93,17 +97,43 @@ export async function resolveRequest(root, url) {
 }
 
 /**
+ * Map a request URL to a help file outside the root, such as the tutorial docs or the changelog.
+ * @param {string} url request URL path, with an optional query string
+ * @returns {Promise<{status: number, file?: string}|null>} 200 with the file, 404 when its source is missing, or null for other paths
+ */
+export async function resolveHelp(url) {
+  let path;
+  try {
+    path = decodeURIComponent(url.split(/[?#]/, 1)[0]).replace(/^\/+/, '');
+  }
+  catch {
+    return null;
+  }
+  if (!Object.hasOwn(HELP_FILES, path)) {
+    return null;
+  }
+  const file = join(REPO_ROOT, HELP_FILES[path]);
+  try {
+    return (await stat(file)).isFile() ? { status: 200, file } : { status: 404 };
+  }
+  catch {
+    return { status: 404 };
+  }
+}
+
+/**
  * Start the server and resolve once it listens.
- * @param {{root?: string, port?: number, host?: string}} options server options
+ * Help paths map to repository files only when `help` is true, which is the default for the default root.
+ * @param {{root?: string, port?: number, host?: string, help?: boolean}} options server options
  * @returns {Promise<import('node:http').Server>} the listening server
  */
-export function startServer({ root = DEFAULT_ROOT, port = 8080, host = '127.0.0.1' } = {}) {
+export function startServer({ root = DEFAULT_ROOT, port = 8080, host = '127.0.0.1', help = resolve(root) === resolve(DEFAULT_ROOT) } = {}) {
   const server = createServer(async (request, response) => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       response.writeHead(405, { allow: 'GET, HEAD' }).end();
       return;
     }
-    const result = await resolveRequest(root, request.url ?? '/');
+    const result = (help && await resolveHelp(request.url ?? '/')) || await resolveRequest(root, request.url ?? '/');
     if (result.status !== 200) {
       response.writeHead(result.status, { 'content-type': 'text/plain; charset=utf-8' }).end(`${result.status}\n`);
       return;

@@ -1,5 +1,5 @@
 # Tests the app, then publishes src/ to GitHub Pages (TEC-11).
-# The app has no build step, so the deployed artifact is the src/ folder as committed.
+# The app has no build step: the deployed artifact is src/ as committed, plus the help files that scripts/stage-site.mjs adds.
 # See docs/devops.md for the one-time Pages setup and the release procedure.
 name: Pages
 
@@ -84,10 +84,14 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
-      - name: Upload src/ as the Pages artifact
+      # Copies src/ and adds the help docs and the changelog under help/, so no copies live in the repository.
+      - name: Stage the site
+        run: node scripts/stage-site.mjs _site
+
+      - name: Upload the staged site as the Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: src
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

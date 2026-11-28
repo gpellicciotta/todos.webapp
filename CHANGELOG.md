@@ -12,6 +12,7 @@ All notable changes to this project are documented here.
 - FrontEnd: Removed the non-clickable logo and app name from the top of the sidebar, which now starts with All tasks.
 - Docs: Added the Reminders section to the settings wireframe, which now clips the scrolling page at the frame edge.
 - Tests: Added a real-notification spec that passes in Chrome and Firefox through `playwright.browsers.config.js`.
+- DevOps: Served the help docs and the changelog under `help/` locally and on Pages, and cached them for offline use after a first visit.
 - Tests: Made the task row due text tests follow the default locale clock, so the Pages workflow passes on CI again.
 - Docs: Wrote the welcome, getting started, and FAQ help docs in `docs/tutorial` as Markdown for the Help screen.
 
