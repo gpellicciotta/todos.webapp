@@ -5,7 +5,7 @@
  * VERSION must equal `version` in package.json; tests/unit/preferences.test.js checks it.
  */
 
-export const VERSION = '0.7.1';
+export const VERSION = '0.7.2-pre';
 
 /** The day the release was built, as an ISO date. */
 export const BUILD_DATE = '2026-11-28';
