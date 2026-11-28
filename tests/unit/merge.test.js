@@ -95,9 +95,11 @@ describe('merging a pulled row', () => {
     const event = (seq, type, time) => entry('post-event', { type: 'event', id: `e${seq}`, 'task-id': 't1' }, { id: `e${seq}`, type, 'creation-time': time, occurrence: 1 }, { seq });
     const pending = [event(1, 'complete', '2026-11-04T10:00:00.000Z'), event(2, 'complete', '2026-11-04T10:01:00.000Z')];
     const server = task('t1', { target: 3, count: 1, status: 'in-progress', due: '2026-11-20T10:00:00.000Z', revision: 14 });
+    // The service lists the live entries behind its progress.
+    server['current-occurrence'].entries = [{ id: 'e0', 'task-id': 't1', occurrence: 1, 'creation-time': T0, type: 'log', checked: true }];
     const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
     expect(merged['lifecycle-rules']).toEqual(mirrorRules(server['lifecycle-rules']));
-    expect(merged['current-occurrence']).toEqual(mirrorOccurrence({ ...server['current-occurrence'], 'completion-count': 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' }));
+    expect(merged['current-occurrence']).toEqual(mirrorOccurrence({ ...server['current-occurrence'], entries: undefined, 'completion-count': 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' }));
     expect(merged.revision).toBe(14);
   });
 
@@ -193,6 +195,93 @@ describe('merging a pulled row', () => {
   });
 });
 
+describe('ADR-0006 task fields and entries', () => {
+  const wire = (id, extra = {}, entries = []) => {
+    const rules = { ...task(id)['lifecycle-rules'] };
+    delete rules['target-count'];
+    return {
+      ...task(id), 'lifecycle-rules': { ...rules, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null },
+      'current-occurrence': {
+        occurrence: 1, 'start-time': T0, 'due-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3,
+        progress: 2, 'time-spent-seconds': 600, status: 'in-progress', 'close-time': null, entries, ...extra,
+      },
+    };
+  };
+  const logEvent = (id, extra = {}) => ({
+    id, 'task-id': 't1', occurrence: 1, 'creation-time': T0, 'owner-id': 7, type: 'log', checked: true, 'time-spent-seconds': 300,
+    amount: null, label: null, 'target-event-id': null, details: null, ...extra,
+  });
+
+  it('reads the goal, progress, and time spent that the service sends instead of the former counts', () => {
+    const { changes } = plan(empty(), feed({ tasks: [wire('t1')] }));
+    const stored = changes.put.tasks[0];
+    expect(stored['lifecycle-rules']).toMatchObject({ 'goal-target': 3, 'target-count': 3 });
+    expect(stored['current-occurrence']).toMatchObject({ 'goal-target': 3, 'target-count': 3, progress: 2, 'completion-count': 2, 'time-spent-seconds': 600, status: 'in-progress' });
+  });
+
+  it('keeps the failed status of a pulled occurrence', () => {
+    const { changes } = plan(empty(), feed({ tasks: [wire('t1', { status: 'failed', 'close-time': T0 })] }));
+    expect(statusOf(changes.put.tasks[0])).toBe('failed');
+  });
+
+  it('stores the entries of a pulled occurrence as events, so they can be undone and refolded', () => {
+    const entries = [logEvent('e1'), logEvent('e2', { 'creation-time': '2026-11-04T10:00:00.000Z' })];
+    const { changes } = plan(empty(), feed({ tasks: [wire('t1', {}, entries)] }));
+    expect(changes.put.events.map((event) => event.id)).toEqual(['e1', 'e2']);
+    expect(changes.put.events[0]).toMatchObject({ 'task-id': 't1', type: 'log', occurrence: 1, checked: true });
+  });
+
+  it('drops stored entries that another device undid, and keeps the queued ones', () => {
+    const local = { ...empty(), tasks: [wire('t1', {}, [logEvent('e1'), logEvent('e2'), logEvent('e3')])], events: [logEvent('e1'), logEvent('e2'), logEvent('e3'), logEvent('e4', { occurrence: 0 })] };
+    local.tasks[0].revision = 5;
+    const pending = [entry('post-event', { type: 'event', id: 'e3', 'task-id': 't1' }, { id: 'e3', type: 'log', checked: true, 'creation-time': T0, occurrence: 1 })];
+    const { changes } = plan(local, feed({ tasks: [wire('t1', {}, [logEvent('e1')])] }), { pending });
+    expect(changes.delete.events).toEqual([['t1', 'e2']]);
+  });
+
+  describe('queued logs and undos on a pulled occurrence', () => {
+    const queued = (seq, fields) => entry('post-event', { type: 'event', id: fields.id, 'task-id': 't1' }, { 'creation-time': '2026-11-04T12:00:00.000Z', occurrence: 1, ...fields }, { seq });
+    const pulled = (extra = {}, entries = [logEvent('e1')]) => feed({ tasks: [{ ...wire('t1', { progress: 1, 'time-spent-seconds': 300, ...extra }, entries), revision: 12 }] });
+    const merge = (pending, page = pulled()) => applied({ ...empty(), tasks: [task('t1')] }, plan({ ...empty(), tasks: [task('t1')] }, page, { pending }).changes).tasks.get('t1')['current-occurrence'];
+
+    it('keeps the time of a queued unchecked log, and does not count it as a check', () => {
+      const merged = merge([queued(1, { id: 'q1', type: 'log', 'time-spent-seconds': 120, checked: false })]);
+      expect(merged).toMatchObject({ progress: 1, 'time-spent-seconds': 420, status: 'in-progress' });
+    });
+
+    it('takes a queued undo of a pulled entry by what the entry gave, and applies a duplicate undo once', () => {
+      const undo = (seq, id) => queued(seq, { id, type: 'undo-log', 'target-event-id': 'e1' });
+      const merged = merge([undo(1, 'u1'), undo(2, 'u2')]);
+      expect(merged).toMatchObject({ progress: 0, 'time-spent-seconds': 0, status: 'ready' });
+    });
+
+    it('undoes only the time of an entry that gave time and no check', () => {
+      const timed = logEvent('e2', { checked: false, 'time-spent-seconds': 200, 'creation-time': '2026-11-04T10:00:00.000Z' });
+      const merged = merge([queued(1, { id: 'u1', type: 'undo-log', 'target-event-id': 'e2' })], pulled({ progress: 1, 'time-spent-seconds': 500 }, [logEvent('e1'), timed]));
+      expect(merged).toMatchObject({ progress: 1, 'time-spent-seconds': 300 });
+    });
+
+    it('counts a log once when the feed lists it and the queue still holds it', () => {
+      const timed = logEvent('e2', { checked: true, 'time-spent-seconds': 30, 'creation-time': '2026-11-04T10:00:00.000Z' });
+      const page = pulled({ progress: 2, 'time-spent-seconds': 330 }, [logEvent('e1'), timed]);
+      const merged = merge([queued(1, { id: 'e2', type: 'log', checked: true, 'time-spent-seconds': 30, 'creation-time': '2026-11-04T10:00:00.000Z' })], page);
+      expect(merged).toMatchObject({ progress: 2, 'time-spent-seconds': 330 });
+    });
+
+    it('sums a queued amount log on an amount goal', () => {
+      const amount = (extra) => ({ 'goal-measure': 'amount', 'goal-target': 100, ...extra });
+      const page = feed({ tasks: [{ ...wire('t1', amount({ progress: 40, 'time-spent-seconds': 0 }), [logEvent('e1', { checked: false, amount: 40, 'time-spent-seconds': null })]), revision: 12 }] });
+      const merged = merge([queued(1, { id: 'q1', type: 'log', amount: 25 })], page);
+      expect(merged).toMatchObject({ progress: 65, 'goal-measure': 'amount' });
+    });
+  });
+
+  it('lists an entry of an unknown type without failing, and stores only log entries', () => {
+    const entries = [logEvent('e1'), logEvent('e2', { type: 'reaction' })];
+    const { changes } = plan(empty(), feed({ tasks: [wire('t1', {}, entries)] }));
+    expect(changes.put.events.map((event) => event.id)).toEqual(['e1']);
+  });
+});
 describe('revisions and tombstones', () => {
   it('ignores entries and tombstones at or below the stored revision', () => {
     const local = {

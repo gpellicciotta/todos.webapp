@@ -525,9 +525,11 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
   - `fields` holds only what changed (`SYN-5`). `edit-times` holds the client time of each field. Creates carry all fields.
   - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type. A task create carries its `lifecycle-rules`.
   - Rules: `update-rules`, sent as `PATCH /api/tasks/{{task-id}}/lifecycle-rules` with the edit time of each field.
+    Requests name the target `goal-target`, since the service refuses `target-count`; the entry keeps `target-count`, so a change queued before the upgrade still replays.
   - Events: `post-event`, sent in order as `POST /api/tasks/{{task-id}}/events` with `id`, `type`, `creation-time`, and `occurrence`.
     A `log` also sends `checked`, `time-spent-seconds`, `amount`, and `label` when set; an `undo-log` sends `target-event-id`.
-    A `409` on an `undo-log` of a target the service never stored is a rejection like any other.
+    A `409` on an `undo-log` of a target the service never stored is a rejection like any other; the undo reverts and the entry counts again.
+    A `complete` or `uncomplete` queued before the upgrade keeps its type, and the service stores it as a `log` or an `undo-log` (aliases).
   - Memberships: `add-`, `move-`, and `remove-membership`.
   - Purges: `purge`, sent as `DELETE /api/recycle-bin/lists/{{list-id}}` or `DELETE /api/recycle-bin/tasks/{{task-id}}`.
     `empty-bin` is sent as `DELETE /api/recycle-bin` and purges every entry the user may restore at the service's receive time.
@@ -602,6 +604,12 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
 and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6`).
 - Lists, tasks, memberships, and notes store the feed's `revision`; lists also keep `role` and `sharing`.
 - Notes map the wire `owner-id`, `occurrence`, and `last-update-time` to the same local fields.
+- Tasks read `goal-target` and `progress` of the rules and the occurrence into the local `target-count` and `completion-count`, whose mirrors the store keeps.
+  `time-spent-seconds` and the `failed` status come as they are.
+- The `entries` of a pulled current occurrence, its live `log` events, go into the events store, so the user can undo them and later refolds keep them.
+  A stored `log` of that occurrence that the feed no longer lists, undone elsewhere, is removed unless the queue still holds it.
+  An entry of another type is ignored, so a type that a newer service adds never fails a pull.
+- A conflict on `goal-target` applies to the local `target-count`.
 - Computed fields are not stored: `overdue`, `upcoming`, `role` of tasks, `task-count`, and `lists` of tasks. Screens derive them.
 - A run replays the queue, then pulls every page after the stored cursor until `has-more` is false. Without a cursor it fetches a snapshot.
 - The leader tab pulls every 30 seconds while the page is visible, and after going online, gaining focus, becoming visible, or replaying the queue.
@@ -610,7 +618,9 @@ and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6
 - The merge keeps what the user changed and the service has not heard of yet:
   - A field with an entry in the queue keeps its local value; the other fields take the pulled value (`SYN-5`, `SYN-6`).
   - A task takes the service's rules and current occurrence; rule fields with a queued edit keep their local value.
-  - Queued events of the pulled occurrence fold onto it in queue order, until the service confirms them.
+  - Queued events of the pulled occurrence fold onto it until the service confirms them.
+    Queued logs and undos fold with the goal fold, over the pulled live entries and the queue: time and amounts count, an undo takes what its entry gave, and a repeated undo counts once.
+    An occurrence the service closed as failed or cancelled takes no queued log.
   - A pulled one-off task past its due time with handling `fail` stays expired, as the local overdue handling expired it.
 
   - A row whose creation is still queued is never replaced. A pending trash, membership change, or note edit or delete stays.

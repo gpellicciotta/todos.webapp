@@ -77,12 +77,32 @@ describe('downloading the change feed', () => {
     expect(events).toContain('applyChanges');
   });
 
+  it('stores the pulled entries as events, undoes one locally, and drops one that another device undid', async () => {
+    const { store, service, pull } = await setup();
+    service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'target-count': 3 } }), []);
+    const log = (id, time) => ({ id, 'task-id': 't1', occurrence: 1, 'creation-time': time, 'owner-id': 7, type: 'log', checked: true });
+    service.events.set('e1', log('e1', '2026-11-04T10:00:00.000Z'));
+    service.events.set('e2', log('e2', '2026-11-04T11:00:00.000Z'));
+    Object.assign(service.tasks.get('t1')['current-occurrence'], { 'completion-count': 2, status: 'in-progress' });
+    service.tasks.get('t1').revision = ++service.revision;
+    await pull.pullOnce();
+    expect((await store.eventsOfTask('t1')).map((event) => event.id)).toEqual(['e1', 'e2']);
+    expect((await store.getTask('t1'))['current-occurrence']).toMatchObject({ progress: 2, 'goal-target': 3 });
+    await store.undoLog('t1', 'e1');
+    service.events.set('u2', { id: 'u2', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T12:00:00.000Z', type: 'undo-log', 'target-event-id': 'e2' });
+    service.tasks.get('t1').revision = ++service.revision;
+    await pull.pullOnce();
+    expect((await store.eventsOfTask('t1')).filter((event) => event.type === 'log').map((event) => event.id)).toEqual(['e1']);
+  });
+
   it('takes the pulled fields and folds a pending event onto the pulled occurrence', async () => {
     const { store, service, pull } = await setup();
     service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'target-count': 2 } }), []);
     await pull.pullOnce();
     await store.postEvent('t1', 'complete');
     const row = service.tasks.get('t1');
+    // The service holds the entry behind its progress, which the feed lists.
+    service.events.set('e0', { id: 'e0', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T08:00:00.000Z', 'owner-id': 7, type: 'log', checked: true });
     const ticked = { ...row['current-occurrence'], status: 'in-progress', 'completion-count': 1 };
     Object.assign(row, { description: 'Remote text', 'current-occurrence': ticked, revision: ++service.revision });
     await pull.pullOnce();

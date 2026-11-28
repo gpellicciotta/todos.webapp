@@ -14,7 +14,7 @@
  * Before it, `settlePendingErase` carries a Delete all data done in local mode to the account (`BAK-15`).
  */
 
-import { RULE_FIELDS, USER_EVENT_TYPES } from '../core/occurrences.js';
+import { RULE_FIELDS, rulesToWire, USER_EVENT_TYPES } from '../core/occurrences.js';
 
 /** The fields that a `log` or an `undo-log` adds to the request of an event. */
 const LOG_FIELDS = ['checked', 'time-spent-seconds', 'amount', 'label', 'target-event-id'];
@@ -168,10 +168,10 @@ async function runStep(api, { kind, record }) {
       break;
     case 'task': {
       const rules = record['lifecycle-rules'];
-      request = ['POST', '/api/tasks', { body: { id: record.id, description: record.description, 'lifecycle-rules': pick(rules, RULE_FIELDS), 'creation-time': record['creation-time'] } }];
+      request = ['POST', '/api/tasks', { body: { id: record.id, description: record.description, 'lifecycle-rules': rulesToWire(pick(rules, RULE_FIELDS)), 'creation-time': record['creation-time'] } }];
       followUps = [
         ['PUT', `/api/tasks/${record.id}`, { body: { description: record.description, 'edit-times': times(['description']) } }],
-        ['PATCH', `/api/tasks/${record.id}/lifecycle-rules`, { body: { ...pick(rules, RULE_FIELDS), 'edit-times': times(RULE_FIELDS) } }],
+        ['PATCH', `/api/tasks/${record.id}/lifecycle-rules`, { body: { ...rulesToWire(pick(rules, RULE_FIELDS)), 'edit-times': rulesToWire(times(RULE_FIELDS)) } }],
       ];
       break;
     }

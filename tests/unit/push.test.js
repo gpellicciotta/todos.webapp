@@ -128,7 +128,8 @@ describe('uploading the queue', () => {
     clock.tick();
     await store.updateRules(task.id, { 'due-time': '2026-11-09T10:00:00Z' });
     expect(await push.drainOnce()).toBe('synced');
-    expect(service.calls[0].body['lifecycle-rules']).toMatchObject({ 'target-count': 3, 'due-time': null });
+    expect(service.calls[0].body['lifecycle-rules']).toMatchObject({ 'goal-target': 3, 'due-time': null });
+    expect(service.calls[0].body['lifecycle-rules']).not.toHaveProperty('target-count');
     const events = service.calls.filter((call) => call.path === `/api/tasks/${task.id}/events`);
     expect(events.every((call) => call.body.checked === true)).toBe(true);
     expect(events.map((call) => [call.method, call.body.type, call.body['creation-time'], call.body.occurrence])).toEqual([
@@ -141,6 +142,43 @@ describe('uploading the queue', () => {
     expect([rules.method, rules.path]).toEqual(['PATCH', `/api/tasks/${task.id}/lifecycle-rules`]);
     expect(rules.body).toEqual({ 'due-time': '2026-11-09T10:00:00.000Z', 'edit-times': { 'due-time': '2026-11-04T09:00:04.000Z' } });
     expect(await store.queue.count()).toBe(0);
+  });
+});
+
+describe('rule edits on the wire', () => {
+  it('sends a goal change as goal-target, with its edit time', async () => {
+    const { store, clock, service, push } = await setup();
+    const task = await store.createTask({ description: 'Exercises' });
+    await push.drainOnce();
+    clock.tick();
+    await store.updateRules(task.id, { 'target-count': 5 });
+    service.calls.length = 0;
+    expect(await push.drainOnce()).toBe('synced');
+    expect(service.calls[0].body).toEqual({ 'goal-target': 5, 'edit-times': { 'goal-target': expect.any(String) } });
+  });
+
+  it('replays a change queued before the upgrade through the goal-target key', async () => {
+    const { store, service, push } = await setup();
+    const task = await store.createTask({ description: 'Exercises' });
+    await push.drainOnce();
+    await store.queue.add([{
+      target: { type: 'rules', id: task.id }, operation: 'update-rules', fields: { 'target-count': 4 },
+      'edit-times': { 'target-count': '2026-11-04T09:00:09.000Z' }, created: '2026-11-04T09:00:09.000Z', undo: { kind: 'rules', id: task.id, fields: {} },
+    }]);
+    service.calls.length = 0;
+    await push.drainOnce();
+    expect(service.calls[0].body).toEqual({ 'goal-target': 4, 'edit-times': { 'goal-target': '2026-11-04T09:00:09.000Z' } });
+  });
+
+  it('applies a kept goal-target of a conflict to the local target count', async () => {
+    const { store, service, push } = await setup();
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 2 } });
+    await push.drainOnce();
+    await store.updateRules(task.id, { 'target-count': 5 });
+    const conflict = { field: 'goal-target', sent: 5, kept: 4, 'kept-edit-time': '2036-11-04T10:00:00.000Z' };
+    service.fail = (call) => (call.method === 'PATCH' ? { status: 200, body: { conflicts: [conflict] } } : null);
+    await push.drainOnce();
+    expect((await store.getTask(task.id))['lifecycle-rules']['target-count']).toBe(4);
   });
 });
 

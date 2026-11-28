@@ -16,6 +16,7 @@
  */
 
 import { adopt, findUser, settlePendingErase } from './adopt.js';
+import { rulesToWire } from '../core/occurrences.js';
 import { createApi, judge, SyncStop } from './api.js';
 import { planConflicts, planPage } from './merge.js';
 
@@ -63,7 +64,7 @@ function toRequest(entry, mapList) {
     case 'restore-list':
       return ['PUT', `/api/lists/${list}`, { body: { 'undo-delete': true }, editTime }];
     case 'create-task':
-      return ['POST', '/api/tasks', { body: { ...fields, lists: fields.lists.map(mapList) } }];
+      return ['POST', '/api/tasks', { body: { ...fields, 'lifecycle-rules': rulesToWire(fields['lifecycle-rules'] ?? {}), lists: fields.lists.map(mapList) } }];
     case 'update-task':
       return ['PUT', `/api/tasks/${target.id}`, { body: { ...fields, 'edit-times': times } }];
     case 'delete-task':
@@ -75,7 +76,7 @@ function toRequest(entry, mapList) {
     case 'empty-bin':
       return ['DELETE', '/api/recycle-bin', {}];
     case 'update-rules':
-      return ['PATCH', `/api/tasks/${target.id}/lifecycle-rules`, { body: { ...fields, 'edit-times': times } }];
+      return ['PATCH', `/api/tasks/${target.id}/lifecycle-rules`, { body: { ...rulesToWire(fields), 'edit-times': rulesToWire(times) } }];
     case 'post-event':
       return ['POST', `/api/tasks/${target['task-id']}/events`, { body: fields }];
 

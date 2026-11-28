@@ -58,6 +58,17 @@ export function syncedRules(rules) {
 }
 
 /**
+ * Rename `target-count` to `goal-target` in rules, or in the edit times of their fields, for a request to the service,
+ * which no longer takes the former key. A queued change of the former shape therefore still replays.
+ * @param {object} fields the rule fields or their edit times
+ * @returns {object} the fields with the wire name of the target
+ */
+export function rulesToWire(fields) {
+  const { 'target-count': target, ...rest } = fields;
+  return target === undefined ? rest : { ...rest, 'goal-target': target };
+}
+
+/**
  * Return rules with `goal-target` equal to `target-count`, the mirror kept until `target-count` is removed.
  * @param {object} rules the rules
  * @returns {object} the rules with the goal fields filled and mirrored

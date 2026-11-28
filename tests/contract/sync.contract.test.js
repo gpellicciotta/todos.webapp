@@ -274,15 +274,15 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(await phone.store.queue.count()).toBe(0);
 
     const stored = await (await phone.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
-    expect(stored['lifecycle-rules']['target-count']).toBe(3);
-    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'target-count': 3, 'completion-count': 3, status: 'completed' });
+    expect(stored['lifecycle-rules']['goal-target']).toBe(3);
+    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'goal-target': 3, progress: 3, status: 'completed' });
     const events = await (await phone.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
-    const ids = (await phone.store.eventsOfTask(task.id)).filter((event) => event.type === 'complete').map((event) => event.id);
-    expect(events.filter((event) => event.type === 'complete').map((event) => event.id).sort()).toEqual([...ids].sort());
+    const ids = (await phone.store.eventsOfTask(task.id)).filter((event) => event.type === 'log').map((event) => event.id);
+    expect(events.filter((event) => event.type === 'log').map((event) => event.id).sort()).toEqual([...ids].sort());
 
     expect(await laptop.engine.syncNow()).toBe('synced');
-    expect((await laptop.store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 3, status: 'completed' });
-    expect((await phone.store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 3, status: 'completed' });
+    expect((await laptop.store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 3, status: 'completed' });
+    expect((await phone.store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 3, status: 'completed' });
   });
 
   it('makes a task weekly, and the server computes the same period and counts its tick', async () => {
@@ -300,11 +300,11 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     const local = weekly['current-occurrence'];
     expect(Date.parse(stored['current-occurrence']['start-time'])).toBe(Date.parse(local['start-time']));
     expect(Date.parse(stored['current-occurrence']['due-time'])).toBe(Date.parse(local['due-time']));
-    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'completion-count': 1, status: 'in-progress', 'close-time': null });
+    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, progress: 1, status: 'in-progress', 'close-time': null });
     const occurrences = await (await ada.raw('GET', `/api/tasks/${task.id}/occurrences`, { Accept: 'application/json' })).json();
     expect(occurrences.map((occurrence) => occurrence.occurrence)).toEqual([1]);
     const events = await (await ada.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
-    expect(events.map((event) => event.type)).toEqual(expect.arrayContaining(['create', 'edit-lifecycle-rules', 'complete']));
+    expect(events.map((event) => event.type)).toEqual(expect.arrayContaining(['create', 'edit-lifecycle-rules', 'log']));
   });
 
   it('replays a format 2 backup imported while connected, so the server rebuilds a target-3 task at 2 of 3', async () => {
@@ -327,8 +327,8 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(await ada.store.queue.count()).toBe(0);
     expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
     const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
-    expect(stored['lifecycle-rules']['target-count']).toBe(3);
-    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'target-count': 3, 'completion-count': 2, status: 'in-progress' });
+    expect(stored['lifecycle-rules']['goal-target']).toBe(3);
+    expect(stored['current-occurrence']).toMatchObject({ occurrence: 1, 'goal-target': 3, progress: 2, status: 'in-progress' });
     const events = await (await ada.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
     expect(events.map((event) => [event.id, event.type]).sort()).toEqual(backup.events.map((event) => [event.id, event.type]).sort());
   });
@@ -351,8 +351,8 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(await ada.engine.syncNow()).toBe('synced');
     expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
     const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
-    expect(stored['lifecycle-rules']['target-count']).toBe(5);
-    expect(stored['current-occurrence']).toMatchObject({ 'target-count': 5, 'completion-count': 0, status: 'ready' });
+    expect(stored['lifecycle-rules']['goal-target']).toBe(5);
+    expect(stored['current-occurrence']).toMatchObject({ 'goal-target': 5, progress: 0, status: 'ready' });
   });
 
   it('replays ended daily series without a user cancel, and the server closes them with end-recurrence', async () => {
@@ -380,7 +380,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
       .toEqual([[met.id, 'complete']]);
     expect(await ada.engine.syncNow()).toBe('synced');
     expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
-    for (const [task, status] of [[met, 'completed'], [unmet, 'cancelled']]) {
+    for (const [task, status] of [[met, 'completed'], [unmet, 'failed']]) {
       // The hourly run would roll the task over to now; a task request without `import: true` does so at once.
       const edited = await fetch(`${stack.url}/api/tasks/${task.id}`, {
         method: 'PUT',
@@ -442,8 +442,8 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
     for (const task of [recurring, oneOff]) {
       const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
-      const expected = Object.fromEntries(Object.entries(rulesOf(task)).filter(([name]) => name !== 'task-id'));
-      expect(stored['lifecycle-rules']).toEqual(expected);
+      const { 'target-count': target, ...expected } = Object.fromEntries(Object.entries(rulesOf(task)).filter(([name]) => name !== 'task-id'));
+      expect(stored['lifecycle-rules']).toMatchObject({ ...expected, 'goal-target': target });
     }
   });
 
@@ -468,6 +468,77 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect((await ada.store.getTask(task.id))['current-occurrence']).toMatchObject({ status: 'cancelled', 'completion-count': 0 });
   });
 
+  it('logs entries with time spent, undoes one on another device, and lists the entries the service returns', async () => {
+    const phone = await device('code-ada');
+    const laptop = await device('code-ada');
+    const list = await phone.store.createList({ name: 'Study' });
+    const task = await phone.store.createTask({ description: 'French', 'lifecycle-rules': { 'target-count': 3 } }, { lists: [list.id] });
+    expect(await phone.engine.syncNow()).toBe('synced');
+    phone.clock.tick(60_000);
+    const first = await phone.store.logEntry(task.id, { checked: true, 'time-spent-seconds': 600, label: 'Chapter 1' });
+    phone.clock.tick(60_000);
+    const second = await phone.store.logEntry(task.id, { checked: true, 'time-spent-seconds': 300 });
+    expect(await phone.engine.syncNow()).toBe('synced');
+    expect((await phone.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+
+    const stored = await (await phone.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+    expect(stored['current-occurrence']).toMatchObject({ progress: 2, 'time-spent-seconds': 900, status: 'in-progress' });
+    expect(stored['current-occurrence'].entries.map((entry) => entry.id)).toEqual([first.event.id, second.event.id]);
+
+    expect(await laptop.engine.syncNow()).toBe('synced');
+    expect((await laptop.store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 2, 'time-spent-seconds': 900 });
+    laptop.clock.tick(60_000);
+    await laptop.store.undoLog(task.id, first.event.id);
+    expect(await laptop.engine.syncNow()).toBe('synced');
+    expect((await laptop.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+
+    expect(await phone.engine.syncNow()).toBe('synced');
+    expect((await phone.store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 1, 'time-spent-seconds': 300 });
+    expect((await phone.store.eventsOfTask(task.id)).filter((event) => event.type === 'log').map((event) => event.id)).toEqual([second.event.id]);
+    const history = await (await phone.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
+    expect(history.map((event) => event.type)).toEqual(expect.arrayContaining(['log', 'undo-log']));
+  });
+
+  it('replays complete and uncomplete changes queued before the upgrade through the service aliases', async () => {
+    const ada = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Legacy', 'lifecycle-rules': { 'target-count': 3 } });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    const base = Date.now() - 3_000_000;
+    const legacy = ['complete', 'complete', 'uncomplete'].map((type, index) => ({
+      target: { type: 'event', id: `0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2c4${index}`, 'task-id': task.id }, operation: 'post-event',
+      fields: { id: `0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2c4${index}`, type, 'creation-time': new Date(base + index * 60_000).toISOString(), occurrence: 1 },
+      'edit-times': {}, created: new Date(base + index * 60_000).toISOString(), undo: { kind: 'rules', id: task.id, fields: {} },
+    }));
+    await ada.store.queue.add(legacy);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
+    const events = await (await ada.raw('GET', `/api/tasks/${task.id}/events`, { Accept: 'application/json' })).json();
+    expect(events.map((event) => event.type).filter((type) => ['log', 'undo-log', 'complete', 'uncomplete'].includes(type)).sort()).toEqual(['log', 'log', 'undo-log']);
+    const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
+    expect(stored['current-occurrence']).toMatchObject({ progress: 1 });
+    expect((await ada.store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 1 });
+  });
+
+  it('reverts an undo that the service refuses with 409', async () => {
+    const ada = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Undo me', 'lifecycle-rules': { 'target-count': 2 } });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    ada.clock.tick(60_000);
+    const { event } = await ada.store.logEntry(task.id, { checked: true });
+    expect(await ada.engine.syncNow()).toBe('synced');
+    ada.clock.tick(60_000);
+    await ada.store.undoLog(task.id, event.id);
+    expect((await ada.store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 0 });
+    // The undo names an entry the service never stored, as after a lost reply of another device.
+    const [queued] = await ada.store.queue.all();
+    const { seq, ...rest } = queued;
+    await ada.store.queue.remove([seq]);
+    await ada.store.queue.add([{ ...rest, fields: { ...rest.fields, 'target-event-id': '0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2cff' } }]);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toHaveLength(1);
+    expect(await ada.store.queue.count()).toBe(0);
+    expect((await ada.store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 1 });
+  });
   it('delivers a purged list as a tombstone', async () => {
     const ada = await device('code-ada');
     const root = await device('code-root');

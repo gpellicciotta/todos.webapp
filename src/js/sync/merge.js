@@ -13,7 +13,7 @@
  */
 
 import {
-  applyEvent, applyRuleEdit, firstOccurrence, foldEvents, makeEvent, mirrorOccurrence, mirrorRules, RULE_FIELDS, shouldExpire, USER_EVENT_TYPES,
+  applyEvent, applyRuleEdit, firstOccurrence, foldEvents, foldLogCache, makeEvent, mirrorOccurrence, mirrorRules, RULE_FIELDS, shouldExpire, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { uuid7 } from '../lib/uuid7.js';
 
@@ -133,12 +133,35 @@ const toList = (list) => ({
   revision: list.revision,
 });
 
+/**
+ * Read the goal and progress fields of the wire format into the local ones, which still hold `target-count` and `completion-count`.
+ * A row with only the former fields, such as one from an older service, keeps them.
+ * @param {object} rules the wire rules
+ * @returns {object} the rules with `target-count` set from `goal-target`
+ */
+const rulesFromWire = (rules) => ({ ...rules, 'target-count': rules['goal-target'] ?? rules['target-count'] });
+
+/**
+ * Read an occurrence of the wire format, without its `entries`, which are stored as events.
+ * @param {object} occurrence the wire occurrence
+ * @returns {object} the occurrence with `target-count` and `completion-count` set from `goal-target` and `progress`
+ */
+function occurrenceFromWire(wire) {
+  const occurrence = { ...wire };
+  delete occurrence.entries;
+  return {
+    ...occurrence,
+    'target-count': occurrence['goal-target'] ?? occurrence['target-count'],
+    'completion-count': occurrence.progress ?? occurrence['completion-count'],
+  };
+}
+
 const toTask = (task) => ({
   id: task.id,
   description: task.description,
   'owner-id': task['owner-id'] ?? null,
-  'lifecycle-rules': mirrorRules(task['lifecycle-rules'] ?? {}),
-  'current-occurrence': mirrorOccurrence(task['current-occurrence']),
+  'lifecycle-rules': mirrorRules(rulesFromWire(task['lifecycle-rules'] ?? {})),
+  'current-occurrence': mirrorOccurrence(occurrenceFromWire(task['current-occurrence'])),
   'creation-time': task['creation-time'],
   'last-update-time': task['last-update-time'] ?? task['creation-time'],
   'deletion-time': task['deletion-time'] ?? null,
@@ -156,6 +179,31 @@ const toNote = (note) => ({
   revision: note.revision,
 });
 
+/** The queued event types that the log fold takes, with the aliases of changes queued before the upgrade. */
+const LOG_KINDS = ['log', 'undo-log', 'complete', 'uncomplete'];
+
+/**
+ * Fold queued logs and undos onto a pulled occurrence with the goal fold, from the live entries the service sent.
+ * Each undo names its target, so an undo takes what its entry gave, such as time or an amount, and a repeated undo counts once.
+ * A pulled occurrence that was only started, without entries, keeps its start.
+ * @param {object} task the pulled task, with its rules and occurrence
+ * @param {object[]} logs the fields of the queued events, in queue order
+ * @param {object[]} entries the live `log` entries of the pulled occurrence
+ * @returns {object} the occurrence with its cache refolded and without `entries`
+ */
+function foldQueuedLogs(task, logs, entries) {
+  const occurrence = task['current-occurrence'];
+  const own = (event) => ({ ...event, 'task-id': task.id, occurrence: event.occurrence ?? occurrence.occurrence });
+  const started = occurrence.status === 'in-progress' && entries.length === 0 && (occurrence.progress ?? 0) === 0
+    ? [{ id: `${task.id}/started`, type: 'start', 'task-id': task.id, occurrence: occurrence.occurrence, 'creation-time': occurrence['start-time'] ?? occurrence['creation-time'] }]
+    : [];
+  // A pull can see an entry that the service accepted while its queue entry waits to be removed; the entry counts once.
+  const byId = new Map([...entries, ...logs].map((event) => [event.id, own(event)]).reverse());
+  const folded = foldLogCache(occurrence, [...started, ...byId.values()], task['lifecycle-rules']);
+  delete folded.entries;
+  return folded;
+}
+
 /**
  * Settle the rules and occurrence of a pulled task against the queue and the clock.
  * Rule fields with a queued edit keep their local value and move the occurrence with them; queued events fold onto
@@ -167,17 +215,52 @@ const toNote = (note) => ({
  * @param {object[]} events the queued events of the task, in queue order
  * @param {Date} now the merge time
  */
-function settleLifecycle(next, local, fields, events, now) {
+function settleLifecycle(next, local, fields, events, now, entries = []) {
   const pendingRules = RULE_FIELDS.filter((name) => fields.has(name));
   if (local && pendingRules.length > 0) {
     const edit = Object.fromEntries(pendingRules.map((name) => [name, local['lifecycle-rules'][name] ?? null]));
     Object.assign(next, applyRuleEdit(next, edit, local['last-update-time']));
   }
-  if (events.length > 0) {
-    next['current-occurrence'] = foldEvents(next['current-occurrence'], events, next['lifecycle-rules']);
+  const logs = events.filter((event) => LOG_KINDS.includes(event.type));
+  const rest = events.filter((event) => !LOG_KINDS.includes(event.type));
+  const open = !['failed', 'cancelled'].includes(next['current-occurrence'].status);
+  if (logs.length > 0 && open) {
+    next['current-occurrence'] = foldQueuedLogs(next, logs, entries);
+  }
+  else if (logs.length > 0) {
+    rest.push(...logs);
+  }
+  if (rest.length > 0) {
+    next['current-occurrence'] = foldEvents(next['current-occurrence'], rest, next['lifecycle-rules']);
   }
   if (shouldExpire(next, now)) {
     next['current-occurrence'] = applyEvent(next['current-occurrence'], { type: 'expire', 'creation-time': now.toISOString() }, next['lifecycle-rules']);
+  }
+}
+
+/**
+ * Plan the stored `log` events of a pulled occurrence: its live `entries` are stored, and a stored `log` of the occurrence that
+ * the service no longer lists, undone by another device, goes unless the queue still holds it. Entries of other types are ignored,
+ * so a type that a newer service adds never fails the pull.
+ * @param {object} incoming the wire task
+ * @param {object[]} stored the stored events
+ * @param {object[]} pending the queue entries
+ * @param {Map<string, object>} puts the events to store, by identifier, extended in place
+ * @param {string[][]} deletes the keys of events to remove, extended in place
+ */
+function planEntries(incoming, stored, pending, puts, deletes) {
+  const occurrence = incoming['current-occurrence'];
+  const live = (occurrence.entries ?? []).filter((event) => event.type === 'log');
+  for (const event of live) {
+    puts.set(`${incoming.id}/${event.id}`,{ ...event, 'task-id': incoming.id });
+  }
+  const listed = new Set(live.map((event) => event.id));
+  const queued = new Set(pending.filter((entry) => entry.operation === 'post-event').map((entry) => entry.fields.id));
+  for (const event of stored) {
+    if (event['task-id'] === incoming.id && event.type === 'log' && event.occurrence === occurrence.occurrence
+      && !listed.has(event.id) && !queued.has(event.id)) {
+      deletes.push([incoming.id, event.id]);
+    }
   }
 }
 
@@ -211,6 +294,8 @@ export function planPage(data, feed, { pending = [], userId = null, final = true
   const touched = { lists: new Set(), tasks: new Set(), memberships: new Set(), notes: new Set() };
   const droppedLists = new Set();
   const droppedTasks = new Set();
+  const eventPuts = new Map();
+  const eventDeletes = [];
   const lost = [];
   const slot = (key) => index.get(key) ?? { create: false, fields: new Set() };
 
@@ -289,7 +374,10 @@ export function planPage(data, feed, { pending = [], userId = null, final = true
       const events = pending.filter((entry) => entry.operation === 'post-event' && entry.target['task-id'] === incoming.id
         && (entry.fields.occurrence ?? number) === number).map((entry) => entry.fields);
 
-      settleLifecycle(next, local, mine.fields, events, now);
+      settleLifecycle(next, local, mine.fields, events, now, (incoming['current-occurrence'].entries ?? []).filter((event) => event.type === 'log'));
+    }
+    if (kind === 'tasks') {
+      planEntries(incoming, data.events ?? [], pending, eventPuts, eventDeletes);
     }
     state[kind].set(incoming.id, next);
     touched[kind].add(incoming.id);
@@ -347,7 +435,16 @@ export function planPage(data, feed, { pending = [], userId = null, final = true
 
   const dropped = { lists: [...droppedLists], tasks: [...droppedTasks] };
   const lostLists = lost.filter((item) => droppedLists.has(item.id)).map((item) => ({ ...item, tasks: item.tasks.filter((id) => droppedTasks.has(id)) }));
-  return { ...diff(data, state, touched), dropped, lost: lostLists };
+  const planned = diff(data, state, touched);
+  if (eventPuts.size > 0) {
+    planned.changes.put.events = [...eventPuts.values()];
+    planned.empty = false;
+  }
+  if (eventDeletes.length > 0) {
+    planned.changes.delete.events = eventDeletes;
+    planned.empty = false;
+  }
+  return { ...planned, dropped, lost: lostLists };
 }
 
 /**
@@ -388,7 +485,9 @@ export function planConflicts(data, entry, conflicts, pending) {
     edited.set(key, { kind, row: { ...(edited.get(key)?.row ?? row), [field]: value } });
   };
   for (const conflict of conflicts) {
-    const { field, kept } = conflict;
+    // The service names the target of a goal `goal-target`; locally it is still `target-count`.
+    const { kept } = conflict;
+    const field = conflict.field === 'goal-target' ? 'target-count' : conflict.field;
     const names = target.type === 'list' ? LIST_FIELDS : TASK_FIELDS;
     if (field === 'position') {
       const listId = conflict['list-id'] ?? target['list-id'];

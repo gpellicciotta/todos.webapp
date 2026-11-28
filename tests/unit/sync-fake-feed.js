@@ -61,7 +61,25 @@ export function fakeFeed({ protocol = 1 } = {}) {
     headers: { get: () => null },
     json: async () => body,
   });
-  const view = (row) => Object.fromEntries(Object.entries(row).filter(([name]) => name !== 'edit-times'));
+  /**
+   * Return a task in the ADR-0006 wire format: `goal-target` and `progress` replace the former counts, and the occurrence
+   * embeds its live `log` entries.
+   * @param {object} row the stored task
+   * @returns {object} the wire task
+   */
+  const wireTask = (row) => {
+    const { 'target-count': ruleTarget, ...rules } = row['lifecycle-rules'];
+    const { 'target-count': target, 'completion-count': count, ...occurrence } = row['current-occurrence'];
+    const own = [...service.events.values()].filter((event) => event['task-id'] === row.id && event.occurrence === occurrence.occurrence);
+    const undone = new Set(own.filter((event) => event.type === 'undo-log').map((event) => event['target-event-id']));
+    const entries = own.filter((event) => event.type === 'log' && !undone.has(event.id)).sort(byEventOrder);
+    return {
+      ...row,
+      'lifecycle-rules': { ...rules, 'goal-target': ruleTarget },
+      'current-occurrence': { ...occurrence, 'goal-target': target, progress: count, entries },
+    };
+  };
+  const view = (row) => Object.fromEntries(Object.entries(row['current-occurrence'] ? wireTask(row) : row).filter(([name]) => name !== 'edit-times'));
 
   /**
    * Apply the mergeable fields of a body by their edit times, and report the fields that lost.

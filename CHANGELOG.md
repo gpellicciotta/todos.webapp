@@ -5,6 +5,11 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.6.1-pre
+- Sync: Sent goal changes to the service as `goal-target`, which it requires, for new tasks, rule edits, and first-connect uploads, and replayed rule changes queued before the upgrade the same way.
+- Sync: Read `goal-target`, `progress`, `time-spent-seconds`, and the `failed` status of pulled tasks, and stored their `entries` as events so they can be undone.
+- Sync: Dropped stored entries that another device undid, and ignored entries of unknown types when pulling.
+- Sync: Folded queued logs and undos onto pulled occurrences with the goal fold, counting an entry once when the feed and the queue both hold it.
+- Tests: Covered logs, undos, aliases of queued `complete` and `uncomplete` changes, and rejected undos against a todos server.
 - FrontEnd: Rebuilt the task editor as the tabs Status, Notes, Configuration, and History, opening on Status, with Cancel task in a Danger zone.
 - FrontEnd: Added the Goal, Recurrence with a yearly unit, and Time window with a start time and Fail when overdue to Configuration (`TSK-15`, `TSK-16`, `TSK-20`).
 - Store: Took the year unit and decimal amount targets from 0 in local rule edits, and kept checks and time to whole numbers.

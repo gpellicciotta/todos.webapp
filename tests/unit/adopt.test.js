@@ -160,7 +160,7 @@ describe('adopting local data on first connect', () => {
     await store.postEvent(task.id, 'complete');
     await store.postEvent(task.id, 'complete');
     const result = await adopt({ store, api, account: ACCOUNT });
-    expect(service.calls.find((call) => call.path === '/api/tasks').body['lifecycle-rules']).toMatchObject({ 'target-count': 3 });
+    expect(service.calls.find((call) => call.path === '/api/tasks').body['lifecycle-rules']).toMatchObject({ 'goal-target': 3 });
     const posted = service.calls.filter((call) => call.path === `/api/tasks/${task.id}/events`).map((call) => call.body);
     const local = (await store.eventsOfTask(task.id)).filter((event) => event.type === 'log');
     expect(posted).toEqual(local.map((event) => ({ id: event.id, type: 'log', checked: true, 'creation-time': event['creation-time'], occurrence: 1, import: true })));
