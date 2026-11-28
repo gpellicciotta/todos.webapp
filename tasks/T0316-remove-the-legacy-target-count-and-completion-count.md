@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1599.7, input: 276, output: 97025, cache_read: 32012015, cache_write: 335987}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T09:28:21Z"
 ---
 # T0316: Remove the legacy target-count and completion-count fields once every reader uses goals and progress
 
@@ -60,4 +65,7 @@ Rules, files, and tests: [technical-spec.md](T0316-remove-the-legacy-target-coun
   - Files touched: 38.
   - Lines touched: 1067.
   - Reopenings: 0.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
