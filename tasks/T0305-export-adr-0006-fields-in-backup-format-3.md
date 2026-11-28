@@ -12,14 +12,13 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 1324.9, input: 226, output: 109032, cache_read: 23205474, cache_write: 292012}
+  worker: {turns: 4, duration_s: 1562.7, input: 252, output: 117252, cache_read: 27014822, cache_write: 309643}
   review: {turns: 2, duration_s: 130.3, input: 52847, output: 3526, cache_read: 516480, cache_write: 0}
-review_status: rejected
-review_round: 2
-review_requested_at: "2026-11-28T06:02:12Z"
+review_status: pending
+review_round: 3
+review_requested_at: "2026-11-28T06:37:09Z"
 review_session: codex-20261128-ec60e4
 work_duration: 1517.6
-reviewed_by: "@codex"
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
 
@@ -98,4 +97,7 @@ Keep merge imports per row, as `BAK-6` requires.
 - [2026-11-28] **[Implement]**
   Round 2: kept the 32767 cap, reported unrebuilt progress in the import result, and made check rebuild linear.
   - Tests cover 32767, 32768, and a huge gap.
+
+- [2026-11-28] **[Review]**
+  Round 3 requested (mode: agent).
 
