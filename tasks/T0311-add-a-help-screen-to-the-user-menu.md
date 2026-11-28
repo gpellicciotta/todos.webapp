@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1821.4, input: 8, output: 1356, cache_read: 784402, cache_write: 7307}
+  worker: {turns: 3, duration_s: 2301.1, input: 44, output: 8421, cache_read: 5448667, cache_write: 22931}
 work_duration: 1854.2
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T02:47:00Z"
 ---
 # T0311: Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings
 
@@ -73,6 +76,9 @@ Details are in [technical-spec.md](T0311-add-a-help-screen-to-the-user-menu/tech
 
 - [2026-11-28] **[Decided]**
   Kept the Help route free of query parameters; search and topic chips cover filtering.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
 ## Visual Verification
 - Before: [settings-before.png](T0311-add-a-help-screen-to-the-user-menu/settings-before.png)
