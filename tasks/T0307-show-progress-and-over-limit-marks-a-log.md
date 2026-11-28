@@ -12,13 +12,12 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 2165.5, input: 26, output: 3742, cache_read: 3127854, cache_write: 15862}
+  worker: {turns: 4, duration_s: 2284.8, input: 40, output: 6074, cache_read: 5075461, cache_write: 24507}
   review: {turns: 1, duration_s: 89.9, input: 43068, output: 2400, cache_read: 441472, cache_write: 0}
 work_duration: 2313.9
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-28T05:34:02Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-28T05:37:57Z"
 review_session: codex-20261128-d2ab6d
 ---
 # T0307: Show progress, check off, a log form, and undoable entries on the task editor Status tab.
@@ -82,4 +81,7 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Implement]**
   Disabled Check off previous period on cancelled tasks; added a grace-window test; bumped service worker VERSION to 2026-11-28.12.
+
+- [2026-11-28] **[Review]**
+  Round 2 requested (mode: agent).
 
