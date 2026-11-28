@@ -95,3 +95,7 @@ Keep merge imports per row, as `BAK-6` requires.
   - Show the affected tasks in the import result; never drop silently.
   - State the limit in backup-format.md and test the report.
 
+- [2026-11-28] **[Implement]**
+  Round 2: kept the 32767 cap, reported unrebuilt progress in the import result, and made check rebuild linear.
+  - Tests cover 32767, 32768, and a huge gap.
+

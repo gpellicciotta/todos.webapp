@@ -85,3 +85,22 @@ Whole unit suite (`npx vitest run`), exit code 0:
 ```
 
 `npx playwright test tests/e2e/backup.spec.js`: `12 passed (12.8s)`. `npx eslint src tests`: no output. `npm run check:sw`: `OK: 166 precached files match VERSION 2026-11-28.14.`
+
+### Review round 2 rework: option C, reported cap and linear rebuild
+
+The loop manager chose option C. Before the change, the new test `rebuilds a gap of exactly 32767 checks, and reports the first gap above it` did not finish: the per-check refold made the rebuild quadratic, and the run was stopped with `processes kill --yes --force`.
+
+After the change, `npx vitest run tests/unit/backup.test.js`, exit code 0:
+
+```
+      Tests  130 passed (130)
+```
+
+`npx vitest run`, exit code 0:
+
+```
+ Test Files  73 passed (73)
+      Tests  2114 passed (2114)
+```
+
+`npx playwright test tests/e2e/backup.spec.js`: `12 passed (12.6s)`. `npx eslint .`: no output. `npm run check:sw`: `OK: 166 precached files match VERSION 2026-11-28.15.`
