@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1818.5, input: 10, output: 1478, cache_read: 934038, cache_write: 6174}
+  worker: {turns: 3, duration_s: 1873.2, input: 26, output: 4106, cache_read: 3171065, cache_write: 12700}
 work_duration: 1850.6
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T04:09:38Z"
 ---
 # T0306: Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 
@@ -61,4 +64,7 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Doc]**
   Added three CHANGELOG bullets under v0.6.1-pre; ui-design.md already specifies this editor.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
