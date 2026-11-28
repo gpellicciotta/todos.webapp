@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1802.4, input: 2, output: 8}
+work_duration: 1811.6
 ---
 # T0307: Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 
