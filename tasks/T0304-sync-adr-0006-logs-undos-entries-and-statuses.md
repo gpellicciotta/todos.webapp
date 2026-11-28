@@ -1,11 +1,11 @@
 ---
 id: T0304
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0304-sync-adr-0006-logs-undos-entries-and-statuses
+worktree: .plan/work/T0304-sync-adr-0006-logs-undos-entries-and-statuses
+status: active
+started_at: "2026-11-28T04:34:48Z"
 ended_at: —
 review: agent
 preview: none
