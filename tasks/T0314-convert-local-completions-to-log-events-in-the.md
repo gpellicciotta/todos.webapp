@@ -5,21 +5,22 @@ session: claude-20261128-5de69e
 needs: []
 branch: task/T0314-convert-local-completions-to-log-events-in-the
 worktree: .plan/work/T0314-convert-local-completions-to-log-events-in-the
-status: active
+status: completed
 started_at: "2026-11-28T01:27:30Z"
-ended_at: —
+ended_at: "2026-11-28T03:02:48Z"
 review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 5, duration_s: 1654.1, input: 236, output: 136966, cache_read: 26236252, cache_write: 307638}
+  worker: {turns: 6, duration_s: 1706.3, input: 250, output: 138322, cache_read: 28193094, cache_write: 311307}
   review: {turns: 5, duration_s: 704.3, input: 119739, output: 8274, cache_read: 1568128, cache_write: 0}
 review_status: approved
 review_round: 5
 review_requested_at: "2026-11-28T03:00:16Z"
 review_session: codex-20261128-e5d28d
-work_duration: 5640.0
+work_duration: 5717.8
 reviewed_by: "@codex"
+completion-commit: 5d169efade3b5cec9f184a15c0b11426364bca5f
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -128,4 +129,7 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 - [2026-11-28] **[Review]**
   Round 5 approved by @codex: [Decided]** Approve.
   - Findings: [review-findings-5.md](T0314-convert-local-completions-to-log-events-in-the/review-findings-5.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
