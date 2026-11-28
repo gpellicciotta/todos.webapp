@@ -13,12 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 1363.0, input: 200, output: 127876, cache_read: 21135500, cache_write: 294997}
-  review: {turns: 2, duration_s: 133.2, input: 62303, output: 3706, cache_read: 641024, cache_write: 0}
-review_status: pending
+  review: {turns: 3, duration_s: 193.5, input: 81938, output: 5463, cache_read: 867456, cache_write: 0}
+review_status: rejected
 review_round: 3
 review_requested_at: "2026-11-28T01:53:26Z"
-review_session: codex-20261128-be17ab
-work_duration: 1373.7
+review_session: codex-20261128-3ca49b
+work_duration: 1619.7
+reviewed_by: "@codex"
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -86,4 +87,17 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Review]**
   Round 3 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 3 rejected by @codex: [Decided]** Reject: mixed histories can undo the wrong check.
+  - Findings: [review-findings-3.md](T0314-convert-local-completions-to-log-events-in-the/review-findings-3.md).
+
+- [2026-11-28] **[Suspended]**
+  Suspended after 3 consecutive review rejections (blocking: 2, 1, 1). Inspect review findings before lifecycle resume.
+
+- [2026-11-28] **[Decided]**
+  Resumed by the loop manager after three rejections: convert mixed histories with one shared conversion that tracks every live check, checked logs and undo-logs included.
+  - Reuse the upgrade conversion instead of a second legacy pass.
+  - Test uncomplete after a checked log, and after an undo-log.
+  - Record verbatim failing-first output in the validation proof.
 
