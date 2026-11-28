@@ -5,20 +5,22 @@ session: claude-20261128-c1da60
 needs: []
 branch: task/T0313-add-goals-start-times-progress-and-time-spent
 worktree: .plan/work/T0313-add-goals-start-times-progress-and-time-spent
-status: active
+status: completed
 started_at: "2026-11-28T01:07:55Z"
-ended_at: —
+ended_at: "2026-11-28T01:27:10Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 988.1, input: 144, output: 51290, cache_read: 10357218, cache_write: 185290}
-  review: {turns: 2, duration_s: 62.7, input: 31405, output: 1425, cache_read: 264576, cache_write: 0}
-review_status: pending
+  review: {turns: 3, duration_s: 122.3, input: 50395, output: 2816, cache_read: 529920, cache_write: 0}
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-28T01:26:07Z"
-work_duration: 742.3
-review_session: codex-20261128-3948b4
+work_duration: 1154.9
+review_session: codex-20261128-107c4d
+reviewed_by: "@codex"
+completion-commit: aa3f6b824ad6c335fa2343a12a9d014685b54364
 ---
 # T0313: Add goals, start times, progress, and time spent to local records in database version 6
 
@@ -37,7 +39,7 @@ Rules, files, and tests: [technical-spec.md](T0313-add-goals-start-times-progres
 - [x] **[Implement]** Add the fields, the upgrade step, and the mirror upkeep.
 - [x] **[Verify]**    Run `npm test` and lint and confirm they pass.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -80,4 +82,11 @@ Rules, files, and tests: [technical-spec.md](T0313-add-goals-start-times-progres
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 approved by @codex: The required browser migration scenario passes and preserves the displayed counts.
+  - Findings: [review-findings-2.md](T0313-add-goals-start-times-progress-and-time-spent/review-findings-2.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
