@@ -5,20 +5,22 @@ session: claude-20261128-9a833f
 needs: []
 branch: task/T0304-sync-adr-0006-logs-undos-entries-and-statuses
 worktree: .plan/work/T0304-sync-adr-0006-logs-undos-entries-and-statuses
-status: active
+status: completed
 started_at: "2026-11-28T04:34:48Z"
-ended_at: —
+ended_at: "2026-11-28T04:56:42Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 1075.9, input: 214, output: 59968, cache_read: 14010002, cache_write: 185373}
-  review: {turns: 2, duration_s: 133.4, input: 82263, output: 3924, cache_read: 857856, cache_write: 0}
-review_status: pending
+  review: {turns: 3, duration_s: 174.5, input: 107667, output: 5081, cache_read: 1029888, cache_write: 0}
+review_status: approved
 review_round: 3
 review_requested_at: "2026-11-28T04:55:58Z"
-review_session: codex-20261128-c597d2
-work_duration: 1159.8
+review_session: codex-20261128-e46bc6
+work_duration: 1313.6
+reviewed_by: "@codex"
+completion-commit: 0bd7088964fadbecd31a1837a4e6d2cbb6a469b1
 ---
 # T0304: Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable
 
@@ -36,7 +38,7 @@ Run the contract tests against a todos.server checkout with its task T0301.
 - [x] **[Implement]** Queue, push, and pull the new events and fields, and tolerate unknown event types.
 - [x] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-27] **[Doc]**
@@ -94,4 +96,11 @@ Run the contract tests against a todos.server checkout with its task T0301.
 
 - [2026-11-28] **[Review]**
   Round 3 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 3 approved by @codex: [Decided]** Approve: the rework deduplicates overlapping entries and queued logs by event ID.
+  - Findings: [review-findings-3.md](T0304-sync-adr-0006-logs-undos-entries-and-statuses/review-findings-3.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
