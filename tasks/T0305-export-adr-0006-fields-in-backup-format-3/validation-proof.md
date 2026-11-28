@@ -65,3 +65,23 @@ OK: 166 precached files match VERSION 2026-11-28.13.
 ### Not run
 
 The contract tests skip without `TODOS_SERVER_DIR`: `Contract tests skipped: set TODOS_SERVER_DIR to a todos checkout`.
+
+### Review round 1 rework: bounded missing checks
+
+Before the fix, the new test `adds no missing checks for a huge valid progress` (progress 999,999,998,000-scale gap) did not finish: `npx vitest run tests/unit/backup.test.js -t "huge valid progress"` ran past 60 s and was stopped with `processes kill --yes --force`.
+
+After the fix (`MISSING_CHECKS_MAX` = 32,767), exit code 0:
+
+```
+ Test Files  1 passed (1)
+      Tests  129 passed (129)
+```
+
+Whole unit suite (`npx vitest run`), exit code 0:
+
+```
+ Test Files  73 passed (73)
+      Tests  2113 passed (2113)
+```
+
+`npx playwright test tests/e2e/backup.spec.js`: `12 passed (12.8s)`. `npx eslint src tests`: no output. `npm run check:sw`: `OK: 166 precached files match VERSION 2026-11-28.14.`

@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1080.7, input: 180, output: 101026, cache_read: 17313871, cache_write: 264438}
-review_status: pending
+  review: {turns: 1, duration_s: 74.4, input: 33479, output: 1815, cache_read: 361728, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T05:57:11Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-12a07c
+work_duration: 1167.4
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
 
@@ -64,4 +68,12 @@ Keep merge imports per row, as `BAK-6` requires.
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: Format 3 and legacy conversion tests pass, but a valid backup can make import effectively hang.
+  - Findings: [review-findings-1.md](T0305-export-adr-0006-fields-in-backup-format-3/review-findings-1.md).
+
+- [2026-11-28] **[Implement]**
+  Review round 1: capped missing checked logs at 32767, so a huge valid progress adds none and import finishes.
+  - Regression test, docs, changelog, and SW version updated.
 
