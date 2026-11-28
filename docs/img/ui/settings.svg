@@ -29,7 +29,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">Settings</text>
-  <text x="40" y="72" font-size="16" class="muted">Theme, Make Enter add, backups, connection, server URL, and app version.</text>
+  <text x="40" y="72" font-size="16" class="muted">Theme, Make Enter add, reminders, backups, connection, server URL, and app version.</text>
   <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
   <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
   <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
@@ -53,26 +53,28 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="56" cy="244" r="9" class="icon"/>
     <text x="80" y="249" font-size="14">Make Enter add</text>
     <text x="28" y="280" font-size="13" class="muted">Shift+Enter and Alt+Enter always add.</text>
-    <rect x="12" y="308" width="366" height="100" rx="8" class="box"/>
-    <text x="28" y="338" font-size="16" class="bold">Data</text>
-    <rect x="28" y="352" width="133.92" height="44" rx="6" class="control"/>
-    <text x="94.96" y="378.9" font-size="14" text-anchor="middle">Export backup</text>
-    <rect x="169.92" y="352" width="133.92" height="44" rx="6" class="control"/>
-    <text x="236.88" y="378.9" font-size="14" text-anchor="middle">Import backup</text>
-    <rect x="12" y="420" width="366" height="328" rx="8" class="box"/>
-    <text x="28" y="450" font-size="16" class="bold">Connection</text>
-    <text x="28" y="478" font-size="13">Not connected. Your data stays on this device.</text>
-    <text x="28" y="500" font-size="13">Connecting syncs your data across devices an…</text>
-    <text x="28" y="522" font-size="13">It needs an account, so you are no longer an…</text>
-    <text x="28" y="548" font-size="13" class="muted">Server: https://todos.pellicciotta.com</text>
-    <rect x="28" y="564" width="86.88" height="44" rx="6" class="primary"/>
-    <text x="71.44" y="590.9" font-size="14" class="on-primary" text-anchor="middle">Sign in</text>
-    <text x="28" y="638" font-size="13" class="muted">Server URL</text>
-    <rect x="28" y="646" width="334" height="44" rx="6" class="control"/>
-    <text x="40" y="673" font-size="14">https://todos.pellicciotta.com</text>
-    <rect x="12" y="760" width="366" height="72" rx="8" class="box"/>
-    <text x="28" y="790" font-size="16" class="bold">About</text>
-    <text x="28" y="808" font-size="13" class="muted">Version 1.0.0 · Built 3 Nov 2026</text>
+    <rect x="12" y="308" width="366" height="214" rx="8" class="box"/>
+    <text x="28" y="338" font-size="16" class="bold">Reminders</text>
+    <rect x="28" y="356" width="40" height="24" rx="12" class="disabled"/>
+    <circle cx="40" cy="368" r="9" class="icon"/>
+    <text x="80" y="373" font-size="14">Remind me when tasks come due</text>
+    <text x="28" y="404" font-size="13" class="muted">Notifies while ToDo's is open in a browser t…</text>
+    <text x="28" y="424" font-size="13" class="muted">A task with a date only reminds at 9:00 on t…</text>
+    <text x="28" y="458" font-size="13" class="muted">Remind me</text>
+    <rect x="28" y="466" width="334" height="44" rx="6" class="control"/>
+    <text x="40" y="493" font-size="14" class="muted">When the task comes due</text>
+    <rect x="12" y="534" width="366" height="100" rx="8" class="box"/>
+    <text x="28" y="564" font-size="16" class="bold">Data</text>
+    <rect x="28" y="578" width="133.92" height="44" rx="6" class="control"/>
+    <text x="94.96" y="604.9" font-size="14" text-anchor="middle">Export backup</text>
+    <rect x="169.92" y="578" width="133.92" height="44" rx="6" class="control"/>
+    <text x="236.88" y="604.9" font-size="14" text-anchor="middle">Import backup</text>
+    <rect x="12" y="646" width="366" height="134" rx="8" class="box"/>
+    <text x="28" y="676" font-size="16" class="bold">Connection</text>
+    <text x="28" y="704" font-size="13">Not connected. Your data stays on this device.</text>
+    <text x="28" y="726" font-size="13">Connecting syncs your data across devices an…</text>
+    <text x="28" y="748" font-size="13">It needs an account, so you are no longer an…</text>
+    <text x="28" y="774" font-size="13" class="muted">Server: https://todos.pellicciotta.com</text>
     <rect x="0" y="780" width="390" height="64" rx="0" class="bar"/>
     <rect x="88.5" y="794" width="18" height="18" rx="3" class="icon"/>
     <text x="97.5" y="828" font-size="12" text-anchor="middle">Tasks</text>
@@ -117,29 +119,35 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <circle cx="348" cy="268" r="9" class="icon"/>
     <text x="372" y="273" font-size="14">Make Enter add</text>
     <text x="320" y="304" font-size="13" class="muted">Shift+Enter and Alt+Enter always add.</text>
-    <rect x="304" y="332" width="640" height="100" rx="8" class="box"/>
-    <text x="320" y="362" font-size="16" class="bold">Data</text>
-    <rect x="320" y="376" width="133.92" height="44" rx="6" class="control"/>
-    <text x="386.96" y="402.9" font-size="14" text-anchor="middle">Export backup</text>
-    <rect x="461.92" y="376" width="133.92" height="44" rx="6" class="control"/>
-    <text x="528.88" y="402.9" font-size="14" text-anchor="middle">Import backup</text>
-    <rect x="304" y="444" width="640" height="328" rx="8" class="box"/>
-    <text x="320" y="474" font-size="16" class="bold">Connection</text>
-    <text x="320" y="502" font-size="13">Not connected. Your data stays on this device.</text>
-    <text x="320" y="524" font-size="13">Connecting syncs your data across devices and lets you share lists.</text>
-    <text x="320" y="546" font-size="13">It needs an account, so you are no longer anonymous. Access is by invitation.</text>
-    <text x="320" y="572" font-size="13" class="muted">Server: https://todos.pellicciotta.com</text>
-    <rect x="320" y="588" width="86.88" height="44" rx="6" class="primary"/>
-    <text x="363.44" y="614.9" font-size="14" class="on-primary" text-anchor="middle">Sign in</text>
-    <text x="320" y="662" font-size="13" class="muted">Server URL</text>
-    <rect x="320" y="670" width="608" height="44" rx="6" class="control"/>
-    <text x="332" y="697" font-size="14">https://todos.pellicciotta.com</text>
-    <rect x="304" y="784" width="640" height="72" rx="8" class="box"/>
-    <text x="320" y="814" font-size="16" class="bold">About</text>
-    <text x="320" y="832" font-size="13" class="muted">Version 1.0.0 · Built 3 Nov 2026</text>
+    <rect x="304" y="332" width="640" height="214" rx="8" class="box"/>
+    <text x="320" y="362" font-size="16" class="bold">Reminders</text>
+    <rect x="320" y="380" width="40" height="24" rx="12" class="disabled"/>
+    <circle cx="332" cy="392" r="9" class="icon"/>
+    <text x="372" y="397" font-size="14">Remind me when tasks come due</text>
+    <text x="320" y="428" font-size="13" class="muted">Notifies while ToDo's is open in a browser tab.</text>
+    <text x="320" y="448" font-size="13" class="muted">A task with a date only reminds at 9:00 on that day.</text>
+    <text x="320" y="482" font-size="13" class="muted">Remind me</text>
+    <rect x="320" y="490" width="608" height="44" rx="6" class="control"/>
+    <text x="332" y="517" font-size="14" class="muted">When the task comes due</text>
+    <rect x="304" y="558" width="640" height="100" rx="8" class="box"/>
+    <text x="320" y="588" font-size="16" class="bold">Data</text>
+    <rect x="320" y="602" width="133.92" height="44" rx="6" class="control"/>
+    <text x="386.96" y="628.9" font-size="14" text-anchor="middle">Export backup</text>
+    <rect x="461.92" y="602" width="133.92" height="44" rx="6" class="control"/>
+    <text x="528.88" y="628.9" font-size="14" text-anchor="middle">Import backup</text>
+    <rect x="304" y="670" width="640" height="230" rx="8" class="box"/>
+    <text x="320" y="700" font-size="16" class="bold">Connection</text>
+    <text x="320" y="728" font-size="13">Not connected. Your data stays on this device.</text>
+    <text x="320" y="750" font-size="13">Connecting syncs your data across devices and lets you share lists.</text>
+    <text x="320" y="772" font-size="13">It needs an account, so you are no longer anonymous. Access is by invitation.</text>
+    <text x="320" y="798" font-size="13" class="muted">Server: https://todos.pellicciotta.com</text>
+    <rect x="320" y="814" width="86.88" height="44" rx="6" class="primary"/>
+    <text x="363.44" y="840.9" font-size="14" class="on-primary" text-anchor="middle">Sign in</text>
     <text x="984" y="140" font-size="13" class="muted">Connected, the Connection section shows the account,</text>
     <text x="984" y="160" font-size="13" class="muted">server, sync state, Sync log, and Disconnect.</text>
     <text x="984" y="188" font-size="13" class="muted">Signing in, not invited, errors, and an expired</text>
     <text x="984" y="208" font-size="13" class="muted">session also show here, in the same section.</text>
+    <text x="984" y="236" font-size="13" class="muted">Turning Reminders on asks for notification permission;</text>
+    <text x="984" y="256" font-size="13" class="muted">a denial or no support leaves it off and says why.</text>
   </g>
 </svg>

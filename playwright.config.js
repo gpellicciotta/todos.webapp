@@ -15,7 +15,8 @@ const NETWORK_GUARD = {
 // The performance spec runs alone through playwright.perf.config.js, since parallel tests would skew its timings.
 export default defineConfig({
   testDir: 'tests/e2e',
-  testIgnore: 'performance.spec.js',
+  // reminders-real.spec.js needs Chrome and Firefox, so playwright.browsers.config.js runs it alone.
+  testIgnore: ['performance.spec.js', 'reminders-real.spec.js'],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

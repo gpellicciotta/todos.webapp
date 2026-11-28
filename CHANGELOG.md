@@ -10,6 +10,8 @@ All notable changes to this project are documented here.
 - Core: Ported the ADR-0006 fold to occurrences.js as `foldLog` and `foldInPlace`, passing the shared fold test vectors.
 - FrontEnd: Kept the compact add bar to one line with a plus button, and removed its filter summary and Reset.
 - FrontEnd: Removed the non-clickable logo and app name from the top of the sidebar, which now starts with All tasks.
+- Docs: Added the Reminders section to the settings wireframe, which now clips the scrolling page at the frame edge.
+- Tests: Added a real-notification spec that passes in Chrome and Firefox through `playwright.browsers.config.js`.
 - Tests: Made the task row due text tests follow the default locale clock, so the Pages workflow passes on CI again.
 
 ## v0.6.0 [released: 2026-11-24]

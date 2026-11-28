@@ -37,6 +37,7 @@ npm run test:contract # opt-in: the sync client against a real todos server; see
 npm run lint         # ESLint, including Stroustrup brace style
 npm run test:e2e     # Playwright end-to-end tests, from tests/e2e/
 npm run test:perf    # Playwright performance spec with 5000 tasks, alone
+npx playwright install firefox && npx playwright test --config playwright.browsers.config.js  # real notifications in Chrome and Firefox
 ```
 
 [devops.py](../scripts/devops.py) wraps the same checks, and adds the release.

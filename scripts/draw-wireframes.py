@@ -1520,15 +1520,22 @@ def recycle_bin():
 
 
 def settings_sections(f, x, y, width):
-    """Draw the settings sections in local mode; return the bottom edge."""
+    """Draw the settings sections in local mode, clipped where the scrolling page runs past the frame; return the bottom edge."""
+    limit = f.height - (64 if f.width < 500 else 0)
 
     def section(title, height):
         nonlocal y
-        f.rect(x, y, width, height, "box", radius=8)
+        if y + 40 > limit:
+            y += height + 12
+            return None
+        f.rect(x, y, width, min(height, limit - y), "box", radius=8)
         f.text(x + 16, y + 30, title, 16, "bold")
         top = y + 44
         y += height + 12
         return top
+
+    def shown(top, bottom):
+        return top is not None and top + bottom <= limit
 
     top = section("Appearance", 100)
     segmented(f, x + 16, top, width - 32, ["System", "Light", "Dark"], 0, 13, 40)
@@ -1537,27 +1544,43 @@ def settings_sections(f, x, y, width):
     f.circle(x + 44, top + 16, 9, "icon")
     f.text(x + 68, top + 21, "Make Enter add", 14)
     f.text(x + 16, top + 52, "Shift+Enter and Alt+Enter always add.", 13, "muted")
+    top = section("Reminders", 214)
+    f.rect(x + 16, top + 4, 40, 24, "disabled", radius=12)
+    f.circle(x + 28, top + 16, 9, "icon")
+    f.text(x + 68, top + 21, "Remind me when tasks come due", 14)
+    f.text(x + 16, top + 52, fit("Notifies while ToDo's is open in a browser tab.", width - 32, 13), 13, "muted")
+    f.text(x + 16, top + 72, fit("A task with a date only reminds at 9:00 on that day.", width - 32, 13), 13, "muted")
+    field(f, x + 16, top + 92, width - 32, "When the task comes due", "Remind me", muted=True)
     top = section("Data", 100)
     left = button(f, x + 16, top, "Export backup") + 8
     button(f, left, top, "Import backup")
     top = section("Connection", 328)
-    f.text(x + 16, top + 14, "Not connected. Your data stays on this device.", 13)
-    f.text(
-        x + 16, top + 36, fit("Connecting syncs your data across devices and lets you share lists.", width - 32, 13), 13
-    )
-    f.text(
-        x + 16,
-        top + 58,
-        fit("It needs an account, so you are no longer anonymous. Access is by invitation.", width - 32, 13),
-        13,
-    )
-    f.text(x + 16, top + 84, "Server: https://todos.pellicciotta.com", 13, "muted")
-    button(f, x + 16, top + 100, "Sign in", "primary")
-    field(f, x + 16, top + 160, width - 32, "https://todos.pellicciotta.com", "Server URL")
+    if shown(top, 18):
+        f.text(x + 16, top + 14, "Not connected. Your data stays on this device.", 13)
+    if shown(top, 40):
+        f.text(
+            x + 16,
+            top + 36,
+            fit("Connecting syncs your data across devices and lets you share lists.", width - 32, 13),
+            13,
+        )
+    if shown(top, 62):
+        f.text(
+            x + 16,
+            top + 58,
+            fit("It needs an account, so you are no longer anonymous. Access is by invitation.", width - 32, 13),
+            13,
+        )
+    if shown(top, 88):
+        f.text(x + 16, top + 84, "Server: https://todos.pellicciotta.com", 13, "muted")
+    if shown(top, 144):
+        button(f, x + 16, top + 100, "Sign in", "primary")
+    if shown(top, 226):
+        field(f, x + 16, top + 160, width - 32, "https://todos.pellicciotta.com", "Server URL")
     top = section("About", 72)
-    f.text(x + 16, top + 4, "Version 1.0.0 · Built 3 Nov 2026", 13, "muted")
+    if shown(top, 8):
+        f.text(x + 16, top + 4, "Version 1.0.0 · Built 3 Nov 2026", 13, "muted")
     return y
-
 
 def settings():
     """Settings in local mode."""
@@ -1573,7 +1596,14 @@ def settings():
     wide.text(MAIN_LEFT + 680, 160, "server, sync state, Sync log, and Disconnect.", 13, "muted")
     wide.text(MAIN_LEFT + 680, 188, "Signing in, not invited, errors, and an expired", 13, "muted")
     wide.text(MAIN_LEFT + 680, 208, "session also show here, in the same section.", 13, "muted")
-    return "Settings", "Theme, Make Enter add, backups, connection, server URL, and app version.", compact, wide
+    wide.text(MAIN_LEFT + 680, 236, "Turning Reminders on asks for notification permission;", 13, "muted")
+    wide.text(MAIN_LEFT + 680, 256, "a denial or no support leaves it off and says why.", 13, "muted")
+    return (
+        "Settings",
+        "Theme, Make Enter add, reminders, backups, connection, server URL, and app version.",
+        compact,
+        wide,
+    )
 
 
 LOG_INTRO = "Values that sync overwrote or undid in the last 30 days."
