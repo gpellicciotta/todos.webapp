@@ -12,13 +12,12 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 2301.1, input: 44, output: 8421, cache_read: 5448667, cache_write: 22931}
+  worker: {turns: 4, duration_s: 2743.1, input: 66, output: 16703, cache_read: 8342054, cache_write: 39353}
   review: {turns: 1, duration_s: 54.6, input: 35226, output: 1563, cache_read: 230016, cache_write: 0}
 work_duration: 2413.4
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-28T02:47:00Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-28T02:55:43Z"
 review_session: codex-20261128-ff0fef
 ---
 # T0311: Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings
@@ -97,6 +96,9 @@ Details are in [technical-spec.md](T0311-add-a-help-screen-to-the-user-menu/tech
 - [2026-11-28] **[Verify]**
   devops check passes after rework.
   - 1908 unit, 296 e2e, 271 Python tests passed.
+
+- [2026-11-28] **[Review]**
+  Round 2 requested (mode: agent).
 
 ## Visual Verification
 - Before: [settings-before.png](T0311-add-a-help-screen-to-the-user-menu/settings-before.png)
