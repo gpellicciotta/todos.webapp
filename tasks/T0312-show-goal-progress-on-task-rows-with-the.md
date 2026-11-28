@@ -1,6 +1,7 @@
 ---
 id: T0312
 owner: "@claude"
+session: claude-20261128-75bfc6
 needs: []
 branch: task/T0312-show-goal-progress-on-task-rows-with-the
 worktree: .plan/work/T0312-show-goal-progress-on-task-rows-with-the
@@ -22,15 +23,45 @@ Reuse the progress module and the log fields of T0307.
 Capture before and after screenshots of the lists and view options in light and dark themes.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the Task Row, Quick Log, View Options, and Key Flows sections, the wireframes, and the views.
-- [ ] **[Implement]** Author failing unit and end-to-end tests for row marks, clicks per goal, the quick log, and views.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reason.
-- [ ] **[Implement]** Add the row marks, the quick log, the undo toast, and the view options.
-- [ ] **[Verify]**    Run the new and affected tests and confirm they pass.
-- [ ] **[Visual]**    Capture before and after screenshots of the lists and view options in both themes.
-- [ ] **[Doc]**       Update the affected docs and CHANGELOG.md.
+- [x] **[Read]**      Read the Task Row, Quick Log, View Options, and Key Flows sections, the wireframes, and the views.
+- [x] **[Implement]** Author failing unit and end-to-end tests for row marks, clicks per goal, the quick log, and views.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reason.
+- [x] **[Implement]** Add the row marks, the quick log, the undo toast, and the view options.
+- [x] **[Verify]**    Run the new and affected tests and confirm they pass.
+- [x] **[Visual]**    Capture before and after screenshots of the lists and view options in both themes.
+- [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-28] **[Verify]**
+  New tests fail: quick-log module and clickOf missing, row marks absent.
+  - 33 task-list failures, 1 failed suite.
+
+- [2026-11-28] **[Implement]**
+  Added row marks, quick log, undo toast, Show upcoming and Upcoming group.
+  - Unit suite: 2137 pass, eslint clean.
+
+- [2026-11-28] **[Verify]**
+  Unit, lint, and end-to-end suites pass with the new tests.
+  - 2137 unit tests, 301 e2e tests passed.
+
+- [2026-11-28] **[Visual]**
+  Captured before and after screenshots in both themes.
+  - See validation-proof.md for the links.
+
+- [2026-11-28] **[Doc]**
+  Updated style guide, FAQ, and CHANGELOG.
+  - Size note: 550-line estimate, 7 files; undeclared: query.js tests, index.html, service-worker.js.
+
+- [2026-11-28] **[Read]**
+  Read Task Row, Quick Log, View Options, and Key Flows sections plus code.
+
+- [2026-11-28] **[Verify]**
+  Recorded task outcomes. Size note: estimate of 7 files and 550 lines exceeded; marks and quick log cannot merge apart.
+  - Files touched: 20.
+  - Lines touched: 1000.
+  - Reopenings: 0.
+
