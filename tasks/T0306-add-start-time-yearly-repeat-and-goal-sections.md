@@ -12,13 +12,12 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 3, duration_s: 1873.2, input: 26, output: 4106, cache_read: 3171065, cache_write: 12700}
+  worker: {turns: 4, duration_s: 2004.4, input: 46, output: 10398, cache_read: 6125076, cache_write: 27125}
   review: {turns: 2, duration_s: 94.3, input: 40340, output: 2325, cache_read: 475392, cache_write: 0}
 work_duration: 2043.8
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-28T04:09:38Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-28T04:13:53Z"
 review_session: codex-20261128-13a485
 ---
 # T0306: Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
@@ -77,4 +76,7 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Implement]**
   Review fix: connected Starts eligibility now reads server events, with local fallback and regression tests.
+
+- [2026-11-28] **[Review]**
+  Round 2 requested (mode: agent).
 
