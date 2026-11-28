@@ -1,6 +1,7 @@
 ---
 id: T0227
 owner: "@claude"
+session: claude-20261128-8536bb
 needs: []
 branch: task/T0227-deliver-due-reminders-with-the-app-closed-through
 worktree: .plan/work/T0227-deliver-due-reminders-with-the-app-closed-through
@@ -25,13 +26,13 @@ Completion check: `npm test`, the reminders e2e spec, and `npm run test:contract
 Size estimate: 6 files, 300 lines.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the service's push routes in its REST API spec and the T0226 reminder code.
-- [ ] **[Implement]** Author failing unit tests for subscribe, unregister, push display, and deduplication.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
-- [ ] **[Implement]** Implement the subscription client, the worker push handler, and the Settings state.
-- [ ] **[Verify]**    Run the unit, e2e, and contract suites and confirm they pass.
-- [ ] **[Visual]**    Inspect the Settings reminder states in both themes and a pushed example reminder in desktop Chromium.
-- [ ] **[Doc]**       Update the requirements, the Settings design, and CHANGELOG.md.
+- [x] **[Read]**      Read the service's push routes in its REST API spec and the T0226 reminder code.
+- [x] **[Implement]** Author failing unit tests for subscribe, unregister, push display, and deduplication.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
+- [x] **[Implement]** Implement the subscription client, the worker push handler, and the Settings state.
+- [x] **[Verify]**    Run the unit, e2e, and contract suites and confirm they pass.
+- [x] **[Visual]**    Inspect the Settings reminder states in both themes and a pushed example reminder in desktop Chromium.
+- [x] **[Doc]**       Update the requirements, the Settings design, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -49,4 +50,13 @@ Size estimate: 6 files, 300 lines.
 
 - [2026-11-28] **[Decided]**
   Resumed after todos.server T0261. Moved the real device checks out: todos.server T0308 covers Chrome and Firefox pushes, and T0317 covers Android after the release.
+
+- [2026-11-28] **[Implement]**
+  Implemented push-subscription.js, the worker push handler, the Settings push line, session beforeDisconnect, and API push routes; proof in validation-proof.md.
+
+- [2026-11-28] **[Verify]**
+  Contract suite: new push test passes; 16 older sync tests fail identically on main, stale server jar suspected. 8 e2e failures also fail on main.
+
+- [2026-11-28] **[Visual]**
+  Inspected Settings reminders in light and dark: push on and service-unavailable lines render with the hint style; screenshots linked in validation-proof.md and below: [before](T0227-deliver-due-reminders-with-the-app-closed-through/before-light-local.png), [after light](T0227-deliver-due-reminders-with-the-app-closed-through/after-light-on.png), [after dark](T0227-deliver-due-reminders-with-the-app-closed-through/after-dark-on.png).
 
