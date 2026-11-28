@@ -7,8 +7,11 @@
     "codex"
   ],
   "work-agent-max-usage": {
-    "claude-code": "week=15%",
-    "antigravity": "week=90%",
+    "claude-code": "week=20%",
+    "antigravity": "week=100%",
     "codex": "week=90%"
+  },
+  "work-agent-default-models": {
+    "antigravity": "claude-sonnet-5-5-high"
   }
 }
