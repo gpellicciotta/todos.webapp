@@ -401,6 +401,7 @@ Wireframe: [Quick log](../design/ui-wireframes.html#quick-log).
 - "+ More" reveals the other fields: Time spent, Amount, Check, and Label; one entry may hold any mix of them.
 - Log posts one `log` event and closes the pop-up; Cancel and Escape close it without a change.
   Focus then returns to the status button.
+- **[Decided]** Only Log and Log anyway look like main actions; + More, Cancel, and Change are secondary buttons.
 - **[Decided]** A duration above 12 hours asks in place first, as ADR-0006 asks of clients.
   The question reads "Log 14 h 0 min? That is more than 12 hours.", with Change and Log anyway.
 - Each log shows an Undo toast, such as "Logged 45 min on Sport."; Undo posts `undo-log` of that entry.

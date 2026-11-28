@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.7.2-pre
+- FrontEnd: Fixed the owner line of a list shared with you, which sat beside the description instead of under it.
+- FrontEnd: Made only Log and Log anyway main buttons in the quick log, and separated the long-duration question's buttons.
 - Docs: Replaced the gray wireframe images with one clickable HTML preview of every screen, using the app's stylesheet.
 - DevOps: Replaced `scripts/draw-wireframes.py` with `scripts/sync-wireframe-icons.mjs`, and added tests of the wireframe page.
 - FrontEnd: Added links to app screens, status icons, and screenshots to the Welcome page, tutorial, and FAQ.

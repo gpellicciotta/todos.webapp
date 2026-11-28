@@ -106,6 +106,15 @@ describe('createQuickLog', () => {
     await vi.waitFor(() => expect(submit).toHaveBeenCalledWith({ 'time-spent-seconds': 50_400 }));
   });
 
+  it('styles only Log and Log anyway as main actions, and the other buttons as secondary ones', () => {
+    const quick = open();
+    const kinds = Object.fromEntries([...quick.element.querySelectorAll('button')]
+      .map((button) => [button.dataset.action, [...button.classList].filter((name) => name.startsWith('button--'))]));
+    expect(kinds).toEqual({
+      change: ['button--secondary'], anyway: ['button--primary'], more: ['button--secondary'], cancel: ['button--secondary'], log: ['button--primary'],
+    });
+  });
+
   it('posts one entry while a request is pending, whatever the repeated Enter or Log anyway presses', async () => {
     let finish;
     submit = vi.fn(() => new Promise((done) => {

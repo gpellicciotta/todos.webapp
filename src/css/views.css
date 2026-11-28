@@ -1223,6 +1223,10 @@
 }
 
 /* A list shared with the user names its owner and the user's role under the description. */
+.list-view > .view-header {
+  flex-wrap: wrap;
+}
+
 .list-view__owner {
   flex: 1 1 100%;
   order: 1;

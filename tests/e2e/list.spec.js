@@ -518,6 +518,41 @@ test.describe('List screen', () => {
 });
 
 
+test('the quick log fills only Log and Log anyway, and keeps its question buttons apart under the question (TSK-21)', async ({ page }) => {
+  const problems = watch(page);
+  const listId = await openList(page);
+  await page.evaluate(async (id) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const task = await store.createTask({ description: 'Sport', 'due-time': new Date(Date.now() + 20 * 3_600_000).toISOString() }, { lists: [id] });
+    await store.updateRules(task.id, { 'goal-direction': 'at-least', 'goal-measure': 'time', 'goal-target': 3600 });
+    store.close();
+  }, listId);
+  const row = page.locator('.list-view .task-row', { hasText: 'Sport' });
+  const quick = row.locator('.quick-log');
+  const fill = (locator) => locator.evaluate((node) => getComputedStyle(node).backgroundColor);
+  for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 800 }]) {
+    await page.setViewportSize(viewport);
+    await row.getByRole('button', { name: /^Log time for Sport/ }).click();
+    const main = await fill(quick.getByRole('button', { name: 'Log', exact: true }));
+    for (const name of ['+ More', 'Cancel']) {
+      expect(await fill(quick.getByRole('button', { name, exact: true })), name).not.toBe(main);
+    }
+    await quick.getByLabel('Hours').fill('13');
+    await quick.getByRole('button', { name: 'Log', exact: true }).click();
+    const change = quick.getByRole('button', { name: 'Change', exact: true });
+    const anyway = quick.getByRole('button', { name: 'Log anyway' });
+    await expect(anyway).toBeVisible();
+    expect(await fill(change)).not.toBe(await fill(anyway));
+    const [question, first, second] = await Promise.all([quick.locator('.quick-log__question'), change, anyway].map((part) => part.boundingBox()));
+    expect(first.y, 'the buttons sit under the question').toBeGreaterThanOrEqual(question.y + question.height);
+    expect(second.x - (first.x + first.width), 'a gap between the buttons').toBeGreaterThanOrEqual(8);
+    await quick.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(quick).toHaveCount(0);
+  }
+  expect(problems).toEqual([]);
+});
+
 test('logs from a row past an at-most limit, shows the marks, and undoes the entry from the toast (TSK-4, TSK-21, TSK-22)', async ({ page }) => {
   const problems = watch(page);
   const listId = await openList(page);

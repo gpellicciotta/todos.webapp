@@ -134,6 +134,23 @@ test('Share list opens the list editor at its Sharing section (SHR-1)', async ({
   await expect(page.locator('[data-section="sharing"]').getByRole('button', { name: 'Invite' })).toBeVisible();
 });
 
+test('a list shared with the user names its owner under the description, on a phone and a desktop (SHR-3)', async ({ page }) => {
+  await connect(page, {
+    lists: [list(FAMILY, 'Family', { description: 'Chores and repairs around the house', owner: SAM, role: 'viewer', sharing: [] })],
+    tasks: [task('t1', 'Plan the trip', { 'owner-id': 9 })],
+    memberships: [member(FAMILY, 't1')],
+  });
+  await open(page, `#/lists/${FAMILY}`);
+  const parts = ['.list-view__description', '.list-view__owner'].map((name) => page.locator(name));
+  for (const viewport of [{ width: 360, height: 740 }, WIDE]) {
+    await page.setViewportSize(viewport);
+    await expect(parts[1]).toHaveText('Shared by Sam Roe · Viewer');
+    const [description, owner] = await Promise.all(parts.map((part) => part.boundingBox()));
+    expect(owner.y, 'under the description').toBeGreaterThanOrEqual(description.y + description.height);
+    expect(owner.x, 'from the same edge').toBe(description.x);
+  }
+});
+
 test('a viewer sees the list read-only, without edit, move, or delete controls (SHR-3, SHR-4)', async ({ page }) => {
   await connect(page, {
     lists: [list(FAMILY, 'Family', { owner: SAM, role: 'viewer', sharing: [] })],

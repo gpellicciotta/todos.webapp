@@ -109,11 +109,11 @@ function fieldOf(doc, part, text, input) {
  * @param {Document} doc the document
  * @param {string} action the action name
  * @param {string} text the text
- * @param {string} [kind] `primary` for the main button
+ * @param {'primary'|'secondary'} kind `primary` for a button that logs, `secondary` for any other
  * @returns {HTMLButtonElement} the button
  */
-function buttonOf(doc, action, text, kind = '') {
-  const button = make(doc, 'button', `button${kind ? ` button--${kind}` : ''}`, text);
+function buttonOf(doc, action, text, kind) {
+  const button = make(doc, 'button', `button button--${kind}`, text);
   button.type = 'button';
   button.dataset.action = action;
   return button;
@@ -169,11 +169,11 @@ export function createQuickLog({ document: doc = globalThis.document, descriptio
   confirm.setAttribute('role', 'alert');
   confirm.hidden = true;
   const question = make(doc, 'p', 'quick-log__question');
-  confirm.append(question, buttonOf(doc, 'change', STRINGS.change), buttonOf(doc, 'anyway', STRINGS.anyway, 'primary'));
-  const more = buttonOf(doc, 'more', STRINGS.more);
+  confirm.append(question, buttonOf(doc, 'change', STRINGS.change, 'secondary'), buttonOf(doc, 'anyway', STRINGS.anyway, 'primary'));
+  const more = buttonOf(doc, 'more', STRINGS.more, 'secondary');
   const actions = make(doc, 'div', 'quick-log__actions');
   const log = buttonOf(doc, 'log', STRINGS.log, 'primary');
-  actions.append(more, buttonOf(doc, 'cancel', STRINGS.cancel), log);
+  actions.append(more, buttonOf(doc, 'cancel', STRINGS.cancel, 'secondary'), log);
   element.append(title, time, amountPart, check, labelPart, error, confirm, actions);
 
   /** True while a posted entry awaits the store, so no path posts a second one. */

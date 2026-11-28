@@ -749,8 +749,8 @@ function quickLogForm(o) {
     + `<div class="quick-log__part quick-log__time">${input('Hours', confirm ? '13' : '0')}${input('Minutes', confirm ? '0' : '45')}</div>`
     + '<p class="quick-log__error field__error" role="status"></p>'
     + (confirm
-      ? `<div class="quick-log__confirm" role="alert"><p class="quick-log__question">Log 13 h 0 min? That is more than 12 hours.</p>${button('Change')}${button('Log anyway', 'button--primary')}</div>`
-      : `<div class="quick-log__actions">${button('+ More')}${button('Cancel', '', 'data-wf-go="all-tasks"')}${button('Log', 'button--primary', 'data-wf-go="all-tasks/ticked"')}</div>`)
+      ? `<div class="quick-log__confirm" role="alert"><p class="quick-log__question">Log 13 h 0 min? That is more than 12 hours.</p>${button('Change', 'button--secondary')}${button('Log anyway', 'button--primary')}</div>`
+      : `<div class="quick-log__actions">${button('+ More', 'button--secondary')}${button('Cancel', 'button--secondary', 'data-wf-go="all-tasks"')}${button('Log', 'button--primary', 'data-wf-go="all-tasks/ticked"')}</div>`)
     + '</form>';
 }
 

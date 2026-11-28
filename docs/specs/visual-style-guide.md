@@ -287,6 +287,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - `.task-row__pace` reads "behind pace" and `.task-row__failed` reads "Failed", both in `--color-danger`.
   - `.task-row__start` shows the start of an upcoming row, such as "Starts tomorrow 07:00".
   - The quick log, `.quick-log`, is a form inside the row that wraps onto its own line under the status button and text.
+    Only Log and Log anyway are `button--primary`; + More, Cancel, and Change are `button--secondary`.
+    The question of a long duration takes its own line, above its two buttons.
 
   The `.task-row__count` badge sits inside the status button on the icon's bottom-right corner, such as "2/3".
   It is `aria-hidden`, since the button's name holds the counts, in 10 px semibold tabular figures.
