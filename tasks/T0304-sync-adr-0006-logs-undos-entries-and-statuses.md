@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 740.6, input: 162, output: 44651, cache_read: 9305369, cache_write: 152142}
-review_status: pending
+  review: {turns: 1, duration_s: 61.3, input: 51947, output: 1889, cache_read: 500864, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T04:47:17Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-b4c935
+work_duration: 813.9
 ---
 # T0304: Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable
 
@@ -59,4 +63,17 @@ Run the contract tests against a todos.server checkout with its task T0301.
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Reject: pending log changes do not merge correctly with a pulled occurrence.
+  - Findings: [review-findings-1.md](T0304-sync-adr-0006-logs-undos-entries-and-statuses/review-findings-1.md).
+
+- [2026-11-28] **[Implement]**
+  Review rework: queued logs and undos now fold with the goal fold over pulled entries, so time, amounts, and repeated undos merge correctly.
+
+- [2026-11-28] **[Verify]**
+  Reran unit and contract suites after rework.
+  - Files touched: 11.
+  - Lines touched: 420.
+  - Reopenings: 0.
 

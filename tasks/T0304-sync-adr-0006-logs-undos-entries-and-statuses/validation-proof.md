@@ -66,3 +66,42 @@ Command: npm run lint, exit code 0
 > todos-webapp@0.6.1-pre lint
 > eslint .
 ```
+### Review round 1 rework: queued logs and undos on a pulled occurrence
+Command: npx vitest run tests/unit/merge.test.js (merge.js at the reviewed commit), exit code 1
+```text
+ ❯ tests/unit/merge.test.js (38 tests | 4 failed) 81ms
+       × keeps the time of a queued unchecked log, and does not count it as a check 19ms
+       × takes a queued undo of a pulled entry by what the entry gave, and applies a duplicate undo once 2ms
+       × undoes only the time of an entry that gave time and no check 3ms
+       × sums a queued amount log on an amount goal 2ms
+      Tests  4 failed | 34 passed (38)
+```
+Command: npx vitest run tests/unit/merge.test.js tests/unit/pull.test.js, exit code 0
+```text
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0304-sync-adr-0006-logs-undos-entries-and-statuses
+ Test Files  2 passed (2)
+      Tests  58 passed (58)
+   Start at  05:52:00
+   Duration  507ms (import 37%, tests 34%, transform 21%, setup 5%, worker 3%)
+```
+Command: npx vitest run, exit code 0
+```text
+ Test Files  72 passed (72)
+      Tests  2024 passed (2024)
+   Start at  05:52:02
+   Duration  27.23s (tests 46%, environment 42%, import 8%, transform 2%, worker 1%, setup 1%)
+    Isolate  72 workers spawned · ~1.35s startup each (spawn + environment, per file)
+             at least ~12.58s faster with isolate: false — reuses workers across files instead of one per file
+```
+Command: npx vitest run --config vitest.contract.config.js (TODOS_SERVER_DIR=C:/Dev-Projects/todos.server), exit code 0
+```text
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0304-sync-adr-0006-logs-undos-entries-and-statuses
+ Test Files  1 passed (1)
+      Tests  26 passed (26)
+   Start at  05:52:32
+   Duration  8.29s (tests 96%, import 3%, transform 1%)
+```
+Command: npm run lint, exit code 0
+```text
+> eslint .
+```

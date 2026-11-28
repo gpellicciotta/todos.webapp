@@ -4,10 +4,13 @@ round: 1
 verdict: rejected
 blocking: 1
 reviewer: "@codex"
-reviewed_at: 2026-11-28T04:47:18Z
+reviewed_at: 2026-11-28T04:48:21Z
 reviewed_commit: "1bb0432"
 base_commit: "13cbcd1"
 branch: task/T0304-sync-adr-0006-logs-undos-entries-and-statuses
+session: codex-20261128-b4c935
+session_agent: codex
+session_created_at: 2026-11-28T04:47:18Z
 ---
 # Review Findings: Task T0304 (Round 1)
 
