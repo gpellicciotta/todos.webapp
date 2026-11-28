@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1800.4, input: 2, output: 3}
+work_duration: 1809.5
 ---
 # T0310: Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use
 

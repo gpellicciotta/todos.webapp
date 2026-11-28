@@ -1,0 +1,19 @@
+{"schema": 1,
+ "completed": [
+  {"item": "Unit tests for help mounts, staging script, help cache written and failing first", "evidence": "tests/unit/serve.test.js, stage-site.test.js, service-worker.test.js; first run 3 files failed"},
+  {"item": "Playwright test fetches help files then reads them offline", "evidence": "tests/e2e/service-worker.spec.js passes"},
+  {"item": "Shared mount list, serve.mjs mapping, stage-site.mjs", "evidence": "scripts/site-files.mjs, serve.mjs, stage-site.mjs; unit tests 88 passed"},
+  {"item": "Pages workflow stages _site, _site ignored", "evidence": ".github/workflows/pages.yml, .gitignore"},
+  {"item": "Service worker network-first help cache, VERSION bumped to 2026-11-28.3, hashes updated", "evidence": "src/service-worker.js, scripts/sw-precache-hashes.json"},
+  {"item": "python scripts/devops.py check passes", "evidence": "last run exit 0: 1858 Vitest, 287 Playwright, 261 pytest passed; fixed unrelated Ruff lint and format in two wireframe files, and test_devops.py copy list"},
+  {"item": "docs/devops.md and CHANGELOG.md updated", "evidence": "Help Files section; DevOps bullet under v0.6.1-pre"}
+ ],
+ "remaining": [
+  "Write validation-proof.md with verbatim verification output",
+  "Check execution steps 1-8 with plan tasks step and log the outcomes",
+  "Run plan tasks validate --completion",
+  "Commit all changes to the task branch (nothing is committed yet)"
+ ],
+ "next_action": "Write validation-proof.md, check steps, log outcomes, validate, then commit on the task branch",
+ "blocker": null,
+ "scope": null}
