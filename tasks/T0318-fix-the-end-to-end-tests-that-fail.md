@@ -5,17 +5,22 @@ session: claude-20261128-0de444
 needs: []
 branch: task/T0318-fix-the-end-to-end-tests-that-fail
 worktree: .plan/work/T0318-fix-the-end-to-end-tests-that-fail
-status: active
+status: completed
 started_at: "2026-11-28T04:17:19Z"
-ended_at: —
+ended_at: "2026-11-28T04:34:27Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 678.2, input: 62, output: 10430, cache_read: 1984189, cache_write: 68723}
-review_status: pending
+  review: {turns: 1, duration_s: 337.4, input: 52390, output: 2320, cache_read: 721664, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T04:28:46Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-8e23ee
+work_duration: 1027.9
+completion-commit: 13cbcd17b917b151092ab3fba4ab098ba017432d
 ---
 # T0318: Fix the end-to-end tests that fail on main since the ADR-0006 local store changes
 
@@ -30,7 +35,7 @@ Files, tests, and size: [technical-spec.md](T0318-fix-the-end-to-end-tests-that-
 - [x] **[Implement]** Fix each cause, in the app or in the outdated test.
 - [x] **[Verify]**    Run `npm run test:e2e` and `npm test` and record the passing output.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -53,4 +58,11 @@ Files, tests, and size: [technical-spec.md](T0318-fix-the-end-to-end-tests-that-
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-1.md](T0318-fix-the-end-to-end-tests-that-fail/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 

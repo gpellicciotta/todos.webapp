@@ -3,7 +3,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
 - [x] T0306 Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
-- [~] T0318 [owner: @claude] Fix the end-to-end tests that fail on main since the ADR-0006 local store changes.
+- [x] T0318 Fix the end-to-end tests that fail on main since the ADR-0006 local store changes.
 - [ ] T0304 Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable.
 - [ ] T0307 Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 - [ ] T0305 Export ADR-0006 fields in backup format 3, and convert older backups on import.
