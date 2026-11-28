@@ -2,7 +2,7 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [ ] T0313 Add goals, start times, progress, and time spent to local records in database version 6.
+- [~] T0313 [owner: @claude] Add goals, start times, progress, and time spent to local records in database version 6.
 - [ ] T0314 [needs: T0313] Convert local completions to log events in the upgrade, and store logs and undos.
 - [ ] T0315 [needs: T0314] Place local events by start time, expire tasks by goal, and filter failed and upcoming tasks.
 - [ ] T0301 Support the year recurrence unit in local periods, with the year cases of the shared recurrence vectors.

@@ -1,11 +1,11 @@
 ---
 id: T0313
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0313-add-goals-start-times-progress-and-time-spent
+worktree: .plan/work/T0313-add-goals-start-times-progress-and-time-spent
+status: active
+started_at: "2026-11-28T01:07:55Z"
 ended_at: —
 review: agent
 preview: none
