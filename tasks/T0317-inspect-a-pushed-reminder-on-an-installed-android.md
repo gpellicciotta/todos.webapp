@@ -1,11 +1,11 @@
 ---
 id: T0317
-owner: ~
+owner: "@claude"
 needs: []
 branch: —
 worktree: —
-status: suspended
-started_at: —
+status: active
+started_at: "2026-11-28T14:13:08Z"
 ended_at: —
 review: agent
 preview: none
@@ -19,7 +19,7 @@ This needs the deployed release over HTTPS and the user's phone, so no agent can
 Moved here from T0227.
 
 ## Task Execution Steps
-- [ ] **[Verify]**    Install the PWA from production, enable reminders, add a due task, and record the pushed notification.
+- [x] **[Verify]**    Install the PWA from production, enable reminders, add a due task, and record the pushed notification.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -31,4 +31,9 @@ Moved here from T0227.
   - Opening the notification showed the closed app on the right task.
   - A repeated job run sent no further notification.
   - Still missing: Android version, and whether the app was installed.
+
+- [2026-11-28] **[Verify]**
+  User reported a pushed reminder on 2026-11-28 in ToDo's installed as an app, on Android 17 (One UI 9.0), from the live app.
+  - Opening the notification showed the right task, with the app closed.
+  - A repeated job run sent no further notification.
 
