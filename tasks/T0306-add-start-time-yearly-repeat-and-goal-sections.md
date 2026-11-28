@@ -5,20 +5,22 @@ session: claude-20261128-15de92
 needs: []
 branch: task/T0306-add-start-time-yearly-repeat-and-goal-sections
 worktree: .plan/work/T0306-add-start-time-yearly-repeat-and-goal-sections
-status: active
+status: completed
 started_at: "2026-11-28T03:37:30Z"
-ended_at: —
+ended_at: "2026-11-28T04:17:00Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 5, duration_s: 2065.0, input: 60, output: 13060, cache_read: 8156857, cache_write: 32195}
-  review: {turns: 3, duration_s: 144.8, input: 63176, output: 3854, cache_read: 653824, cache_write: 0}
-work_duration: 2236.2
-review_status: pending
+  review: {turns: 4, duration_s: 191.1, input: 104437, output: 5212, cache_read: 860160, cache_write: 0}
+work_duration: 2369.6
+review_status: approved
 review_round: 3
 review_requested_at: "2026-11-28T04:16:11Z"
-review_session: codex-20261128-2a0feb
+review_session: codex-20261128-cdca99
+reviewed_by: "@codex"
+completion-commit: fdb6335405a276cd2113583a67c1c621c2999338
 ---
 # T0306: Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 
@@ -38,7 +40,7 @@ Capture before and after screenshots of the task editor in light and dark themes
 - [x] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [x] **[Visual]**    Capture before and after screenshots of the task editor in both themes.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-27] **[Doc]**
@@ -89,4 +91,11 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Review]**
   Round 3 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 3 approved by @codex: [Decided]** Approve.
+  - Findings: [review-findings-3.md](T0306-add-start-time-yearly-repeat-and-goal-sections/review-findings-3.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
