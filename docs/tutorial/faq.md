@@ -70,6 +70,8 @@ Reminders are off by default.
 Turn on **Remind me when tasks come due** in the **Reminders** section of **Settings**, and allow notifications when your browser asks.
 ToDo's notifies you while it is open in a browser tab.
 A task with a date only reminds at 9:00 that day.
+While you are connected, reminders also arrive with ToDo's closed, up to 4 hours before the task is due; the notification names the due time.
+On an iPhone or iPad this needs ToDo's added to the Home Screen.
 
 ## How do I share a list?
 

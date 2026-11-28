@@ -1037,6 +1037,9 @@ Settings is one page with these sections:
 - Reminders: the Remind me when tasks come due switch, off by default, and a Remind me list of lead times (`REM-1` to `REM-3`).
   The list is off until the switch is on. Turning the switch on asks for notification permission; a denial or a browser without support leaves it off,
   with a status line that names the reason. The hint says reminders work while ToDo's is open, and that a date-only task reminds at 9:00.
+  While connected with reminders on, a second line (`data-reminders="push"`) says how pushes to a closed app stand (`REM-11` to `REM-14`):
+  on (reminders also arrive with ToDo's closed, up to 4 hours early), the service cannot push right now, the browser cannot receive pushes,
+  or, on iPhone and iPad, ToDo's must be on the Home Screen. It stays hidden while push is off.
 - Data: Export backup, Import backup, and Delete all data (`BAK-1`, `BAK-5`, `BAK-15`).
 - Delete all data is a danger button, last in Data; it is enabled in every mode.
 - Connected or expired, the dialog counts only the lists and tasks the user owns, adds a line for lists shared with the user,

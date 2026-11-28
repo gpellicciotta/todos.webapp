@@ -10,6 +10,7 @@
  * for any file but the start page; page navigations fall back to the cached start page.
  * Help files (`help/*.md`: the tutorial docs and the changelog) are served network first instead: each OK answer is
  * stored, and the stored copy answers when the network fails. They are not precached, so Help works offline after one visit.
+ * A pushed reminder (Web Push, while connected) shows as a notification with the tag of the local reminder of the same due time.
  * A clicked reminder notification focuses an open window and posts `{type: 'open-task', taskId}` to it, or opens one at the task.
  * Other origins and the server paths `/admin` and `/api` are never fetched or cached here (`LOC-3`):
  * a navigation to `/admin` reaches the server and never falls back to the app shell.
@@ -18,7 +19,7 @@
  * of the vendored design system, it requires exactly the files that css/style.css and the app modules load.
  */
 
-const VERSION = '2026-11-28.7';
+const VERSION = '2026-11-28.9';
 const CACHE = `todos-shell-${VERSION}`;
 const PREFIX = 'todos-shell-';
 const HTML_ENTRIES = ['./', 'index.html'];
@@ -74,6 +75,7 @@ const PRECACHE = [
   'js/sync/inbox.js',
   'js/sync/merge.js',
   'js/sync/pull.js',
+  'js/sync/push-subscription.js',
   'js/sync/push.js',
   'js/sync/queue.js',
   'js/sync/session.js',
@@ -312,6 +314,38 @@ async function openApp(taskId) {
   const path = taskId ? `./#/tasks/${encodeURIComponent(taskId)}` : './';
   await self.clients.openWindow(new URL(path, self.location.href).href);
 }
+
+/**
+ * Build the notification of a pushed reminder from the service's payload (`REM-12`).
+ * A task reminder carries the tag the app uses for its local reminder, so a push replaces a local one for the same due time.
+ * A payload that cannot be read still shows a generic notification, since a push that shows nothing can cost the subscription.
+ * @param {object|null} payload `{type: 'task-due', tag, 'task-id', description, 'due-time'}`, `{type: 'tasks-due', tag, count}`, or null
+ * @returns {{title: string, options: object}} the notification
+ */
+function pushedReminder(payload) {
+  const icon = new URL('img/todos-icon-192.png', self.location.href).href;
+  if (payload?.type === 'task-due' && payload['task-id'] && payload.description) {
+    const due = new Date(payload['due-time']);
+    const body = Number.isNaN(due.getTime()) ? '' : `Due ${due.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`;
+    return { title: String(payload.description), options: { body, tag: payload.tag ?? `task-due:${payload['task-id']}:${payload['due-time']}`, data: { taskId: payload['task-id'] }, icon } };
+  }
+  if (payload?.type === 'tasks-due') {
+    return { title: `${payload.count} tasks came due`, options: { body: 'Open ToDo\'s to see them.', tag: payload.tag ?? 'tasks-due', data: {}, icon } };
+  }
+  return { title: 'A task came due', options: { body: 'Open ToDo\'s to see it.', tag: 'task-due-unknown', data: {}, icon } };
+}
+
+self.addEventListener('push', (event) => {
+  let payload = null;
+  try {
+    payload = event.data?.json() ?? null;
+  }
+  catch {
+    // An unreadable payload shows the generic reminder.
+  }
+  const { title, options } = pushedReminder(payload);
+  event.waitUntil(self.registration.showNotification(title, options));
+});
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.6.1-pre
+- Reminders: Delivered due reminders with the app closed through Web Push while connected, subscribing with the service key, updating the lead time, and unsubscribing on turn-off, disconnect, and sign-out (`REM-11` to `REM-14`).
+- Settings: Showed under Reminders whether pushes to a closed app work, with the Home Screen note for iPhone and iPad.
+- Tests: Gave the contract server a throwaway VAPID key pair, and covered registering, updating, and deleting a push subscription against it.
 - Core: Supported the `year` recurrence unit in local periods, starting on 1 January, passing the year cases of the shared recurrence vectors.
 - Store: Raised the local database to version 6, adding goal fields, a start time, progress, and time spent to rules and occurrences, with the old counts kept as mirrors.
 - Docs: Specified ADR-0006 in the local store and backup format specs: goals, the log, the fold, `failed`, store version 6, and backup format 3.

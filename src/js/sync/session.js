@@ -28,6 +28,7 @@ const START_WINDOW = 15 * 60 * 1000;
  */
 export function createSession({ getStorage = () => globalThis.localStorage, fetch = (...args) => globalThis.fetch(...args), now = Date.now, authUrl } = {}) {
   const listeners = new Set();
+  const hooks = new Set();
   let returned = null;
 
   /**
@@ -184,10 +185,29 @@ export function createSession({ getStorage = () => globalThis.localStorage, fetc
      */
     async disconnect() {
       const current = record();
+      // Hooks run while the token is still valid, such as deleting this device's push registration; a failing hook never blocks the disconnect.
+      for (const hook of [...hooks]) {
+        try {
+          await hook();
+        }
+        catch (error) {
+          console.error('Before disconnecting failed:', error);
+        }
+      }
       save(null);
       if (current?.token) {
         await endSession(current.server, current.token, fetch);
       }
+    },
+
+    /**
+     * Run a hook at the start of a disconnect, while the token is still there.
+     * @param {() => Promise<void>|void} hook the hook
+     * @returns {() => void} removes the hook
+     */
+    beforeDisconnect(hook) {
+      hooks.add(hook);
+      return () => hooks.delete(hook);
     },
 
     /**

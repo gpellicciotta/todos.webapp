@@ -222,6 +222,21 @@ describe('the session', () => {
     expect([last.url, last.init.method, last.init.headers.Authorization]).toEqual([`${SERVER}/api/auth-token`, 'DELETE', 'Bearer session-1']);
   });
 
+  it('runs the before-disconnect hooks while the token is still there, and disconnects when one fails', async () => {
+    const { session } = setup();
+    await signIn(session);
+    const seen = [];
+    session.beforeDisconnect(async () => {
+      seen.push(session.token());
+      throw new Error('offline');
+    });
+    const stop = session.beforeDisconnect(async () => seen.push('removed'));
+    stop();
+    await session.disconnect();
+    expect(seen).toEqual(['session-1']);
+    expect(session.state()).toBe('local');
+  });
+
   it('deletes the token even when the server cannot be reached', async () => {
     const storage = memoryStorage();
     const { session } = setup({ storage });

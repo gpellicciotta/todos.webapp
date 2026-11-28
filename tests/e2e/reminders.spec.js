@@ -66,6 +66,56 @@ test('a task due in one minute notifies once, and the click opens its editor', a
   expect(problems).toEqual([]);
 });
 
+test.describe('pushed reminders', () => {
+  // The service has no route that sends a push on demand (todos.server T0261 tests the sending), so the service's example payload
+  // reaches the real worker as a push event. Headless Chromium denies notifications inside the worker, so the worker's own
+  // `showNotification` is recorded; a real notification on a device is checked by todos.server T0308 and T0317.
+  const EXAMPLE = {
+    type: 'task-due',
+    tag: 'task-due:0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2c3d:2026-11-17T09:00:00.000Z',
+    'task-id': '0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2c3d',
+    occurrence: 3,
+    description: 'Renew the gym pass',
+    'due-time': '2026-11-17T09:00:00Z',
+    'action-url': '/#/tasks/0192f1a2-7c3e-7b4a-9d10-5f2e8a1b2c3d',
+  };
+
+  /**
+   * Deliver push messages to the service worker, as the push service does, and return what the worker showed.
+   * @param {import('@playwright/test').Page} page the page of the app
+   * @param {object[]} payloads the JSON payloads
+   * @returns {Promise<{title: string, tag: string, body: string, data: object}[]>} the notifications, in order
+   */
+  async function deliver(page, payloads) {
+    const worker = page.context().serviceWorkers().find((candidate) => candidate.url().endsWith('/service-worker.js'));
+    return worker.evaluate(async (messages) => {
+      const shown = [];
+      self.registration.showNotification = async (title, { tag, body, data }) => {
+        shown.push({ title, tag, body, data });
+      };
+      for (const message of messages) {
+        await new Promise((done) => {
+          const event = new globalThis.PushEvent('push', { data: JSON.stringify(message) });
+          event.waitUntil = (promise) => promise.then(done, done);
+          self.dispatchEvent(event);
+        });
+      }
+      return shown;
+    }, payloads);
+  }
+
+  test('shows a pushed reminder with the tag of the local one, and a summary for several', async ({ page }) => {
+    await open(page, '#/tasks');
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    const shown = await deliver(page, [EXAMPLE, EXAMPLE, { type: 'tasks-due', tag: 'tasks-due', count: 4, 'action-url': '/#/tasks' }]);
+    expect(shown).toHaveLength(3);
+    expect(shown[0]).toMatchObject({ title: 'Renew the gym pass', tag: EXAMPLE.tag, data: { taskId: EXAMPLE['task-id'] } });
+    expect(shown[0].body).toContain('Due');
+    expect(shown[1].tag).toBe(shown[0].tag);
+    expect(shown[2]).toMatchObject({ title: '4 tasks came due', tag: 'tasks-due', data: {} });
+  });
+});
+
 test('a denied permission leaves the switch off and says why', async ({ page }) => {
   await mockNotifications(page, 'denied');
   await open(page, '#/settings');

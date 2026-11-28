@@ -13,6 +13,7 @@
  * The sync indicator shows the sync state beside the user button (see views/sync-indicator.js).
  * While connected, the inbox shows a bell and the broadcast banners of the service (see sync/inbox.js).
  * With Reminders on in Settings, one tab notifies when a task comes due; a click opens its editor (core/reminders.js).
+ * While connected, this device also subscribes to Web Push, so reminders arrive with the app closed (sync/push-subscription.js).
  * The toaster adds Ctrl+Z or Cmd+Z, which runs the Undo of the newest toast.
  */
 
@@ -27,6 +28,7 @@ import { openStore } from './store/db.js';
 import { createApi } from './sync/api.js';
 import { createEngine } from './sync/engine.js';
 import { createInbox } from './sync/inbox.js';
+import { createPushSubscription } from './sync/push-subscription.js';
 import { createSession } from './sync/session.js';
 import { applyTheme, readThemePreference, renderShell, STRINGS } from './ui/layout.js';
 import { createRouter, DEFAULT_HASH, formatRoute } from './ui/router.js';
@@ -93,7 +95,7 @@ async function showReminder({ title, body, tag, taskId }) {
  * @param {object} store the store facade
  * @param {(hash: string) => void} navigate opens a route
  */
-function startReminders(store, navigate) {
+function startReminders(store, navigate, push, session) {
   if (!('Notification' in window) || !navigator.serviceWorker) {
     return;
   }
@@ -110,6 +112,8 @@ function startReminders(store, navigate) {
   let on = false;
   const follow = () => {
     const wanted = readReminders() && Notification.permission === 'granted';
+    // While connected, the same choice also subscribes this device to Web Push, so reminders arrive with every tab closed.
+    push.sync().catch((error) => console.error('Push subscription failed:', error));
     if (wanted && !on) {
       on = true;
       reminders.start().catch((error) => console.error('Reminders failed:', error));
@@ -124,6 +128,7 @@ function startReminders(store, navigate) {
   };
   window.addEventListener(REMINDERS_EVENT, follow);
   window.addEventListener('storage', follow);
+  session.subscribe(follow);
   // A click on a notification reaches the page as a message from the worker (see service-worker.js).
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'open-task' && event.data.taskId) {
@@ -210,6 +215,14 @@ async function start() {
   const listSnapshot = createListSnapshot(store);
   // The screens and the View options panel share these, so the rows, the info line, and the panel follow one state.
   const viewModels = { tasks: createViewModel('tasks'), list: createViewModel('list') };
+  // Web Push for reminders with the app closed: only while connected; a disconnect deletes the registration first (`REM-13`).
+  const push = createPushSubscription({
+    session,
+    api: createApi({ session }),
+    wanted: () => 'Notification' in window && readReminders() && Notification.permission === 'granted',
+    lead: () => readReminderLead(),
+  });
+  session.beforeDisconnect(() => push.unregister());
   const editorPanel = createEditorPanel({
     slot: shell.editor, editors: EDITORS,
     context: { store, toaster, session, api: createApi({ session }), sync: engine, viewModels, navigate: (hash) => router.navigate(hash) },
@@ -253,7 +266,7 @@ async function start() {
       screen?.controller?.destroy();
       const mount = SCREENS[route.view];
       const options = {
-        store, toaster, session, api: createApi({ session }), sync: engine, seen, viewModels, memory: router.memory(), readSnapshot: listSnapshot.read, readRecords: listSnapshot.readData, actionBar: shell.actionBar, actionsSlot: shell.actionsSlot, overlays: shell.overlays,
+        store, toaster, session, api: createApi({ session }), push, sync: engine, seen, viewModels, memory: router.memory(), readSnapshot: listSnapshot.read, readRecords: listSnapshot.readData, actionBar: shell.actionBar, actionsSlot: shell.actionsSlot, overlays: shell.overlays,
         navigate: (hash, settings) => router.navigate(hash, settings),
       };
       screen = { element, controller: mount ? mount(element, options) : null };
@@ -331,7 +344,7 @@ async function start() {
     // In local mode the same timer rolls recurring tasks over; while connected the service does (`LOC-2`).
     await startOverdueTimer({ store, rollOver: () => session.state() === 'local' }).idle();
     // After the overdue run, so a task it expires never reminds; scheduling runs off the first paint (`TEC-16`).
-    startReminders(store, (hash) => router.navigate(hash));
+    startReminders(store, (hash) => router.navigate(hash), push, session);
   }
   catch (error) {
     console.error('Store failed:', error);

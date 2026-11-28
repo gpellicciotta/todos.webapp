@@ -38,6 +38,8 @@ describe('the contract test server helper', () => {
     expect(text).toContain('TODOS_SYNC_MIN_CLIENT_VERSIONS=todos.webapp=0.1.0');
     expect(text).toContain('TODOS_THROTTLE_REQUESTS_PER_SECOND=100000');
     expect(text).not.toMatch(/PASSWORD/);
+    expect(text).toMatch(/TODOS_PUSH_VAPID_PUBLIC_KEY=[\w-]{87}\n/);
+    expect(text).toMatch(/TODOS_PUSH_VAPID_PRIVATE_KEY=[\w-]{43}\n/);
   });
 
   it('grants only the codes of known accounts to a server that knows the app secret', async () => {

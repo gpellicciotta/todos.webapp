@@ -102,6 +102,57 @@ describe('Reminders in Settings', () => {
   });
 });
 
+describe('Reminders with the app closed in Settings', () => {
+  /**
+   * Mount Settings with a push status stand-in.
+   * @param {string} status the push status
+   * @returns {{view: HTMLElement, set: (status: string) => void}} the parts
+   */
+  function mountPush(status) {
+    const view = document.body.appendChild(document.createElement('div'));
+    const listeners = new Set();
+    const state = { status };
+    const push = { status: () => state.status, subscribe: (listener) => (listeners.add(listener), () => listeners.delete(listener)) };
+    const session = { state: () => 'connected', account: () => ({ name: null, email: 'a@b.c', server: 'https://todos.example.com' }), subscribe: () => () => {} };
+    mountSettings(view, { session, push, getStorage: () => null, notification: { permission: 'granted', requestPermission: vi.fn() } });
+    return { view, set: (next) => {
+      state.status = next;
+      listeners.forEach((listener) => listener(next));
+    } };
+  }
+  const lineOf = (view) => view.querySelector('[data-reminders="push"]');
+
+  it('says nothing while push is off', () => {
+    expect(lineOf(mountPush('off').view).hidden).toBe(true);
+  });
+
+  it('says reminders arrive with the app closed once push is on, and follows changes', () => {
+    const { view, set } = mountPush('on');
+    expect(lineOf(view).hidden).toBe(false);
+    expect(lineOf(view).textContent).toContain('closed');
+    set('unavailable');
+    expect(lineOf(view).textContent).toContain('service');
+    set('off');
+    expect(lineOf(view).hidden).toBe(true);
+  });
+
+  it('says an iPhone needs the app on the Home Screen when push is unsupported there', () => {
+    const { view } = mountPush('unsupported-ios');
+    expect(lineOf(view).textContent).toContain('Home Screen');
+  });
+
+  it('tells the reminders of the tab when the lead time changes, so the subscription follows', async () => {
+    const { view } = mountPush('on');
+    const heard = vi.fn();
+    window.addEventListener('todos-reminders-changed', heard);
+    const lead = view.querySelector('[data-reminders="lead"]');
+    lead.value = '15';
+    lead.dispatchEvent(new Event('change'));
+    window.removeEventListener('todos-reminders-changed', heard);
+    expect(heard).toHaveBeenCalled();
+  });
+});
+
 describe('Disconnect in Settings', () => {
   it('says so when the pending changes cannot be counted, and stays connected', async () => {
     const { view, session, toaster } = mountConnected({ pendingCount: () => Promise.reject(new Error('queue closed')) });

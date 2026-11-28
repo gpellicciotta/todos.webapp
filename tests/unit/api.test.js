@@ -45,6 +45,25 @@ describe('the API client', () => {
     expect(JSON.parse(calls[0].init.body)).toEqual({ delete: true, reason: 'Requested by the user' });
   });
 
+  it('calls the push routes: key, register, update, and delete', async () => {
+    const calls = [];
+    const fetch = async (url, init) => {
+      calls.push({ url, method: init.method, body: init.body ? JSON.parse(init.body) : undefined });
+      return { status: 200, ok: true, headers: { get: () => null }, json: async () => ({}) };
+    };
+    const api = createApi({ session: { token: () => 'token-1', serverUrl: () => 'https://todos.example.com' }, fetch });
+    await api.getVapidKey();
+    await api.registerPushSubscription({ endpoint: 'https://fcm.googleapis.com/x', keys: { p256dh: 'p', auth: 'a' } });
+    await api.updatePushSubscription('s/1', { 'lead-minutes': 5 });
+    await api.deletePushSubscription('s/1');
+    expect(calls).toEqual([
+      { url: 'https://todos.example.com/api/push/vapid-public-key', method: 'GET', body: undefined },
+      { url: 'https://todos.example.com/api/push-subscriptions', method: 'POST', body: { endpoint: 'https://fcm.googleapis.com/x', keys: { p256dh: 'p', auth: 'a' } } },
+      { url: 'https://todos.example.com/api/push-subscriptions/s%2F1', method: 'PATCH', body: { 'lead-minutes': 5 } },
+      { url: 'https://todos.example.com/api/push-subscriptions/s%2F1', method: 'DELETE', body: undefined },
+    ]);
+  });
+
   it('judges replies', () => {
     const reply = (status, headers = {}) => ({ status, ok: status < 300, headers: { get: (name) => headers[name.toLowerCase()] ?? null } });
     expect(judge(reply(200))).toBe('done');

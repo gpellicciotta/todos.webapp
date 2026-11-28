@@ -116,6 +116,46 @@ export function createApi({ session, fetch = (...args) => globalThis.fetch(...ar
     },
 
     /**
+     * Read the VAPID public key of the service, the `applicationServerKey` of a push subscription.
+     * @returns {Promise<{status: number, ok: boolean, headers: object, body: any}>} the reply; `503` when the service has no push keys
+     * @throws {SyncStop} without a token (`auth`) or a connection (`retry`)
+     */
+    getVapidKey() {
+      return api.send('GET', '/api/push/vapid-public-key');
+    },
+
+    /**
+     * Register the Web Push subscription of this browser; the same endpoint again updates its registration.
+     * @param {{endpoint: string, keys: {p256dh: string, auth: string}, 'lead-minutes'?: number, 'device-name'?: string}} subscription the subscription
+     * @returns {Promise<{status: number, ok: boolean, headers: object, body: any}>} the reply, with the stored `id`
+     * @throws {SyncStop} without a token (`auth`) or a connection (`retry`)
+     */
+    registerPushSubscription(subscription) {
+      return api.send('POST', '/api/push-subscriptions', { body: subscription });
+    },
+
+    /**
+     * Change the lead time or device name of a registered subscription.
+     * @param {string} id the subscription ID
+     * @param {{'lead-minutes'?: number, 'device-name'?: string|null}} changes the changes
+     * @returns {Promise<{status: number, ok: boolean, headers: object, body: any}>} the reply
+     * @throws {SyncStop} without a token (`auth`) or a connection (`retry`)
+     */
+    updatePushSubscription(id, changes) {
+      return api.send('PATCH', `/api/push-subscriptions/${encodeURIComponent(id)}`, { body: changes });
+    },
+
+    /**
+     * Delete a registered subscription.
+     * @param {string} id the subscription ID
+     * @returns {Promise<{status: number, ok: boolean, headers: object, body: any}>} the reply
+     * @throws {SyncStop} without a token (`auth`) or a connection (`retry`)
+     */
+    deletePushSubscription(id) {
+      return api.send('DELETE', `/api/push-subscriptions/${encodeURIComponent(id)}`);
+    },
+
+    /**
      * Read every list the account can see, trashed ones included, from the snapshot of the change feed.
      * @returns {Promise<object[]>} the `List` objects
      * @throws {SyncStop} when the service answers with another sync protocol than 1 (`upgrade`)

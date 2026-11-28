@@ -52,6 +52,10 @@ const STRINGS = Object.freeze({
   remindersBlocked: 'Notifications are blocked for this site. Allow them in the browser settings, then turn reminders on again.',
   remindersUnsupported: 'This browser does not support notifications, so reminders cannot work.',
   remindersNotSaved: 'The reminder choice could not be saved on this device, so it stays as it was.',
+  pushOn: 'While you are connected, reminders also arrive on this device with ToDo\'s closed, up to 4 hours before they are due.',
+  pushUnavailable: 'The service cannot send reminders to a closed app right now. Reminders still work while ToDo\'s is open.',
+  pushUnsupported: 'This browser cannot receive reminders while ToDo\'s is closed.',
+  pushIos: 'On iPhone and iPad, reminders with ToDo\'s closed need ToDo\'s on the Home Screen: choose Share, then Add to Home Screen.',
   data: 'Data',
   exportBackup: 'Export backup',
   importBackup: 'Import backup',
@@ -233,9 +237,10 @@ function addingSection(doc, getStorage, toaster) {
  * @param {{show: (message: string) => void}} [toaster] reports a choice that could not be saved
  * @param {{permission: string, requestPermission: () => Promise<string>}|null} notification the Notification API, or null
  * @param {() => number} now the clock in Unix milliseconds
- * @returns {HTMLElement} the section
+ * @param {{status: () => string, subscribe: Function}|null} push the push subscription, which says whether reminders reach a closed app
+ * @returns {{element: HTMLElement, destroy: () => void}} the section, and how to stop following the push status
  */
-function remindersSection(doc, getStorage, toaster, notification, now) {
+function remindersSection(doc, getStorage, toaster, notification, now, push) {
   const element = section(doc, 'reminders', STRINGS.reminders);
   const label = make(doc, 'label', 'switch');
   const control = doc.createElement('input');
@@ -322,11 +327,22 @@ function remindersSection(doc, getStorage, toaster, notification, now) {
       lead.value = String(readReminderLead(getStorage));
       toaster?.show(STRINGS.remindersNotSaved);
     }
+    // The push registration carries the lead time, so it follows the change.
+    doc.defaultView?.dispatchEvent(new Event(REMINDERS_EVENT));
   });
   const field = make(doc, 'div', 'field');
   field.append(leadLabel, lead);
-  element.append(label, hint, field, problem);
-  return element;
+  const pushLine = make(doc, 'p', 'settings__hint');
+  pushLine.dataset.reminders = 'push';
+  pushLine.setAttribute('role', 'status');
+  const showPush = (status) => {
+    const text = { on: STRINGS.pushOn, unavailable: STRINGS.pushUnavailable, unsupported: STRINGS.pushUnsupported, 'unsupported-ios': STRINGS.pushIos }[status] ?? '';
+    pushLine.textContent = text;
+    pushLine.hidden = !text;
+  };
+  showPush(push?.status());
+  element.append(label, hint, field, problem, pushLine);
+  return { element, destroy: push?.subscribe(showPush) ?? (() => {}) };
 }
 
 /**
@@ -905,11 +921,12 @@ function connectionSection(doc, { getStorage, session, sync, toaster, assign, st
  * @param {(url: string) => void} [options.assign] opens the Auth URL, `location.assign` by default
  * @param {{permission: string, requestPermission: () => Promise<string>}|null} [options.notification] the Notification API, which `globalThis.Notification` supplies by default
  * @param {() => number} [options.now] the clock in Unix milliseconds
+ * @param {{status: () => string, subscribe: Function}|null} [options.push] the push subscription, for the reminder state with the app closed
  * @param {{createObjectURL: Function, revokeObjectURL: Function}} [options.url] the URL API for the backup, global `URL` by default
  * @returns {{update: (route?: object) => void, destroy: () => void}} the screen
  */
 export function mountSettings(view, {
-  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, api, url,
+  getStorage, store, toaster, session = createSession({ getStorage }), sync, assign, api, url, push = null,
   notification = globalThis.Notification ?? null, now = Date.now, navigate = (hash, { replace = false } = {}) => {
     const { location } = view.ownerDocument.defaultView;
     if (replace) {
@@ -925,7 +942,8 @@ export function mountSettings(view, {
   const connection = connectionSection(doc, { getStorage, session, sync, toaster, assign, store, api });
   const data = dataSection(doc, store, toaster, { session, sync }, url);
   const adding = addingSection(doc, getStorage, toaster);
-  root.append(appearanceSection(doc, getStorage, toaster), adding.element, remindersSection(doc, getStorage, toaster, notification, now), data.element, connection.element);
+  const reminders = remindersSection(doc, getStorage, toaster, notification, now, push);
+  root.append(appearanceSection(doc, getStorage, toaster), adding.element, reminders.element, data.element, connection.element);
   view.replaceChildren(root);
   return {
     /**
@@ -947,6 +965,7 @@ export function mountSettings(view, {
     /** Stop following the session; the controls go with the view. */
     destroy() {
       adding.destroy();
+      reminders.destroy();
       connection.destroy();
       data.destroy();
     },

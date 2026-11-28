@@ -3,10 +3,11 @@ import { exportBackup, importBackup } from '../../src/js/core/backup.js';
 import { removePreference, writePreference, writeServerUrl } from '../../src/js/core/preferences.js';
 import { createApi } from '../../src/js/sync/api.js';
 import { createEngine } from '../../src/js/sync/engine.js';
+import { createPushSubscription } from '../../src/js/sync/push-subscription.js';
 import { createSession } from '../../src/js/sync/session.js';
 import { createSettingsSync } from '../../src/js/sync/settings.js';
 import { freshStore } from '../unit/store-helpers.js';
-import { serverDir, startStack } from './server.js';
+import { serverDir, startStack, vapidKeys } from './server.js';
 
 /**
  * Contract tests: the sync client against a real todos server on an in-memory database.
@@ -104,6 +105,36 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     const ada = await device('code-ada');
     expect(ada.session.state()).toBe('connected');
     expect(ada.session.account()).toMatchObject({ email: 'ada@example.com', server: stack.url });
+  });
+
+  it('registers a push subscription, reads it back, changes its lead time, and deletes it', async () => {
+    const ada = await device('code-ada');
+    const endpoint = 'https://fcm.googleapis.com/fcm/send/contract-test';
+    const subscription = {
+      endpoint,
+      toJSON: () => ({ endpoint, keys: { p256dh: vapidKeys().publicKey, auth: Buffer.alloc(16, 7).toString('base64url') } }),
+      unsubscribe: async () => true,
+    };
+    const manager = { getSubscription: async () => null, subscribe: async () => subscription };
+    const state = { lead: 15 };
+    const storage = memoryStorage();
+    const push = createPushSubscription({
+      session: ada.session,
+      api: createApi({ session: ada.session }),
+      getRegistration: async () => ({ pushManager: manager }),
+      wanted: () => true,
+      lead: () => state.lead,
+      getStorage: () => storage,
+      deviceName: () => 'Contract test',
+    });
+    const held = async () => (await (await ada.raw('GET', '/api/push-subscriptions', { Accept: 'application/json' })).json());
+    expect(await push.sync()).toBe('on');
+    expect(await held()).toEqual([expect.objectContaining({ endpoint, 'lead-minutes': 15, 'device-name': 'Contract test' })]);
+    state.lead = 60;
+    expect(await push.sync()).toBe('on');
+    expect(await held()).toEqual([expect.objectContaining({ 'lead-minutes': 60 })]);
+    await push.unregister();
+    expect(await held()).toEqual([]);
   });
 
   it('adopts local lists and tasks on first connect, merges same-named lists, and repeats without duplicates', async () => {

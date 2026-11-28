@@ -157,6 +157,10 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
 - REM-8: A recurring task reminds once per occurrence; the roll-over arms the next occurrence.
 - REM-9: Only one tab schedules (`SYN-12`), and in local mode reminders send no network request (`LOC-3`).
 - REM-10: On start, reminders that came due while the app was closed, since reminders turned on, show as one summary notification.
+- REM-11: While connected, with reminders on and notification permission granted, the device subscribes to Web Push and registers the subscription with the service, with the lead time and a device name; local mode registers nothing (`LOC-3`).
+- REM-12: A pushed reminder shows while every tab is closed, with the task description and its due time, up to 4 hours before the local reminder time; its tag matches the local reminder of the same due time, so one replaces the other instead of stacking, and clicking it opens the task (`REM-6`).
+- REM-13: Turning reminders off, disconnecting, and signing out unsubscribe the browser and delete the registration; an expired session unsubscribes the browser, and the service drops the registration once its push service reports the subscription gone.
+- REM-14: A change of the lead time updates the registration. Settings says when the service cannot push or the browser cannot receive pushes, and that an iPhone or iPad needs ToDo's on the Home Screen.
 
 ### List View
 - LV-1: The list view shows all tasks of one list, with the list name and description.

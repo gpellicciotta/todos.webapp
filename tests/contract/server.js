@@ -7,6 +7,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import { generateKeyPairSync } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer as createHttpServer } from 'node:http';
 import { createServer as createSocketServer } from 'node:net';
@@ -63,11 +64,23 @@ export function stopCommand(pid) {
 }
 
 /**
- * Write the environment file of the server: Auth at the stand-in, a minimum client version, no per-IP throttle, and no real secrets.
+ * Generate a throwaway VAPID key pair, so the server turns Web Push on: the public key is the uncompressed P-256 point,
+ * the private key the 32-byte scalar, both base64url. The pair is random per run and signs nothing real.
+ * @returns {{publicKey: string, privateKey: string}} the pair
+ */
+export function vapidKeys() {
+  const { d, x, y } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' }).privateKey.export({ format: 'jwk' });
+  const point = Buffer.concat([Buffer.from([4]), Buffer.from(x, 'base64url'), Buffer.from(y, 'base64url')]);
+  return { publicKey: point.toString('base64url'), privateKey: d };
+}
+
+/**
+ * Write the environment file of the server: Auth at the stand-in, a minimum client version, no per-IP throttle, and a throwaway VAPID pair.
  * @param {{port: number, authUrl: string}} options the port and the Auth stand-in address
  * @returns {string} the file text
  */
 export function environmentText({ port, authUrl }) {
+  const vapid = vapidKeys();
   return [
     'HOSTNAME=127.0.0.1',
     `PORT=${port}`,
@@ -83,6 +96,8 @@ export function environmentText({ port, authUrl }) {
     `TODOS_AUTH_APP_SECRET=${APP_SECRET}`,
     `TODOS_SYNC_MIN_CLIENT_VERSIONS=todos.webapp=${MIN_CLIENT_VERSION}`,
     'TODOS_THROTTLE_REQUESTS_PER_SECOND=100000',
+    `TODOS_PUSH_VAPID_PUBLIC_KEY=${vapid.publicKey}`,
+    `TODOS_PUSH_VAPID_PRIVATE_KEY=${vapid.privateKey}`,
     '',
   ].join('\n');
 }
