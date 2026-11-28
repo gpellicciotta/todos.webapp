@@ -43,3 +43,22 @@ Contract tests skipped: set TODOS_SERVER_DIR to a todos checkout, such as TODOS_
       Tests  22 skipped (22)
 ```
 The contract tests need a todos server checkout and did not run.
+
+### Rework after review round 1
+Command: `npm test`
+Exit code: 0
+
+```
+ Test Files  69 passed (69)
+      Tests  1897 passed (1897)
+```
+
+Command: `npm run lint`
+Exit code: 0
+
+```
+> todos-webapp@0.6.1-pre lint
+> eslint .
+```
+New tests: `log entries in a backup` in backup.test.js and `rolling back queued log entries` in queue.test.js.
+The red-phase output of round 1 was not kept verbatim; the new tests were written with the fixes and pass.

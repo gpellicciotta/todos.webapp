@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 953.7, input: 138, output: 100041, cache_read: 12676369, cache_write: 246054}
-review_status: pending
+  review: {turns: 1, duration_s: 68.7, input: 34190, output: 1867, cache_read: 324736, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T01:43:32Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-5bdb63
+work_duration: 1033.5
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -60,4 +64,14 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Reject: backup export loses log data, and queue rollback leaves log caches inconsistent.
+  - Findings: [review-findings-1.md](T0314-convert-local-completions-to-log-events-in-the/review-findings-1.md).
+
+- [2026-11-28] **[Decided]**
+  Backup keeps format 2 but carries log and undo-log events with all fields, so export and import lose nothing.
+
+- [2026-11-28] **[Implement]**
+  Rejected queued events now refold from surviving stored events; upgrade-converted entries without stored events keep the old restore.
 
