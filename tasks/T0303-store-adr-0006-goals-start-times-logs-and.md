@@ -1,11 +1,11 @@
 ---
 id: T0303
-owner: ~
-needs: [T0302]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0303-store-adr-0006-goals-start-times-logs-and
+worktree: .plan/work/T0303-store-adr-0006-goals-start-times-logs-and
+status: active
+started_at: "2026-11-28T00:18:53Z"
 ended_at: —
 review: agent
 preview: none
