@@ -5,17 +5,22 @@ session: claude-20261128-7a3611
 needs: []
 branch: task/T0309-write-the-welcome-getting-started-and-faq-help-docs
 worktree: .plan/work/T0309-write-the-welcome-getting-started-and-faq-help-docs
-status: active
+status: completed
 started_at: "2026-11-28T00:31:04Z"
-ended_at: —
+ended_at: "2026-11-28T00:33:51Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 107.4, input: 34, output: 9901, cache_read: 849772, cache_write: 46438}
-review_status: pending
+  review: {turns: 1, duration_s: 49.1, input: 61347, output: 4753, cache_read: 397071}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T00:32:58Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261128-71ef0a
+work_duration: 167.2
+completion-commit: aeda47906814593dfb336279b630623576889c02
 ---
 # T0309: Write the welcome, getting started, and FAQ help docs in docs/tutorial as Markdown
 
@@ -32,7 +37,7 @@ T0310 serves them, and T0311 renders them; the content contract is in [technical
 - [x] **[Doc]**       Write faq.md with every required question, including the full keyboard shortcut list.
 - [x] **[Verify]**    Check every doc against the Markdown subset, structure, and facts in technical-spec.md.
 - [x] **[Doc]**       Link the docs from docs/index.md and add a CHANGELOG.md entry.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -61,4 +66,11 @@ T0310 serves them, and T0311 renders them; the content contract is in [technical
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @gemini: The three docs meet the contract in technical-spec.md, so the work is approved.
+  - Findings: [review-findings-1.md](T0309-write-the-welcome-getting-started-and-faq-help-docs/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
