@@ -13,9 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1555.6, input: 190, output: 91540, cache_read: 16758446, cache_write: 239012}
-review_status: pending
+  review: {turns: 1, duration_s: 101.8, input: 30234, output: 2468, cache_read: 384000, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T06:30:41Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-54d021
+work_duration: 1669.8
 ---
 # T0312: Show goal progress on task rows, with the quick log, Failed status, and upcoming tasks
 
@@ -72,4 +76,8 @@ Capture before and after screenshots of the lists and view options in light and 
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Reject: the quick log can submit duplicate entries while a request is pending.
+  - Findings: [review-findings-1.md](T0312-show-goal-progress-on-task-rows-with-the/review-findings-1.md).
 

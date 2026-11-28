@@ -5,20 +5,20 @@ session: claude-20261128-4879fa
 needs: []
 branch: task/T0305-export-adr-0006-fields-in-backup-format-3
 worktree: .plan/work/T0305-export-adr-0006-fields-in-backup-format-3
-status: suspended
+status: active
 started_at: "2026-11-28T05:39:01Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1281.5, input: 212, output: 106704, cache_read: 21387036, cache_write: 281450}
+  worker: {turns: 3, duration_s: 1324.9, input: 226, output: 109032, cache_read: 23205474, cache_write: 292012}
   review: {turns: 2, duration_s: 130.3, input: 52847, output: 3526, cache_read: 516480, cache_write: 0}
 review_status: rejected
 review_round: 2
 review_requested_at: "2026-11-28T06:02:12Z"
 review_session: codex-20261128-ec60e4
-work_duration: 1450.7
+work_duration: 1517.6
 reviewed_by: "@codex"
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
@@ -89,4 +89,9 @@ Keep merge imports per row, as `BAK-6` requires.
   - A: add a count field to checked logs (format and service change).
   - B: override the cache only, which a later refold drops.
   - C: keep the cap and report the lost progress.
+
+- [2026-11-28] **[Decided]**
+  Loop manager chose option C: keep the 32,767 limit that formats 1 and 2 already apply, and report every task whose progress import could not rebuild.
+  - Show the affected tasks in the import result; never drop silently.
+  - State the limit in backup-format.md and test the report.
 

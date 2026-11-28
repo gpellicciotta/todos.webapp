@@ -4,10 +4,13 @@ round: 1
 verdict: rejected
 blocking: 1
 reviewer: "@codex"
-reviewed_at: 2026-11-28T06:30:42Z
+reviewed_at: 2026-11-28T06:32:25Z
 reviewed_commit: "30b48df"
 base_commit: "3623737"
 branch: task/T0312-show-goal-progress-on-task-rows-with-the
+session: codex-20261128-54d021
+session_agent: codex
+session_created_at: 2026-11-28T06:30:42Z
 ---
 # Review Findings: Task T0312 (Round 1)
 
