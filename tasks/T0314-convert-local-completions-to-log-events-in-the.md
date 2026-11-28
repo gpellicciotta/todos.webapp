@@ -13,12 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 1460.6, input: 216, output: 133865, cache_read: 23338774, cache_write: 302794}
-  review: {turns: 3, duration_s: 193.5, input: 81938, output: 5463, cache_read: 867456, cache_write: 0}
-review_status: pending
+  review: {turns: 4, duration_s: 637.5, input: 94902, output: 6950, cache_read: 1219840, cache_write: 0}
+review_status: rejected
 review_round: 4
 review_requested_at: "2026-11-28T01:59:59Z"
-review_session: codex-20261128-3ca49b
-work_duration: 1619.7
+review_session: codex-20261128-2432c5
+work_duration: 2097.9
+reviewed_by: "@codex"
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -105,4 +106,16 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Review]**
   Round 4 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 4 rejected by @codex: [Decided]** Reject: the required full test suite failed.
+  - Findings: [review-findings-4.md](T0314-convert-local-completions-to-log-events-in-the/review-findings-4.md).
+
+- [2026-11-28] **[Suspended]**
+  Suspended after 4 consecutive review rejections (blocking: 2, 1, 1, 1). Inspect review findings before lifecycle resume.
+
+- [2026-11-28] **[Decided]**
+  Resumed: only the staging test timed out under load; the code findings are resolved.
+  - Run tests/unit/stage-site.test.js alone; if it passes, give it 30 seconds.
+  - Record why, and record a passing npm test run.
 
