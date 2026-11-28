@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ToDo's UI Wireframes</title>
+<link rel="icon" href="data:,">
+<style>
+/*
+ * Wireframe controls only: nothing here belongs to the design.
+ * The previews are separate documents that load the app's stylesheet, ../../src/css/style.css, and nothing else.
+ */
+:root { --wf-ink: #1f1533; --wf-ground: #f5f3ff; --wf-panel: #ffffff; --wf-line: #c4b5fd; --wf-accent: #6d28d9; --wf-on-accent: #ffffff; color-scheme: light }
+:root[data-theme="dark"] { --wf-ink: #ede9fe; --wf-ground: #17102b; --wf-panel: #221840; --wf-line: #4c3a80; --wf-accent: #c4b5fd; --wf-on-accent: #1f1533; color-scheme: dark }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) { --wf-ink: #ede9fe; --wf-ground: #17102b; --wf-panel: #221840; --wf-line: #4c3a80; --wf-accent: #c4b5fd; --wf-on-accent: #1f1533; color-scheme: dark }
+}
+* { box-sizing: border-box }
+body { margin: 0; background: var(--wf-ground); color: var(--wf-ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif }
+a { color: var(--wf-accent) }
+:focus-visible { outline: 2px solid var(--wf-accent); outline-offset: 2px }
+.wf-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 10px 16px; border-bottom: 1px dashed var(--wf-accent); background: var(--wf-panel) }
+.wf-bar b { color: var(--wf-accent); font-size: 12px; letter-spacing: .06em; text-transform: uppercase }
+.wf-bar h1 { margin: 0; font-size: 15px }
+.wf-bar p { margin: 0; font-size: 12.5px }
+.wf-choices { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center }
+.wf-choices button { min-height: 32px; padding: 2px 12px; border: 1px solid var(--wf-line); border-radius: 16px; background: transparent; color: inherit; font: inherit; cursor: pointer }
+.wf-choices button[aria-pressed="true"] { border-color: var(--wf-accent); background: var(--wf-accent); color: var(--wf-on-accent) }
+.wf-layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr) }
+.wf-nav { padding: 12px 8px; border-right: 1px solid var(--wf-line) }
+.wf-nav ol { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none }
+.wf-nav a { display: block; padding: 5px 10px; border-radius: 6px; color: inherit; text-decoration: none }
+.wf-nav a:hover { text-decoration: underline }
+.wf-nav a[aria-current="page"] { background: var(--wf-accent); color: var(--wf-on-accent) }
+.wf-main { display: grid; align-content: start; gap: 10px; min-width: 0; padding: 16px }
+.wf-main h2 { margin: 0; font-size: 20px }
+.wf-main > p { max-width: 70ch; margin: 0 }
+.wf-frames { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 20px; min-width: 0 }
+.wf-frame { margin: 0; min-width: 0 }
+.wf-frame figcaption { margin-bottom: 4px; font-size: 12px }
+.wf-frame--phone { flex: 0 1 392px }
+.wf-frame--desktop { flex: 1 1 520px; max-width: 1282px }
+.wf-viewport { position: relative; overflow: hidden; border: 1px solid var(--wf-line); border-radius: 10px }
+.wf-viewport iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: top left }
+[data-size="phone"] .wf-frame--desktop, [data-size="desktop"] .wf-frame--phone { display: none }
+[data-size="desktop"] .wf-frame--desktop { flex-basis: 100% }
+@media (max-width: 800px) {
+  .wf-layout { grid-template-columns: minmax(0, 1fr) }
+  .wf-nav { border-right: 0; border-bottom: 1px solid var(--wf-line) }
+  .wf-nav ol { grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)) }
+}
+</style>
+</head>
+<body>
+<header class="wf-bar">
+  <b>Wireframe controls</b>
+  <h1>ToDo's UI wireframes</h1>
+  <div class="wf-choices" role="group" aria-label="Theme">
+    <button type="button" data-wf-theme="system" aria-pressed="true">System</button>
+    <button type="button" data-wf-theme="light" aria-pressed="false">Light</button>
+    <button type="button" data-wf-theme="dark" aria-pressed="false">Dark</button>
+  </div>
+  <div class="wf-choices" role="group" aria-label="Size">
+    <button type="button" data-wf-size="both" aria-pressed="true">Phone and desktop</button>
+    <button type="button" data-wf-size="phone" aria-pressed="false">Phone</button>
+    <button type="button" data-wf-size="desktop" aria-pressed="false">Desktop</button>
+  </div>
+  <p>Example data. The previews use the app's stylesheet; links and tabs in them switch screens.</p>
+</header>
+<div class="wf-layout">
+  <nav class="wf-nav" aria-label="Screens">
+    <ol>
+      <li id="first-launch"><a href="#first-launch">First launch</a></li>
+      <li id="all-tasks"><a href="#all-tasks">All tasks</a></li>
+      <li id="user-menu"><a href="#user-menu">User menu</a></li>
+      <li id="list"><a href="#list">List</a></li>
+      <li id="view-options"><a href="#view-options">View options</a></li>
+      <li id="lists"><a href="#lists">Lists</a></li>
+      <li id="lists-many"><a href="#lists-many">Lists with many lists</a></li>
+      <li id="lists-find"><a href="#lists-find">Finding a list</a></li>
+      <li id="task-editor"><a href="#task-editor">Task editor · Status</a></li>
+      <li id="task-editor-notes"><a href="#task-editor-notes">Task editor · Notes</a></li>
+      <li id="task-editor-configuration"><a href="#task-editor-configuration">Task editor · Configuration</a></li>
+      <li id="task-editor-history"><a href="#task-editor-history">Task editor · History</a></li>
+      <li id="quick-log"><a href="#quick-log">Quick log</a></li>
+      <li id="list-editor"><a href="#list-editor">List editor</a></li>
+      <li id="recycle-bin"><a href="#recycle-bin">Recycle bin</a></li>
+      <li id="settings"><a href="#settings">Settings</a></li>
+      <li id="help"><a href="#help">Help</a></li>
+      <li id="sync-log"><a href="#sync-log">Sync log</a></li>
+      <li id="connect"><a href="#connect">Connect</a></li>
+      <li id="import"><a href="#import">Import</a></li>
+      <li id="nav-rail"><a href="#nav-rail">Nav rail</a></li>
+    </ol>
+  </nav>
+  <main class="wf-main">
+    <h2 id="wf-title"></h2>
+    <p id="wf-caption"></p>
+    <div class="wf-choices" id="wf-states" role="group" aria-label="State"></div>
+    <div class="wf-frames" data-size="both" id="wf-frames">
+      <figure class="wf-frame wf-frame--phone">
+        <figcaption>Phone · 390 × 844</figcaption>
+        <div class="wf-viewport"><iframe title="Phone preview" data-width="390" data-height="844"></iframe></div>
+      </figure>
+      <figure class="wf-frame wf-frame--desktop">
+        <figcaption>Desktop · 1280 × 800</figcaption>
+        <div class="wf-viewport"><iframe title="Desktop preview" data-width="1280" data-height="800"></iframe></div>
+      </figure>
+    </div>
+  </main>
+</div>
+
+<!-- icons:begin -->
+<template id="wf-sprite"><svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="app-status-ready" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+  </symbol>
+  <symbol id="app-status-in-progress" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M6 12a6 6 0 0 0 12 0Z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="app-status-completed" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M8.2 11.8 10.5 14.1 15.8 8.8 17.2 10.2 10.5 16.9 6.8 13.2Z"/>
+  </symbol>
+  <symbol id="app-status-failed" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M8.5 7.1 12 10.6 15.5 7.1 16.9 8.5 13.4 12 16.9 15.5 15.5 16.9 12 13.4 8.5 16.9 7.1 15.5 10.6 12 7.1 8.5Z"/>
+  </symbol>
+  <symbol id="app-status-upcoming" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/>
+  </symbol>
+  <symbol id="app-status-cancelled" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M7 11h10v2H7Z"/>
+  </symbol>
+  <symbol id="app-clock" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 7v5l3 2"/>
+  </symbol>
+  <symbol id="app-timer" viewBox="0 0 24 24">
+    <circle cx="12" cy="13" r="8"/>
+    <path d="M12 9v4l2.5 1.5M9.5 3h5"/>
+  </symbol>
+  <symbol id="app-repeat" viewBox="0 0 24 24">
+    <path d="M4 11V9a3 3 0 0 1 3-3h13"/>
+    <path d="M17 3l3 3-3 3"/>
+    <path d="M20 13v2a3 3 0 0 1-3 3H4"/>
+    <path d="M7 21l-3-3 3-3"/>
+  </symbol>
+  <symbol id="app-alert" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 8v5M12 16h.01"/>
+  </symbol>
+  <symbol id="app-note" viewBox="0 0 24 24">
+    <path d="M5 4h14v11l-5 5H5Z"/>
+    <path d="M14 20v-5h5"/>
+  </symbol>
+  <symbol id="app-people" viewBox="0 0 24 24">
+    <circle cx="9" cy="8" r="3"/>
+    <path d="M3 20a6 6 0 0 1 12 0"/>
+    <path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.2a6 6 0 0 1 3 5.8"/>
+  </symbol>
+  <symbol id="app-more" viewBox="0 0 24 24">
+    <circle cx="5" cy="12" r="1"/>
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="19" cy="12" r="1"/>
+  </symbol>
+  <symbol id="app-more-vertical" viewBox="0 0 24 24">
+    <circle cx="12" cy="5" r="1"/>
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="12" cy="19" r="1"/>
+  </symbol>
+  <symbol id="app-grip" viewBox="0 0 24 24">
+    <circle cx="9" cy="6" r="1"/>
+    <circle cx="15" cy="6" r="1"/>
+    <circle cx="9" cy="12" r="1"/>
+    <circle cx="15" cy="12" r="1"/>
+    <circle cx="9" cy="18" r="1"/>
+    <circle cx="15" cy="18" r="1"/>
+  </symbol>
+  <symbol id="app-check" viewBox="0 0 24 24">
+    <path d="m5 12 5 5 9-10"/>
+  </symbol>
+  <symbol id="app-close" viewBox="0 0 24 24">
+    <path d="M18 6 6 18M6 6l12 12"/>
+  </symbol>
+  <symbol id="app-back" viewBox="0 0 24 24">
+    <path d="m15 18-6-6 6-6"/>
+  </symbol>
+  <symbol id="app-plus" viewBox="0 0 24 24">
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+  <symbol id="app-minus" viewBox="0 0 24 24">
+    <path d="M5 12h14"/>
+  </symbol>
+  <symbol id="app-search" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="7"/>
+    <path d="m20 20-4-4"/>
+  </symbol>
+  <symbol id="app-sort" viewBox="0 0 24 24">
+    <path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/>
+  </symbol>
+  <symbol id="app-chevron-down" viewBox="0 0 24 24">
+    <path d="m6 9 6 6 6-6"/>
+  </symbol>
+  <symbol id="app-tasks" viewBox="0 0 24 24">
+    <path d="M11 6h9M11 12h9M11 18h9"/>
+    <path d="m4 6 1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17"/>
+  </symbol>
+  <symbol id="app-lists" viewBox="0 0 24 24">
+    <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>
+  </symbol>
+  <symbol id="app-icon-nav-menu" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h16"/>
+  </symbol>
+  <symbol id="app-icon-nav-collapse" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M18.5 15l-3 3 3 3"/>
+  </symbol>
+  <symbol id="app-icon-nav-hide" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M14 15v6M20 15l-3 3 3 3"/>
+  </symbol>
+  <symbol id="app-icon-nav-close" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M14 15l6 6M20 15l-6 6"/>
+  </symbol>
+  <symbol id="app-bin" viewBox="0 0 24 24">
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>
+  </symbol>
+  <symbol id="app-settings" viewBox="0 0 24 24">
+    <path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/>
+    <circle cx="15" cy="6" r="2"/>
+    <circle cx="9" cy="12" r="2"/>
+    <circle cx="17" cy="18" r="2"/>
+  </symbol>
+  <symbol id="app-help" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.2M12 16.5h.01"/>
+  </symbol>
+  <symbol id="app-user" viewBox="0 0 24 24">
+    <circle cx="12" cy="8" r="4"/>
+    <path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5"/>
+  </symbol>
+  <symbol id="app-bell" viewBox="0 0 24 24">
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/>
+    <path d="M10 21h4"/>
+  </symbol>
+  <symbol id="app-sync-local" viewBox="0 0 24 24">
+    <rect x="3" y="4" width="18" height="12" rx="2"/>
+    <path d="M8 20h8M12 16v4"/>
+  </symbol>
+  <symbol id="app-sync-synced" viewBox="0 0 24 24">
+    <path d="M7 19h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10.06 4.5 4.5 0 0 0 7 19Z"/>
+    <path d="m9.5 14.5 2 2 3.5-4"/>
+  </symbol>
+  <symbol id="app-sync-syncing" viewBox="0 0 24 24">
+    <path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/>
+    <path d="M18 3v3.7h-3.7M6 21v-3.7h3.7"/>
+  </symbol>
+  <symbol id="app-sync-offline" viewBox="0 0 24 24">
+    <path d="M7 19h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10.06 4.5 4.5 0 0 0 7 19Z"/>
+    <path d="m3 3 18 18"/>
+  </symbol>
+  <symbol id="app-sync-sign-in" viewBox="0 0 24 24">
+    <circle cx="8" cy="15" r="4"/>
+    <path d="m11 12 9-9M17 6l3 3M14 9l2 2"/>
+  </symbol>
+  <symbol id="app-sync-error" viewBox="0 0 24 24">
+    <path d="M12 4 2.5 20h19Z"/>
+    <path d="M12 10v4M12 17h.01"/>
+  </symbol>
+  <symbol id="look-icon-status-todo" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+  </symbol>
+  <symbol id="look-icon-status-in-progress" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M6 12a6 6 0 0 0 12 0Z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="look-icon-status-completed" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M8.2 11.8 10.5 14.1 15.8 8.8 17.2 10.2 10.5 16.9 6.8 13.2Z"/>
+  </symbol>
+  <symbol id="look-icon-status-cancelled" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M7 11h10v2H7Z"/>
+  </symbol>
+  <symbol id="look-icon-clock" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 7v5l3 2"/>
+  </symbol>
+  <symbol id="look-icon-alert" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 8v5M12 16h.01"/>
+  </symbol>
+  <symbol id="look-icon-help" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.2M12 16.5h.01"/>
+  </symbol>
+  <symbol id="look-icon-note" viewBox="0 0 24 24">
+    <path d="M5 4h14v11l-5 5H5Z"/>
+    <path d="M14 20v-5h5"/>
+  </symbol>
+  <symbol id="look-icon-people" viewBox="0 0 24 24">
+    <circle cx="9" cy="8" r="3"/>
+    <path d="M3 20a6 6 0 0 1 12 0"/>
+    <path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.2a6 6 0 0 1 3 5.8"/>
+  </symbol>
+  <symbol id="look-icon-more" viewBox="0 0 24 24">
+    <circle cx="12" cy="5" r="1"/>
+    <circle cx="12" cy="12" r="1"/>
+    <circle cx="12" cy="19" r="1"/>
+  </symbol>
+  <symbol id="look-icon-nav-menu" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h16"/>
+  </symbol>
+  <symbol id="look-icon-nav-collapse" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M18.5 15l-3 3 3 3"/>
+  </symbol>
+  <symbol id="look-icon-nav-hide" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M14 15v6M20 15l-3 3 3 3"/>
+  </symbol>
+  <symbol id="look-icon-nav-close" viewBox="0 0 24 24">
+    <path d="M4 6h16M4 12h16M4 18h7M14 15l6 6M20 15l-6 6"/>
+  </symbol>
+  <symbol id="look-icon-refresh" viewBox="0 0 24 24">
+    <path d="M20 12a8 8 0 1 1-2.3-5.7"/>
+    <path d="M17.7 2.6v3.7h-3.7"/>
+  </symbol>
+  <symbol id="look-icon-grip" viewBox="0 0 24 24">
+    <circle cx="9" cy="6" r="1"/>
+    <circle cx="15" cy="6" r="1"/>
+    <circle cx="9" cy="12" r="1"/>
+    <circle cx="15" cy="12" r="1"/>
+    <circle cx="9" cy="18" r="1"/>
+    <circle cx="15" cy="18" r="1"/>
+  </symbol>
+  <symbol id="look-icon-check" viewBox="0 0 24 24">
+    <path d="m5 12 5 5 9-10"/>
+  </symbol>
+  <symbol id="look-icon-close" viewBox="0 0 24 24">
+    <path d="M18 6 6 18M6 6l12 12"/>
+  </symbol>
+  <symbol id="look-icon-back" viewBox="0 0 24 24">
+    <path d="m15 18-6-6 6-6"/>
+  </symbol>
+  <symbol id="look-icon-plus" viewBox="0 0 24 24">
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+  <symbol id="look-icon-search" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="7"/>
+    <path d="m20 20-4-4"/>
+  </symbol>
+  <symbol id="look-icon-sort" viewBox="0 0 24 24">
+    <path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/>
+  </symbol>
+  <symbol id="look-icon-chevron-down" viewBox="0 0 24 24">
+    <path d="m6 9 6 6 6-6"/>
+  </symbol>
+  <symbol id="look-icon-tasks" viewBox="0 0 24 24">
+    <path d="M11 6h9M11 12h9M11 18h9"/>
+    <path d="m4 6 1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17"/>
+  </symbol>
+  <symbol id="look-icon-lists" viewBox="0 0 24 24">
+    <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>
+  </symbol>
+  <symbol id="look-icon-bin" viewBox="0 0 24 24">
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>
+  </symbol>
+  <symbol id="look-icon-settings" viewBox="0 0 24 24">
+    <path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/>
+    <circle cx="15" cy="6" r="2"/>
+    <circle cx="9" cy="12" r="2"/>
+    <circle cx="17" cy="18" r="2"/>
+  </symbol>
+  <symbol id="look-icon-overview" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 12l4-4M7 16h10"/>
+  </symbol>
+  <symbol id="look-icon-sessions" viewBox="0 0 24 24">
+    <circle cx="8" cy="15" r="4"/>
+    <path d="M11 12l9-9M16 7l3 3"/>
+  </symbol>
+  <symbol id="look-icon-events" viewBox="0 0 24 24">
+    <path d="M3 12h4l3-7 4 14 3-7h4"/>
+  </symbol>
+  <symbol id="look-icon-logs" viewBox="0 0 24 24">
+    <rect x="4" y="3" width="16" height="18" rx="2"/>
+    <path d="M8 8h8M8 12h8M8 16h5"/>
+  </symbol>
+  <symbol id="look-icon-broadcast" viewBox="0 0 24 24">
+    <path d="M4 10v4h3l6 4V6L7 10H4zM17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/>
+  </symbol>
+  <symbol id="look-icon-user" viewBox="0 0 24 24">
+    <circle cx="12" cy="8" r="4"/>
+    <path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5"/>
+  </symbol>
+  <symbol id="look-icon-bell" viewBox="0 0 24 24">
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/>
+    <path d="M10 21h4"/>
+  </symbol>
+  <symbol id="look-icon-sync-local" viewBox="0 0 24 24">
+    <rect x="3" y="4" width="18" height="12" rx="2"/>
+    <path d="M8 20h8M12 16v4"/>
+  </symbol>
+  <symbol id="look-icon-sync-synced" viewBox="0 0 24 24">
+    <path d="M7 19h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10.06 4.5 4.5 0 0 0 7 19Z"/>
+    <path d="m9.5 14.5 2 2 3.5-4"/>
+  </symbol>
+  <symbol id="look-icon-sync-syncing" viewBox="0 0 24 24">
+    <path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/>
+    <path d="M18 3v3.7h-3.7M6 21v-3.7h3.7"/>
+  </symbol>
+  <symbol id="look-icon-sync-offline" viewBox="0 0 24 24">
+    <path d="M7 19h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10.06 4.5 4.5 0 0 0 7 19Z"/>
+    <path d="m3 3 18 18"/>
+  </symbol>
+  <symbol id="look-icon-sync-sign-in" viewBox="0 0 24 24">
+    <circle cx="8" cy="15" r="4"/>
+    <path d="m11 12 9-9M17 6l3 3M14 9l2 2"/>
+  </symbol>
+  <symbol id="look-icon-sync-error" viewBox="0 0 24 24">
+    <path d="M12 4 2.5 20h19Z"/>
+    <path d="M12 10v4M12 17h.01"/>
+  </symbol>
+</svg></template>
+<!-- icons:end -->
+
+<script>
+'use strict';
+
+/* ---------- Small parts, written with the class names of the app ---------- */
+
+const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const use = (href, extra) => `<svg class="icon${extra ? ` ${extra}` : ''}" aria-hidden="true" focusable="false"><use href="#${href}"></use></svg>`;
+/** An icon of the app's sprite. */
+const icon = (name, extra) => use(`app-${name}`, extra);
+/** An icon of the sprite of the look. */
+const look = (name) => use(`look-${name}`);
+const hidden = (text) => `<span class="visually-hidden">${esc(text)}</span>`;
+const button = (text, classes = '', attributes = '') => `<button class="button${classes ? ` ${classes}` : ''}" type="button" ${attributes}>${text}</button>`;
+const iconButton = (name, label, attributes = '', classes = '') => `<button class="icon-button${classes ? ` ${classes}` : ''}" type="button" aria-label="${esc(label)}" ${attributes}>${icon(name)}</button>`;
+let ids = 0;
+const nextId = () => `wf-${ids += 1}`;
+
+/** A labeled field; `control` is `input`, `textarea`, or a list of select options. */
+function field(label, value = '', { type = 'text', control = 'input', hint = '', counter = '', error = '', placeholder = '' } = {}) {
+  const id = nextId();
+  let body = `<input class="field__control" id="${id}" type="${type}" value="${esc(value)}" placeholder="${esc(placeholder)}">`;
+  if (control === 'textarea') {
+    body = `<textarea class="field__control" id="${id}" placeholder="${esc(placeholder)}">${esc(value)}</textarea>`;
+  }
+  if (Array.isArray(control)) {
+    body = `<select class="field__control" id="${id}">${control.map((option) => `<option${option === value ? ' selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
+  }
+  return `<div class="field"><label class="field__label" for="${id}">${esc(label)}</label>${body}`
+    + `${hint ? `<p class="field__hint">${esc(hint)}</p>` : ''}${counter ? `<p class="field__counter">${esc(counter)}</p>` : ''}`
+    + `${error ? `<p class="field__error">${icon('alert')}<span>${esc(error)}</span></p>` : ''}</div>`;
+}
+
+/** A segmented control; each option is a label, and `current` is the chosen one. */
+function segmented(legend, options, current, classes = '') {
+  const name = nextId();
+  return `<fieldset class="segmented${classes ? ` ${classes}` : ''}"><legend class="visually-hidden">${esc(legend)}</legend><div class="segmented__options">`
+    + options.map((option) => `<label class="segmented__option"><input type="radio" name="${name}"${option === current ? ' checked' : ''}>${esc(option)}</label>`).join('')
+    + '</div></fieldset>';
+}
+
+/** A menu; `entries` are [label, target, icon, danger] and `open` shows it under its button. */
+function menu(id, label, entries, open) {
+  return `<div class="menu" id="${id}" aria-label="${esc(label)}" popover="auto" role="menu"${open ? ' data-wf-open' : ''}>`
+    + entries.map(([text, go, glyph, danger]) => `<button class="menu__item${danger ? ' menu__item--danger' : ''}" type="button" role="menuitem"${go ? ` data-wf-go="${go}"` : ''}>${glyph ? icon(glyph) : ''}${esc(text)}</button>`).join('')
+    + '</div>';
+}
+
+/* ---------- The app shell ---------- */
+
+const LISTS = [['Home', 2], ['Travel', 1], ['Work', 3]];
+const MANY = ['Errands', 'Garage', 'Garden', 'Gifts', 'Home', 'Legal', 'Movies', 'Music', 'Reading', 'Recipes', 'Taxes', 'Travel', 'Work', 'Yoga'].map((name, i) => [name, (i * 5) % 7]);
+
+function topBar(o) {
+  const nav = !o.wide ? ['Open navigation', 'icon-nav-menu', false]
+    : o.nav === 'rail' ? ['Hide navigation', 'icon-nav-hide', false]
+      : o.nav === 'hidden' ? ['Show navigation', 'icon-nav-menu', false] : ['Collapse navigation', 'icon-nav-collapse', true];
+  const navGo = o.nav === 'rail' ? 'nav-rail/hidden' : o.nav === 'hidden' ? 'all-tasks' : 'nav-rail';
+  const sync = o.connected ? ['synced', 'sync-synced', 'Synced'] : ['local', 'sync-local', 'Local only'];
+  const user = o.connected ? 'Jane Doe' : 'Local User';
+  const syncPanel = o.connected
+    ? '<p class="sync-panel__state">Synced</p><p class="sync-panel__time">Last synced Today 09:59</p>'
+      + `<div class="sync-panel__actions">${button('Sync now', 'button--secondary')}<a class="button button--secondary" href="#/settings/sync-log">Sync log</a></div>`
+    : '<p class="sync-panel__state">Local only</p><p class="sync-panel__time">Your data stays on this device.</p>'
+      + '<div class="sync-panel__actions"><a class="button" href="#/connect">Connect</a></div>';
+  const account = [['#/connect', o.connected ? 'icon-sync-synced' : 'icon-sync-local', o.connected ? 'Connected' : 'Local only'],
+    ['#/bin', 'icon-bin', 'Recycle bin'], ['#/settings', 'icon-settings', 'Settings'], ['#/help', 'icon-help', 'Help']];
+  const actions = o.actions
+    ? `<div class="app__view-actions">${iconButton('more-vertical', `${o.actions.label}`, `aria-expanded="false" aria-controls="view-menu" popovertarget="view-menu" aria-haspopup="menu"${o.actions.go ? ` data-wf-go="${o.actions.go}"` : ''}`, 'view-header__more')}${menu('view-menu', o.actions.label, o.actions.entries, o.actions.open)}</div>`
+    : '';
+  return '<header class="app__top-bar">'
+    + `<button class="app__nav-toggle icon-button" type="button" aria-expanded="${nav[2]}" aria-label="${nav[0]}" data-wf-go="${navGo}">${icon(nav[1])}</button>`
+    + `<h1 class="app__title" id="app-title">${esc(o.title)}</h1>`
+    + '<div class="app__top-actions user-menu">'
+    + `<button class="sync-indicator" type="button" aria-expanded="false" aria-controls="sync-panel" data-state="${sync[0]}" data-wf-go="user-menu/sync">${icon(sync[1])}${hidden('Sync state: ')}<span class="sync-indicator__label">${sync[2]}</span></button>`
+    + `<div class="popover sync-panel" id="sync-panel" role="group" aria-label="Sync" popover="auto"${o.syncOpen ? ' data-wf-open' : ''}>${syncPanel}</div>`
+    + (o.connected ? `<button class="icon-button app__notifications-button" type="button" aria-label="Inbox">${look('icon-bell')}</button>` : '')
+    + actions
+    + `<div class="account-menu"><button class="account-menu__button" type="button" aria-expanded="false" aria-controls="user-panel" aria-haspopup="menu" aria-label="${user}" data-wf-go="user-menu${o.connected ? '/connected' : ''}">`
+    + (o.connected ? '<span class="avatar avatar--sm avatar--initials" aria-hidden="true">JD</span>' : `<span class="avatar avatar--sm" aria-hidden="true">${look('icon-user')}</span>`)
+    + '</button>'
+    + `<div class="menu account-menu__panel" id="user-panel" role="menu" popover="auto"${o.userOpen ? ' data-wf-open' : ''}><p class="account-menu__name" aria-hidden="true">${user}</p>`
+    + account.map(([href, glyph, text]) => `<a class="menu__item" role="menuitem" href="${href}">${look(glyph)}${text}</a>`).join('')
+    + '</div></div></div></header>';
+}
+
+const count = (open) => `<span class="nav-item__count"><span aria-hidden="true">${open}</span>${hidden(`${open} open tasks`)}</span>`;
+const current = (on) => (on ? ' aria-current="page"' : '');
+
+function sidebar(o) {
+  const lists = o.lists ?? LISTS;
+  const page = (name, glyph, href) => `<li><a class="app__nav-item nav-item" href="${href}" title="${name}"${current(o.current === name)}>${icon(glyph)}<span class="nav-item__label">${name}</span>${name === 'All tasks' ? count(lists.length ? 6 : 0) : ''}</a></li>`;
+  const find = lists.length >= 12
+    ? `<div class="sidebar__find"><input class="field__control" type="search" aria-label="Find a list" placeholder="Find a list" value="${esc(o.find ?? '')}"><span class="sidebar__find-count" aria-hidden="true">${o.find ? `${lists.filter(([name]) => name.toLowerCase().includes(o.find)).length} of ${lists.length}` : ''}</span></div>`
+    : '';
+  const shown = o.find ? lists.filter(([name]) => name.toLowerCase().includes(o.find)) : lists;
+  return `<nav class="sidebar app__sidebar" aria-label="Main" popover="auto"${o.nav === 'hidden' ? ' hidden' : ''}>`
+    + `<ul class="nav-list app__nav-list">${page('All tasks', 'tasks', '#/tasks')}${page('Lists', 'lists', '#/lists')}</ul>${find}`
+    + '<div class="sidebar__scroll"><ul class="nav-list app__nav-list" aria-label="Lists">'
+    + shown.map(([name, open]) => `<li><a class="app__nav-item nav-item nav-item--list" href="#/lists/${name.toLowerCase()}" title="${name}"${current(o.current === name)}><span class="nav-item__mark" aria-hidden="true">${name[0]}</span><span class="nav-item__label">${name}</span>${count(open)}</a></li>`).join('')
+    + '</ul></div></nav>';
+}
+
+function bottomNav(tab) {
+  const item = (name, glyph, href) => `<li><a class="app__nav-item bottom-nav__item" href="${href}"${current(tab === name)}>${icon(glyph)}${name}</a></li>`;
+  return `<nav class="bottom-nav app__bottom-nav" aria-label="Main"><ul class="bottom-nav__list app__nav-list">${item('Tasks', 'tasks', '#/tasks')}${item('Lists', 'lists', '#/lists')}</ul></nav>`;
+}
+
+/** Assemble a screen: `view` is the main area, `panel` the editor, and `action` the pinned bar. */
+function shell(o) {
+  return '<div class="app app--scroll-main">'
+    + topBar(o) + sidebar(o)
+    + `<main class="app__main" aria-labelledby="app-title"><div class="app__view" data-view="${o.dataView ?? 'tasks'}">${o.view}</div></main>`
+    + (o.panel ? `<aside class="app__side-panel">${o.panel}</aside>` : '')
+    + (o.action ? `<div class="app__action-bar">${o.action}</div>` : '')
+    + bottomNav(o.tab ?? 'Tasks')
+    + `<div class="app__overlays"><div class="toast-region" role="region" aria-label="Notifications">${o.toast ?? ''}</div>${o.fab ?? ''}</div>`
+    + `</div>${o.overlay ?? ''}`;
+}
+
+/* ---------- Tasks ---------- */
+
+const STATUS_NAMES = { ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', failed: 'Failed', cancelled: 'Cancelled', upcoming: 'Upcoming' };
+
+const TASKS = [
+  { text: 'Buy paint for the hallway', due: 'Today 18:00', lists: ['Home'] },
+  { text: 'Call the plumber about the leak', due: 'Yesterday 16:00', track: 'overdue', lists: ['Home'] },
+  { text: 'Prepare slides for the team review', status: 'in-progress', count: '2/3', due: 'Tomorrow 16:00', lists: ['Work'] },
+  { text: 'Sport', status: 'in-progress', repeat: 'Weekly', goal: { color: 'blue', share: 85, text: '2 h 50 / 3 h 20 min' }, go: 'quick-log' },
+  { text: 'Calories', status: 'in-progress', track: 'over-limit', repeat: 'Daily', goal: { color: 'orange', share: 100, text: '1,720 / max 1,600 kcal · 120 over', over: true }, go: 'quick-log' },
+  { text: 'Paint the garden fence', status: 'completed', lists: ['Home'] },
+  { text: 'Submit the grant report', status: 'failed', track: 'failed', due: 'Yesterday 17:00', lists: ['Work'] },
+  { text: 'Buy a new lawn mower', status: 'cancelled', lists: ['Home'] },
+  { text: 'Plan the spring trip', status: 'upcoming', starts: 'Starts tomorrow 06:00', lists: ['Travel'] },
+];
+const HOME = TASKS.filter((task) => task.lists?.includes('Home')).map((task) => ({ ...task, lists: undefined }));
+
+function taskRow(task, { quickLog = '', selected = '' } = {}) {
+  const status = task.status ?? 'ready';
+  const upcoming = status === 'upcoming';
+  const shape = upcoming ? 'ready' : status;
+  const track = task.track ?? 'on-track';
+  const fixed = ['completed', 'failed', 'cancelled', 'upcoming'].includes(status);
+  const go = fixed ? '' : ` data-wf-go="${task.go ?? 'all-tasks/ticked'}"`;
+  const meta = [
+    task.repeat ? `<span class="task-row__repeat">${icon('repeat', 'icon--sm')}${task.repeat}</span>` : '',
+    task.starts ? `<span class="task-row__start">${icon('status-upcoming', 'icon--sm')}${task.starts}</span>` : '',
+    task.due ? `<span class="task-row__due${track === 'overdue' ? ' task-row__due--overdue' : ''}">${icon('clock', 'icon--sm')}${task.due}</span>` : '',
+    status === 'failed' ? '<span class="task-row__failed">Failed</span>' : '',
+    task.goal ? `<span class="task-row__goal"><span class="task-row__meter" data-color="${task.goal.color}" aria-hidden="true" style="--meter-share: ${task.goal.share}%;"></span><span class="task-row__progress${task.goal.over ? ' task-row__progress--over' : ''}">${task.goal.over ? icon('alert', 'icon--sm') : ''}${task.goal.text}</span></span>` : '',
+    task.lists ? `<span class="task-row__lists">${task.lists.map((name) => `<span class="task-row__list">${name}</span>`).join('')}</span>` : '',
+  ].join('');
+  return `<li class="task-row" data-status="${shape}" data-track="${track}"${upcoming ? ' data-upcoming="true"' : ''}>`
+    + `<button class="icon-button status-button" type="button" aria-label="${STATUS_NAMES[status]}: ${esc(task.text)}" title="${STATUS_NAMES[status]}"${fixed ? ' aria-disabled="true"' : ''} data-status="${shape}" data-track="${track}"${go}>${icon(`status-${status}`)}${task.count ? `<span class="task-row__count" aria-hidden="true">${task.count}</span>` : ''}</button>`
+    + `<a class="task-row__open" href="#/tasks/${task.text === 'Sport' ? 'sport' : 'task'}"${current(task.text === selected)}><span class="task-row__description">${esc(task.text)}</span>${meta ? `<span class="task-row__meta">${meta}</span>` : ''}</a>`
+    + `${quickLog && task.text === 'Sport' ? quickLog : ''}</li>`;
+}
+
+const groupHeader = (name, size) => `<li class="group-header"><h3 class="group-header__heading"><button class="group-header__toggle" type="button" aria-expanded="true">${icon('chevron-down', 'icon--sm group-header__icon')}<span class="group-header__name">${name}</span><span class="group-header__count">${size}</span></button></h3></li>`;
+
+/** The task rows, with the upcoming tasks under their own header. */
+function taskList(label, tasks, options) {
+  const now = tasks.filter((task) => task.status !== 'upcoming');
+  const later = tasks.filter((task) => task.status === 'upcoming');
+  return `<ul class="task-list" aria-label="${label}">${now.map((task) => taskRow(task, options)).join('')}`
+    + `${later.length ? groupHeader('Upcoming', later.length) + later.map((task) => taskRow(task, options)).join('') : ''}</ul>`;
+}
+
+const taskView = (rows, head = '', classes = '') => `<div class="task-view${classes}"><div class="view-header">${head}</div><div class="task-list-frame">${rows}</div></div>`;
+
+function addBar({ value = '', info = '9 tasks', reset = false, preview = '' } = {}) {
+  const id = nextId();
+  return '<div class="add-block"><form class="add-bar">'
+    + `<div class="field add-bar__field"><label class="field__label visually-hidden" for="${id}">Search or add a task</label><input class="field__control" id="${id}" type="text" placeholder="Search or add a task" value="${esc(value)}"></div>`
+    + `<button class="button" type="button">${icon('plus')}<span class="add-bar__label">Add</span></button>`
+    + `${preview ? `<p class="add-bar__preview">${esc(preview)}</p>` : ''}</form>`
+    + `${info ? `<div class="info-line"><p class="info-line__text">${esc(info)}</p>${reset ? button('Reset', 'button--quiet info-line__reset') : ''}</div>` : ''}</div>`;
+}
+
+const ALL_ACTIONS = (open) => ({ label: 'All tasks actions', open, entries: [['Edit view options', 'view-options']] });
+
+/** All tasks, the background of most editors. */
+const allTasks = (o, more = {}) => shell({
+  ...o, title: 'All tasks', current: 'All tasks', actions: ALL_ACTIONS(false), view: taskView(taskList('All tasks', TASKS)), action: addBar(), ...more,
+});
+
+/* ---------- Lists ---------- */
+
+const OVERVIEW = [
+  ['Home', 'Chores and repairs around the house', '2 open · 4 total', 'Shared with 2 people'],
+  ['Travel', 'Spring trip planning', '1 open · 1 total', 'Shared by Ann'],
+  ['Work', 'Projects and follow-ups', '3 open · 5 total', ''],
+];
+const overviewOf = (names) => names.map(([name, open]) => [name, '', `${open} open · ${open + 2} total`, '']);
+
+function listRows(rows, { movable = true, menuFor = '' } = {}) {
+  return '<div class="lists-view"><ul class="lists-view__rows" aria-label="Lists">'
+    + rows.map(([name, description, counts, sharing]) => '<li class="list-item">'
+      + `<span class="list-item__handle" aria-hidden="true"${movable ? '' : ' hidden'}>${icon('grip')}</span>`
+      + `<a class="list-row" href="#/lists/${name.toLowerCase()}"><span class="list-row__name">${name}</span>${description ? `<span class="list-row__description">${description}</span>` : ''}<span class="list-row__counts">${counts}</span>${sharing ? `<span class="list-row__sharing">${sharing}</span>` : ''}</a>`
+      + iconButton('more', `List actions: ${name}`, `aria-haspopup="menu" aria-expanded="false"${menuFor === name ? ' aria-controls="row-menu"' : ' data-wf-go="lists/menu"'}`, 'list-item__more')
+      + (menuFor === name ? menu('row-menu', `List actions: ${name}`, [['Edit list', 'list-editor'], ['Edit view options', 'view-options'], ['Share list', 'list-editor/shared'], ['Move to bottom'], ['Delete list', '', '', true]], true) : '')
+      + '</li>').join('')
+    + '</ul></div>';
+}
+
+function findBar({ value = '', sort = 'Manual order', info, reset = false }) {
+  return '<div class="add-block lists-find"><div class="lists-find__bar">'
+    + `<input class="field__control lists-find__field" type="search" placeholder="Find a list" aria-label="Find a list" value="${esc(value)}">`
+    + `<button class="button button--quiet lists-find__sort" type="button" aria-label="Sort: ${sort}">${icon('sort')}<span class="lists-find__sort-label">Sort: ${sort}</span></button></div>`
+    + `<div class="info-line"><p class="info-line__text">${info}</p>${reset ? button('Reset', 'button--quiet info-line__reset') : ''}</div></div>`;
+}
+
+const FAB = `<a class="fab" href="#/lists/new" aria-label="New list">${icon('plus')}</a>`;
+const listsScreen = (o, more) => shell({ ...o, title: 'Lists', current: 'Lists', tab: 'Lists', dataView: 'lists', fab: FAB, ...more });
+
+function homeList(o, more = {}) {
+  const shared = o.state === 'shared';
+  const entries = shared
+    ? [['List details', 'list-editor/shared'], ['Edit view options', 'view-options']]
+    : [['Edit list', 'list-editor'], ['Edit view options', 'view-options'], ['Share list', 'list-editor/shared'], ['Delete list', '', '', true]];
+  const head = `<p class="list-view__description">Chores and repairs around the house</p>${shared ? '<p class="list-view__owner">Shared by Sam Roe · Task editor</p>' : ''}`;
+  return shell({
+    ...o, title: 'Home', current: 'Home', tab: 'Lists', connected: shared, dataView: 'list',
+    actions: { label: 'Home actions', open: o.state === 'menu', go: o.state === 'menu' ? '' : 'list/menu', entries },
+    view: taskView(taskList('Home', HOME), head, ' list-view'), action: addBar({ info: `${HOME.length} tasks` }), ...more,
+  });
+}
+
+/* ---------- Editors ---------- */
+
+function editorPanel(title, body, { heading = '', close = 'all-tasks' } = {}) {
+  const id = nextId();
+  return `<aside class="editor-panel" aria-labelledby="${id}"><div class="editor-panel__header"><h2 class="editor-panel__title" id="${id}">${title}</h2>`
+    + `${iconButton('close', `Close the ${title.toLowerCase() === 'task' ? 'task editor' : title.toLowerCase()}`, `data-wf-go="${close}"`)}</div>`
+    + `${heading ? `<p class="task-editor__heading" title="${esc(heading)}"><span class="task-editor__heading-text">${esc(heading)}</span></p>` : ''}`
+    + `<div class="editor-panel__body">${body}</div></aside>`;
+}
+
+const TABS = [['Status', 'task-editor'], ['Notes', 'task-editor-notes'], ['Configuration', 'task-editor-configuration'], ['History', 'task-editor-history']];
+
+/** The task editor on one of its tabs, beside All tasks on a desktop and over it on a phone. */
+function taskEditor(o, tab, heading, body) {
+  const tabs = '<div class="tabs task-editor__tabs"><div class="tabs__list" role="tablist" aria-label="Task sections">'
+    + TABS.map(([name, go]) => `<button class="tabs__tab" type="button" role="tab" aria-selected="${name === tab}" data-wf-go="${go}">${name}</button>`).join('')
+    + `</div><div class="tabs__panel task-editor__panel" role="tabpanel">${body}</div></div>`;
+  const rows = taskView(taskList('All tasks', TASKS, { selected: heading }));
+  return allTasks(o, { connected: true, view: rows, panel: editorPanel('Task', tabs, { heading }) });
+}
+
+const section = (body, name) => `<div class="editor-panel__section"${name ? ` data-section="${name}"` : ''}>${body}</div>`;
+const sectionTitle = (text) => `<h3 class="editor-panel__section-title">${text}</h3>`;
+const details = (text) => `<p class="editor-panel__details">${text}</p>`;
+const RULE = '<hr class="task-editor__rule">';
+
+function statusTab(o) {
+  const upcoming = o.state === 'upcoming';
+  const status = upcoming ? 'upcoming' : 'in-progress';
+  const top = `<p class="task-editor__status" data-status="${upcoming ? 'ready' : status}" data-track="${upcoming ? 'on-track' : 'over-limit'}">${icon(`status-${status}`)}<span class="task-editor__status-text">${upcoming ? 'Upcoming' : 'In progress, not on track'}</span></p>`;
+  if (upcoming) {
+    return taskEditor(o, 'Status', 'Plan the spring trip', '<fieldset class="task-editor__fields">' + section(top + details('Starts tomorrow 06:00. It takes no logs yet.')) + '</fieldset>');
+  }
+  const progress = '<div class="progress-box" data-state="over"><p class="progress-box__value">1,720 / max 1,600 kcal</p><div class="progress-box__meter">'
+    + '<div class="progress-meter" role="meter" aria-label="Progress" aria-valuemin="0" aria-valuemax="1600" aria-valuenow="1720" data-color="orange" style="--meter-share: 100%;"><div class="progress-meter__fill"></div></div></div>'
+    + '<p class="progress-box__next">120 kcal over the limit.<br>The window fails if the progress stays above the limit at its end.</p></div>';
+  const log = `<h3 class="editor-panel__section-title">Log</h3><form class="task-editor__log" aria-label="Log an entry"><div class="task-editor__log-fields"><div class="task-editor__part">${field('Amount (kcal)')}</div>${field('Label (optional)')}`
+    + `<div class="task-editor__log-add">${button('+ Time spent', 'button--secondary')}${button('+ Check', 'button--secondary')}</div>${button('Log', 'button--primary')}</div></form>`;
+  const entries = '<h3 class="editor-panel__section-title">Entries</h3><div class="task-editor__part"><ul class="task-editor__entries">'
+    + [['17 Nov, 12:30', '640 kcal'], ['17 Nov, 08:00', '1,080 kcal']].map(([time, value]) => `<li><time class="task-editor__entry-time">${time}</time><span class="task-editor__entry-text"><span class="task-editor__entry-value">${value}</span></span>${button('Undo', 'button--secondary', `aria-label="Undo ${value}"`)}</li>`).join('')
+    + '</ul><p class="task-editor__part editor-panel__details">Total: 1,720 kcal</p></div>';
+  return taskEditor(o, 'Status', 'Calories', `<fieldset class="task-editor__fields">${section(top + `<p class="task-editor__part editor-panel__details">Today, Tue 17 Nov</p>${progress}${RULE}${log}${RULE}${entries}`)}</fieldset>`);
+}
+
+function notesTab(o) {
+  const notes = o.state === 'empty' ? [] : [['You', '17 Nov, 09:40', 'Ann prefers the warm white from the sample card.'], ['Sam Roe', '15 Nov, 18:05', 'Two tins are enough for both coats.']];
+  const thread = `<div class="note-thread"><div class="note-thread__add">${field('Add note', '', { control: 'textarea', placeholder: 'Add or search notes' })}<div class="note-thread__actions">${button('Add note', 'button--secondary')}</div></div>`
+    + (notes.length
+      ? `<ol class="note-thread__list" aria-label="Notes, newest first">${notes.map(([author, time, text]) => `<li class="note"><div class="note__header"><p class="note__meta"><span class="note__author">${author}</span> · <time>${time}</time></p>${iconButton('more', `More actions for the note of ${time}`)}</div><p class="note__text">${text}</p></li>`).join('')}</ol>`
+      : '<p class="note-thread__empty">No notes yet.</p>')
+    + '</div>';
+  return taskEditor(o, 'Notes', 'Buy paint for the hallway', `<fieldset class="task-editor__fields">${section(thread, 'notes')}</fieldset>`);
+}
+
+function configurationTab(o) {
+  const lists = `${sectionTitle('Lists')}<ul class="chip-list"></ul><div class="combo-box">${field('Add to list', '', { placeholder: 'Add to list' })}</div>`;
+  const goal = `${sectionTitle('Goal')}${segmented('Goal', ['Check', 'At least', 'At most'], 'At least')}<div class="task-editor__part">${field('Measure', 'Time spent', { control: ['Checks', 'Time spent', 'Amount', 'Reading'] })}</div>`
+    + `<div class="task-editor__part editor-panel__row">${field('Hours', '3', { type: 'number' })}${field('Minutes', '20', { type: 'number' })}</div>${details('Each week succeeds at 3 h 20 min or more.')}`;
+  const recurrence = `${sectionTitle('Recurrence')}${segmented('Recurrence', ['Never', 'Day', 'Week', 'Month', 'Year'], 'Week')}<div class="task-editor__recurrence">`
+    + field('Every', '1', { type: 'number', hint: 'How many days, weeks, months, or years each period spans.' })
+    + field('Ends on', '', { type: 'date', hint: 'No period starts after this date.' })
+    + field('Ends after', '', { type: 'number', hint: 'The number of periods, whatever their outcome.' })
+    + field('Timezone', 'Europe/Brussels', { hint: 'Periods start at midnight in this timezone.' }) + '</div>';
+  const time = `${sectionTitle('Time window')}<p class="task-editor__part">Starts 16 Nov, 00:00</p>${details('Each week ends the window, so Due hides.')}`;
+  const danger = `${sectionTitle('Danger zone')}<div class="editor-panel__danger">${button('Cancel task', 'button--secondary')}${button(`${icon('bin')}Delete task`, 'button--danger')}</div>`;
+  return taskEditor(o, 'Configuration', 'Sport', '<fieldset class="task-editor__fields">'
+    + [section(field('Description', 'Sport', { control: 'textarea' }), 'description'), section(lists), section(goal), section(recurrence), section(time)].join(RULE)
+    + `</fieldset>${RULE}${section(danger, 'danger')}`);
+}
+
+const number = (text) => `<th class="task-history__number" scope="col">${text}</th>`;
+
+function historyTab(o) {
+  const long = o.state === 'long';
+  const days = long ? 20 : 3;
+  const occurrences = Array.from({ length: days }, (_, i) => {
+    const day = 17 - i;
+    const date = day > 0 ? `${day} Nov` : `${31 + day} Oct`;
+    const kcal = ['1,720', '1,480', '1,555', '1,610'][i % 4];
+    const verdict = i === 0 ? 'In progress' : kcal > '1,600' ? 'Failed' : 'Completed';
+    return `<tbody><tr><th class="task-history__number" scope="row">${(long ? 124 : 3) - i}</th><td>${date}</td><td>${verdict}</td><td>${kcal} / max 1,600 kcal</td></tr></tbody>`;
+  }).join('');
+  const events = [['17 Nov, 12:30', 'You logged 640 kcal', 3], ['17 Nov, 08:00', 'You logged 1,080 kcal', 3], ['16 Nov, 20:10', 'You logged 530 kcal', 2], ['16 Nov, 20:09', 'You undid 5,300 kcal', 2], ['15 Nov, 09:00', 'Created', 1]];
+  const more = (kind) => (long ? button(`Load more ${kind}`, 'button--secondary task-history__more') : '');
+  const body = section(`${sectionTitle('Details')}${details('Created 15 Nov, 09:00 · Last updated 17 Nov, 12:30')}`, 'details')
+    + section(`${sectionTitle('History')}<div class="task-history">${button('Refresh history', 'button--secondary')}<div class="task-history__body">`
+      + '<table class="task-history__table task-history__table--occurrences"><caption class="task-history__title">Occurrences</caption>'
+      + `<thead><tr>${number('#')}<th scope="col">Period</th><th scope="col">Status</th><th scope="col">Progress</th></tr></thead>${occurrences}</table>${more('occurrences')}`
+      + '<table class="task-history__table task-history__table--events"><caption class="task-history__title">Events</caption>'
+      + `<thead><tr>${number('When')}<th scope="col">Event</th>${number('#')}</tr></thead><tbody>`
+      + events.map(([time, text, n]) => `<tr class="task-history__event"><td class="task-history__when"><time>${time}</time></td><td>${text}</td><td class="task-history__number">${n}</td></tr>`).join('')
+      + `</tbody></table>${more('events')}</div></div>`, 'history');
+  return taskEditor(o, 'History', 'Calories', body);
+}
+
+function quickLogForm(o) {
+  const confirm = o.state === 'confirm';
+  const input = (label, value) => `<label class="quick-log__field"><span class="quick-log__label">${label}</span><input class="field__control" type="number" value="${value}"></label>`;
+  return '<form class="quick-log" role="group" aria-label="Log for Sport"><p class="quick-log__title">Log for Sport</p>'
+    + `<div class="quick-log__part quick-log__time">${input('Hours', confirm ? '13' : '0')}${input('Minutes', confirm ? '0' : '45')}</div>`
+    + '<p class="quick-log__error field__error" role="status"></p>'
+    + (confirm
+      ? `<div class="quick-log__confirm" role="alert"><p class="quick-log__question">Log 13 h 0 min? That is more than 12 hours.</p>${button('Change')}${button('Log anyway', 'button--primary')}</div>`
+      : `<div class="quick-log__actions">${button('+ More')}${button('Cancel', '', 'data-wf-go="all-tasks"')}${button('Log', 'button--primary', 'data-wf-go="all-tasks/ticked"')}</div>`)
+    + '</form>';
+}
+
+function listEditor(o) {
+  const shared = o.state === 'shared';
+  const person = (email, role) => `<li class="sharing__person"><span class="sharing__email">${email}</span><select class="field__control" aria-label="Role of ${email}"><option>${role}</option></select>${button('Remove', 'button--secondary', `aria-label="Remove ${email}"`)}</li>`;
+  const sharing = shared
+    ? `<div class="sharing"><p class="sharing__owner">Owner: Jane Doe (you)</p><ul class="sharing__people">${person('sam@example.com', 'Task editor')}${person('ann@example.com', 'Viewer')}</ul>`
+      + `<div class="sharing__invite">${field('Email address', '', { type: 'email' })}${field('Role', 'Task editor: Can add, edit, and reorder tasks', { control: ['Viewer: Can view the list and its tasks', 'Task editor: Can add, edit, and reorder tasks', 'Editor: Can also rename and describe the list'] })}${button('Invite')}</div></div>`
+    : '<div class="sharing"><a class="sharing__connect" href="#/connect">Connect to share this list</a></div>';
+  const body = '<div class="list-editor">'
+    + section(`${field('Name', 'Home')}${field('Description', 'Chores and repairs around the house', { control: 'textarea', counter: '35 / 1000' })}`, 'fields')
+    + section(`${sectionTitle('Details')}${details('Created 2 Nov, 19:12')}`, 'details')
+    + section(`${sectionTitle('Sharing')}${sharing}`, 'sharing')
+    + `<div class="editor-panel__danger">${button(`${icon('bin')}Delete list`, 'button--danger')}${details('Deleting a list never deletes its tasks.')}</div></div>`;
+  return homeList({ ...o, state: '' }, { connected: shared, panel: editorPanel('List', body, { close: 'list' }) });
+}
+
+function viewOptions(o) {
+  const grouped = o.state === 'grouped';
+  const row = (label, value) => `<button class="view-options__row" type="button" aria-expanded="false"><span class="view-options__label">${label}</span><span class="view-options__value">${value}</span>${icon('chevron-down')}</button>`;
+  const select = (label, options, value, classes) => `<h3 class="view-options__heading">${label}</h3><select class="field__control ${classes}" aria-label="${label}">${options.map((option) => `<option${option === value ? ' selected' : ''}>${option}</option>`).join('')}</select>`;
+  const body = `<div class="view-options"><div class="view-options__content"><div class="view-options__top">${button('Reset', 'button--secondary view-options__reset')}</div>`
+    + `<h3 class="view-options__heading">Filter</h3><div class="view-options__rows">${row('Lists', 'All')}${row('Status', 'All')}${row('Due', 'Any')}${row('Created', 'Any')}</div>`
+    + select('Group by', ['None', 'List', 'Due date', 'Status'], grouped ? 'List' : 'None', 'view-options__group')
+    + select('Sort by', ['Due time', 'Created', 'Description', 'Manual order'], grouped ? 'Created' : 'Due time', 'view-options__sort')
+    + segmented('Direction', ['Ascending', 'Descending'], grouped ? 'Descending' : 'Ascending', 'view-options__direction')
+    + `</div>${button('Show 9 tasks', 'view-options__done', 'data-wf-go="all-tasks"')}</div>`;
+  const groups = ['Home', 'Travel', 'Work'].map((name) => {
+    const tasks = TASKS.filter((task) => task.lists?.includes(name));
+    return groupHeader(name, tasks.length) + tasks.map((task) => taskRow({ ...task, lists: undefined })).join('');
+  }).join('');
+  const rows = grouped ? `<ul class="task-list" aria-label="All tasks">${groups}</ul>` : taskList('All tasks', TASKS);
+  const info = grouped ? { info: '9 tasks · Grouped by List · Sorted by Created, newest', reset: true } : {};
+  return allTasks(o, { view: taskView(rows), action: addBar(info), panel: editorPanel('View options', body) });
+}
+
+/* ---------- Pages ---------- */
+
+function recycleBin(o) {
+  const page = (view) => shell({ ...o, title: 'Recycle bin', dataView: 'bin', view: `<div class="bin">${view}</div>` });
+  if (o.state === 'empty') {
+    return page(`<div class="empty-state">${icon('bin', 'empty-state__icon')}<p class="empty-state__title">The recycle bin is empty.</p><p class="empty-state__text">Deleted items stay here for 30 days.</p></div>`);
+  }
+  const confirming = o.state === 'confirm';
+  const row = (type, name, age) => `<li class="bin-row"><span class="bin-row__type">${icon(type === 'List' ? 'lists' : 'tasks')}${hidden(type)}</span><div class="bin-row__text"><span class="bin-row__name">${name}</span><span class="bin-row__meta"><span class="bin-row__deleted">${age} ·</span> ${age === 'Deleted today' ? 30 : 27} days left</span></div>`
+    + `<div class="bin-row__actions">${button('Restore', 'button--secondary')}${button(`${icon('close')}<span class="bin-row__purge-label">Delete permanently</span>`, 'button--secondary button--danger bin-row__purge')}</div></li>`;
+  const toolbar = confirming
+    ? `<div class="inline-confirm bin__confirm" role="group" aria-label="Empty recycle bin"><p class="inline-confirm__text">Permanently delete 1 list and 1 task? This cannot be undone.</p><div class="inline-confirm__actions">${button('Keep', 'button--secondary', 'data-wf-go="recycle-bin"')}${button('Delete all', 'button--danger')}</div></div>`
+    : button('Empty recycle bin', 'button--secondary button--danger', 'data-wf-go="recycle-bin/confirm"');
+  return page(`<div class="bin__toolbar">${toolbar}</div><div class="bin__find"><input class="field__control bin__field" type="text" placeholder="Find in the recycle bin" aria-label="Find in the recycle bin">${segmented('Show', ['All', 'Lists', 'Tasks'], 'All', 'bin__type')}<p class="bin__info"><span class="bin__info-text">2 entries</span></p></div>`
+    + `<p class="bin__note">Deleted items stay here for 30 days.</p><ul class="bin__list" aria-label="Deleted lists and tasks">${row('Task', 'Sort old receipts', 'Deleted today')}${row('List', 'Moving house', 'Deleted 3 days ago')}</ul>`);
+}
+
+function settings(o) {
+  const connected = o.state === 'connected';
+  const block = (id, title, body) => `<section class="settings__section" aria-labelledby="settings-${id}"><h2 class="settings__title" id="settings-${id}">${title}</h2>${body}</section>`;
+  const toggle = (text, on) => `<label class="switch"><input class="switch__control" type="checkbox" role="switch"${on ? ' checked' : ''}>${text}</label>`;
+  const hint = (text) => `<p class="settings__hint">${text}</p>`;
+  const connection = connected
+    ? `<div class="settings__live" data-phase="signed-in"><p class="settings__text connect__status">${icon('check')}Signed in as Jane Doe (jane@example.com)</p></div><div class="settings__body">${hint('Server: https://todos.example.com')}<p class="settings__hint settings__sync-state">Sync state: Synced</p><div class="settings__actions"><a class="button button--secondary" href="#/settings/sync-log">Sync log</a>${button('Disconnect', 'button--secondary')}${button('Delete account', 'button--danger')}</div></div>`
+    : `<div class="settings__live" data-phase="intro"><p class="settings__text">Not connected. Your data stays on this device.</p><p class="settings__text">Connecting syncs your data across devices and lets you share lists.</p><p class="settings__text">It needs an account, so you are no longer anonymous. Access is by invitation.</p></div><div class="settings__body">${hint('Server: https://todos.example.com')}<div class="settings__actions">${button('Sign in', '', 'data-wf-go="settings/connected"')}</div>${field('Server URL', 'https://todos.example.com', { type: 'url' })}</div>`;
+  const view = '<div class="settings">'
+    + block('appearance', 'Appearance', segmented('Theme', ['System', 'Light', 'Dark'], 'System'))
+    + block('adding', 'Adding tasks', `${toggle('Make Enter add', true)}${hint('Shift+Enter and Alt+Enter always add. When this is off, Enter only searches.')}`)
+    + block('reminders', 'Reminders', `${toggle('Remind me when tasks come due', connected)}${hint("Notifies while ToDo's is open in a browser tab. A task with a date only reminds at 9:00 on that day.")}${field('Remind me', 'When the task comes due', { control: ['When the task comes due', '5 minutes before', '15 minutes before', '30 minutes before', '60 minutes before'] })}${connected ? hint("While you are connected, reminders also arrive on this device with ToDo's closed, up to 4 hours before they are due.") : ''}`)
+    + block('data', 'Data', `<div class="settings__actions">${button('Export backup', 'button--secondary')}${button('Import backup', 'button--secondary', 'data-wf-go="import"')}${button('Delete all data', 'button--secondary button--danger')}</div>`)
+    + block('connection', 'Connection', connection)
+    + '</div>';
+  return shell({ ...o, title: 'Settings', dataView: 'settings', connected, view });
+}
+
+/** Settings scrolled to its Connection section, as the connect route opens it. */
+const connect = (o) => settings(o);
+
+function help(o) {
+  const topic = (name, on) => `<button class="chip chip--filter" type="button" aria-pressed="${on}">${name}</button>`;
+  const card = (id, title, body) => `<section class="card help-page__section" aria-labelledby="help-${id}"><h2 class="card__title" id="help-${id}">${title}</h2>${body}</section>`;
+  const shot = (name, alt) => `<figure class="help__shot"><img class="help__shot-image help__shot-image--light" src="../tutorial/img/${name}.png" alt="${alt}"><img class="help__shot-image help__shot-image--dark" src="../tutorial/img/${name}-dark.png" alt="${alt}"></figure>`;
+  const status = (name, label, meaning) => `<tr><td><span class="help__icon" role="img" aria-label="${label}">${icon(`status-${name}`)}</span></td><td>${label}</td><td>${meaning}</td></tr>`;
+  const view = '<div class="help-page"><div class="help-page__toolbar">'
+    + `<div class="help-page__search">${field('Search help', '', { type: 'search', placeholder: 'Search guides, FAQ, or release notes' })}</div>`
+    + `<div class="help-page__filters" role="group" aria-label="Help topics">${topic('All topics', true)}${['App info', 'Welcome', 'Tutorial', 'FAQ', 'Release notes'].map((name) => topic(name, false)).join('')}</div></div>`
+    + card('info', 'Application Info &amp; Support', `<p class="card__text">Version 1.0.0 · Built 17 Nov 2026</p><p class="card__text">Local only: your data stays on this device</p><div class="help-page__actions">${button('Requirements and source code', 'button--secondary')}${button('Report a problem', 'button--secondary')}</div>`)
+    + card('welcome', "Welcome to ToDo's", "<p>ToDo's is a personal task manager that works offline, on your phone or computer.</p>"
+      + `${shot('all-tasks', 'All tasks on a phone')}<h3 class="help__part">Statuses</h3><p>The button at the start of a row shows the status of the task.</p>`
+      + '<div class="help__table-wrap"><table class="help__table"><thead><tr><th scope="col">Icon</th><th scope="col">Status</th><th scope="col">What it means</th></tr></thead><tbody>'
+      + status('ready', 'To do', 'Open, and not started yet.') + status('in-progress', 'In progress', 'Started.') + status('completed', 'Completed', 'The goal is met.') + status('failed', 'Failed', 'The time window closed before the goal was met.')
+      + '</tbody></table></div>')
+    + '</div>';
+  return shell({ ...o, title: 'Help', dataView: 'help', view });
+}
+
+function syncLog(o) {
+  const entry = (item, time, kind, text) => `<li class="entry-list__item"><p class="entry-list__message">${item}</p><div class="entry-list__meta"><span class="chip">${look('icon-clock')}<time>${time}</time></span><span class="chip chip--status chip--warning">${look('icon-sync-error')}${kind}</span><span class="entry-list__action"><a href="#/lists/home">Open</a></span></div><p class="entry-list__details">${text}</p></li>`;
+  const entries = o.state === 'empty' ? [] : [entry('Home · Name', 'Today 09:00', 'Overwritten value', 'Lost: House · Kept: Home'), entry('Buy paint for the hallway', 'Yesterday 18:20', 'Rejected change', 'Undone: Due')];
+  const view = '<div class="sync-log"><p class="sync-log__intro">Values that sync overwrote or undid in the last 30 days.</p>'
+    + (entries.length ? `<ul class="entry-list sync-log__list" aria-label="Sync log entries">${entries.join('')}</ul>` : '<p class="sync-log__empty">Nothing to show. Sync overwrote or undid nothing in the last 30 days.</p>')
+    + '<p class="sync-log__note">Entries stay for 30 days.</p></div>';
+  return shell({ ...o, title: 'Sync log', dataView: 'sync-log', connected: true, view });
+}
+
+function importDialog(o) {
+  const invalid = o.state === 'invalid';
+  const id = nextId();
+  const mode = (name, on, text) => `<div class="import-dialog__mode"><label class="choice"><input type="radio" name="${id}"${on ? ' checked' : ''}>${name}</label><p class="field__hint import-dialog__mode-hint">${text}</p></div>`;
+  const preview = '<div class="import-dialog__preview"><div class="import-dialog__summary"><p class="import-dialog__file-name">todos-backup-2026-11-14.json</p><p class="import-dialog__file-meta">Exported 14 Nov, 21:03 · 3 lists, 24 tasks, 6 notes</p></div>'
+    + `<fieldset class="choice-group import-dialog__modes"><legend class="visually-hidden">Import mode</legend>${mode('Merge', true, 'Add and update items; keep the rest.')}${mode('Overwrite', false, 'Replace your data; missing items go to the recycle bin.')}</fieldset>`
+    + '<p class="import-dialog__counts" role="status">5 added · 2 updated · 0 to recycle bin</p></div>';
+  const dialog = `<dialog class="dialog import-dialog" aria-labelledby="${id}-title" data-wf-open><div class="dialog__header import-dialog__header"><h2 class="dialog__title" id="${id}-title">Import backup</h2>${iconButton('close', 'Close', 'data-wf-go="settings"')}</div>`
+    + `<div class="dialog__body import-dialog__body">${field('Backup file', '', { type: 'file', hint: "Choose a todos-backup file exported from ToDo's.", error: invalid ? 'Invalid backup: format must be todos-backup.' : '' })}${invalid ? '' : preview}</div>`
+    + `<div class="dialog__actions">${button('Cancel', 'button--secondary', 'data-wf-go="settings"')}${button('Import', '', invalid ? 'disabled' : 'data-wf-go="all-tasks"')}</div></dialog>`;
+  return settings({ ...o, state: '' }).replace(/$/, dialog);
+}
+
+/* ---------- The screens, in the order of the list above ---------- */
+
+const state = (id, label) => ({ id, label });
+
+const SCREENS = [
+  {
+    id: 'first-launch', caption: 'Local mode with no data: no sign-in, straight to a usable empty state.', states: [state('empty', 'No tasks yet')],
+    render: (o) => shell({
+      ...o, title: 'All tasks', current: 'All tasks', lists: [], actions: ALL_ACTIONS(false), action: addBar({ info: '' }),
+      view: `<div class="task-view"><div class="empty-state">${icon('tasks', 'empty-state__icon')}<p class="empty-state__title">No tasks yet.</p><p class="empty-state__text">Your tasks stay on this device.</p><div class="empty-state__actions"><a class="button button--quiet" href="#/settings">Import a backup</a><a class="button button--quiet" href="#/connect">Connect to sync across devices</a></div></div></div>`,
+    }),
+  },
+  {
+    id: 'all-tasks', caption: 'Rows show status, count badge or goal meter, and meta line; a tap ticks or logs, and a row opens the editor.',
+    states: [state('rows', 'Tasks'), state('search', 'Searching'), state('ticked', 'After a tick')],
+    render: (o) => {
+      if (o.state === 'search') {
+        const found = TASKS.filter((task) => task.text.toLowerCase().includes('paint'));
+        return allTasks(o, { view: taskView(taskList('All tasks', found)), action: addBar({ value: 'paint', info: '2 of 9 tasks' }) });
+      }
+      const toast = o.state === 'ticked' ? `<div class="toast"><p class="toast__text">Task marked completed.</p>${button('Undo', 'button--quiet', 'data-wf-go="all-tasks"')}</div>` : '';
+      return allTasks(o, { toast });
+    },
+  },
+  {
+    id: 'user-menu', caption: 'The user button ends the top bar; its panel holds the name, the state, Recycle bin, Settings, and Help. The sync button explains the state.',
+    states: [state('local', 'Local user'), state('connected', 'Connected'), state('sync', 'Sync state')],
+    render: (o) => allTasks(o, { connected: o.state !== 'local', userOpen: o.state !== 'sync', syncOpen: o.state === 'sync' }),
+  },
+  {
+    id: 'list', caption: 'One list in manual order, all statuses shown; the actions button holds the list and view actions that the role allows.',
+    states: [state('own', 'Own list'), state('menu', 'Actions menu'), state('shared', 'Shared with me')], render: (o) => homeList(o),
+  },
+  {
+    id: 'view-options', caption: 'Opens where the editors open; changes apply at once, and the info line reports them.',
+    states: [state('default', 'Defaults'), state('grouped', 'Grouped by list')], render: viewOptions,
+  },
+  {
+    id: 'lists', caption: 'Every list with its counts and sharing state; New list floats at the bottom right.',
+    states: [state('rows', 'Lists'), state('menu', 'Row menu')],
+    render: (o) => listsScreen(o, { connected: true, view: listRows(OVERVIEW, { menuFor: o.state === 'menu' ? 'Home' : '' }) }),
+  },
+  {
+    id: 'lists-many', caption: 'From 12 lists the sidebar gains a find field and scrolls only its lists; the Lists screen finds and sorts them.',
+    states: [state('many', '14 lists')],
+    render: (o) => listsScreen(o, { connected: true, lists: MANY, view: listRows(overviewOf(MANY)), action: findBar({ info: '14 lists' }) }),
+  },
+  {
+    id: 'lists-find', caption: 'Finding keeps the sidebar in manual order; no match offers to create the list.',
+    states: [state('matches', 'Matches'), state('none', 'No match')],
+    render: (o) => {
+      if (o.state === 'none') {
+        return listsScreen(o, {
+          connected: true, lists: MANY,
+          view: `<div class="lists-view"><div class="empty-state"><p class="empty-state__text">No list matches "Garden shed".</p>${button('Create list "Garden shed"', 'lists-view__create')}</div></div>`,
+          action: findBar({ value: 'Garden shed', sort: 'Name', info: '0 of 14 lists', reset: true }),
+        });
+      }
+      const found = MANY.filter(([name]) => name.toLowerCase().includes('ga'));
+      return listsScreen(o, { connected: true, lists: MANY, find: 'ga', view: listRows(overviewOf(found), { movable: false }), action: findBar({ value: 'ga', sort: 'Name', info: `${found.length} of 14 lists`, reset: true }) });
+    },
+  },
+  {
+    id: 'task-editor', caption: 'The editor opens on Status, under the description of the task: the status as text, the progress, the Log form, and the entries with Undo.',
+    states: [state('over', 'Over a limit'), state('upcoming', 'Upcoming')], render: statusTab,
+  },
+  { id: 'task-editor-notes', caption: 'The note thread, newest first, with the add and search field.', states: [state('thread', 'Notes'), state('empty', 'No notes')], render: notesTab },
+  { id: 'task-editor-configuration', caption: 'Description, Lists, Goal, Recurrence, Time window, and the Danger zone; every field saves on change.', states: [state('repeating', 'Repeating time goal')], render: configurationTab },
+  { id: 'task-editor-history', caption: 'Details, then the occurrences and the events in two tables, newest first; each shows 20 and loads more.', states: [state('short', 'Short history'), state('long', 'Long history')], render: historyTab },
+  {
+    id: 'quick-log', caption: 'The status button of a time, amount, or reading goal opens the quick log under its row.', states: [state('form', 'Form'), state('confirm', 'Unusual value')],
+    render: (o) => allTasks(o, { view: taskView(taskList('All tasks', TASKS, { quickLog: quickLogForm(o) })) }),
+  },
+  { id: 'list-editor', caption: 'The list fields, its details, sharing, and deletion; every field saves on change.', states: [state('local', 'Local'), state('shared', 'Shared')], render: listEditor },
+  { id: 'recycle-bin', caption: 'Deleted lists and tasks stay 30 days, with Restore and permanent deletion.', states: [state('entries', 'Entries'), state('confirm', 'Emptying'), state('empty', 'Empty')], render: recycleBin },
+  { id: 'settings', caption: 'Appearance, adding tasks, reminders, data, and the connection.', states: [state('local', 'Local'), state('connected', 'Connected')], render: settings },
+  { id: 'help', caption: 'A search field and topic chips above the help cards, with icons, screenshots, and tables.', states: [state('welcome', 'All topics')], render: help },
+  { id: 'sync-log', caption: 'Values that sync overwrote or undid, each with the lost and the kept value.', states: [state('entries', 'Entries'), state('empty', 'Empty')], render: syncLog },
+  { id: 'connect', caption: 'The connect route opens Settings and scrolls to its Connection section.', states: [state('local', 'Not connected'), state('connected', 'Signed in')], render: connect, scrollTo: 'settings-connection' },
+  { id: 'import', caption: 'Choosing a backup previews what each mode changes; an invalid file says why.', states: [state('preview', 'Preview'), state('invalid', 'Invalid file')], render: importDialog },
+  {
+    id: 'nav-rail', caption: 'On a desktop the nav toggle collapses the sidebar to a rail of glyphs, and the next press hides it. A phone keeps its bottom navigation.',
+    states: [state('rail', 'Rail'), state('hidden', 'Hidden')], render: (o) => allTasks(o, { nav: o.state }),
+  },
+];
+for (const screen of SCREENS) {
+  screen.title = document.querySelector(`#${screen.id} a`).textContent;
+}
+window.wireframes = { screens: SCREENS };
+
+/* ---------- The viewer: routes, controls, and the two previews ---------- */
+
+const frames = [...document.querySelectorAll('iframe')];
+let theme = 'system';
+let drawing = 0;
+
+/** Show a preview at its device size, scaled down to the room it has. */
+function fit(frame) {
+  const box = frame.parentElement;
+  const width = Number(frame.dataset.width);
+  const height = Number(frame.dataset.height);
+  const room = frame.closest('figure').clientWidth;
+  const scale = Math.min(1, room > 2 ? (room - 2) / width : 1);
+  frame.width = width;
+  frame.height = height;
+  frame.style.transform = `scale(${scale})`;
+  box.style.width = `${width * scale + 2}px`;
+  box.style.height = `${height * scale + 2}px`;
+}
+
+/** The screen that an address of the app leads to. */
+function screenOf(route) {
+  const rules = [
+    [/^#\/tasks\/view-options/, 'view-options'], [/^#\/tasks\/sport/, 'task-editor-configuration'], [/^#\/tasks\/./, 'task-editor'], [/^#\/tasks/, 'all-tasks'],
+    [/^#\/lists\/new/, 'list-editor'], [/^#\/lists\/./, 'list'], [/^#\/lists/, 'lists'], [/^#\/bin/, 'recycle-bin'],
+    [/^#\/settings\/sync-log/, 'sync-log'], [/^#\/settings/, 'settings'], [/^#\/connect/, 'connect'], [/^#\/help/, 'help'],
+  ];
+  return rules.find(([pattern]) => pattern.test(route))?.[1];
+}
+
+/** Make the links and buttons of a preview switch screens. */
+function listen(doc) {
+  doc.addEventListener('submit', (event) => event.preventDefault());
+  doc.addEventListener('click', (event) => {
+    const go = event.target.closest('[data-wf-go]');
+    const link = event.target.closest('a[href]');
+    if (!go && !link) {
+      return;
+    }
+    event.preventDefault();
+    const target = go?.dataset.wfGo ?? screenOf(link.getAttribute('href'));
+    if (target) {
+      location.hash = `#${target}`;
+    }
+  });
+}
+
+/** Each preview is one document that loads the app's stylesheet once; drawing a screen replaces its body. */
+const loaded = Promise.all(frames.map((frame) => new Promise((resolve) => {
+  frame.onload = () => {
+    listen(frame.contentDocument);
+    resolve();
+  };
+  frame.srcdoc = '<!doctype html><html lang="en" data-shell="ready"><head><meta charset="utf-8"><title>Preview</title><link rel="stylesheet" href="../../src/css/style.css"></head><body></body></html>';
+})));
+
+/** Give a preview the chosen theme, or let it follow the system. */
+function paint(doc) {
+  if (theme === 'system') {
+    doc.documentElement.removeAttribute('data-theme');
+  }
+  else {
+    doc.documentElement.dataset.theme = theme;
+  }
+}
+
+/** Put a screen into a preview, open its menus and dialogs, and wait for its fonts and images. */
+async function draw(frame, screen, stateId) {
+  const doc = frame.contentDocument;
+  ids = 0;
+  paint(doc);
+  doc.body.innerHTML = document.getElementById('wf-sprite').innerHTML
+    + screen.render({ wide: Number(frame.dataset.width) >= 1024, state: stateId });
+  for (const node of doc.querySelectorAll('[data-wf-open]')) {
+    if (node.tagName === 'DIALOG') {
+      node.showModal();
+      continue;
+    }
+    const anchor = doc.querySelector(`[aria-controls="${node.id}"]`);
+    node.showPopover();
+    anchor.setAttribute('aria-expanded', 'true');
+    const place = anchor.getBoundingClientRect();
+    const left = Math.max(8, Math.min(place.right - node.offsetWidth, doc.documentElement.clientWidth - node.offsetWidth - 8));
+    Object.assign(node.style, { position: 'fixed', margin: '0', inset: `${place.bottom + 4}px auto auto ${left}px` });
+  }
+  doc.activeElement?.blur();
+  await doc.fonts.ready;
+  await Promise.all([...doc.images].map((image) => image.decode()));
+  if (screen.scrollTo) {
+    const main = doc.querySelector('.app__main');
+    const section = doc.getElementById(screen.scrollTo).closest('section');
+    main.scrollTop += section.getBoundingClientRect().top - main.getBoundingClientRect().top;
+  }
+}
+
+/** A screen's anchor sits in the list of screens: show the top of the page instead, or the screen on a narrow window. */
+function settle() {
+  if (location.hash && matchMedia('(max-width: 800px)').matches) {
+    document.querySelector('.wf-main').scrollIntoView();
+  }
+  else {
+    scrollTo(0, 0);
+  }
+}
+
+/** Draw the screen state that the address names into both previews. */
+async function render() {
+  const [screenId, stateId] = location.hash.slice(1).split('/');
+  const screen = SCREENS.find((entry) => entry.id === screenId) ?? SCREENS[0];
+  const shown = screen.states.find((entry) => entry.id === stateId) ?? screen.states[0];
+  const turn = ++drawing;
+  document.documentElement.removeAttribute('data-wf-ready');
+  document.getElementById('wf-title').textContent = screen.title;
+  document.getElementById('wf-caption').textContent = screen.caption;
+  document.getElementById('wf-states').replaceChildren(...screen.states.map((entry) => {
+    const choice = document.createElement('button');
+    choice.type = 'button';
+    choice.textContent = entry.label;
+    choice.setAttribute('aria-pressed', String(entry === shown));
+    choice.addEventListener('click', () => { location.hash = `#${screen.id}/${entry.id}`; });
+    return choice;
+  }));
+  for (const link of document.querySelectorAll('.wf-nav a')) {
+    link.toggleAttribute('aria-current', false);
+    if (link.getAttribute('href') === `#${screen.id}`) {
+      link.setAttribute('aria-current', 'page');
+    }
+  }
+  await loaded;
+  if (turn !== drawing) {
+    return;
+  }
+  frames.forEach(fit);
+  await Promise.all(frames.map((frame) => draw(frame, screen, shown.id)));
+  if (turn === drawing) {
+    settle();
+    document.documentElement.dataset.wfReady = `${screen.id}/${shown.id}/${theme}`;
+  }
+}
+
+function press(selector, chosen) {
+  for (const choice of document.querySelectorAll(selector)) {
+    choice.setAttribute('aria-pressed', String(choice === chosen));
+  }
+}
+
+for (const choice of document.querySelectorAll('[data-wf-theme]')) {
+  choice.addEventListener('click', () => {
+    theme = choice.dataset.wfTheme;
+    press('[data-wf-theme]', choice);
+    if (theme === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    else {
+      document.documentElement.dataset.theme = theme;
+    }
+    render();
+  });
+}
+for (const choice of document.querySelectorAll('[data-wf-size]')) {
+  choice.addEventListener('click', () => {
+    document.getElementById('wf-frames').dataset.size = choice.dataset.wfSize;
+    press('[data-wf-size]', choice);
+    frames.forEach(fit);
+  });
+}
+const resizes = new ResizeObserver(() => frames.forEach(fit));
+frames.forEach((frame) => resizes.observe(frame.closest('figure')));
+addEventListener('hashchange', render);
+addEventListener('load', settle);
+render();
+</script>
+</body>
+</html>

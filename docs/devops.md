@@ -325,16 +325,22 @@ The Pages workflow needs no custom domain, `CNAME` file, or DNS record.
 ---
 
 ## Wireframes
-[draw-wireframes.py](../scripts/draw-wireframes.py) draws the UI wireframes of [ui-design.md](specs/ui-design.md).
-Regenerate them after changing a screen, then check the script and its output:
+[ui-wireframes.html](design/ui-wireframes.html) previews the screens that [ui-design.md](specs/ui-design.md) describes.
+Open the file in a browser; it needs no server or network.
 
-```bash
-python scripts/draw-wireframes.py docs/img/ui
-python scripts/devops.py test tests/test_draw_wireframes.py
-python scripts/devops.py lint
-```
+- Change the page in the same commit as the screen it shows.
+- Use the class names of the app, and no styles of its own in the previews.
+- Copy the icons again after changing a sprite:
+  ```bash
+  node scripts/sync-wireframe-icons.mjs
+  ```
+- Check the page and every screen state:
+  ```bash
+  npx vitest run tests/unit/wireframes.test.js
+  npx playwright test tests/e2e/wireframes.spec.js
+  ```
 
-The tests fail when a shape leaves its frame, so overflow at 390 px shows up before review.
+The tests fail on errors, network requests, sideways scrolling, missing icons, and classes the app does not know.
 
 ---
 

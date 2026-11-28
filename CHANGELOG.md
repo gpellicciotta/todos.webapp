@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.7.2-pre
+- Docs: Replaced the gray wireframe images with one clickable HTML preview of every screen, using the app's stylesheet.
+- DevOps: Replaced `scripts/draw-wireframes.py` with `scripts/sync-wireframe-icons.mjs`, and added tests of the wireframe page.
 - FrontEnd: Added links to app screens, status icons, and screenshots to the Welcome page, tutorial, and FAQ.
 - FrontEnd: Listed the keyboard shortcuts in a table, and corrected how the help describes overdue tasks and new lists.
 - FrontEnd: Opened Settings at a named section from links such as `#/settings?section=data`.

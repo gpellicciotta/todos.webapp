@@ -86,7 +86,7 @@ The [visual-style-guide.md](visual-style-guide.md) defines the look; this docume
 - Each route restores its scroll position, filters, and sort (`TV-12`).
 
 ### Sidebar With Many Lists
-Wireframes: [lists-many.svg](../img/ui/lists-many.svg) and [lists-find.svg](../img/ui/lists-find.svg).
+Wireframes: [Lists with many lists](../design/ui-wireframes.html#lists-many) and [Finding a list](../design/ui-wireframes.html#lists-find).
 
 The wide sidebar must stay usable from 12 lists up to 500.
 The [Lists Overview](#lists-overview) section decides finding, ordering, and rendering for both surfaces.
@@ -126,7 +126,7 @@ The [Lists Overview](#lists-overview) section decides finding, ordering, and ren
 - The scroll region is `.sidebar__scroll` inside `.app__sidebar`; the sidebar itself never scrolls.
 
 ### Nav Toggle and Icon Rail
-Wireframe: [nav-rail.svg](../img/ui/nav-rail.svg), with the hidden state in its caption.
+Wireframe: [Nav rail](../design/ui-wireframes.html#nav-rail), with the rail and the hidden state.
 The top bar opens with the `app__nav-toggle` of support.webapp, drawing the `icon-nav-collapse`, `icon-nav-hide`, `icon-nav-menu`, or `icon-nav-close` glyph of its next step.
 The vendored [app-nav.js](../../src/vendor/design/js/app-nav.js) drives it; the sidebar is its `id="app-nav"` popover.
 - **[Decided]** From 64rem each press cycles the sidebar through open, an icon rail, and hidden.
@@ -217,7 +217,7 @@ Settings and the Sync log stay in a centered `--width-main` column.
   A theme chosen in Settings updates `data-theme`, the `color-scheme` meta, and the `theme-color` metas at once.
 
 ### User Menu
-Wireframe: [user-menu.svg](../img/ui/user-menu.svg).
+Wireframe: [User menu](../design/ui-wireframes.html#user-menu).
 
 - **[Decided]** The user menu is the vendored account menu of support.webapp, a menu button with a `.menu` panel.
 - A circular account button ends the top bar in both layouts; it is at least 44 px wide.
@@ -285,7 +285,7 @@ An unknown route or identifier opens All tasks with a toast naming the missing i
 ## Shared Components
 
 ### Task Row
-Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg), [list.svg](../img/ui/list.svg), and [quick-log.svg](../img/ui/quick-log.svg).
+Wireframes: [All tasks](../design/ui-wireframes.html#all-tasks), [List](../design/ui-wireframes.html#list), and [Quick log](../design/ui-wireframes.html#quick-log).
 
 ```text
 | [status 2/3] Description text, wrapping to at most 2 lines                              |
@@ -393,7 +393,7 @@ Wireframes: [all-tasks.svg](../img/ui/all-tasks.svg), [list.svg](../img/ui/list.
 - **[Decided]** Every drag keeps a keyboard alternative but needs no visible button.
 
 ### Quick Log
-Wireframe: [quick-log.svg](../img/ui/quick-log.svg).
+Wireframe: [Quick log](../design/ui-wireframes.html#quick-log).
 
 - The status button of a time, amount, or reading goal opens the quick log under its row (`TSK-21`).
 - It is a non-modal pop-up, the row's width on compact layouts, titled after the task, such as "Log for Sport".
@@ -428,7 +428,7 @@ Wireframe: [quick-log.svg](../img/ui/quick-log.svg).
 - A failed add keeps the text and shows a toast.
 
 ### Search and Add
-Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
+Wireframe: [All tasks](../design/ui-wireframes.html#all-tasks).
 
 ```text
 [ paint.................................................. ] [Add]
@@ -491,7 +491,7 @@ Home                                                              3
   - Search keeps the raw typed text. In a list view, the task keeps that list, and tags add more lists.
 
 ### View Options
-Wireframe: [view-options.svg](../img/ui/view-options.svg).
+Wireframe: [View options](../design/ui-wireframes.html#view-options).
 
 - **[Decided]** The view menu opens the view options (`VO-4`); it sits in the top bar as the view actions button.
   A list view's menu holds Edit list, Edit view options, Share list, and Delete list.
@@ -632,7 +632,7 @@ Wireframe: [view-options.svg](../img/ui/view-options.svg).
 ## Screens
 
 ### All Tasks
-Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
+Wireframe: [All tasks](../design/ui-wireframes.html#all-tasks).
 
 - Shows every non-deleted task, in any list or none (`TV-1`).
 - Filters sit in the view options: Lists, Status, Due, Created, and Shared when connected (`TV-2` to `TV-7`).
@@ -682,7 +682,7 @@ Wireframe: [all-tasks.svg](../img/ui/all-tasks.svg).
     This predates the windowing: main behaves the same.
 
 ### List
-Wireframe: [list.svg](../img/ui/list.svg).
+Wireframe: [List](../design/ui-wireframes.html#list).
 
 - The header shows the list name, its description, the owner and role when shared, and the actions.
   A list shared with the user shows "Shared by {{owner}} · {{role}}" under the description (`SHR-3`).
@@ -712,7 +712,7 @@ Wireframe: [list.svg](../img/ui/list.svg).
 - [list.js](../../src/js/views/list.js) builds the screen; [reorder.js](../../src/js/views/reorder.js) turns moves into neighbors.
 
 ### Lists Overview
-Wireframes: [lists.svg](../img/ui/lists.svg) with a few lists, [lists-many.svg](../img/ui/lists-many.svg) and [lists-find.svg](../img/ui/lists-find.svg) with 124.
+Wireframes: [Lists](../design/ui-wireframes.html#lists) with a few lists, [Lists with many lists](../design/ui-wireframes.html#lists-many) and [Finding a list](../design/ui-wireframes.html#lists-find) with 14.
 
 - Each list row shows its name, description start, "4 open · 10 total", and sharing state (`LST-5`).
 - Shared lists show the owner's name when owned by someone else.
@@ -832,7 +832,7 @@ The sidebar and this screen share the rules below.
   Quick for experts, but invisible on touch and a new component; the sidebar field with `l` is as fast.
 
 ### Task Editor
-Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-notes.svg), [Configuration](../img/ui/task-editor-configuration.svg), and [History](../img/ui/task-editor-history.svg).
+Wireframes: [Status](../design/ui-wireframes.html#task-editor), [Notes](../design/ui-wireframes.html#task-editor-notes), [Configuration](../design/ui-wireframes.html#task-editor-configuration), and [History](../design/ui-wireframes.html#task-editor-history).
 
 - Wide layouts open it as a right panel next to the rows; compact layouts open it as a full screen.
 - Fields save on change, with no Save button; invalid values show a field error and are not saved.
@@ -974,7 +974,7 @@ Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-n
 - Deleting from the editor closes it and shows the Undo toast; focus returns to the rows or the add bar.
 
 ### List Editor
-Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
+Wireframe: [List editor](../design/ui-wireframes.html#list-editor).
 
 - **[Decided]** The list editor opens where the task editor opens, and behaves the same way.
 - Wide layouts open it as the right panel; compact layouts open it as a full screen.
@@ -1013,7 +1013,7 @@ Wireframe: [list-editor.svg](../img/ui/list-editor.svg).
 - [sharing.js](../../src/js/views/sharing.js) builds the section; [permissions.js](../../src/js/core/permissions.js) holds the role rules (`SHR-5`).
 
 ### Recycle Bin
-Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
+Wireframe: [Recycle bin](../design/ui-wireframes.html#recycle-bin).
 
 - Rows show a type icon, the name or description, and "Deleted 5 days ago · 25 days left" (`BIN-1`).
 - Each row has Restore and Delete permanently (`BIN-2`, `BIN-4`).
@@ -1040,7 +1040,7 @@ Wireframe: [recycle-bin.svg](../img/ui/recycle-bin.svg).
 - Compact rows show only the days left and an icon-only Delete permanently; the question takes its own line.
 
 ### Settings
-Wireframe: [settings.svg](../img/ui/settings.svg).
+Wireframe: [Settings](../design/ui-wireframes.html#settings).
 
 Settings is one page with these sections:
 - Appearance: theme as System, Light, or Dark.
@@ -1088,7 +1088,7 @@ Settings is one page with these sections:
 - It takes https, or http on `localhost`, `127.0.0.1`, or `[::1]`; the query and fragment are dropped.
 
 ### Help
-Wireframe: [help.svg](../img/ui/help.svg). Open it from the user menu, route `#/help` (`HLP-1`).
+Wireframe: [Help](../design/ui-wireframes.html#help). Open it from the user menu, route `#/help` (`HLP-1`).
 
 Help is the vendored help page in the centered `--width-main` column, with no view actions and no editor.
 - A search field, then topic chips: All topics, App info, Welcome, Tutorial, FAQ, and Release notes.
@@ -1116,7 +1116,7 @@ Help is the vendored help page in the centered `--width-main` column, with no vi
   A task that adds a shortcut updates the FAQ answer in [faq.md](../tutorial/faq.md).
 
 ### Sync Log
-Wireframe: [sync-log.svg](../img/ui/sync-log.svg).
+Wireframe: [Sync log](../design/ui-wireframes.html#sync-log).
 
 - Lists sync events of the last 30 days, newest first (`SYN-8`).
 - Entry kinds: overwritten value, rejected change, lost access, and sync error.
@@ -1135,7 +1135,7 @@ Wireframe: [sync-log.svg](../img/ui/sync-log.svg).
 ## Key Flows
 
 ### First Launch
-Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
+Wireframe: [First launch](../design/ui-wireframes.html#first-launch).
 
 1. The app opens All tasks in local mode, with no sign-in prompt (`LOC-1`).
 2. The empty state reads "No tasks yet. Your tasks stay on this device."
@@ -1153,7 +1153,7 @@ Wireframe: [first-launch.svg](../img/ui/first-launch.svg).
 5. Every step works offline; the user menu stays at Local only.
 
 ### Logging Progress
-Wireframe: [quick-log.svg](../img/ui/quick-log.svg).
+Wireframe: [Quick log](../design/ui-wireframes.html#quick-log).
 
 1. The user taps the status button of Sport, a weekly time goal; the quick log opens under the row.
 2. They enter 45 min and select Log; a toast offers Undo (`TSK-21`).
@@ -1163,7 +1163,7 @@ Wireframe: [quick-log.svg](../img/ui/quick-log.svg).
 6. At the period end, the period closes as Completed or Failed, and History shows the verdict.
 
 ### Connecting
-Wireframe: [connect.svg](../img/ui/connect.svg).
+Wireframe: [Connect](../design/ui-wireframes.html#connect).
 
 1. The user opens Settings, or selects the Local only indicator, which opens Settings at the Connection section.
 2. The Connection section explains the gains, the loss of anonymity, and the invitation-only access (`CON-2`).
@@ -1218,7 +1218,7 @@ Wireframe: [connect.svg](../img/ui/connect.svg).
 3. A toast names the file and its counts of lists and tasks: "Saved todos-backup-2026-11-04.json with 1 list and 2 tasks."
 
 ### Importing a Backup
-Wireframe: [import.svg](../img/ui/import.svg).
+Wireframe: [Import](../design/ui-wireframes.html#import).
 
 1. The user selects Import backup and picks a file in the Backup file field, which has focus.
    On phones this is the main view with an Import backup header and close button; wide screens show a dialog.
@@ -1261,6 +1261,8 @@ Wireframe: [import.svg](../img/ui/import.svg).
 ---
 
 ## Wireframes
-The [ui wireframes](../img/ui/) show each screen at 390 px and 1440 px side by side.
-They are low fidelity: gray boxes and placeholder text, without the design system's colors or fonts.
-[draw-wireframes.py](../../scripts/draw-wireframes.py) draws them; regenerate them after changing a screen, as [devops.md](../devops.md) describes.
+The [UI wireframes](../design/ui-wireframes.html) are one HTML page that previews each screen and its main states.
+It shows a phone and a desktop side by side, in light or dark, and its links and tabs switch screens.
+The previews use the app's stylesheet and class names, with example data.
+Open the file from a checkout in a browser; it needs no server or network.
+Change it with the screen it shows, as [devops.md](../devops.md#wireframes) describes.
