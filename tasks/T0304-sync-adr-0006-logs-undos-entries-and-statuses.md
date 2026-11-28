@@ -13,12 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 988.5, input: 196, output: 56823, cache_read: 12422870, cache_write: 175681}
-  review: {turns: 1, duration_s: 61.3, input: 51947, output: 1889, cache_read: 500864, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 133.4, input: 82263, output: 3924, cache_read: 857856, cache_write: 0}
+review_status: rejected
 review_round: 2
 review_requested_at: "2026-11-28T04:52:53Z"
-review_session: codex-20261128-b4c935
-work_duration: 813.9
+review_session: codex-20261128-c597d2
+work_duration: 1159.8
+reviewed_by: "@codex"
 ---
 # T0304: Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable
 
@@ -78,4 +79,17 @@ Run the contract tests against a todos.server checkout with its task T0301.
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 rejected by @codex: [Decided]** Reject: the reworked fold can count the same log twice.
+  - Findings: [review-findings-2.md](T0304-sync-adr-0006-logs-undos-entries-and-statuses/review-findings-2.md).
+
+- [2026-11-28] **[Implement]**
+  Review rework: pulled entries and queued logs are deduplicated by event id before folding, so an overlap counts once.
+
+- [2026-11-28] **[Verify]**
+  Reran unit and contract suites after rework.
+  - Files touched: 11.
+  - Lines touched: 430.
+  - Reopenings: 0.
 

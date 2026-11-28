@@ -105,3 +105,31 @@ Command: npm run lint, exit code 0
 ```text
 > eslint .
 ```
+### Review round 2 rework: a log in both the feed and the queue counts once
+Command: npx vitest run tests/unit/merge.test.js (before the deduplication), exit code 1
+```text
+ ❯ tests/unit/merge.test.js (39 tests | 1 failed) 43ms
+       × counts a log once when the feed lists it and the queue still holds it 13ms
+AssertionError: expected { occurrence: 1, …(12) } to match object { progress: 2, …(1) }
+```
+Command: npx vitest run, exit code 0
+```text
+ Test Files  72 passed (72)
+      Tests  2025 passed (2025)
+   Start at  05:55:10
+   Duration  22.52s (tests 50%, environment 38%, import 9%, transform 2%, worker 1%, setup 1%)
+    Isolate  72 workers spawned · ~1.02s startup each (spawn + environment, per file)
+             at least ~9.49s faster with isolate: false — reuses workers across files instead of one per file
+```
+Command: npx vitest run --config vitest.contract.config.js (TODOS_SERVER_DIR=C:/Dev-Projects/todos.server), exit code 0
+```text
+ RUN  v5.1.0 C:/Dev-Projects/todos.webapp/.plan/work/T0304-sync-adr-0006-logs-undos-entries-and-statuses
+ Test Files  1 passed (1)
+      Tests  26 passed (26)
+   Start at  05:55:35
+   Duration  7.67s (tests 96%, import 2%, transform 2%)
+```
+Command: npm run lint, exit code 0
+```text
+> eslint .
+```
