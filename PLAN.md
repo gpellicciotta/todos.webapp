@@ -5,4 +5,4 @@ An overview of all tasks and their planning, possibly split by milestone.
 *(Currently no tasks)*
 
 ## Backlog
-- [~] T0317 [owner: @claude] Inspect a pushed reminder on an installed Android PWA after the release.
+- [x] T0317 Inspect a pushed reminder on an installed Android PWA after the release.

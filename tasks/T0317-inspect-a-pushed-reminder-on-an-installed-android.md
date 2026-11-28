@@ -4,16 +4,18 @@ owner: "@claude"
 needs: []
 branch: —
 worktree: —
-status: active
+status: completed
 started_at: "2026-11-28T16:39:42Z"
-ended_at: —
+ended_at: "2026-11-28T16:40:32Z"
 review: agent
 preview: none
 protocol: standard
-review_status: pending
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-28T16:39:54Z"
-review_session: codex-20261128-e3139c
+review_session: codex-20261128-37889a
+reviewed_by: "@codex"
+completion-commit: 490e2fe94b9abe8567aeac35da48ac7e4c4097d6
 ---
 # T0317: Inspect a pushed reminder on an installed Android PWA after the release
 
@@ -24,7 +26,7 @@ Moved here from T0227.
 
 ## Task Execution Steps
 - [x] **[Verify]**    Install the PWA from production, enable reminders, add a due task, and record the pushed notification.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -57,4 +59,11 @@ Moved here from T0227.
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 approved by @codex: The recorded user confirmation resolves the previous finding: every browser tab showing ToDo's was closed when the notification arrived.
+  - Findings: [review-findings-2.md](T0317-inspect-a-pushed-reminder-on-an-installed-android/review-findings-2.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
