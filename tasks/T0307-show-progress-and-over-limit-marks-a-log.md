@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1827.8, input: 12, output: 1381, cache_read: 1230251, cache_write: 7141}
+  worker: {turns: 3, duration_s: 2165.5, input: 26, output: 3742, cache_read: 3127854, cache_write: 15862}
 work_duration: 1860.3
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T05:34:02Z"
 ---
 # T0307: Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 
@@ -66,4 +69,7 @@ Capture before and after screenshots of the task editor in light and dark themes
   - Files touched: 17.
   - Lines touched: 1723.
   - Reopenings: 0.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
