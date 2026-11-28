@@ -1,11 +1,11 @@
 ---
 id: T0299
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0299-specify-adr-0006-goals-logs-statuses-and-backup
+worktree: .plan/work/T0299-specify-adr-0006-goals-logs-statuses-and-backup
+status: active
+started_at: "2026-11-28T00:08:59Z"
 ended_at: —
 review: agent
 preview: none
