@@ -6,7 +6,7 @@ The IndexedDB schema that holds the app's data in the browser.
 
 ## Database
 - Name: `todos`; one database per browser profile (`LOC-5`).
-- Version: 5; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
+- Version: 6; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
 - Version 1 created `lists`, `tasks`, and `memberships`; version 2 adds `notes` and keeps existing data.
 - Version 3 gives existing memberships a `position`, per list in added-time order, then by task id.
 - Version 4 adds the sync stores `sync-queue`, `sync-state`, and `sync-log`; existing stores and data stay unchanged.
@@ -18,6 +18,8 @@ The IndexedDB schema that holds the app's data in the browser.
   - `last-update-time` takes the later of it and `last-activity-time`, which goes.
   - Notes rename `author` to `owner-id` and `edit-time` to `last-update-time`, and get `occurrence` null.
   - Queued task changes become `update-rules` and `post-event` entries, appended after the queue.
+- Version 6 adds goals, the log, and the `failed` status, as ADR-0006 of todos.server says; see Store Upgrade.
+  It adds no store and no index; it rewrites the records of `tasks`, `occurrences`, `events`, and `sync-queue`.
 - Records use the field names of the service's `List`, `Task`, `Note`, `Occurrence`, and `TaskEvent` schemas, in kebab-case.
 - Times are ISO-8601 strings in UTC with milliseconds, such as `2026-11-04T09:00:00.000Z`.
 - Identifiers are UUIDv7 strings from [uuid7.js](../../src/js/lib/uuid7.js), sorting by creation time (`TEC-9`).
@@ -37,18 +39,28 @@ Keyed by `id`.
 - `id`, `description`, `owner-id`, `lifecycle-rules`, `current-occurrence`.
 - `creation-time`, `last-update-time`, `deletion-time`.
 - `lifecycle-rules` and `current-occurrence` match the service's `LifecycleRules` and `Occurrence`, without `task-id`.
+- `lifecycle-rules` holds the window and goal fields (see Goals).
+- `current-occurrence` also embeds `entries`: its live `log` events, oldest first.
+- `upcoming` is computed, never stored: the current moment lies before occurrence 1 starts.
 - `last-update-time` changes with every change of the task, its rules, events, memberships, and notes (`TSK-12`, `NOT-5`).
 
 ### `occurrences`
 Keyed out of line by `[task-id, occurrence]`; added in version 5.
-- The service's `Occurrence` fields: `task-id`, `occurrence`, `start-time`, `due-time`, `target-count`, `completion-count`, `status`, `close-time`.
+- The service's `Occurrence` fields: `task-id`, `occurrence`, `start-time`, `due-time`, `status`, `close-time`.
+  - The goal snapshot: `goal-direction`, `goal-measure`, and `goal-target`.
+  - The cache: `progress`, a number or null, and `time-spent-seconds`, a whole number from 0.
+  - `target-count` and `completion-count` are gone.
 - Every write of a task also writes its current occurrence here.
 - A local roll-over, and a grace event in local mode, also write past occurrences of recurring tasks here.
 
 ### `events`
 Keyed out of line by `[task-id, id]`; added in version 5.
 - The service's `TaskEvent` fields: `id`, `task-id`, `occurrence`, `creation-time`, `owner-id`, `type`, `details`.
+  - Log fields: `checked`, `time-spent-seconds`, `amount`, `label`, and `target-event-id`.
+  - A `log` event holds at least one of `checked`, `time-spent-seconds`, and `amount`; only `undo-log` has a `target-event-id`.
+  - `details` holds the changes of edit events only.
 - Local events: `create`, the user events, `expire`, `edit-lifecycle-rules`, `roll-over`, and `end-recurrence`.
+  The user events are `log`, `undo-log`, `start`, `unstart`, `cancel`, and `reopen`.
 - Synced tasks hold only the events made on this device; system and rule edit events never join the change queue.
 
 ### `memberships`
@@ -103,7 +115,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - List names hold 1 to 100 characters, descriptions at most 1000 (`LST-1`, `LST-2`).
 - Task descriptions hold 1 to 500 characters after trimming surrounding spaces (`TSK-1`).
 - A date-only due time, such as `2026-11-08`, is stored as 23:59 local time on that date (`TSK-6`).
-- New tasks get default one-off rules, target 1 and overdue handling `keep`, and a `ready` occurrence 1 (`TSK-2`).
+- New tasks get default one-off rules, an `at-least` goal of 1 check and overdue handling `keep`, and a `ready` occurrence 1 (`TSK-2`).
 - Note texts hold 1 to 2000 characters after trimming surrounding spaces (`NOT-1`).
 - A task lists its notes newest first, by creation time, then by identifier (`NOT-3`).
 - Adding, editing, or deleting a note sets the task's `last-update-time` (`NOT-5`).
@@ -149,31 +161,38 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 
 ## Lifecycle
 [occurrences.js](../../src/js/core/occurrences.js) runs the todos.server status rules locally, so local mode keeps every feature (`LOC-2`).
-- Statuses are `ready`, `in-progress`, `completed`, and `cancelled`; a task's status is that of its current occurrence.
+- Statuses are `ready`, `in-progress`, `completed`, `failed`, and `cancelled`; a task's status is that of its current occurrence.
+  - `failed` only appears on closed occurrences.
+  - `cancelled` only means that the user dropped the task.
 - The fold applies events in `creation-time` order, then by `id`, and ignores an event whose precondition fails at its place.
-- A one-off occurrence closes on `completed` or `cancelled`, and reopens when it leaves them.
-- `postEvent(id, type)` posts `complete`, `uncomplete`, `start`, `unstart`, `cancel`, or `reopen` with a UUIDv7 and the client time.
+- A one-off occurrence closes on `completed`, `failed`, or `cancelled`, and reopens when it leaves them (see Closing One-Off Occurrences).
+- `postEvent(id, type)` posts `start`, `unstart`, `cancel`, or `reopen` with a UUIDv7 and the client time.
   A failing precondition throws a `StoreError` with code `conflict`.
-- `updateRules(id, edit)` edits the rules; target and due time edits move the open occurrence.
+- `logEntry(id, {checked, timeSpentSeconds, amount, label})` posts one `log` event and returns it (see Log).
+- `undoEntry(id, entryId)` posts an `undo-log` event for that entry (see Log).
+- `postEvent(id, 'complete')` and `postEvent(id, 'uncomplete')` stay as aliases of a checked `log` and an `undo-log` of the live check.
+  `uncomplete` without a live check throws a `conflict` StoreError.
+- `updateRules(id, edit)` edits the rules; goal, start time, and due time edits move the open occurrence.
 - A recurring task keeps `due-time` and `overdue-handling` null, in `createTask`, `updateRules`, and backup imports alike.
   A one-off task keeps the recurrence fields and `timezone` null, with overdue handling `keep` by default.
 - `updateTask(id, changes)` keeps the status edit of the current views and maps it onto events (`TSK-4`).
-  - `completed` posts `complete`, `cancelled` posts `cancel`, and `in-progress` posts `start`.
-  - Going back posts `uncomplete`, `unstart`, or `reopen`, as the todos.server T0218 mapping does.
+  - `completed` posts a checked `log`, `cancelled` posts `cancel`, and `in-progress` posts `start`.
+  - Going back posts an `undo-log` of the live check, `unstart`, or `reopen`.
+  - `failed` is never set by hand; the fold or an `expire` sets it.
   - `due-time` and `overdue-handling` edit the rules.
 - `eventsOfTask(id)` and `occurrencesOfTask(id)` read a task's events and occurrences.
 - `updateRules` also stores an `edit-lifecycle-rules` event with the old and new values of each changed field.
 
 ### Recurrence
 [periods.js](../../src/js/core/periods.js) computes periods as the todos.server business logic spec says, section Periods.
-- A period spans `recurrence-interval` units of `day`, `week`, or `month` in the rule's IANA `timezone`.
-- Days start at local midnight, weeks on Monday, and months on the 1st; periods are half-open.
+- A period spans `recurrence-interval` units of `day`, `week`, `month`, or `year` in the rule's IANA `timezone`.
+- Days start at local midnight, weeks on Monday, months on the 1st, and years on 1 January; periods are half-open.
 - A skipped local midnight starts at the first valid instant of its day; units add in local dates.
 - The period after a period starts at its end, so a unit or timezone edit applies from the next period.
 - [periods.test.js](../../tests/unit/periods.test.js) runs every case of [recurrence-test-vectors.json](../../tests/fixtures/recurrence-test-vectors.json).
   The file copies todos.server `docs/specs/recurrence-test-vectors.json`; refresh it by hand when the server's copy changes.
 - A recurring occurrence covers one period: its `start-time` and `due-time` bound it, and it stays open at target.
-- Occurrence 1 covers the period containing the creation time.
+- Occurrence 1 covers the period containing the creation time, or the one containing `start-time` when the rules have one.
   Making an open one-off task recurring turns its occurrence into the period containing the edit.
   Making a closed one recurring opens a fresh occurrence; stopping recurrence drops the occurrence's due time.
 - `createTask` and `updateRules` refuse a recurring rule without `recurrence-interval` or a known `timezone`.
@@ -182,17 +201,18 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - **[Decided]** In local mode the store rolls a task over before each event and rule edit, as the server does.
   The minute timer of [overdue.js](../../src/js/core/overdue.js) also rolls every recurring task over (`LOC-2`).
 - `rollOverTask(id)` closes each occurrence whose period ended with a `roll-over` event at its due time.
-  Missed periods become occurrences with count 0 and status `ready`, until the current period covers now.
-- When the end count or end date is reached, `end-recurrence` closes the last occurrence instead.
-  It closes as `completed` at or above target, else `cancelled`.
+  Missed periods become occurrences with progress 0 and status `ready`, until the current period covers now.
+  The verdict of each closed occurrence follows Closing Recurring Occurrences.
+- When the end count or end date is reached, `end-recurrence` closes the last occurrence instead, with the same verdict.
   The end date is a local date: the recurrence ends when the next period would start after it.
-- A closed recurring current occurrence, completed or cancelled, takes only `reopen`; other user events fail.
+- A closed recurring current occurrence, whatever its status, takes only `reopen`; other user events fail.
   The `reopen` opens a fresh period containing now, unless the end rules allow none, as after `end-recurrence`.
 - Folding a recurring occurrence applies its `roll-over` or `end-recurrence` event last, as the server's fold does.
 - **[Decided]** While connected, the store never rolls over; `rollOverTask` returns null and the service rolls over.
 
 #### Display Rule
-- A recurring task past its period end, not rolled over yet, shows as `ready` with count 0 (`displayTask`).
+- A recurring task past its period end, not rolled over yet, shows as `ready` with progress 0 (`displayTask`).
+  A `reading` goal shows its carried reading as progress.
 - All tasks and the list view apply it before they filter, sort, and group, so such a task shows under the open filter.
   Their minute tick renders again when a task passes its period end (`becameStale`).
 - Rows and the editor's status apply it; the editor takes an injectable clock.
@@ -200,8 +220,9 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - **[Decided]** A connected event on such a task joins the period covering now, computed locally.
   It goes to the service without `occurrence`, so the service assigns the period containing its time.
 
-#### Grace Completion
-- For 24 hours after a period ends, `postEvent(id, 'complete', {occurrence})` may name that period's occurrence.
+#### Grace Entries
+- For 24 hours after a period ends, `logEntry(id, entry, {occurrence})` may name that period's occurrence.
+  The `complete` alias accepts `occurrence` the same way.
 - `graceOccurrence(task, now)` names it: the cached occurrence past its period end, or the previous one after a roll-over.
 - In local mode the event joins the stored occurrence with a time just before its due time, and the occurrence folds again.
   It stays closed and keeps its close time; the current occurrence does not change.
@@ -213,12 +234,165 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 
 ---
 
+## Goals
+`lifecycle-rules` holds the window and goal fields of the todos.server `LifecycleRules`; every task has them.
+- `start-time`: an optional time; before it, the task is upcoming.
+  - Occurrence 1 starts at `start-time`, or without one at the task's creation time (one-off) or at the start of the unit containing it (recurring).
+  - A recurring occurrence 1 that starts at `start-time` ends with the period containing it, so its first period is shorter.
+  - `start-time` must lie before `due-time` and before the recurrence end date.
+  - A `log` or other event before the start of occurrence 1 throws a `conflict` StoreError.
+- `recurrence-unit` is `day`, `week`, `month`, or `year`.
+- `overdue-handling` is `keep` or `fail`, and applies to `at-least` goals only.
+- `goal-direction`: `at-least` (default) or `at-most`.
+- `goal-measure`: what the goal counts, over the live entries of an occurrence.
+  - `checks` (default): the number of applied checks.
+  - `time`: the sum of applied `time-spent-seconds`.
+  - `amount`: the sum of applied amounts.
+  - `reading`: the latest applied amount, such as a weight.
+- `goal-target`: the number to reach or stay within.
+  - A whole number from 1 to 999,999,999,999 for `checks` and `time`.
+  - A decimal from 0 to 999,999,999,999.999, with at most 3 decimals, for `amount` and `reading`.
+- `goal-unit`: a label of up to 20 characters, such as `kcal`; only `amount` and `reading` goals have one, others keep it null.
+- An `at-most` goal needs a window end: a `due-time` or a recurrence.
+- Goals have no start value: sums start at 0, and readings carry forward.
+- The defaults are today's simple task: `at-least`, `checks`, target 1.
+- Amounts, targets, and totals are JSON numbers; the store computes in whole thousandths, so sums stay exact.
+  A decimal total stays below 10^15 thousandths, and a `time-spent-seconds` total at or below 999,999,999,999.
+- `createTask` and `updateRules` throw a `ValidationError` naming the field for any broken rule above.
+
+### Rule Edits
+- A goal edit updates the open occurrence's snapshot and refolds it; closed occurrences keep their snapshot, so past verdicts keep their goals.
+- A measure edit reinterprets the live entries of the open occurrence; the entries never change.
+  Readings carry forward only into occurrences whose measure is `reading`.
+- A `start-time` edit applies only while occurrence 1 is the only occurrence, is open, and holds no user events.
+  It moves the start of occurrence 1; a recurring occurrence 1 also takes the end of the period containing the new start.
+  Otherwise the edit throws a `conflict` StoreError.
+- Local mode keeps the unit edit rule: the next period applies the new unit.
+
+---
+
+## Log
+Every entry is one append-only `log` event; the store never edits or removes it.
+- A `log` holds at least one of `checked`, `time-spent-seconds`, and `amount`, plus an optional `label`.
+  - `checked`: true when the entry checks the task off once.
+  - `time-spent-seconds`: a whole number from 1 to 2,147,483,647.
+  - `amount`: a decimal from 0 to 999,999,999,999.999, with at most 3 decimals.
+  - `label`: an optional text of up to 100 characters after trimming, such as "Croissant".
+- An occurrence's `time-spent-seconds` total stays at or below 999,999,999,999; a `log` that would pass it throws a `conflict` StoreError.
+- Durations have no other limit; the interface asks for confirmation above 12 hours.
+- An `undo-log` cancels one `log`, named by its `target-event-id`.
+  - The target must be a stored `log` of the same task; otherwise the post throws a `conflict` StoreError.
+  - A second undo of the same target is accepted and changes nothing.
+  - An undo never targets an undo, so chains cannot form.
+  - The undo joins the occurrence of its target.
+- A check is a `log` with `checked: true`; unticking is an `undo-log` of that entry.
+- The time spent on a task is the sum of its live `time-spent-seconds`, whatever its goal.
+- Any user who may edit the task may undo any entry; events keep their `owner-id`.
+- `start` and `unstart` stay: they say "I have begun" before anything is logged.
+- Connected, a `log` and an `undo-log` join the change queue as `post-event` entries with their identifiers.
+
+---
+
+## Fold
+[occurrences.js](../../src/js/core/occurrences.js) computes an occurrence's cache as a pure function of its goal snapshot, its events, and any carried reading.
+- Step 1: collect the occurrence's `log` events, minus those named by an `undo-log` of the task; these are the live entries.
+  An undo's own time never matters.
+- Step 2: order the live entries and the other non-undo events by `creation-time`, then by `id`.
+  In a recurring occurrence, the period-end event goes last.
+- Step 3: start open, at status `ready` and progress 0 for sums and checks.
+  A `reading` goal starts at the carried reading, or null.
+- Step 4: apply each event in order; an event whose precondition fails at its place is ignored.
+  - A checked `log` applies its check unless the status is `cancelled`.
+  - The time and amount of a `log` apply in every status, also when its check is ignored.
+  - `start` needs `ready`; `unstart` needs `in-progress`, no applied entry, and progress 0 or null.
+  - `cancel` needs any status but `cancelled`.
+  - `reopen`, `expire`, `roll-over`, and `end-recurrence` follow the closing rules below.
+- Step 5: after each `log`, `start`, `unstart`, or `reopen`, the status follows from progress.
+  This applies to open occurrences, and to a one-off occurrence closed as `completed`.
+- **[Decided]** An undo is retroactive: the fold treats the entry as never logged.
+  A `start` that the entry blocked at its place can thus apply after the undo.
+- Progress follows the measure: the number of applied checks, the sum of applied times or amounts, or the latest applied amount.
+  `time-spent-seconds` always holds the sum of applied times.
+- Status from progress:
+  - `at-least`: `completed` at or above the target.
+  - Otherwise `in-progress` when an entry or a `start` has applied in this occurrence.
+  - Otherwise `ready`.
+  - For a `reading` goal, only the occurrence's own live readings count while it is open; a carried reading alone leaves it `ready`.
+  - An open `at-most` occurrence is never `completed` or `failed`; the interface shows it above its target as over the limit.
+- `tests/fixtures/fold-test-vectors.json` holds event sequences with their expected caches.
+  The file copies todos.server `docs/specs/fold-test-vectors.json`; refresh it by hand when the server's copy changes.
+  The occurrences unit test runs every case.
+
+### Closing Recurring Occurrences
+- A recurring occurrence stays open until its period ends, or until `cancel`.
+- At its period end, `roll-over` or `end-recurrence` gives the verdict from the progress, including a carried reading:
+  - `at-least`: `completed` at or above the target, else `failed`.
+  - `at-most`: `completed` at or within the target, else `failed`.
+  - **[Decided]** An `at-most` sum with nothing logged has progress 0, so it ends `completed`.
+  - A `reading` goal with progress null ends `failed`.
+- `reopen` keeps its preconditions for recurring tasks.
+
+### Closing One-Off Occurrences
+- An `at-least` occurrence closes when it becomes `completed`, at that event's time.
+  - Later logs on it still add checks, time, and amounts; it stays `completed`.
+  - When progress falls below the target, it reopens.
+- `cancel` closes an open one-off occurrence as `cancelled`; on a closed occurrence it throws a `conflict` StoreError.
+  `reopen` opens it again.
+- At its `due-time`, `expireTask` writes `expire` once per occurrence, by goal:
+  - `at-least` under `keep`: no `expire`; it stays open and overdue.
+  - `at-least` under `fail`, below target: `failed`, and closed.
+  - `at-most`: `completed` at or within the target, else `failed`, and closed.
+- `reopen` also accepts an `at-least` occurrence that `expire` failed.
+  It then stays open and overdue, since `expire` never repeats for an occurrence.
+- An `at-most` occurrence closed by `expire` cannot be reopened; undoing entries changes its verdict instead.
+- An occurrence reopened after `cancel` gets its `expire` later, when its deadline has passed.
+
+### Readings Carry Forward
+- An occurrence's own reading is its latest live reading, in fold order.
+- An occurrence without its own reading takes the reading of the previous occurrence, and so on; the first falls back to null.
+- A live reading always takes effect, since amounts apply in every status.
+- Logging or undoing a reading refolds that occurrence and the later ones.
+  The refold stops at the first later occurrence whose own reading, after its refold, decides its progress.
+- The fold vectors include an undone reading and a reading on a log whose check is ignored.
+- `entries` holds only live entries of the current occurrence; entries of past occurrences come from `eventsOfTask`.
+
+### Late Entries
+- A `log` joins the occurrence containing its `creation-time`, under Grace Entries and the service's late limit.
+- A late entry within the limit refolds a closed occurrence, also its verdict.
+- An `undo-log` is subject to the late limit of its target's occurrence, unless it is imported.
+
+---
+
+## Store Upgrade
+Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/store/migrate.js) holds the conversion, as todos.server does for its schema.
+- Rules: `target-count` N becomes an `at-least` goal of N `checks` with `goal-unit` null and `start-time` null; `overdue-handling` `cancel` becomes `fail`.
+- Occurrences: the same goal snapshot per occurrence; `completion-count` becomes `progress`, and `time-spent-seconds` is 0.
+- Events: refold each occurrence with the old fold first, noting which events applied and which event closed it.
+  - Each `complete` becomes a checked `log` with the same `id`, time, and owner.
+  - Each applied `uncomplete` becomes an `undo-log` of the latest check live at its place.
+  - An `uncomplete` the old fold ignored is dropped, and the upgrade counts it.
+- Status: the closing event decides.
+  - `expire` gives `failed`; `end-recurrence` below target gives `failed`.
+  - A `roll-over` that closed `ready` or `in-progress` gives `failed`.
+  - A user `cancel` keeps `cancelled`, and `completed` stays `completed`.
+- The upgrade verifies each occurrence with an in-place fold, which applies each `undo-log` at its own place.
+  It must reproduce the old count, the mapped status, and the close time; a mismatch aborts the transaction and keeps version 5.
+- The real fold then runs with retroactive undo; occurrences where it differs keep its result, and the upgrade counts them.
+- Queued entries convert in step:
+  - A queued `post-event` of `complete` or `uncomplete` keeps its type, since the service accepts both as aliases.
+  - A queued `update-rules` of `target-count` becomes `goal-target`; `cancel` for `overdue-handling` becomes `fail`.
+- The upgrade writes no sync log record; counts go to the console.
+- Older web apps cannot read version 6; the open fails with a `blocked` or version error, and the app asks to update.
+
+---
+
 ## Overdue Handling
 [overdue.js](../../src/js/core/overdue.js) computes the flag and expires overdue tasks through the store facade.
 - `isOverdue(task, now)` is true when the current occurrence's `due-time` is before `now` and it is `ready` or `in-progress` (`OVD-1`).
-- `applyOverdueHandling(store, now)` writes an `expire` event for each overdue `cancel` task via `expireTask` (`OVD-4`).
+  An `at-most` occurrence is overdue only before `expire` closes it, since the hourly run closes it at its due time.
+- `applyOverdueHandling(store, now)` writes an `expire` event via `expireTask` for each overdue `fail` task with an `at-least` goal, and for each overdue `at-most` task (`OVD-4`).
 - The `expire` event never joins the change queue, since the service writes its own on its hourly run.
-- It never changes deleted, `completed`, or `cancelled` tasks (`OVD-6`).
+- It never changes deleted, `completed`, `failed`, or `cancelled` tasks (`OVD-6`).
 - `startOverdueTimer` runs it once on start, then every minute; the returned function stops it (`OVD-5`).
 - With `rollOver()` true, each run first rolls recurring tasks over through `applyRollOver`; the app passes local mode.
 - A recurring task is never overdue: its due times end periods.
@@ -251,7 +425,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 [query.js](../../src/js/core/query.js) filters and sorts task arrays in memory (`TEC-16`).
 - `filterTasks(tasks, filter, ctx)` keeps the input order; filters combine with AND (`TV-8`).
   - `lists`: list ids, or `NO_LIST` for tasks in no list (`TV-2`).
-  - `statuses`: statuses (`TV-3`).
+  - `statuses`: `ready`, `in-progress`, `completed`, `failed`, or `cancelled` (`TV-3`).
   - `due`: `overdue`, `today`, `this-week`, `none`, or `{from, to}` ranges (`TV-4`).
   - `created`: one `{from, to}` range (`TV-5`).
   - `text`: text in the description or any note, ignoring case and surrounding spaces (`TV-6`).
@@ -268,7 +442,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 - Status and due time come from the current occurrence; stored views read `todo` as `ready`, and `last-activity-time` as `last-update-time`.
   - Directions are `asc` and `desc`; ties break on the task id in the same direction.
   - Tasks without a due time sort last in both directions (`TV-10`).
-  - Statuses sort in lifecycle order; descriptions ignore case.
+  - Statuses sort in lifecycle order: `ready`, `in-progress`, `completed`, `failed`, `cancelled`; descriptions ignore case.
 - `DEFAULT_FILTER` keeps open tasks; `DEFAULT_ORDER` is due time ascending.
 - `sortByPosition(tasks, positionsOfList(memberships, listId))` restores the manual order (`LV-8`).
 - Filtering and sorting 5000 tasks takes under 50 ms in Node, per the unit test.
@@ -326,6 +500,8 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
   - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type. A task create carries its `lifecycle-rules`.
   - Rules: `update-rules`, sent as `PATCH /api/tasks/{{task-id}}/lifecycle-rules` with the edit time of each field.
   - Events: `post-event`, sent in order as `POST /api/tasks/{{task-id}}/events` with `id`, `type`, `creation-time`, and `occurrence`.
+    A `log` also sends `checked`, `time-spent-seconds`, `amount`, and `label` when set; an `undo-log` sends `target-event-id`.
+    A `409` on an `undo-log` of a target the service never stored is a rejection like any other.
   - Memberships: `add-`, `move-`, and `remove-membership`.
   - Purges: `purge`, sent as `DELETE /api/recycle-bin/lists/{{list-id}}` or `DELETE /api/recycle-bin/tasks/{{task-id}}`.
     `empty-bin` is sent as `DELETE /api/recycle-bin` and purges every entry the user may restore at the service's receive time.
@@ -400,7 +576,7 @@ Keyed by `id`, with an index on `time`; records of what sync changed or refused,
 and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6`).
 - Lists, tasks, memberships, and notes store the feed's `revision`; lists also keep `role` and `sharing`.
 - Notes map the wire `owner-id`, `occurrence`, and `last-update-time` to the same local fields.
-- Computed fields are not stored: `overdue`, `role` of tasks, `task-count`, and `lists` of tasks. Screens derive them.
+- Computed fields are not stored: `overdue`, `upcoming`, `role` of tasks, `task-count`, and `lists` of tasks. Screens derive them.
 - A run replays the queue, then pulls every page after the stored cursor until `has-more` is false. Without a cursor it fetches a snapshot.
 - The leader tab pulls every 30 seconds while the page is visible, and after going online, gaining focus, becoming visible, or replaying the queue.
   A hidden page still replays the queue.
@@ -409,7 +585,7 @@ and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6
   - A field with an entry in the queue keeps its local value; the other fields take the pulled value (`SYN-5`, `SYN-6`).
   - A task takes the service's rules and current occurrence; rule fields with a queued edit keep their local value.
   - Queued events of the pulled occurrence fold onto it in queue order, until the service confirms them.
-  - A pulled one-off task past its due time with handling `cancel` stays expired, as the local overdue handling expired it.
+  - A pulled one-off task past its due time with handling `fail` stays expired, as the local overdue handling expired it.
 
   - A row whose creation is still queued is never replaced. A pending trash, membership change, or note edit or delete stays.
     A queued note edit keeps its own fields, `text` or `occurrence`, and takes the other from the feed.

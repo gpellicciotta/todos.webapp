@@ -14,8 +14,8 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 ```json
 {
   "format": "todos-backup",
-  "format-version": 2,
-  "app-version": "0.5.0-pre",
+  "format-version": 3,
+  "app-version": "0.6.1-pre",
   "export-time": "2026-11-04T09:00:00.000Z",
   "lists": [],
   "tasks": [],
@@ -27,15 +27,17 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 }
 ```
 
-- Export writes format 2; import reads formats 1 and 2.
-- Format 2 follows the todos.server JSON format: tasks embed nothing, and their parts are top-level arrays.
+- Export writes format 3; import reads formats 1, 2, and 3.
+- Formats 2 and 3 follow the todos.server JSON format: tasks embed nothing, and their parts are top-level arrays.
+- Format 3 adds goals, start times, the log, and the `failed` status of ADR-0006 of todos.server.
 - [backup-v1.json](../../tests/fixtures/backup-v1.json) and [backup-v2.json](../../tests/fixtures/backup-v2.json) are sample files.
+  The format 3 sample, `tests/fixtures/backup-v3.json`, comes with the implementation.
 
 ---
 
 ## Header Fields
 - `format`: always `todos-backup`.
-- `format-version`: the integer 2 for this layout, or 1 for the former one; readers reject other versions (`BAK-3`).
+- `format-version`: the integer 3 for this layout, or 1 or 2 for the former ones; readers reject other versions (`BAK-3`).
 - `app-version`: the version of the app that wrote the file, from package.json.
 - `export-time`: the time of the export.
 
@@ -53,20 +55,25 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 - A task embeds neither `lifecycle-rules` nor `current-occurrence`; the arrays below refer to it by `task-id`.
 
 ### `lifecycle-rules`
-- `task-id`, then the rule fields of the store: `target-count`, `due-time`, `overdue-handling`.
+- `task-id`, then the rule fields of the store: `start-time`, `due-time`, `overdue-handling`.
+- The goal: `goal-direction`, `goal-measure`, `goal-target`, and `goal-unit`.
 - `recurrence-unit`, `recurrence-interval`, `recurrence-end-date`, `recurrence-end-count`, `timezone`.
-- One record per task; a task without one gets the default rules on import.
+- `target-count` is gone; formats 1 and 2 are converted (see Format 2).
+- One record per task; a task without one gets the default rules on import: `at-least`, `checks`, target 1.
 
 ### `occurrences`
-- `task-id`, `occurrence`, `start-time`, `due-time`, `target-count`, `completion-count`, `status`, `close-time`.
+- `task-id`, `occurrence`, `start-time`, `due-time`, `status`, `close-time`.
+- The goal snapshot `goal-direction`, `goal-measure`, and `goal-target`, and the cache `progress` and `time-spent-seconds`.
 - Every stored occurrence of each task, the current one included.
 - Export-only: import rebuilds the occurrences from the rules and events, and stores none of these.
 - Optional on import: a file without the array reads as one with an empty array.
 
 ### `events`
 - `id`, `task-id`, `occurrence`, `creation-time`, `owner-id`, `type`, `details`.
+- Log fields: `checked`, `time-spent-seconds`, `amount`, `label`, and `target-event-id`.
 - Every stored event of each task, system events and rule edits included.
 - `details` of an `edit-lifecycle-rules` event holds the old and new value of each changed rule field.
+- Types include `log` and `undo-log`; `complete` and `uncomplete` never appear in format 3.
 
 ### `memberships`
 - `list-id`, `task-id`, `position`, `added-time`.
@@ -76,6 +83,18 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 - `id`, `task-id`, `text`, `owner-id`, `occurrence`, `creation-time`, `last-update-time`, as in the store.
 - `occurrence` is null for a global note, or the number of the occurrence it belongs to.
 
+### Format 2
+Format 2 has the layout of format 3 with the former goal, log, and status model; import converts it before validation of the converted values.
+- Rules: `target-count` N becomes an `at-least` goal of N `checks`; `start-time` and `goal-unit` are null.
+  `overdue-handling` `cancel` becomes `fail`.
+- Occurrences are never read, since import rebuilds them.
+- Events: each `complete` becomes a checked `log` with the same `id`, time, and owner.
+  - Each applied `uncomplete` becomes an `undo-log` of the latest check live at its place, as in the store upgrade.
+  - An `uncomplete` the old fold ignores, or one without a live check, is skipped and reported.
+  - An `edit-lifecycle-rules` event converts its `target-count` change into `goal-target`, and `cancel` into `fail`.
+- Statuses of the rebuilt occurrences follow Rebuilding Occurrences; a closing event that left `ready` or `in-progress` gives `failed`.
+- The conversion is the one of the todos.server import, so a file converts alike in both apps.
+
 ### Format 1
 Format 1 keeps the former task and note shape; import maps it onto the store.
 - Tasks: `id`, `description`, `status`, `due-time`, `overdue-handling`, `owner-id`.
@@ -83,6 +102,7 @@ Format 1 keeps the former task and note shape; import maps it onto the store.
 - Notes: `id`, `task-id`, `text`, `author`, `creation-time`, `edit-time`.
 - Import folds both task times into `last-update-time`, taking the later one.
 - Import maps a status onto events: an added task gets a `create` event and at most one status event.
+  A `completed` status gives a checked `log`; tasks get the default goal, and the result converts as format 2 does.
 - A replaced task keeps its events and occurrences, and gets the events from its old to its new status at the import time.
   Its deadline fields edit its rules; a recurring task keeps its rules, since format 1 knows no recurrence.
 - A note's `author` maps to `owner-id`, and its `edit-time` to `last-update-time`; a replaced note keeps its occurrence.
@@ -99,21 +119,33 @@ Format 1 keeps the former task and note shape; import maps it onto the store.
 ## Validation
 An import first validates the whole file; any failure changes nothing and names the reason (`BAK-13`).
 - The text must be valid JSON holding one object with `format` set to `todos-backup`.
-- `format-version` must be 1 or 2; other values fail with code `unsupported-version`.
+- `format-version` must be 1, 2, or 3; other values fail with code `unsupported-version`.
 - `app-version` must be a non-empty string, and `export-time` a valid time.
 - `lists`, `tasks`, `memberships`, and `notes` must be arrays of objects.
-  Format 2 also needs `lifecycle-rules` and `events` arrays, and reads `occurrences` when present.
+  Formats 2 and 3 also need `lifecycle-rules` and `events` arrays, and read `occurrences` when present.
 - Every field follows the store rules:
   - List names hold 1 to 100 characters and are unique per owner, ignoring case.
   - List descriptions hold at most 1000 characters and are kept exactly, like the store keeps them.
   - Task descriptions hold 1 to 500 characters; `status` and `overdue-handling` use the store values.
-  - Rules follow the store: a target of at least 1, an interval from 1 to 99, and an IANA `timezone`.
+  - Rules follow the store: an interval from 1 to 99 and an IANA `timezone`; `recurrence-unit` is `day`, `week`, `month`, or `year`.
     A recurring rule needs its interval and timezone, and keeps `due-time` and `overdue-handling` null.
     A one-off rule keeps `recurrence-interval`, `recurrence-end-date`, `recurrence-end-count`, and `timezone` null.
     Either break fails with the path of the field, such as `lifecycle-rules[0].timezone`.
-  - Occurrence numbers start at 1 and are unique per task; statuses are `ready`, `in-progress`, `completed`, `cancelled`.
+  - Goals follow the store:
+    - `goal-direction` is `at-least` or `at-most`; `goal-measure` is `checks`, `time`, `amount`, or `reading`.
+    - `goal-target` is a whole number from 1 to 999,999,999,999 for `checks` and `time`, else a decimal from 0 to 999,999,999,999.999 with at most 3 decimals.
+    - `goal-unit` holds at most 20 characters, and only for `amount` and `reading`.
+    - An `at-most` goal needs a `due-time` or a recurrence.
+    - `overdue-handling` is `keep` or `fail`.
+  - `start-time` may be null; otherwise it lies before `due-time` and before `recurrence-end-date`.
+  - Occurrence numbers start at 1 and are unique per task; statuses are `ready`, `in-progress`, `completed`, `failed`, `cancelled`.
+    `progress` is null or a number from 0 with at most 3 decimals, and `time-spent-seconds` a whole number from 0.
   - Event types are those of the service's `TaskEvent`; an `edit-lifecycle-rules` event lists only rule fields.
     Its `old` and `new` values follow the same rule checks, so `events[2].details.timezone.new` names a bad zone.
+  - A `log` holds at least one of `checked`, `time-spent-seconds`, and `amount`.
+    `time-spent-seconds` is a whole number from 1 to 2,147,483,647, `amount` follows the goal range, and `label` holds at most 100 characters.
+  - An `undo-log` needs a `target-event-id`; other types have none.
+    A target missing from the file does not fail the file: import skips that event and reports it.
   - Note texts hold 1 to 2000 characters; a note `occurrence` is null or at least 1.
   - Positions are well-formed fractional-index keys of at most 128 characters.
     They follow `validateKey` in fractional-index.js and the service's `FractionalIndex`, so `0zz`, `a00`, and `a` fail.
@@ -132,11 +164,11 @@ Both modes run in one store transaction, so a failure leaves no partial change (
 ### Merge
 Matches lists, tasks, and notes by `id`; the most recently updated version wins (`BAK-6`).
 - A record missing locally is added.
-- Lists, tasks, and format 2 notes compare `last-update-time`.
+- Lists, tasks, and format 2 and 3 notes compare `last-update-time`.
 - Format 1 notes compare `edit-time`, or `creation-time` when not edited.
 - A format 1 task's backup time is the later of its `last-update-time` and `last-activity-time`.
 - A strictly later backup version replaces the local record; otherwise the local record stays.
-- Format 2: a task that the backup adds or replaces keeps its local events and gains the backup events by `id`.
+- Formats 2 and 3: a task that the backup adds or replaces keeps its local events and gains the backup events by `id`.
   Events are never removed; a task whose local version wins keeps its events as they are.
 - A missing membership goes after the last task of its list, in backup order (`BAK-7`).
 - A list without local memberships takes the backup positions as they are.
@@ -146,20 +178,21 @@ Matches lists, tasks, and notes by `id`; the most recently updated version wins 
 ### Overwrite
 Replaces all data the user owns with the backup contents (`BAK-8`).
 - Every backup list, task, and note replaces the local record with the same `id`, or is added.
-  A format 2 task counts as changed when its fields or rules differ, or rebuilding it changes its events or occurrences.
+  A format 2 or 3 task counts as changed when its fields or rules differ, or rebuilding it changes its events or occurrences.
 - Memberships between a backup list and a backup task take exactly the backup set and positions.
 - Notes of backup tasks take exactly the backup set.
-- Format 2: a replaced task takes exactly the backup events; events missing from the backup are removed.
+- Formats 2 and 3: a replaced task takes exactly the backup events; events missing from the backup are removed.
 - Owned lists and tasks missing from the backup move to the recycle bin (`BAK-9`).
   - Binning works like deleting: it sets `deletion-time` and `last-update-time`.
 
   - Their memberships and notes stay, so restoring brings them back.
 - Records already in the recycle bin and missing from the backup stay unchanged.
 - Importing an export into an empty store reproduces the same data (`BAK-14`).
-  With format 2 this includes every rule, occurrence, and event.
+  With format 3 this includes every rule, occurrence, and event.
 
 ### Rebuilding Occurrences
-Format 2 import rebuilds each written task's occurrences from its rules and events, as the todos.server JSON format replays them.
+Format 2 and 3 import rebuilds each written task's occurrences from its rules and events, as the todos.server JSON format replays them.
+A format 2 file converts first, so the replay always runs on goals and the log.
 - The task starts with its first rules: the exported rules with every `edit-lifecycle-rules` event undone, newest first.
 - Its events then apply in time order, through the store's fold (`LOC-2`):
   - A recurring task first rolls over up to each event's time.
@@ -167,6 +200,10 @@ Format 2 import rebuilds each written task's occurrences from its rules and even
   - A `roll-over` or `end-recurrence` event closes the occurrence it names, when that is the open current one.
     Missing ones are written anew; repeated ones are left out.
   - A user event that names an earlier, closed occurrence joins it, and that occurrence folds again.
+  - An `undo-log` is placed right after its target, not by its own time, and joins the target's occurrence.
+    It rolls over only up to its own time, which the target's replay already passed, so snapshots and assignment stay unchanged.
+  - An `undo-log` whose target is missing from the file is skipped and reported, as other skipped events are.
+  - The fold, readings carried between occurrences, and verdicts are those of the local store (see [local-store.md](local-store.md)).
 - **[Decided]** The replay always ends with the exported rules, which win over the rule edits.
   Rule edits can miss changes: `updateTask` edits deadlines without one, and pulled tasks bring no remote events.
   Merge can also add older local rule edits to a newer backup task.
@@ -180,11 +217,15 @@ Format 2 import rebuilds each written task's occurrences from its rules and even
   Importing the same file again therefore writes the same identifiers and changes nothing.
 - The import never rolls over up to now; the store or the service does so afterwards.
 - **[Decided]** Backup events can miss the exported current status, since a connected device keeps only its own events.
-  When they do, import adds the user events that reach the count and status of the highest exported occurrence.
-  A recurring task first rolls over to that occurrence. The events take the import time.
-  A recurring occurrence takes the last moment of its period instead, when that comes earlier.
-- **[Decided]** A closed exported recurring occurrence first gets its count, then closes like the server closes it.
-  When the end rules end the series at its period end, an `end-recurrence` event closes it, completed or cancelled.
+  When they do, import adds `log` events that reach the progress, time spent, and status of the highest exported occurrence.
+  - A `checks` goal gets one checked `log` per missing check.
+  - A `time` goal gets one `log` with the missing seconds; an `amount` goal one with the missing amount.
+  - A `reading` goal gets one `log` with the exported progress as its amount.
+  - A recurring task first rolls over to that occurrence. The events take the import time.
+  - A recurring occurrence takes the last moment of its period instead, when that comes earlier.
+  - An exported `progress` that logs cannot reach, such as one below the replayed sum, is left as the fold computes it.
+- **[Decided]** A closed exported recurring occurrence first gets its progress, then closes like the server closes it.
+  When the end rules end the series at its period end, an `end-recurrence` event closes it with the verdict of the goal, `completed` or `failed`.
   Only a series cancelled before its period end gets a user `cancel` event, at its close time.
 - **[Decided]** Rules and events count with their task; the counts cover lists, tasks, memberships, and notes.
 
@@ -203,14 +244,16 @@ Format 2 import rebuilds each written task's occurrences from its rules and even
 - A newer row (later `last-update-time`) queues all its mergeable fields with no edit time, so the service takes its receive time.
   An older row queues nothing.
 - A row missing locally queues a create; a bin move queues a delete or restore, restores first and deletes last.
-- Format 2 replays a missing task with `import: true`, as the todos.server JSON format says:
-  - The create carries the first rules, and the `create` event's identifier as `event-id`.
+- Formats 2 and 3 replay a missing task with `import: true`, as the todos.server JSON format says:
+  - The create carries the first rules, with their goal fields, and the `create` event's identifier as `event-id`.
   - Rule edits follow as `update-rules` with `event-id`, their new values, and their time as edit time.
   - User events follow as `post-event` with their `id`, time, and occurrence, all in time order.
-- Format 2 notes replay with their `occurrence`, and `null` keeps a global note global.
+    A `log` carries `checked`, `time-spent-seconds`, `amount`, and `label`; an `undo-log` carries `target-event-id`.
+  - An `undo-log` posts right after its target, as in Rebuilding Occurrences.
+- Format 2 and 3 notes replay with their `occurrence`, and `null` keeps a global note global.
   Without it the service would link a recurring task's note to the period of its creation time.
   Format 1 notes replay without `occurrence`.
-- A replaced format 2 task posts only its new user events, with `import: true`; system events never queue.
+- A replaced format 2 or 3 task posts only its new user events, with `import: true`; system events never queue.
 - The service takes `import: true` from the task owner only. A refused replayed event only leaves the events store.
 - Existing notes stay as they are and never queue; only missing notes queue a create.
 - Memberships only add: new ones queue an add in list order, and existing ones keep their positions.
