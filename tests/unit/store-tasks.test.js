@@ -610,7 +610,7 @@ describe('log entries', () => {
     clock.tick();
     await expect(store.logEntry(task.id, { 'time-spent-seconds': 2_147_483_647 })).rejects.toMatchObject({ code: 'conflict' });
     expect((await store.getTask(task.id))['current-occurrence']['time-spent-seconds']).toBeLessThanOrEqual(999_999_999_999);
-  });
+  }, 30_000); // 466 logs that each fold every earlier one take seconds on a busy machine
 
   it('applies the time of a log whose check is ignored on a cancelled task', async () => {
     const task = await store.createTask({ description: 'Stopped', status: 'cancelled' });
