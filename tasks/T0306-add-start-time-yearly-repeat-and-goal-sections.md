@@ -13,11 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 1873.2, input: 26, output: 4106, cache_read: 3171065, cache_write: 12700}
-  review: {turns: 1, duration_s: 3.9, input: 0, output: 0, cache_read: 0}
-work_duration: 1935.4
-review_status: pending
+  review: {turns: 2, duration_s: 94.3, input: 40340, output: 2325, cache_read: 475392, cache_write: 0}
+work_duration: 2043.8
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T04:09:38Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-13a485
 ---
 # T0306: Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 
@@ -68,4 +70,11 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Reject pending correction of connected task start-time eligibility.
+  - Findings: [review-findings-1.md](T0306-add-start-time-yearly-repeat-and-goal-sections/review-findings-1.md).
+
+- [2026-11-28] **[Implement]**
+  Review fix: connected Starts eligibility now reads server events, with local fallback and regression tests.
 
