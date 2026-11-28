@@ -13,7 +13,8 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 1873.2, input: 26, output: 4106, cache_read: 3171065, cache_write: 12700}
-work_duration: 1850.6
+  review: {turns: 1, duration_s: 3.9, input: 0, output: 0, cache_read: 0}
+work_duration: 1935.4
 review_status: pending
 review_round: 1
 review_requested_at: "2026-11-28T04:09:38Z"
