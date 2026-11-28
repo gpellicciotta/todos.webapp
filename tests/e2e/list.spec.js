@@ -516,3 +516,32 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 });
+
+
+test('logs from a row past an at-most limit, shows the marks, and undoes the entry from the toast (TSK-4, TSK-21, TSK-22)', async ({ page }) => {
+  const problems = watch(page);
+  const listId = await openList(page);
+  await page.evaluate(async (id) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const task = await store.createTask({ description: 'Calories', 'due-time': new Date(Date.now() + 20 * 3_600_000).toISOString() }, { lists: [id] });
+    await store.updateRules(task.id, { 'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 100, 'goal-unit': 'kcal' });
+    store.close();
+  }, listId);
+  const row = page.locator('.list-view .task-row', { hasText: 'Calories' });
+  await expect(row.locator('.task-row__progress')).toHaveText('0 / max 100 kcal');
+  await row.getByRole('button', { name: /^Log amount for Calories/ }).click();
+  const quick = row.locator('.quick-log');
+  await expect(quick).toBeVisible();
+  await quick.getByLabel('Amount').fill('130');
+  await quick.getByRole('button', { name: 'Log', exact: true }).click();
+  await expect(quick).toHaveCount(0);
+  await expect(row.locator('.task-row__progress')).toHaveText('130 / max 100 kcal · 30 over');
+  await expect(row.locator('.task-row__meter')).toHaveAttribute('data-color', 'orange');
+  await expect(row.locator('.status-button')).toHaveAttribute('data-track', 'over-limit');
+  const toast = page.locator('.toast', { hasText: 'Logged 130 kcal on Calories.' });
+  await toast.getByRole('button', { name: 'Undo' }).click();
+  await expect(row.locator('.task-row__progress')).toHaveText('0 / max 100 kcal');
+  await expect(row.locator('.status-button')).toHaveAttribute('data-track', 'on-track');
+  expect(problems).toEqual([]);
+});

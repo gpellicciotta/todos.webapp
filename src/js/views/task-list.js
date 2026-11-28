@@ -33,10 +33,12 @@
  * `markAdded` highlights a new task's row for two seconds and scrolls it into view, rendering it first when needed.
  */
 
-import { applyEvent, displayTask, dueTimeOf, isRecurring, isStale, recurrenceLabel, statusOf } from '../core/occurrences.js';
+import { applyEvent, displayTask, dueTimeOf, isRecurring, isStale, isUpcoming, recurrenceLabel, statusOf } from '../core/occurrences.js';
 import { isOverdue } from '../core/overdue.js';
 import { can, taskRole } from '../core/permissions.js';
+import { durationWords, entryWords, formatMeasure, meterColor, overage, progressOf, trackOf } from '../core/progress.js';
 import { make } from '../ui/dom.js';
+import { createQuickLog } from './quick-log.js';
 
 export { make };
 
@@ -65,16 +67,29 @@ export const STATUS_LABELS = Object.freeze({
   ready: 'To do', 'in-progress': 'In progress', completed: 'Completed', failed: 'Failed', cancelled: 'Cancelled',
 });
 
-/** The event that undoes a tick, for the Undo toast. */
-const INVERSE = Object.freeze({ complete: 'uncomplete' });
+/** The measures that a row shows with a meter and a progress text, and whose status button opens the quick log. */
+const GOAL_MEASURES = Object.freeze(['time', 'amount', 'reading']);
+const LOG_NOUNS = Object.freeze({ time: 'time', amount: 'amount', reading: 'reading' });
+/** The group key and label of the upcoming rows (`TSK-20`). */
+const UPCOMING_GROUP = 'upcoming';
+
+/**
+ * Tell whether an occurrence has a time, amount, or reading goal, which a row shows with a meter.
+ * @param {object} occurrence the current occurrence
+ * @returns {boolean} true for such a goal
+ */
+function isGoalRow(occurrence) {
+  return GOAL_MEASURES.includes(progressOf(occurrence).measure);
+}
 
 /**
  * Tell whether an occurrence shows its done and target counts: a target above 1, or a count past a target of 1.
+ * A time, amount, or reading goal shows a meter instead.
  * @param {object} occurrence the current occurrence
  * @returns {boolean} true when the counts show
  */
 export function showsCount(occurrence) {
-  return occurrence['target-count'] > 1 || occurrence['completion-count'] > 1;
+  return !isGoalRow(occurrence) && (occurrence['target-count'] > 1 || occurrence['completion-count'] > 1);
 }
 
 /**
@@ -91,9 +106,10 @@ const STRINGS = Object.freeze({
   tick:(description, occurrence) => (showsCount(occurrence)
     ? `Tick ${description}, ${countWords(occurrence)}`
     : `Mark ${description} completed`),
-  inert: (description, occurrence) => `${description}, ${STATUS_LABELS[occurrence.status].toLowerCase()}`
+  inert: (description, occurrence, start) => `${description}, ${start ? 'upcoming' : STATUS_LABELS[occurrence.status].toLowerCase()}`
     + `${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`,
-  statusHint: (occurrence) => `${STATUS_LABELS[occurrence.status]}${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`,
+  statusHint: (occurrence, progress) => `${STATUS_LABELS[occurrence.status]}${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`
+    + `${progress ? `, ${progress.name}` : ''}`,
   inertHint: 'Open the task to change its status.',
   marked: (status) => `Task marked ${STATUS_LABELS[status].toLowerCase()}.`,
   ticked: (occurrence) => `Ticked, ${countWords(occurrence)}.`,
@@ -104,22 +120,39 @@ const STRINGS = Object.freeze({
   moreLists: ' more lists',
   groupCount: (shown, total) => (shown < total ? `${shown} of ${total}` : String(total)),
   groupLabel: (label, shown, total) => `${label}, ${shown < total ? `${shown} of ` : ''}${total} ${total === 1 ? 'task' : 'tasks'}`,
+  upcoming: 'Upcoming',
+  starts: (text) => `Starts ${text}`,
+  failedMark: 'Failed',
+  behindPace: 'behind pace',
+  spent: (words) => `${words} spent`,
+  carried: ' (carried)',
+  max: 'max ',
+  over: (words) => ` · ${words} over`,
+  logAction: (noun, description, progress) => `Log ${noun} for ${description}, ${progress}`,
+  logged: (words, description) => `Logged ${words} on ${description}.`,
 });
 
 /**
- * Return the event one click on the status button posts, its tick, which never lowers the count (`TSK-4`).
- * At target 1, an open occurrence takes `complete`, and a completed one nothing.
- * Above target 1, every occurrence but a cancelled one takes `complete`, so a count may pass its target, such as 4 of 3.
- * A cancelled occurrence and a closed recurring series take nothing; the task editor changes their status.
+ * Return what one click on the status button does, the goal's most frequent change (`TSK-4`, `TSK-21`).
+ * A time, amount, or reading goal opens the quick log; a checks goal logs a check, which never lowers the count.
+ * A checks goal at target 1 takes a check while open; above target 1, also once completed, so a count may pass its target.
+ * Failed and Cancelled occurrences, a closed recurring series, and an upcoming task take nothing.
  * @param {object} occurrence the current occurrence
  * @param {object} [rules] the lifecycle rules
- * @returns {'complete'|null} the event type, or null when a click posts nothing
+ * @param {Date|number} [now] the current time; given, a task before its start time takes nothing
+ * @returns {'check'|'log'|null} the action, or null when a click does nothing
  */
-export function tickEvent(occurrence, rules = undefined) {
-  if (occurrence.status === 'cancelled' || (isRecurring(rules) && occurrence['close-time'] !== null)) {
+export function clickOf(occurrence, rules = undefined, now = undefined) {
+  if (occurrence.status === 'cancelled' || occurrence.status === 'failed' || (isRecurring(rules) && occurrence['close-time'] !== null)) {
     return null;
   }
-  return occurrence.status === 'completed' && occurrence['target-count'] <= 1 ? null : 'complete';
+  if (now !== undefined && occurrence.occurrence === 1 && Date.parse(occurrence['start-time']) > new Date(now).getTime()) {
+    return null;
+  }
+  if (isGoalRow(occurrence)) {
+    return 'log';
+  }
+  return occurrence.status === 'completed' && occurrence['target-count'] <= 1 ? null : 'check';
 }
 
 
@@ -190,24 +223,50 @@ export function formatDue(task, now = new Date(), locale = undefined) {
   if (!dueTimeOf(task) || recurrenceLabel(task['lifecycle-rules'])) {
     return null;
   }
-  const overdue = isOverdue(task, now);
-  const due = new Date(dueTimeOf(task));
+  return { text: describeTime(dueTimeOf(task), now, locale, false).text, overdue: isOverdue(task, now) };
+}
+
+/**
+ * Format a moment relative to now: Yesterday, Today, or Tomorrow, a weekday within the next week, or a date.
+ * @param {string} iso the moment
+ * @param {Date|number} now the current time
+ * @param {string|undefined} locale the locale of the formats
+ * @param {boolean} timeOfDay true to always show the time; false to leave out the 23:59 of a date-only time (`TSK-6`)
+ * @returns {{text: string, near: boolean}} the text, and whether it starts with a word for Yesterday, Today, or Tomorrow
+ */
+function describeTime(iso, now, locale, timeOfDay) {
+  const due = new Date(iso);
   const current = new Date(now);
   const days = Math.round((startOfDay(due) - startOfDay(current)) / DAY_MS);
-  const time = due.getHours() === 23 && due.getMinutes() === 59
+  const time = !timeOfDay && due.getHours() === 23 && due.getMinutes() === 59
     ? '' : ` ${dateFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(due)}`;
   const near = { [-1]: STRINGS.yesterday, 0: STRINGS.today, 1: STRINGS.tomorrow };
   if (near[days]) {
-    return { text: `${near[days]}${time}`, overdue };
+    return { text: `${near[days]}${time}`, near: true };
   }
   if (days > 1 && days < 7) {
-    return { text: `${dateFormat(locale, { weekday: 'short' }).format(due)}${time}`, overdue };
+    return { text: `${dateFormat(locale, { weekday: 'short' }).format(due)}${time}`, near: false };
   }
   const format = { day: 'numeric', month: 'short' };
   if (due.getFullYear() !== current.getFullYear()) {
     format.year = 'numeric';
   }
-  return { text: dateFormat(locale, format).format(due), overdue };
+  return { text: dateFormat(locale, format).format(due) + (timeOfDay ? time : ''), near: false };
+}
+
+/**
+ * Format the start of an upcoming task, such as "Starts tomorrow 07:00" (`TSK-20`).
+ * @param {object} task the task
+ * @param {Date|number} [now] the current time
+ * @param {string} [locale] the locale of the date and time formats, the user's by default
+ * @returns {string|null} the start text, or null when the task is not upcoming
+ */
+export function formatStart(task, now = new Date(), locale = undefined) {
+  if (!isUpcoming(task, now)) {
+    return null;
+  }
+  const { text, near } = describeTime(task['current-occurrence']['start-time'], now, locale, true);
+  return STRINGS.starts(near ? `${text.charAt(0).toLowerCase()}${text.slice(1)}` : text);
 }
 
 /**
@@ -244,12 +303,54 @@ function viewOf(task, ctx, options) {
   const occurrence = task['current-occurrence'];
   const count = showsCount(occurrence) ? `${occurrence['completion-count']}/${occurrence['target-count']}` : null;
   const repeat = recurrenceLabel(task['lifecycle-rules']);
-  // An ended series keeps its status and count but turns inert, so the key holds the tick too.
-  const tick = tickEvent(occurrence, task['lifecycle-rules']);
+  // An ended series keeps its status and count but turns inert, so the key holds the click too.
+  const click = clickOf(occurrence, task['lifecycle-rules'], ctx.now);
+  const start = formatStart(task, ctx.now, ctx.locale);
+  const goal = goalOf(task, ctx.now, ctx.locale);
   return {
-    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, locked, tick]),
-    dueKey: due ? `${due.overdue}|${due.text}` : '', due, count, repeat, href, handle, names, locked,
+    key: JSON.stringify([statusOf(task), count, repeat, task.description, href, handle, names, locked, click, goal, start]),
+    dueKey: `${due ? `${due.overdue}|${due.text}` : ''}|${start}|${goal.track}`,
+    due, count, repeat, href, handle, names, locked, click, goal, start, status: statusOf(task),
   };
+}
+
+/**
+ * Compute the goal marks of a row (`TSK-21`, `TSK-22`): the standing against the pace, the meter and progress text of a
+ * time, amount, or reading goal, and the logged time of a task whose goal is not time.
+ * @param {object} task the task as shown
+ * @param {Date|number} [now] the current time
+ * @param {string} [locale] the locale of numbers, the user's by default
+ * @returns {{track: string, over: boolean, behind: boolean, spent: string|null, progress: object|null}} the marks; `progress`
+ *   holds the text, the words that name the log action, the meter color and share, and whether the goal is above its limit
+ */
+function goalOf(task, now, locale) {
+  const occurrence = task['current-occurrence'];
+  const when = new Date(now ?? Date.now());
+  const track = trackOf(occurrence, when);
+  const p = progressOf(occurrence);
+  const seconds = occurrence['time-spent-seconds'];
+  const spent = p.measure !== 'time' && seconds > 0 ? STRINGS.spent(durationWords(seconds)) : null;
+  const marks = { track, over: p.direction === 'at-most' && p.share > 1, behind: track === 'behind-pace', spent, progress: null };
+  if (!GOAL_MEASURES.includes(p.measure)) {
+    return marks;
+  }
+  const target = formatMeasure(p.measure, p.target, p.unit, locale);
+  let value = formatMeasure(p.measure, p.value, null, locale);
+  if (value.endsWith(' min') && target.endsWith(' min')) {
+    value = value.slice(0, -' min'.length);
+  }
+  const carried = p.measure === 'reading' && p.value !== null && !(occurrence.entries ?? []).some((entry) => typeof entry.amount === 'number');
+  const limit = `${p.direction === 'at-most' ? STRINGS.max : ''}${target}`;
+  const extra = overage(occurrence);
+  const words = extra > 0 ? (p.measure === 'time' ? durationWords(extra) : formatMeasure('amount', extra, null, locale)) : null;
+  marks.progress = {
+    text: `${value}${carried ? STRINGS.carried : ''} / ${limit}${words ? STRINGS.over(words) : ''}`,
+    name: `${value} of ${limit}`,
+    color: meterColor(occurrence),
+    share: Math.min(1, Number.isFinite(p.share) ? p.share : 1),
+    over: words !== null,
+  };
+  return marks;
 }
 
 /**
@@ -270,13 +371,39 @@ function isLocked(task, ctx) {
  * @param {{repeat: string|null, due: object|null, names: string[]}} view the row content of `viewOf`
  * @returns {HTMLElement|null} the meta line, or null without content
  */
-function metaOf(doc, { repeat, due, names }) {
+function metaOf(doc, { repeat, due, names, start, goal, status }) {
   const meta = make(doc, 'span', 'task-row__meta');
-  if (repeat) {
+  if (start) {
+    meta.append(metaItem(doc, 'task-row__start', 'status-upcoming', start));
+  }
+  else if (repeat) {
     meta.append(metaItem(doc, 'task-row__repeat', 'repeat', repeat));
   }
   else if (due) {
     meta.append(metaItem(doc, due.overdue ? 'task-row__due task-row__due--overdue' : 'task-row__due', 'clock', due.text));
+  }
+  if (goal.progress) {
+    const shown = make(doc, 'span', 'task-row__goal');
+    const meter = make(doc, 'span', 'task-row__meter');
+    meter.dataset.color = goal.progress.color;
+    meter.style.setProperty('--meter-share', `${goal.progress.share * 100}%`);
+    meter.setAttribute('aria-hidden', 'true');
+    const text = make(doc, 'span', goal.progress.over ? 'task-row__progress task-row__progress--over' : 'task-row__progress');
+    if (goal.progress.over) {
+      text.append(spriteIcon(doc, 'alert', 'icon icon--sm'));
+    }
+    text.append(goal.progress.text);
+    shown.append(meter, text);
+    meta.append(shown);
+  }
+  if (goal.spent) {
+    meta.append(metaItem(doc, 'task-row__spent', 'timer', goal.spent));
+  }
+  if (goal.behind) {
+    meta.append(make(doc, 'span', 'task-row__pace', STRINGS.behindPace));
+  }
+  if (status === 'failed') {
+    meta.append(make(doc, 'span', 'task-row__failed', STRINGS.failedMark));
   }
   if (names.length > 0) {
     const lists = make(doc, 'span', 'task-row__lists');
@@ -314,6 +441,34 @@ function rowTemplate(doc, handle) {
   open.append(make(doc, 'span', 'task-row__description'));
   row.append(status, open);
   return row;
+}
+
+/**
+ * Move the upcoming tasks out of the rows into an Upcoming group at the end (`TSK-20`).
+ * A grouped view loses them from its groups, and its counts follow; an upcoming task of several groups shows once.
+ * @param {object[]} tasks the tasks of an ungrouped view, as shown
+ * @param {Array<{key: string, label: string, tasks: object[], total?: number}>|null} groups the groups of a grouped view
+ * @param {Date|number} now the current time
+ * @returns {{groups: object[]|null, rest: object[], upcomingGroup: object|null}} the groups with the Upcoming group last,
+ *   the tasks that are not upcoming, and the Upcoming group, which is null without upcoming tasks
+ */
+function withUpcoming(tasks, groups, now) {
+  const upcoming = new Map();
+  const keep = (task) => {
+    if (!isUpcoming(task, now)) {
+      return true;
+    }
+    upcoming.set(task.id, task);
+    return false;
+  };
+  const rest = groups ? [] : tasks.filter(keep);
+  const stripped = groups?.map((group) => {
+    const kept = group.tasks.filter(keep);
+    return { ...group, tasks: kept, total: group.total === undefined ? undefined : group.total - (group.tasks.length - kept.length) };
+  }).filter((group) => group.tasks.length > 0) ?? null;
+  const upcomingGroup = upcoming.size > 0
+    ? { key: UPCOMING_GROUP, label: STRINGS.upcoming, tasks: [...upcoming.values()], total: upcoming.size } : null;
+  return { groups: stripped && upcomingGroup ? [...stripped, upcomingGroup] : stripped, rest, upcomingGroup };
 }
 
 /**
@@ -379,18 +534,33 @@ function renderRow(doc, task, view, template, selected) {
   const open = row.lastElementChild;
   const status = open.previousElementSibling;
   const occurrence = task['current-occurrence'];
-  // A click that posts nothing leaves the button focusable for the row keys, but aria-disabled; a viewer's stays disabled.
-  const inert = !view.locked && tickEvent(occurrence, task['lifecycle-rules']) === null;
-  status.setAttribute('aria-label', inert ? STRINGS.inert(task.description, occurrence) : STRINGS.tick(task.description, occurrence));
-  status.title = inert ? STRINGS.inertHint : STRINGS.statusHint(occurrence);
+  // A click that does nothing leaves the button focusable for the row keys, but aria-disabled; a viewer's stays disabled.
+  const inert = !view.locked && view.click === null;
+  const progress = view.goal.progress;
   if (inert) {
+    status.setAttribute('aria-label', STRINGS.inert(task.description, occurrence, view.start));
     status.setAttribute('aria-disabled', 'true');
   }
+  else if (view.click === 'log') {
+    status.setAttribute('aria-label', STRINGS.logAction(LOG_NOUNS[progressOf(occurrence).measure], task.description, progress.name));
+  }
+  else {
+    status.setAttribute('aria-label', STRINGS.tick(task.description, occurrence));
+  }
+  if (view.start) {
+    status.title = view.start;
+    row.dataset.upcoming = 'true';
+  }
+  else {
+    status.title = inert ? STRINGS.inertHint : STRINGS.statusHint(occurrence, progress);
+  }
   status.dataset.status = statusOf(task);
-  status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${statusOf(task)}`);
+  status.dataset.track = view.goal.track;
+  row.dataset.track = view.goal.track;
+  status.firstElementChild.firstElementChild.setAttribute('href', `${ICONS}#status-${view.start ? 'upcoming' : statusOf(task)}`);
   // The badge sits inside the button, so a tap on it ticks; the button's name already names the counts.
   if (view.count) {
-    const badge = make(doc, 'span', 'task-row__count', view.count);
+    const badge = make(doc, 'span', view.goal.over ? 'task-row__count task-row__count--over' : 'task-row__count', view.count);
     badge.setAttribute('aria-hidden', 'true');
     status.append(badge);
   }
@@ -550,22 +720,100 @@ export function createTaskList({
    * @param {object|undefined} task the task
    */
   function tick(task) {
-    const type = task ? tickEvent(task['current-occurrence'], task['lifecycle-rules']) : null;
-    if (!type || isLocked(task, ctx)) {
-      return;
-    }
     const time = new Date(ctx.now ?? Date.now()).toISOString();
     const before = task['current-occurrence'];
-    const occurrence = applyEvent(before, { type, 'creation-time': time }, task['lifecycle-rules']);
+    const occurrence = applyEvent(before, { type: 'complete', 'creation-time': time }, task['lifecycle-rules']);
     if (!occurrence) {
       return;
     }
-    store.postEvent(task.id, type).then(() => {
+    store.logEntry(task.id, { checked: true }).then(({ event }) => {
       toaster.show(occurrence.status === before.status ? STRINGS.ticked(occurrence) : STRINGS.marked(occurrence.status), {
         undo: true,
-        onAction: () => store.postEvent(task.id, INVERSE[type]).catch(fail),
+        onAction: () => store.undoLog(task.id, event.id).catch(fail),
       });
     }, fail);
+  }
+
+  /** The task whose quick log is open, and the form. */
+  let quick = null;
+
+  /**
+   * Find the rendered row of a task.
+   * @param {string} taskId the task identifier
+   * @returns {HTMLLIElement|null} the row, or null while it is not rendered
+   */
+  function rowOf(taskId) {
+    return [...rows.values()].find((entry) => entry.taskId === taskId)?.row ?? null;
+  }
+
+  /**
+   * Close the open quick log; focus returns to the status button of its row unless `silent`.
+   * @param {boolean} [silent] true when the quick log leaves because another one opens or its row left
+   */
+  function closeQuick(silent = false) {
+    if (!quick) {
+      return;
+    }
+    const { taskId, form } = quick;
+    quick = null;
+    const hadFocus = form.element.contains(doc.activeElement);
+    form.element.remove();
+    if (!silent || hadFocus) {
+      rowOf(taskId)?.querySelector('[data-role="status"]')?.focus();
+    }
+  }
+
+  /**
+   * Open the quick log under the row of a time, amount, or reading goal, or close it when it is already open (`TSK-21`).
+   * Log posts one entry, then shows an Undo toast, whose Undo posts `undo-log` of that entry.
+   * @param {object} task the task
+   */
+  function openQuick(task) {
+    if (quick?.taskId === task.id) {
+      closeQuick();
+      return;
+    }
+    closeQuick(true);
+    const { measure, unit } = progressOf(task['current-occurrence']);
+    const form = createQuickLog({
+      document: doc,
+      description: task.description,
+      goal: { measure, unit },
+      submit: async (entry) => {
+        try {
+          const { event } = await store.logEntry(task.id, entry);
+          toaster.show(STRINGS.logged(entryWords(entry, { measure, unit }), task.description), {
+            undo: true,
+            onAction: () => store.undoLog(task.id, event.id).catch(fail),
+          });
+        }
+        catch (error) {
+          if (error?.name !== 'ValidationError') {
+            fail(error);
+          }
+          throw error;
+        }
+      },
+      close: () => closeQuick(),
+    });
+    quick = { taskId: task.id, form };
+    rowOf(task.id)?.append(form.element);
+    form.focus();
+  }
+
+  /**
+   * Run the click of a status button: log a check, or open the quick log, as the goal asks (`TSK-4`).
+   * Nothing happens when the user's role locks the task, or when a click does nothing for its status (`SHR-4`).
+   * @param {object|undefined} task the task
+   */
+  function act(task) {
+    const click = task && !isLocked(task, ctx) ? clickOf(task['current-occurrence'], task['lifecycle-rules'], ctx.now) : null;
+    if (click === 'log') {
+      openQuick(task);
+    }
+    else if (click === 'check') {
+      tick(task);
+    }
   }
 
   /**
@@ -580,6 +828,10 @@ export function createTaskList({
     }
     const row = renderRow(doc, item.task, view, templates.get(view.handle), options.selected);
     row.dataset.rowKey = item.key;
+    // A row built again keeps its open quick log, with what was typed.
+    if (quick?.taskId === item.task.id) {
+      row.append(quick.form.element);
+    }
     return { row, key: view.key, dueKey: view.dueKey, taskId: item.task.id };
   }
 
@@ -1027,13 +1279,13 @@ export function createTaskList({
       return;
     }
     if (event.target.closest?.('[data-role="status"]')) {
-      tick(taskOf(event));
+      act(taskOf(event));
     }
   });
   list.addEventListener('keydown', (event) => {
     if (event.key === 'x' && !event.altKey && !event.ctrlKey && !event.metaKey && !inTextField(event) && taskOf(event)) {
       event.preventDefault();
-      tick(taskOf(event));
+      act(taskOf(event));
     }
   });
   doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
@@ -1064,22 +1316,27 @@ export function createTaskList({
       // The display rule: a recurring task past its period end shows as ready with count 0 until it rolls over.
       const now = context.now ?? new Date();
       const shown = (task) => displayTask(task, now);
-      const groups = given?.map((group) => ({ ...group, tasks: group.tasks.map(shown) })) ?? null;
-      tasks = groups ? tasks : tasks.map(shown);
+      const { groups, rest, upcomingGroup } = withUpcoming(tasks.map(shown), given?.map((group) => ({ ...group, tasks: group.tasks.map(shown) })) ?? null, now);
+      tasks = rest;
       const memo = remember();
       cancelFill();
       items = [];
-      if (groups) {
-        for (const group of groups) {
-          items.push({ key: `#${group.key}`, group });
-          for (const task of collapsed.has(group.key) ? [] : group.tasks) {
-            items.push({ key: `${group.key}\u0000${task.id}`, task });
-          }
+      const addGroup = (group) => {
+        items.push({ key: `#${group.key}`, group });
+        for (const task of collapsed.has(group.key) ? [] : group.tasks) {
+          items.push({ key: `${group.key}\u0000${task.id}`, task });
         }
+      };
+      if (groups) {
+        groups.forEach(addGroup);
       }
       else {
         for (const task of tasks) {
           items.push({ key: task.id, task });
+        }
+        // Upcoming rows form a group at the end of the rows (`TSK-20`).
+        if (upcomingGroup) {
+          addGroup(upcomingGroup);
         }
       }
       const lean = rows.size === 0 && items.length > FULL_ROWS;
@@ -1096,6 +1353,9 @@ export function createTaskList({
           known.delete(key);
         }
       }
+      if (quick && !byId.has(quick.taskId)) {
+        closeQuick(true);
+      }
       layout();
       // The focused row stays rendered, or the row now at its place when it left, so focus can stay or pass on.
       draw(true, memo ? [memo.key, items[Math.min(memo.index, items.length - 1)]?.key] : [], lean ? 0 : BUFFER_ROWS);
@@ -1111,7 +1371,9 @@ export function createTaskList({
      */
     tick(now) {
       // A recurring task whose period just ended changes its row, so the rows render again.
-      if (last && [...byId.values()].some((task) => isStale(task, now) && !isStale(task, ctx.now ?? now))) {
+      // An upcoming task that just started moves out of the Upcoming group, so the rows render again too.
+      const started = (task) => isUpcoming(task, ctx.now ?? now) && !isUpcoming(task, now);
+      if (last && [...byId.values()].some((task) => (isStale(task, now) && !isStale(task, ctx.now ?? now)) || started(task))) {
         api.render(last[0], { ...last[1], now }, last[2]);
         return;
       }
@@ -1123,6 +1385,8 @@ export function createTaskList({
         const view = viewOf(byId.get(entry.taskId), ctx, options);
         if (view.dueKey !== entry.dueKey) {
           updateMeta(doc, entry.row, view);
+          entry.row.dataset.track = view.goal.track;
+          entry.row.querySelector('[data-role="status"]').dataset.track = view.goal.track;
           entry.dueKey = view.dueKey;
         }
       }

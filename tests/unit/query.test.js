@@ -18,6 +18,7 @@ import {
   positionsOfList,
   sortByPosition,
   sortTasks,
+  upcomingChanged,
 } from '../../src/js/core/query.js';
 
 // Wednesday 2026-11-04 12:00 local time.
@@ -633,5 +634,22 @@ describe('failed and upcoming tasks (TV-3, TV-14, TV-15)', () => {
     const list = [upcoming('later', 30)];
     expect(filterTasks(list, {}, ctx)).toEqual([]);
     expect(ids(filterTasks(list, {}, { ...ctx, now: new Date(NOW.getTime() + 7 * HOUR) }))).toEqual(['later']);
+  });
+});
+
+
+describe('upcomingChanged (TV-15)', () => {
+  const starting = (start) => shapeTask({ 'creation-time': start });
+  const at = (iso) => new Date(iso);
+
+  it('is true when a task starts, or comes within 24 hours of its start, between two times', () => {
+    const tasks = [starting('2026-11-05T10:00:00.000Z')];
+    expect(upcomingChanged(tasks, at('2026-11-05T09:00:00.000Z'), at('2026-11-05T10:01:00.000Z'))).toBe(true);
+    expect(upcomingChanged(tasks, at('2026-11-04T09:59:00.000Z'), at('2026-11-04T10:01:00.000Z'))).toBe(true);
+  });
+
+  it('is false when no task crosses its start or its 24 hour mark', () => {
+    const tasks = [starting('2026-11-05T10:00:00.000Z'), starting('2026-11-01T10:00:00.000Z'), starting('2026-12-01T10:00:00.000Z')];
+    expect(upcomingChanged(tasks, at('2026-11-04T10:10:00.000Z'), at('2026-11-04T10:20:00.000Z'))).toBe(false);
   });
 });

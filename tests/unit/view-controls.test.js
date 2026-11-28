@@ -447,7 +447,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     expect(rows.map((row) => row.querySelector('.view-options__value').textContent)).toEqual(['All', 'All', 'Any', 'Any']);
     const statuses = [...panel.body.querySelectorAll('[data-region="statuses"] input')];
     expect(statuses.map((input) => [input.value, input.checked])).toEqual([
-      ['ready', true], ['in-progress', true], ['completed', true], ['failed', true], ['cancelled', true], ['true', false],
+      ['ready', true], ['in-progress', true], ['completed', true], ['failed', true], ['cancelled', true], ['true', false], ['true', true],
     ]);
   });
 
@@ -621,7 +621,7 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     await mount('tasks');
     const region = panel.body.querySelector('[data-region="statuses"]');
     const labels = [...region.querySelectorAll('label')].map((label) => label.textContent.trim());
-    expect(labels).toEqual(['To do', 'In progress', 'Completed', 'Failed', 'Cancelled', 'Finished today only']);
+    expect(labels).toEqual(['To do', 'In progress', 'Completed', 'Failed', 'Cancelled', 'Finished today only', 'Show upcoming']);
     const choice = region.querySelector('input[data-toggle="finishedToday"]');
     expect(choice.type).toBe('checkbox');
     expect(choice.checked).toBe(false);
@@ -645,6 +645,23 @@ describe('mountViewOptions (VO-5, VO-6, VO-13)', () => {
     panel.body.querySelector('.view-options__reset').click();
     expect(choice.checked).toBe(false);
     expect(models.list.get().filter.finishedToday).toBeUndefined();
+  });
+
+  it('offers Show upcoming after the statuses, on by default, and stores only the choice to hide them (TV-15)', async () => {
+    await mount('tasks');
+    const region = panel.body.querySelector('[data-region="statuses"]');
+    const choice = region.querySelector('input[data-toggle="showUpcoming"]');
+    expect(choice.type).toBe('checkbox');
+    expect(choice.checked).toBe(true);
+    expect(choice.closest('label').textContent.trim()).toBe('Show upcoming');
+    toggle(choice, false);
+    expect(models.tasks.get().filter.showUpcoming).toBe(false);
+    toggle(choice, true);
+    expect(models.tasks.get().filter.showUpcoming).toBeUndefined();
+    toggle(choice, false);
+    panel.body.querySelector('.view-options__reset').click();
+    expect(choice.checked).toBe(true);
+    expect(models.tasks.get().filter.showUpcoming).toBeUndefined();
   });
 
   it('sets the due quick options and ranges, and the created range', async () => {

@@ -100,6 +100,7 @@ const PRECACHE = [
   'js/views/list.js',
   'js/views/lists.js',
   'js/views/notes.js',
+  'js/views/quick-log.js',
   'js/views/recycle-bin.js',
   'js/views/reorder.js',
   'js/views/settings.js',

@@ -48,6 +48,7 @@ const STRINGS = Object.freeze({
   statuses: (count) => `${count} statuses`,
   options: (count) => `${count} options`,
   finishedToday: 'Finished today only',
+  showUpcoming: 'Show upcoming',
   finishedTodayValue: (value) => `${value}, finished today`,
   sortedBy: (field) => `Sorted by ${field}`,
   tasks: (count) => `${count} ${count === 1 ? 'task' : 'tasks'}`,
@@ -676,7 +677,11 @@ export function mountViewOptions(panel, route, context) {
       const input = finishedToday.firstElementChild;
       delete input.dataset.filter;
       input.dataset.toggle = 'finishedToday';
-      return [...STATUSES.map((status) => choice(key, status, STATUS_LABELS[status])), finishedToday];
+      // Show upcoming is on by default, so a check hides nothing and only the choice to hide them is stored (`TV-15`).
+      const showUpcoming = choice(key, 'true', STRINGS.showUpcoming);
+      delete showUpcoming.firstElementChild.dataset.filter;
+      showUpcoming.firstElementChild.dataset.toggle = 'showUpcoming';
+      return [...STATUSES.map((status) => choice(key, status, STATUS_LABELS[status])), finishedToday, showUpcoming];
     }
     if (key === 'due') {
       return [...DUE_OPTIONS.map((option) => choice(key, option, DUE_LABELS[option])), rangeFields(key)];
@@ -796,6 +801,9 @@ export function mountViewOptions(panel, route, context) {
     for (const input of root.querySelectorAll('input[data-toggle="finishedToday"]')) {
       input.checked = state.filter.finishedToday === true;
     }
+    for (const input of root.querySelectorAll('input[data-toggle="showUpcoming"]')) {
+      input.checked = state.filter.showUpcoming !== false;
+    }
     for (const input of root.querySelectorAll('input[data-filter]')) {
       const key = input.dataset.filter;
       if (input.type === 'checkbox') {
@@ -888,6 +896,16 @@ export function mountViewOptions(panel, route, context) {
         }
         else {
           delete filter.finishedToday;
+        }
+      });
+    }
+    else if (input.dataset?.toggle === 'showUpcoming') {
+      apply(({ filter }) => {
+        if (input.checked) {
+          delete filter.showUpcoming;
+        }
+        else {
+          filter.showUpcoming = false;
         }
       });
     }

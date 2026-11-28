@@ -277,6 +277,13 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   - `.task-row__due--overdue` draws the due text and clock in `--color-danger` at regular weight.
   - `.task-row__lists`, right-aligned: two names and a "+n" count, joined by " · " below 48rem of list width.
     From 48rem they are small sunken pills that truncate at `--width-chip-max`; narrow text ends in an ellipsis.
+  - `.task-row__goal` holds the `.task-row__meter` and the `.task-row__progress` text of a time, amount, or reading goal.
+    The meter is 2.5rem wide and takes its fill from `data-color`: blue, yellow, green, gray, or orange.
+    `.task-row__progress--over` adds an alert icon and the overage in `--color-danger`; yellow progress text uses the dark amber.
+  - `.task-row__spent` shows a timer icon and the logged time of a task whose goal is not time.
+  - `.task-row__pace` reads "behind pace" and `.task-row__failed` reads "Failed", both in `--color-danger`.
+  - `.task-row__start` shows the start of an upcoming row, such as "Starts tomorrow 07:00".
+  - The quick log, `.quick-log`, is a form inside the row that wraps onto its own line under the status button and text.
 
   The `.task-row__count` badge sits inside the status button on the icon's bottom-right corner, such as "2/3".
   It is `aria-hidden`, since the button's name holds the counts, in 10 px semibold tabular figures.
@@ -285,6 +292,9 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Below 36rem of list width, rows drop the handle.
   States use attributes the app sets:
   - Status: `data-status` mutes completed, failed, cancelled, and upcoming text, and strikes through completed and cancelled text.
+  - Track: `data-track` on the row and its status button holds `on-track`, `behind-pace`, `overdue`, or `over-limit`;
+    an in-progress icon turns orange unless it is `on-track`, and the `task-row__count--over` badge takes an orange tint.
+  - Upcoming: `data-upcoming="true"` shows the dashed ring, muted text, and a status button that does nothing.
   - Selected: `aria-current="page"` on the open link adds the selected ground and a signal edge on the inline start.
     A selected row keeps hover and press feedback.
   - Just added: the `task-row--added` class shows the same ground and edge for two seconds after an add.

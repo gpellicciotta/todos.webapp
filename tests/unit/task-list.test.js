@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { attachReorder } from '../../src/js/views/reorder.js';
-import { createTaskList, formatDue, tickEvent } from '../../src/js/views/task-list.js';
+import { clickOf, createTaskList, formatDue } from '../../src/js/views/task-list.js';
 import { isShowing } from './popover-shim.js';
 import { shapeTask } from './task-shape.js';
 
@@ -53,24 +53,26 @@ describe('formatDue', () => {
   });
 });
 
-describe('tickEvent', () => {
+describe('clickOf', () => {
   const tickOf = (status, target, count = undefined) => {
     const task = shapeTask({ status, 'target-count': target, ...(count === undefined ? {} : { 'completion-count': count }) });
-    return tickEvent(task['current-occurrence'], task['lifecycle-rules']);
+    return clickOf(task['current-occurrence'], task['lifecycle-rules']);
   };
 
   it('completes open tasks at target 1, and leaves completed and cancelled ones alone (TSK-4)', () => {
-    expect(tickOf('ready', 1)).toBe('complete');
-    expect(tickOf('in-progress', 1)).toBe('complete');
+    expect(tickOf('ready', 1)).toBe('check');
+    expect(tickOf('in-progress', 1)).toBe('check');
     expect(tickOf('completed', 1)).toBeNull();
     expect(tickOf('cancelled', 1)).toBeNull();
+    expect(tickOf('failed', 1)).toBeNull();
+    expect(tickOf('failed', 3, 1)).toBeNull();
   });
 
   it('completes every status but cancelled above target 1, also past the target (TSK-4)', () => {
-    expect(tickOf('ready', 3, 0)).toBe('complete');
-    expect(tickOf('in-progress', 3, 2)).toBe('complete');
-    expect(tickOf('completed', 3, 3)).toBe('complete');
-    expect(tickOf('completed', 3, 4)).toBe('complete');
+    expect(tickOf('ready', 3, 0)).toBe('check');
+    expect(tickOf('in-progress', 3, 2)).toBe('check');
+    expect(tickOf('completed', 3, 3)).toBe('check');
+    expect(tickOf('completed', 3, 4)).toBe('check');
     expect(tickOf('cancelled', 3, 2)).toBeNull();
   });
 
@@ -78,7 +80,7 @@ describe('tickEvent', () => {
     const rules = { ...shapeTask()['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 1 };
     for (const status of ['completed', 'cancelled']) {
       const occurrence = { ...shapeTask({ status, 'target-count': 3, 'completion-count': 3 })['current-occurrence'], 'close-time': at(2, 0) };
-      expect(tickEvent(occurrence, { ...rules, 'target-count': 3 }), status).toBeNull();
+      expect(clickOf(occurrence, { ...rules, 'target-count': 3 }), status).toBeNull();
     }
   });
 });
@@ -104,6 +106,8 @@ describe('createTaskList', () => {
     store = {
       updateTask: vi.fn(async () => ({})),
       postEvent: vi.fn(async () => ({})),
+      logEntry: vi.fn(async (id) => ({ event: { id: `e-${id}` }, task: {} })),
+      undoLog: vi.fn(async () => ({})),
       deleteTask: vi.fn(async () => ({})),
       restoreTask: vi.fn(async () => ({})),
       addToList: vi.fn(async () => true),
@@ -219,7 +223,7 @@ describe('createTaskList', () => {
     list.render([french(3)], ctx);
     expect(document.querySelector('.task-row__count').textContent).toBe('3/3');
     document.querySelector('.status-button').click();
-    expect(store.postEvent.mock.calls).toEqual([['f', 'complete'], ['f', 'complete']]);
+    expect(store.logEntry.mock.calls).toEqual([['f', { checked: true }], ['f', { checked: true }]]);
   });
 
   it('renders the row again when only its count changes', () => {
@@ -267,7 +271,7 @@ describe('createTaskList', () => {
       for (const { id } of four) {
         statusOf(id).click();
       }
-      expect(store.postEvent.mock.calls).toEqual([['a', 'complete'], ['b', 'complete']]);
+      expect(store.logEntry.mock.calls).toEqual([['a', { checked: true }], ['b', { checked: true }]]);
       expect(store.updateTask).not.toHaveBeenCalled();
       expect(menusShowing()).toBe(0);
     });
@@ -305,7 +309,7 @@ describe('createTaskList', () => {
         expect(menusShowing(), id).toBe(0);
       }
       await new Promise((resolve) => setTimeout(resolve));
-      expect(store.postEvent).not.toHaveBeenCalled();
+      expect(store.logEntry).not.toHaveBeenCalled();
     });
 
     it('opens no menu on Down, Up, Shift+F10, or the Menu key, and leaves those keys to the browser', async () => {
@@ -318,7 +322,7 @@ describe('createTaskList', () => {
         }
       }
       await new Promise((resolve) => setTimeout(resolve));
-      expect(store.postEvent).not.toHaveBeenCalled();
+      expect(store.logEntry).not.toHaveBeenCalled();
     });
 
     it('opens no menu on a long press by touch, so its release ticks like any tap', () => {
@@ -331,7 +335,7 @@ describe('createTaskList', () => {
         button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
         button.click();
         expect(menusShowing()).toBe(0);
-        expect(store.postEvent.mock.calls).toEqual([['a', 'complete']]);
+        expect(store.logEntry.mock.calls).toEqual([['a', { checked: true }]]);
       }
       finally {
         vi.useRealTimers();
@@ -344,7 +348,7 @@ describe('createTaskList', () => {
       expect(press(open, 'x').defaultPrevented).toBe(true);
       statusOf('a').focus();
       press(statusOf('a'), 'x');
-      expect(store.postEvent.mock.calls).toEqual([['b', 'complete'], ['a', 'complete']]);
+      expect(store.logEntry.mock.calls).toEqual([['b', { checked: true }], ['a', { checked: true }]]);
     });
 
     it('posts nothing on x in a row whose click is inert', async () => {
@@ -356,7 +360,7 @@ describe('createTaskList', () => {
         press(statusOf(id), 'x');
       }
       await new Promise((resolve) => setTimeout(resolve));
-      expect(store.postEvent).not.toHaveBeenCalled();
+      expect(store.logEntry).not.toHaveBeenCalled();
       expect(toaster.show).not.toHaveBeenCalled();
     });
 
@@ -373,7 +377,7 @@ describe('createTaskList', () => {
       document.querySelector('.task-row[data-task-id="a"]').append(field);
       field.focus();
       press(field, 'x');
-      expect(store.postEvent).not.toHaveBeenCalled();
+      expect(store.logEntry).not.toHaveBeenCalled();
     });
 
     it('lets a viewer neither click, press x, nor open the menu (SHR-4)', () => {
@@ -392,7 +396,7 @@ describe('createTaskList', () => {
       open.focus();
       press(open, 'x');
       expect(menusShowing()).toBe(0);
-      expect(store.postEvent).not.toHaveBeenCalled();
+      expect(store.logEntry).not.toHaveBeenCalled();
     });
 
     it('shows the Undo toast for x too', async () => {
@@ -413,7 +417,8 @@ describe('createTaskList', () => {
       expect(message).toBe('Task marked completed.');
       expect(settings.undo).toBe(true);
       settings.onAction();
-      expect(store.postEvent.mock.calls).toEqual([['a', 'complete'], ['b', 'complete'], ['b', 'uncomplete']]);
+      expect(store.logEntry.mock.calls).toEqual([['a', { checked: true }], ['b', { checked: true }]]);
+      expect(store.undoLog.mock.calls).toEqual([['b', 'e-b']]);
     });
 
     it('names the counts in the toast of a tick that changes only the count, and Undo posts uncomplete', async () => {
@@ -435,7 +440,8 @@ describe('createTaskList', () => {
       const [message, settings] = toaster.show.mock.lastCall;
       expect(message).toBe('Ticked, 4 of 3 done.');
       settings.onAction();
-      expect(store.postEvent.mock.calls).toEqual([['g', 'complete'], ['g', 'complete'], ['g', 'complete'], ['g', 'uncomplete']]);
+      expect(store.logEntry.mock.calls).toEqual([['g', { checked: true }], ['g', { checked: true }], ['g', { checked: true }]]);
+      expect(store.undoLog.mock.calls).toEqual([['g', 'e-g']]);
     });
 
     it('never asks the view filter whether a ticked row hides', async () => {
@@ -1136,13 +1142,263 @@ describe('createTaskList', () => {
       expect(menusShowing()).toBe(0);
       expect(rowOf().querySelector('[aria-haspopup]')).toBeNull();
       expect(list.element.textContent).not.toContain('previous period');
-      expect(store.postEvent).not.toHaveBeenCalled();
+      expect(store.logEntry).not.toHaveBeenCalled();
     });
 
     it('ticks a row shown ready for the new period without naming an occurrence', () => {
       list.render([recurring()], { ...ctx, now: new Date('2026-11-02T08:00:00Z') });
       rowOf().querySelector('.status-button').click();
-      expect(store.postEvent).toHaveBeenCalledWith('r1', 'complete');
+      expect(store.logEntry).toHaveBeenCalledWith('r1', { checked: true });
+    });
+  });
+});
+
+
+/**
+ * Build a goal task whose current occurrence holds goal fields, for the row marks of ADR-0006.
+ * @param {object} fields the shortcut fields of `shapeTask`, such as `id` and `status`
+ * @param {object} occurrence the occurrence fields to add, such as `goal-measure` and `progress`
+ * @returns {object} the task
+ */
+function goalTask(fields, occurrence) {
+  const base = shapeTask({ id: 'g1', description: 'Sport', status: 'in-progress', ...fields });
+  return {
+    ...base,
+    'current-occurrence': { 'start-time': at(2, 0), 'due-time': at(8, 0), entries: [], ...base['current-occurrence'], ...occurrence },
+  };
+}
+
+describe('goal rows (TSK-4, TSK-15, TSK-21, TSK-22)', () => {
+  let store;
+  let toaster;
+  let list;
+  const ctx = { now: NOW, locale: 'en-US', lists: new Map(), listsByTask: new Map() };
+  const sport = (progress, extra = {}) => goalTask({}, {
+    'goal-measure': 'time', 'goal-direction': 'at-least', 'goal-target': 12_000, progress, 'due-time': at(8, 0), ...extra,
+  });
+  const row = (id = 'g1') => document.querySelector(`.task-row[data-task-id="${id}"]`);
+  const status = (id = 'g1') => row(id).querySelector('.status-button');
+  const rows = (tasks) => list.render(tasks, ctx);
+
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    store = {
+      postEvent: vi.fn(async () => ({})),
+      logEntry: vi.fn(async (id) => ({ event: { id: `e-${id}` }, task: {} })),
+      undoLog: vi.fn(async () => ({})),
+    };
+    toaster = { show: vi.fn() };
+    list = createTaskList({ document, store, toaster, label: 'All tasks', hrefOf: (task) => `#/tasks/${task.id}` });
+    document.body.append(list.element);
+  });
+
+  afterEach(() => {
+    list.destroy();
+  });
+
+  describe('clickOf per goal', () => {
+    const clickFor = (occurrence) => clickOf(occurrence, undefined);
+    const occurrenceOf = (status, goal) => goalTask({ status }, goal)['current-occurrence'];
+
+    it('opens the quick log for a time, amount, or reading goal, and logs a check for a checks goal', () => {
+      for (const measure of ['time', 'amount', 'reading']) {
+        expect(clickFor(occurrenceOf('ready', { 'goal-measure': measure, 'goal-target': 5, progress: 0 })), measure).toBe('log');
+        expect(clickFor(occurrenceOf('completed', { 'goal-measure': measure, 'goal-target': 5, progress: 5 })), measure).toBe('log');
+      }
+      expect(clickFor(occurrenceOf('in-progress', { 'goal-measure': 'checks', 'goal-target': 3, progress: 1 }))).toBe('check');
+    });
+
+    it('does nothing for Failed and Cancelled goal rows', () => {
+      for (const status of ['failed', 'cancelled']) {
+        expect(clickFor(occurrenceOf(status, { 'goal-measure': 'time', 'goal-target': 5, progress: 1 })), status).toBeNull();
+      }
+    });
+
+    it('does nothing before the start time (TSK-20)', () => {
+      const upcoming = goalTask({ status: 'ready' }, { 'start-time': at(5, 7) });
+      expect(clickOf(upcoming['current-occurrence'], upcoming['lifecycle-rules'], NOW)).toBeNull();
+    });
+
+    it('always logs a check for an open at-most checks goal, even past the limit', () => {
+      const occurrence = occurrenceOf('in-progress', { 'goal-measure': 'checks', 'goal-direction': 'at-most', 'goal-target': 3, progress: 4, 'completion-count': 4, 'target-count': 3 });
+      expect(clickFor(occurrence)).toBe('check');
+    });
+  });
+
+  describe('marks', () => {
+    it('shows the meter, the progress text, and names the log action for a time goal', () => {
+      rows([sport(10_200)]);
+      expect(row().querySelector('.task-row__meter').dataset.color).toBe('yellow');
+      expect(row().querySelector('.task-row__progress').textContent).toBe('2 h 50 / 3 h 20 min');
+      expect(status().getAttribute('aria-label')).toBe('Log time for Sport, 2 h 50 of 3 h 20 min');
+      expect(status().title).toBe('In progress, 2 h 50 of 3 h 20 min');
+      expect(status().dataset.track).toBe('on-track');
+      expect(row().querySelector('.task-row__count')).toBeNull();
+    });
+
+    it('colors the meter by progress: blue, yellow from 80%, green at the target', () => {
+      rows([sport(1200)]);
+      expect(row().querySelector('.task-row__meter').dataset.color).toBe('blue');
+      rows([sport(12_000, { status: 'completed' })]);
+      expect(row().querySelector('.task-row__meter').dataset.color).toBe('green');
+    });
+
+    it('marks an at-most goal above its limit with an alert, the overage, and orange', () => {
+      rows([goalTask({}, { 'goal-measure': 'amount', 'goal-direction': 'at-most', 'goal-target': 160, 'goal-unit': 'kcal', progress: 172 })]);
+      const progress = row().querySelector('.task-row__progress');
+      expect(progress.textContent).toBe('172 / max 160 kcal · 12 over');
+      expect(progress.classList.contains('task-row__progress--over')).toBe(true);
+      expect(progress.querySelector('use').getAttribute('href')).toMatch(/#alert$/);
+      expect(row().querySelector('.task-row__meter').dataset.color).toBe('orange');
+      expect(status().dataset.track).toBe('over-limit');
+    });
+
+    it('keeps an at-most goal below 80% gray and on its limit orange without an overage', () => {
+      rows([goalTask({}, { 'goal-measure': 'amount', 'goal-direction': 'at-most', 'goal-target': 100, 'goal-unit': 'g', progress: 50 })]);
+      expect(row().querySelector('.task-row__meter').dataset.color).toBe('gray');
+      rows([goalTask({}, { 'goal-measure': 'amount', 'goal-direction': 'at-most', 'goal-target': 100, 'goal-unit': 'g', progress: 100 })]);
+      expect(row().querySelector('.task-row__meter').dataset.color).toBe('orange');
+      expect(row().querySelector('.task-row__progress').textContent).toBe('100 / max 100 g');
+      expect(status().dataset.track).toBe('on-track');
+    });
+
+    it('adds "behind pace" to the meta line and marks the status button when the progress lags the window', () => {
+      rows([sport(3600, { 'goal-target': 36_000 })]);
+      expect(row().querySelector('.task-row__pace').textContent).toBe('behind pace');
+      expect(status().dataset.track).toBe('behind-pace');
+      rows([sport(30_000, { 'goal-target': 36_000 })]);
+      expect(row().querySelector('.task-row__pace')).toBeNull();
+    });
+
+    it('reads a carried reading as carried', () => {
+      rows([goalTask({ status: 'ready' }, {
+        'goal-measure': 'reading', 'goal-direction': 'at-most', 'goal-target': 80, 'goal-unit': 'kg', progress: 79.8, entries: [],
+      })]);
+      expect(row().querySelector('.task-row__progress').textContent).toBe('79.8 (carried) / max 80 kg');
+    });
+
+    it('shows the logged time of a task whose goal is not time, with a timer', () => {
+      rows([goalTask({ id: 'c1' }, { 'goal-measure': 'checks', 'goal-target': 1, progress: 0, 'time-spent-seconds': 22_500 }), sport(600)]);
+      expect(row('c1').querySelector('.task-row__spent').textContent).toBe('6 h 15 min spent');
+      expect(row('c1').querySelector('.task-row__spent use').getAttribute('href')).toMatch(/#timer$/);
+      expect(document.querySelectorAll('.task-row__spent').length).toBe(1);
+    });
+
+    it('turns the count badge orange above an at-most limit', () => {
+      rows([goalTask({}, { 'goal-measure': 'checks', 'goal-direction': 'at-most', 'goal-target': 3, 'target-count': 3, 'completion-count': 4, progress: 4 })]);
+      const badge = row().querySelector('.task-row__count');
+      expect(badge.textContent).toBe('4/3');
+      expect(badge.classList.contains('task-row__count--over')).toBe(true);
+    });
+
+    it('ends the meta line of a failed row in "Failed" and uses the failed icon', () => {
+      rows([shapeTask({ id: 'f1', description: 'Report', status: 'failed', 'due-time': at(3, 17) })]);
+      expect(row('f1').querySelector('.task-row__failed').textContent).toBe('Failed');
+      expect(row('f1').querySelector('.task-row__meta').lastElementChild.className).toContain('task-row__failed');
+      expect(row('f1').querySelector('.status-button use').getAttribute('href')).toMatch(/#status-failed$/);
+      expect(row('f1').querySelector('.task-row__due--overdue')).toBeNull();
+    });
+  });
+
+  describe('upcoming tasks (TSK-20, TV-15)', () => {
+    const upcoming = () => goalTask({ id: 'u1', description: 'Early swim', status: 'ready' }, { 'start-time': at(5, 7), 'goal-measure': 'checks', 'goal-target': 1, progress: 0 });
+    const normal = () => shapeTask({ id: 'n1', description: 'Buy paint', status: 'ready' });
+
+    it('shows a dashed ring, the start text, and a disabled status button that does nothing', () => {
+      rows([upcoming()]);
+      expect(row('u1').dataset.upcoming).toBe('true');
+      expect(row('u1').querySelector('.status-button use').getAttribute('href')).toMatch(/#status-upcoming$/);
+      expect(row('u1').querySelector('.task-row__start').textContent).toBe(`Starts tomorrow ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(new Date(2026, 10, 5, 7))}`);
+      expect(status('u1').getAttribute('aria-disabled')).toBe('true');
+      expect(status('u1').title).toBe(`Starts tomorrow ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(new Date(2026, 10, 5, 7))}`);
+      status('u1').click();
+      expect(store.logEntry).not.toHaveBeenCalled();
+    });
+
+    it('groups upcoming rows at the end under an Upcoming header with their count', () => {
+      rows([upcoming(), normal()]);
+      const items = [...document.querySelectorAll('.task-list > li')].map((item) => item.dataset.taskId ?? item.querySelector('.group-header__name').textContent);
+      expect(items).toEqual(['n1', 'Upcoming', 'u1']);
+      expect(document.querySelector('.group-header__count').textContent).toBe('1');
+    });
+
+    it('moves upcoming rows out of the other groups and puts the Upcoming group last', () => {
+      const groups = [{ key: 'ready', label: 'To do', tasks: [upcoming(), normal()], total: 2 }];
+      list.render([upcoming(), normal()], ctx, { groups });
+      const names = [...document.querySelectorAll('.group-header__name')].map((name) => name.textContent);
+      expect(names).toEqual(['To do', 'Upcoming']);
+      const counts = [...document.querySelectorAll('.group-header__count')].map((count) => count.textContent);
+      expect(counts).toEqual(['1', '1']);
+    });
+
+    it('collapses the Upcoming group like any group', () => {
+      rows([upcoming(), normal()]);
+      document.querySelector('.group-header[data-group-key="upcoming"] .group-header__toggle').click();
+      expect(row('u1')).toBeNull();
+    });
+  });
+
+  describe('clicks', () => {
+    it('logs a check for a checks goal, with an Undo toast that posts undo-log of that entry', async () => {
+      rows([goalTask({ status: 'in-progress' }, { 'goal-measure': 'checks', 'goal-target': 3, 'target-count': 3, 'completion-count': 1, progress: 1 })]);
+      status().click();
+      expect(store.logEntry).toHaveBeenCalledWith('g1', { checked: true });
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
+      const [message, settings] = toaster.show.mock.lastCall;
+      expect(message).toBe('Ticked, 2 of 3 done.');
+      settings.onAction();
+      expect(store.undoLog).toHaveBeenCalledWith('g1', 'e-g1');
+    });
+
+    it('opens the quick log under the row of a time goal, and posts nothing', () => {
+      rows([sport(600)]);
+      status().click();
+      const quick = row().querySelector('.quick-log');
+      expect(quick).not.toBeNull();
+      expect(quick.getAttribute('aria-label')).toBe('Log for Sport');
+      expect(store.logEntry).not.toHaveBeenCalled();
+      status().click();
+      expect(row().querySelector('.quick-log')).toBeNull();
+    });
+
+    it('opens the quick log for x on the focused row', () => {
+      rows([sport(600)]);
+      const open = row().querySelector('.task-row__open');
+      open.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true, cancelable: true }));
+      expect(row().querySelector('.quick-log')).not.toBeNull();
+    });
+
+    it('logs the entry of the quick log, shows "Logged 45 min on Sport." with Undo, and returns focus to the status button', async () => {
+      rows([sport(600)]);
+      status().click();
+      const quick = row().querySelector('.quick-log');
+      quick.querySelector('[name="minutes"]').value = '45';
+      quick.querySelector('[data-action="log"]').click();
+      await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));
+      expect(store.logEntry).toHaveBeenCalledWith('g1', { 'time-spent-seconds': 2700 });
+      const [message, settings] = toaster.show.mock.lastCall;
+      expect(message).toBe('Logged 45 min on Sport.');
+      settings.onAction();
+      expect(store.undoLog).toHaveBeenCalledWith('g1', 'e-g1');
+      expect(row().querySelector('.quick-log')).toBeNull();
+      expect(document.activeElement).toBe(status());
+    });
+
+    it('closes the quick log on Cancel without a change and focuses the status button', () => {
+      rows([sport(600)]);
+      status().click();
+      row().querySelector('.quick-log [data-action="cancel"]').click();
+      expect(row().querySelector('.quick-log')).toBeNull();
+      expect(store.logEntry).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(status());
+    });
+
+    it('keeps the open quick log when the rows render again', () => {
+      rows([sport(600)]);
+      status().click();
+      row().querySelector('.quick-log [name="minutes"]').value = '12';
+      rows([sport(1200)]);
+      expect(row().querySelector('.quick-log [name="minutes"]').value).toBe('12');
     });
   });
 });

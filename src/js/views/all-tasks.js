@@ -19,7 +19,7 @@ import { applyListOrder, onListOrderChange, readListOrder } from '../core/list-o
 import { isSharedList } from '../core/permissions.js';
 import { becameStale, displayTasks } from '../core/occurrences.js';
 import {
-  clearFilters, DEFAULT_ORDER, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, positionsOfList, sortByPosition, sortTasks,
+  clearFilters, DEFAULT_ORDER, exactMatchIndex, filterTasks, groupTasks, indexMemberships, NO_LIST, positionsOfList, sortByPosition, sortTasks, upcomingChanged,
 } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
@@ -385,7 +385,7 @@ export function mountAllTasks(view, {
   function tick() {
     const { filter, group } = model.get();
     const time = now();
-    if (filter.due?.length || filter.finishedToday === true || group === 'due' || (data && renderedAt && becameStale(data.tasks, renderedAt, time))) {
+    if (filter.due?.length || filter.finishedToday === true || group === 'due' || (data && renderedAt && (becameStale(data.tasks, renderedAt, time) || upcomingChanged(data.tasks, renderedAt, time)))) {
       render();
     }
     else {

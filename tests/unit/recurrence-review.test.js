@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { countLists } from '../../src/js/core/list-counts.js';
 import { applyEvent, becameStale, firstOccurrence, foldEvents, normalizeRules } from '../../src/js/core/occurrences.js';
 import { mountAllTasks } from '../../src/js/views/all-tasks.js';
-import { createTaskList, tickEvent } from '../../src/js/views/task-list.js';
+import { createTaskList, clickOf } from '../../src/js/views/task-list.js';
 import { freshStore } from './store-helpers.js';
 import { shapeTask } from './task-shape.js';
 
@@ -86,7 +86,7 @@ describe('ended recurring series', () => {
 
   it('leaves the row of a series that ended completed inert, so only the task editor reopens it', () => {
     const task = ended('completed');
-    expect(tickEvent(task['current-occurrence'], task['lifecycle-rules'])).toBeNull();
+    expect(clickOf(task['current-occurrence'], task['lifecycle-rules'])).toBeNull();
     document.body.innerHTML = '';
     const list = createTaskList({ document, store: { postEvent: vi.fn() }, toaster: { show: vi.fn() }, label: 'Tasks', hrefOf: () => '#' });
     document.body.append(list.element);

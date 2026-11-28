@@ -49,6 +49,11 @@ All notable changes to this project are documented here.
 - Store: Expired overdue tasks by goal, failing `fail` tasks and closing `at-most` tasks with their verdict once per occurrence, and refused a reopen of an `at-most` occurrence.
 - Core: Added `failed` to the status filter, Finished today only, and the group names, and filtered upcoming tasks by the 24 hour window and a stored Show upcoming option.
 - Tests: Fixed the end-to-end tests for the Failed status, `log` events in backups, and version 5 upgrade fixtures that hold one event per tick.
+- FrontEnd: Showed goal progress on task rows: a meter and progress text for time, amount, and reading goals, the logged time of other tasks, and the new status icons (`TSK-15`, `TSK-22`).
+- FrontEnd: Marked rows over an at-most limit, behind pace, and Failed, and showed the start of upcoming tasks (`TSK-20`).
+- FrontEnd: Opened the quick log from the status button of a time, amount, or reading goal, and logged checks with an Undo toast that posts `undo-log` (`TSK-4`, `TSK-21`).
+- FrontEnd: Grouped upcoming tasks under an Upcoming header at the end of the rows, and added Show upcoming to the Status filter (`TV-15`).
+- Core: Redrew the lists when the clock starts an upcoming task or brings one within 24 hours.
 
 ## v0.6.0 [released: 2026-11-24]
 - FrontEnd: Made the All tasks empty state say tasks sync and drop the Connect link while connected.

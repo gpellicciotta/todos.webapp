@@ -13,7 +13,7 @@
  */
 
 import {
-  clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks,
+  clearFilters, exactMatchIndex, filterTasks, groupTasks, indexMemberships, positionsOfList, sortByPosition, sortTasks, upcomingChanged,
 } from '../core/query.js';
 import { createLiveRegion } from '../../vendor/design/js/live-region.js';
 import { attachMenu } from '../../vendor/design/js/menu.js';
@@ -296,7 +296,7 @@ export function mountList(view, { store, toaster, navigate, viewModels, getStora
   // Overdue chips follow the clock, also for tasks that keep their status (`OVD-2`); the rows stay.
   // Finished today only changes which rows show at midnight, so it renders again (`TV-14`).
   const timer = setInterval(() => {
-    if (model.get().filter.finishedToday === true || (data && renderedAt && becameStale(data.tasks, renderedAt, now()))) {
+    if (model.get().filter.finishedToday === true || (data && renderedAt && (becameStale(data.tasks, renderedAt, now()) || upcomingChanged(data.tasks, renderedAt, now())))) {
       render();
     }
     else {

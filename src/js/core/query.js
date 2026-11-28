@@ -43,6 +43,25 @@ const FINISHED = new Set(['completed', 'failed', 'cancelled']);
 /** Views show an upcoming task only when it starts within this time (`TV-15`). */
 export const UPCOMING_WINDOW_MS = 24 * 3_600_000;
 
+/**
+ * Tell whether the clock moved an upcoming task into view or out of the Upcoming group between two times:
+ * a task that came within 24 hours of its start, or whose start passed. A view then filters and groups again (`TV-15`).
+ * @param {object[]} tasks the tasks
+ * @param {Date|number|string} from the time of the last render
+ * @param {Date|number|string} to the current time
+ * @returns {boolean} true when a task changed its upcoming state or visibility
+ */
+export function upcomingChanged(tasks, from, to) {
+  const before = new Date(from).getTime();
+  const after = new Date(to).getTime();
+  return tasks.some((task) => {
+    const current = task['current-occurrence'];
+    const start = Date.parse(current['start-time']);
+    return current.occurrence === 1
+      && ((start > before) !== (start > after) || (start - before > UPCOMING_WINDOW_MS) !== (start - after > UPCOMING_WINDOW_MS));
+  });
+}
+
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 

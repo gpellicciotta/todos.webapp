@@ -57,6 +57,8 @@ To make `Enter` only search, turn off **Make Enter add** in **Settings**.
 In the task editor, make a task repeat daily, weekly, monthly, or yearly, every 1 to 99 units.
 It comes back as *To do* each period, and it can end on a date or after a number of periods.
 A task can ask for several checks. Each click on its status button counts one, and the row shows a count like `2/3`.
+A goal in time, amounts, or readings shows a small meter and its progress, and its status button opens a quick log under the row.
+After each log, a toast offers Undo.
 
 ## What happens when a task becomes overdue?
 

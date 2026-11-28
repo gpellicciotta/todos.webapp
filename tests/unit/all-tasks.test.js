@@ -12,7 +12,7 @@ import { shapeTask } from './task-shape.js';
 function fakeStore(dueTime = null) {
   const task = shapeTask({
     id: 't1', description: 'Buy paint', status: 'ready', 'due-time': dueTime,
-    'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
+    'creation-time': '2026-11-03T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
   });
   return {
     snapshot: async () => ({ lists: [], tasks: [task], memberships: [], notes: [] }),
@@ -479,7 +479,7 @@ describe('mountAllTasks', () => {
     function groupedStore() {
       const make = (id, description, status, due) => shapeTask({
         id, description, status, 'due-time': due,
-        'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
+        'creation-time': '2026-11-03T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
       });
       const tasks = [
         make('t1', 'Buy paint', 'ready', new Date(2026, 10, 5, 9).toISOString()),
@@ -589,7 +589,7 @@ describe('mountAllTasks', () => {
   describe('the Shared filter (TV-7)', () => {
     const task = (id, description) => shapeTask({
       id, description, status: 'ready', 'due-time': null, 'owner-id': 3,
-      'creation-time': '2026-11-04T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
+      'creation-time': '2026-11-03T09:00:00.000Z', 'last-update-time': '2026-11-04T09:00:00.000Z',
     });
 
     const store = {

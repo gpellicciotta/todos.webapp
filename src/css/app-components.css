@@ -434,6 +434,171 @@
   color: var(--color-danger);
 }
 
+/*
+ * Goal marks of the meta line (`TSK-21`, `TSK-22`): a small meter with the progress text, the logged time of other tasks,
+ * "behind pace", the start of an upcoming task, and "Failed". Red marks Failed only; the over-limit and behind-pace
+ * marks use the orange danger color, and each mark carries words or an icon, so color never carries one alone.
+ */
+.task-row__meta {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+
+.task-row__goal,
+.task-row__spent,
+.task-row__start {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.task-row__meter {
+  --meter-color: var(--color-status-in-progress);
+  --meter-share: 0%;
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  inline-size: 2.5rem;
+  block-size: var(--size-meter);
+  border-radius: var(--radius-chip);
+  background-color: var(--color-border);
+}
+
+.task-row__meter::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--meter-share);
+  border-radius: inherit;
+  background-color: var(--meter-color);
+  content: '';
+}
+
+.task-row__meter[data-color='yellow'] {
+  --meter-color: var(--color-progress-approaching);
+}
+
+.task-row__meter[data-color='green'] {
+  --meter-color: var(--color-status-completed);
+}
+
+.task-row__meter[data-color='gray'] {
+  --meter-color: var(--color-text-muted);
+}
+
+.task-row__meter[data-color='orange'] {
+  --meter-color: var(--color-danger);
+}
+
+.task-row__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Yellow fills meters and icons only; the text beside an approaching meter uses the dark amber. */
+.task-row__goal:has(.task-row__meter[data-color='yellow']) .task-row__progress {
+  color: var(--color-progress-approaching-text);
+}
+
+.task-row__progress--over,
+.task-row__pace {
+  color: var(--color-danger);
+}
+
+.task-row__failed {
+  color: var(--color-danger);
+}
+
+.task-row__failed::before {
+  content: '· ';
+}
+
+.task-row[data-status='failed'] .task-row__description {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+}
+
+/* An upcoming row is muted: a dashed ring, and its start in the meta line. */
+.task-row[data-upcoming='true'] .task-row__description {
+  color: var(--color-text-muted);
+}
+
+/*
+ * Quick log (`TSK-21`): a non-modal form under the row, the row's width, set off by a rule.
+ * The row wraps, so the form takes a line of its own below the status button and the text.
+ */
+.task-row {
+  flex-wrap: wrap;
+}
+
+.task-row__open {
+  flex-basis: 0;
+}
+
+.quick-log {
+  display: flex;
+  flex: 0 0 100%;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
+  padding-block: var(--space-2) var(--space-3);
+  padding-inline: var(--space-3);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface-sunken);
+}
+
+.quick-log__title {
+  flex: 0 0 100%;
+  margin: 0;
+  font-weight: var(--weight-semibold);
+}
+
+.quick-log__part {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+
+.quick-log__part[hidden],
+.quick-log__confirm[hidden] {
+  display: none;
+}
+
+.quick-log__field {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.quick-log__field .field__control {
+  inline-size: 6rem;
+}
+
+.quick-log__error,
+.quick-log__confirm {
+  flex: 0 0 100%;
+  margin: 0;
+}
+
+.quick-log__error:empty {
+  display: none;
+}
+
+.quick-log__actions {
+  display: flex;
+  flex: 0 0 100%;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.quick-log__actions [data-action='more'] {
+  margin-inline-end: auto;
+}
+
 .task-row__lists {
   flex: 1 1 auto;
   min-inline-size: 0;
@@ -539,6 +704,11 @@
   --badge-tone: var(--color-status-in-progress);
 }
 
+/* Above an "at most" limit the badge takes an orange tint, such as 4/3. */
+.status-button > .task-row__count--over {
+  --badge-tone: var(--color-danger);
+}
+
 .status-button[data-status='completed'] > .task-row__count {
   --badge-tone: var(--color-status-completed);
 }
@@ -577,6 +747,20 @@
 .status-button[data-status='in-progress'],
 .task-editor__status[data-status='in-progress'] > .icon {
   color: var(--color-status-in-progress);
+}
+
+/* A row not on track (behind pace, overdue, or over its limit) turns its in-progress icon orange (`TSK-22`). */
+.status-button[data-status='in-progress'][data-track]:not([data-track='on-track']) {
+  color: var(--color-danger);
+}
+
+/* Failed is the one red mark; an upcoming row's dashed ring stays gray (`TSK-20`). */
+.status-button[data-status='failed'] {
+  color: var(--color-status-failed);
+}
+
+.task-row[data-upcoming='true'] .status-button {
+  color: var(--color-text-muted);
 }
 
 .task-editor__status[data-status='in-progress']:not([data-track='on-track']) > .icon {
