@@ -1,6 +1,7 @@
 ---
 id: T0313
 owner: "@claude"
+session: claude-20261128-c1da60
 needs: []
 branch: task/T0313-add-goals-start-times-progress-and-time-spent
 worktree: .plan/work/T0313-add-goals-start-times-progress-and-time-spent
@@ -22,14 +23,40 @@ T0314 converts events, T0315 adds start times and expiry, and T0316 removes the 
 Rules, files, and tests: [technical-spec.md](T0313-add-goals-start-times-progress-and-time-spent/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read Goals and Store Upgrade in local-store.md, occurrences.js, db.js, and migrate.js.
-- [ ] **[Implement]** Author failing tests for the upgrade of rules and occurrences and for the mirrors.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reason.
-- [ ] **[Implement]** Add the fields, the upgrade step, and the mirror upkeep.
-- [ ] **[Verify]**    Run `npm test` and lint and confirm they pass.
-- [ ] **[Doc]**       Update the affected docs and CHANGELOG.md.
+- [x] **[Read]**      Read Goals and Store Upgrade in local-store.md, occurrences.js, db.js, and migrate.js.
+- [x] **[Implement]** Author failing tests for the upgrade of rules and occurrences and for the mirrors.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reason.
+- [x] **[Implement]** Add the fields, the upgrade step, and the mirror upkeep.
+- [x] **[Verify]**    Run `npm test` and lint and confirm they pass.
+- [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
   Task split out of T0303, which asked for size approval at 25 files and 2500 lines.
+
+- [2026-11-28] **[Implement]**
+  Decided: mirrors flow from target-count and completion-count; goal fields stay out of sync payloads and backups.
+  - Upgrade runs only from version 5.
+
+- [2026-11-28] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 16.
+  - Lines touched: 330.
+  - Reopenings: 0.
+
+- [2026-11-28] **[Read]**
+  Read the goals and store upgrade specs, occurrences.js, db.js, and migrate.js.
+
+- [2026-11-28] **[Implement]**
+  Authored failing tests for goal fields, mirrors, and the version 5 upgrade.
+
+- [2026-11-28] **[Verify]**
+  Confirmed eight new tests failed for missing fields and version 6.
+
+- [2026-11-28] **[Verify]**
+  Full suite of 1866 tests and lint passed; proof is in validation-proof.md.
+
+- [2026-11-28] **[Doc]**
+  Size note: 17 counted files, 351 changed lines, since existing exact-shape tests needed the new fields; the earlier outcome counts were estimates.
+
