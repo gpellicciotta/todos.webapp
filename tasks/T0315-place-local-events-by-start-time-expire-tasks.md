@@ -1,11 +1,11 @@
 ---
 id: T0315
-owner: ~
-needs: [T0314]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0315-place-local-events-by-start-time-expire-tasks
+worktree: .plan/work/T0315-place-local-events-by-start-time-expire-tasks
+status: active
+started_at: "2026-11-28T03:03:07Z"
 ended_at: —
 review: agent
 preview: none
