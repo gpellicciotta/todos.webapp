@@ -25,3 +25,6 @@ playwright-report/
 
 # Ignore the staged Pages artifact of scripts/stage-site.mjs
 _site/
+
+# Ignore local notes and settings
+*.local.*
