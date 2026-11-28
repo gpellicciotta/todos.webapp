@@ -12,14 +12,13 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1203.1, input: 178, output: 120731, cache_read: 18069554, cache_write: 282908}
+  worker: {turns: 3, duration_s: 1363.0, input: 200, output: 127876, cache_read: 21135500, cache_write: 294997}
   review: {turns: 2, duration_s: 133.2, input: 62303, output: 3706, cache_read: 641024, cache_write: 0}
-review_status: rejected
-review_round: 2
-review_requested_at: "2026-11-28T01:49:16Z"
+review_status: pending
+review_round: 3
+review_requested_at: "2026-11-28T01:53:26Z"
 review_session: codex-20261128-be17ab
 work_duration: 1373.7
-reviewed_by: "@codex"
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -84,4 +83,7 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Implement]**
   foldLogCache now converts legacy complete and uncomplete to log form before folding, so mixed histories rebuild time, entries, and undos.
+
+- [2026-11-28] **[Review]**
+  Round 3 requested (mode: agent).
 
