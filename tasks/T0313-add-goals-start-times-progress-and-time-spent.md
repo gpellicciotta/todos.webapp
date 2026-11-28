@@ -13,11 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 647.3, input: 124, output: 46293, cache_read: 8603409, cache_write: 170585}
-  review: {turns: 1, duration_s: 3.1, input: 0, output: 0, cache_read: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 62.7, input: 31405, output: 1425, cache_read: 264576, cache_write: 0}
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T01:18:51Z"
-work_duration: 663.8
+work_duration: 742.3
+reviewed_by: "@codex"
+review_session: codex-20261128-3948b4
 ---
 # T0313: Add goals, start times, progress, and time spent to local records in database version 6
 
@@ -69,4 +71,11 @@ Rules, files, and tests: [technical-spec.md](T0313-add-goals-start-times-progres
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: The migration and mirror tests pass, as do the full automated suite and lint.
+  - Findings: [review-findings-1.md](T0313-add-goals-start-times-progress-and-time-spent/review-findings-1.md).
+
+- [2026-11-28] **[Implement]**
+  Added the end-to-end version 5 upgrade spec the review asked for; it passes with all 288 e2e tests.
 

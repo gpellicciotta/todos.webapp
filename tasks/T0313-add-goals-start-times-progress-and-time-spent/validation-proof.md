@@ -32,3 +32,23 @@ $ npm run lint   (exit code 0)
 > todos-webapp@0.6.1-pre lint
 > eslint .
 ```
+
+Review round 1 asked for the end-to-end scenario: `tests/e2e/store-upgrade.spec.js` seeds a version 5 database, opens the app, and checks the counts.
+
+```text
+$ npx playwright test tests/e2e/store-upgrade.spec.js   (exit code 0)
+  ok 1 [chromium] › tests\e2e\store-upgrade.spec.js:52:1 › upgrades a version 5 database and shows each task with its count kept (2.9s)
+
+  1 passed (4.7s)
+```
+
+```text
+$ npx playwright test   (exit code 0)
+  288 passed (4.4m)
+```
+
+```text
+$ npm run lint   (exit code 0)
+> todos-webapp@0.6.1-pre lint
+> eslint .
+```
