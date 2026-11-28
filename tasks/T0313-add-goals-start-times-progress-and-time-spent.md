@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 647.3, input: 124, output: 46293, cache_read: 8603409, cache_write: 170585}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T01:18:51Z"
 ---
 # T0313: Add goals, start times, progress, and time spent to local records in database version 6
 
@@ -59,4 +64,7 @@ Rules, files, and tests: [technical-spec.md](T0313-add-goals-start-times-progres
 
 - [2026-11-28] **[Doc]**
   Size note: 17 counted files, 351 changed lines, since existing exact-shape tests needed the new fields; the earlier outcome counts were estimates.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
