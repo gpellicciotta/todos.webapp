@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 745.8, input: 140, output: 54687, cache_read: 10261613, cache_write: 187014}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T03:15:41Z"
 ---
 # T0315: Place local events by start time, expire tasks by goal, and filter failed and upcoming tasks
 
@@ -51,4 +56,7 @@ Rules, files, and tests: [technical-spec.md](T0315-place-local-events-by-start-t
 
 - [2026-11-28] **[Doc]**
   Updated local-store.md, CHANGELOG.md, and the service worker hashes.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
