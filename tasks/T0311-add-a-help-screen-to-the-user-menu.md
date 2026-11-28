@@ -5,20 +5,22 @@ session: claude-20261128-026f37
 needs: []
 branch: task/T0311-add-a-help-screen-to-the-user-menu
 worktree: .plan/work/T0311-add-a-help-screen-to-the-user-menu
-status: active
+status: completed
 started_at: "2026-11-28T02:07:45Z"
-ended_at: —
+ended_at: "2026-11-28T02:56:34Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 2743.1, input: 66, output: 16703, cache_read: 8342054, cache_write: 39353}
-  review: {turns: 1, duration_s: 54.6, input: 35226, output: 1563, cache_read: 230016, cache_write: 0}
-work_duration: 2413.4
-review_status: pending
+  review: {turns: 2, duration_s: 102.0, input: 56141, output: 2987, cache_read: 428160, cache_write: 0}
+work_duration: 2929.4
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-28T02:55:43Z"
-review_session: codex-20261128-ff0fef
+review_session: codex-20261128-6198b1
+reviewed_by: "@codex"
+completion-commit: 300160d41aee5d6af95b2c2d801dcc14e4bcb150
 ---
 # T0311: Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings
 
@@ -39,7 +41,7 @@ Details are in [technical-spec.md](T0311-add-a-help-screen-to-the-user-menu/tech
 - [x] **[Verify]**    Run `python scripts/devops.py check` and confirm it passes.
 - [x] **[Visual]**    Capture Help and Settings before and after, in light and dark, at 390 and 1440 px.
 - [x] **[Doc]**       Update requirements, ui-design.md, visual-style-guide.md, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -99,6 +101,13 @@ Details are in [technical-spec.md](T0311-add-a-help-screen-to-the-user-menu/tech
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-2.md](T0311-add-a-help-screen-to-the-user-menu/review-findings-2.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
 ## Visual Verification
 - Before: [settings-before.png](T0311-add-a-help-screen-to-the-user-menu/settings-before.png)
