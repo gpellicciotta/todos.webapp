@@ -5,17 +5,22 @@ session: claude-20261128-833341
 needs: []
 branch: task/T0302-port-the-adr-0006-fold-to-the-local
 worktree: .plan/work/T0302-port-the-adr-0006-fold-to-the-local
-status: active
+status: completed
 started_at: "2026-11-28T00:14:02Z"
-ended_at: —
+ended_at: "2026-11-28T00:18:34Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 201.1, input: 52, output: 14274, cache_read: 2105950, cache_write: 85658}
-review_status: pending
+  review: {turns: 1, duration_s: 60.9, input: 47599, output: 3510, cache_read: 582683}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T00:17:29Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261128-1c4645
+work_duration: 273.1
+completion-commit: f2588bc417d2d370f74138ee0f870daf4fb4afb8
 ---
 # T0302: Port the ADR-0006 fold to the local occurrences module, passing the shared fold test vectors
 
@@ -32,7 +37,7 @@ Copy docs/specs/fold-test-vectors.json from todos.server task T0293 into tests/f
 - [x] **[Implement]** Port the fold, verdicts, and carried readings to occurrences.js.
 - [x] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-27] **[Doc]**
@@ -55,4 +60,11 @@ Copy docs/specs/fold-test-vectors.json from todos.server task T0293 into tests/f
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @gemini: The work meets the goals.
+  - Findings: [review-findings-1.md](T0302-port-the-adr-0006-fold-to-the-local/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
