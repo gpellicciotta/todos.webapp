@@ -81,3 +81,7 @@ Capture before and after screenshots of the lists and view options in light and 
   Round 1 rejected by @codex: [Decided]** Reject: the quick log can submit duplicate entries while a request is pending.
   - Findings: [review-findings-1.md](T0312-show-goal-progress-on-task-rows-with-the/review-findings-1.md).
 
+- [2026-11-28] **[Implement]**
+  Guarded every quick-log submission path while a request is pending.
+  - Regression tests added; 2139 unit tests pass.
+

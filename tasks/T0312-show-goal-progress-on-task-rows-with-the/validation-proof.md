@@ -37,3 +37,8 @@ Captured with `node t0312-capture.mjs` against the base commit (before) and the 
 - Lists: [before light](list-before-light.png), [after light](list-after-light.png), [before dark](list-before-dark.png), [after dark](list-after-dark.png)
 - View options, Status row open: [before light](view-options-before-light.png), [after light](view-options-after-light.png), [before dark](view-options-before-dark.png), [after dark](view-options-after-dark.png)
 - Quick log open under Sport: [light](quick-log-after-light.png), [dark](quick-log-after-dark.png)
+
+### Review round 1 rework: duplicate quick-log entries
+Regression tests: repeated Enter, Log, and Log anyway post once while a request is pending.
+Before the fix: `AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times`.
+After the fix, `npx vitest run` (exit code 0): `Tests  2139 passed (2139)`; `npx eslint .` exit 0; `npx playwright test tests/e2e/list.spec.js`: `20 passed`.
