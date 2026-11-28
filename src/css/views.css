@@ -755,9 +755,14 @@
 
 .import-dialog__file-name,
 .import-dialog__file-meta,
-.import-dialog__counts {
+.import-dialog__counts,
+.import-dialog__warning {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.import-dialog__warning {
+  font-size: var(--text-sm);
 }
 
 .import-dialog__file-name,

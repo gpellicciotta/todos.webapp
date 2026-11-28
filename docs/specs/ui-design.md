@@ -1213,6 +1213,8 @@ Wireframe: [import.svg](../img/ui/import.svg).
    Merge queues its changes for upload, and Import then leaves the dialog open on the counts and a sync line (`BAK-6`).
    The line reads "Syncing N changes…", then "Synced."; offline, sign-in needed, and failures show their own text.
    Done closes the dialog and a toast repeats the counts; Close and Escape also work, and syncing continues.
+9. When a task has more than 10,000 missing checks per period, the dialog names it with its missing count, in the preview and after the import.
+   Import then leaves the dialog open on that list, also in local mode, until Done closes it and a toast repeats the counts.
 
 ---
 

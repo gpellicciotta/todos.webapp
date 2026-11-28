@@ -5,6 +5,11 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.6.1-pre
+- Backup: Wrote backup format 3, with the goal, start time, `fail`, progress, and time-spent fields of ADR-0006, and logs in place of `complete` and `uncomplete`.
+- Backup: Converted format 2 files on import, with `target-count` as a checks goal, `cancel` as `fail`, `complete` as a checked log, and `uncomplete` as an undo.
+- Backup: Capped the checked logs that import adds for missing progress at 10,000 per occurrence, for formats 2 and 3, listing affected tasks as `unrebuiltProgress`, and added them in linear time.
+- FrontEnd: Named the tasks with progress beyond that cap, and their missing checks, in the import dialog before and after the import.
+- Backup: Wrote the status events of format 1 imports as logs and undos, and listed skipped events as `skippedEvents` in the import result.
 - Sync: Sent goal changes to the service as `goal-target`, which it requires, for new tasks, rule edits, and first-connect uploads, and replayed rule changes queued before the upgrade the same way.
 - Sync: Read `goal-target`, `progress`, `time-spent-seconds`, and the `failed` status of pulled tasks, and stored their `entries` as events so they can be undone.
 - Sync: Dropped stored entries that another device undid, and ignored entries of unknown types when pulling.

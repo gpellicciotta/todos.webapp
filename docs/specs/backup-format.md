@@ -30,8 +30,9 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 - Export writes format 3; import reads formats 1, 2, and 3.
 - Formats 2 and 3 follow the todos.server JSON format: tasks embed nothing, and their parts are top-level arrays.
 - Format 3 adds goals, start times, the log, and the `failed` status of ADR-0006 of todos.server.
-- [backup-v1.json](../../tests/fixtures/backup-v1.json) and [backup-v2.json](../../tests/fixtures/backup-v2.json) are sample files.
-  The format 3 sample, `tests/fixtures/backup-v3.json`, comes with the implementation.
+- [backup-v1.json](../../tests/fixtures/backup-v1.json), [backup-v2.json](../../tests/fixtures/backup-v2.json),
+  and [backup-v3.json](../../tests/fixtures/backup-v3.json) are sample files.
+  The format 3 sample is the format 2 sample after import and export.
 
 ---
 
@@ -85,14 +86,15 @@ The JSON file that holds a full backup of the app's data, and how importing it m
 
 ### Format 2
 Format 2 has the layout of format 3 with the former goal, log, and status model; import converts it before validation of the converted values.
-Until the format 3 export lands, the app writes format 2 and its events also carry `log` and `undo-log` types with their `checked`, `time-spent-seconds`, `amount`, `label`, and `target-event-id` fields, so no entry is lost.
-Import validates those fields, and rebuilds each occurrence cache and its live entries with the log fold.
+Files that the app wrote before format 3 also hold `log` and `undo-log` events beside `complete` and `uncomplete`; the conversion keeps them, so no entry is lost.
+Import validates the log fields, and rebuilds each occurrence cache and its live entries with the log fold.
+The app converts a format 2 file in memory; it validates the file as format 2 first, then validates the converted values as format 3.
 - Rules: `target-count` N becomes an `at-least` goal of N `checks`; `start-time` and `goal-unit` are null.
   `overdue-handling` `cancel` becomes `fail`.
 - Occurrences are never read, since import rebuilds them.
 - Events: each `complete` becomes a checked `log` with the same `id`, time, and owner.
   - Each applied `uncomplete` becomes an `undo-log` of the latest check live at its place, as in the store upgrade.
-  - An `uncomplete` the old fold ignores, or one without a live check, is skipped and reported.
+  - An `uncomplete` the old fold ignores, or one without a live check, is skipped and listed in `skippedEvents` of the import result.
   - An `edit-lifecycle-rules` event converts its `target-count` change into `goal-target`, and `cancel` into `fail`.
 - Statuses of the rebuilt occurrences follow Rebuilding Occurrences; a closing event that left `ready` or `in-progress` gives `failed`.
 - The conversion is the one of the todos.server import, so a file converts alike in both apps.
@@ -106,6 +108,7 @@ Format 1 keeps the former task and note shape; import maps it onto the store.
 - Import maps a status onto events: an added task gets a `create` event and at most one status event.
   A `completed` status gives a checked `log`; tasks get the default goal, and the result converts as format 2 does.
 - A replaced task keeps its events and occurrences, and gets the events from its old to its new status at the import time.
+  Reopening a completed task adds an `undo-log` of its latest live check.
   Its deadline fields edit its rules; a recurring task keeps its rules, since format 1 knows no recurrence.
 - A note's `author` maps to `owner-id`, and its `edit-time` to `last-update-time`; a replaced note keeps its occurrence.
 
@@ -147,7 +150,7 @@ An import first validates the whole file; any failure changes nothing and names 
   - A `log` holds at least one of `checked`, `time-spent-seconds`, and `amount`.
     `time-spent-seconds` is a whole number from 1 to 2,147,483,647, `amount` follows the goal range, and `label` holds at most 100 characters.
   - An `undo-log` needs a `target-event-id`; other types have none.
-    A target missing from the file does not fail the file: import skips that event and reports it.
+    A target missing from the file and the store does not fail the file: import skips that event and lists it in `skippedEvents`.
   - Note texts hold 1 to 2000 characters; a note `occurrence` is null or at least 1.
   - Positions are well-formed fractional-index keys of at most 128 characters.
     They follow `validateKey` in fractional-index.js and the service's `FractionalIndex`, so `0zz`, `a00`, and `a` fail.
@@ -220,7 +223,10 @@ A format 2 file converts first, so the replay always runs on goals and the log.
 - The import never rolls over up to now; the store or the service does so afterwards.
 - **[Decided]** Backup events can miss the exported current status, since a connected device keeps only its own events.
   When they do, import adds `log` events that reach the progress, time spent, and status of the highest exported occurrence.
-  - A `checks` goal gets one checked `log` per missing check.
+  - A `checks` goal gets one checked `log` per missing check, up to 10,000 per occurrence; format 2 completions follow the same limit.
+    **[Decided]** The user chose this limit, which the server's CSV import also uses. A larger gap gets none, since a log holds one check.
+    The progress then stays as the fold computes it, the import result lists the task in `unrebuiltProgress` with the `missing` checks,
+    and the import dialog names it, in the preview and after the import.
   - A `time` goal gets one `log` with the missing seconds; an `amount` goal one with the missing amount.
   - A `reading` goal gets one `log` with the exported progress as its amount.
   - A recurring task first rolls over to that occurrence. The events take the import time.
@@ -279,6 +285,8 @@ A format 2 file converts first, so the replay always runs on goals and the log.
 - `skipped`: backup records that change nothing, being identical, older, or not owned.
 - Each count covers lists, tasks, memberships, and notes; the `lists`, `tasks`, `memberships`, and `notes` fields break them down.
   Rules, occurrences, and events have no counts of their own.
+- `skippedEvents`: the identifiers of events that conversion or import left out, present only when there are some.
+- `unrebuiltProgress`: the tasks whose missing checks exceeded 10,000, each as `{task-id, missing}`, present only when there are some.
 - `importBackup` applies the same plan and returns its counts; cancelling the preview writes nothing (`BAK-12`).
 - The preview reads its own snapshot, and the import plans again from a fresh one.
   The counts can differ when data changes between the preview and the import.

@@ -12,7 +12,7 @@
  * From 64rem it stays a modal dialog.
  */
 
-import { importBackup, parseBackup, previewImport } from '../core/backup.js';
+import { importBackup, MISSING_CHECKS_MAX, parseBackup, previewImport } from '../core/backup.js';
 import { openDialog } from '../../vendor/design/js/dialog.js';
 import { make, spriteIcon } from './task-list.js';
 
@@ -34,6 +34,8 @@ const STRINGS = Object.freeze({
   unreadable: 'The file could not be read. Choose it again.',
   failed: 'The import failed, and nothing changed. Try again.',
   imported: (name, counts) => `Imported ${name}: ${STRINGS.counts(counts)}.`,
+  unrebuilt: (tasks) => `Progress beyond ${MISSING_CHECKS_MAX.toLocaleString('en-US')} missing checks per period is not imported, so these tasks show less progress than the backup: `
+    + `${tasks.map(({ description, missing }) => `${description} (${missing.toLocaleString('en-US')} checks)`).join(', ')}.`,
   importAction: 'Import',
   done: 'Done',
   cancel: 'Cancel',
@@ -175,12 +177,15 @@ export function openImportDialog(doc, { store, toaster, opener, session, sync })
   modes.append(...options.map((option) => option.element));
   const counts = make(doc, 'p', 'import-dialog__counts');
   counts.setAttribute('role', 'status');
+  const warning = make(doc, 'p', 'import-dialog__warning');
+  warning.setAttribute('role', 'status');
+  warning.hidden = true;
   const syncStatus = make(doc, 'p', 'import-dialog__counts import-dialog__sync');
   syncStatus.setAttribute('role', 'status');
   syncStatus.hidden = true;
   const preview = make(doc, 'div', 'import-dialog__preview');
   preview.hidden = true;
-  preview.append(summary, modes, counts, syncStatus);
+  preview.append(summary, modes, counts, warning, syncStatus);
 
   const body = make(doc, 'div', 'dialog__body import-dialog__body');
   body.append(field, preview);
@@ -231,14 +236,31 @@ export function openImportDialog(doc, { store, toaster, opener, session, sync })
     }
   }
 
-  /** Leave the import view for the sync progress: the dialog stays open until Done. */
-  function showSync() {
+  /**
+   * Name the tasks whose progress import cannot rebuild, or hide the warning when there are none.
+   * @param {{unrebuiltProgress?: {'task-id': string, missing: number}[]}} planned the preview or the import result
+   */
+  function showWarning(planned) {
+    const names = new Map(backup.tasks.map((task) => [task.id, task.description]));
+    const tasks = (planned.unrebuiltProgress ?? []).map((item) => ({ description: names.get(item['task-id']) ?? item['task-id'], missing: item.missing }));
+    warning.hidden = tasks.length === 0;
+    warning.textContent = tasks.length === 0 ? '' : STRINGS.unrebuilt(tasks);
+  }
+
+  /** Leave the import view for the result: the dialog stays open until Done. */
+  function showDone() {
     finished = true;
     field.hidden = true;
     modes.hidden = true;
     cancelButton.hidden = true;
     importButton.textContent = STRINGS.done;
     counts.textContent = STRINGS.imported(name, result);
+    showWarning(result);
+  }
+
+  /** Leave the import view for the sync progress: the dialog stays open until Done. */
+  function showSync() {
+    showDone();
     syncStatus.hidden = false;
     stopWatching = sync.subscribe(() => refreshSync());
     refreshSync();
@@ -275,6 +297,7 @@ export function openImportDialog(doc, { store, toaster, opener, session, sync })
       const planned = await previewImport(store, backup, mode(), await importOptions());
       if (current === request) {
         counts.textContent = STRINGS.counts(planned);
+        showWarning(planned);
         importButton.disabled = false;
       }
     }
@@ -357,6 +380,12 @@ export function openImportDialog(doc, { store, toaster, opener, session, sync })
     }
     if (watching) {
       showSync();
+      importButton.focus();
+      return;
+    }
+    // Progress that import could not rebuild stays on screen, since a toast would pass too soon to read it.
+    if (result.unrebuiltProgress) {
+      showDone();
       importButton.focus();
       return;
     }

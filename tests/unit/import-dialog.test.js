@@ -369,3 +369,43 @@ describe('openImportDialog while connected', () => {
     expect(importButton.textContent).toBe('Import');
   });
 });
+
+
+describe('openImportDialog with progress that import cannot rebuild', () => {
+  const ID = '0192f1a2-0000-7000-8000-000000000801';
+  const GAP = 50_000;
+  const file = JSON.stringify({
+    format: 'todos-backup', 'format-version': 3, 'app-version': '0.6.1-pre', 'export-time': '2026-11-05T00:00:00.000Z',
+    lists: [], memberships: [], notes: [],
+    tasks: [{ id: ID, description: 'Count the steps', 'owner-id': null, 'creation-time': '2026-11-01T09:00:00.000Z', 'last-update-time': '2026-11-01T09:00:00.000Z', 'deletion-time': null }],
+    'lifecycle-rules': [{ 'task-id': ID, 'goal-target': 100_000 }],
+    occurrences: [{ 'task-id': ID, occurrence: 1, 'start-time': '2026-11-01T09:00:00.000Z', status: 'in-progress', progress: GAP }],
+    events: [{ id: '0192f1a2-0000-7000-8000-000000000802', 'task-id': ID, occurrence: 1, 'creation-time': '2026-11-01T09:00:00.000Z', 'owner-id': null, type: 'create', details: null }],
+  });
+
+  it('names the affected task and its missing checks in the preview, and keeps the report open after the import until Done', async () => {
+    const parts = open();
+    pick(parts.input, async () => file);
+    await settle();
+    const warning = parts.dialog.querySelector('.import-dialog__warning');
+    expect(warning.hidden).toBe(false);
+    expect(warning.textContent).toContain('Count the steps (50,000 checks)');
+    expect(warning.textContent).toContain('10,000');
+    parts.importButton.click();
+    await settle();
+    parts.imports[0].resolve({ ...COUNTS, unrebuiltProgress: [{ 'task-id': ID, missing: GAP }] });
+    await settle();
+    expect(parts.dialog.isConnected).toBe(true);
+    expect(parts.dialog.querySelector('.import-dialog__warning').textContent).toContain('Count the steps (50,000 checks)');
+    expect(parts.importButton.textContent).toBe('Done');
+    parts.importButton.click();
+    await expect(parts.closed).resolves.toMatchObject({ unrebuiltProgress: [{ 'task-id': ID, missing: GAP }] });
+  });
+
+  it('shows no warning when every progress can be rebuilt', async () => {
+    const parts = open();
+    pick(parts.input, async () => BACKUP);
+    await settle();
+    expect(parts.dialog.querySelector('.import-dialog__warning').hidden).toBe(true);
+  });
+});

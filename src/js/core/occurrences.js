@@ -716,7 +716,7 @@ export function foldLog({ goal, recurring = false, events = [], carriedReading =
  * @param {object} rules the lifecycle rules
  * @returns {object[]} the events, unchanged when none is legacy
  */
-function logForm(occurrence, events, rules) {
+export function logForm(occurrence, events, rules) {
   if (!events.some((event) => event.type === 'complete' || event.type === 'uncomplete')) {
     return events;
   }
@@ -1043,12 +1043,12 @@ export function makeEvent({ id, 'task-id': taskId, type, 'creation-time': time, 
  * @param {object[]} events the events of the task
  * @returns {object} the full rules the task was created with
  */
-export function firstRules(rules, events) {
+export function firstRules(rules, events, fields = RULE_FIELDS) {
   const first = { ...DEFAULT_RULES, ...rules };
   const edits = events.filter((event) => event.type === 'edit-lifecycle-rules').sort(byEventOrder).reverse();
   for (const event of edits) {
     for (const [field, change] of Object.entries(event.details ?? {})) {
-      if (RULE_FIELDS.includes(field)) {
+      if (fields.includes(field)) {
         first[field] = change?.old ?? null;
       }
     }
@@ -1064,11 +1064,11 @@ export function firstRules(rules, events) {
  * @param {object[]} events the events of the task
  * @returns {Set<string>} the identifiers of the edits that apply
  */
-export function replayableRuleEdits(rules, events) {
-  let active = firstRules(rules, events);
+export function replayableRuleEdits(rules, events, fields = RULE_FIELDS) {
+  let active = firstRules(rules, events, fields);
   const applied = new Set();
   for (const event of events.filter((candidate) => candidate.type === 'edit-lifecycle-rules').sort(byEventOrder)) {
-    const { rules: next, problem } = editedRules(active, ruleEditOf(event));
+    const { rules: next, problem } = editedRules(active, ruleEditOf(event, fields));
     if (!problem) {
       applied.add(event.id);
       active = next;
@@ -1082,8 +1082,8 @@ export function replayableRuleEdits(rules, events) {
  * @param {object} event the event
  * @returns {object} the edit
  */
-export function ruleEditOf(event) {
-  return Object.fromEntries(Object.entries(event.details ?? {}).filter(([field]) => RULE_FIELDS.includes(field))
+export function ruleEditOf(event, fields = RULE_FIELDS) {
+  return Object.fromEntries(Object.entries(event.details ?? {}).filter(([field]) => fields.includes(field))
     .map(([field, change]) => [field, change?.new ?? null]));
 }
 
@@ -1100,13 +1100,14 @@ export function ruleEditOf(event) {
  * @param {object[]} events the events of the task
  * @param {(event: object) => string} newId returns the identifier of a new event from its `task-id`, `type`, `occurrence`,
  *   and `creation-time`
- * @param {{settleAt?: string|null}} [options] the moment of the task's last change, such as its `last-update-time`
+ * @param {{settleAt?: string|null, fields?: string[]}} [options] the moment of the task's last change, such as its `last-update-time`,
+ *   and the rule fields that rule edits and the settling edit cover, `RULE_FIELDS` by default
  * @returns {{rules: object, current: object, occurrences: object[], events: object[], added: object[]}} the rules after the
  *   replay, the current occurrence, every occurrence by number, the events that took part, and the events written anew
  */
-export function replayEvents(task, rules, events, newId, { settleAt = null } = {}) {
+export function replayEvents(task, rules, events, newId, { settleAt = null, fields = RULE_FIELDS } = {}) {
   const goal = normalizeRules(rules);
-  let active = firstRules(rules, events);
+  let active = firstRules(rules, events, fields);
   let occurrence = firstOccurrence(active, task['creation-time']);
   let own = [];
   const past = new Map();
@@ -1175,7 +1176,7 @@ export function replayEvents(task, rules, events, newId, { settleAt = null } = {
    * @param {string} moment the ISO moment
    */
   const settle = (moment) => {
-    const edit = Object.fromEntries(RULE_FIELDS.filter((field) => (active[field] ?? null) !== (goal[field] ?? null))
+    const edit = Object.fromEntries(fields.filter((field) => (active[field] ?? null) !== (goal[field] ?? null))
       .map((field) => [field, goal[field] ?? null]));
     if (Object.keys(edit).length === 0) {
       return;
@@ -1183,7 +1184,7 @@ export function replayEvents(task, rules, events, newId, { settleAt = null } = {
     const time = new Date(Math.max(Date.parse(moment), lastEdit + 1)).toISOString();
     rollTo(time);
     const old = editRules(edit, time);
-    const details = Object.fromEntries(RULE_FIELDS.filter((field) => (old[field] ?? null) !== (active[field] ?? null))
+    const details = Object.fromEntries(fields.filter((field) => (old[field] ?? null) !== (active[field] ?? null))
       .map((field) => [field, { old: old[field] ?? null, new: active[field] ?? null }]));
     const event = { ...create({ type: 'edit-lifecycle-rules', 'creation-time': time, occurrence: occurrence.occurrence }), details };
     own.push(event);
@@ -1216,8 +1217,8 @@ export function replayEvents(task, rules, events, newId, { settleAt = null } = {
     }
     if (event.type === 'edit-lifecycle-rules') {
       // An edit that breaks the rule shape stays in the history without effect, as the service would refuse it.
-      if (!editedRules(active, ruleEditOf(event)).problem) {
-        editRules(ruleEditOf(event), time);
+      if (!editedRules(active, ruleEditOf(event, fields)).problem) {
+        editRules(ruleEditOf(event, fields), time);
         lastEdit = Math.max(lastEdit, Date.parse(time));
       }
     }

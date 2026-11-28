@@ -202,7 +202,7 @@ test('Export backup downloads todos-backup-{{date}}.json holding the stored data
   const file = await exportFile(page);
   expect(file.name).toBe(`todos-backup-${today}.json`);
   const backup = JSON.parse(file.text);
-  expect(backup).toMatchObject({ format: 'todos-backup', 'format-version': 2, 'app-version': VERSION });
+  expect(backup).toMatchObject({ format: 'todos-backup', 'format-version': 3, 'app-version': VERSION });
   expect(backup.lists.map((list) => [list.id, list.name])).toEqual([[ids.listId, 'Home']]);
   expect(backup.tasks.map((task) => task.id).sort()).toEqual([ids.waterId, ids.billId].sort());
   expect(backup.memberships.map((m) => m['task-id'])).toEqual([ids.waterId, ids.billId]);
@@ -269,8 +269,8 @@ test('a target-3 task with two completions shows 2/3 after an export and an impo
   });
   const file = await exportFile(page);
   const backup = JSON.parse(file.text);
-  expect(backup['format-version']).toBe(2);
-  expect(backup.occurrences).toEqual([expect.objectContaining({ 'target-count': 3, 'completion-count': 2, status: 'in-progress' })]);
+  expect(backup['format-version']).toBe(3);
+  expect(backup.occurrences).toEqual([expect.objectContaining({ 'goal-measure': 'checks', 'goal-target': 3, progress: 2, status: 'in-progress' })]);
   const types = ['create', 'edit-lifecycle-rules', 'log', 'log'];
   expect(backup.events.map((event) => event.type)).toEqual(types);
   await page.evaluate(async () => {
@@ -291,6 +291,76 @@ test('a target-3 task with two completions shows 2/3 after an export and an impo
   const stored = await snapshot(page);
   expect(stored.events.map((event) => event.type)).toEqual(types);
   expect(stored.events.map((event) => event.id)).toEqual(backup.events.map((event) => event.id));
+  expect(problems).toEqual([]);
+});
+
+test('a goal task with entries exports in format 3 and imports into an empty app with its goal, window, and entries', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/#/settings');
+  await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+  const taskId = await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    const rules = {
+      'start-time': '2020-01-01T00:00:00.000Z', 'due-time': '2099-12-31T18:00:00.000Z', 'overdue-handling': 'fail',
+      'goal-measure': 'amount', 'goal-unit': 'km', 'target-count': 10,
+    };
+    const run = await store.createTask({ description: 'Run 10 km', 'lifecycle-rules': rules });
+    const { event } = await store.logEntry(run.id, { amount: 4, label: 'Park' });
+    await store.logEntry(run.id, { amount: 3 });
+    await store.undoLog(run.id, event.id);
+    store.close();
+    return run.id;
+  });
+  const before = await snapshot(page);
+  const file = await exportFile(page);
+  const backup = JSON.parse(file.text);
+  expect(backup['format-version']).toBe(3);
+  expect(backup['lifecycle-rules']).toEqual([expect.objectContaining({
+    'task-id': taskId, 'start-time': '2020-01-01T00:00:00.000Z', 'goal-direction': 'at-least', 'goal-measure': 'amount',
+    'goal-target': 10, 'goal-unit': 'km', 'overdue-handling': 'fail',
+  })]);
+  expect(backup.occurrences).toEqual([expect.objectContaining({ 'goal-measure': 'amount', 'goal-target': 10, progress: 3, status: 'in-progress' })]);
+  expect(backup.events.map((event) => event.type)).toEqual(['create', 'log', 'log', 'undo-log']);
+  expect(file.text).not.toContain('target-count');
+  await page.evaluate(async () => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore({ broadcast: true });
+    await store.deleteAllData();
+    store.close();
+  });
+  const dialog = await pickFile(page, file);
+  await expect(dialog.getByRole('status')).toHaveText('1 added · 0 updated · 0 to recycle bin');
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(await snapshot(page)).toEqual(before);
+  expect(problems).toEqual([]);
+});
+
+test('progress beyond 10,000 missing checks is named in the dialog, before and after the import, and stays until Done', async ({ page }) => {
+  const problems = watch(page);
+  await openSeeded(page);
+  const id = '0192f1a2-0000-7000-8000-000000000901';
+  const text = JSON.stringify({
+    format: 'todos-backup', 'format-version': 3, 'app-version': VERSION, 'export-time': '2026-11-05T00:00:00.000Z',
+    lists: [], memberships: [], notes: [],
+    tasks: [{ id, description: 'Count the steps', 'owner-id': null, 'creation-time': '2026-11-01T09:00:00.000Z', 'last-update-time': '2026-11-01T09:00:00.000Z', 'deletion-time': null }],
+    'lifecycle-rules': [{ 'task-id': id, 'goal-target': 100_000 }],
+    occurrences: [{ 'task-id': id, occurrence: 1, 'start-time': '2026-11-01T09:00:00.000Z', status: 'in-progress', progress: 50_000 }],
+    events: [{ id: '0192f1a2-0000-7000-8000-000000000902', 'task-id': id, occurrence: 1, 'creation-time': '2026-11-01T09:00:00.000Z', 'owner-id': null, type: 'create', details: null }],
+  });
+  const dialog = await pickFile(page, { name: 'steps.json', text });
+  const warning = dialog.locator('.import-dialog__warning');
+  await expect(warning).toContainText('Count the steps (50,000 checks)');
+  await expect(warning).toContainText('10,000');
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Done' })).toBeVisible();
+  await expect(warning).toContainText('Count the steps (50,000 checks)');
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(dialog).toHaveCount(0);
+  const { tasks, events } = await snapshot(page);
+  expect(tasks.find((task) => task.id === id)['current-occurrence'].progress).toBe(0);
+  expect(events.filter((event) => event['task-id'] === id && event.type === 'log')).toHaveLength(0);
   expect(problems).toEqual([]);
 });
 

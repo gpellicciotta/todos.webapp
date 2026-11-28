@@ -1,0 +1,256 @@
+{
+  "format": "todos-backup",
+  "format-version": 3,
+  "app-version": "0.6.1-pre",
+  "export-time": "2026-11-05T18:00:00.000Z",
+  "lists": [
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000001",
+      "name": "Groceries",
+      "description": "Weekly shopping\n  - fruit first\n",
+      "owner": null,
+      "creation-time": "2026-11-01T08:00:00.000Z",
+      "last-update-time": "2026-11-02T08:00:00.000Z",
+      "deletion-time": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000002",
+      "name": "Old projects",
+      "description": "  Archive  ",
+      "owner": null,
+      "creation-time": "2026-11-01T08:00:00.000Z",
+      "last-update-time": "2026-11-03T08:00:00.000Z",
+      "deletion-time": "2026-11-03T08:00:00.000Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000101",
+      "description": "Almond milk\n\nunsweetened",
+      "owner-id": null,
+      "creation-time": "2026-11-01T09:00:00.000Z",
+      "last-update-time": "2026-11-02T10:00:00.000Z",
+      "deletion-time": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000102",
+      "description": "Bread",
+      "owner-id": null,
+      "creation-time": "2026-11-01T09:01:00.000Z",
+      "last-update-time": "2026-11-02T09:00:00.000Z",
+      "deletion-time": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000103",
+      "description": "Paint the shed",
+      "owner-id": null,
+      "creation-time": "2026-11-01T09:02:00.000Z",
+      "last-update-time": "2026-11-03T07:00:00.000Z",
+      "deletion-time": "2026-11-03T07:00:00.000Z"
+    }
+  ],
+  "lifecycle-rules": [
+    {
+      "task-id": "0192f1a2-0000-7000-8000-000000000101",
+      "start-time": null,
+      "due-time": "2026-11-05T22:59:00.000Z",
+      "overdue-handling": "keep",
+      "goal-direction": "at-least",
+      "goal-measure": "checks",
+      "goal-target": 1,
+      "goal-unit": null,
+      "recurrence-unit": null,
+      "recurrence-interval": null,
+      "recurrence-end-date": null,
+      "recurrence-end-count": null,
+      "timezone": null
+    },
+    {
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "start-time": null,
+      "due-time": null,
+      "overdue-handling": "fail",
+      "goal-direction": "at-least",
+      "goal-measure": "checks",
+      "goal-target": 3,
+      "goal-unit": null,
+      "recurrence-unit": null,
+      "recurrence-interval": null,
+      "recurrence-end-date": null,
+      "recurrence-end-count": null,
+      "timezone": null
+    },
+    {
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "start-time": null,
+      "due-time": null,
+      "overdue-handling": "keep",
+      "goal-direction": "at-least",
+      "goal-measure": "checks",
+      "goal-target": 1,
+      "goal-unit": null,
+      "recurrence-unit": null,
+      "recurrence-interval": null,
+      "recurrence-end-date": null,
+      "recurrence-end-count": null,
+      "timezone": null
+    }
+  ],
+  "occurrences": [
+    {
+      "task-id": "0192f1a2-0000-7000-8000-000000000101",
+      "occurrence": 1,
+      "start-time": "2026-11-01T09:00:00.000Z",
+      "due-time": "2026-11-05T22:59:00.000Z",
+      "status": "ready",
+      "close-time": null,
+      "goal-direction": "at-least",
+      "goal-measure": "checks",
+      "goal-target": 1,
+      "progress": 0,
+      "time-spent-seconds": 0
+    },
+    {
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "occurrence": 1,
+      "start-time": "2026-11-01T09:01:00.000Z",
+      "due-time": null,
+      "status": "in-progress",
+      "close-time": null,
+      "goal-direction": "at-least",
+      "goal-measure": "checks",
+      "goal-target": 3,
+      "progress": 2,
+      "time-spent-seconds": 0
+    },
+    {
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "occurrence": 1,
+      "start-time": "2026-11-01T09:02:00.000Z",
+      "due-time": null,
+      "status": "in-progress",
+      "close-time": null,
+      "goal-direction": "at-least",
+      "goal-measure": "checks",
+      "goal-target": 1,
+      "progress": 0,
+      "time-spent-seconds": 0
+    }
+  ],
+  "events": [
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000301",
+      "task-id": "0192f1a2-0000-7000-8000-000000000101",
+      "occurrence": 1,
+      "creation-time": "2026-11-01T09:00:00.000Z",
+      "owner-id": null,
+      "type": "create",
+      "details": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000302",
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "occurrence": 1,
+      "creation-time": "2026-11-01T09:01:00.000Z",
+      "owner-id": null,
+      "type": "create",
+      "details": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000303",
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "occurrence": 1,
+      "creation-time": "2026-11-01T10:00:00.000Z",
+      "owner-id": null,
+      "type": "edit-lifecycle-rules",
+      "details": {
+        "goal-target": {
+          "old": 1,
+          "new": 3
+        },
+        "overdue-handling": {
+          "old": "keep",
+          "new": "fail"
+        }
+      }
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000304",
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "occurrence": 1,
+      "creation-time": "2026-11-02T08:00:00.000Z",
+      "owner-id": null,
+      "type": "log",
+      "details": null,
+      "checked": true
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000305",
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "occurrence": 1,
+      "creation-time": "2026-11-02T09:00:00.000Z",
+      "owner-id": null,
+      "type": "log",
+      "details": null,
+      "checked": true
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000306",
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "occurrence": 1,
+      "creation-time": "2026-11-01T09:02:00.000Z",
+      "owner-id": null,
+      "type": "create",
+      "details": null
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000307",
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "occurrence": 1,
+      "creation-time": "2026-11-03T07:00:00.000Z",
+      "owner-id": null,
+      "type": "start",
+      "details": null
+    }
+  ],
+  "memberships": [
+    {
+      "list-id": "0192f1a2-0000-7000-8000-000000000001",
+      "task-id": "0192f1a2-0000-7000-8000-000000000102",
+      "position": "a0",
+      "added-time": "2026-11-01T09:01:00.000Z"
+    },
+    {
+      "list-id": "0192f1a2-0000-7000-8000-000000000001",
+      "task-id": "0192f1a2-0000-7000-8000-000000000101",
+      "position": "a0V",
+      "added-time": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "list-id": "0192f1a2-0000-7000-8000-000000000002",
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "position": "a0",
+      "added-time": "2026-11-01T09:02:00.000Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000201",
+      "task-id": "0192f1a2-0000-7000-8000-000000000101",
+      "text": "The unsweetened one",
+      "owner-id": null,
+      "occurrence": null,
+      "creation-time": "2026-11-02T10:00:00.000Z",
+      "last-update-time": "2026-11-02T10:00:00.000Z"
+    },
+    {
+      "id": "0192f1a2-0000-7000-8000-000000000202",
+      "task-id": "0192f1a2-0000-7000-8000-000000000103",
+      "text": "Needs two coats\n  of paint",
+      "owner-id": null,
+      "occurrence": 1,
+      "creation-time": "2026-11-02T11:00:00.000Z",
+      "last-update-time": "2026-11-02T12:00:00.000Z"
+    }
+  ]
+}
