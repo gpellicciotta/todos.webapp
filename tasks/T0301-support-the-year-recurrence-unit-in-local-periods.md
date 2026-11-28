@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 132.3, input: 32, output: 5564, cache_read: 839484, cache_write: 51697}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T01:57:08Z"
 ---
 # T0301: Support the year recurrence unit in local periods, with the year cases of the shared recurrence vectors
 
@@ -52,4 +57,7 @@ Copy the year cases into tests/fixtures/recurrence-test-vectors.json once todos.
 
 - [2026-11-28] **[Doc]**
   Added the CHANGELOG entry; no other docs name the unit list.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
