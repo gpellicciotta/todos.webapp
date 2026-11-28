@@ -11,7 +11,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [ ] T0307 [needs: T0306] Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 - [ ] T0305 [needs: T0303] Export ADR-0006 fields in backup format 3, and convert older backups on import.
 - [ ] T0312 [needs: T0307] Show goal progress on task rows, with the quick log, Failed status, and upcoming tasks.
-- [~] T0268 [owner: @claude] Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
+- [x] T0268 Add the Reminders section to the settings wireframe and check real notifications in Chrome and Firefox.
 - [!] T0227 [reason: Waiting for the push dispatch of todos.server T0261.] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [ ] T0309 Write the welcome, getting started, and FAQ help docs in docs/tutorial as Markdown.
 - [ ] T0310 [needs: T0309] Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use.
