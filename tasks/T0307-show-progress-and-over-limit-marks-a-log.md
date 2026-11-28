@@ -1,6 +1,7 @@
 ---
 id: T0307
 owner: "@claude"
+session: claude-20261128-d09379
 needs: []
 branch: task/T0307-show-progress-and-over-limit-marks-a-log
 worktree: .plan/work/T0307-show-progress-and-over-limit-marks-a-log
@@ -23,9 +24,9 @@ Put the progress, approaching, and on-track rules in one core module that task r
 Capture before and after screenshots of the task editor in light and dark themes.
 
 ## Task Execution Steps
-- [ ] **[Read]**      Read the Task Editor and Key Flows sections of ui-design.md, the wireframes, and the views.
-- [ ] **[Implement]** Author failing unit and end-to-end tests for pace, the Status tab, the Log form, and history.
-- [ ] **[Verify]**    Run the new tests and confirm they fail for the right reason.
+- [x] **[Read]**      Read the Task Editor and Key Flows sections of ui-design.md, the wireframes, and the views.
+- [x] **[Implement]** Author failing unit and end-to-end tests for pace, the Status tab, the Log form, and history.
+- [x] **[Verify]**    Run the new tests and confirm they fail for the right reason.
 - [ ] **[Implement]** Add the progress module, the Status tab, the Log form, entries with undo, and history lines.
 - [ ] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [ ] **[Visual]**    Capture before and after screenshots of the task editor in both themes.
@@ -35,3 +36,10 @@ Capture before and after screenshots of the task editor in light and dark themes
 ## Execution Log
 - [2026-11-27] **[Doc]**
   Task file written from ADR-0006 of todos.server, which Codex approved.
+
+- [2026-11-28] **[Read]**
+  Read ui-design Task Editor, store log API, editor, history, and tests; progress module and unit tests written.
+
+- [2026-11-28] **[Verify]**
+  New unit and e2e tests fail for missing Status tab features: 28 unit, 2 e2e.
+
