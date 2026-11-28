@@ -1,6 +1,7 @@
 ---
 id: T0305
 owner: "@claude"
+session: claude-20261128-4879fa
 needs: []
 branch: task/T0305-export-adr-0006-fields-in-backup-format-3
 worktree: .plan/work/T0305-export-adr-0006-fields-in-backup-format-3
@@ -115,4 +116,8 @@ A larger gap adds no check; import everything else, and the import dialog names 
   - Option A: import the rest; the dialog names affected tasks and missing counts.
   - Rebuild at most 10,000 checks per occurrence, for format 2 and 3 imports.
   - State this in backup-format.md and cover the dialog report end to end.
+
+- [2026-11-28] **[Implement]**
+  Round 3: applied the user's 10,000 cap to formats 2 and 3, and named affected tasks in the import dialog.
+  - Unit, dialog, and end-to-end tests cover the report.
 

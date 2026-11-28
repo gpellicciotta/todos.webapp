@@ -104,3 +104,20 @@ After the change, `npx vitest run tests/unit/backup.test.js`, exit code 0:
 ```
 
 `npx playwright test tests/e2e/backup.spec.js`: `12 passed (12.6s)`. `npx eslint .`: no output. `npm run check:sw`: `OK: 166 precached files match VERSION 2026-11-28.15.`
+
+### Review round 3 rework: the user's decision, a 10,000 cap and a dialog report
+
+Before the change, the new tests failed: `rebuilds a gap of exactly 10000 checks...` and the format 2 twin gave `AssertionError: expected 10001 to be +0`, and both new import-dialog tests gave `TypeError: Cannot read properties of null (reading 'hidden')`.
+
+After the change, exit code 0 for each:
+
+```
+npx vitest run tests/unit/import-dialog.test.js   Tests  20 passed (20)
+npx vitest run tests/unit/backup.test.js          Tests  131 passed (131)
+npx vitest run                                    Test Files  73 passed (73) / Tests  2117 passed (2117)
+npx playwright test tests/e2e/backup.spec.js      13 passed (13.5s)
+npm run check:sw                                  OK: 166 precached files match VERSION 2026-11-28.16.
+npx eslint .                                      no output
+```
+
+The new end-to-end test `progress beyond 10,000 missing checks is named in the dialog, before and after the import, and stays until Done` drives the real dialog: the preview names `Count the steps (50,000 checks)`, Import leaves the dialog open on Done, and Done closes it with progress 0 and no log events.
