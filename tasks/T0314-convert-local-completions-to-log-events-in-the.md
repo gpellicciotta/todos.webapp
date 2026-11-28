@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 953.7, input: 138, output: 100041, cache_read: 12676369, cache_write: 246054}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T01:43:32Z"
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -52,4 +57,7 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
   - Files touched: 19.
   - Lines touched: 1135.
   - Reopenings: 0.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
