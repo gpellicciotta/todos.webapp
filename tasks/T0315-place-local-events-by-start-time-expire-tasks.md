@@ -5,17 +5,22 @@ session: claude-20261128-b119fc
 needs: []
 branch: task/T0315-place-local-events-by-start-time-expire-tasks
 worktree: .plan/work/T0315-place-local-events-by-start-time-expire-tasks
-status: active
+status: completed
 started_at: "2026-11-28T03:03:07Z"
-ended_at: —
+ended_at: "2026-11-28T03:16:58Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 745.8, input: 140, output: 54687, cache_read: 10261613, cache_write: 187014}
-review_status: pending
+  review: {turns: 1, duration_s: 72.1, input: 53334, output: 4531, cache_read: 524762}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T03:15:41Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261128-24c51d
+work_duration: 831.3
+completion-commit: 3c0ae4f534c811a9378dcde7c21079d77bc593ae
 ---
 # T0315: Place local events by start time, expire tasks by goal, and filter failed and upcoming tasks
 
@@ -33,7 +38,7 @@ Rules, files, and tests: [technical-spec.md](T0315-place-local-events-by-start-t
 - [x] **[Implement]** Add the rules, the filters, and the preference.
 - [x] **[Verify]**    Run `npm test` and lint and confirm they pass.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -59,4 +64,11 @@ Rules, files, and tests: [technical-spec.md](T0315-place-local-events-by-start-t
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @gemini: The work meets the goals.
+  - Findings: [review-findings-1.md](T0315-place-local-events-by-start-time-expire-tasks/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
