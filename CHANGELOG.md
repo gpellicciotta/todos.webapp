@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.7.2-pre
+- FrontEnd: Moved the task editor's labels into a left column, with fields, choices, and buttons in a right-hand column.
+- FrontEnd: Kept the words of the pace mark inside the progress box, which cut them off late in a window.
 
 ## v0.7.1 [released: 2026-11-28]
 - Core: Kept the live entries on synced tasks, so the editor lists them again, the minus button works, and rows mark only carried readings.

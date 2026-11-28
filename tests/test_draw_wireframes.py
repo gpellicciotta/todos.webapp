@@ -412,6 +412,44 @@ def test_configuration_tab_orders_its_parts_and_ends_with_the_danger_zone(output
             assert any(ys[upper] < r < ys[lower] for r in rules), f"no rule between {upper} and {lower}"
 
 
+@pytest.mark.parametrize(
+    "name, labels, buttons",
+    [
+        ("task-editor.svg", ["Amount", "Label (optional)"], ["Log", "Undo"]),
+        ("task-editor-notes.svg", ["Add note"], ["Add note"]),
+        (
+            "task-editor-configuration.svg",
+            ["Description", "Lists", "Goal", "Measure", "Target", "Recurrence", "Every", "Timezone"],
+            ["Delete task"],
+        ),
+    ],
+)
+def test_editor_tabs_put_labels_left_of_a_right_hand_column(output, name, labels, buttons):
+    _, groups = frames(output / name)
+    module = load_script()
+    for wide, group in enumerate(groups):
+        left = module.EDITOR_LEFT + 24 if wide else 16
+        right = module.WIDE_WIDTH - 24 if wide else module.COMPACT_WIDTH - 16
+        texts = [t for t in group.iter(f"{SVG}text") if float(t.get("x")) >= left]
+        classes = {"control", "chip", "primary"}
+        controls = [bounds(r, None) for r in group.iter(f"{SVG}rect") if r.get("class") in classes]
+        for label in labels:
+            text = next((t for t in texts if t.text == label and float(t.get("x")) == left), None)
+            assert text is not None, f"{label} does not start the row"
+            beside = [b for b in controls if b[0] > left and b[1] <= float(text.get("y")) <= b[3]]
+            assert beside and max(b[2] for b in beside) == right, label
+        for button in buttons:
+            centers = [
+                (float(t.get("x")), float(t.get("y")))
+                for t in texts
+                if t.text == button and t.get("text-anchor") == "middle"
+            ]
+            assert centers, button
+            for x, y in centers:
+                around = [b for b in controls if b[0] <= x <= b[2] and b[1] <= y <= b[3]]
+                assert [b[2] for b in around] == [right], button
+
+
 def test_history_tab_lists_entries_undos_and_verdicts(output):
     _, groups = frames(output / "task-editor-history.svg")
     for wide, group in enumerate(groups):

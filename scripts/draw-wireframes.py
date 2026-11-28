@@ -23,6 +23,8 @@ NAV_TOGGLE = (12, 22)
 MAIN_LEFT = SIDEBAR_WIDTH + 40
 MAIN_RIGHT = 1104
 EDITOR_LEFT = 1020
+# Where the right-hand column of the task editor starts, past the label column and its gap.
+EDITOR_COLUMN = 140
 ROW_HEIGHT = 48
 VIEW_PANEL_HEIGHT = 536
 
@@ -1185,10 +1187,27 @@ def tab_strip(f, x, y, width, current):
     return y + 60
 
 
+def labeled(f, x, y, width, label, value, height=36, muted=False):
+    """Draw a task editor row, its label left and its field in the right-hand column; return the bottom edge."""
+    f.text(x, y + 23, label, 13, "muted")
+    return field(f, x + EDITOR_COLUMN, y, width - EDITOR_COLUMN, value, height=height, muted=muted)
+
+
+def choices(f, x, y, width, labels, current):
+    """Draw a segmented control in the right-hand column, two choices per row; return the bottom edge."""
+    left = x + EDITOR_COLUMN
+    half = (width - EDITOR_COLUMN) / 2
+    for start in range(0, len(labels), 2):
+        row = labels[start : start + 2]
+        segmented(f, left, y, half * len(row), row, current - start, 12, 30)
+        y += 30
+    return y
+
+
 def notes_tab(f, x, y, width):
-    """Draw the Notes tab: the add and search field, then the note thread; return the bottom edge."""
-    add_left = button_right(f, x + width, y, "Add note")
-    field(f, x, y, add_left - x - 8, "Add or search notes", muted=True)
+    """Draw the Notes tab: the add and search field with its button, then the note thread; return the bottom edge."""
+    y = labeled(f, x, y, width, "Add note", "Add or search notes", 60, muted=True) + 8
+    button_right(f, x + width, y, "Add note", height=36)
     y += 52
     notes = [
         ("You · 3 Nov 09:12 · edited", "Hardware store closes at 18:00."),
@@ -1221,12 +1240,11 @@ def status_tab(f, x, y, width):
     f.line(x, y, x + width, y)
     f.text(x, y + 28, "Log", 14, "bold")
     y += 40
-    amount = width * 0.35
-    field(f, x, y, amount, "0", "Amount", height=36, muted=True)
-    field(f, x + amount + 8, y, width - amount - 8, "Croissant", "Label (optional)", height=36, muted=True)
-    y += 70
-    f.text(x, y + 20, "+ Time spent", 13, "bold")
-    f.text(x + 104, y + 20, "+ Check", 13, "bold")
+    y = labeled(f, x, y, width, "Amount", "0", muted=True) + 8
+    y = labeled(f, x, y, width, "Label (optional)", "Croissant", muted=True) + 8
+    left = button_right(f, x + width, y, "+ Check", size=13, height=32)
+    button_right(f, left - 8, y, "+ Time spent", size=13, height=32)
+    y += 40
     button_right(f, x + width, y, "Log", "primary", 14, 32)
     y += 44
     f.line(x, y, x + width, y)
@@ -1253,42 +1271,36 @@ def configuration_tab(f, x, y, width):
     """Draw the Configuration tab for Sport, a weekly goal of at least 3 h 20 min of time spent.
 
     Description, Lists, Goal, Recurrence, Time window, and the Danger zone, with rules between them.
+    Labels and the headings of Lists, Goal, and Recurrence sit left of the right-hand column.
     """
-    f.text(x, y + 14, "Description", 13, "muted")
-    f.rect(x, y + 22, width, 44, "control")
-    f.text(x + 12, y + 50, "Sport", 15)
-    y += 80
+    y = labeled(f, x, y, width, "Description", "Sport", 40) + 10
     f.line(x, y, x + width, y)
-    f.text(x, y + 28, "Lists", 14, "bold")
-    left = chip_left(f, x, y + 40, "Home  ×", size=13) + 8
-    chip_left(f, left, y + 40, "+ Add to list", "control", 13)
-    y += 76
+    f.text(x, y + 29, "Lists", 14, "bold")
+    chip(f, x + width, y + 12, "Home  ×", size=13)
+    field(f, x + EDITOR_COLUMN, y + 44, width - EDITOR_COLUMN, "Add to list", height=36, muted=True)
+    y += 90
     f.line(x, y, x + width, y)
-    f.text(x, y + 28, "Goal", 14, "bold")
-    segmented(f, x, y + 40, width, ["Check", "At least", "At most"], 1)
-    y += 88
-    half = width / 2 - 4
-    f.text(x, y + 14, "Measure", 13, "muted")
-    field(f, x, y + 22, half, "Time spent ▾", height=36)
-    f.text(x + half + 8, y + 14, "Target", 13, "muted")
-    field(f, x + half + 8, y + 22, half, "3 h 20 min", height=36)
-    y += 70
+    f.text(x, y + 30, "Goal", 14, "bold")
+    y = choices(f, x, y + 10, width, ["Check", "At least", "At most"], 1) + 8
+    y = labeled(f, x, y, width, "Measure", "Time spent ▾") + 8
+    y = labeled(f, x, y, width, "Target", "3 h 20 min") + 12
     f.line(x, y, x + width, y)
-    f.text(x, y + 28, "Recurrence", 14, "bold")
-    segmented(f, x, y + 40, width, ["Never", "Day", "Week", "Month", "Year"], 2, 11)
-    y += 88
-    f.text(x, y + 14, "Every 1 week · Europe/Brussels · no end", 13, "muted")
-    y += 28
+    f.text(x, y + 30, "Recurrence", 14, "bold")
+    y = choices(f, x, y + 10, width, ["Never", "Day", "Week", "Month", "Year"], 2) + 8
+    y = labeled(f, x, y, width, "Every", "1") + 8
+    y = labeled(f, x, y, width, "Timezone", "Europe/Brussels") + 12
     f.line(x, y, x + width, y)
-    f.text(x, y + 28, "Time window", 14, "bold")
-    f.text(x, y + 52, "Starts Mon 3 Nov 2026", 14)
-    f.text(x, y + 72, "Each week ends the window, so Due hides.", 12, "muted")
-    y += 88
+    f.text(x, y + 24, "Time window", 14, "bold")
+    column = x + EDITOR_COLUMN
+    f.text(column, y + 46, "Starts Mon 3 Nov 2026", 14)
+    f.text(column, y + 66, "Each week ends the window,", 12, "muted")
+    f.text(column, y + 82, "so Due hides.", 12, "muted")
+    y += 92
     f.line(x, y, x + width, y)
-    f.text(x, y + 28, "Danger zone", 14, "bold")
-    right = button(f, x, y + 40, "Cancel task", "control")
-    button(f, right + 12, y + 40, "Delete task", "control")
-    return y + 92
+    f.text(x, y + 24, "Danger zone", 14, "bold")
+    left = button_right(f, x + width, y + 34, "Delete task", height=40)
+    button_right(f, left - 12, y + 34, "Cancel task", height=40)
+    return y + 84
 
 
 def danger_zone(f, x, y, width, label):

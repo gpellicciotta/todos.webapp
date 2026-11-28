@@ -863,20 +863,37 @@
   --meter-color: var(--color-danger);
 }
 
-/* The pace mark of a checks goal: a tick on the meter at the share of the window gone, with its words under it. */
+/*
+ * The pace mark of a checks goal: a tick on the meter at the share of the window gone, with its words under it.
+ * The words move back by the same share of their own width, so they stay inside the box at every share.
+ */
 .progress-meter__pace {
   position: absolute;
   inset-inline-start: var(--pace-share, 0%);
   inset-block-start: 0;
   padding-block-start: calc(var(--size-meter) + var(--space-1));
-  border-inline-start: var(--border-width) solid var(--color-text);
   font-size: var(--text-xs);
   white-space: nowrap;
-  transform: translateX(-0.5px);
+  translate: calc(0% - var(--pace-share, 0%)) 0;
+}
+
+.progress-meter__pace::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: var(--pace-share, 0%);
+  inset-block-start: 0;
+  block-size: calc(var(--size-meter) + var(--space-1));
+  border-inline-start: var(--border-width) solid var(--color-text);
+  translate: -50% 0;
 }
 
 .progress-meter__pace[hidden] {
   display: none;
+}
+
+/* The meter keeps the room of the words under its pace mark. */
+.progress-box__meter:has(> .progress-meter__pace:not([hidden])) {
+  padding-block-end: calc(var(--text-xs) * var(--leading-normal));
 }
 
 /* Text in the approaching state uses the dark amber, since yellow fills meters and icons only. */
@@ -885,13 +902,13 @@
 }
 
 /*
- * Task editor actions: Check off, the centered count stepper, Mark started, Reopen, and Check off previous period.
+ * Task editor actions, at the right: Check off, the count stepper, Mark started, Reopen, and Check off previous period.
  */
 .task-editor__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: var(--space-3);
   margin-block-start: var(--space-3);
 }
@@ -904,7 +921,7 @@
   display: inline-flex;
   flex-basis: 100%;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: var(--space-2);
   font-variant-numeric: tabular-nums;
 }
@@ -918,11 +935,14 @@
   text-align: center;
 }
 
-/* The Log form: the fields stack, and the question for a long time sits in place of Log. */
+/* The Log form: the fields stack, the buttons end at the right, and the question for a long time sits in place of Log. */
 .task-editor__log {
   display: grid;
-  justify-items: start;
   gap: var(--space-3);
+}
+
+.task-editor__log > .button {
+  justify-self: end;
 }
 
 .task-editor__log-fields {
@@ -930,13 +950,17 @@
   gap: var(--space-3);
 }
 
-.task-editor__log :is([name='log-amount'], [name='log-hours'], [name='log-minutes']) {
-  max-inline-size: var(--width-chip-max);
+/* The Check box ends its row, and its words start the row. */
+.task-editor__log .checkbox {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  padding-inline: 0;
 }
 
 .task-editor__log-add {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
 
@@ -944,6 +968,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
 
@@ -971,6 +996,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+.task-editor__entries [data-action='undo'] {
+  margin-inline-start: auto;
 }
 
 .task-editor__entry-time,

@@ -8,10 +8,12 @@
  */
 
 :root {
-  /* Size: task rows, group headers, the widest list chip, the minimum width of text before a wrap, and the goal meter. */
+  /* Size: task rows, group headers, the widest list chip and field label, the minimum width of text before a wrap, and the goal meter. */
   --row-height: 3rem;
   --group-header-height: 2rem;
   --width-chip-max: 8rem;
+  --width-field-label: 8rem;
+  --width-field-label-min: 6rem;
   --width-text-min: 12rem;
   --size-meter: 0.5rem;
 

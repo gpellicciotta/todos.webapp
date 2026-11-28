@@ -281,9 +281,114 @@
   padding-inline: var(--space-2);
 }
 
-/* The task editor's tab panels leave the spacing to their sections. */
+/*
+ * The task editor's tab panels leave the spacing to their sections.
+ * Labels sit in a left column; fields, choices, and buttons sit in a right-hand column (`TSK-18`).
+ * A narrow panel shrinks the label column to its minimum, so the right-hand column keeps the minimum text width.
+ */
 .task-editor__panel {
   padding: 0;
+}
+
+/* Every row shares one template, so the right-hand column starts at the same place in each of them. */
+.task-editor__panel .field,
+.task-editor__panel :is([data-section='lists'], [data-section='goal'], [data-section='recurrence'], [data-section='window']),
+.task-editor__panel [data-part='overdue'] > .segmented {
+  grid-template-columns:
+    clamp(var(--width-field-label-min), calc(100% - var(--width-text-min) - var(--space-3)), var(--width-field-label))
+    minmax(0, 1fr);
+}
+
+.task-editor__panel .field > :not(.field__label) {
+  grid-column: 2;
+}
+
+/* A label starts level with the first line of its control, also beside a text area. */
+.task-editor__panel .field > .field__label {
+  grid-row: 1;
+  align-self: start;
+  padding-block-start: calc(var(--space-2) + var(--border-width));
+}
+
+.task-editor__panel .field > .field__control {
+  grid-row: 1;
+}
+
+/* A field with a hidden label has one column, so its control fills the room it gets. */
+.task-editor__panel .field:has(> .field__label--hidden) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.task-editor__panel .field:has(> .field__label--hidden) > * {
+  grid-column: 1;
+}
+
+/* A date and time field needs less inset to show all its parts in a narrow panel. */
+.task-editor__panel input.field__control[type='datetime-local'] {
+  padding-inline: var(--space-2);
+}
+
+/* A section's parts span both columns; the headings of Lists, Goal, and Recurrence label the control beside them. */
+.task-editor__panel :is([data-section='lists'], [data-section='goal'], [data-section='recurrence'], [data-section='window']) > * {
+  grid-column: 1 / -1;
+}
+
+.task-editor__panel :is([data-section='lists'], [data-section='goal'], [data-section='recurrence']) > .editor-panel__section-title {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  padding-block-start: calc(var(--space-2) + var(--border-width));
+}
+
+.task-editor__panel [data-section='lists'] > :is(.chip-list, .combo-box),
+.task-editor__panel [data-section='goal'] > :is([data-part='goal-line'], [data-part='goal-error']),
+.task-editor__panel [data-section='window'] > :is([data-part='start-text'], [data-part='window-note']) {
+  grid-column: 2;
+}
+
+.task-editor__panel :is([data-section='goal'], [data-section='recurrence']) > .segmented {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* The right-hand column still holds two choices side by side. */
+.task-editor__panel .segmented__options {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-12) + var(--space-3))), 1fr));
+}
+
+.task-editor__panel .chip-list {
+  justify-content: flex-end;
+}
+
+.task-editor__panel .chip-list:empty {
+  display: none;
+}
+
+/* A floated legend leaves the fieldset border, so it takes the label column. */
+.task-editor__panel [data-part='overdue'] > .segmented {
+  display: grid;
+  column-gap: var(--space-3);
+}
+
+.task-editor__panel [data-part='overdue'] .segmented__legend {
+  float: left;
+  grid-column: 1;
+  align-self: center;
+  margin: 0;
+}
+
+.task-editor__panel [data-part='overdue'] .segmented__options {
+  grid-column: 2;
+}
+
+/* The task editor stacks the fields of a row, so each keeps its label beside it; Clear ends its own line. */
+.task-editor__panel .editor-panel__row:not([hidden]) {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.task-editor__panel .editor-panel__row > .button {
+  justify-self: end;
 }
 
 /* Status separates its parts with rules only: the status, the lists, the configuration groups, and Delete task. */
@@ -297,9 +402,8 @@
   border-block-start: var(--border-width) solid var(--color-border);
 }
 
-/* The Danger zone holds Cancel task and Delete task side by side, under its heading. */
+/* The Danger zone holds Cancel task and Delete task side by side, under its heading, at the right. */
 .task-editor__panel .editor-panel__danger {
-  justify-content: flex-start;
   margin: 0;
   padding: 0;
   border: 0;
@@ -332,17 +436,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The goal parts hide as a whole, also the row of hours and minutes; the target fields stay as narrow as a chip. */
+/* The goal parts hide as a whole, also the row of hours and minutes. */
 .task-editor__part[hidden],
 .task-editor__part[data-part='goal-error']:empty {
   display: none;
 }
 
-.task-editor__part :is([name='goal-target'], [name='goal-hours'], [name='goal-minutes']) {
-  max-inline-size: var(--width-chip-max);
-}
-
-/* The recurrence details stack like section fields; the interval and end count stay as narrow as a chip. */
+/* The recurrence details stack like section fields. */
 .task-editor__recurrence {
   display: grid;
   gap: var(--space-3);
@@ -350,10 +450,6 @@
 
 .task-editor__recurrence[hidden] {
   display: none;
-}
-
-.task-editor__recurrence :is([name='recurrence-interval'], [name='recurrence-end-count']) {
-  max-inline-size: var(--width-chip-max);
 }
 
 /* An undone log entry stays in the history, struck through. */
@@ -367,6 +463,10 @@
   display: grid;
   justify-items: start;
   gap: var(--space-2);
+}
+
+.task-history > .button {
+  justify-self: end;
 }
 
 .task-history__status {

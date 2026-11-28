@@ -205,6 +205,118 @@ for (const viewport of [COMPACT, WIDE]) {
   });
 }
 
+/**
+ * Measure the shown tab in whole pixels: its edges, each labeled field, and the right edges of the named elements.
+ * @param {import('@playwright/test').Locator} panel the editor panel
+ * @param {string[]} selectors elements that must end at the right edge; the first shown match of each is measured
+ * @returns {Promise<{left: number, right: number, overflow: number, ends: object, fields: object[]}>} the measures
+ */
+function measureColumns(panel, selectors) {
+  return panel.evaluate((element, wanted) => {
+    const tab = element.querySelector('[role="tabpanel"]:not([hidden])');
+    const box = (node) => node.getBoundingClientRect();
+    const shown = (node) => box(node).width > 1 && box(node).height > 1;
+    const edge = box(tab);
+    const ends = Object.fromEntries(wanted.map((selector) => {
+      const node = [...tab.querySelectorAll(selector)].find(shown);
+      return [selector, node ? Math.round(box(node).right) : null];
+    }));
+    // A label is a field's own label, or the heading or legend that names a segmented control or the list chips.
+    const pairs = [...tab.querySelectorAll('.field')].filter(shown)
+      .map((field) => [field.querySelector(':scope > .field__label:not(.field__label--hidden)'), field.querySelector(':scope > .field__control')])
+      .concat([['goal', '.segmented__options'], ['recurrence', '.segmented__options'], ['lists', '.chip-list'], ['window', '[data-part="overdue"] .segmented__options']]
+        .map(([name, control]) => {
+          const section = tab.querySelector(`[data-section="${name}"]`);
+          const label = section?.querySelector(name === 'window' ? '[data-part="overdue"] legend' : ':scope > .editor-panel__section-title');
+          return [label, section?.querySelector(control)];
+        }));
+    // A word that the label column is too narrow for would continue on the next line.
+    const wholeWords = (label) => [...label.firstChild.textContent.matchAll(/\S+/g)].every((word) => {
+      const range = document.createRange();
+      range.setStart(label.firstChild, word.index);
+      range.setEnd(label.firstChild, word.index + word[0].length);
+      return range.getClientRects().length === 1;
+    });
+    const fields = pairs.filter(([label, control]) => label && control && shown(label) && shown(control)).map(([label, control]) => ({
+      name: label.textContent, wholeWords: wholeWords(label), labelLeft: Math.round(box(label).left), labelRight: Math.round(box(label).right),
+      beside: box(label).top < box(control).bottom && box(label).bottom > box(control).top,
+      left: Math.round(box(control).left), right: Math.round(box(control).right),
+    }));
+    const body = element.querySelector('.editor-panel__body');
+    return { left: Math.round(edge.left), right: Math.round(edge.right), overflow: body.scrollWidth - body.clientWidth, ends, fields };
+  }, selectors);
+}
+
+/**
+ * Expect every labeled field of the shown tab to have its label on the left and its control in one right-hand column,
+ * and every named element to end at the right edge of the panel.
+ * @param {import('@playwright/test').Locator} panel the editor panel
+ * @param {string[]} names the labels the tab must show
+ * @param {string[]} selectors elements that must end at the right edge
+ */
+async function expectColumns(panel, names, selectors) {
+  const { left, right, overflow, ends, fields } = await measureColumns(panel, selectors);
+  expect(overflow).toBe(0);
+  expect(ends).toEqual(Object.fromEntries(selectors.map((selector) => [selector, right])));
+  expect(fields.map((field) => field.name).sort()).toEqual([...names].sort());
+  for (const field of fields) {
+    expect(field, field.name).toMatchObject({ labelLeft: left, wholeWords: true, beside: true, right });
+    expect(field.labelRight, field.name).toBeLessThanOrEqual(field.left);
+  }
+  expect(new Set(fields.map((field) => field.left)).size).toBeLessThanOrEqual(1);
+}
+
+for (const [width, viewport, panelRem] of [['compact', COMPACT, null], ['wide', WIDE, null], ['narrowest wide panel', WIDE, 20]]) {
+  test(`the editor shows labels on the left and fields and buttons in a right-hand column, ${width}`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(viewport);
+    if (panelRem) {
+      await page.addInitScript((rem) => localStorage.setItem('todos.view.panels', JSON.stringify({ editor: rem })), panelRem);
+    }
+    await seed(page);
+    const panel = await openEditor(page);
+
+    await showTab(panel, 'Configuration');
+    await pick(panel, 'At least');
+    await panel.getByLabel('Target', { exact: true }).fill('4');
+    await panel.getByLabel('Target', { exact: true }).press('Tab');
+    await panel.getByRole('combobox', { name: 'Add to list' }).fill('Home');
+    await panel.getByRole('combobox', { name: 'Add to list' }).press('Enter');
+    await expect(panel.locator('.chip-list .chip')).toHaveCount(1);
+    await panel.getByLabel('Due date', { exact: true }).fill('2031-05-04');
+    await panel.getByLabel('Due time', { exact: true }).focus();
+    await panel.getByLabel('Target', { exact: true }).focus();
+    await expect(panel.getByRole('group', { name: 'When overdue' })).toBeVisible();
+    await expectColumns(panel, ['Description', 'Lists', 'Goal', 'Measure', 'Target', 'Recurrence', 'Starts', 'Due date', 'Due time', 'When overdue'],
+      ['.chip-list > :last-child', '.combo-box .field__control', '[data-section="window"] .button', '[data-action="cancel-task"] ~ button']);
+
+    await pick(panel, 'Month');
+    await expect(panel.getByLabel('Timezone')).toBeVisible();
+    await expectColumns(panel, ['Description', 'Lists', 'Goal', 'Measure', 'Target', 'Recurrence', 'Every', 'Ends on', 'Ends after', 'Timezone', 'Starts'],
+      ['[data-action="cancel-task"] ~ button']);
+
+    await showTab(panel, 'Status');
+    await expectColumns(panel, ['Label (optional)'],
+      ['[data-step="up"]', '[data-part="log-check"] input', '[data-action="add-amount"]', '[data-action="log"]']);
+    await panel.getByRole('button', { name: '+ Time spent' }).click();
+    await panel.getByRole('button', { name: '+ Amount' }).click();
+    await expectColumns(panel, ['Hours', 'Minutes', 'Amount', 'Label (optional)'], ['[data-action="log"]']);
+    await panel.getByLabel('Label (optional)').fill('A walk');
+    await panel.getByRole('button', { name: 'Log', exact: true }).click();
+    await expect(panel.locator('.task-editor__entries > li')).toHaveCount(1);
+    await expect(panel.getByLabel('Label (optional)')).toHaveValue('');
+    const entry = await measureColumns(panel, ['.task-editor__entries [data-action="undo"]']);
+    expect(entry.ends).toEqual({ '.task-editor__entries [data-action="undo"]': entry.right });
+
+    await showTab(panel, 'Notes');
+    await expectColumns(panel, ['Add note'], ['.note-thread__actions > .button']);
+
+    await showTab(panel, 'History');
+    await expectColumns(panel, [], ['.task-history > .button']);
+    expect(problems).toEqual([]);
+  });
+}
+
 test('a click on the row of the open task closes the editor, and another row switches it', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);

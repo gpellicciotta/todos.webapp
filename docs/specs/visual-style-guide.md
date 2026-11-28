@@ -164,7 +164,9 @@ Signal values and their lowest contrast ratios, checked by [tokens.test.js](../.
 - Layout: `--width-sidebar` and `--width-side-panel` size the side panels.
 - Control minimums: `--width-menu` for menus and popovers; the package sets the narrowest segmented option.
 - `--width-chip-max`: the widest list chip in a task row; longer list names truncate.
-- Text minimums: `--width-text-min` before a banner's action wraps; the package sets the lowest textarea.
+- `--width-field-label` and `--width-field-label-min`: the label column of the task editor, in wide and narrow panels.
+- Text minimums: `--width-text-min` before a banner's action wraps, and for the task editor's right-hand column.
+  The package sets the lowest textarea.
 
 ### Elevation, Layers, and Motion
 - `--elevation-1` for popovers and menus, `--elevation-2` for dialogs and the floating button.
@@ -389,7 +391,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   The header and the tab strip hold no More button.
   Status shows the status as an icon and text, with no state buttons, since logging decides it.
   It holds the progress box, the actions that apply, the Log form, and the entries with Undo.
-  A checks goal centers a `.task-editor__stepper` under the progress, with a polite live count, such as "1 of 3".
+  A checks goal puts a `.task-editor__stepper` under the progress, at the right, with a polite live count, such as "1 of 3".
+  Each `.task-editor__panel` keeps labels in a left column, and fields, choices, and buttons in a right-hand column.
   Check off previous period is a secondary button there, shown only during the grace period.
   Configuration ends with the Danger zone: Cancel task, which reads Uncancel once cancelled, and Delete task.
   The Danger zone drops its own border, after the last rule.

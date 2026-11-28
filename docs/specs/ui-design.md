@@ -842,6 +842,11 @@ Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-n
 - **[Decided]** The editor always opens on Status, the most used tab.
   Arrow keys move between the tabs, and Home and End jump to the first and last.
 - A field error on a hidden tab, such as a late validation failure, selects that tab and focuses the field.
+- **[Decided]** Labels sit in a left column; fields, choices, and buttons sit in a right-hand column (`TSK-18`).
+  - Fields fill that column, and buttons end at the panel's right edge.
+  - The headings of Lists, Goal, and Recurrence label the control beside them.
+  - Fields that share a purpose, such as Hours and Minutes, take one row each.
+  - Narrow panels shrink the label column from 8rem to 6rem at most; longer labels wrap between words.
 
 #### Status Tab
 - **[Decided]** Status shows the current status and only the actions that change it; it has no status buttons.
@@ -852,10 +857,11 @@ Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-n
   - Above an "at most" limit, the box turns orange and reads "120 kcal over the limit".
     It adds that the window fails if the progress stays above the limit at its end.
   - A checks goal marks the current pace on its meter, such as "pace now: 1.5".
+    The words stay inside the box at every point of the window.
     Behind pace, it reads "Behind pace: half the week is gone, 1 of 3 done."
 - Actions show only while their events apply:
   - Check off, the main button of a Check goal, logs one check.
-  - A checks goal shows the stepper `[−] 1 of 3 [+]`, centered under the progress box.
+  - A checks goal shows the stepper `[−] 1 of 3 [+]` under the progress box, at the right.
     Plus logs a check; minus undoes the latest live check; the count is a polite live region.
   - Mark started posts `start` while the task is To do.
     It then reads Unmark started, which posts `unstart` while no entry applies and progress is 0 or empty.
@@ -957,7 +963,7 @@ Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-n
   A due time of exactly 23:59 shows as date-only (`TSK-6`); field errors also go to a polite live region.
 - Escape in a note's edit field cancels that edit only; a typed new note stays as a draft for the session.
 - Add to list matches lists by name, and offers Create list "{{name}}" for a new name.
-- Clear wraps below the date and time fields in the panel's width.
+- Due date, Due time, and Clear take one row each.
 - Deleting from the editor closes it and shows the Undo toast; focus returns to the rows or the add bar.
 
 ### List Editor
