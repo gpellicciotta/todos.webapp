@@ -43,3 +43,22 @@ OK: 166 precached files match VERSION 2026-11-28.11.
 ### Screenshots
 - Before: [light](task-editor-status-before-light.png), [dark](task-editor-status-before-dark.png)
 - After: [light](task-editor-status-after-light.png), [dark](task-editor-status-after-dark.png)
+
+### Review round 1 rework: previous period while cancelled
+Command: `npx vitest run` (exit 0)
+
+```
+      Tests  2100 passed (2100)
+```
+
+Command: `npx playwright test tests/e2e/task-editor.spec.js` (exit 0)
+
+```
+  17 passed (22.6s)
+```
+
+Command: `npm run check:sw` (exit 0)
+
+```
+OK: 166 precached files match VERSION 2026-11-28.12.
+```
