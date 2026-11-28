@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
+## v0.7.1-pre
+
 ## v0.7.0 [released: 2026-11-28]
 - Store: Removed `target-count` and `completion-count` from rules and occurrences, which now hold only `goal-target` and `progress`.
 - Store: Read `target-count` and `completion-count` only from version 5 data, format 2 backups, older service rows, stored rule edits, and changes queued before the upgrade.
