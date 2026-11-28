@@ -14,6 +14,9 @@ Overview of all documentation for the `todos.webapp` project.
 - [visual-style-guide.md](specs/visual-style-guide.md): Principles, decisions, and usage rules of the design system.
 - [local-store.md](specs/local-store.md): IndexedDB schema and rules of the local data store.
 - [backup-format.md](specs/backup-format.md): JSON backup file format, and the merge and overwrite import rules.
+- [welcome.md](tutorial/welcome.md): The Welcome panel of the Help screen, one section per concept.
+- [getting-started.md](tutorial/getting-started.md): The Getting Started Tutorial panel, from a first task to installing the app.
+- [faq.md](tutorial/faq.md): The FAQ panel, including the keyboard shortcuts.
 
 ---
 

@@ -13,6 +13,7 @@ All notable changes to this project are documented here.
 - Docs: Added the Reminders section to the settings wireframe, which now clips the scrolling page at the frame edge.
 - Tests: Added a real-notification spec that passes in Chrome and Firefox through `playwright.browsers.config.js`.
 - Tests: Made the task row due text tests follow the default locale clock, so the Pages workflow passes on CI again.
+- Docs: Wrote the welcome, getting started, and FAQ help docs in `docs/tutorial` as Markdown for the Help screen.
 
 ## v0.6.0 [released: 2026-11-24]
 - FrontEnd: Made the All tasks empty state say tasks sync and drop the Connect link while connected.
