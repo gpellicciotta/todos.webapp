@@ -4,15 +4,17 @@ owner: "@claude"
 needs: []
 branch: —
 worktree: —
-status: active
+status: suspended
 started_at: "2026-11-28T14:13:08Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
-review_status: pending
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T14:13:22Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-e3139c
 ---
 # T0317: Inspect a pushed reminder on an installed Android PWA after the release
 
@@ -42,4 +44,12 @@ Moved here from T0227.
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: The user reported a notification on an installed Android app, but the evidence does not establish that every tab was.
+  - Findings: [review-findings-1.md](T0317-inspect-a-pushed-reminder-on-an-installed-android/review-findings-1.md).
+
+- [2026-11-28] **[Review]**
+  Codex rejected round 1: the report does not state that every tab showing ToDo's was closed.
+  - Only the user can confirm this, or repeat the check.
 
