@@ -412,7 +412,8 @@ describe('mountTaskEditor', () => {
       });
 
       it('refuses to clear the due time or the recurrence of an At most goal', async () => {
-        await refillWith({ 'goal-direction': 'at-most', 'due-time': '2026-11-08T22:59:00.000Z' });
+        // 23:59 local time is a date-only due date in every timezone, so the time field stays empty.
+        await refillWith({ 'goal-direction': 'at-most', 'due-time': new Date(2026, 10, 8, 23, 59).toISOString() });
         const date = control('due-date');
         typeAndLeave(date, '');
         await vi.waitFor(() => expect(errorOf(date)).toBe('At most needs a due time or a recurrence.'));
