@@ -1,11 +1,11 @@
 ---
 id: T0268
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0268-add-the-reminders-section-to-the-settings-wireframe
+worktree: .plan/work/T0268-add-the-reminders-section-to-the-settings-wireframe
+status: active
+started_at: "2026-11-28T00:21:08Z"
 ended_at: —
 review: agent
 preview: none
