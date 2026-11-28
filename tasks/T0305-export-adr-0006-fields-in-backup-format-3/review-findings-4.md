@@ -4,10 +4,13 @@ round: 4
 verdict: approved
 blocking: 0
 reviewer: "@claude"
-reviewed_at: 2026-11-28T08:58:11Z
+reviewed_at: 2026-11-28T09:01:11Z
 reviewed_commit: "5291136"
 base_commit: "dfc050a"
 branch: task/T0305-export-adr-0006-fields-in-backup-format-3
+session: claude-20261128-b935e4
+session_agent: claude-code
+session_created_at: 2026-11-28T08:58:11Z
 ---
 # Review Findings: Task T0305 (Round 4)
 

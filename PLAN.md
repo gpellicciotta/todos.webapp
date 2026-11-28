@@ -6,9 +6,9 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0318 Fix the end-to-end tests that fail on main since the ADR-0006 local store changes.
 - [x] T0304 Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable.
 - [x] T0307 Show progress, check off, a log form, and undoable entries on the task editor Status tab.
-- [~] T0305 [owner: @claude] Export ADR-0006 fields in backup format 3, and convert older backups on import.
+- [x] T0305 Export ADR-0006 fields in backup format 3, and convert older backups on import.
 - [x] T0312 Show goal progress on task rows, with the quick log, Failed status, and upcoming tasks.
-- [ ] T0316 [needs: T0305] Remove the legacy target-count and completion-count fields once every reader uses goals and progress.
+- [ ] T0316 Remove the legacy target-count and completion-count fields once every reader uses goals and progress.
 - [x] T0315 Place local events by start time, expire tasks by goal, and filter failed and upcoming tasks.
 - [x] T0227 Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [x] T0313 Add goals, start times, progress, and time spent to local records in database version 6.

@@ -5,20 +5,22 @@ session: claude-20261128-4879fa
 needs: []
 branch: task/T0305-export-adr-0006-fields-in-backup-format-3
 worktree: .plan/work/T0305-export-adr-0006-fields-in-backup-format-3
-status: active
+status: completed
 started_at: "2026-11-28T05:39:01Z"
-ended_at: —
+ended_at: "2026-11-28T09:01:12Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 5, duration_s: 1809.3, input: 302, output: 135762, cache_read: 35019481, cache_write: 675706}
-  review: {turns: 3, duration_s: 200.9, input: 74262, output: 5297, cache_read: 830208, cache_write: 0}
-review_status: pending
+  review: {turns: 4, duration_s: 377.5, input: 74298, output: 14313, cache_read: 1867153, cache_write: 60883}
+review_status: approved
 review_round: 4
 review_requested_at: "2026-11-28T08:58:10Z"
-review_session: codex-20261128-21ef1a
-work_duration: 1763.6
+review_session: claude-20261128-b935e4
+work_duration: 434.4
+reviewed_by: "@claude"
+completion-commit: 9da170f0499a51ee16b8826bc680e310cc140d23
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
 
@@ -36,7 +38,7 @@ A larger gap adds no check; import everything else, and the import dialog names 
 - [x] **[Implement]** Write format 3 and convert older formats on import.
 - [x] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-27] **[Doc]**
@@ -122,4 +124,11 @@ A larger gap adds no check; import everything else, and the import dialog names 
 
 - [2026-11-28] **[Review]**
   Round 4 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 4 approved by @claude: Round 3 rework meets the user's recorded decision; both round 3 blocking defects are resolved.
+  - Findings: [review-findings-4.md](T0305-export-adr-0006-fields-in-backup-format-3/review-findings-4.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
