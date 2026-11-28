@@ -5,20 +5,16 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.7.2-pre
+- FrontEnd: Moved the three-dot actions button of All tasks and of a list into the top bar on phones too.
+- FrontEnd: Showed the task's description above the editor's tabs, with labels in a left column beside their fields.
+- FrontEnd: Started History with Details, and showed occurrences and events as tables, 20 at a time with Load more.
+- FrontEnd: Added app links, status icons, screenshots, and a shortcut table to the help, and fixed wrong statements.
+- FrontEnd: Opened Settings at a named section from links such as `#/settings?section=data`.
+- FrontEnd: Kept the words of the pace mark inside the progress box, which cut them off late in a window.
 - FrontEnd: Fixed the owner line of a list shared with you, which sat beside the description instead of under it.
 - FrontEnd: Made only Log and Log anyway main buttons in the quick log, which hides other buttons while asking.
 - Docs: Replaced the gray wireframe images with one clickable HTML preview of every screen, using the app's stylesheet.
-- DevOps: Replaced `scripts/draw-wireframes.py` with `scripts/sync-wireframe-icons.mjs`, and added tests of the wireframe page.
-- FrontEnd: Added links to app screens, status icons, and screenshots to the Welcome page, tutorial, and FAQ.
-- FrontEnd: Listed the keyboard shortcuts in a table, and corrected how the help describes overdue tasks and new lists.
-- FrontEnd: Opened Settings at a named section from links such as `#/settings?section=data`.
-- DevOps: Added `scripts/capture-help-images.mjs`, which takes the help screenshots in light and dark.
-- FrontEnd: Showed the task's description above the task editor's tabs.
-- FrontEnd: Moved Details to the top of the History tab, and showed occurrences and events as tables.
-- FrontEnd: Showed the newest 20 occurrences and events, with Load more, reading the service page by page.
-- FrontEnd: Moved the three-dot actions button of All tasks and of a list into the top bar on phones too.
-- FrontEnd: Moved the task editor's labels into a left column, with fields, choices, and buttons in a right-hand column.
-- FrontEnd: Kept the words of the pace mark inside the progress box, which cut them off late in a window.
+- DevOps: Added [capture-help-images.mjs](scripts/capture-help-images.mjs), and replaced `draw-wireframes.py` with [sync-wireframe-icons.mjs](scripts/sync-wireframe-icons.mjs).
 
 ## v0.7.1 [released: 2026-11-28]
 - Core: Kept the live entries on synced tasks, so the editor lists them again, the minus button works, and rows mark only carried readings.
