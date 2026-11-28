@@ -5,7 +5,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0313 Add goals, start times, progress, and time spent to local records in database version 6.
 - [!] T0314 [reason: circuit breaker: 3 consecutive review rejections (blocking: 2, 1, 1); inspect review findings before resuming] [owner: @claude] Convert local completions to log events in the upgrade, and store logs and undos.
 - [ ] T0315 [needs: T0314] Place local events by start time, expire tasks by goal, and filter failed and upcoming tasks.
-- [ ] T0301 Support the year recurrence unit in local periods, with the year cases of the shared recurrence vectors.
+- [~] T0301 [owner: @claude] Support the year recurrence unit in local periods, with the year cases of the shared recurrence vectors.
 - [!] T0304 [reason: Waiting for the log and undo-log REST events of todos.server T0301.] [needs: T0315] Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable.
 - [ ] T0306 [needs: T0315] Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 - [ ] T0307 [needs: T0306] Show progress, check off, a log form, and undoable entries on the task editor Status tab.

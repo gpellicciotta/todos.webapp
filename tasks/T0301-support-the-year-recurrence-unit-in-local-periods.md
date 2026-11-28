@@ -1,11 +1,11 @@
 ---
 id: T0301
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0301-support-the-year-recurrence-unit-in-local-periods
+worktree: .plan/work/T0301-support-the-year-recurrence-unit-in-local-periods
+status: active
+started_at: "2026-11-28T01:54:47Z"
 ended_at: —
 review: agent
 preview: none
