@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 678.2, input: 62, output: 10430, cache_read: 1984189, cache_write: 68723}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T04:28:46Z"
 ---
 # T0318: Fix the end-to-end tests that fail on main since the ADR-0006 local store changes
 
@@ -45,4 +50,7 @@ Files, tests, and size: [technical-spec.md](T0318-fix-the-end-to-end-tests-that-
 
 - [2026-11-28] **[Doc]**
   Added a Tests bullet to CHANGELOG.md.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
