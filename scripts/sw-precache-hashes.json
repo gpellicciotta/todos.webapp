@@ -1,11 +1,11 @@
 {
-  "version": "2026-11-28.30",
+  "version": "2026-11-28.31",
   "files": {
     "index.html": "d68aeff274dc8b437493e4ec6e9960b3ec31efe022d2878165246c4b4fc9ecc9",
     "manifest.webmanifest": "5e3311877d56c6bf9443787abcb3452cee02a3d32cd66bfadadd923ee39208cb",
     "css/style.css": "a3d0c3b32ac129d6aa3ff1799eae8b8fee68af9986afc32743fda11f8e16379a",
     "css/tokens.css": "ec6a27b49649a801cb1c4f77ad8ec8c268c5b219269dcb162be24ae33d76275a",
-    "css/app-components.css": "c06635fd92e400bb05868669c52f7f9fca9e70b351b5be58129f462954445d48",
+    "css/app-components.css": "f054d9ffdf997347f5b4820aa1ebff82e76cc89a4630dbe0bbd9401865a775a4",
     "css/app-chrome.css": "f172c4d7d5993764a2c1ed799c685cd2a898ed4d15750ec3688a8160ba86256f",
     "css/views.css": "8a65cfb0e37a4807bb48d3f377e7fe69be089b6cf65a1c32823839f1ea421f6b",
     "img/icons.svg": "031e4e3bbbb48524f55b9ba7dcfdafa96242cc96bb32fb3b5db05ab3fe16e0c7",
@@ -75,7 +75,7 @@
     "js/views/list.js": "c839ad2e88a24ca4fbc1b84d44d82fa663c7e184ebccadcb09fc6f7119ef4021",
     "js/views/lists.js": "28fc3893e9d3b63f1ed85ed2179ec34db2cc1b42ef0799891f53f118b0b1c407",
     "js/views/notes.js": "38591620e2a4e47273c9114143f1814f5c15e458a655ee974e9c63b492304cdd",
-    "js/views/quick-log.js": "8570c24ac9f83751d12291b82fa1f34ac7254a65946fbdd0afde6a931a8e1cf7",
+    "js/views/quick-log.js": "653d49addd036dba3456cd8c29ca870a04b5d34fcab996cf563ef175c2864296",
     "js/views/recycle-bin.js": "6d499ebf93013410b299872339d0f0083939209cbfa604218925b4c962a283a1",
     "js/views/reorder.js": "bea69609ead59146073101fa06745fceb00a10c9023ead9a442ae1651acc7734",
     "js/views/settings.js": "ec4030d36ee4699d5aede0a83bb77c3a80778f5d4a6ba17311fc2283370358de",

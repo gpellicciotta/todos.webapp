@@ -564,7 +564,8 @@
 }
 
 .quick-log__part[hidden],
-.quick-log__confirm[hidden] {
+.quick-log__confirm[hidden],
+.quick-log__actions[hidden] {
   display: none;
 }
 
@@ -584,7 +585,7 @@
   margin: 0;
 }
 
-/* The question of a long duration takes its own line, over its two buttons at the end of the next. */
+/* The question of a long duration takes its own line, over its two buttons, which replace those of the form. */
 .quick-log__confirm {
   display: flex;
   flex-wrap: wrap;

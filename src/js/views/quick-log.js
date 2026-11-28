@@ -169,7 +169,8 @@ export function createQuickLog({ document: doc = globalThis.document, descriptio
   confirm.setAttribute('role', 'alert');
   confirm.hidden = true;
   const question = make(doc, 'p', 'quick-log__question');
-  confirm.append(question, buttonOf(doc, 'change', STRINGS.change, 'secondary'), buttonOf(doc, 'anyway', STRINGS.anyway, 'primary'));
+  const anyway = buttonOf(doc, 'anyway', STRINGS.anyway, 'primary');
+  confirm.append(question, buttonOf(doc, 'change', STRINGS.change, 'secondary'), anyway);
   const more = buttonOf(doc, 'more', STRINGS.more, 'secondary');
   const actions = make(doc, 'div', 'quick-log__actions');
   const log = buttonOf(doc, 'log', STRINGS.log, 'primary');
@@ -186,6 +187,13 @@ export function createQuickLog({ document: doc = globalThis.document, descriptio
     }
   }
   showParts();
+
+  /** Take the question about a long duration away, and the entry it asked about; the buttons of the form return. */
+  function endQuestion() {
+    delete element.dataset.pending;
+    confirm.hidden = true;
+    actions.hidden = false;
+  }
 
   /**
    * Show an error under the fields, or clear it.
@@ -204,7 +212,7 @@ export function createQuickLog({ document: doc = globalThis.document, descriptio
       return;
     }
     pending = true;
-    confirm.hidden = true;
+    endQuestion();
     log.disabled = true;
     try {
       await submit(entry);
@@ -228,6 +236,8 @@ export function createQuickLog({ document: doc = globalThis.document, descriptio
       return;
     }
     fail('');
+    // Each attempt replaces an open question, so Log anyway never posts values that changed since.
+    endQuestion();
     const read = parseEntry({
       checked: !hidden.check && checked.checked,
       amount: hidden.amount ? '' : amount.control.value,
@@ -242,7 +252,9 @@ export function createQuickLog({ document: doc = globalThis.document, descriptio
     if (read.seconds > CONFIRM_ABOVE_SECONDS) {
       question.textContent = STRINGS.ask(read.seconds);
       confirm.hidden = false;
+      actions.hidden = true;
       element.dataset.pending = JSON.stringify(read.entry);
+      anyway.focus();
       return;
     }
     post(read.entry);
@@ -264,13 +276,11 @@ export function createQuickLog({ document: doc = globalThis.document, descriptio
       close('cancel');
     }
     else if (action === 'change') {
-      confirm.hidden = true;
-      delete element.dataset.pending;
+      endQuestion();
+      hours.control.focus();
     }
     else if (action === 'anyway' && element.dataset.pending) {
-      const entry = JSON.parse(element.dataset.pending);
-      delete element.dataset.pending;
-      post(entry);
+      post(JSON.parse(element.dataset.pending));
     }
   });
   element.addEventListener('submit', (event) => {

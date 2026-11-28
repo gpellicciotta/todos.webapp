@@ -404,6 +404,8 @@ Wireframe: [Quick log](../design/ui-wireframes.html#quick-log).
 - **[Decided]** Only Log and Log anyway look like main actions; + More, Cancel, and Change are secondary buttons.
 - **[Decided]** A duration above 12 hours asks in place first, as ADR-0006 asks of clients.
   The question reads "Log 14 h 0 min? That is more than 12 hours.", with Change and Log anyway.
+  Meanwhile + More, Cancel, and Log hide, and Log anyway takes the focus; Change returns to the hours.
+  Another Enter replaces the question with one about the current values, or logs them.
 - Each log shows an Undo toast, such as "Logged 45 min on Sport."; Undo posts `undo-log` of that entry.
 - Values follow the service limits: whole minutes, amounts with at most 3 decimals, and labels of at most 100 characters.
 

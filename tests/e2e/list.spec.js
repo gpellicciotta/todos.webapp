@@ -547,6 +547,13 @@ test('the quick log fills only Log and Log anyway, and keeps its question button
     const [question, first, second] = await Promise.all([quick.locator('.quick-log__question'), change, anyway].map((part) => part.boundingBox()));
     expect(first.y, 'the buttons sit under the question').toBeGreaterThanOrEqual(question.y + question.height);
     expect(second.x - (first.x + first.width), 'a gap between the buttons').toBeGreaterThanOrEqual(8);
+    await expect(anyway).toBeFocused();
+    for (const name of ['+ More', 'Cancel', 'Log']) {
+      await expect(quick.getByRole('button', { name, exact: true }), name).toBeHidden();
+    }
+    await change.click();
+    await expect(quick.getByLabel('Hours')).toBeFocused();
+    await expect(quick.getByRole('button', { name: 'Log', exact: true })).toBeVisible();
     await quick.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(quick).toHaveCount(0);
   }

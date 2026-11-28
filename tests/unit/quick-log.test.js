@@ -106,6 +106,35 @@ describe('createQuickLog', () => {
     await vi.waitFor(() => expect(submit).toHaveBeenCalledWith({ 'time-spent-seconds': 50_400 }));
   });
 
+  it('shows only the buttons of its question while it asks, with the focus on Log anyway', () => {
+    const quick = open();
+    const actions = quick.element.querySelector('.quick-log__actions');
+    field(quick, 'hours').value = '14';
+    click(quick, 'log');
+    expect(actions.hidden).toBe(true);
+    expect(document.activeElement.dataset.action).toBe('anyway');
+    click(quick, 'change');
+    expect(actions.hidden).toBe(false);
+    expect(document.activeElement).toBe(field(quick, 'hours'));
+  });
+
+  it('drops the question when Enter logs a corrected value, even one it refuses', async () => {
+    const quick = open();
+    const confirm = quick.element.querySelector('[data-part="confirm"]');
+    const actions = quick.element.querySelector('.quick-log__actions');
+    const enter = () => field(quick, 'hours').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    field(quick, 'hours').value = '14';
+    click(quick, 'log');
+    field(quick, 'hours').value = '';
+    enter();
+    expect([confirm.hidden, actions.hidden]).toEqual([true, false]);
+    click(quick, 'anyway');
+    expect(submit).not.toHaveBeenCalled();
+    field(quick, 'hours').value = '2';
+    enter();
+    await vi.waitFor(() => expect(submit).toHaveBeenCalledWith({ 'time-spent-seconds': 7_200 }));
+  });
+
   it('styles only Log and Log anyway as main actions, and the other buttons as secondary ones', () => {
     const quick = open();
     const kinds = Object.fromEntries([...quick.element.querySelectorAll('button')]
