@@ -217,6 +217,90 @@
       "instant": "2026-12-01T03:00:00Z",
       "containing": { "start": "2026-11-01T04:00:00Z", "end": "2026-12-01T05:00:00Z" },
       "next": { "start": "2026-12-01T05:00:00Z", "end": "2027-01-01T05:00:00Z" }
+    },
+    {
+      "name": "year, interval 1, midyear",
+      "unit": "year", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2025-12-31T23:00:00Z", "end": "2026-12-31T23:00:00Z" },
+      "next": { "start": "2026-12-31T23:00:00Z", "end": "2027-12-31T23:00:00Z" }
+    },
+    {
+      "name": "year, interval 1, exactly on local New Year",
+      "unit": "year", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2025-12-31T23:00:00Z",
+      "containing": { "start": "2025-12-31T23:00:00Z", "end": "2026-12-31T23:00:00Z" },
+      "next": { "start": "2026-12-31T23:00:00Z", "end": "2027-12-31T23:00:00Z" }
+    },
+    {
+      "name": "year, interval 1, just before local New Year",
+      "unit": "year", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2025-12-31T22:59:59.999Z",
+      "containing": { "start": "2024-12-31T23:00:00Z", "end": "2025-12-31T23:00:00Z" },
+      "next": { "start": "2025-12-31T23:00:00Z", "end": "2026-12-31T23:00:00Z" }
+    },
+    {
+      "name": "year, interval 2",
+      "unit": "year", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2025-12-31T23:00:00Z", "end": "2027-12-31T23:00:00Z" },
+      "next": { "start": "2027-12-31T23:00:00Z", "end": "2029-12-31T23:00:00Z" }
+    },
+    {
+      "name": "year, interval 2, last second of the first year",
+      "unit": "year", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-12-31T22:59:59Z",
+      "containing": { "start": "2025-12-31T23:00:00Z", "end": "2027-12-31T23:00:00Z" },
+      "next": { "start": "2027-12-31T23:00:00Z", "end": "2029-12-31T23:00:00Z" }
+    },
+    {
+      "name": "year, interval 2, first second of the second year",
+      "unit": "year", "interval": 2, "zone": "Europe/Brussels",
+      "instant": "2026-12-31T23:00:00Z",
+      "containing": { "start": "2026-12-31T23:00:00Z", "end": "2028-12-31T23:00:00Z" },
+      "next": { "start": "2028-12-31T23:00:00Z", "end": "2030-12-31T23:00:00Z" }
+    },
+    {
+      "name": "year, leap year spans 366 days",
+      "unit": "year", "interval": 1, "zone": "Europe/Brussels",
+      "instant": "2028-02-29T12:00:00Z",
+      "containing": { "start": "2027-12-31T23:00:00Z", "end": "2028-12-31T23:00:00Z" },
+      "next": { "start": "2028-12-31T23:00:00Z", "end": "2029-12-31T23:00:00Z" }
+    },
+    {
+      "name": "year, UTC zone",
+      "unit": "year", "interval": 1, "zone": "UTC",
+      "instant": "2026-12-31T23:59:59Z",
+      "containing": { "start": "2026-01-01T00:00:00Z", "end": "2027-01-01T00:00:00Z" },
+      "next": { "start": "2027-01-01T00:00:00Z", "end": "2028-01-01T00:00:00Z" }
+    },
+    {
+      "name": "year, daylight saving zone in summer time on 1 January",
+      "unit": "year", "interval": 1, "zone": "Australia/Sydney",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2025-12-31T13:00:00Z", "end": "2026-12-31T13:00:00Z" },
+      "next": { "start": "2026-12-31T13:00:00Z", "end": "2027-12-31T13:00:00Z" }
+    },
+    {
+      "name": "year, daylight saving zone, interval 2",
+      "unit": "year", "interval": 2, "zone": "Australia/Sydney",
+      "instant": "2026-06-15T10:00:00Z",
+      "containing": { "start": "2025-12-31T13:00:00Z", "end": "2027-12-31T13:00:00Z" },
+      "next": { "start": "2027-12-31T13:00:00Z", "end": "2029-12-31T13:00:00Z" }
+    },
+    {
+      "name": "year, local date ahead of the UTC date",
+      "unit": "year", "interval": 1, "zone": "Australia/Sydney",
+      "instant": "2026-12-31T14:00:00Z",
+      "containing": { "start": "2026-12-31T13:00:00Z", "end": "2027-12-31T13:00:00Z" },
+      "next": { "start": "2027-12-31T13:00:00Z", "end": "2028-12-31T13:00:00Z" }
+    },
+    {
+      "name": "year, local date behind the UTC date",
+      "unit": "year", "interval": 1, "zone": "America/New_York",
+      "instant": "2027-01-01T03:00:00Z",
+      "containing": { "start": "2026-01-01T05:00:00Z", "end": "2027-01-01T05:00:00Z" },
+      "next": { "start": "2027-01-01T05:00:00Z", "end": "2028-01-01T05:00:00Z" }
     }
   ]
 }

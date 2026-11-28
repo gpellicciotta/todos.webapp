@@ -132,7 +132,7 @@ export function recurrenceLabel(rules) {
   }
   const unit = rules['recurrence-unit'];
   const interval = rules['recurrence-interval'] ?? 1;
-  return interval === 1 ? { day: 'Daily', week: 'Weekly', month: 'Monthly' }[unit] : `Every ${interval} ${unit}s`;
+  return interval === 1 ? { day: 'Daily', week: 'Weekly', month: 'Monthly', year: 'Yearly' }[unit] : `Every ${interval} ${unit}s`;
 }
 
 /** The rule fields that only a recurring task holds. */

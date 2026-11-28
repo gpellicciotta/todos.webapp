@@ -14,7 +14,12 @@ const instants = (period) => ({ start: Date.parse(period.start), end: Date.parse
 
 describe('recurrence periods', () => {
   it('has the shared vectors', () => {
-    expect(vectors.length).toBeGreaterThanOrEqual(31);
+    expect(vectors.length).toBeGreaterThanOrEqual(43);
+    expect(vectors.filter((vector) => vector.unit === 'year').length).toBeGreaterThanOrEqual(12);
+  });
+
+  it('rejects an unknown unit', () => {
+    expect(() => periodContaining('2026-06-15T10:00:00Z', { unit: 'decade', interval: 1, zone: 'UTC' })).toThrow(RangeError);
   });
 
   for (const vector of vectors) {

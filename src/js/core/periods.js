@@ -1,8 +1,8 @@
 /**
  * Recurrence periods, computed as the todos.server business logic spec says, section Periods (`LOC-2`).
  *
- * A period spans `interval` units of `day`, `week`, or `month` in an IANA timezone.
- * Days start at local midnight, weeks on Monday (ISO 8601), and months on the 1st; periods are half-open.
+ * A period spans `interval` units of `day`, `week`, `month`, or `year` in an IANA timezone.
+ * Days start at local midnight, weeks on Monday (ISO 8601), months on the 1st, and years on 1 January; periods are half-open.
  * A local midnight skipped by daylight saving resolves to the first valid instant of that day,
  * and units add in local dates, so a day spans 23 or 25 hours on daylight saving changes.
  * The period after a period starts at its end and runs `interval` units from the unit start containing that end.
@@ -107,6 +107,9 @@ function unitStart(date, unit) {
     const weekday = new Date(Date.UTC(date.year, date.month - 1, date.day)).getUTCDay();
     return plusDays(date, -((weekday + 6) % 7));
   }
+  if (unit === 'year') {
+    return { year: date.year, month: 1, day: 1 };
+  }
   return unit === 'month' ? { ...date, day: 1 } : date;
 }
 
@@ -118,6 +121,9 @@ function unitStart(date, unit) {
  * @returns {{year: number, month: number, day: number}} the later unit start
  */
 function plusUnits(date, unit, count) {
+  if (unit === 'year') {
+    return { year: date.year + count, month: 1, day: 1 };
+  }
   if (unit === 'month') {
     const months = date.year * 12 + date.month - 1 + count;
     return { year: Math.floor(months / 12), month: (months % 12) + 1, day: 1 };
@@ -130,7 +136,7 @@ function plusUnits(date, unit, count) {
  * @param {{unit: string, interval: number, zone: string}} rule the rule
  */
 function checkRule({ unit, interval, zone }) {
-  if (!['day', 'week', 'month'].includes(unit) || !Number.isInteger(interval) || interval < 1 || !zone) {
+  if (!['day', 'week', 'month', 'year'].includes(unit) || !Number.isInteger(interval) || interval < 1 || !zone) {
     throw new RangeError(`Not a recurrence rule: ${unit}, ${interval}, ${zone}.`);
   }
 }
