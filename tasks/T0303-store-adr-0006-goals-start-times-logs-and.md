@@ -1,15 +1,18 @@
 ---
 id: T0303
 owner: "@claude"
+session: claude-20261128-9611c7
 needs: []
 branch: task/T0303-store-adr-0006-goals-start-times-logs-and
 worktree: .plan/work/T0303-store-adr-0006-goals-start-times-logs-and
-status: active
+status: suspended
 started_at: "2026-11-28T00:18:53Z"
 ended_at: —
 review: agent
 preview: none
 protocol: standard
+size_status: requested
+size_estimate: 25 files, 2500 lines
 ---
 # T0303: Store ADR-0006 goals, start times, logs, and undos locally, migrating the database and local legacy events
 
@@ -33,3 +36,16 @@ Cover `failed` in the finished-today filter, and persist the Show upcoming view 
 ## Execution Log
 - [2026-11-27] **[Doc]**
   Task file written from ADR-0006 of todos.server, which Codex approved.
+
+- [2026-11-28] **[Read]**
+  Read local-store.md, store, occurrences, migrate, overdue code. Real scope far exceeds the 8-file, 450-line estimate; no code changed yet.
+  - occurrences.js applyEvent and rule model still use target-count and completion-count.
+  - queue, merge, backup, task-list, task-editor also read those fields.
+  - 224 test references across 22 files use the old fields.
+
+- [2026-11-28] **[Decide]**
+  Size note: store records change shape, so consumers and about 200 test references must change together. Estimate 25 files, 2500 lines. Proposed split: core occurrences model, store upgrade and actions, consumer adaptation.
+
+- [2026-11-28] **[Size]**
+  Size approval requested for 25 files, 2500 lines.
+
