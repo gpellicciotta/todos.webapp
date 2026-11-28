@@ -12,14 +12,13 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 4, duration_s: 1562.7, input: 252, output: 117252, cache_read: 27014822, cache_write: 309643}
+  worker: {turns: 5, duration_s: 1809.3, input: 302, output: 135762, cache_read: 35019481, cache_write: 675706}
   review: {turns: 3, duration_s: 200.9, input: 74262, output: 5297, cache_read: 830208, cache_write: 0}
-review_status: rejected
-review_round: 3
-review_requested_at: "2026-11-28T06:37:09Z"
+review_status: pending
+review_round: 4
+review_requested_at: "2026-11-28T08:58:10Z"
 review_session: codex-20261128-21ef1a
 work_duration: 1763.6
-reviewed_by: "@codex"
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
 
@@ -120,4 +119,7 @@ A larger gap adds no check; import everything else, and the import dialog names 
 - [2026-11-28] **[Implement]**
   Round 3: applied the user's 10,000 cap to formats 2 and 3, and named affected tasks in the import dialog.
   - Unit, dialog, and end-to-end tests cover the report.
+
+- [2026-11-28] **[Review]**
+  Round 4 requested (mode: agent).
 
