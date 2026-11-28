@@ -1,11 +1,11 @@
 ---
 id: T0305
-owner: ~
-needs: ['T0315']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0305-export-adr-0006-fields-in-backup-format-3
+worktree: .plan/work/T0305-export-adr-0006-fields-in-backup-format-3
+status: active
+started_at: "2026-11-28T05:39:01Z"
 ended_at: —
 review: agent
 preview: none
