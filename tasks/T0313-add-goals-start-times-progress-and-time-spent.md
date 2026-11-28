@@ -12,13 +12,12 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 647.3, input: 124, output: 46293, cache_read: 8603409, cache_write: 170585}
+  worker: {turns: 2, duration_s: 988.1, input: 144, output: 51290, cache_read: 10357218, cache_write: 185290}
   review: {turns: 2, duration_s: 62.7, input: 31405, output: 1425, cache_read: 264576, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-28T01:18:51Z"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-28T01:26:07Z"
 work_duration: 742.3
-reviewed_by: "@codex"
 review_session: codex-20261128-3948b4
 ---
 # T0313: Add goals, start times, progress, and time spent to local records in database version 6
@@ -78,4 +77,7 @@ Rules, files, and tests: [technical-spec.md](T0313-add-goals-start-times-progres
 
 - [2026-11-28] **[Implement]**
   Added the end-to-end version 5 upgrade spec the review asked for; it passes with all 288 e2e tests.
+
+- [2026-11-28] **[Review]**
+  Round 2 requested (mode: agent).
 
