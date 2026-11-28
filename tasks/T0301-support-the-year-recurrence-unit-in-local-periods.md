@@ -5,17 +5,22 @@ session: claude-20261128-582e1b
 needs: []
 branch: task/T0301-support-the-year-recurrence-unit-in-local-periods
 worktree: .plan/work/T0301-support-the-year-recurrence-unit-in-local-periods
-status: active
+status: completed
 started_at: "2026-11-28T01:54:47Z"
-ended_at: —
+ended_at: "2026-11-28T01:57:55Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 132.3, input: 32, output: 5564, cache_read: 839484, cache_write: 51697}
-review_status: pending
+  review: {turns: 1, duration_s: 42.6, input: 20058, output: 1374, cache_read: 163456, cache_write: 0}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T01:57:08Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-e56791
+work_duration: 187.5
+completion-commit: ba646c525dbfb9036c93e81951f26bfdd9f8d507
 ---
 # T0301: Support the year recurrence unit in local periods, with the year cases of the shared recurrence vectors
 
@@ -31,7 +36,7 @@ Copy the year cases into tests/fixtures/recurrence-test-vectors.json once todos.
 - [x] **[Implement]** Add the year unit to periods.js.
 - [x] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-27] **[Doc]**
@@ -60,4 +65,11 @@ Copy the year cases into tests/fixtures/recurrence-test-vectors.json once todos.
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @codex: [Decided]** Approved.
+  - Findings: [review-findings-1.md](T0301-support-the-year-recurrence-unit-in-local-periods/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
