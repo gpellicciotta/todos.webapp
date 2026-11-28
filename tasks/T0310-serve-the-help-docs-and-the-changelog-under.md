@@ -1,6 +1,7 @@
 ---
 id: T0310
 owner: "@claude"
+session: claude-20261128-20c407
 needs: []
 branch: task/T0310-serve-the-help-docs-and-the-changelog-under
 worktree: .plan/work/T0310-serve-the-help-docs-and-the-changelog-under
