@@ -10,6 +10,7 @@
  * See docs/specs/ui-design.md, Task Editor.
  */
 
+import { entryWords, formatMeasure, progressOf } from '../core/progress.js';
 import { countWords, make as el, STATUS_LABELS } from './task-list.js';
 
 /** History strings, for the strings module of TEC-13 to absorb. */
@@ -17,15 +18,29 @@ const STRINGS = Object.freeze({
   show: 'Show history', refresh: 'Refresh history', loading: 'Loading the history…', occurrences: 'Occurrences', events: 'Events',
   none: 'Nothing yet.', local: 'Showing the history kept on this device.', failed: 'The history could not be loaded.',
   missed: 'Missed', partly: 'Partly done', from: 'from ', notesOf: 'Notes of occurrence ',
+  you: 'You', collaborator: 'Collaborator', logged: 'logged', undid: 'undid', anEntry: 'an entry', max: 'max ',
 });
 
 /** What each event type says in the history. */
 export const EVENT_LABELS = Object.freeze({
   create: 'Created', complete: 'Ticked', uncomplete: 'Unticked', start: 'Started', unstart: 'Undid start',
-  cancel: 'Cancelled', reopen: 'Reopened', 'edit-task': 'Edited', 'edit-lifecycle-rules': 'Changed the rules',
+  log: 'Logged', 'undo-log': 'Undid', cancel: 'Cancelled', reopen: 'Reopened', 'edit-task': 'Edited', 'edit-lifecycle-rules': 'Changed the rules',
   expire: 'Expired', 'roll-over': 'Period ended', 'end-recurrence': 'Recurrence ended',
 });
 
+/**
+ * Describe the progress of an occurrence against its goal: `2 of 3 done` for checks, else `1,910 / max 1,600 kcal`.
+ * @param {object} occurrence the occurrence
+ * @param {string} [locale] the locale of numbers
+ * @returns {string} the words
+ */
+function progressWords(occurrence, locale = undefined) {
+  const p = progressOf(occurrence);
+  if (p.measure === 'checks') {
+    return countWords(occurrence);
+  }
+  return `${formatMeasure(p.measure, p.value, null, locale)} / ${p.direction === 'at-most' ? STRINGS.max : ''}${formatMeasure(p.measure, p.target, p.unit, locale)}`;
+}
 /**
  * Compare records by a time field, newest first.
  * @param {string} field the time field
@@ -101,10 +116,11 @@ async function readServer(api, taskId) {
  * @param {{send: Function}} [options.api] the API client, used while connected
  * @param {{state: () => string}} [options.session] the session; without one, the app is in local mode
  * @param {string} [options.locale] the locale of times, the user's by default
+ * @param {() => (string|number|null)} [options.userId] reads the user's identifier, which tells own entries from a collaborator's
  * @returns {{element: HTMLElement, load: () => Promise<void>, showNotes: (notes: object[]) => void}} the history;
  *   `showNotes` redraws the notes of a shown history without reading the occurrences and events again
  */
-export function createTaskHistory({ document: doc, store, taskId, api = null, session = null, locale }) {
+export function createTaskHistory({ document: doc, store, taskId, api = null, session = null, locale, userId = () => null }) {
   const day = dayFormat(locale);
   const moment = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const element = el(doc, 'div', 'task-history');
@@ -126,7 +142,7 @@ export function createTaskHistory({ document: doc, store, taskId, api = null, se
     const closed = occurrence['close-time'] !== null;
     const recurring = Boolean(occurrence['due-time']) && closed && (occurrence.status === 'ready' || occurrence.status === 'in-progress');
     const label = recurring ? (occurrence.status === 'ready' ? STRINGS.missed : STRINGS.partly) : STATUS_LABELS[occurrence.status];
-    return `${occurrenceLabel(occurrence, day)} · ${label} · ${countWords(occurrence)}`;
+    return `${occurrenceLabel(occurrence, day)} · ${label}, ${progressWords(occurrence, locale)}`;
   }
 
   /**
@@ -156,14 +172,41 @@ export function createTaskHistory({ document: doc, store, taskId, api = null, se
 
   /**
    * Describe an event: its time, what happened, and its occurrence.
+   * A log entry names its author, label, and value, such as `You logged Croissant · 320 kcal`; an undo names the entry it undid.
    * @param {object} event the event
+   * @param {{events: object[], occurrences: object[]}} history the history, which holds the goal of each occurrence
    * @returns {string} the text
    */
-  function describeEvent(event) {
-    const what = EVENT_LABELS[event.type] ?? event.type;
-    return `${moment.format(new Date(event['creation-time']))} · ${what}${event.occurrence ? ` · #${event.occurrence}` : ''}`;
+  function describeEvent(event, history) {
+    const time = moment.format(new Date(event['creation-time']));
+    const place = event.occurrence ? ` · #${event.occurrence}` : '';
+    if (event.type !== 'log' && event.type !== 'undo-log') {
+      return `${time} · ${EVENT_LABELS[event.type] ?? event.type}${place}`;
+    }
+    const mine = event['owner-id'] === undefined || event['owner-id'] === null || event['owner-id'] === userId();
+    const author = mine ? STRINGS.you : STRINGS.collaborator;
+    const entry = event.type === 'log' ? event : history.events.find((other) => other.id === event['target-event-id']);
+    if (!entry) {
+      return `${time} · ${author} ${STRINGS.undid} ${STRINGS.anEntry}${place}`;
+    }
+    const goal = progressOf(history.occurrences.find((occurrence) => occurrence.occurrence === entry.occurrence) ?? {});
+    const what = [entry.label, entryWords(entry, goal, locale)].filter(Boolean).join(' · ');
+    return `${time} · ${author} ${event.type === 'log' ? STRINGS.logged : STRINGS.undid} ${what}${place}`;
   }
 
+  /**
+   * Render an event as a list item; a log entry that an undo names stays listed, struck through.
+   * @param {object} event the event
+   * @param {{events: object[], occurrences: object[]}} history the history
+   * @param {Set<string>} undone the identifiers of the undone entries
+   * @returns {HTMLLIElement} the item
+   */
+  function renderEvent(event, history, undone) {
+    const item = el(doc, 'li', 'task-history__item', describeEvent(event, history));
+    item.dataset.event = event.id;
+    item.classList.toggle('is-undone', event.type === 'log' && undone.has(event.id));
+    return item;
+  }
   /**
    * Render one titled list of the history.
    * @param {string} kind `occurrences` or `events`
@@ -186,10 +229,11 @@ export function createTaskHistory({ document: doc, store, taskId, api = null, se
    */
   function draw(history, notes) {
     const notesOf = (occurrence) => notes.filter((note) => note.occurrence === occurrence.occurrence);
+    const undone = new Set(history.events.filter((event) => event.type === 'undo-log').map((event) => event['target-event-id']));
     body.replaceChildren(
       ...section('occurrences', STRINGS.occurrences, [...history.occurrences].sort((a, b) => b.occurrence - a.occurrence)
         .map((occurrence) => renderOccurrence(occurrence, notesOf(occurrence)))),
-      ...section('events', STRINGS.events, [...history.events].sort(newestFirst('creation-time')).map(describeEvent)),
+      ...section('events', STRINGS.events, [...history.events].sort(newestFirst('creation-time')).map((event) => renderEvent(event, history, undone))),
     );
   }
 

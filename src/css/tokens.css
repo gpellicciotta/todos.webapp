@@ -3,14 +3,32 @@
  *
  * The shared base and the neutral look of the vendored support.webapp design system define every
  * contract token: colors, fonts, type, space, radius roles, lines, elevation, layers, motion, and widths.
- * This file adds only sizes that belong to ToDo's own screens; it never redefines a vendored token.
+ * This file adds only sizes and colors that belong to ToDo's own screens; it never redefines a vendored token.
  * See docs/specs/visual-style-guide.md for the usage rules of each group.
  */
 
 :root {
-  /* Size: task rows, group headers, the widest list chip, and the minimum width of text before a wrap. */
+  /* Size: task rows, group headers, the widest list chip, the minimum width of text before a wrap, and the goal meter. */
   --row-height: 3rem;
   --group-header-height: 2rem;
   --width-chip-max: 8rem;
   --width-text-min: 12rem;
+  --size-meter: 0.5rem;
+
+  /*
+   * Progress colors of ADR-0006: red marks Failed only; over-limit and behind-pace marks use the look's orange danger color.
+   * Yellow marks a goal approaching its target on meters and icons only; the text variant reaches 4.5:1.
+   */
+  --color-status-failed: light-dark(#b91c1c, #f87171);
+  --color-progress-approaching: light-dark(#a16207, #facc15);
+  --color-progress-approaching-text: light-dark(#854d0e, #fde047);
+}
+
+@supports not (color: light-dark(#000000, #ffffff)) {
+  :root,
+  :root[data-theme] {
+    --color-status-failed: #b91c1c;
+    --color-progress-approaching: #a16207;
+    --color-progress-approaching-text: #854d0e;
+  }
 }

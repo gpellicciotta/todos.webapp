@@ -318,12 +318,12 @@
   color: var(--color-text-muted);
 }
 
-/* The state buttons and the stepper stay, disabled, so a viewer still sees the status and its counts (SHR-4). */
-.task-editor__fields:disabled :is(.combo-box, .editor-panel__row > .button, .chip--removable .chip__remove, .task-editor__previous) {
+/* A viewer sees the status, progress, and entries; the controls that change them stay hidden (SHR-4). */
+.task-editor__fields:disabled :is(.combo-box, .editor-panel__row > .button, .chip--removable .chip__remove, .task-editor__actions, .task-editor__log) {
   display: none;
 }
 
-/* The status line names the status and its counts beside the status icon; the state buttons sit under it. */
+/* The status line names the status beside the status icon; the window, progress box, and actions follow. */
 .task-editor__status {
   display: flex;
   align-items: center;
@@ -354,6 +354,12 @@
 
 .task-editor__recurrence :is([name='recurrence-interval'], [name='recurrence-end-count']) {
   max-inline-size: var(--width-chip-max);
+}
+
+/* An undone log entry stays in the history, struck through. */
+.task-history__item.is-undone {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
 }
 
 /* The history lists occurrences and events, newest first, in small text under Show history. */

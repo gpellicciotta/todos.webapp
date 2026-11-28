@@ -571,49 +571,162 @@
 }
 
 /*
- * Status colors: In progress is blue, Completed green, and Cancelled gray; To do keeps the muted text color.
- * The rules sit after the hover and disabled rules so that the color stays in every state.
- * An enabled state button of the task editor tints its icon too; a disabled one keeps the disabled color.
+ * Status colors: In progress is blue, or orange when not on track; Completed is green, Failed red, and Cancelled gray.
+ * To do keeps the muted text color. The rules sit after the hover and disabled rules so that the color stays in every state.
  */
 .status-button[data-status='in-progress'],
-.task-editor__status[data-status='in-progress'] > .icon,
-.task-editor__state[data-status='in-progress']:not(:disabled) > .icon {
+.task-editor__status[data-status='in-progress'] > .icon {
   color: var(--color-status-in-progress);
 }
 
+.task-editor__status[data-status='in-progress']:not([data-track='on-track']) > .icon {
+  color: var(--color-danger);
+}
+
 .status-button[data-status='completed'],
-.task-editor__status[data-status='completed'] > .icon,
-.task-editor__state[data-status='completed']:not(:disabled) > .icon {
+.task-editor__status[data-status='completed'] > .icon {
   color: var(--color-status-completed);
 }
 
-.status-button[data-status='cancelled'],
-.task-editor__status[data-status='cancelled'] > .icon,
-.task-editor__state[data-status='cancelled']:not(:disabled) > .icon {
+.task-editor__status[data-status='failed'] > .icon {
+  color: var(--color-status-failed);
+}
+
+.status-button[data-status='cancelled'] {
   color: var(--color-status-cancelled);
 }
 
-/*
- * Task editor status controls: the state buttons, the count stepper, and Complete for previous period, stacked.
- * The state buttons are package icon buttons on the package segmented track, sized to their content;
- * the pressed one takes the icon button's selected ground and primary outline.
- */
-.task-editor__status-controls {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-3);
+.task-editor__status[data-status='cancelled'] > .icon {
+  color: var(--color-text-muted);
 }
 
-.task-editor__states {
-  display: inline-flex;
+/* The status line takes the focus when a control it follows disables, so it shows no ring without the keyboard. */
+.task-editor__status:focus {
+  outline: none;
+}
+
+.task-editor__status:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/*
+ * Progress box: the progress and target in large text, a meter, and the line on what comes next (`TSK-22`).
+ * Above an "at most" limit the box turns orange; red stays reserved for Failed.
+ */
+.progress-box {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface-sunken);
+}
+
+.progress-box[data-state='over'] {
+  border-color: var(--color-danger);
+}
+
+.progress-box__value {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-box__next {
+  margin: 0;
+  font-size: var(--text-sm);
+  white-space: pre-line;
+}
+
+.progress-box[data-state='over'] .progress-box__next {
+  color: var(--color-danger);
+}
+
+.progress-box__meter {
+  position: relative;
+  padding-block-end: var(--space-1);
+}
+
+.progress-meter {
+  --meter-color: var(--color-status-in-progress);
+  overflow: hidden;
+  block-size: var(--size-meter);
+  border-radius: var(--radius-chip);
+  background-color: var(--color-border);
+}
+
+.progress-meter__fill {
+  inline-size: var(--meter-share, 0%);
+  block-size: 100%;
+  border-radius: inherit;
+  background-color: var(--meter-color);
+}
+
+.progress-meter[data-color='yellow'] {
+  --meter-color: var(--color-progress-approaching);
+}
+
+.progress-meter[data-color='green'] {
+  --meter-color: var(--color-status-completed);
+}
+
+.progress-meter[data-color='gray'] {
+  --meter-color: var(--color-text-muted);
+}
+
+.progress-meter[data-color='orange'] {
+  --meter-color: var(--color-danger);
+}
+
+/* The pace mark of a checks goal: a tick on the meter at the share of the window gone, with its words under it. */
+.progress-meter__pace {
+  position: absolute;
+  inset-inline-start: var(--pace-share, 0%);
+  inset-block-start: 0;
+  padding-block-start: calc(var(--size-meter) + var(--space-1));
+  border-inline-start: var(--border-width) solid var(--color-text);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  transform: translateX(-0.5px);
+}
+
+.progress-meter__pace[hidden] {
+  display: none;
+}
+
+/* Text in the approaching state uses the dark amber, since yellow fills meters and icons only. */
+.progress-box:has(.progress-meter[data-color='yellow']) .progress-box__next {
+  color: var(--color-progress-approaching-text);
+}
+
+/*
+ * Task editor actions: Check off, the centered count stepper, Mark started, Reopen, and Check off previous period.
+ */
+.task-editor__actions {
+  display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
+}
+
+.task-editor__actions > [hidden] {
+  display: none;
 }
 
 .task-editor__stepper {
   display: inline-flex;
+  flex-basis: 100%;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
   font-variant-numeric: tabular-nums;
+}
+
+.task-editor__stepper[hidden] {
+  display: none;
 }
 
 .task-editor__count {
@@ -621,11 +734,82 @@
   text-align: center;
 }
 
-.task-editor__stepper[hidden],
-.task-editor__previous[hidden] {
+/* The Log form: the fields stack, and the question for a long time sits in place of Log. */
+.task-editor__log {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.task-editor__log-fields {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.task-editor__log :is([name='log-amount'], [name='log-hours'], [name='log-minutes']) {
+  max-inline-size: var(--width-chip-max);
+}
+
+.task-editor__log-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.task-editor__log-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.task-editor__log-question {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.task-editor__log [hidden],
+.task-editor__log-add:empty {
   display: none;
 }
 
+/* The entries of the period, newest first: time, label and value, author, and Undo. */
+.task-editor__entries {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-editor__entries > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.task-editor__entry-time,
+.task-editor__entry-author {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.task-editor__entry-text {
+  display: inline-flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.task-editor__entry-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.task-editor__entry-label {
+  overflow-wrap: anywhere;
+}
 /*
  * Task view: the view header, the search field, the add block, and the task list of one screen.
  * The add block holds the add bar and the info line under it (`VO-7`).

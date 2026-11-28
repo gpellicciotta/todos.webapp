@@ -50,7 +50,7 @@ Never edit the vendored copy: `node src/vendor/design/bin/check.mjs` fails on an
 - **[Decided]** ADR-0006 changes the status colors; the Task Row section of [ui-design.md](ui-design.md) defines them.
   Failed takes red, Cancelled turns gray, and in progress turns orange when not on track.
   Goal meters add yellow and green for "at least" goals, and orange for "at most" goals.
-  Red now marks Failed only; T0307 adds the tokens and their contrast checks.
+  Red now marks Failed only; --color-status-failed, --color-progress-approaching, and its text variant carry the new colors, each with contrast checks.
 - **[Decided]** Inter, self-hosted as one variable font, sets all text.
   Rejected: the system font stack, which renders differently on every platform.
 - **[Decided]** The service worker caches the font, so offline pages look the same as online ones.
@@ -115,7 +115,8 @@ Definitions live in the vendored [look.css](../../src/vendor/design/looks/neutra
 - Danger states: `--color-danger-hover` and `--color-danger-active` for the filled Delete button, `--color-on-danger` for its text.
 - Status: `--color-status-in-progress` (sky blue), `--color-status-completed` (green), and `--color-status-cancelled` for status icons; each reaches 3:1 on every ground.
   ADR-0006 turns `--color-status-cancelled` gray and adds tokens for Failed (red) and not on track (orange).
-  T0307 adds those tokens and the yellow, green, and orange meter tokens, with their contrast checks.
+  --color-status-failed (red) and --color-progress-approaching (yellow, with the dark text variant --color-progress-approaching-text) are app-local tokens of 	okens.css; unit tests check their contrast.
+  Meters take green from --color-status-completed, and orange from --color-danger; the editor's Cancelled icon uses the muted gray.
 - Signal states: `--color-primary-hover` and `--color-primary-active` for the hovered and pressed main action.
 - Links: `--color-link` for links and quiet buttons.
 - Focus: `--focus-glow` on every interactive element, a solid `--color-focus` contour plus a soft halo, on `box-shadow`.
@@ -382,7 +383,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   Check off previous period is a secondary button there, shown only during the grace period.
   Configuration ends with the Danger zone: Cancel task, which reads Uncancel once cancelled, and Delete task.
   The Danger zone drops its own border, after the last rule.
-  T0306 and T0307 build this layout; until then the app keeps the earlier three-tab editor.
+  The progress box, meter, Log form, and entries of Status are built in [task-editor.js](../../src/js/views/task-editor.js); the rules sit in [progress.js](../../src/js/core/progress.js).
 - Help: the vendored `createHelpPage` pattern of `help-page.js`, with search, topic chips, section cards, FAQ collapsibles, and release notes.
   Markdown panels render through `ui/markdown.js`, and `views.css` adds only the `.help__part` subheading and the list spacing.
 - [In-place confirmation](../../src/demo/visual-style-gallery.html#note-thread): an `.inline-confirm` question with Delete and Keep.
@@ -399,7 +400,7 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
 - Mark decorative icons with `aria-hidden="true"`; buttons carry the accessible name, not the icon.
 - Keep one stroke width and one 24 px grid across the set.
 - Status icons: `status-ready`, `status-in-progress`, `status-completed`, `status-failed`, `status-cancelled`, and `status-upcoming`.
-  T0307 adds `status-failed` and `status-upcoming`, and redraws `status-cancelled` as a filled gray circle.
+  `status-failed` is a filled circle with a cross, and `status-upcoming` a dashed ring; `status-cancelled` stays a filled circle with a dash.
 - Sync icons: `sync-local`, `sync-synced`, `sync-syncing`, `sync-offline`, `sync-sign-in`, and `sync-error`.
 
 ---

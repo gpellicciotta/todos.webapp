@@ -26,7 +26,7 @@ const GROUNDS = [
 ];
 
 // Text tokens that must reach 4.5:1 on every ground.
-const TEXT_ON_GROUNDS = ['--color-text', '--color-text-muted', '--color-primary', '--color-link', '--color-danger'];
+const TEXT_ON_GROUNDS = ['--color-text', '--color-text-muted', '--color-primary', '--color-link', '--color-danger', '--color-progress-approaching-text'];
 
 // Non-text tokens that must reach 3:1 on every ground.
 const NON_TEXT_ON_GROUNDS = ['--color-border-strong', '--color-focus'];
@@ -41,10 +41,14 @@ const ICONS = [
   '--color-status-in-progress',
   '--color-status-completed',
   '--color-status-cancelled',
+  '--color-status-failed',
+  '--color-progress-approaching',
 ];
 const STATUS_ICONS = ['--color-status-in-progress', '--color-status-completed', '--color-status-cancelled'];
 // Smallest RGB distance between the in-progress blue and the navy primary color.
 const MIN_BLUE_DISTANCE = 60;
+// Red and orange sit close in any palette, so Failed also differs in shape; the two still keep this RGB distance.
+const MIN_RED_DISTANCE = 30;
 const ICON_GROUNDS = [...GROUNDS, '--color-surface-active'];
 
 // Text on filled primary controls and on pressed secondary controls, in every state.
@@ -304,6 +308,14 @@ describe('tokens of the vendored neutral look and tokens.css', () => {
         const { tokens } = loadTokens();
         const blue = resolve(tokens, '--color-status-in-progress', theme);
         expect(distance(blue, resolve(tokens, '--color-primary', theme))).toBeGreaterThanOrEqual(MIN_BLUE_DISTANCE);
+      });
+
+      it('keeps red for Failed apart from the orange danger color, and yellow apart from green', () => {
+        const { tokens } = loadTokens();
+        const color = (name) => resolve(tokens, name, theme);
+        expect(color('--color-status-failed')).not.toBe(color('--color-danger'));
+        expect(distance(color('--color-status-failed'), color('--color-danger'))).toBeGreaterThanOrEqual(MIN_RED_DISTANCE);
+        expect(distance(color('--color-progress-approaching'), color('--color-status-completed'))).toBeGreaterThanOrEqual(MIN_BLUE_DISTANCE);
       });
 
       it('gives the three status colors three different colors', () => {

@@ -107,11 +107,14 @@ for (const viewport of [COMPACT, WIDE]) {
     await expect(tab('Status')).toBeFocused();
     expect(await tabs.evaluate((list) => list.scrollWidth <= list.clientWidth)).toBe(true);
 
-    // Status: the status and its controls only, without Cancel.
-    await expect(panel.getByRole('group', { name: 'Status', exact: true })).toBeVisible();
+    // Status: the status, progress, and the actions that no log derives, with no status buttons and no Cancel.
+    await expect(panel.locator('.task-editor__status')).toHaveText('To do');
+    await expect(panel.locator('[data-part="progress-box"]')).toBeVisible();
     await expect(panel.getByLabel('Description')).toBeHidden();
     await expect(panel.getByRole('button', { name: 'Cancelled', exact: true })).toHaveCount(0);
-    await panel.getByRole('button', { name: 'In progress', exact: true }).click();
+    await expect(panel.getByRole('button', { name: 'Check off', exact: true })).toBeVisible();
+    await panel.getByRole('button', { name: 'Mark started', exact: true }).click();
+    await expect(panel.locator('.task-editor__status')).toHaveText('In progress');
 
     // Notes by keyboard: the arrow keys move between the tabs; the add field also searches the notes.
     await tab('Status').focus();
@@ -134,7 +137,7 @@ for (const viewport of [COMPACT, WIDE]) {
     await tab('Notes').focus();
     await page.keyboard.press('ArrowRight');
     await expect(tab('Configuration')).toBeFocused();
-    await expect(panel.getByRole('group', { name: 'Status', exact: true })).toBeHidden();
+    await expect(panel.locator('.task-editor__status')).toBeHidden();
     const tops = await Promise.all([
       panel.getByLabel('Description'), panel.getByRole('combobox', { name: 'Add to list' }), panel.getByRole('group', { name: 'Goal', exact: true }),
       panel.getByRole('group', { name: 'Recurrence', exact: true }), panel.getByLabel('Due date', { exact: true }), panel.getByRole('button', { name: 'Cancel task' }),
@@ -232,7 +235,7 @@ test('every field saves on change without a Save button, and the changes survive
   await expect(description).not.toHaveAttribute('aria-invalid', 'true');
   await expect(page.locator('.task-row__description', { hasText: 'Buy blue paint' })).toHaveCount(1);
   await showTab(panel, 'Status');
-  await panel.getByRole('button', { name: 'In progress', exact: true }).click();
+  await panel.getByRole('button', { name: 'Mark started', exact: true }).click();
   await showTab(panel, 'Configuration');
   await expect(panel.getByRole('group', { name: 'When overdue' })).toBeHidden();
   await panel.getByLabel('Due date', { exact: true }).fill('2030-05-06');
@@ -253,7 +256,7 @@ test('every field saves on change without a Save button, and the changes survive
   await expect(panel.getByLabel('Description')).toHaveValue('Buy blue paint');
   await showTab(panel, 'Status');
   await expect(panel.locator('.task-editor__status')).toHaveText('In progress');
-  await expect(panel.getByRole('button', { name: 'In progress', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(panel.getByRole('button', { name: 'Unmark started', exact: true })).toBeVisible();
   await showTab(panel, 'Configuration');
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
   await expect(panel.getByLabel('Due time', { exact: true })).toHaveValue('18:00');
@@ -278,13 +281,14 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
     await expect(row.locator('.task-row__count')).toHaveText(`${done}/3`);
   }
   await expect(row).toHaveAttribute('data-status', 'in-progress');
-  await expect(panel.locator('.task-editor__status')).toHaveText('In progress, 2 of 3 done');
+  await expect(panel.locator('.task-editor__status')).toHaveText('In progress');
+  await expect(panel.locator('[data-part="progress"]')).toContainText('2 / 3');
   // The third tick reaches the target; the default filter of every status keeps the row, now completed.
   await row.getByRole('button', { name: 'Tick Buy paint, 2 of 3 done' }).click();
   await expect(row).toHaveAttribute('data-status', 'completed');
-  await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
-  await expect(panel.getByRole('button', { name: 'Completed', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(panel.getByRole('button', { name: 'In progress', exact: true })).toBeDisabled();
+  await expect(panel.locator('.task-editor__status')).toHaveText('Completed');
+  await expect(panel.locator('[data-part="progress"]')).toContainText('3 / 3');
+  await expect(panel.locator('[data-part="meter"]')).toHaveAttribute('data-color', 'green');
 
   await showTab(panel, 'Configuration');
   await panel.getByLabel('Due date', { exact: true }).fill('2030-05-06');
@@ -309,41 +313,41 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'log', 'log', 'log', 'edit-lifecycle-rules']);
   await page.reload();
   await showTab(panel, 'Status');
-  await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
+  await expect(panel.locator('.task-editor__status')).toHaveText('Completed');
   await showTab(panel, 'Configuration');
   await expect(panel.getByLabel('Target')).toHaveValue('3');
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
   expect(problems).toEqual([]);
 });
 
-test('the stepper steps a target-3 task to 2 and back to 1, then Ready resets it to 0, by state buttons only', async ({ page }) => {
+test('the stepper steps a target-3 task up to 2 and back to 0 with undos, and Mark started toggles the start', async ({ page }) => {
   const problems = watch(page);
   await page.setViewportSize(WIDE);
   const id = await seed(page);
   const panel = await openEditor(page);
   await setTarget(panel, '3');
   await showTab(panel, 'Status');
-  const states = panel.getByRole('group', { name: 'Status', exact: true });
   const stepper = panel.getByRole('group', { name: 'Completions' });
   const line = panel.locator('.task-editor__status');
-  await expect(states.getByRole('button', { name: 'Completed' })).toBeDisabled();
-  await expect(states.getByRole('button', { name: 'Completed' })).toHaveAttribute('title', 'Reach 3 of 3 to complete');
-  await expect(stepper).toBeHidden();
-  await states.getByRole('button', { name: 'In progress' }).click();
-  await expect(line).toHaveText('In progress, 0 of 3 done');
+  await expect(panel.getByRole('button', { name: 'Check off', exact: true })).toBeHidden();
+  await expect(line).toHaveText('To do');
   await expect(stepper.getByRole('button', { name: 'Undo a completion' })).toBeDisabled();
   for (const done of [1, 2]) {
     await stepper.getByRole('button', { name: 'Add a completion' }).click();
     await expect(stepper.locator('.task-editor__count')).toHaveText(`${done} of 3`);
   }
-  await expect(line).toHaveText('In progress, 2 of 3 done');
-  await stepper.getByRole('button', { name: 'Undo a completion' }).click();
-  await expect(stepper.locator('.task-editor__count')).toHaveText('1 of 3');
-  await expect(states.getByRole('button', { name: 'In progress' })).toHaveAttribute('aria-pressed', 'true');
-  await states.getByRole('button', { name: 'To do' }).click();
-  // Completions are log events now, so Ready undoes the checks but keeps the started mark, until the log of T0307 replaces these controls.
-  await expect(line).toHaveText('In progress, 0 of 3 done');
-  await expect(states.getByRole('button', { name: 'In progress' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(line).toHaveText('In progress');
+  await expect(panel.locator('[data-part="entries"] > li')).toHaveCount(2);
+  await expect(panel.getByRole('button', { name: 'Unmark started' })).toBeHidden();
+  for (const left of [1, 0]) {
+    await stepper.getByRole('button', { name: 'Undo a completion' }).click();
+    await expect(stepper.locator('.task-editor__count')).toHaveText(`${left} of 3`);
+  }
+  await expect(line).toHaveText('To do');
+  await panel.getByRole('button', { name: 'Mark started' }).click();
+  await expect(line).toHaveText('In progress');
+  await panel.getByRole('button', { name: 'Unmark started' }).click();
+  await expect(line).toHaveText('To do');
   const stored = await page.evaluate(async (taskId) => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore();
@@ -352,8 +356,58 @@ test('the stepper steps a target-3 task to 2 and back to 1, then Ready resets it
     store.close();
     return { occurrence: task['current-occurrence'], events: events.map((event) => event.type) };
   }, id);
-  expect(stored.occurrence).toMatchObject({ 'completion-count': 0, status: 'in-progress' });
-  expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'start', 'log', 'log', 'undo-log', 'undo-log']);
+  expect(stored.occurrence).toMatchObject({ 'completion-count': 0, status: 'ready' });
+  expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'log', 'log', 'undo-log', 'undo-log', 'start', 'unstart']);
+  expect(problems).toEqual([]);
+});
+
+test('logs kcal past an at-most limit, sees the orange box, undoes the entry, and sees it clear (TSK-21, TSK-22)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await seed(page);
+  const panel = await openEditor(page);
+  await showTab(panel, 'Configuration');
+  const dueDate = panel.getByLabel('Due date', { exact: true });
+  await dueDate.fill('2030-05-06');
+  await panel.getByLabel('Due time', { exact: true }).fill('18:00');
+  await panel.getByLabel('Due time', { exact: true }).blur();
+  await pick(panel, 'At most');
+  await panel.getByLabel('Measure').selectOption('amount');
+  const target = panel.getByLabel('Target', { exact: true });
+  await target.fill('1600');
+  await target.press('Tab');
+  const unit = panel.getByLabel('Unit', { exact: true });
+  await unit.fill('kcal');
+  await unit.press('Tab');
+  await expect(panel.locator('[data-part="goal-line"]')).toContainText('kcal or less.');
+
+  await showTab(panel, 'Status');
+  const box = panel.locator('[data-part="progress-box"]');
+  const log = async (amount, label) => {
+    await panel.getByLabel(/^Amount/).fill(amount);
+    await panel.getByLabel('Label (optional)').fill(label);
+    await panel.getByRole('button', { name: 'Log', exact: true }).click();
+  };
+  await log('1500', 'Lunch');
+  await expect(box).toHaveAttribute('data-state', 'normal');
+  await expect(panel.locator('[data-part="meter"]')).toHaveAttribute('data-color', 'orange');
+  await log('220', 'Pizza');
+  await expect(box).toHaveAttribute('data-state', 'over');
+  await expect(box).toContainText('120 kcal over the limit');
+  await expect(panel.locator('.task-editor__status')).toHaveText('In progress, not on track');
+  await expect(panel.locator('[data-part="entries"] > li')).toHaveText([/Pizza.*220 kcal/, /Lunch.*1,500 kcal/]);
+  await expect(panel.locator('[data-part="entries-total"]')).toContainText('1,720 kcal');
+
+  await panel.locator('[data-part="entries"] > li', { hasText: 'Pizza' }).getByRole('button', { name: /^Undo/ }).click();
+  await expect(box).toHaveAttribute('data-state', 'normal');
+  await expect(panel.locator('[data-part="progress"]')).toContainText('1,500 / max 1,600 kcal');
+  await expect(panel.locator('.task-editor__status')).toHaveText('In progress');
+  await expect(panel.locator('[data-part="entries"] > li')).toHaveCount(1);
+
+  await showTab(panel, 'History');
+  await panel.getByRole('button', { name: /history$/i }).click();
+  await expect(panel.locator('[data-history="events"] li', { hasText: 'You logged Pizza · 220 kcal' })).toHaveClass(/is-undone/);
+  await expect(panel.locator('[data-history="events"] li', { hasText: 'You undid Pizza · 220 kcal' })).toBeVisible();
   expect(problems).toEqual([]);
 });
 
@@ -556,7 +610,7 @@ test.describe('recurring tasks in local mode', () => {
     await expect(panel.getByLabel('Timezone')).toHaveValue('Europe/Brussels');
     await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Weekly');
     await showTab(panel, 'Status');
-    await panel.getByRole('button', { name: 'Completed', exact: true }).click();
+    await panel.getByRole('button', { name: 'Check off', exact: true }).click();
     await expect(panel.locator('.task-editor__status')).toHaveText('Completed');
     // Completed this week, the task stays completed until its next period.
     const row = page.locator('.task-row', { hasText: 'Buy paint' });

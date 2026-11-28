@@ -352,6 +352,14 @@ describe('recurring tasks', () => {
     expect(displayTask(oneOff, at(5))).toBe(oneOff);
   });
 
+  it('shows progress 0 past the period end, but keeps the carried reading of a reading goal', () => {
+    const task = weekly();
+    task['current-occurrence'] = { ...task['current-occurrence'], 'goal-measure': 'amount', progress: 2, 'time-spent-seconds': 90 };
+    expect(displayTask(task, WEEK_1.end)['current-occurrence']).toMatchObject({ progress: 0, 'time-spent-seconds': 0, status: 'ready' });
+    task['current-occurrence'] = { ...task['current-occurrence'], 'goal-measure': 'reading', progress: 79.8 };
+    expect(displayTask(task, WEEK_1.end)['current-occurrence']).toMatchObject({ progress: 79.8, status: 'ready' });
+  });
+
   it('names the occurrence that grace completion completes, within 24 hours of a period end', () => {
     const stale = weekly();
     expect(graceOccurrence(stale, '2026-06-21T21:00:00Z')).toBeNull();

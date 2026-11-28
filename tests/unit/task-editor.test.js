@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEditorPanel } from '../../src/js/views/editor-panel.js';
 import { resetBody } from './dom-reset.js';
 import { mountTaskEditor } from '../../src/js/views/task-editor.js';
+import { createTaskHistory } from '../../src/js/views/task-history.js';
 import { shapeTask } from './task-shape.js';
 
 const TASK = shapeTask({
@@ -28,6 +29,9 @@ function fakeStore() {
     updateTask: vi.fn(async () => ({ ...TASK })),
     updateRules: vi.fn(async () => ({ ...TASK })),
     postEvent: vi.fn(async () => ({ task: { ...TASK } })),
+    logEntry: vi.fn(async () => ({ task: { ...TASK } })),
+    undoLog: vi.fn(async () => ({ task: { ...TASK } })),
+    eventsOfTask: vi.fn(async () => []),
     addNote: vi.fn(async () => ({})),
     subscribe: (listener) => {
       listeners.push(listener);
@@ -236,27 +240,6 @@ describe('mountTaskEditor', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    const STATES = ['ready', 'in-progress', 'completed'];
-    const ICONS = STATES.map((status) => `img/icons.svg#status-${status}`);
-    /** @returns {HTMLButtonElement[]} the state buttons, in order */
-    const states = () => [...document.querySelectorAll('[data-section="status"] .task-editor__states > button')];
-    /**
-     * Find the state button of a status.
-     * @param {string} status the status
-     * @returns {HTMLButtonElement} the button
-     */
-    const state = (status) => states().find((button) => button.dataset.status === status);
-    /** @returns {string[]} the statuses of the enabled state buttons */
-    const enabled = () => states().filter((button) => !button.disabled).map((button) => button.dataset.status);
-    /** @returns {HTMLElement} the count stepper */
-    const stepper = () => document.querySelector('[data-section="status"] .task-editor__stepper');
-    /**
-     * Find a stepper button.
-     * @param {'down'|'up'} direction the direction
-     * @returns {HTMLButtonElement} the button
-     */
-    const step = (direction) => stepper().querySelector(`button[data-step="${direction}"]`);
-
     /**
      * Click a control and wait until the posts it started settle.
      * @param {HTMLElement} control the control
@@ -269,126 +252,6 @@ describe('mountTaskEditor', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       return store.postEvent.mock.calls;
     }
-
-    it('shows three state buttons, the current one pressed and each named by its status, and no event actions (TSK-4)', async () => {
-      expect(document.querySelector('input[name^="status-"]')).toBeNull();
-      expect(document.querySelector('[data-section="status"] button[data-event]')).toBeNull();
-      const group = document.querySelector('[data-section="status"] .task-editor__states');
-      expect([group.getAttribute('role'), group.getAttribute('aria-label')]).toEqual(['group', 'Status']);
-      expect(states().map((button) => [button.dataset.status, button.getAttribute('aria-label'), button.title, button.getAttribute('aria-pressed')])).toEqual([
-        ['ready', 'To do', 'To do', 'true'], ['in-progress', 'In progress', 'In progress', 'false'],
-        ['completed', 'Completed', 'Completed', 'false'],
-      ]);
-      expect(states().every((button) => button.type === 'button' && button.classList.contains('icon-button'))).toBe(true);
-      expect(states().map((button) => button.querySelector('use').getAttribute('href'))).toEqual(ICONS);
-      expect(enabled()).toEqual(STATES);
-      expect(document.querySelector('.task-editor__status').textContent).toBe('To do');
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
-      expect(document.querySelector('.task-editor__status').textContent).toBe('In progress, 2 of 3 done');
-      expect(states().map((button) => button.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false']);
-      // No control previews the status it leads to: each icon names its own status, and the stepper shows none.
-      expect(states().map((button) => button.querySelector('use').getAttribute('href'))).toEqual(ICONS);
-      expect(stepper().querySelectorAll('use[href*="#status-"]')).toHaveLength(0);
-    });
-
-    it('posts the events of eventsTowardsStatus in order, and never a status through updateTask', async () => {
-      expect(await clickAndCollect(state('completed'))).toEqual([['t1', 'complete']]);
-      expect(await clickAndCollect(state('in-progress'))).toEqual([['t1', 'start']]);
-      expect(await clickAndCollect(state('ready'))).toEqual([]);
-      // Ready resets the count to 0, one uncomplete per completion.
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
-      expect(await clickAndCollect(state('ready'))).toEqual([['t1', 'uncomplete'], ['t1', 'uncomplete']]);
-      await refill({ status: 'in-progress' });
-      expect(await clickAndCollect(state('ready'))).toEqual([['t1', 'unstart']]);
-      // At target 1, Completed to In progress unticks, then starts.
-      await refill({ status: 'completed' });
-      expect(await clickAndCollect(state('in-progress'))).toEqual([['t1', 'uncomplete'], ['t1', 'start']]);
-      // Cancelled keeps the count; leaving it reopens first.
-      await refill({ status: 'cancelled', 'target-count': 3, 'completion-count': 2 });
-      expect(await clickAndCollect(state('in-progress'))).toEqual([['t1', 'reopen']]);
-      expect(await clickAndCollect(state('ready'))).toEqual([['t1', 'reopen'], ['t1', 'uncomplete'], ['t1', 'uncomplete']]);
-      expect(store.updateTask).not.toHaveBeenCalled();
-    });
-
-    it('disables Completed below target and In progress at or above it, above target 1, with their tooltips', async () => {
-      await refill({ status: 'ready', 'target-count': 3 });
-      expect(enabled()).toEqual(['ready', 'in-progress']);
-      expect(state('completed').title).toBe('Reach 3 of 3 to complete');
-      expect(state('completed').getAttribute('aria-label')).toBe('Completed');
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
-      expect(enabled()).toEqual(['ready', 'in-progress']);
-      await refill({ status: 'completed', 'target-count': 3, 'completion-count': 3 });
-      expect(enabled()).toEqual(['ready', 'completed']);
-      expect(state('in-progress').title).toBe('Step below 3 of 3 to be in progress');
-      expect(state('completed').title).toBe('Completed');
-      await refill({ status: 'completed', 'target-count': 3, 'completion-count': 4 });
-      expect(enabled()).toEqual(['ready', 'completed']);
-      await refill({ status: 'cancelled', 'target-count': 3, 'completion-count': 3 });
-      expect(enabled()).toEqual(['ready', 'completed']);
-      expect(await clickAndCollect(state('completed'))).toEqual([['t1', 'reopen']]);
-      await refill({ status: 'cancelled', 'target-count': 3, 'completion-count': 1 });
-      expect(enabled()).toEqual(['ready', 'in-progress']);
-    });
-
-    it('shows the stepper above target 1 outside Ready, posting complete and uncomplete', async () => {
-      expect(stepper().hidden).toBe(true);
-      await refill({ status: 'in-progress' });
-      expect(stepper().hidden).toBe(true);
-      await refill({ status: 'ready', 'target-count': 3 });
-      expect(stepper().hidden).toBe(true);
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
-      expect(stepper().hidden).toBe(false);
-      expect([stepper().getAttribute('role'), stepper().getAttribute('aria-label')]).toEqual(['group', 'Completions']);
-      const count = stepper().querySelector('.task-editor__count');
-      expect([count.textContent, count.getAttribute('aria-live')]).toEqual(['2 of 3', 'polite']);
-      expect([step('down').getAttribute('aria-label'), step('up').getAttribute('aria-label')]).toEqual(['Undo a completion', 'Add a completion']);
-      expect([step('down').disabled, step('up').disabled]).toEqual([false, false]);
-      expect(await clickAndCollect(step('up'))).toEqual([['t1', 'complete']]);
-      expect(await clickAndCollect(step('down'))).toEqual([['t1', 'uncomplete']]);
-      // Minus from 1 starts again, so the task stays In progress at 0.
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
-      expect(await clickAndCollect(step('down'))).toEqual([['t1', 'uncomplete'], ['t1', 'start']]);
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 0 });
-      expect([stepper().hidden, step('down').disabled, step('up').disabled]).toEqual([false, true, false]);
-      // Plus applies past the target too.
-      await refill({ status: 'completed', 'target-count': 3, 'completion-count': 3 });
-      expect(await clickAndCollect(step('up'))).toEqual([['t1', 'complete']]);
-      await refill({ status: 'cancelled', 'target-count': 3, 'completion-count': 2 });
-      expect([stepper().hidden, count.textContent, step('down').disabled, step('up').disabled]).toEqual([false, '2 of 3', true, true]);
-      expect(store.updateTask).not.toHaveBeenCalled();
-    });
-
-    it('enables only Ready on a closed recurring series, which posts reopen', async () => {
-      const closed = shapeTask({ ...TASK, id: 't1', description: 'Buy paint', status: 'completed', 'target-count': 3, 'completion-count': 3 });
-      closed['lifecycle-rules'] = { ...closed['lifecycle-rules'], 'recurrence-unit': 'day', 'recurrence-interval': 1, 'recurrence-end-count': 1, timezone: 'UTC' };
-      closed['current-occurrence'] = { ...closed['current-occurrence'], 'start-time': '2026-11-04T00:00:00.000Z', 'due-time': '2026-11-05T00:00:00.000Z',
-        'close-time': '2026-11-05T00:00:00.000Z' };
-      store.getTask.mockImplementation(async () => closed);
-      const reads = store.listsOfTask.mock.calls.length;
-      store.listeners.forEach((listener) => listener({ operation: 'rollOverTask' }));
-      await vi.waitFor(() => expect(store.listsOfTask.mock.calls.length).toBeGreaterThan(reads));
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(enabled()).toEqual(['ready']);
-      expect([step('down').disabled, step('up').disabled]).toEqual([true, true]);
-      expect(await clickAndCollect(state('ready'))).toEqual([['t1', 'reopen']]);
-    });
-
-    it('passes the focus of a control that disables or hides to the pressed state button', async () => {
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
-      step('up').focus();
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
-      expect(document.activeElement).toBe(step('up'));
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
-      step('down').focus();
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 0 });
-      expect(document.activeElement).toBe(state('in-progress'));
-      step('up').focus();
-      await refill({ status: 'ready', 'target-count': 3 });
-      expect(document.activeElement).toBe(state('ready'));
-      state('in-progress').focus();
-      await refill({ status: 'completed', 'target-count': 3, 'completion-count': 3 });
-      expect(document.activeElement).toBe(state('completed'));
-    });
 
     /**
      * Fill the editor with a task whose rules and current occurrence differ from the defaults.
@@ -716,13 +579,6 @@ describe('mountTaskEditor', () => {
       });
     });
 
-    it('names the cancelled status with a pointer to Configuration', async () => {
-      await refill({ status: 'cancelled' });
-      expect(document.querySelector('.task-editor__status').textContent).toBe('Cancelled');
-      expect(document.querySelector('[data-part="uncancel-hint"]').hidden).toBe(false);
-      expect(document.querySelector('[data-part="uncancel-hint"]').textContent).toBe('Uncancel in Configuration.');
-    });
-
     describe('history', () => {
       const EVENTS = [
         { id: 'e2', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T10:00:00.000Z', 'owner-id': null, type: 'complete', details: null },
@@ -1034,7 +890,7 @@ describe('mountTaskEditor', () => {
     });
 
     it('holds the status on Status, the notes on Notes, and History then Details on History', () => {
-      expect(parts('Status')).toEqual(['status']);
+      expect(parts('Status')).toEqual(['status', 'rule', 'rule']);
       expect(parts('Notes')).toEqual(['notes']);
       expect(parts('History')).toEqual(['history', 'details']);
     });
@@ -1456,13 +1312,14 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
     expect(document.querySelector('.note-thread__add').hidden).toBe(true);
   });
 
-  it('shows a viewer the state buttons and the stepper, every one disabled', async () => {
+  it('shows a viewer the status and progress, without actions, the Log form, or Undo', async () => {
     const counted = shapeTask({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
     await open('viewer', { 'lifecycle-rules': counted['lifecycle-rules'], 'current-occurrence': counted['current-occurrence'] });
-    const controls = [...document.querySelectorAll('[data-section="status"] :is(.task-editor__states, .task-editor__stepper) button')];
-    expect(controls).toHaveLength(5);
-    expect(document.querySelector('[data-section="status"] .task-editor__stepper').hidden).toBe(false);
-    expect(controls.filter((button) => !button.matches(':disabled'))).toEqual([]);
+    const status = document.querySelector('[data-section="status"]');
+    expect(status.querySelector('.task-editor__status').textContent).toContain('In progress');
+    expect(status.querySelector('[data-part="progress"]').textContent).toContain('1');
+    const hidden = (selector) => [...status.querySelectorAll(selector)].every((element) => element.closest('[hidden]') !== null);
+    expect(hidden('[data-action], [data-step], form')).toBe(true);
   });
 
   it('lets a task editor change the task but not delete it', async () => {
@@ -1494,31 +1351,60 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
   });
 });
 
-describe('mountTaskEditor previous period (TSK-16)', () => {
+
+
+describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
+  const NOW = '2026-11-26T12:00:00.000Z';
+  const day = (iso) => new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(iso));
   let panel;
   let store;
-  const DAILY_RULES = { ...TASK['lifecycle-rules'], 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null };
-  const OCC2 = {
-    occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', 'target-count': 1,
-    'completion-count': 0, status: 'ready', 'close-time': null,
-  };
-  const day = (iso) => new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(iso));
+
+  /**
+   * Build a task with a goal and a current occurrence of a week that ends at Mon 30 Nov.
+   * @param {{direction?: string, measure?: string, target?: number, unit?: string}} goalFields the goal
+   * @param {object} [occurrence] the occurrence fields to set
+   * @param {object} [rules] the rule fields to set
+   * @returns {object} the task
+   */
+  function goalTask({ direction = 'at-least', measure = 'checks', target = 1, unit = null } = {}, occurrence = {}, rules = {}) {
+    const base = shapeTask({ ...TASK, id: 't1', description: 'Eat well' });
+    const goal = { 'goal-direction': direction, 'goal-measure': measure, 'goal-target': target, 'target-count': target, 'goal-unit': unit };
+    return {
+      ...base,
+      'lifecycle-rules': { ...base['lifecycle-rules'], ...goal, 'due-time': '2026-11-30T00:00:00.000Z', ...rules },
+      'current-occurrence': {
+        occurrence: 1, 'start-time': '2026-11-23T00:00:00.000Z', 'due-time': '2026-11-30T00:00:00.000Z', 'close-time': null, status: 'ready',
+        ...goal, progress: 0, 'completion-count': 0, 'time-spent-seconds': 0, entries: [], ...occurrence,
+      },
+    };
+  }
+
+  /**
+   * Build a `log` event of the task.
+   * @param {string} id the event identifier
+   * @param {object} fields the entry fields
+   * @param {string} time the creation time
+   * @param {number} [occurrence] the occurrence
+   * @returns {object} the event
+   */
+  const logged = (id, fields, time, occurrence = 1) => ({ id, 'task-id': 't1', type: 'log', occurrence, 'creation-time': time, ...fields });
 
   /**
    * Open the editor of a task at a moment.
    * @param {object} task the task
-   * @param {string} now the moment
-   * @returns {Promise<void>}
+   * @param {{now?: string, events?: object[]}} [options] the moment and the stored events
+   * @returns {Promise<void>} resolves once loaded
    */
-  async function open(task, now) {
+  async function open(task, { now = NOW, events = [] } = {}) {
     resetBody('<div data-editor-slot hidden></div>');
     store = fakeStore();
     store.getTask = vi.fn(async () => task);
+    store.eventsOfTask = vi.fn(async () => events);
     let editor;
     panel = createEditorPanel({
       slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
       editors: { task: (view, route) => {
-        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, now: () => new Date(now) });
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, locale: 'en', now: () => new Date(now) });
         return editor;
       } },
     });
@@ -1526,34 +1412,404 @@ describe('mountTaskEditor previous period (TSK-16)', () => {
     await editor.idle();
   }
 
-  const previous = () => document.querySelector('[data-section="status"] button[data-action="previous-period"]');
+  const q = (selector) => document.querySelector(`[data-section="status"] ${selector}`);
+  const action = (name) => q(`button[data-action="${name}"]`);
+  const visible = (element) => Boolean(element) && element.closest('[hidden]') === null;
+  const field = (name) => q(`[name="${name}"]`);
+  const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+  /**
+   * Click a control and let the store calls it starts settle.
+   * @param {HTMLElement} control the control
+   * @returns {Promise<void>} resolves once settled
+   */
+  async function click(control) {
+    control.click();
+    await tick();
+    await tick();
+  }
+  /**
+   * Type a value into a control of the Log form.
+   * @param {string} name the control name
+   * @param {string} value the value
+   */
+  function type(name, value) {
+    const control = field(name);
+    control.value = value;
+    control.dispatchEvent(new Event('input', { bubbles: true }));
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 
   afterEach(() => {
     panel.destroy();
   });
 
-  it('hides Complete for previous period on a one-off task', async () => {
-    await open({ ...TASK }, '2026-11-05T10:00:00.000Z');
-    expect(previous().hidden).toBe(true);
+  it('shows the status line, naming a task that is behind pace as not on track', async () => {
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1, 'completion-count': 1 }));
+    expect(q('.task-editor__status').textContent).toBe('In progress, not on track');
+    expect(q('.task-editor__status').dataset.track).toBe('behind-pace');
+    await panel.destroy();
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 2, 'completion-count': 2 }));
+    expect(q('.task-editor__status').textContent).toBe('In progress');
   });
 
-  it('completes the previous occurrence within 24 hours after its period ended, naming its day', async () => {
-    await open({ ...TASK, 'lifecycle-rules': DAILY_RULES, 'current-occurrence': OCC2 }, '2026-11-05T10:00:00.000Z');
-    expect(previous().hidden).toBe(false);
-    expect(previous().textContent).toBe(`Complete for previous period (${day('2026-11-04T12:00:00.000Z')})`);
-    previous().click();
-    await vi.waitFor(() => expect(store.postEvent).toHaveBeenCalledWith('t1', 'complete', { occurrence: 1 }));
-    expect(store.postEvent).toHaveBeenCalledTimes(1);
+  it('names the window under the status line', async () => {
+    await open(goalTask({ target: 3 }, {}, { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC' }));
+    expect(q('[data-part="window-line"]').textContent).toContain(day('2026-11-23T00:00:00.000Z'));
+    expect(q('[data-part="window-line"]').textContent).toContain(day('2026-11-29T00:00:00.000Z'));
+    await panel.destroy();
+    await open(goalTask({}, {}));
+    expect(q('[data-part="window-line"]').textContent).toBe(`Due ${new Intl.DateTimeFormat('en', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date('2026-11-30T00:00:00.000Z'))}`);
   });
 
-  it('names the cached occurrence past its period end before the roll-over, and hides once the grace period ends', async () => {
-    const task = { ...TASK, 'lifecycle-rules': DAILY_RULES, 'current-occurrence': OCC2 };
-    await open(task, '2026-11-06T10:00:00.000Z');
-    expect(previous().textContent).toBe(`Complete for previous period (${day('2026-11-05T12:00:00.000Z')})`);
-    previous().click();
-    await vi.waitFor(() => expect(store.postEvent).toHaveBeenCalledWith('t1', 'complete', { occurrence: 2 }));
-    panel.destroy();
-    await open(task, '2026-11-07T10:00:00.000Z');
-    expect(previous().hidden).toBe(true);
+  it('shows the progress and target in large text, with a meter colored by progress', async () => {
+    await open(goalTask({ measure: 'time', target: 12_000 }, { status: 'in-progress', progress: 10_200, 'time-spent-seconds': 10_200 }));
+    expect(q('[data-part="progress"]').textContent).toContain('2 h 50 min / 3 h 20 min');
+    const meter = q('[data-part="meter"]');
+    expect([meter.dataset.color, meter.getAttribute('role'), meter.getAttribute('aria-valuenow'), meter.getAttribute('aria-valuemax')]).toEqual(['yellow', 'meter', '10200', '12000']);
+    expect(q('[data-part="progress-box"]').dataset.state).toBe('normal');
+  });
+
+  it('turns the progress box orange above an at-most limit, naming the overage and the failure', async () => {
+    await open(goalTask({ direction: 'at-most', measure: 'amount', target: 1600, unit: 'kcal' }, { status: 'in-progress', progress: 1720 }));
+    expect(q('[data-part="progress"]').textContent).toContain('1,720 / max 1,600 kcal');
+    expect(q('[data-part="progress-box"]').dataset.state).toBe('over');
+    expect(q('[data-part="next"]').textContent).toContain('120 kcal over the limit');
+    expect(q('[data-part="next"]').textContent).toContain('fails if the progress stays above the limit at its end');
+    expect(q('.task-editor__status').textContent).toBe('In progress, not on track');
+    expect(q('[data-part="meter"]').dataset.color).toBe('orange');
+    await panel.destroy();
+    await open(goalTask({ direction: 'at-most', measure: 'amount', target: 1600, unit: 'kcal' }, { status: 'in-progress', progress: 1600 }));
+    expect(q('[data-part="progress-box"]').dataset.state).toBe('normal');
+    expect(q('[data-part="meter"]').dataset.color).toBe('orange');
+  });
+
+  it('marks the pace now of a checks goal on its meter, and says when it is behind pace', async () => {
+    const weekly = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC' };
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1, 'completion-count': 1 }, weekly));
+    expect(q('[data-part="pace"]').textContent).toBe('pace now: 1.5');
+    expect(q('[data-part="next"]').textContent).toContain('Behind pace: half the week is gone, 1 of 3 done.');
+  });
+
+  it('makes Check off the main action of a Check goal, logging a check', async () => {
+    await open(goalTask({}));
+    expect(visible(action('check-off'))).toBe(true);
+    expect(visible(q('.task-editor__stepper'))).toBe(false);
+    await click(action('check-off'));
+    expect(store.logEntry).toHaveBeenCalledWith('t1', { checked: true });
+    expect(store.postEvent).not.toHaveBeenCalled();
+  });
+
+  it('disables Check off once the task finished or was cancelled', async () => {
+    await open(goalTask({}, { status: 'completed', progress: 1, 'completion-count': 1, 'close-time': '2026-11-24T00:00:00.000Z' }));
+    expect(action('check-off').disabled).toBe(true);
+    await panel.destroy();
+    await open(goalTask({}, { status: 'cancelled', 'close-time': '2026-11-24T00:00:00.000Z' }));
+    expect(action('check-off').disabled).toBe(true);
+  });
+
+  it('shows the stepper of a checks goal above 1, centered, logging a check with plus and undoing the latest with minus', async () => {
+    const events = [logged('c1', { checked: true }, '2026-11-24T09:00:00.000Z'), logged('c2', { checked: true }, '2026-11-25T09:00:00.000Z')];
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 2, 'completion-count': 2, entries: ['c1', 'c2'] }), { events });
+    const stepper = q('.task-editor__stepper');
+    expect(visible(stepper)).toBe(true);
+    expect(visible(action('check-off'))).toBe(false);
+    const count = stepper.querySelector('.task-editor__count');
+    expect([count.textContent, count.getAttribute('aria-live')]).toEqual(['2 of 3', 'polite']);
+    await click(stepper.querySelector('button[data-step="up"]'));
+    expect(store.logEntry).toHaveBeenCalledWith('t1', { checked: true });
+    await click(stepper.querySelector('button[data-step="down"]'));
+    expect(store.undoLog).toHaveBeenCalledWith('t1', 'c2');
+  });
+
+  it('disables minus without a live check, and both steps on a cancelled task', async () => {
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 0 }));
+    const step = (direction) => q(`.task-editor__stepper button[data-step="${direction}"]`);
+    expect([step('down').disabled, step('up').disabled]).toEqual([true, false]);
+    await panel.destroy();
+    await open(goalTask({ target: 3 }, { status: 'cancelled', progress: 1, 'completion-count': 1, 'close-time': '2026-11-24T00:00:00.000Z', entries: ['c1'] }),
+      { events: [logged('c1', { checked: true }, '2026-11-24T09:00:00.000Z')] });
+    expect([step('down').disabled, step('up').disabled]).toEqual([true, true]);
+  });
+
+  it('offers Mark started while To do, posting start, then Unmark started while nothing was logged', async () => {
+    await open(goalTask({ target: 3 }));
+    expect(action('mark-started').textContent).toBe('Mark started');
+    await click(action('mark-started'));
+    expect(store.postEvent).toHaveBeenCalledWith('t1', 'start');
+    await panel.destroy();
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 0 }));
+    expect(action('mark-started').textContent).toBe('Unmark started');
+    store.postEvent.mockClear();
+    await click(action('mark-started'));
+    expect(store.postEvent).toHaveBeenCalledWith('t1', 'unstart');
+  });
+
+  it('hides Unmark started once an entry or a carried reading counts as progress', async () => {
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1, 'completion-count': 1, entries: ['c1'] }), { events: [logged('c1', { checked: true }, '2026-11-24T09:00:00.000Z')] });
+    expect(visible(action('mark-started'))).toBe(false);
+    await panel.destroy();
+    await open(goalTask({ direction: 'at-most', measure: 'reading', target: 80, unit: 'kg' }, { status: 'in-progress', progress: 79.8 }));
+    expect(visible(action('mark-started'))).toBe(false);
+  });
+
+  it('offers Reopen on an at-least one-off task that failed, and never on a failed at-most task', async () => {
+    const failed = { status: 'failed', 'close-time': '2026-11-30T00:00:00.000Z' };
+    await open(goalTask({ target: 3 }, { ...failed, progress: 1 }), { now: '2026-12-01T12:00:00.000Z' });
+    expect(q('.task-editor__status').textContent).toBe('Failed');
+    await click(action('reopen'));
+    expect(store.postEvent).toHaveBeenCalledWith('t1', 'reopen');
+    await panel.destroy();
+    await open(goalTask({ direction: 'at-most', measure: 'amount', target: 1600, unit: 'kcal' }, { ...failed, progress: 1910 }), { now: '2026-12-01T12:00:00.000Z' });
+    expect(visible(action('reopen'))).toBe(false);
+    await panel.destroy();
+    await open(goalTask({}, { status: 'in-progress' }));
+    expect(visible(action('reopen'))).toBe(false);
+  });
+
+  it('offers Reopen on a closed recurring series, which opens a fresh period', async () => {
+    const rules = { 'recurrence-unit': 'day', 'recurrence-interval': 1, 'recurrence-end-count': 1, timezone: 'UTC' };
+    await open(goalTask({}, { status: 'completed', progress: 1, 'completion-count': 1, 'close-time': '2026-11-24T00:00:00.000Z', 'start-time': '2026-11-23T00:00:00.000Z', 'due-time': '2026-11-24T00:00:00.000Z' }, rules));
+    expect(action('check-off').disabled).toBe(true);
+    await click(action('reopen'));
+    expect(store.postEvent).toHaveBeenCalledWith('t1', 'reopen');
+  });
+
+  it('checks off the previous period within 24 hours after it ended, naming its last day', async () => {
+    const daily = { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null };
+    const second = { occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z' };
+    await open(goalTask({}, second, daily), { now: '2026-11-05T10:00:00.000Z' });
+    expect(action('previous-period').textContent).toBe(`Check off previous period (${day('2026-11-04T12:00:00.000Z')})`);
+    await click(action('previous-period'));
+    expect(store.logEntry).toHaveBeenCalledWith('t1', { checked: true }, { occurrence: 1 });
+    await panel.destroy();
+    await open(goalTask({}, second, daily), { now: '2026-11-07T10:00:00.000Z' });
+    expect(visible(action('previous-period'))).toBe(false);
+  });
+
+  it('disables the previous period button on a cancelled task, and posts nothing', async () => {
+    const daily = { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null };
+    const cancelled = { occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', status: 'cancelled', 'close-time': '2026-11-05T05:00:00.000Z' };
+    await open(goalTask({}, cancelled, daily), { now: '2026-11-05T10:00:00.000Z' });
+    expect(action('previous-period').disabled).toBe(true);
+    await click(action('previous-period'));
+    expect(store.logEntry).not.toHaveBeenCalled();
+  });
+
+  it('hides the previous period button on a one-off task', async () => {
+    await open(goalTask({}));
+    expect(visible(action('previous-period'))).toBe(false);
+  });
+
+  it('shows the status, with Uncancel in Configuration, on a cancelled task whose time and amounts still log', async () => {
+    await open(goalTask({ measure: 'amount', target: 100, unit: 'g' }, { status: 'cancelled', 'close-time': '2026-11-24T00:00:00.000Z' }));
+    expect(q('.task-editor__status').textContent).toBe('Cancelled');
+    expect(q('[data-part="uncancel-hint"]').textContent).toBe('Uncancel in Configuration.');
+    expect(field('log-amount').disabled).toBe(false);
+    expect(action('log').disabled).toBe(false);
+  });
+
+  describe('Log form', () => {
+    it('shows the goal\'s own field first, then Label, and Log, with the other fields behind buttons', async () => {
+      await open(goalTask({ direction: 'at-most', measure: 'amount', target: 1600, unit: 'kcal' }));
+      const form = q('form[data-part="log-form"]');
+      expect(form.querySelector('label[for="' + field('log-amount').id + '"]').textContent).toContain('kcal');
+      expect(field('log-label')).not.toBeNull();
+      expect(visible(field('log-hours'))).toBe(false);
+      expect(visible(field('log-checked'))).toBe(false);
+      expect(['add-time', 'add-check'].every((name) => visible(action(name)))).toBe(true);
+      expect(visible(action('add-amount'))).toBe(false);
+      await click(action('add-time'));
+      expect(visible(field('log-hours'))).toBe(true);
+      expect(visible(action('add-time'))).toBe(false);
+    });
+
+    it('logs an amount with its label, then clears the form', async () => {
+      await open(goalTask({ direction: 'at-most', measure: 'amount', target: 1600, unit: 'kcal' }));
+      type('log-amount', '320');
+      type('log-label', ' Croissant ');
+      await click(action('log'));
+      expect(store.logEntry).toHaveBeenCalledWith('t1', { amount: 320, label: 'Croissant' });
+      expect([field('log-amount').value, field('log-label').value]).toEqual(['', '']);
+    });
+
+    it('logs hours and minutes as seconds for a time goal, and a mix with a check', async () => {
+      await open(goalTask({ measure: 'time', target: 12_000 }));
+      type('log-hours', '0');
+      type('log-minutes', '45');
+      await click(action('log'));
+      expect(store.logEntry).toHaveBeenCalledWith('t1', { 'time-spent-seconds': 2700 });
+      await click(action('add-check'));
+      type('log-hours', '1');
+      type('log-minutes', '0');
+      field('log-checked').checked = true;
+      await click(action('log'));
+      expect(store.logEntry).toHaveBeenLastCalledWith('t1', { checked: true, 'time-spent-seconds': 3600 });
+    });
+
+    it('rejects an amount of more than 3 decimals, a long label, and an empty entry, without logging', async () => {
+      await open(goalTask({ measure: 'amount', target: 100, unit: 'g' }));
+      const errorText = (control) => {
+        const ids = control.getAttribute('aria-describedby')?.split(' ') ?? [];
+        return ids.map((id) => document.getElementById(id)).find((element) => element?.matches('.field__error') && !element.hidden)?.textContent ?? null;
+      };
+      await click(action('log'));
+      expect(errorText(field('log-amount'))).toBe('Enter a value to log.');
+      type('log-amount', '1.2345');
+      await click(action('log'));
+      expect(errorText(field('log-amount'))).toBe('Enter an amount from 0 to 999,999,999,999.999, with at most 3 decimals.');
+      type('log-amount', '2');
+      type('log-label', 'x'.repeat(101));
+      await click(action('log'));
+      expect(errorText(field('log-label'))).toBe('A label holds at most 100 characters.');
+      expect(store.logEntry).not.toHaveBeenCalled();
+    });
+
+    it('asks in place before logging more than 12 hours, offering Change and Log anyway', async () => {
+      await open(goalTask({ measure: 'time', target: 12_000 }));
+      type('log-hours', '14');
+      type('log-minutes', '0');
+      await click(action('log'));
+      const confirm = q('[data-part="log-confirm"]');
+      expect(visible(confirm)).toBe(true);
+      expect(confirm.textContent).toContain('Log 14 h 0 min? That is more than 12 hours.');
+      expect(store.logEntry).not.toHaveBeenCalled();
+      await click(action('log-change'));
+      expect(visible(confirm)).toBe(false);
+      expect(document.activeElement).toBe(field('log-hours'));
+      await click(action('log'));
+      await click(action('log-anyway'));
+      expect(store.logEntry).toHaveBeenCalledWith('t1', { 'time-spent-seconds': 50_400 });
+      expect(visible(confirm)).toBe(false);
+    });
+
+    it('does not ask for exactly 12 hours', async () => {
+      await open(goalTask({ measure: 'time', target: 12_000 }));
+      type('log-hours', '12');
+      type('log-minutes', '0');
+      await click(action('log'));
+      expect(store.logEntry).toHaveBeenCalledWith('t1', { 'time-spent-seconds': 43_200 });
+    });
+
+    it('reports a rejected entry on the form instead of clearing it', async () => {
+      await open(goalTask({ measure: 'amount', target: 100, unit: 'g' }));
+      store.logEntry.mockRejectedValueOnce(Object.assign(new Error('Not a valid amount.'), { name: 'ValidationError' }));
+      type('log-amount', '5');
+      await click(action('log'));
+      expect(field('log-amount').value).toBe('5');
+    });
+  });
+
+  describe('entries', () => {
+    const EVENTS = [
+      logged('e1', { amount: 320, label: 'Croissant' }, '2026-11-26T08:00:00.000Z'),
+      logged('e2', { amount: 300, label: 'Cake' }, '2026-11-26T10:00:00.000Z'),
+      logged('e3', { amount: 50 }, '2026-11-25T10:00:00.000Z'),
+      logged('e4', { amount: 999, label: 'Earlier period' }, '2026-11-20T10:00:00.000Z', 0),
+      { id: 'u1', 'task-id': 't1', type: 'undo-log', occurrence: 1, 'creation-time': '2026-11-26T11:00:00.000Z', 'target-event-id': 'e3' },
+    ];
+    const cake = () => goalTask({ direction: 'at-most', measure: 'amount', target: 1600, unit: 'kcal' }, { status: 'in-progress', progress: 620, entries: ['e1', 'e2'] });
+    const items = () => [...document.querySelectorAll('[data-section="status"] [data-part="entries"] > li')];
+
+    it('lists the live entries of the current period, newest first, with their total', async () => {
+      await open(cake(), { events: EVENTS });
+      expect(items().map((item) => item.dataset.entry)).toEqual(['e2', 'e1']);
+      expect(items()[0].textContent).toContain('Cake');
+      expect(items()[0].textContent).toContain('300 kcal');
+      expect(items()[1].textContent).toContain('Croissant');
+      expect(q('[data-part="entries-total"]').textContent).toContain('620 kcal');
+    });
+
+    it('undoes an entry with an undo-log of it', async () => {
+      await open(cake(), { events: EVENTS });
+      await click(items()[0].querySelector('button[data-action="undo"]'));
+      expect(store.undoLog).toHaveBeenCalledWith('t1', 'e2');
+    });
+
+    it('shows nothing before the first entry', async () => {
+      await open(cake(), { events: [] });
+      expect(items()).toHaveLength(0);
+      expect(visible(q('[data-part="entries-empty"]'))).toBe(true);
+    });
+
+    it('lets any editor undo an entry of a collaborator, and shows its author while connected', async () => {
+      await open(cake(), { events: [{ ...EVENTS[0], 'owner-id': 7 }, EVENTS[1]] });
+      expect(items().every((item) => item.querySelector('button[data-action="undo"]') !== null)).toBe(true);
+    });
+
+    it('shows a viewer the entries without Undo', async () => {
+      const task = { ...cake(), 'owner-id': 9 };
+      resetBody('<div data-editor-slot hidden></div>');
+      panel?.destroy();
+      store = fakeStore();
+      store.getTask = vi.fn(async () => task);
+      store.eventsOfTask = vi.fn(async () => EVENTS);
+      store.listLists = vi.fn(async () => [{ id: 'l1', name: 'Home', role: 'viewer', owner: { id: 9, name: 'Sam Roe' } }]);
+      store.listsOfTask = vi.fn(async () => ['l1']);
+      store.queue = { getState: vi.fn(async () => 3) };
+      let editor;
+      panel = createEditorPanel({
+        slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+        editors: { task: (view, route) => {
+          editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, locale: 'en', now: () => new Date(NOW) });
+          return editor;
+        } },
+      });
+      panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+      await editor.idle();
+      expect(items()).toHaveLength(2);
+      expect(items().every((item) => !visible(item.querySelector('button[data-action="undo"]')))).toBe(true);
+    });
+  });
+
+  describe('focus', () => {
+    it('passes the focus of a control that disables to the status line', async () => {
+      const task = goalTask({}, {});
+      await open(task);
+      action('check-off').focus();
+      task['current-occurrence'] = { ...task['current-occurrence'], status: 'completed', progress: 1, 'completion-count': 1, 'close-time': '2026-11-26T00:00:00.000Z' };
+      store.listeners.forEach((listener) => listener({ operation: 'logEntry' }));
+      await vi.waitFor(() => expect(action('check-off').disabled).toBe(true));
+      await tick();
+      expect(document.activeElement).toBe(q('.task-editor__status'));
+    });
+  });
+});
+
+describe('task history of log entries (TSK-17)', () => {
+  const CURRENT = {
+    occurrence: 2, 'start-time': '2026-11-27T00:00:00.000Z', 'due-time': '2026-11-28T00:00:00.000Z', 'close-time': null, status: 'in-progress',
+    'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 1600, 'target-count': 1600, 'goal-unit': 'kcal', progress: 320, 'completion-count': 320,
+  };
+  const CLOSED = { ...CURRENT, occurrence: 1, 'start-time': '2026-11-26T00:00:00.000Z', 'due-time': '2026-11-27T00:00:00.000Z', 'close-time': '2026-11-27T00:00:00.000Z', status: 'failed', progress: 1910 };
+  const EVENTS = [
+    { id: 'e1', 'task-id': 't1', type: 'log', occurrence: 1, 'creation-time': '2026-11-26T08:00:00.000Z', amount: 1610, label: 'Lunch', 'owner-id': null },
+    { id: 'e2', 'task-id': 't1', type: 'log', occurrence: 1, 'creation-time': '2026-11-26T10:00:00.000Z', amount: 300, label: 'Cake', 'owner-id': 4 },
+    { id: 'u2', 'task-id': 't1', type: 'undo-log', occurrence: 1, 'creation-time': '2026-11-26T11:00:00.000Z', 'target-event-id': 'e2', 'owner-id': 4 },
+    { id: 'e3', 'task-id': 't1', type: 'log', occurrence: 2, 'creation-time': '2026-11-27T08:00:00.000Z', amount: 320, label: 'Croissant', 'owner-id': null },
+  ];
+  let history;
+
+  beforeEach(async () => {
+    resetBody('<div></div>');
+    const store = { eventsOfTask: async () => EVENTS, occurrencesOfTask: async () => [CLOSED, CURRENT], notesOfTask: async () => [] };
+    history = createTaskHistory({ document, store, taskId: 't1', locale: 'en', userId: () => null });
+    document.body.append(history.element);
+    await history.load();
+  });
+
+  it('shows an occurrence with its status and progress against the goal', () => {
+    const texts = [...document.querySelectorAll('[data-history="occurrences"] > li')].map((item) => item.textContent);
+    expect(texts[1]).toContain('Failed, 1,910 / max 1,600 kcal');
+    expect(texts[0]).toContain('In progress, 320 / max 1,600 kcal');
+  });
+
+  it('shows what each entry logged, and an undo naming the undone entry, which stays listed struck through', () => {
+    const items = [...document.querySelectorAll('[data-history="events"] > li')];
+    const text = (id) => items.find((item) => item.dataset.event === id)?.textContent;
+    expect(text('e3')).toContain('You logged Croissant · 320 kcal');
+    expect(text('e1')).toContain('You logged Lunch · 1,610 kcal');
+    expect(text('u2')).toContain('Collaborator undid Cake · 300 kcal');
+    expect(items.find((item) => item.dataset.event === 'e2').classList.contains('is-undone')).toBe(true);
+    expect(items.find((item) => item.dataset.event === 'e1').classList.contains('is-undone')).toBe(false);
   });
 });

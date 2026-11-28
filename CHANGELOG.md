@@ -12,6 +12,12 @@ All notable changes to this project are documented here.
 - Tests: Covered logs, undos, aliases of queued `complete` and `uncomplete` changes, and rejected undos against a todos server.
 - FrontEnd: Rebuilt the task editor as the tabs Status, Notes, Configuration, and History, opening on Status, with Cancel task in a Danger zone.
 - FrontEnd: Added the Goal, Recurrence with a yearly unit, and Time window with a start time and Fail when overdue to Configuration (`TSK-15`, `TSK-16`, `TSK-20`).
+- FrontEnd: Replaced the status buttons of the task editor's Status tab with the status line, a progress box with a meter, Check off, a checks stepper, Mark started, Reopen, and Check off previous period (`TSK-21`, `TSK-22`).
+- FrontEnd: Added a Log form with the 12-hour question, and the entries of the current period with Undo, to the Status tab.
+- FrontEnd: Showed logged entries, undos, and progress against the goal in History, with undone entries struck through.
+- FrontEnd: Turned the progress box orange above an at-most limit, and marked the pace of checks goals on the meter.
+- Core: Put the progress, approaching, and on-track rules in core/progress.js for task rows to reuse.
+- Design: Added the failed and upcoming status icons and the failed and approaching colors, with contrast checks.
 - Store: Took the year unit and decimal amount targets from 0 in local rule edits, and kept checks and time to whole numbers.
 - Reminders: Delivered due reminders with the app closed through Web Push while connected, subscribing with the service key, updating the lead time, and unsubscribing on turn-off, disconnect, and sign-out (`REM-11` to `REM-14`).
 - Settings: Showed under Reminders whether pushes to a closed app work, with the Home Screen note for iPhone and iPad.

@@ -17,6 +17,12 @@
   <symbol id="status-completed" viewBox="0 0 24 24">
     <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M8.2 11.8 10.5 14.1 15.8 8.8 17.2 10.2 10.5 16.9 6.8 13.2Z"/>
   </symbol>
+  <symbol id="status-failed" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M8.5 7.1 12 10.6 15.5 7.1 16.9 8.5 13.4 12 16.9 15.5 15.5 16.9 12 13.4 8.5 16.9 7.1 15.5 10.6 12 7.1 8.5Z"/>
+  </symbol>
+  <symbol id="status-upcoming" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/>
+  </symbol>
   <symbol id="status-cancelled" viewBox="0 0 24 24">
     <path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20Z M7 11h10v2H7Z"/>
   </symbol>

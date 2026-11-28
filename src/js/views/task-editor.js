@@ -2,7 +2,9 @@
  * Task editor: every field of one task, saved on change, with no Save button.
  *
  * Four tabs under the header split the sections, with the vendored tabs.js; each open starts on Status (`TSK-18`).
- * Status: the status and the controls that change it, until the log of ADR-0006 replaces them (T0307).
+ * Status: the status line, the progress box with its meter, the actions no log derives (Check off, the checks stepper,
+ * Mark started, Reopen, Check off previous period), the Log form, and the live entries with Undo (TSK-21, TSK-22).
+ * What is logged decides the status, so there are no status buttons; the rules of progress sit in core/progress.js.
  * Notes: the note thread (`NOT-1` to `NOT-6`), whose add field also searches it.
  * Configuration, with a rule between each part: description (`TSK-1`), lists (`TSK-8`), Goal (`TSK-15`),
  * Recurrence (`TSK-16`), Time window with start, due, and overdue behavior (`TSK-5` to `TSK-7`, `TSK-20`),
@@ -25,26 +27,40 @@
  * there the panel sits beside the rows, so the user keeps typing the next task (`TSK-13`).
  */
 
-import { displayTask, eventsTowardsStatus, graceOccurrence, isRecurring, overdueHandlingOf, USER_EVENT_TYPES } from '../core/occurrences.js';
+import { displayTask, graceOccurrence, isRecurring, overdueHandlingOf, USER_EVENT_TYPES } from '../core/occurrences.js';
 import { browserTimezone, isValidTimezone } from '../core/periods.js';
 import { can, canTrashTask, listRole, taskRole } from '../core/permissions.js';
+import { durationWords, entryWords, formatMeasure, meterColor, overage, paceNow, progressOf, trackOf, windowShare } from '../core/progress.js';
 
 import { DESCRIPTION_MAX } from '../store/tasks.js';
 import { attachTabs } from '../../vendor/design/js/tabs.js';
 import { createEditorField } from './editor-panel.js';
 import { createTaskHistory, readServerOccurrences } from './task-history.js';
 import { createNoteThread } from './notes.js';
-import { countWords, make as el, showsCount, spriteIcon, STATUS_LABELS } from './task-list.js';
+import { make as el, spriteIcon, STATUS_LABELS } from './task-list.js';
 
 /** Editor strings, for the strings module of TEC-13 to absorb. */
 const STRINGS = Object.freeze({
   title: 'Task', sections: 'Task sections', status: 'Status', notes: 'Notes', configuration: 'Configuration', history: 'History',
   description: 'Description', completions: 'Completions', stepDown: 'Undo a completion', stepUp: 'Add a completion',
-  reachTarget: (target) => `Reach ${target} of ${target} to complete`,
-  belowTarget: (target) => `Step below ${target} of ${target} to be in progress`,
   count: (done, target) => `${done} of ${target}`,
-  previousPeriod: (day) => `Complete for previous period (${day})`,
+  previousPeriod: (day) => `Check off previous period (${day})`,
   uncancelHint: 'Uncancel in Configuration.',
+  checkOff: 'Check off', markStarted: 'Mark started', unmarkStarted: 'Unmark started', reopen: 'Reopen', notOnTrack: ', not on track',
+  progress: 'Progress', paceNow: (value) => `pace now: ${value}`,
+  today: (day) => `Today, ${day}`, dueOn: (day) => `Due ${day}`,
+  overLimit: (words) => `${words} over the limit`, overFails: 'The window fails if the progress stays above the limit at its end.',
+  behindPace: (gone, unit, done) => `Behind pace: ${gone} the ${unit} is gone, ${done} done.`,
+  toGo: (words) => `${words} to go.`, leftBefore: (words) => `${words} left before the limit.`, noReading: 'No reading yet.',
+  reached: 'Target reached.', within: 'Stayed within the limit.', endedBelow: 'The window ended below the target.',
+  endedAbove: 'The window ended above the limit.', cancelled: 'This task is cancelled.', carried: ' (carried)', max: 'max ',
+  log: 'Log', logForm: 'Log an entry', logLabel: 'Label (optional)', logCheck: 'Check', logTime: 'Time spent', logAmount: 'Amount', logReading: 'Reading',
+  addTime: '+ Time spent', addAmount: '+ Amount', addCheck: '+ Check', entries: 'Entries', entriesEmpty: 'No entries yet.',
+  entriesTotal: (words) => `Total: ${words}`, undo: 'Undo', undoEntry: (what) => `Undo ${what}`, logNothing: 'Enter a value to log.',
+  logAmountInvalid: 'Enter an amount from 0 to 999,999,999,999.999, with at most 3 decimals.',
+  logTimeInvalid: 'Enter whole hours and minutes from 0 to 59, at least 1 minute in all.', logLabelLong: 'A label holds at most 100 characters.',
+  longTime: (hours, minutes) => `Log ${hours} h ${minutes} min? That is more than 12 hours.`, change: 'Change', logAnyway: 'Log anyway',
+  you: 'You', collaborator: 'Collaborator', 
   goal: 'Goal', check: 'Check', atLeast: 'At least', atMost: 'At most', measure: 'Measure', target: 'Target', unit: 'Unit',
   measures: [['checks', 'Checks'], ['time', 'Time spent'], ['amount', 'Amount (sum)'], ['reading', 'Reading (latest)']],
   hours: 'Hours', minutes: 'Minutes',
@@ -75,9 +91,6 @@ const STRINGS = Object.freeze({
   timezone: 'Timezone', timezoneHint: 'Periods start at midnight in this timezone.', timezoneInvalid: 'Enter a timezone such as Europe/Brussels.',
 });
 let instances = 0;
-
-/** The statuses of the state buttons, in order; Cancel task sits in the Danger zone. */
-const STATES = Object.freeze(['ready', 'in-progress', 'completed']);
 
 /** The goal target limits: whole numbers for checks and seconds, thousandths for amounts and readings. */
 const TARGET_MAX = 999_999_999_999;
@@ -152,16 +165,6 @@ function startValue(iso) {
 }
 
 /**
- * Name a time target in hours, minutes, and seconds, leaving out the parts that are 0.
- * @param {number} seconds the target
- * @returns {string} the words, such as `3 h 20 min`
- */
-function timeWords(seconds) {
-  const parts = [[Math.floor(seconds / 3600), 'h'], [Math.floor((seconds % 3600) / 60), 'min'], [seconds % 60, 's']];
-  return parts.filter(([count]) => count > 0).map(([count, word]) => `${count} ${word}`).join(' ') || '0 min';
-}
-
-/**
  * Tell whether a goal target is valid for a measure.
  * @param {string} measure the goal measure
  * @param {number} value the target
@@ -214,6 +217,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   let members = [];
   let userId = null;
   let userEvents = [];
+  let loggedEvents = [];
   let shownDeleted = false;
   let pending = null;
   let destroyed = false;
@@ -387,9 +391,12 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   });
 
   const statusLine = el(doc, 'p', 'task-editor__status');
+  statusLine.tabIndex = -1;
   const statusIcon = spriteIcon(doc, 'status-ready');
   const statusText = el(doc, 'span', 'task-editor__status-text');
   statusLine.append(statusIcon, statusText);
+  const windowLine = part('window-line', 'p');
+  windowLine.classList.add('editor-panel__details');
   const uncancelHint = part('uncancel-hint', 'p', STRINGS.uncancelHint);
   uncancelHint.classList.add('editor-panel__details');
   uncancelHint.hidden = true;
@@ -406,17 +413,42 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     button.append(spriteIcon(doc, icon));
     return button;
   };
-  const stateGroup = el(doc, 'div', 'segmented__options task-editor__states');
-  stateGroup.setAttribute('role', 'group');
-  stateGroup.setAttribute('aria-label', STRINGS.status);
-  const stateButtons = STATES.map((status) => {
-    const button = iconButton(`status-${status}`, STATUS_LABELS[status]);
-    button.classList.add('task-editor__state');
-    button.dataset.status = status;
-    button.setAttribute('aria-pressed', 'false');
+  /**
+   * Create a text button of the Status tab.
+   * @param {string} action the `data-action` name
+   * @param {string} text the label
+   * @param {string} [kind] the button kind
+   * @returns {HTMLButtonElement} the button
+   */
+  const actionButton = (action, text, kind = 'secondary') => {
+    const button = el(doc, 'button', `button button--${kind}`, text);
+    button.type = 'button';
+    button.dataset.action = action;
     return button;
-  });
-  stateGroup.append(...stateButtons);
+  };
+
+  // The progress box: the progress and target in large text, a meter, and a line on what comes next.
+  const progressBox = el(doc, 'div', 'progress-box');
+  progressBox.dataset.part = 'progress-box';
+  const progressText = el(doc, 'p', 'progress-box__value');
+  progressText.dataset.part = 'progress';
+  const meterWrap = el(doc, 'div', 'progress-box__meter');
+  const meter = el(doc, 'div', 'progress-meter');
+  meter.dataset.part = 'meter';
+  meter.setAttribute('role', 'meter');
+  meter.setAttribute('aria-label', STRINGS.progress);
+  meter.setAttribute('aria-valuemin', '0');
+  const meterFill = el(doc, 'div', 'progress-meter__fill');
+  meter.append(meterFill);
+  const paceMark = el(doc, 'span', 'progress-meter__pace');
+  paceMark.dataset.part = 'pace';
+  meterWrap.append(meter, paceMark);
+  const nextLine = el(doc, 'p', 'progress-box__next');
+  nextLine.dataset.part = 'next';
+  progressBox.append(progressText, meterWrap, nextLine);
+
+  // The actions that no log derives, and the checks stepper, centered under the progress box.
+  const checkOff = actionButton('check-off', STRINGS.checkOff, 'primary');
   const stepper = el(doc, 'div', 'task-editor__stepper');
   stepper.setAttribute('role', 'group');
   stepper.setAttribute('aria-label', STRINGS.completions);
@@ -428,54 +460,134 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   countText.setAttribute('aria-live', 'polite');
   stepper.append(stepDown, countText, stepUp);
   stepper.hidden = true;
-  const previousPeriod = el(doc, 'button', 'button button--secondary task-editor__previous');
-  previousPeriod.type = 'button';
-  previousPeriod.dataset.action = 'previous-period';
-  previousPeriod.hidden = true;
-  const statusControls = el(doc, 'div', 'task-editor__status-controls');
-  statusControls.append(stateGroup, stepper, previousPeriod);
-  const statusSection = section(statusFields, 'status');
-  statusSection.append(el(doc, 'h3', 'editor-panel__section-title', STRINGS.status), statusLine, uncancelHint, statusControls);
+  const markStarted = actionButton('mark-started', STRINGS.markStarted);
+  const reopen = actionButton('reopen', STRINGS.reopen);
+  const previousPeriod = actionButton('previous-period', '');
+  previousPeriod.classList.add('task-editor__previous');
+  const actions = el(doc, 'div', 'task-editor__actions');
+  actions.append(checkOff, stepper, markStarted, reopen, previousPeriod);
 
-  // What the last fill showed, so a click posts the events from the state the user saw.
+  // The Log form: the goal's own field, Label, and Log, with the other fields behind "+" buttons.
+  const logForm = el(doc, 'form', 'task-editor__log');
+  logForm.dataset.part = 'log-form';
+  logForm.noValidate = true;
+  logForm.setAttribute('aria-label', STRINGS.logForm);
+  const logAmount = createEditorField(doc, { label: STRINGS.logAmount, name: 'log-amount', type: 'text' });
+  logAmount.control.inputMode = 'decimal';
+  logAmount.control.autocomplete = 'off';
+  const logHours = createEditorField(doc, { label: STRINGS.hours, name: 'log-hours', type: 'number' });
+  const logMinutes = createEditorField(doc, { label: STRINGS.minutes, name: 'log-minutes', type: 'number' });
+  for (const field of [logHours, logMinutes]) {
+    Object.assign(field.control, { min: '0', step: '1' });
+    field.control.inputMode = 'numeric';
+  }
+  const logLabel = createEditorField(doc, { label: STRINGS.logLabel, name: 'log-label' });
+  logLabel.control.autocomplete = 'off';
+  const logChecked = doc.createElement('input');
+  logChecked.type = 'checkbox';
+  logChecked.name = 'log-checked';
+  logChecked.className = 'checkbox__control';
+  const logCheckPart = part('log-check', 'label');
+  logCheckPart.classList.add('checkbox');
+  logCheckPart.append(logChecked, ` ${STRINGS.logCheck}`);
+  const logAmountPart = part('log-amount');
+  logAmountPart.append(logAmount.element);
+  const logTimePart = part('log-time');
+  logTimePart.classList.add('editor-panel__row');
+  logTimePart.append(logHours.element, logMinutes.element);
+  const logParts = { time: logTimePart, amount: logAmountPart, check: logCheckPart };
+  const logFields = el(doc, 'div', 'task-editor__log-fields');
+  const logError = part('log-error', 'p');
+  logError.classList.add('field__error');
+  logError.setAttribute('role', 'status');
+  const addButtons = {
+    time: actionButton('add-time', STRINGS.addTime), amount: actionButton('add-amount', STRINGS.addAmount), check: actionButton('add-check', STRINGS.addCheck),
+  };
+  const addRow = el(doc, 'div', 'task-editor__log-add');
+  addRow.append(...Object.values(addButtons));
+  const logConfirm = part('log-confirm');
+  logConfirm.classList.add('task-editor__log-confirm');
+  logConfirm.setAttribute('role', 'alert');
+  const confirmText = el(doc, 'p', 'task-editor__log-question');
+  const confirmChange = actionButton('log-change', STRINGS.change);
+  const confirmAnyway = actionButton('log-anyway', STRINGS.logAnyway, 'primary');
+  logConfirm.append(confirmText, confirmChange, confirmAnyway);
+  logConfirm.hidden = true;
+  const logSubmit = el(doc, 'button', 'button button--primary', STRINGS.log);
+  logSubmit.type = 'submit';
+  logSubmit.dataset.action = 'log';
+  logForm.append(logFields, logLabel.element, logError, addRow, logConfirm, logSubmit);
+
+  // The entries of the current period, newest first, under their own rule.
+  const entriesBlock = part('entries-block');
+  const entriesList = el(doc, 'ul', 'task-editor__entries');
+  entriesList.dataset.part = 'entries';
+  const entriesEmpty = part('entries-empty', 'p', STRINGS.entriesEmpty);
+  entriesEmpty.classList.add('editor-panel__details');
+  const entriesTotal = part('entries-total', 'p');
+  entriesTotal.classList.add('editor-panel__details');
+  entriesBlock.append(entriesEmpty, entriesList, entriesTotal);
+
+  const statusSection = section(statusFields, 'status');
+  statusSection.append(statusLine, windowLine, uncancelHint, progressBox, actions);
+  rule(statusSection);
+  statusSection.append(el(doc, 'h3', 'editor-panel__section-title', STRINGS.log), logForm);
+  rule(statusSection);
+  statusSection.append(el(doc, 'h3', 'editor-panel__section-title', STRINGS.entries), entriesBlock);
+
+  // What the last fill showed, so a click acts on the state the user saw.
   let shownOccurrence = null;
   let closedSeries = false;
   let graceNumber = null;
+  let liveEntries = [];
   let posting = Promise.resolve();
+  const revealed = { time: false, amount: false, check: false };
+  let logOwn = null;
+
+  /**
+   * Run a store operation in order, after those of earlier clicks; a failure shows a toast.
+   * @param {() => Promise<unknown>} operation the operation
+   * @returns {Promise<void>} resolves once settled
+   */
+  function run(operation) {
+    posting = posting.then(operation).catch(fail);
+    return posting;
+  }
 
   /**
    * Post events in order, after those of earlier clicks; a failed event stops the rest.
    * @param {string[]} types the event types
-   * @param {{occurrence: number}} [options] the occurrence the events name, the current one by default
    */
-  function post(types, options) {
-    posting = posting.then(async () => {
+  function post(types) {
+    run(async () => {
       for (const type of types) {
-        await (options ? store.postEvent(taskId, type, options) : store.postEvent(taskId, type));
+        await store.postEvent(taskId, type);
       }
-    }).catch(fail);
+    });
   }
 
-  stateGroup.addEventListener('click', (event) => {
-    const button = event.target.closest?.('button[data-status]');
-    if (!button || button.disabled || !shownOccurrence) {
-      return;
-    }
-    // A closed recurring series takes only reopen, which opens a fresh period.
-    const status = button.dataset.status;
-    post(closedSeries ? (status === 'ready' ? ['reopen'] : []) : eventsTowardsStatus(shownOccurrence, status, task['lifecycle-rules']));
-  });
+  checkOff.addEventListener('click', () => run(() => store.logEntry(taskId, { checked: true })));
+  markStarted.addEventListener('click', () => post([shownOccurrence?.status === 'ready' ? 'start' : 'unstart']));
+  reopen.addEventListener('click', () => post(['reopen']));
   stepper.addEventListener('click', (event) => {
     const button = event.target.closest?.('button[data-step]');
     if (!button || button.disabled || !shownOccurrence) {
       return;
     }
-    // Minus from 1 starts again, so the task stays In progress at 0 rather than falling back to Ready.
-    post(button.dataset.step === 'up' ? ['complete'] : shownOccurrence['completion-count'] === 1 ? ['uncomplete', 'start'] : ['uncomplete']);
+    const latest = liveEntries.find((entry) => entry.checked);
+    run(() => (button.dataset.step === 'up' ? store.logEntry(taskId, { checked: true }) : latest ? store.undoLog(taskId, latest.id) : Promise.resolve()));
   });
   previousPeriod.addEventListener('click', () => {
-    if (graceNumber !== null) {
-      post(['complete'], { occurrence: graceNumber });
+    if (graceNumber !== null && !previousPeriod.disabled) {
+      const named = graceNumber;
+      run(() => store.logEntry(taskId, { checked: true }, { occurrence: named }));
+    }
+  });
+  entriesList.addEventListener('click', (event) => {
+    const button = event.target.closest?.('button[data-action="undo"]');
+    if (button && !button.disabled) {
+      const id = button.closest('li').dataset.entry;
+      run(() => store.undoLog(taskId, id));
     }
   });
 
@@ -551,7 +663,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     unitPart.hidden = !detailed || !['amount', 'reading'].includes(kind);
     const amount = rules['target-count'];
     const unitName = rules['goal-unit'] ?? '';
-    const words = kind === 'checks' ? STRINGS.checkWord(amount) : kind === 'time' ? timeWords(amount)
+    const words = kind === 'checks' ? STRINGS.checkWord(amount) : kind === 'time' ? durationWords(amount)
       : `${amount.toLocaleString(locale, { maximumFractionDigits: 3 })}${unitName ? ` ${unitName}` : ''}`;
     goalLine.textContent = STRINGS.succeeds(STRINGS.subject(isRecurring(rules) ? rules['recurrence-unit'] : ''), words, mode === 'at-most');
   }
@@ -946,7 +1058,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   const thread = createNoteThread({ document: doc, store, taskId, onError: fail, locale, loadOccurrences });
   section(noteFields, 'notes').append(thread.element);
   // History and Details edit nothing, so they sit in no fieldset.
-  const history = createTaskHistory({ document: doc, store, taskId, api, session, locale });
+  const history = createTaskHistory({ document: doc, store, taskId, api, session, locale, userId: () => userId });
   section(panels.history, 'history', STRINGS.history).append(history.element);
   const details = el(doc, 'p', 'editor-panel__details');
   section(panels.history, 'details', STRINGS.details).append(details);
@@ -1007,50 +1119,218 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   }
 
   /**
-   * Show the status and its counts, press the state button of the status, and gate the controls.
-   * Above target 1, Completed needs the target and In progress a count below it; the stepper shows outside Ready.
-   * A focused control that disables or hides passes the focus to the pressed state button.
+   * Name a share of the window in words, such as "half".
+   * @param {number} share the share from 0 to 1
+   * @returns {string} the words, ready to precede "the week"
+   */
+  function shareWords(share) {
+    const named = [[0.25, 'a quarter of'], [0.5, 'half'], [0.75, 'three quarters of']].find(([value]) => Math.abs(value - share) < 0.05);
+    return named ? named[1] : `${Math.round(share * 100)}% of`;
+  }
+
+  /**
+   * Name the window of an occurrence under the status line: today, its period, or its due day.
+   * @param {object} occurrence the shown occurrence
+   * @param {object} rules the lifecycle rules
+   * @returns {string} the words, empty without a due time
+   */
+  function windowWords(occurrence, rules) {
+    if (!occurrence['due-time']) {
+      return '';
+    }
+    const zone = isValidTimezone(rules.timezone ?? '') ? rules.timezone : undefined;
+    const dayFormat = (options) => new Intl.DateTimeFormat(locale, { ...options, timeZone: zone });
+    const start = Date.parse(occurrence['start-time']);
+    const end = Date.parse(occurrence['due-time']);
+    if (!isRecurring(rules)) {
+      return STRINGS.dueOn(new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(end)));
+    }
+    const long = dayFormat({ weekday: 'short', day: 'numeric', month: 'short' });
+    if (end - start <= 24 * 3_600_000 + 1) {
+      const current = now().getTime();
+      return current >= start && current < end ? STRINGS.today(long.format(new Date(start))) : long.format(new Date(start));
+    }
+    const short = dayFormat({ day: 'numeric', month: 'short' });
+    return `${short.format(new Date(start))} – ${short.format(new Date(end - 1))}`;
+  }
+
+  /**
+   * Tell what comes next for an occurrence, in the line under the meter.
+   * @param {object} occurrence the shown occurrence
+   * @param {ReturnType<typeof progressOf>} p its progress
+   * @param {string} track how it stands against the pace of its window
+   * @param {object} rules the lifecycle rules
+   * @returns {string} the text
+   */
+  function nextWords(occurrence, p, track, rules) {
+    const words = (value) => formatMeasure(p.measure, value, p.unit, locale);
+    const atMost = p.direction === 'at-most';
+    const { status } = occurrence;
+    if (status === 'cancelled') {
+      return STRINGS.cancelled;
+    }
+    if (status === 'failed') {
+      return atMost ? STRINGS.endedAbove : STRINGS.endedBelow;
+    }
+    if (atMost && track === 'over-limit') {
+      return `${STRINGS.overLimit(words(overage(occurrence)))}.\n${STRINGS.overFails}`;
+    }
+    if (p.value === null) {
+      return STRINGS.noReading;
+    }
+    if (status === 'completed') {
+      return atMost ? STRINGS.within : STRINGS.reached;
+    }
+    if (atMost) {
+      return STRINGS.leftBefore(words(Math.max(0, p.target - p.value)));
+    }
+    if (track === 'behind-pace') {
+      const gone = windowShare(occurrence, now());
+      const done = p.measure === 'checks' ? STRINGS.count(p.value, p.target) : `${formatMeasure(p.measure, p.value, null, locale)} of ${words(p.target)}`;
+      return STRINGS.behindPace(shareWords(gone), isRecurring(rules) ? rules['recurrence-unit'] : 'time', done);
+    }
+    return STRINGS.toGo(words(Math.max(0, p.target - p.value)));
+  }
+
+  /**
+   * Return the live entries of an occurrence, newest first: its `log` events that no `undo-log` names.
+   * @param {number} number the occurrence number
+   * @returns {object[]} the events
+   */
+  function entriesOf(number) {
+    const undone = new Set(loggedEvents.filter((event) => event.type === 'undo-log').map((event) => event['target-event-id']));
+    return loggedEvents.filter((event) => event.type === 'log' && event.occurrence === number && !undone.has(event.id))
+      .sort((a, b) => Date.parse(b['creation-time']) - Date.parse(a['creation-time']) || (a.id < b.id ? 1 : -1));
+  }
+
+  /**
+   * Draw the entries of the shown period with their total, each with Undo for those who may change the task.
+   * @param {ReturnType<typeof progressOf>} p the progress of the shown occurrence
+   * @param {boolean} carried whether the progress is a reading carried in from the last period
+   */
+  function showEntries(p, carried) {
+    const connected = Boolean(api) && session?.state?.() === 'connected';
+    const focusedUndo = entriesList.contains(doc.activeElement);
+    entriesList.replaceChildren(...liveEntries.map((entry) => {
+      const item = doc.createElement('li');
+      item.dataset.entry = entry.id;
+      const time = el(doc, 'time', 'task-editor__entry-time', format.format(new Date(entry['creation-time'])));
+      time.dateTime = entry['creation-time'];
+      const text = el(doc, 'span', 'task-editor__entry-text');
+      text.append(...[entry.label ? el(doc, 'span', 'task-editor__entry-label', entry.label) : null,
+        el(doc, 'span', 'task-editor__entry-value', entryWords(entry, p, locale))].filter(Boolean));
+      const undo = actionButton('undo', STRINGS.undo, 'secondary');
+      undo.setAttribute('aria-label', STRINGS.undoEntry(entry.label || entryWords(entry, p, locale)));
+      undo.hidden = readOnly;
+      item.append(time, text);
+      if (connected) {
+        item.append(el(doc, 'span', 'task-editor__entry-author', (entry['owner-id'] ?? null) === null || entry['owner-id'] === userId ? STRINGS.you : STRINGS.collaborator));
+      }
+      item.append(undo);
+      return item;
+    }));
+    entriesEmpty.hidden = liveEntries.length > 0;
+    entriesTotal.hidden = liveEntries.length === 0;
+    entriesTotal.textContent = STRINGS.entriesTotal(`${formatMeasure(p.measure, p.value, p.unit, locale)}${carried ? STRINGS.carried : ''}`);
+    if (focusedUndo && !entriesList.contains(doc.activeElement)) {
+      (entriesList.querySelector('button[data-action="undo"]:not([hidden])') ?? statusLine).focus();
+    }
+  }
+
+  /**
+   * Show the Log form for the goal of the shown occurrence: its own field first, the others behind "+" buttons.
+   * @param {ReturnType<typeof progressOf>} p the progress of the shown occurrence
+   * @param {{checks: boolean, closed: boolean}} gate whether checks are disabled and whether the occurrence is closed
+   */
+  function showLogForm(p, gate) {
+    const own = p.measure === 'checks' ? 'check' : p.measure === 'time' ? 'time' : 'amount';
+    if (own !== logOwn) {
+      logOwn = own;
+      logFields.replaceChildren(...[own, ...['time', 'amount', 'check'].filter((kind) => kind !== own)].map((kind) => logParts[kind]));
+      logChecked.checked = own === 'check';
+      Object.assign(revealed, { time: false, amount: false, check: false });
+    }
+    const unitName = p.unit ? ` (${p.unit})` : '';
+    logAmount.element.querySelector('.field__label').textContent = `${p.measure === 'reading' ? STRINGS.logReading : STRINGS.logAmount}${own === 'amount' ? unitName : ''}`;
+    for (const kind of ['time', 'amount', 'check']) {
+      logParts[kind].hidden = kind !== own && !revealed[kind];
+      addButtons[kind].hidden = kind === own || revealed[kind];
+    }
+    // A cancelled task still logs time and amounts; a closed occurrence takes no entry.
+    logChecked.disabled = gate.checks;
+    addButtons.check.disabled = gate.checks;
+    logSubmit.disabled = gate.closed;
+    for (const control of [logAmount.control, logHours.control, logMinutes.control, logLabel.control]) {
+      control.disabled = gate.closed;
+    }
+  }
+
+  /**
+   * Show the status, progress, and entries of the current occurrence, and gate the actions.
+   * A focused control that disables or hides passes the focus to the status line.
    */
   function fillStatus() {
-    const occurrence = displayTask(task, now())['current-occurrence'];
+    const shownTask = displayTask(task, now());
+    const occurrence = shownTask['current-occurrence'];
     const rules = task['lifecycle-rules'];
     const { status } = occurrence;
-    const done = occurrence['completion-count'];
-    const target = occurrence['target-count'];
-    const focused = statusControls.contains(doc.activeElement) ? doc.activeElement : null;
+    const p = progressOf(occurrence);
+    const track = trackOf(occurrence, now());
+    const closed = occurrence['close-time'] !== null;
+    const stale = shownTask !== task;
+    const focused = statusSection.contains(doc.activeElement) ? doc.activeElement : null;
     shownOccurrence = occurrence;
-    closedSeries = isRecurring(rules) && occurrence['close-time'] !== null;
+    closedSeries = isRecurring(rules) && closed;
+    liveEntries = stale ? [] : entriesOf(occurrence.occurrence);
     statusLine.dataset.status = status;
+    statusLine.dataset.track = track;
     statusIcon.firstElementChild.setAttribute('href', `img/icons.svg#status-${status}`);
-    statusText.textContent = `${STATUS_LABELS[status]}${showsCount(occurrence) ? `, ${countWords(occurrence)}` : ''}`;
+    statusText.textContent = `${STATUS_LABELS[status]}${status === 'in-progress' && track !== 'on-track' ? STRINGS.notOnTrack : ''}`;
+    windowLine.textContent = windowWords(occurrence, rules);
+    windowLine.hidden = windowLine.textContent === '';
     uncancelHint.hidden = status !== 'cancelled';
-    for (const button of stateButtons) {
-      const state = button.dataset.status;
-      const reason = target <= 1 ? null
-        : state === 'completed' && done < target ? STRINGS.reachTarget(target)
-          : state === 'in-progress' && done >= target ? STRINGS.belowTarget(target) : null;
-      button.setAttribute('aria-pressed', String(state === status));
-      // A viewer or a deleted task sees every control disabled, also where the fieldset does not reach, as in tests.
-      button.disabled = readOnly || (closedSeries ? state !== 'ready' : reason !== null);
-      button.title = reason ?? STATUS_LABELS[state];
+
+    // The progress box: large text, the meter, and the line on what comes next.
+    const carried = p.measure === 'reading' && p.value !== null && !liveEntries.some((entry) => typeof entry.amount === 'number');
+    progressText.textContent = `${formatMeasure(p.measure, p.value, null, locale)}${carried ? STRINGS.carried : ''} / ${p.direction === 'at-most' ? STRINGS.max : ''}${formatMeasure(p.measure, p.target, p.unit, locale)}`;
+    progressBox.dataset.state = overage(occurrence) > 0 ? 'over' : 'normal';
+    meter.dataset.color = meterColor(occurrence);
+    meter.setAttribute('aria-valuemax', String(p.target));
+    meter.setAttribute('aria-valuenow', String(p.value ?? 0));
+    meter.style.setProperty('--meter-share', `${Math.min(100, p.share * 100)}%`);
+    nextLine.textContent = nextWords(occurrence, p, track, rules);
+    const pace = paceNow(occurrence, now());
+    const showsPace = p.measure === 'checks' && p.target > 1 && p.direction === 'at-least' && pace !== null && !closed;
+    paceMark.hidden = !showsPace;
+    if (showsPace) {
+      paceMark.textContent = STRINGS.paceNow((Math.round(pace * 10) / 10).toLocaleString(locale));
+      paceMark.style.setProperty('--pace-share', `${windowShare(occurrence, now()) * 100}%`);
     }
-    // Cancel task needs an open occurrence; a cancelled one offers Uncancel, and a finished one neither.
-    const finished = status !== 'cancelled' && occurrence['close-time'] !== null;
-    cancelTask.textContent = status === 'cancelled' ? STRINGS.uncancelTask : STRINGS.cancelTask;
-    cancelTask.disabled = readOnly || finished;
-    cancelTask.title = finished ? STRINGS.cancelFinished : '';
-    stepper.hidden = target <= 1 || status === 'ready';
-    const count = STRINGS.count(done, target);
+
+    // The actions that no log derives: viewers and deleted tasks see none.
+    const cancelled = status === 'cancelled';
+    const countable = p.measure === 'checks';
+    actions.hidden = readOnly;
+    logForm.hidden = readOnly;
+    checkOff.hidden = !countable || p.target > 1;
+    checkOff.disabled = closed;
+    const live = liveEntries.some((entry) => entry.checked);
+    stepper.hidden = !countable || p.target <= 1;
+    const count = STRINGS.count(p.value ?? 0, p.target);
     // The count is a live region, so it changes only when the count does.
     if (countText.textContent !== count) {
       countText.textContent = count;
     }
-    const frozen = readOnly || status === 'cancelled' || closedSeries;
-    stepDown.disabled = frozen || done === 0;
-    stepUp.disabled = frozen;
+    stepDown.disabled = cancelled || closed || !live;
+    stepUp.disabled = cancelled || closed;
+    const started = status === 'in-progress' && !(p.value !== null && (p.measure === 'reading' || p.value > 0)) && liveEntries.length === 0
+      && !(occurrence.entries?.length > 0);
+    markStarted.hidden = !(status === 'ready' || started) || closedSeries || stale;
+    markStarted.textContent = status === 'ready' ? STRINGS.markStarted : STRINGS.unmarkStarted;
+    reopen.hidden = !(closedSeries || (status === 'failed' && !isRecurring(rules) && p.direction === 'at-least'));
     graceNumber = graceOccurrence(task, now());
-    previousPeriod.hidden = graceNumber === null;
-    previousPeriod.disabled = readOnly;
+    previousPeriod.hidden = graceNumber === null || !countable;
+    previousPeriod.disabled = cancelled;
     if (graceNumber !== null) {
       // The previous period ends where the current one starts; a cached one past its end ends at its due time.
       const current = task['current-occurrence'];
@@ -1059,11 +1339,151 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
       const day = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: zoneName }).format(new Date(end - 1));
       previousPeriod.textContent = STRINGS.previousPeriod(day);
     }
+    cancelTask.textContent = cancelled ? STRINGS.uncancelTask : STRINGS.cancelTask;
+    // Cancel task needs an open occurrence; a cancelled one offers Uncancel, and a finished one neither.
+    const finished = !cancelled && closed;
+    cancelTask.disabled = readOnly || finished;
+    cancelTask.title = finished ? STRINGS.cancelFinished : '';
+    showLogForm(p, { checks: cancelled, closed: closed && !cancelled });
+    showEntries(p, carried);
     // Only a part of the controls counts as hidden; the Status tab itself may be hidden while a store change fills it.
-    if (focused && (focused.disabled || statusControls.contains(focused.closest('[hidden]')))) {
-      (stateButtons.find((button) => button.getAttribute('aria-pressed') === 'true' && !button.disabled)
-        ?? stateButtons.find((button) => !button.disabled))?.focus();
+    const hiddenAncestor = focused?.closest('[hidden]');
+    if (focused?.isConnected && (focused.disabled || (hiddenAncestor && statusSection.contains(hiddenAncestor)))) {
+      statusLine.focus();
     }
+  }
+
+  /**
+   * Read the Log form into an entry, showing a field error for a value that breaks a rule.
+   * @returns {{entry: object, seconds: number}|null} the entry and its time, or null when the form is invalid
+   */
+  function readLogForm() {
+    const entry = {};
+    const errors = [];
+    for (const field of [logAmount, logHours, logMinutes, logLabel]) {
+      field.setError(null);
+    }
+    logError.textContent = '';
+    if (!logParts.check.hidden && logChecked.checked && !logChecked.disabled) {
+      entry.checked = true;
+    }
+    const amountText = logAmount.control.value.trim();
+    if (!logParts.amount.hidden && amountText !== '') {
+      const amount = Number(amountText);
+      if (!/^\d+(\.\d{1,3})?$/.test(amountText) || amount > 999_999_999_999.999) {
+        errors.push([logAmount, STRINGS.logAmountInvalid]);
+      }
+      else {
+        entry.amount = amount;
+      }
+    }
+    const hoursText = logHours.control.value.trim();
+    const minutesText = logMinutes.control.value.trim();
+    if (!logParts.time.hidden && (hoursText !== '' || minutesText !== '')) {
+      const hoursValue = hoursText === '' ? 0 : Number(hoursText);
+      const minutesValue = minutesText === '' ? 0 : Number(minutesText);
+      const seconds = hoursValue * 3600 + minutesValue * 60;
+      if (!Number.isInteger(hoursValue) || !Number.isInteger(minutesValue) || hoursValue < 0 || minutesValue < 0 || minutesValue > 59 || seconds < 60 || seconds > 2_147_483_647) {
+        errors.push([logHours, STRINGS.logTimeInvalid]);
+      }
+      else {
+        entry['time-spent-seconds'] = seconds;
+      }
+    }
+    const label = logLabel.control.value.trim();
+    if (label.length > 100) {
+      errors.push([logLabel, STRINGS.logLabelLong]);
+    }
+    else if (label) {
+      entry.label = label;
+    }
+    if (errors.length === 0 && !('checked' in entry || 'amount' in entry || 'time-spent-seconds' in entry)) {
+      const first = logOwn === 'time' ? logHours : logOwn === 'amount' ? logAmount : null;
+      errors.push([first, STRINGS.logNothing]);
+    }
+    for (const [field, message] of errors) {
+      if (field) {
+        field.setError(message);
+      }
+      else {
+        logError.textContent = message;
+      }
+    }
+    return errors.length === 0 ? { entry, seconds: entry['time-spent-seconds'] ?? 0 } : null;
+  }
+
+  /**
+   * Store an entry of the Log form, then clear the form; a rejected entry stays in the form with its error.
+   * @param {object} entry the entry
+   */
+  function logEntry(entry) {
+    logConfirm.hidden = true;
+    logSubmit.hidden = false;
+    run(async () => {
+      try {
+        await store.logEntry(taskId, entry);
+      }
+      catch (error) {
+        if (error?.name === 'ValidationError') {
+          (logOwn === 'time' ? logHours : logOwn === 'amount' ? logAmount : logLabel).setError(error.message);
+          return;
+        }
+        throw error;
+      }
+      for (const control of [logAmount.control, logHours.control, logMinutes.control, logLabel.control]) {
+        control.value = '';
+      }
+      logChecked.checked = logOwn === 'check';
+    });
+  }
+
+  let askedEntry = null;
+  logForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (logSubmit.disabled || !logConfirm.hidden) {
+      return;
+    }
+    const read = readLogForm();
+    if (!read) {
+      return;
+    }
+    // A duration above 12 hours asks in place first, as ADR-0006 asks of clients.
+    if (read.seconds > 12 * 3600) {
+      askedEntry = read.entry;
+      confirmText.textContent = STRINGS.longTime(Math.floor(read.seconds / 3600), Math.floor((read.seconds % 3600) / 60));
+      logConfirm.hidden = false;
+      logSubmit.hidden = true;
+      confirmAnyway.focus();
+      return;
+    }
+    logEntry(read.entry);
+  });
+  confirmChange.addEventListener('click', () => {
+    askedEntry = null;
+    logConfirm.hidden = true;
+    logSubmit.hidden = false;
+    logHours.control.focus();
+  });
+  confirmAnyway.addEventListener('click', () => {
+    if (askedEntry) {
+      const entry = askedEntry;
+      askedEntry = null;
+      logEntry(entry);
+    }
+  });
+  for (const kind of ['time', 'amount', 'check']) {
+    addButtons[kind].addEventListener('click', () => {
+      revealed[kind] = true;
+      logParts[kind].hidden = false;
+      addButtons[kind].hidden = true;
+      if (kind === 'check') {
+        logChecked.checked = true;
+        logChecked.focus();
+      }
+      else {
+        (kind === 'time' ? logHours : logAmount).control.focus();
+      }
+    });
   }
 
   /**
@@ -1210,13 +1630,14 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
         return [...(remote ?? []), ...local];
       };
       const [all, ids, notes, occurrences, user, events] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId),
-        store.occurrencesOfTask(taskId), store.queue?.getState?.('user-id'), firstOpen ? readEvents() : []]);
+        store.occurrencesOfTask(taskId), store.queue?.getState?.('user-id'), firstOpen || next['current-occurrence'].entries?.length > 0 ? readEvents() : []]);
       if (destroyed) {
         return;
       }
       task = next;
       userId = user ?? null;
       userEvents = events.filter((event) => USER_EVENT_TYPES.includes(event.type));
+      loggedEvents = [...new Map(events.filter((event) => event.type === 'log' || event.type === 'undo-log').map((event) => [event.id, event])).values()];
       lists = [...all].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
       members = ids;
       fill(notes, occurrences);

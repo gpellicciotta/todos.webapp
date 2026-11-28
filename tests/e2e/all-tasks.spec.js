@@ -391,7 +391,7 @@ test('the status button opens no menu, and the task editor posts start and cance
   await row.locator('.task-row__open').click();
   await expect(panel.getByLabel('Description')).toHaveValue('Book flights');
   await panel.getByRole('tab', { name: 'Status' }).click();
-  await panel.getByRole('button', { name: 'In progress', exact: true }).click();
+  await panel.getByRole('button', { name: 'Mark started', exact: true }).click();
   await expect(row).toHaveAttribute('data-status', 'in-progress');
 
   const paint = page.locator('.task-row', { hasText: 'Buy paint' });

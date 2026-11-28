@@ -469,7 +469,8 @@ export function isStaleOccurrence(rules, occurrence, now) {
 }
 
 /**
- * Apply the display rule: a recurring task past its period end shows as `ready` with count 0 until it rolls over.
+ * Apply the display rule: a recurring task past its period end shows as `ready` with count and progress 0 until it rolls over;
+ * a reading goal keeps its carried reading.
  * The shown occurrence keeps its number and due time, so grace completion can still name it.
  * @param {object} task the task
  * @param {string|Date|number} now the current time
@@ -479,7 +480,10 @@ export function displayTask(task, now) {
   if (!isStale(task, now)) {
     return task;
   }
-  return { ...task, 'current-occurrence': mirrorOccurrence({ ...task['current-occurrence'], 'completion-count': 0, status: 'ready' }) };
+  const current = task['current-occurrence'];
+  const shown = mirrorOccurrence({ ...current, 'completion-count': 0, status: 'ready' });
+  // Progress is 0 past the period end, but a reading goal keeps the carried reading until a new one.
+  return { ...task, 'current-occurrence': { ...shown, progress: current['goal-measure'] === 'reading' ? current.progress ?? null : 0, 'time-spent-seconds': 0 } };
 }
 
 /**
