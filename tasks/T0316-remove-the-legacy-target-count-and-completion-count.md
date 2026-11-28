@@ -1,6 +1,7 @@
 ---
 id: T0316
 owner: "@claude"
+session: claude-20261128-db5066
 needs: []
 branch: task/T0316-remove-the-legacy-target-count-and-completion-count
 worktree: .plan/work/T0316-remove-the-legacy-target-count-and-completion-count
@@ -21,12 +22,42 @@ Delete legacy fold functions without callers.
 Rules, files, and tests: [technical-spec.md](T0316-remove-the-legacy-target-count-and-completion-count/technical-spec.md).
 
 ## Task Execution Steps
-- [ ] **[Read]**      Search src and tests for the legacy fields and the legacy fold functions.
-- [ ] **[Implement]** Change the remaining readers and tests, and remove the mirrors.
-- [ ] **[Verify]**    Run `python scripts/devops.py check` and `npm run test:e2e` and confirm they pass.
-- [ ] **[Doc]**       Update the affected docs and CHANGELOG.md.
+- [x] **[Read]**      Search src and tests for the legacy fields and the legacy fold functions.
+- [x] **[Implement]** Change the remaining readers and tests, and remove the mirrors.
+- [x] **[Verify]**    Run `python scripts/devops.py check` and `npm run test:e2e` and confirm they pass.
+- [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
   Task split out of T0303, which asked for size approval at 25 files and 2500 lines.
+
+- [2026-11-28] **[Read]**
+  Found the legacy fields in 38 files; no legacy fold function loses its callers, so only the mirror helpers go.
+
+- [2026-11-28] **[Implement]**
+  Rules and occurrences now hold only goal-target and progress; fullRules and fullOccurrence read the legacy names at the edges.
+  - Red phase: 6 new goal-fields tests failed first.
+  - Reading goals without a reading keep a null progress.
+  - Service worker VERSION bumped; its manifest was stale at HEAD.
+
+- [2026-11-28] **[Implement]**
+  Size note: 38 counted files and 1067 lines cross the large line, since every test asserting the removed fields changes with them.
+  - Source and docs: 13 files, 442 lines.
+  - Splitting would leave readers on fields that no longer exist.
+
+- [2026-11-28] **[Verify]**
+  python scripts/devops.py check passed with exit 0, including npm run test:e2e; evidence is in validation-proof.md.
+  - Vitest: 2164 passed; Playwright: 303 passed.
+  - Ruff clean; pytest: 271 passed.
+  - Contract tests not run: they need a sibling todos server build.
+
+- [2026-11-28] **[Doc]**
+  Updated local-store.md for records without the counts and their legacy readers, and added CHANGELOG bullets.
+
+- [2026-11-28] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 38.
+  - Lines touched: 1067.
+  - Reopenings: 0.
+
