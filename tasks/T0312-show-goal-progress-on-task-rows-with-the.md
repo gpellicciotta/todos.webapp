@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1555.6, input: 190, output: 91540, cache_read: 16758446, cache_write: 239012}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T06:30:41Z"
 ---
 # T0312: Show goal progress on task rows, with the quick log, Failed status, and upcoming tasks
 
@@ -64,4 +69,7 @@ Capture before and after screenshots of the lists and view options in light and 
   - Files touched: 20.
   - Lines touched: 1000.
   - Reopenings: 0.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
