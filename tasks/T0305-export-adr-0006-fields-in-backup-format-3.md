@@ -5,7 +5,7 @@ session: claude-20261128-4879fa
 needs: []
 branch: task/T0305-export-adr-0006-fields-in-backup-format-3
 worktree: .plan/work/T0305-export-adr-0006-fields-in-backup-format-3
-status: active
+status: suspended
 started_at: "2026-11-28T05:39:01Z"
 ended_at: —
 review: agent
@@ -13,12 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 2, duration_s: 1281.5, input: 212, output: 106704, cache_read: 21387036, cache_write: 281450}
-  review: {turns: 1, duration_s: 74.4, input: 33479, output: 1815, cache_read: 361728, cache_write: 0}
-review_status: pending
+  review: {turns: 2, duration_s: 130.3, input: 52847, output: 3526, cache_read: 516480, cache_write: 0}
+review_status: rejected
 review_round: 2
 review_requested_at: "2026-11-28T06:02:12Z"
-review_session: codex-20261128-12a07c
-work_duration: 1167.4
+review_session: codex-20261128-ec60e4
+work_duration: 1450.7
+reviewed_by: "@codex"
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
 
@@ -78,4 +79,14 @@ Keep merge imports per row, as `BAK-6` requires.
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 rejected by @codex: The limit prevents the extreme loop, but silently loses valid backup progress.
+  - Findings: [review-findings-2.md](T0305-export-adr-0006-fields-in-backup-format-3/review-findings-2.md).
+
+- [2026-11-28] **[Decide]**
+  Needs review: a checks goal counts one checked log per check, so a gap above 32767 cannot be kept without a new format field or cache-only override.
+  - A: add a count field to checked logs (format and service change).
+  - B: override the cache only, which a later refold drops.
+  - C: keep the cap and report the lost progress.
 

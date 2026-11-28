@@ -4,10 +4,13 @@ round: 2
 verdict: rejected
 blocking: 1
 reviewer: "@codex"
-reviewed_at: 2026-11-28T06:02:13Z
+reviewed_at: 2026-11-28T06:03:10Z
 reviewed_commit: "c0071c2"
 base_commit: "3623737"
 branch: task/T0305-export-adr-0006-fields-in-backup-format-3
+session: codex-20261128-ec60e4
+session_agent: codex
+session_created_at: 2026-11-28T06:02:13Z
 ---
 # Review Findings: Task T0305 (Round 2)
 
