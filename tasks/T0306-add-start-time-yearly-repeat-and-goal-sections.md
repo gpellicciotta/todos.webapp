@@ -1,11 +1,11 @@
 ---
 id: T0306
-owner: ~
-needs: ['T0315']
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0306-add-start-time-yearly-repeat-and-goal-sections
+worktree: .plan/work/T0306-add-start-time-yearly-repeat-and-goal-sections
+status: active
+started_at: "2026-11-28T03:37:30Z"
 ended_at: —
 review: agent
 preview: none

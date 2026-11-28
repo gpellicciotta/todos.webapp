@@ -5,7 +5,7 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0315 Place local events by start time, expire tasks by goal, and filter failed and upcoming tasks.
 - [x] T0227 Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [!] T0304 [reason: Waiting for the log and undo-log REST events of todos.server T0301.] Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable.
-- [ ] T0306 Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
+- [~] T0306 [owner: @claude] Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 - [ ] T0307 [needs: T0306] Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 - [ ] T0305 Export ADR-0006 fields in backup format 3, and convert older backups on import.
 - [ ] T0312 [needs: T0307] Show goal progress on task rows, with the quick log, Failed status, and upcoming tasks.
