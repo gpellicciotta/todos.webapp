@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1080.7, input: 180, output: 101026, cache_read: 17313871, cache_write: 264438}
+  worker: {turns: 2, duration_s: 1281.5, input: 212, output: 106704, cache_read: 21387036, cache_write: 281450}
   review: {turns: 1, duration_s: 74.4, input: 33479, output: 1815, cache_read: 361728, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-28T05:57:11Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-28T06:02:12Z"
 review_session: codex-20261128-12a07c
 work_duration: 1167.4
 ---
@@ -76,4 +75,7 @@ Keep merge imports per row, as `BAK-6` requires.
 - [2026-11-28] **[Implement]**
   Review round 1: capped missing checked logs at 32767, so a huge valid progress adds none and import finishes.
   - Regression test, docs, changelog, and SW version updated.
+
+- [2026-11-28] **[Review]**
+  Round 2 requested (mode: agent).
 
