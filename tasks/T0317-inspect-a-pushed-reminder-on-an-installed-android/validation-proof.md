@@ -16,7 +16,15 @@ Answer on the phone:
 2. Yes, installed as app with Android 17 (One UI 9.0)
 ```
 
+The agent then asked: "when the phone notification arrived, was ToDo's also closed in every browser tab there?"
+The user's answer:
+
+```text
+3. yes it was closed
+```
+
 ### Outcome
+- The user confirmed that no browser tab on the phone showed ToDo's when the notification arrived.
 - Installed app on Android 17 (One UI 9.0): the pushed reminder appeared.
 - The user reported once, for desktop and phone together, that opening it showed the right task.
 - A second job run sent no further notification.

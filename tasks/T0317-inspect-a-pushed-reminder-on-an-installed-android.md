@@ -4,8 +4,8 @@ owner: "@claude"
 needs: []
 branch: —
 worktree: —
-status: suspended
-started_at: "2026-11-28T14:13:08Z"
+status: active
+started_at: "2026-11-28T16:39:42Z"
 ended_at: —
 review: agent
 preview: none
@@ -52,4 +52,7 @@ Moved here from T0227.
 - [2026-11-28] **[Review]**
   Codex rejected round 1: the report does not state that every tab showing ToDo's was closed.
   - Only the user can confirm this, or repeat the check.
+
+- [2026-11-28] **[Verify]**
+  User confirmed on 2026-11-28 that ToDo's was closed in every browser tab on the phone.
 
