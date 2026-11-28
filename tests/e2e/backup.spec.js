@@ -271,7 +271,7 @@ test('a target-3 task with two completions shows 2/3 after an export and an impo
   const backup = JSON.parse(file.text);
   expect(backup['format-version']).toBe(2);
   expect(backup.occurrences).toEqual([expect.objectContaining({ 'target-count': 3, 'completion-count': 2, status: 'in-progress' })]);
-  const types = ['create', 'edit-lifecycle-rules', 'complete', 'complete'];
+  const types = ['create', 'edit-lifecycle-rules', 'log', 'log'];
   expect(backup.events.map((event) => event.type)).toEqual(types);
   await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');

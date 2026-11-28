@@ -24,7 +24,7 @@ async function seedVersion5(page) {
         db.createObjectStore('sync-state', { keyPath: 'key' });
         db.createObjectStore('sync-log', { keyPath: 'id' }).createIndex('time', 'time');
         const occurrences = db.createObjectStore('occurrences');
-        db.createObjectStore('events');
+        const events = db.createObjectStore('events');
         const rules = {
           'target-count': 3, 'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
           'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
@@ -36,6 +36,12 @@ async function seedVersion5(page) {
             'creation-time': time, 'last-update-time': time, 'deletion-time': null,
           });
           occurrences.put({ 'task-id': id, ...occurrence }, [id, 1]);
+          // A version 5 database holds one complete event per counted tick; the version 6 fold rebuilds the count from them.
+          for (let tick = 1; tick <= count; tick += 1) {
+            events.put({
+              'task-id': id, occurrence: 1, 'owner-id': null, details: null, id: `${id}-tick-${tick}`, type: 'complete', 'creation-time': time,
+            }, [id, `${id}-tick-${tick}`]);
+          }
         };
         seed('gym', 'Gym sessions', 3, 2, 'in-progress');
         seed('paint', 'Buy paint', 1, 0, 'ready');

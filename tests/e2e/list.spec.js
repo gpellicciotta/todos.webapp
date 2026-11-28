@@ -464,7 +464,7 @@ test.describe('List screen', () => {
     await options.getByRole('button', { name: /^Due/ }).click();
     await options.getByLabel('No due time').check();
     expect(await rows(page)).toEqual(['Water the plants']);
-    await expect(page.locator(INFO)).toHaveText('1 of 4 tasks · Status: 3 statuses · Due: no due time');
+    await expect(page.locator(INFO)).toHaveText('1 of 4 tasks · Status: 4 statuses · Due: no due time');
     await page.reload();
     await expect(page.locator('.list-view .task-row')).toHaveCount(1);
     await page.locator('.info-line__reset').click();

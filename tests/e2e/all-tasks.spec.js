@@ -438,13 +438,13 @@ for (const viewport of [COMPACT, WIDE]) {
     const statusRow = options.getByRole('button', { name: /^Status/ });
     let region = await openRow(options, 'Status');
     await expect(statusRow.locator('.view-options__value')).toHaveText('All');
-    for (const status of ['To do', 'In progress', 'Completed', 'Cancelled']) {
+    for (const status of ['To do', 'In progress', 'Completed', 'Failed', 'Cancelled']) {
       await expect(region.getByLabel(status)).toBeChecked();
     }
     await expect(region.getByLabel('Finished today only')).not.toBeChecked();
     await region.getByLabel('Cancelled').uncheck();
     await expect(page.locator('.task-row')).toHaveCount(5);
-    await expect(page.locator(INFO)).toHaveText('5 of 6 tasks · Status: 3 statuses');
+    await expect(page.locator(INFO)).toHaveText('5 of 6 tasks · Status: 4 statuses');
     await expect(page.locator('[data-live-region="polite"]').filter({ hasText: '5 tasks' })).toHaveCount(1);
 
     region = await openRow(options, 'Lists');
@@ -469,7 +469,7 @@ for (const viewport of [COMPACT, WIDE]) {
     expect(await rows(page)).toEqual(['Book flights', 'Buy paint', 'Call the plumber', 'Water the plants', 'Write the report']);
     await options.getByLabel('Descending').check();
     expect(await rows(page)).toEqual(['Write the report', 'Water the plants', 'Call the plumber', 'Buy paint', 'Book flights']);
-    await expect(page.locator(INFO)).toHaveText('5 of 6 tasks · Status: 3 statuses · Sorted by Description, descending');
+    await expect(page.locator(INFO)).toHaveText('5 of 6 tasks · Status: 4 statuses · Sorted by Description, descending');
     await expect(page.locator('.info-line__reset')).toBeAttached();
 
     // Escape closes the panel and keeps the view; the options stay after a reload (TV-12).
@@ -859,6 +859,7 @@ test('adding a task that the view options hide shows a toast whose Show resets t
   const region = await openRow(options, 'Status');
   await region.getByLabel('To do').uncheck();
   await region.getByLabel('In progress').uncheck();
+  await region.getByLabel('Failed').uncheck();
   await region.getByLabel('Cancelled').uncheck();
   await expect(page.locator(INFO)).toContainText('Status: completed');
   const field = page.getByLabel('Search or add a task');
