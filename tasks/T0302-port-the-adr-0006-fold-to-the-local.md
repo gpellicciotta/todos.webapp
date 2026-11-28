@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 201.1, input: 52, output: 14274, cache_read: 2105950, cache_write: 85658}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T00:17:29Z"
 ---
 # T0302: Port the ADR-0006 fold to the local occurrences module, passing the shared fold test vectors
 
@@ -47,4 +52,7 @@ Copy docs/specs/fold-test-vectors.json from todos.server task T0293 into tests/f
 
 - [2026-11-28] **[Doc]**
   Updated local-store.md Fold section and CHANGELOG.md.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
