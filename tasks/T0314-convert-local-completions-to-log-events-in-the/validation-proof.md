@@ -119,3 +119,24 @@ Exit code: 0
 > todos-webapp@0.6.1-pre lint
 > eslint .
 ```
+
+### Rework after review round 4
+Finding: `stage-site.test.js` "stages the real repository and exits 0" timed out after 5000 ms in the reviewer's run, with lint running at the same time.
+Investigation: alone the test takes 433 ms. Four full `npm test` runs on the unchanged test passed, and one more passed with lint running at once. I could not reproduce the timeout, and the test does not touch the code of this task.
+Change: gave that one test an explicit 30 s timeout with a comment, since it spawns a process while 69 test files start together.
+
+Command: `npm test`
+Exit code: 0
+
+```
+ Test Files  69 passed (69)
+      Tests  1918 passed (1918)
+```
+
+Command: `npm run lint`
+Exit code: 0
+
+```
+> todos-webapp@0.6.1-pre lint
+> eslint .
+```

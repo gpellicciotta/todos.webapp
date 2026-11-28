@@ -119,3 +119,6 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
   - Run tests/unit/stage-site.test.js alone; if it passes, give it 30 seconds.
   - Record why, and record a passing npm test run.
 
+- [2026-11-28] **[Verify]**
+  Could not reproduce the stage-site timeout in five runs; gave that spawn test an explicit 30 s timeout. Touched stage-site.test.js.
+
