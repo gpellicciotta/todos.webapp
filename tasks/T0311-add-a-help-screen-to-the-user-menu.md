@@ -13,10 +13,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 3, duration_s: 2301.1, input: 44, output: 8421, cache_read: 5448667, cache_write: 22931}
-work_duration: 1854.2
-review_status: pending
+  review: {turns: 1, duration_s: 54.6, input: 35226, output: 1563, cache_read: 230016, cache_write: 0}
+work_duration: 2413.4
+review_status: rejected
 review_round: 1
 review_requested_at: "2026-11-28T02:47:00Z"
+reviewed_by: "@codex"
+review_session: codex-20261128-ff0fef
 ---
 # T0311: Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings
 
@@ -79,6 +82,21 @@ Details are in [technical-spec.md](T0311-add-a-help-screen-to-the-user-menu/tech
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 rejected by @codex: [Decided]** Rejected: Help does not support the specified query links.
+  - Findings: [review-findings-1.md](T0311-add-a-help-screen-to-the-user-menu/review-findings-1.md).
+
+- [2026-11-28] **[Decided]**
+  Reversed the earlier omission: Help now supports ?q= and ?topic= links, as the spec requires.
+
+- [2026-11-28] **[Implement]**
+  Router carries hash query; Help applies it on update; added unit and e2e tests.
+  - VERSION bumped to 2026-11-28.6.
+
+- [2026-11-28] **[Verify]**
+  devops check passes after rework.
+  - 1908 unit, 296 e2e, 271 Python tests passed.
 
 ## Visual Verification
 - Before: [settings-before.png](T0311-add-a-help-screen-to-the-user-menu/settings-before.png)

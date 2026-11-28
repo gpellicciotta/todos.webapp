@@ -4,10 +4,13 @@ round: 1
 verdict: rejected
 blocking: 1
 reviewer: "@codex"
-reviewed_at: 2026-11-28T02:47:01Z
+reviewed_at: 2026-11-28T02:47:57Z
 reviewed_commit: "3f81faf"
 base_commit: "ba646c5"
 branch: task/T0311-add-a-help-screen-to-the-user-menu
+session: codex-20261128-ff0fef
+session_agent: codex
+session_created_at: 2026-11-28T02:47:01Z
 ---
 # Review Findings: Task T0311 (Round 1)
 

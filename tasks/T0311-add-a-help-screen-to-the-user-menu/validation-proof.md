@@ -59,3 +59,17 @@ No HTTP errors occurred.
 
 - The vendored `changelog-parser.mjs` is support.js commit `3747182`, whose `package.json` says version 3.1.0-pre; the spec said v4.0.1-pre, so the provenance comment names 3.1.0-pre.
 - Undeclared files touched: `src/index.html` (module preload links), `src/js/ui/layout.js`, `tests/unit/layout.test.js`, `tests/e2e/shell.spec.js`, `scripts/sw-precache-hashes.json` (mechanical).
+
+### Review round 1 rework: query links
+
+The router now carries a hash query, and Help applies `?q=` and `?topic=`.
+
+Command: `python scripts/devops.py check` (exit 0), key lines
+
+```text
+ Test Files  71 passed (71)
+      Tests  1908 passed (1908)
+  296 passed (3.7m)
+271 passed in 108.11s (0:01:48)
+```
+
