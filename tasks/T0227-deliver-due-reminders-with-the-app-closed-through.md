@@ -5,17 +5,22 @@ session: claude-20261128-8536bb
 needs: []
 branch: task/T0227-deliver-due-reminders-with-the-app-closed-through
 worktree: .plan/work/T0227-deliver-due-reminders-with-the-app-closed-through
-status: active
+status: completed
 started_at: "2026-11-28T03:17:18Z"
-ended_at: —
+ended_at: "2026-11-28T03:37:11Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1092.9, input: 132, output: 57963, cache_read: 8398228, cache_write: 161477}
-review_status: pending
+  review: {turns: 1, duration_s: 87.9, input: 65422, output: 4770, cache_read: 588195}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T03:35:38Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261128-56414b
+work_duration: 1193.2
+completion-commit: a8a36684874bdbeef67d6666d1c9d766c858ba20
 ---
 # T0227: Deliver due reminders with the app closed through Web Push while connected, once the service sends them
 
@@ -38,7 +43,7 @@ Size estimate: 6 files, 300 lines.
 - [x] **[Verify]**    Run the unit, e2e, and contract suites and confirm they pass.
 - [x] **[Visual]**    Inspect the Settings reminder states in both themes and a pushed example reminder in desktop Chromium.
 - [x] **[Doc]**       Update the requirements, the Settings design, and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-12] **[Doc]**
@@ -67,4 +72,11 @@ Size estimate: 6 files, 300 lines.
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @gemini: TL;DR: The work meets the goals.
+  - Findings: [review-findings-1.md](T0227-deliver-due-reminders-with-the-app-closed-through/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
