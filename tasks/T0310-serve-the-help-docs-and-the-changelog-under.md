@@ -12,8 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 2, duration_s: 1814.5, input: 10, output: 1052, cache_read: 326093, cache_write: 6539}
+  worker: {turns: 3, duration_s: 1883.7, input: 32, output: 4421, cache_read: 1504337, cache_write: 14541}
 work_duration: 1850.0
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T01:06:33Z"
 ---
 # T0310: Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use
 
@@ -65,4 +68,7 @@ Details are in [technical-spec.md](T0310-serve-the-help-docs-and-the-changelog-u
 
 - [2026-11-28] **[Verify]**
   devops check exited 0: 1858 Vitest, 287 Playwright, 261 pytest passed.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
