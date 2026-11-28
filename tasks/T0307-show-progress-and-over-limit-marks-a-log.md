@@ -5,20 +5,22 @@ session: claude-20261128-d09379
 needs: []
 branch: task/T0307-show-progress-and-over-limit-marks-a-log
 worktree: .plan/work/T0307-show-progress-and-over-limit-marks-a-log
-status: active
+status: completed
 started_at: "2026-11-28T04:57:02Z"
-ended_at: —
+ended_at: "2026-11-28T05:38:42Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 2284.8, input: 40, output: 6074, cache_read: 5075461, cache_write: 24507}
-  review: {turns: 1, duration_s: 89.9, input: 43068, output: 2400, cache_read: 441472, cache_write: 0}
-work_duration: 2313.9
-review_status: pending
+  review: {turns: 2, duration_s: 130.9, input: 61506, output: 3513, cache_read: 636160, cache_write: 0}
+work_duration: 2499.7
+review_status: approved
 review_round: 2
 review_requested_at: "2026-11-28T05:37:57Z"
-review_session: codex-20261128-d2ab6d
+review_session: codex-20261128-5e4580
+reviewed_by: "@codex"
+completion-commit: 362373715c0ba9dde27e94b399e75d158017b152
 ---
 # T0307: Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 
@@ -39,7 +41,7 @@ Capture before and after screenshots of the task editor in light and dark themes
 - [x] **[Verify]**    Run the new and affected tests and confirm they pass.
 - [x] **[Visual]**    Capture before and after screenshots of the task editor in both themes.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-27] **[Doc]**
@@ -84,4 +86,11 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Review]**
   Round 2 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 2 approved by @codex: [Decided]** Approve.
+  - Findings: [review-findings-2.md](T0307-show-progress-and-over-limit-marks-a-log/review-findings-2.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
