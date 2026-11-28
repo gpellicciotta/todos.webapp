@@ -10,6 +10,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T14:13:22Z"
 ---
 # T0317: Inspect a pushed reminder on an installed Android PWA after the release
 
@@ -36,4 +39,7 @@ Moved here from T0227.
   User reported a pushed reminder on 2026-11-28 in ToDo's installed as an app, on Android 17 (One UI 9.0), from the live app.
   - Opening the notification showed the right task, with the app closed.
   - A repeated job run sent no further notification.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
