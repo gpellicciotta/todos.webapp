@@ -12,12 +12,11 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 953.7, input: 138, output: 100041, cache_read: 12676369, cache_write: 246054}
+  worker: {turns: 2, duration_s: 1203.1, input: 178, output: 120731, cache_read: 18069554, cache_write: 282908}
   review: {turns: 1, duration_s: 68.7, input: 34190, output: 1867, cache_read: 324736, cache_write: 0}
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-28T01:43:32Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-28T01:49:16Z"
 review_session: codex-20261128-5bdb63
 work_duration: 1033.5
 ---
@@ -74,4 +73,7 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Implement]**
   Rejected queued events now refold from surviving stored events; upgrade-converted entries without stored events keep the old restore.
+
+- [2026-11-28] **[Review]**
+  Round 2 requested (mode: agent).
 
