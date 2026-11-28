@@ -120,7 +120,7 @@ describe('uploading the queue', () => {
 
   it('creates a task with its rules, posts its events in order, and patches its rules', async () => {
     const { store, clock, service, push } = await setup();
-    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'goal-target': 3 } });
     for (let tick = 0; tick < 3; tick++) {
       clock.tick();
       await store.postEvent(task.id, 'complete');
@@ -151,7 +151,7 @@ describe('rule edits on the wire', () => {
     const task = await store.createTask({ description: 'Exercises' });
     await push.drainOnce();
     clock.tick();
-    await store.updateRules(task.id, { 'target-count': 5 });
+    await store.updateRules(task.id, { 'goal-target': 5 });
     service.calls.length = 0;
     expect(await push.drainOnce()).toBe('synced');
     expect(service.calls[0].body).toEqual({ 'goal-target': 5, 'edit-times': { 'goal-target': expect.any(String) } });
@@ -172,13 +172,13 @@ describe('rule edits on the wire', () => {
 
   it('applies a kept goal-target of a conflict to the local target count', async () => {
     const { store, service, push } = await setup();
-    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'goal-target': 2 } });
     await push.drainOnce();
-    await store.updateRules(task.id, { 'target-count': 5 });
+    await store.updateRules(task.id, { 'goal-target': 5 });
     const conflict = { field: 'goal-target', sent: 5, kept: 4, 'kept-edit-time': '2036-11-04T10:00:00.000Z' };
     service.fail = (call) => (call.method === 'PATCH' ? { status: 200, body: { conflicts: [conflict] } } : null);
     await push.drainOnce();
-    expect((await store.getTask(task.id))['lifecycle-rules']['target-count']).toBe(4);
+    expect((await store.getTask(task.id))['lifecycle-rules']['goal-target']).toBe(4);
   });
 });
 
@@ -218,7 +218,7 @@ describe('handling replies', () => {
     await store.updateTask(task.id, { status: 'completed' });
     service.fail = (call) => (call.path.endsWith('/events') ? 409 : null);
     expect(await push.drainOnce()).toBe('synced');
-    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ status: 'ready', 'completion-count': 0, 'close-time': null });
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ status: 'ready', progress: 0, 'close-time': null });
     expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
     expect(rejected).toHaveLength(1);
     expect((await store.queue.log())[0]).toMatchObject({ kind: 'rejected', status: 409, operation: 'post-event', message: 'The service refused a status change, so it was undone.' });
@@ -226,7 +226,7 @@ describe('handling replies', () => {
 
   it('restores the occurrence when the service refuses every queued tick', async () => {
     const { store, clock, service, push, rejected } = await setup();
-    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'goal-target': 3 } });
     await push.drainOnce();
     for (let tick = 0; tick < 3; tick++) {
       clock.tick();
@@ -235,7 +235,7 @@ describe('handling replies', () => {
     service.fail = (call) => (call.path.endsWith('/events') ? 403 : null);
     expect(await push.drainOnce()).toBe('synced');
     expect(rejected).toHaveLength(3);
-    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 0, status: 'ready', 'close-time': null });
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 0, status: 'ready', 'close-time': null });
     expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
   });
 

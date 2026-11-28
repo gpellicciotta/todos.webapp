@@ -20,9 +20,8 @@ The IndexedDB schema that holds the app's data in the browser.
   - Queued task changes become `update-rules` and `post-event` entries, appended after the queue.
 - Version 6 adds goals, the log, and the `failed` status, as ADR-0006 of todos.server says; see Store Upgrade.
   It adds no store and no index; it rewrites the records of `tasks`, `occurrences`, `events`, and `sync-queue`.
-  - Implemented so far: the goal fields on rules and occurrences, as the first two Store Upgrade bullets say.
-    `target-count` and `completion-count` stay as mirrors of `goal-target` and `progress`; the store keeps them equal on every write.
-    Events, statuses, and queued changes stay as in version 5, and the goal fields stay out of sync payloads and backups until later tasks.
+  - Records hold no `target-count` or `completion-count`; readers use `goal-target` and `progress`.
+    Queued changes, stored rule edits, and backups made before the upgrade may still name them; see Store Upgrade and Sync.
 - Records use the field names of the service's `List`, `Task`, `Note`, `Occurrence`, and `TaskEvent` schemas, in kebab-case.
 - Times are ISO-8601 strings in UTC with milliseconds, such as `2026-11-04T09:00:00.000Z`.
 - Identifiers are UUIDv7 strings from [uuid7.js](../../src/js/lib/uuid7.js), sorting by creation time (`TEC-9`).
@@ -398,10 +397,13 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
   The current occurrence of each task with events embeds its live `entries`.
 - An occurrence without events keeps its stored cache.
 - The conversion runs after the version 5 and goal field steps, for every database older than version 6; a database already at version 6 is not converted.
+  Its records may still hold the former counts; readers ignore them, and the next write of a record drops them.
 - Queued entries convert in step:
   - A queued `post-event` of `complete` or `uncomplete` keeps its type, since the service accepts both as aliases.
   - A queued `update-rules` of `target-count` becomes `goal-target`; `cancel` for `overdue-handling` becomes `fail`.
-    Its undo data keeps `target-count`, which the store still applies.
+    Its undo data keeps `target-count`, which a rollback reads as `goal-target`.
+  - A queued event's undo data may hold an occurrence with `completion-count`, which a rollback reads as `progress`.
+- Stored `edit-lifecycle-rules` events keep a `target-count` detail, which rule replays and exports read as `goal-target`.
 - The upgrade writes no sync log record; the console shows the counts of refolded occurrences, converted events, dropped uncompletes, and occurrences refolded differently.
 - Older web apps cannot read version 6; the open fails with a `blocked` or version error, and the app asks to update.
 
@@ -525,7 +527,8 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
   - `fields` holds only what changed (`SYN-5`). `edit-times` holds the client time of each field. Creates carry all fields.
   - Lists and tasks: `create-`, `update-`, `delete-`, and `restore-` plus the type. A task create carries its `lifecycle-rules`.
   - Rules: `update-rules`, sent as `PATCH /api/tasks/{{task-id}}/lifecycle-rules` with the edit time of each field.
-    Requests name the target `goal-target`, since the service refuses `target-count`; the entry keeps `target-count`, so a change queued before the upgrade still replays.
+    Requests name the target `goal-target`, since the service refuses `target-count`.
+    An entry queued before the upgrade may still name `target-count`; its request sends `goal-target`, so it still replays.
   - Events: `post-event`, sent in order as `POST /api/tasks/{{task-id}}/events` with `id`, `type`, `creation-time`, and `occurrence`.
     A `log` also sends `checked`, `time-spent-seconds`, `amount`, and `label` when set; an `undo-log` sends `target-event-id`.
     A `409` on an `undo-log` of a target the service never stored is a rejection like any other; the undo reverts and the entry counts again.
@@ -604,12 +607,13 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
 and [engine.js](../../src/js/sync/engine.js) schedules the runs (`SYN-3`, `CON-6`).
 - Lists, tasks, memberships, and notes store the feed's `revision`; lists also keep `role` and `sharing`.
 - Notes map the wire `owner-id`, `occurrence`, and `last-update-time` to the same local fields.
-- Tasks read `goal-target` and `progress` of the rules and the occurrence into the local `target-count` and `completion-count`, whose mirrors the store keeps.
+- Tasks keep `goal-target` and `progress` of the rules and the occurrence as they are.
+  A row with only the former `target-count` and `completion-count`, from an older service, gives them as those fields.
   `time-spent-seconds` and the `failed` status come as they are.
 - The `entries` of a pulled current occurrence, its live `log` events, go into the events store, so the user can undo them and later refolds keep them.
   A stored `log` of that occurrence that the feed no longer lists, undone elsewhere, is removed unless the queue still holds it.
   An entry of another type is ignored, so a type that a newer service adds never fails a pull.
-- A conflict on `goal-target` applies to the local `target-count`.
+- A conflict on `goal-target` applies to the rules and the open occurrence.
 - Computed fields are not stored: `overdue`, `upcoming`, `role` of tasks, `task-count`, and `lists` of tasks. Screens derive them.
 - A run replays the queue, then pulls every page after the stored cursor until `has-more` is false. Without a cursor it fetches a snapshot.
 - The leader tab pulls every 30 seconds while the page is visible, and after going online, gaining focus, becoming visible, or replaying the queue.

@@ -139,7 +139,7 @@ describe('queued events and rule edits', () => {
 
   it('undoes a rejected event and refolds the events queued after it', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'goal-target': 3 } });
     for (let tick = 0; tick < 3; tick++) {
       clock.tick();
       await store.postEvent(task.id, 'complete');
@@ -147,13 +147,13 @@ describe('queued events and rule edits', () => {
     const [, first] = await store.queue.all();
     await store.queue.undo(store, first);
     const after = await store.getTask(task.id);
-    expect(after['current-occurrence']).toMatchObject({ 'completion-count': 2, status: 'in-progress', 'close-time': null });
+    expect(after['current-occurrence']).toMatchObject({ progress: 2, status: 'in-progress', 'close-time': null });
     expect((await store.eventsOfTask(task.id)).map((event) => event.id)).not.toContain(first.target.id);
   });
 
   it('restores the original occurrence when every queued event is rolled back in turn (SYN-9)', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'goal-target': 3 } });
     for (let tick = 0; tick < 3; tick++) {
       clock.tick();
       await store.postEvent(task.id, 'complete');
@@ -162,28 +162,28 @@ describe('queued events and rule edits', () => {
       await store.queue.undo(store, entry);
       await store.queue.remove([entry.seq]);
     }
-    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ 'completion-count': 0, status: 'ready', 'close-time': null });
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ progress: 0, status: 'ready', 'close-time': null });
     expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
   });
 
   it('restores the rules and occurrence when a rule edit and the event after it are both rolled back', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Count', 'lifecycle-rules': { 'goal-target': 2 } });
     await store.postEvent(task.id, 'complete');
     await store.queue.clear();
     clock.tick();
-    await store.updateRules(task.id, { 'target-count': 1 });
+    await store.updateRules(task.id, { 'goal-target': 1 });
     clock.tick();
     await store.postEvent(task.id, 'uncomplete');
     const [rules, event] = await store.queue.all();
     await store.queue.undo(store, rules);
     await store.queue.remove([rules.seq]);
-    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ 'target-count': 2, 'completion-count': 0, status: 'ready' });
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ 'goal-target': 2, progress: 0, status: 'ready' });
     await store.queue.undo(store, (await store.queue.all())[0]);
     expect(event.operation).toBe('post-event');
     const after = await store.getTask(task.id);
-    expect(after['lifecycle-rules']['target-count']).toBe(2);
-    expect(after['current-occurrence']).toMatchObject({ 'target-count': 2, 'completion-count': 1, status: 'in-progress', 'close-time': null });
+    expect(after['lifecycle-rules']['goal-target']).toBe(2);
+    expect(after['current-occurrence']).toMatchObject({ 'goal-target': 2, progress: 1, status: 'in-progress', 'close-time': null });
   });
 });
 
@@ -278,7 +278,7 @@ describe('queued log entries', () => {
     const [entry] = await store.queue.all();
     await store.queue.undo(store, entry);
     const after = await store.getTask(task.id);
-    expect(after['current-occurrence']).toMatchObject({ progress: 0, 'completion-count': 0, status: 'ready', 'close-time': null });
+    expect(after['current-occurrence']).toMatchObject({ progress: 0, status: 'ready', 'close-time': null });
     expect(after['current-occurrence'].entries ?? []).toEqual([]);
     expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create']);
   });
@@ -287,7 +287,7 @@ describe('queued log entries', () => {
 describe('rolling back queued log entries', () => {
   it('removes the time of a rejected time-only log and keeps the later entries', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Run', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Run', 'lifecycle-rules': { 'goal-target': 2 } });
     await store.queue.clear();
     clock.tick();
     await store.logEntry(task.id, { 'time-spent-seconds': 600 });
@@ -296,7 +296,7 @@ describe('rolling back queued log entries', () => {
     const [first] = await store.queue.all();
     await store.queue.undo(store, first);
     const occurrence = (await store.getTask(task.id))['current-occurrence'];
-    expect(occurrence).toMatchObject({ 'time-spent-seconds': 60, progress: 1, 'completion-count': 1, status: 'in-progress' });
+    expect(occurrence).toMatchObject({ 'time-spent-seconds': 60, progress: 1, status: 'in-progress' });
     expect(occurrence.entries.map((entry) => entry.id)).toEqual([later.id]);
   });
 
@@ -318,7 +318,7 @@ describe('rolling back queued log entries', () => {
 
   it('rebuilds the occurrence after rolling back every queued log and undo in turn', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'goal-target': 3 } });
     await store.queue.clear();
     clock.tick();
     const { event } = await store.logEntry(task.id, { checked: true, amount: 1.5 });
@@ -338,7 +338,7 @@ describe('rolling back queued log entries', () => {
 describe('rolling back a log beside legacy events', () => {
   it('keeps the legacy check, drops the rejected time, and keeps the live entries', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'goal-target': 2 } });
     await store.applyChanges(() => ({
       changes: { put: { events: [{ id: 'legacy-1', 'task-id': task.id, occurrence: 1, 'creation-time': '2026-11-04T09:00:30.000Z', 'owner-id': null, type: 'complete', details: null }] } },
       result: null,
@@ -357,7 +357,7 @@ describe('rolling back a log beside legacy events', () => {
 describe('rolling back a log after a legacy uncomplete that undoes a checked log', () => {
   it('keeps the legacy check and drops the checked log that the uncomplete undid', async () => {
     const { store, clock } = await freshStore(TRACKED);
-    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Mixed', 'lifecycle-rules': { 'goal-target': 3 } });
     const legacy = (id, type, time) => ({ id, 'task-id': task.id, occurrence: 1, 'creation-time': time, 'owner-id': null, type, details: null });
     await store.applyChanges(() => ({ changes: { put: { events: [legacy('legacy-1', 'complete', '2026-11-04T09:00:30.000Z')] } }, result: null }));
     clock.tick(60_000);

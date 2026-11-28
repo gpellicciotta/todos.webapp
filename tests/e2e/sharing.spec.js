@@ -18,11 +18,11 @@ const list = (id, name, fields) => ({
 const task = (id, description, fields = {}) => ({
   id, description, 'owner-id': 3, 'creation-time': TIME, 'last-update-time': TIME, 'deletion-time': null, revision: 10,
   'lifecycle-rules': {
-    'target-count': 1, 'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
+    'goal-target': 1, 'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
     'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
   },
   'current-occurrence': {
-    occurrence: 1, 'start-time': TIME, 'due-time': null, 'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': null,
+    occurrence: 1, 'start-time': TIME, 'due-time': null, 'goal-target': 1, progress: 0, status: 'ready', 'close-time': null,
   },
   ...fields,
 });

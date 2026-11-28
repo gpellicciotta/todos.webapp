@@ -264,7 +264,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     const phone = await device('code-ada');
     const laptop = await device('code-ada');
     const list = await phone.store.createList({ name: 'Ticks' });
-    const task = await phone.store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } }, { lists: [list.id] });
+    const task = await phone.store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'goal-target': 3 } }, { lists: [list.id] });
     expect(await phone.engine.syncNow()).toBe('synced');
     for (let tick = 0; tick < 3; tick++) {
       phone.clock.tick(60_000);
@@ -287,7 +287,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
 
   it('makes a task weekly, and the server computes the same period and counts its tick', async () => {
     const ada = await device('code-ada');
-    const task = await ada.store.createTask({ description: 'Water the plants', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await ada.store.createTask({ description: 'Water the plants', 'lifecycle-rules': { 'goal-target': 2 } });
     expect(await ada.engine.syncNow()).toBe('synced');
     ada.clock.tick(60_000);
     const weekly = await ada.store.updateRules(task.id, { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' });
@@ -312,7 +312,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     clock.now = Date.now() - 2 * 3_600_000;
     const task = await source.createTask({ description: 'Paint the fence' });
     clock.tick(60_000);
-    await source.updateRules(task.id, { 'target-count': 3 });
+    await source.updateRules(task.id, { 'goal-target': 3 });
     for (let tick = 0; tick < 2; tick++) {
       clock.tick(60_000);
       await source.postEvent(task.id, 'complete');
@@ -338,12 +338,12 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     clock.now = Date.now() - 2 * 3_600_000;
     const task = await source.createTask({ description: 'Sand the deck' });
     clock.tick(60_000);
-    await source.updateRules(task.id, { 'target-count': 3 });
+    await source.updateRules(task.id, { 'goal-target': 3 });
     const backup = await exportBackup(source, { appVersion: '0.5.0-pre' });
     source.close();
     // A rule change that left no event, such as one pulled from another device.
-    backup['lifecycle-rules'][0]['target-count'] = 5;
-    backup.occurrences[0]['target-count'] = 5;
+    backup['lifecycle-rules'][0]['goal-target'] = 5;
+    backup.occurrences[0]['goal-target'] = 5;
 
     const ada = await device('code-ada');
     expect(await ada.engine.syncNow()).toBe('synced');
@@ -369,7 +369,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     backup.events = backup.events.filter((event) => event.type === 'create');
     const ended = (task, count) => ({
       'task-id': task.id, occurrence: 2, 'start-time': new Date(midnight - 2 * day).toISOString(), 'due-time': new Date(midnight - day).toISOString(),
-      'target-count': 1, 'completion-count': count, status: count ? 'completed' : 'cancelled', 'close-time': new Date(midnight - day).toISOString(),
+      'goal-target': 1, progress: count, status: count ? 'completed' : 'cancelled', 'close-time': new Date(midnight - day).toISOString(),
     });
     backup.occurrences = [ended(met, 1), ended(unmet, 0)];
 
@@ -423,16 +423,16 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     const recurring = await source.createTask({ description: 'Recurring later' });
     const oneOff = await source.createTask({ description: 'One-off again' });
     clock.tick(60_000);
-    await source.updateRules(recurring.id, { 'target-count': 3 });
-    await source.updateRules(oneOff.id, { 'target-count': 2 });
+    await source.updateRules(recurring.id, { 'goal-target': 3 });
+    await source.updateRules(oneOff.id, { 'goal-target': 2 });
     const backup = await exportBackup(source, { appVersion: '0.5.0-pre' });
     source.close();
     // Unlogged changes: the first task became weekly, and the second ended a recurrence whose interval edit was logged.
     const rulesOf = (task) => backup['lifecycle-rules'].find((rules) => rules['task-id'] === task.id);
     const editOf = (task) => backup.events.find((event) => event['task-id'] === task.id && event.type === 'edit-lifecycle-rules');
     Object.assign(rulesOf(recurring), { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null });
-    editOf(recurring).details = { 'target-count': { old: 1, new: 3 }, timezone: { old: null, new: 'UTC' } };
-    editOf(oneOff).details = { 'target-count': { old: 1, new: 2 }, 'recurrence-interval': { old: null, new: 2 } };
+    editOf(recurring).details = { 'goal-target': { old: 1, new: 3 }, timezone: { old: null, new: 'UTC' } };
+    editOf(oneOff).details = { 'goal-target': { old: 1, new: 2 }, 'recurrence-interval': { old: null, new: 2 } };
     backup.occurrences = [];
 
     const ada = await device('code-ada');
@@ -442,7 +442,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
     for (const task of [recurring, oneOff]) {
       const stored = await (await ada.raw('GET', `/api/tasks/${task.id}`, { Accept: 'application/json' })).json();
-      const { 'target-count': target, ...expected } = Object.fromEntries(Object.entries(rulesOf(task)).filter(([name]) => name !== 'task-id'));
+      const { 'goal-target': target, ...expected } = Object.fromEntries(Object.entries(rulesOf(task)).filter(([name]) => name !== 'task-id'));
       expect(stored['lifecycle-rules']).toMatchObject({ ...expected, 'goal-target': target });
     }
   });
@@ -465,14 +465,14 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([
       expect.objectContaining({ operation: 'post-event', status: 409 }),
     ]);
-    expect((await ada.store.getTask(task.id))['current-occurrence']).toMatchObject({ status: 'cancelled', 'completion-count': 0 });
+    expect((await ada.store.getTask(task.id))['current-occurrence']).toMatchObject({ status: 'cancelled', progress: 0 });
   });
 
   it('logs entries with time spent, undoes one on another device, and lists the entries the service returns', async () => {
     const phone = await device('code-ada');
     const laptop = await device('code-ada');
     const list = await phone.store.createList({ name: 'Study' });
-    const task = await phone.store.createTask({ description: 'French', 'lifecycle-rules': { 'target-count': 3 } }, { lists: [list.id] });
+    const task = await phone.store.createTask({ description: 'French', 'lifecycle-rules': { 'goal-target': 3 } }, { lists: [list.id] });
     expect(await phone.engine.syncNow()).toBe('synced');
     phone.clock.tick(60_000);
     const first = await phone.store.logEntry(task.id, { checked: true, 'time-spent-seconds': 600, label: 'Chapter 1' });
@@ -501,7 +501,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
 
   it('replays complete and uncomplete changes queued before the upgrade through the service aliases', async () => {
     const ada = await device('code-ada');
-    const task = await ada.store.createTask({ description: 'Legacy', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await ada.store.createTask({ description: 'Legacy', 'lifecycle-rules': { 'goal-target': 3 } });
     expect(await ada.engine.syncNow()).toBe('synced');
     const base = Date.now() - 3_000_000;
     const legacy = ['complete', 'complete', 'uncomplete'].map((type, index) => ({
@@ -521,7 +521,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
 
   it('reverts an undo that the service refuses with 409', async () => {
     const ada = await device('code-ada');
-    const task = await ada.store.createTask({ description: 'Undo me', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await ada.store.createTask({ description: 'Undo me', 'lifecycle-rules': { 'goal-target': 2 } });
     expect(await ada.engine.syncNow()).toBe('synced');
     ada.clock.tick(60_000);
     const { event } = await ada.store.logEntry(task.id, { checked: true });

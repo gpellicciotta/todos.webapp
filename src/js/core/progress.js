@@ -16,14 +16,14 @@ export const APPROACHING = 0.8;
 const OPEN = Object.freeze(['ready', 'in-progress']);
 
 /**
- * Read the goal and progress of an occurrence, falling back to the counts of one without goal fields.
+ * Read the goal and progress of an occurrence.
  * `share` is the progress over the target: 0 without a value, 1 for a limit of 0 not yet passed, Infinity above it.
  * @param {object} occurrence the occurrence
  * @returns {{direction: string, measure: string, target: number, value: number|null, unit: string|null, share: number}} the progress
  */
 export function progressOf(occurrence) {
-  const target = occurrence['goal-target'] ?? occurrence['target-count'];
-  const value = occurrence.progress === undefined ? occurrence['completion-count'] ?? 0 : occurrence.progress;
+  const target = occurrence['goal-target'] ?? 1;
+  const value = occurrence.progress === undefined ? 0 : occurrence.progress;
   let share = 0;
   if (target > 0) {
     share = (value ?? 0) / target;

@@ -16,7 +16,7 @@
 
 import {
   applyEvent, applyRuleEdit, byEventOrder, eventsTowardsStatus, firstOccurrence, foldLogCache, freshOccurrence, GRACE_MS, graceOccurrence, isRecurring,
-  isPeriodEnd, isStale, makeEvent, mirrorOccurrence, mirrorRules, normalizeRules, planRollOver, refoldOccurrence, RULE_FIELDS, shouldExpire, STATUSES, USER_EVENT_TYPES,
+  isPeriodEnd, isStale, makeEvent, fullOccurrence, fullRules, normalizeRules, planRollOver, refoldOccurrence, RULE_FIELDS, shouldExpire, STATUSES, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { isValidTimezone, localDate } from '../core/periods.js';
 import { keyBetween, keysBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
@@ -135,7 +135,7 @@ function checkRule(field, value) {
     throw new ValidationError(field, 'invalid', `Not a valid ${field}: ${value}; ${rule}.`);
   };
   switch (field) {
-    case 'target-count':
+    case 'goal-target':
       if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > TARGET_MAX + 0.999
         || Math.abs(value * 1000 - Math.round(value * 1000)) > 1e-6) {
         fail('it is a number from 0 to 999,999,999,999.999 with at most 3 decimals');
@@ -217,9 +217,9 @@ function checkGoalRules(rules) {
   if (start !== null && rules['recurrence-end-date'] && localDate(rules['start-time'], rules.timezone || 'UTC') > rules['recurrence-end-date']) {
     fail('start-time', 'it lies before the recurrence end date');
   }
-  const target = rules['target-count'] ?? 1;
+  const target = rules['goal-target'] ?? 1;
   if (['checks', 'time'].includes(rules['goal-measure'] ?? 'checks') && (!Number.isInteger(target) || target < 1 || target > TARGET_MAX)) {
-    fail('target-count', 'it is a whole number from 1 to 999,999,999,999 for checks and time');
+    fail('goal-target', 'it is a whole number from 1 to 999,999,999,999 for checks and time');
   }
   if (rules['goal-direction'] === 'at-most' && !rules['due-time'] && !isRecurring(rules)) {
     fail('goal-direction', 'an at-most goal needs a due time or a recurrence');
@@ -269,8 +269,8 @@ function newEventId(ctx) {
  * @returns {Promise<void>}
  */
 export async function putTask(tx, task) {
-  const occurrence = mirrorOccurrence(task['current-occurrence']);
-  await request(tx.objectStore(STORES.tasks).put({ ...task, 'lifecycle-rules': mirrorRules(task['lifecycle-rules']), 'current-occurrence': occurrence }));
+  const occurrence = fullOccurrence(task['current-occurrence']);
+  await request(tx.objectStore(STORES.tasks).put({ ...task, 'lifecycle-rules': fullRules(task['lifecycle-rules']), 'current-occurrence': occurrence }));
   // Only the task embeds the live entries of its current occurrence.
   const cache = { ...occurrence };
   delete cache.entries;
@@ -285,7 +285,7 @@ export async function putTask(tx, task) {
  * @returns {Promise<void>}
  */
 async function putOccurrence(tx, taskId, occurrence) {
-  const cache = mirrorOccurrence(occurrence);
+  const cache = fullOccurrence(occurrence);
   delete cache.entries;
   await request(tx.objectStore(STORES.occurrences).put({ 'task-id': taskId, ...cache }, [taskId, occurrence.occurrence]));
 }

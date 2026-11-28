@@ -79,11 +79,11 @@ describe('downloading the change feed', () => {
 
   it('stores the pulled entries as events, undoes one locally, and drops one that another device undid', async () => {
     const { store, service, pull } = await setup();
-    service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'target-count': 3 } }), []);
+    service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'goal-target': 3 } }), []);
     const log = (id, time) => ({ id, 'task-id': 't1', occurrence: 1, 'creation-time': time, 'owner-id': 7, type: 'log', checked: true });
     service.events.set('e1', log('e1', '2026-11-04T10:00:00.000Z'));
     service.events.set('e2', log('e2', '2026-11-04T11:00:00.000Z'));
-    Object.assign(service.tasks.get('t1')['current-occurrence'], { 'completion-count': 2, status: 'in-progress' });
+    Object.assign(service.tasks.get('t1')['current-occurrence'], { progress: 2, status: 'in-progress' });
     service.tasks.get('t1').revision = ++service.revision;
     await pull.pullOnce();
     expect((await store.eventsOfTask('t1')).map((event) => event.id)).toEqual(['e1', 'e2']);
@@ -97,17 +97,17 @@ describe('downloading the change feed', () => {
 
   it('takes the pulled fields and folds a pending event onto the pulled occurrence', async () => {
     const { store, service, pull } = await setup();
-    service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'target-count': 2 } }), []);
+    service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'goal-target': 2 } }), []);
     await pull.pullOnce();
     await store.postEvent('t1', 'complete');
     const row = service.tasks.get('t1');
     // The service holds the entry behind its progress, which the feed lists.
     service.events.set('e0', { id: 'e0', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T08:00:00.000Z', 'owner-id': 7, type: 'log', checked: true });
-    const ticked = { ...row['current-occurrence'], status: 'in-progress', 'completion-count': 1 };
+    const ticked = { ...row['current-occurrence'], status: 'in-progress', progress: 1 };
     Object.assign(row, { description: 'Remote text', 'current-occurrence': ticked, revision: ++service.revision });
     await pull.pullOnce();
     expect(await store.getTask('t1')).toMatchObject({
-      description: 'Remote text', 'current-occurrence': { status: 'completed', 'completion-count': 2, 'close-time': expect.any(String) },
+      description: 'Remote text', 'current-occurrence': { status: 'completed', progress: 2, 'close-time': expect.any(String) },
     });
 
   });
@@ -258,7 +258,7 @@ describe('disconnecting', () => {
 
   it('keeps a status set on another device through a disconnect and the next adoption (CON-8, CON-4)', async () => {
     const { store, service, pull } = await setup();
-    const done = { occurrence: 1, 'start-time': T0, 'due-time': null, 'target-count': 1, 'completion-count': 1, status: 'completed', 'close-time': T0 };
+    const done = { occurrence: 1, 'start-time': T0, 'due-time': null, 'goal-target': 1, progress: 1, status: 'completed', 'close-time': T0 };
     service.seedTask(taskRow('t1', { 'current-occurrence': done }), []);
     await pull.pullOnce();
     await pull.disconnect();

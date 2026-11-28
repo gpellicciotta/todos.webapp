@@ -24,12 +24,12 @@ describe('createTask', () => {
       description: 'Buy paint',
       'owner-id': null,
       'lifecycle-rules': {
-        'target-count': 1, 'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
+        'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
         'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
         'start-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null,
       },
       'current-occurrence': {
-        occurrence: 1, 'start-time': time, 'due-time': null, 'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': null,
+        occurrence: 1, 'start-time': time, 'due-time': null, status: 'ready', 'close-time': null,
         'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null, progress: 0, 'time-spent-seconds': 0,
       },
       'creation-time': time,
@@ -61,7 +61,7 @@ describe('createTask', () => {
 
   it('reaches a given starting status through events', async () => {
     const task = await store.createTask({ description: 'Done already', status: 'completed' });
-    expect(task['current-occurrence']).toMatchObject({ status: 'completed', 'completion-count': 1 });
+    expect(task['current-occurrence']).toMatchObject({ status: 'completed', progress: 1 });
     expect((await store.eventsOfTask(task.id)).map((event) => event.type)).toEqual(['create', 'log']);
   });
 
@@ -165,14 +165,14 @@ describe('updateTask', () => {
 
 describe('events and rules', () => {
   it('ticks a target-3 task through complete events until it is completed', async () => {
-    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'goal-target': 3 } });
     const counts = [];
     for (let tick = 0; tick < 3; tick++) {
       clock.tick();
       const { event, task: after } = await store.postEvent(task.id, 'complete');
       expect(event).toMatchObject({ 'task-id': task.id, type: 'log', checked: true, occurrence: 1, 'owner-id': null, details: null });
       expect(event.id[14]).toBe('7');
-      counts.push([after['current-occurrence']['completion-count'], after['current-occurrence'].status]);
+      counts.push([after['current-occurrence'].progress, after['current-occurrence'].status]);
     }
     expect(counts).toEqual([[1, 'in-progress'], [2, 'in-progress'], [3, 'completed']]);
     expect((await store.getTask(task.id))['last-update-time']).toBe('2026-11-04T09:00:03.000Z');
@@ -188,11 +188,11 @@ describe('events and rules', () => {
   it('edits the target and deadline of the rules and the open occurrence', async () => {
     const task = await store.createTask({ description: 'Water', status: 'completed' });
     clock.tick();
-    const updated = await store.updateRules(task.id, { 'target-count': 2, 'due-time': '2026-11-09T10:00:00Z' });
-    expect(updated['lifecycle-rules']).toMatchObject({ 'target-count': 2, 'due-time': '2026-11-09T10:00:00.000Z' });
-    expect(updated['current-occurrence']).toMatchObject({ 'target-count': 2, 'completion-count': 1, status: 'in-progress', 'close-time': null });
+    const updated = await store.updateRules(task.id, { 'goal-target': 2, 'due-time': '2026-11-09T10:00:00Z' });
+    expect(updated['lifecycle-rules']).toMatchObject({ 'goal-target': 2, 'due-time': '2026-11-09T10:00:00.000Z' });
+    expect(updated['current-occurrence']).toMatchObject({ 'goal-target': 2, progress: 1, status: 'in-progress', 'close-time': null });
     expect(updated['last-update-time']).toBe('2026-11-04T09:00:01.000Z');
-    await expect(store.updateRules(task.id, { 'target-count': 0 })).rejects.toMatchObject({ field: 'target-count', code: 'invalid' });
+    await expect(store.updateRules(task.id, { 'goal-target': 0 })).rejects.toMatchObject({ field: 'goal-target', code: 'invalid' });
   });
 
   it('expires an overdue task with handling cancel through a system event', async () => {
@@ -503,17 +503,17 @@ describe('schema upgrade to version 3', () => {
 
 describe('goal fields', () => {
   it('stores the goal rules and the occurrence snapshot, and keeps the mirrors through events and edits', async () => {
-    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'goal-target': 3 } });
     expect(task['lifecycle-rules']).toMatchObject({ 'start-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null });
     expect(task['current-occurrence']).toMatchObject({ 'goal-target': 3, progress: 0, 'time-spent-seconds': 0 });
     clock.tick();
     const { task: ticked } = await store.postEvent(task.id, 'complete');
-    expect(ticked['current-occurrence']).toMatchObject({ 'completion-count': 1, progress: 1 });
+    expect(ticked['current-occurrence']).toMatchObject({ progress: 1 });
     clock.tick();
-    const edited = await store.updateRules(task.id, { 'target-count': 2 });
+    const edited = await store.updateRules(task.id, { 'goal-target': 2 });
     expect(edited['lifecycle-rules']['goal-target']).toBe(2);
     const [stored] = await store.occurrencesOfTask(task.id);
-    expect(stored).toMatchObject({ 'target-count': 2, 'goal-target': 2, 'completion-count': 1, progress: 1, 'time-spent-seconds': 0 });
+    expect(stored).toMatchObject({ 'goal-target': 2, progress: 1, 'time-spent-seconds': 0 });
   });
 
   it('takes the year unit as a recurrence rule', async () => {
@@ -525,27 +525,27 @@ describe('goal fields', () => {
 
   it('takes a decimal target from 0 for amount and reading goals, and only a whole number for checks and time', async () => {
     const task = await store.createTask({ description: 'Weigh in' });
-    const edited = await store.updateRules(task.id, { 'goal-measure': 'reading', 'target-count': 79.875, 'goal-unit': 'kg' });
+    const edited = await store.updateRules(task.id, { 'goal-measure': 'reading', 'goal-target': 79.875, 'goal-unit': 'kg' });
     expect(edited['lifecycle-rules']).toMatchObject({ 'goal-target': 79.875, 'goal-unit': 'kg' });
-    expect((await store.updateRules(task.id, { 'target-count': 0 }))['lifecycle-rules']['goal-target']).toBe(0);
-    await expect(store.updateRules(task.id, { 'target-count': 1.2345 })).rejects.toBeInstanceOf(ValidationError);
+    expect((await store.updateRules(task.id, { 'goal-target': 0 }))['lifecycle-rules']['goal-target']).toBe(0);
+    await expect(store.updateRules(task.id, { 'goal-target': 1.2345 })).rejects.toBeInstanceOf(ValidationError);
     await expect(store.updateRules(task.id, { 'goal-measure': 'checks' })).rejects.toBeInstanceOf(ValidationError);
-    await expect(store.updateRules(task.id, { 'goal-measure': 'time', 'target-count': 1.5 })).rejects.toBeInstanceOf(ValidationError);
-    await expect(store.updateRules(task.id, { 'goal-measure': 'checks', 'target-count': 0 })).rejects.toBeInstanceOf(ValidationError);
-    const checks = await store.updateRules(task.id, { 'goal-measure': 'checks', 'target-count': 4 });
+    await expect(store.updateRules(task.id, { 'goal-measure': 'time', 'goal-target': 1.5 })).rejects.toBeInstanceOf(ValidationError);
+    await expect(store.updateRules(task.id, { 'goal-measure': 'checks', 'goal-target': 0 })).rejects.toBeInstanceOf(ValidationError);
+    const checks = await store.updateRules(task.id, { 'goal-measure': 'checks', 'goal-target': 4 });
     expect(checks['lifecycle-rules']).toMatchObject({ 'goal-measure': 'checks', 'goal-target': 4, 'goal-unit': null });
   });
 });
 
 describe('log entries', () => {
   it('writes complete and uncomplete as a checked log and an undo-log of the latest live check', async () => {
-    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'goal-target': 2 } });
     clock.tick();
     const first = await store.postEvent(task.id, 'complete');
     clock.tick();
     const second = await store.postEvent(task.id, 'complete');
     expect(first.event).toMatchObject({ type: 'log', checked: true, occurrence: 1 });
-    expect(second.task['current-occurrence']).toMatchObject({ progress: 2, 'completion-count': 2, status: 'completed' });
+    expect(second.task['current-occurrence']).toMatchObject({ progress: 2, status: 'completed' });
     expect(second.task['current-occurrence'].entries.map((entry) => entry.id)).toEqual([first.event.id, second.event.id]);
     clock.tick();
     const undone = await store.postEvent(task.id, 'uncomplete');
@@ -571,7 +571,7 @@ describe('log entries', () => {
   });
 
   it('logs time and an amount without a check, summing time on the occurrence', async () => {
-    const task = await store.createTask({ description: 'Run', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Run', 'lifecycle-rules': { 'goal-target': 2 } });
     clock.tick();
     const { event, task: after } = await store.logEntry(task.id, { 'time-spent-seconds': 600, amount: 2.5, label: '  Park  ' });
     expect(event).toMatchObject({ type: 'log', 'time-spent-seconds': 600, amount: 2.5, label: 'Park', occurrence: 1 });
@@ -648,7 +648,7 @@ describe('log entries', () => {
   });
 
   it('keeps unticking through the status mapping working on converted checks', async () => {
-    const task = await store.createTask({ description: 'Both', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Both', 'lifecycle-rules': { 'goal-target': 2 } });
     await store.logEntry(task.id, { checked: true });
     clock.tick();
     await store.logEntry(task.id, { checked: true });

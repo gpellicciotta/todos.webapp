@@ -89,7 +89,7 @@ function isGoalRow(occurrence) {
  * @returns {boolean} true when the counts show
  */
 export function showsCount(occurrence) {
-  return !isGoalRow(occurrence) && (occurrence['target-count'] > 1 || occurrence['completion-count'] > 1);
+  return !isGoalRow(occurrence) && (occurrence['goal-target'] > 1 || occurrence.progress > 1);
 }
 
 /**
@@ -98,7 +98,7 @@ export function showsCount(occurrence) {
  * @returns {string} the counts
  */
 export function countWords(occurrence) {
-  return `${occurrence['completion-count']} of ${occurrence['target-count']} done`;
+  return `${occurrence.progress} of ${occurrence['goal-target']} done`;
 }
 
 /** Row strings, for the strings module of TEC-13 to absorb. */
@@ -152,7 +152,7 @@ export function clickOf(occurrence, rules = undefined, now = undefined) {
   if (isGoalRow(occurrence)) {
     return 'log';
   }
-  return occurrence.status === 'completed' && occurrence['target-count'] <= 1 ? null : 'check';
+  return occurrence.status === 'completed' && occurrence['goal-target'] <= 1 ? null : 'check';
 }
 
 
@@ -301,7 +301,7 @@ function viewOf(task, ctx, options) {
   const handle = Boolean(options.moves?.enabled());
   const due = formatDue(task, ctx.now);
   const occurrence = task['current-occurrence'];
-  const count = showsCount(occurrence) ? `${occurrence['completion-count']}/${occurrence['target-count']}` : null;
+  const count = showsCount(occurrence) ? `${occurrence.progress}/${occurrence['goal-target']}` : null;
   const repeat = recurrenceLabel(task['lifecycle-rules']);
   // An ended series keeps its status and count but turns inert, so the key holds the click too.
   const click = clickOf(occurrence, task['lifecycle-rules'], ctx.now);

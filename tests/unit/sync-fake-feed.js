@@ -62,22 +62,16 @@ export function fakeFeed({ protocol = 1 } = {}) {
     json: async () => body,
   });
   /**
-   * Return a task in the ADR-0006 wire format: `goal-target` and `progress` replace the former counts, and the occurrence
-   * embeds its live `log` entries.
+   * Return a task in the ADR-0006 wire format, whose occurrence embeds its live `log` entries.
    * @param {object} row the stored task
    * @returns {object} the wire task
    */
   const wireTask = (row) => {
-    const { 'target-count': ruleTarget, ...rules } = row['lifecycle-rules'];
-    const { 'target-count': target, 'completion-count': count, ...occurrence } = row['current-occurrence'];
+    const occurrence = row['current-occurrence'];
     const own = [...service.events.values()].filter((event) => event['task-id'] === row.id && event.occurrence === occurrence.occurrence);
     const undone = new Set(own.filter((event) => event.type === 'undo-log').map((event) => event['target-event-id']));
     const entries = own.filter((event) => event.type === 'log' && !undone.has(event.id)).sort(byEventOrder);
-    return {
-      ...row,
-      'lifecycle-rules': { ...rules, 'goal-target': ruleTarget },
-      'current-occurrence': { ...occurrence, 'goal-target': target, progress: count, entries },
-    };
+    return { ...row, 'current-occurrence': { ...occurrence, entries } };
   };
   const view = (row) => Object.fromEntries(Object.entries(row['current-occurrence'] ? wireTask(row) : row).filter(([name]) => name !== 'edit-times'));
 
@@ -209,7 +203,7 @@ export function fakeFeed({ protocol = 1 } = {}) {
       // Like the service, check the precondition at the event's place in creation-time order, then refold.
       const event = { ...body, 'task-id': id };
       const own = [...service.events.values()].filter((other) => other['task-id'] === id);
-      const base = { ...task['current-occurrence'], 'completion-count': 0, status: 'ready', 'close-time': null };
+      const base = { ...task['current-occurrence'], progress: 0, status: 'ready', 'close-time': null };
       const before = foldEvents(base, own.filter((other) => byEventOrder(other, event) < 0), task['lifecycle-rules']);
       if (!applyEvent(before, event, task['lifecycle-rules'])) {
         return { status: 409, body: { message: 'precondition failed' } };

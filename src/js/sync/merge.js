@@ -13,7 +13,7 @@
  */
 
 import {
-  applyEvent, applyRuleEdit, firstOccurrence, foldEvents, foldLogCache, makeEvent, mirrorOccurrence, mirrorRules, RULE_FIELDS, shouldExpire, USER_EVENT_TYPES,
+  applyEvent, applyRuleEdit, firstOccurrence, foldEvents, foldLogCache, fullOccurrence, fullRules, makeEvent, RULE_FIELDS, shouldExpire, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { uuid7 } from '../lib/uuid7.js';
 
@@ -134,34 +134,23 @@ const toList = (list) => ({
 });
 
 /**
- * Read the goal and progress fields of the wire format into the local ones, which still hold `target-count` and `completion-count`.
- * A row with only the former fields, such as one from an older service, keeps them.
- * @param {object} rules the wire rules
- * @returns {object} the rules with `target-count` set from `goal-target`
- */
-const rulesFromWire = (rules) => ({ ...rules, 'target-count': rules['goal-target'] ?? rules['target-count'] });
-
-/**
  * Read an occurrence of the wire format, without its `entries`, which are stored as events.
- * @param {object} occurrence the wire occurrence
- * @returns {object} the occurrence with `target-count` and `completion-count` set from `goal-target` and `progress`
+ * A row with only the former `target-count` and `completion-count`, such as one from an older service, gives them as the goal fields.
+ * @param {object} wire the wire occurrence
+ * @returns {object} the occurrence with its goal fields
  */
 function occurrenceFromWire(wire) {
   const occurrence = { ...wire };
   delete occurrence.entries;
-  return {
-    ...occurrence,
-    'target-count': occurrence['goal-target'] ?? occurrence['target-count'],
-    'completion-count': occurrence.progress ?? occurrence['completion-count'],
-  };
+  return fullOccurrence(occurrence);
 }
 
 const toTask = (task) => ({
   id: task.id,
   description: task.description,
   'owner-id': task['owner-id'] ?? null,
-  'lifecycle-rules': mirrorRules(rulesFromWire(task['lifecycle-rules'] ?? {})),
-  'current-occurrence': mirrorOccurrence(occurrenceFromWire(task['current-occurrence'])),
+  'lifecycle-rules': fullRules(task['lifecycle-rules'] ?? {}),
+  'current-occurrence': occurrenceFromWire(task['current-occurrence']),
   'creation-time': task['creation-time'],
   'last-update-time': task['last-update-time'] ?? task['creation-time'],
   'deletion-time': task['deletion-time'] ?? null,
@@ -485,9 +474,7 @@ export function planConflicts(data, entry, conflicts, pending) {
     edited.set(key, { kind, row: { ...(edited.get(key)?.row ?? row), [field]: value } });
   };
   for (const conflict of conflicts) {
-    // The service names the target of a goal `goal-target`; locally it is still `target-count`.
-    const { kept } = conflict;
-    const field = conflict.field === 'goal-target' ? 'target-count' : conflict.field;
+    const { kept, field } = conflict;
     const names = target.type === 'list' ? LIST_FIELDS : TASK_FIELDS;
     if (field === 'position') {
       const listId = conflict['list-id'] ?? target['list-id'];
@@ -627,14 +614,14 @@ export function planDisconnect(data, userId, { newId = (time) => uuid7(() => Dat
 export function localEventsOf(task, own, newId) {
   const current = task['current-occurrence'];
   const rules = task['lifecycle-rules'];
-  const base = { ...firstOccurrence(rules, task['creation-time']), 'target-count': current['target-count'] };
+  const base = { ...firstOccurrence(rules, task['creation-time']), 'goal-target': current['goal-target'] };
   const users = own.filter((event) => USER_EVENT_TYPES.includes(event.type));
   const folded = foldEvents(base, users, rules);
   const put = own.some((event) => event.type === 'create') ? [] : [makeEvent({ id: newId(task['creation-time']), 'task-id': task.id, type: 'create', 'creation-time': task['creation-time'] })];
-  if (folded.status === current.status && folded['completion-count'] === current['completion-count']) {
+  if (folded.status === current.status && folded.progress === current.progress) {
     return { put, delete: [] };
   }
-  const count = Math.max(0, current['completion-count']);
+  const count = Math.max(0, current.progress ?? 0);
   const types = [...Array(count).fill('log'), ...(current.status === 'in-progress' && count === 0 ? ['start'] : []), ...(current.status === 'cancelled' ? ['cancel'] : [])];
   const time = current['close-time'] ?? task['last-update-time'] ?? task['creation-time'];
   put.push(...types.map((type) => ({

@@ -9,7 +9,7 @@
  * A stored task also stores its current occurrence, and a removed task takes its occurrences and events along.
  */
 
-import { mirrorOccurrence, mirrorRules } from '../core/occurrences.js';
+import { fullOccurrence, fullRules } from '../core/occurrences.js';
 import { request, STORES, transact } from './idb.js';
 
 /**
@@ -94,12 +94,12 @@ export function applyChanges(ctx, planner, { queue = false } = {}) {
       await request(store(STORES.lists).put(list));
     }
     for (const task of changes.put?.tasks ?? []) {
-      const occurrence = mirrorOccurrence(task['current-occurrence']);
-      await request(store(STORES.tasks).put({ ...task, 'lifecycle-rules': mirrorRules(task['lifecycle-rules']), 'current-occurrence': occurrence }));
+      const occurrence = fullOccurrence(task['current-occurrence']);
+      await request(store(STORES.tasks).put({ ...task, 'lifecycle-rules': fullRules(task['lifecycle-rules']), 'current-occurrence': occurrence }));
       await request(store(STORES.occurrences).put({ 'task-id': task.id, ...withoutEntries(occurrence) }, [task.id, occurrence.occurrence]));
     }
     for (const occurrence of changes.put?.occurrences ?? []) {
-      await request(store(STORES.occurrences).put(withoutEntries(mirrorOccurrence(occurrence)), [occurrence['task-id'], occurrence.occurrence]));
+      await request(store(STORES.occurrences).put(withoutEntries(fullOccurrence(occurrence)), [occurrence['task-id'], occurrence.occurrence]));
     }
     for (const membership of changes.put?.memberships ?? []) {
       await request(store(STORES.memberships).put(membership, [membership['list-id'], membership['task-id']]));

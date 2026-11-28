@@ -55,7 +55,7 @@ describe('formatDue', () => {
 
 describe('clickOf', () => {
   const tickOf = (status, target, count = undefined) => {
-    const task = shapeTask({ status, 'target-count': target, ...(count === undefined ? {} : { 'completion-count': count }) });
+    const task = shapeTask({ status, 'goal-target': target, ...(count === undefined ? {} : { progress: count }) });
     return clickOf(task['current-occurrence'], task['lifecycle-rules']);
   };
 
@@ -79,8 +79,8 @@ describe('clickOf', () => {
   it('leaves a closed recurring series alone, completed or cancelled', () => {
     const rules = { ...shapeTask()['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 1 };
     for (const status of ['completed', 'cancelled']) {
-      const occurrence = { ...shapeTask({ status, 'target-count': 3, 'completion-count': 3 })['current-occurrence'], 'close-time': at(2, 0) };
-      expect(clickOf(occurrence, { ...rules, 'target-count': 3 }), status).toBeNull();
+      const occurrence = { ...shapeTask({ status, 'goal-target': 3, progress: 3 })['current-occurrence'], 'close-time': at(2, 0) };
+      expect(clickOf(occurrence, { ...rules, 'goal-target': 3 }), status).toBeNull();
     }
   });
 });
@@ -192,8 +192,8 @@ describe('createTaskList', () => {
 
   it('shows done and target counts as a badge on the status icon above target 1, and none at target 1', () => {
     list.render([
-      shapeTask({ id: 'f', description: 'French exercises', status: 'in-progress', 'target-count': 3, 'completion-count': 2 }),
-      shapeTask({ id: 'g', description: 'Gym', status: 'completed', 'target-count': 3, 'completion-count': 4 }),
+      shapeTask({ id: 'f', description: 'French exercises', status: 'in-progress', 'goal-target': 3, progress: 2 }),
+      shapeTask({ id: 'g', description: 'Gym', status: 'completed', 'goal-target': 3, progress: 4 }),
       ...tasks,
     ], ctx);
     const rows = [...document.querySelectorAll('.task-row')];
@@ -216,7 +216,7 @@ describe('createTaskList', () => {
   it('ticks a target-3 task towards its target, and past it once completed', () => {
     const french = (count) => shapeTask({
       id: 'f', description: 'French exercises', status: count >= 3 ? 'completed' : count > 0 ? 'in-progress' : 'ready',
-      'target-count': 3, 'completion-count': count,
+      'goal-target': 3, progress: count,
     });
     list.render([french(2)], ctx);
     document.querySelector('.status-button').click();
@@ -227,7 +227,7 @@ describe('createTaskList', () => {
   });
 
   it('renders the row again when only its count changes', () => {
-    const french = (count) => shapeTask({ id: 'f', description: 'French', status: 'in-progress', 'target-count': 3, 'completion-count': count });
+    const french = (count) => shapeTask({ id: 'f', description: 'French', status: 'in-progress', 'goal-target': 3, progress: count });
     list.render([french(1)], ctx);
     const before = document.querySelector('.task-row');
     list.render([french(2)], ctx);
@@ -289,7 +289,7 @@ describe('createTaskList', () => {
     it('marks an inert status button aria-disabled, focusable, and named by its status alone', () => {
       expect(statusOf('c').getAttribute('aria-label')).toBe('Water the plants, completed');
       expect(statusOf('d').getAttribute('aria-label')).toBe('Renew the gym pass, cancelled');
-      list.render([shapeTask({ id: 'g', description: 'Gym', status: 'cancelled', 'target-count': 3, 'completion-count': 2 })], ctx);
+      list.render([shapeTask({ id: 'g', description: 'Gym', status: 'cancelled', 'goal-target': 3, progress: 2 })], ctx);
       expect(statusOf('g').getAttribute('aria-label')).toBe('Gym, cancelled, 2 of 3 done');
       list.render(four, ctx);
       for (const id of ['c', 'd']) {
@@ -424,7 +424,7 @@ describe('createTaskList', () => {
     it('names the counts in the toast of a tick that changes only the count, and Undo posts uncomplete', async () => {
       const gym = (count) => shapeTask({
         id: 'g', description: 'Gym', status: count >= 3 ? 'completed' : count > 0 ? 'in-progress' : 'ready',
-        'target-count': 3, 'completion-count': count,
+        'goal-target': 3, progress: count,
       });
       list.render([gym(1)], ctx);
       statusOf('g').click();
@@ -1107,7 +1107,7 @@ describe('createTaskList', () => {
   describe('recurring tasks', () => {
     // A weekly task, ticked twice of three in the week from Monday 26 October to Monday 2 November, 00:00 in Brussels.
     const recurring = (fields = {}) => {
-      const task = shapeTask({ id: 'r1', description: 'Water the plants', status: 'in-progress', 'target-count': 3, 'completion-count': 2, ...fields });
+      const task = shapeTask({ id: 'r1', description: 'Water the plants', status: 'in-progress', 'goal-target': 3, progress: 2, ...fields });
       task['lifecycle-rules'] = { ...task['lifecycle-rules'], 'due-time': null, 'overdue-handling': null, 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels' };
       task['current-occurrence'] = { ...task['current-occurrence'], 'start-time': '2026-10-25T23:00:00.000Z', 'due-time': '2026-11-01T23:00:00.000Z' };
       return task;
@@ -1220,7 +1220,7 @@ describe('goal rows (TSK-4, TSK-15, TSK-21, TSK-22)', () => {
     });
 
     it('always logs a check for an open at-most checks goal, even past the limit', () => {
-      const occurrence = occurrenceOf('in-progress', { 'goal-measure': 'checks', 'goal-direction': 'at-most', 'goal-target': 3, progress: 4, 'completion-count': 4, 'target-count': 3 });
+      const occurrence = occurrenceOf('in-progress', { 'goal-measure': 'checks', 'goal-direction': 'at-most', 'goal-target': 3, progress: 4 });
       expect(clickFor(occurrence)).toBe('check');
     });
   });
@@ -1285,7 +1285,7 @@ describe('goal rows (TSK-4, TSK-15, TSK-21, TSK-22)', () => {
     });
 
     it('turns the count badge orange above an at-most limit', () => {
-      rows([goalTask({}, { 'goal-measure': 'checks', 'goal-direction': 'at-most', 'goal-target': 3, 'target-count': 3, 'completion-count': 4, progress: 4 })]);
+      rows([goalTask({}, { 'goal-measure': 'checks', 'goal-direction': 'at-most', 'goal-target': 3, progress: 4 })]);
       const badge = row().querySelector('.task-row__count');
       expect(badge.textContent).toBe('4/3');
       expect(badge.classList.contains('task-row__count--over')).toBe(true);
@@ -1340,7 +1340,7 @@ describe('goal rows (TSK-4, TSK-15, TSK-21, TSK-22)', () => {
 
   describe('clicks', () => {
     it('logs a check for a checks goal, with an Undo toast that posts undo-log of that entry', async () => {
-      rows([goalTask({ status: 'in-progress' }, { 'goal-measure': 'checks', 'goal-target': 3, 'target-count': 3, 'completion-count': 1, progress: 1 })]);
+      rows([goalTask({ status: 'in-progress' }, { 'goal-measure': 'checks', 'goal-target': 3, progress: 1 })]);
       status().click();
       expect(store.logEntry).toHaveBeenCalledWith('g1', { checked: true });
       await vi.waitFor(() => expect(toaster.show).toHaveBeenCalledTimes(1));

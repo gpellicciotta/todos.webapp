@@ -56,7 +56,7 @@ function upgrade(db, oldVersion, tx, fail) {
     }
   }
   if (oldVersion === 5) {
-    // Rules and occurrences gain the goal fields, with the counts kept as mirrors (ADR-0006), then the events convert to logs.
+    // Rules and occurrences turn their counts into the goal fields (ADR-0006), then the events convert to logs.
     migrateToGoals(tx, () => migrateToLog(tx, fail));
   }
 }

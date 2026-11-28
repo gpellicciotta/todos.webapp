@@ -11,7 +11,7 @@
 
 import {
   applyEvent, byEventOrder, DEFAULT_RULES, eventsTowardsStatus, firstOccurrence, foldInPlace, foldLog, fromLegacyTask, isPeriodEnd,
-  isRecurring, makeEvent, mirrorOccurrence, mirrorRules, OPEN_STATUSES,
+  fullOccurrence, fullRules, isRecurring, makeEvent, OPEN_STATUSES,
 } from '../core/occurrences.js';
 
 import { uuid7 } from '../lib/uuid7.js';
@@ -48,7 +48,7 @@ export function upgradeNote(note) {
  */
 function occurrenceOf(status) {
   const current = !status || status === 'todo' ? 'ready' : status;
-  return { ...firstOccurrence(DEFAULT_RULES, null), status: current, 'completion-count': current === 'completed' ? 1 : 0 };
+  return { ...firstOccurrence(DEFAULT_RULES, null), status: current, progress: current === 'completed' ? 1 : 0 };
 }
 
 /**
@@ -137,9 +137,10 @@ export function upgradeEntry(entry) {
 /**
  * Add the ADR-0006 goal fields to every stored task, rule set, and occurrence inside the version-change transaction.
  * Rules gain `start-time` null and an `at-least` goal of `target-count` `checks`; occurrences get the same snapshot,
- * `progress` equal to `completion-count`, and `time-spent-seconds` 0. Counts, statuses, events, and queued changes stay as they are.
+ * `progress` equal to `completion-count`, and `time-spent-seconds` 0. `target-count` and `completion-count` go.
+ * Statuses, events, and queued changes stay as they are.
  * @param {IDBTransaction} tx the version-change transaction, after the version 5 stores exist
- * @param {() => void} [done] called once every write is requested, so the next step reads the mirrored records
+ * @param {() => void} [done] called once every write is requested, so the next step reads the converted records
  */
 export function migrateToGoals(tx, done = () => {}) {
   const tasks = tx.objectStore(STORES.tasks);
@@ -147,13 +148,13 @@ export function migrateToGoals(tx, done = () => {}) {
   const allTasks = tasks.getAll();
   allTasks.onsuccess = () => {
     for (const record of allTasks.result) {
-      tasks.put({ ...record, 'lifecycle-rules': mirrorRules(record['lifecycle-rules']), 'current-occurrence': mirrorOccurrence(record['current-occurrence']) });
+      tasks.put({ ...record, 'lifecycle-rules': fullRules(record['lifecycle-rules']), 'current-occurrence': fullOccurrence(record['current-occurrence']) });
     }
   };
   const allOccurrences = occurrences.getAll();
   allOccurrences.onsuccess = () => {
     for (const record of allOccurrences.result) {
-      occurrences.put(mirrorOccurrence(record), [record['task-id'], record.occurrence]);
+      occurrences.put(fullOccurrence(record), [record['task-id'], record.occurrence]);
     }
     done();
   };
@@ -181,7 +182,7 @@ const CLOSERS = Object.freeze(['cancel', 'expire', 'roll-over', 'end-recurrence'
 export function convertOccurrence({ occurrence, rules, events, taskId = '' }) {
   const recurring = isRecurring(rules);
   const ordered = [...events].sort((a, b) => (recurring ? isPeriodEnd(a.type) - isPeriodEnd(b.type) : 0) || byEventOrder(a, b));
-  let old = { ...occurrence, 'completion-count': 0, status: 'ready', 'close-time': null };
+  let old = { ...fullOccurrence(occurrence), progress: 0, status: 'ready', 'close-time': null };
   const live = [];
   const converted = [];
   const dropped = [];
@@ -222,13 +223,13 @@ export function convertOccurrence({ occurrence, rules, events, taskId = '' }) {
       status = 'failed';
     }
   }
-  const mapped = { progress: old['completion-count'], status, 'close-time': old['close-time'] };
-  const target = occurrence['target-count'];
+  const mapped = { progress: old.progress, status, 'close-time': old['close-time'] };
+  const target = old['goal-target'];
   const inPlace = foldInPlace({ target, recurring, events: converted });
   if (inPlace.progress !== mapped.progress || inPlace.status !== mapped.status || inPlace['close-time'] !== mapped['close-time']) {
     throw new Error(`The in-place fold of occurrence ${occurrence.occurrence} of task ${taskId} gives ${JSON.stringify(inPlace)}, not ${JSON.stringify(mapped)}.`);
   }
-  const goal = { direction: occurrence['goal-direction'] ?? 'at-least', measure: occurrence['goal-measure'] ?? 'checks', target: occurrence['goal-target'] ?? target };
+  const goal = { direction: old['goal-direction'], measure: old['goal-measure'], target };
   const real = foldLog({ goal, recurring, events: converted });
   const differs = real.progress !== mapped.progress || real.status !== mapped.status || real['close-time'] !== mapped['close-time'];
   return { converted, dropped, mapped, real, differs };
@@ -236,7 +237,7 @@ export function convertOccurrence({ occurrence, rules, events, taskId = '' }) {
 
 /**
  * Convert a queued change to the version 6 rule fields: `update-rules` sends `goal-target` for `target-count`, and `fail` for `cancel`.
- * The undo data keeps the field names that the store still applies.
+ * The undo data keeps `target-count`, which a rollback reads as `goal-target`.
  * @param {object} entry the stored entry
  * @returns {object} the entry to store, the same object when nothing changes
  */
@@ -312,9 +313,9 @@ function convertStores(tx, data) {
         }
       }
       result.dropped.forEach((id) => tx.objectStore(STORES.events).delete([taskId, id]));
-      const folded = mirrorOccurrence({
+      const folded = fullOccurrence({
         ...occurrence,
-        'completion-count': result.real.progress ?? 0,
+        progress: result.real.progress ?? 0,
         status: result.real.status,
         'close-time': result.real['close-time'],
         'time-spent-seconds': result.real['time-spent-seconds'],

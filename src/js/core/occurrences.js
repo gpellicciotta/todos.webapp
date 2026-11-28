@@ -7,8 +7,8 @@
  * A one-off occurrence closes when it becomes `completed` or `cancelled`, and reopens when it leaves them.
  * A recurring occurrence covers one period (see periods.js) and stays open until its period ends, even at target.
  * Roll-over then closes it with its status and opens the next period, as the server does; missed periods become
- * occurrences with count 0, and the end date or count closes the last one with `end-recurrence` instead.
- * Until a roll-over happens, the display rule shows a task past its period end as `ready` with count 0.
+ * occurrences with progress 0, and the end date or count closes the last one with `end-recurrence` instead.
+ * Until a roll-over happens, the display rule shows a task past its period end as `ready` with progress 0.
  * See docs/specs/local-store.md, Lifecycle and Recurrence.
  */
 
@@ -28,7 +28,6 @@ export const GOAL_DEFAULTS = Object.freeze({ 'goal-direction': 'at-least', 'goal
 
 /** The rules of a new task: a one-off task with target 1, no deadline, and overdue handling `keep`. */
 export const DEFAULT_RULES = Object.freeze({
-  'target-count': 1,
   'start-time': null,
   ...GOAL_DEFAULTS,
   'due-time': null,
@@ -41,11 +40,11 @@ export const DEFAULT_RULES = Object.freeze({
 });
 
 /**
- * Rule field names that sync and backups carry, in schema order.
- * The goal fields and `start-time` stay local until the sync and backup tasks of ADR-0006 add them.
+ * Rule field names that sync carries, in schema order.
+ * The other goal fields and `start-time` stay local until the sync tasks of ADR-0006 add them.
  */
 export const RULE_FIELDS = Object.freeze([
-  'target-count', 'due-time', 'overdue-handling', 'recurrence-unit', 'recurrence-interval', 'recurrence-end-date', 'recurrence-end-count', 'timezone',
+  'goal-target', 'due-time', 'overdue-handling', 'recurrence-unit', 'recurrence-interval', 'recurrence-end-date', 'recurrence-end-count', 'timezone',
 ]);
 
 /**
@@ -58,40 +57,50 @@ export function syncedRules(rules) {
 }
 
 /**
- * Rename `target-count` to `goal-target` in rules, or in the edit times of their fields, for a request to the service,
- * which no longer takes the former key. A queued change of the former shape therefore still replays.
+ * Rename the former `target-count` to `goal-target` in rule fields, their edit times, or rule edit details.
+ * Changes queued, events stored, and backups written before version 6 name the target so; the service refuses that name.
+ * @param {object} fields the rule fields, their edit times, or the details of an `edit-lifecycle-rules` event
+ * @returns {object} a copy of the fields with `goal-target` in the place of `target-count`; a `goal-target` that they already hold wins
+ */
+export function withGoalTarget(fields) {
+  const both = 'goal-target' in fields;
+  return Object.fromEntries(Object.entries(fields).filter(([name]) => !(both && name === 'target-count'))
+    .map(([name, value]) => [name === 'target-count' ? 'goal-target' : name, value]));
+}
+
+/**
+ * Return rule fields for a request to the service, so a change queued with `target-count` still replays.
  * @param {object} fields the rule fields or their edit times
  * @returns {object} the fields with the wire name of the target
  */
-export function rulesToWire(fields) {
-  const { 'target-count': target, ...rest } = fields;
-  return target === undefined ? rest : { ...rest, 'goal-target': target };
-}
+export const rulesToWire = withGoalTarget;
 
 /**
- * Return rules with `goal-target` equal to `target-count`, the mirror kept until `target-count` is removed.
+ * Return full rules: the defaults under the given fields, with a former `target-count` read as `goal-target` and dropped.
  * @param {object} rules the rules
- * @returns {object} the rules with the goal fields filled and mirrored
+ * @returns {object} the rules with every field
  */
-export function mirrorRules(rules) {
-  return { ...DEFAULT_RULES, ...rules, 'goal-target': rules['target-count'] ?? DEFAULT_RULES['target-count'] };
+export function fullRules(rules) {
+  return { ...DEFAULT_RULES, ...withGoalTarget(rules) };
 }
 
 /**
- * Return an occurrence with its goal snapshot filled, `goal-target` equal to `target-count`,
- * `progress` equal to `completion-count`, and `time-spent-seconds` set; the mirrors last until the counts are removed.
+ * Return an occurrence with its goal snapshot and cache filled. A record of the former shape, such as the undo data
+ * of a change queued before version 6, gives its `target-count` as `goal-target` and its `completion-count` as `progress`;
+ * both former fields are dropped.
  * @param {object} occurrence the occurrence
  * @returns {object} the occurrence with the goal fields
  */
-export function mirrorOccurrence(occurrence) {
+export function fullOccurrence(occurrence) {
+  const { 'target-count': target, 'completion-count': count, ...rest } = occurrence;
   return {
-    ...occurrence,
-    'goal-direction': occurrence['goal-direction'] ?? GOAL_DEFAULTS['goal-direction'],
-    'goal-measure': occurrence['goal-measure'] ?? GOAL_DEFAULTS['goal-measure'],
-    'goal-target': occurrence['target-count'],
-    'goal-unit': occurrence['goal-unit'] ?? null,
-    progress: occurrence['completion-count'],
-    'time-spent-seconds': occurrence['time-spent-seconds'] ?? 0,
+    ...rest,
+    'goal-direction': rest['goal-direction'] ?? GOAL_DEFAULTS['goal-direction'],
+    'goal-measure': rest['goal-measure'] ?? GOAL_DEFAULTS['goal-measure'],
+    'goal-target': rest['goal-target'] ?? target ?? GOAL_DEFAULTS['goal-target'],
+    'goal-unit': rest['goal-unit'] ?? null,
+    progress: rest.progress === undefined ? count ?? 0 : rest.progress,
+    'time-spent-seconds': rest['time-spent-seconds'] ?? 0,
   };
 }
 
@@ -102,9 +111,9 @@ export const GRACE_MS = 24 * 3_600_000;
 const PERIOD_ENDS = Object.freeze(['roll-over', 'end-recurrence']);
 
 /**
- * Return the status an occurrence takes from its count: `ready` at 0, `completed` at or above target, else `in-progress`.
- * @param {number} count the completion count
- * @param {number} target the target count
+ * Return the status an occurrence takes from its progress: `ready` at 0, `completed` at or above target, else `in-progress`.
+ * @param {number} count the progress
+ * @param {number} target the goal target
  * @returns {string} the status
  */
 export function statusFromCount(count, target) {
@@ -157,7 +166,7 @@ export const RECURRENCE_FIELDS = Object.freeze(['recurrence-interval', 'recurren
  * @returns {object} the full rules
  */
 export function normalizeRules(rules) {
-  const full = mirrorRules(rules);
+  const full = fullRules(rules);
   if (isRecurring(full)) {
     full['due-time'] = null;
     full['overdue-handling'] = null;
@@ -214,15 +223,15 @@ export function editedRules(before, edit) {
  * @returns {object} the occurrence, without `task-id`
  */
 function opened(rules, number, period) {
-  return mirrorOccurrence({
+  return fullOccurrence({
     occurrence: number,
     'start-time': period.start,
     'due-time': period.end,
-    'target-count': rules['target-count'] ?? 1,
-    'completion-count': 0,
     'goal-direction': rules['goal-direction'],
     'goal-measure': rules['goal-measure'],
+    'goal-target': rules['goal-target'] ?? GOAL_DEFAULTS['goal-target'],
     'goal-unit': rules['goal-unit'],
+    progress: 0,
     status: 'ready',
     'close-time': null,
   });
@@ -295,26 +304,28 @@ function settleClosing(occurrence, rules, time) {
  * @returns {object|null} the new occurrence, or null when the event's precondition fails
  */
 export function applyEvent(occurrence, event, rules = DEFAULT_RULES) {
-  const next = applyEventToCount(occurrence, event, rules);
-  return next && mirrorOccurrence(next);
+  const next = applyEventInPlace(fullOccurrence(occurrence), event, rules);
+  return next && fullOccurrence(next);
 }
 
 /**
- * Apply one event to the counts of an occurrence; `applyEvent` then mirrors them.
- * @param {object} occurrence the occurrence before the event
+ * Apply one event to the progress and status of an occurrence at its own place, counting checks;
+ * the store then refolds the cache with the log fold, which also counts time and amounts.
+ * @param {object} occurrence the occurrence before the event, with its goal fields
  * @param {{type: string, 'creation-time': string}} event the event
  * @param {object} rules the lifecycle rules
  * @returns {object|null} the new occurrence, or null when the event's precondition fails
  */
-function applyEventToCount(occurrence, event, rules) {
+function applyEventInPlace(occurrence, event, rules) {
   const next = { ...occurrence };
   const time = event['creation-time'];
   const { status } = occurrence;
-  const count = occurrence['completion-count'];
+  const count = occurrence.progress ?? 0;
+  const target = occurrence['goal-target'];
   if (isRecurring(rules) && occurrence['close-time'] !== null && !isPeriodEnd(event.type)) {
     // A closed recurring occurrence takes only `reopen`, completed or cancelled, which opens a fresh period.
     if (event.type === 'reopen') {
-      return { ...next, 'completion-count': 0, status: 'ready', 'close-time': null };
+      return { ...next, progress: 0, status: 'ready', 'close-time': null };
     }
     if (USER_EVENT_TYPES.includes(event.type) || event.type === 'expire') {
       return null;
@@ -334,8 +345,8 @@ function applyEventToCount(occurrence, event, rules) {
       if (status === 'cancelled' || changed < 0) {
         return null;
       }
-      next['completion-count'] = changed;
-      next.status = status === 'failed' ? 'failed' : statusFromCount(changed, occurrence['target-count']);
+      next.progress = changed;
+      next.status = status === 'failed' ? 'failed' : statusFromCount(changed, target);
       break;
     }
     case 'start':
@@ -361,15 +372,15 @@ function applyEventToCount(occurrence, event, rules) {
       if (!OPEN_STATUSES.includes(status)) {
         return null;
       }
-      // The verdict of the counts; the store refolds the occurrence for other measures.
-      next.status = occurrence['goal-direction'] === 'at-most' && count <= occurrence['target-count'] ? 'completed' : 'failed';
+      // The verdict of the checks; the store refolds the occurrence for other measures.
+      next.status = occurrence['goal-direction'] === 'at-most' && count <= target ? 'completed' : 'failed';
       next['close-time'] = time;
       return next;
     case 'reopen':
       if ((status !== 'cancelled' && status !== 'failed') || (status === 'failed' && occurrence['goal-direction'] === 'at-most')) {
         return null;
       }
-      next.status = statusFromCount(count, occurrence['target-count']);
+      next.status = statusFromCount(count, target);
       next['close-time'] = null;
       break;
     case 'roll-over':
@@ -378,7 +389,7 @@ function applyEventToCount(occurrence, event, rules) {
       return next;
     case 'end-recurrence':
       // Below target, the series ended unmet.
-      next.status = status === 'failed' ? 'failed' : count >= occurrence['target-count'] ? 'completed' : 'cancelled';
+      next.status = status === 'failed' ? 'failed' : count >= target ? 'completed' : 'cancelled';
       next['close-time'] = next.status === status && occurrence['close-time'] ? occurrence['close-time'] : time;
       return next;
     default:
@@ -390,7 +401,7 @@ function applyEventToCount(occurrence, event, rules) {
 /**
  * Plan the roll-over of a recurring task up to a moment: close each occurrence whose period ended with a `roll-over`
  * event, and open the next one, until the open occurrence covers `now` or the end rules close it with `end-recurrence`.
- * Missed periods become occurrences that open and close in the same roll-over, with count 0 and status `ready`.
+ * Missed periods become occurrences that open and close in the same roll-over, with progress 0 and status `ready`.
  * Each event takes the due time of the occurrence it closes as its time.
  * @param {object} rules the lifecycle rules
  * @param {object} current the current occurrence
@@ -443,7 +454,7 @@ export function freshOccurrence(rules, closed, now) {
  * @returns {object} the folded occurrence
  */
 export function refoldOccurrence(occurrence, events, rules) {
-  return mirrorOccurrence(foldEvents({ ...occurrence, 'completion-count': 0, status: 'ready', 'close-time': null }, events, rules));
+  return foldEvents({ ...fullOccurrence(occurrence), progress: 0, status: 'ready', 'close-time': null }, events, rules);
 }
 
 /**
@@ -469,7 +480,7 @@ export function isStaleOccurrence(rules, occurrence, now) {
 }
 
 /**
- * Apply the display rule: a recurring task past its period end shows as `ready` with count and progress 0 until it rolls over;
+ * Apply the display rule: a recurring task past its period end shows as `ready` with progress 0 until it rolls over;
  * a reading goal keeps its carried reading.
  * The shown occurrence keeps its number and due time, so grace completion can still name it.
  * @param {object} task the task
@@ -480,10 +491,10 @@ export function displayTask(task, now) {
   if (!isStale(task, now)) {
     return task;
   }
-  const current = task['current-occurrence'];
-  const shown = mirrorOccurrence({ ...current, 'completion-count': 0, status: 'ready' });
+  const current = fullOccurrence(task['current-occurrence']);
   // Progress is 0 past the period end, but a reading goal keeps the carried reading until a new one.
-  return { ...task, 'current-occurrence': { ...shown, progress: current['goal-measure'] === 'reading' ? current.progress ?? null : 0, 'time-spent-seconds': 0 } };
+  const progress = current['goal-measure'] === 'reading' ? current.progress ?? null : 0;
+  return { ...task, 'current-occurrence': { ...current, status: 'ready', progress, 'time-spent-seconds': 0 } };
 }
 
 /**
@@ -722,12 +733,12 @@ export function logForm(occurrence, events, rules) {
   }
   const recurring = isRecurring(rules);
   const ordered = [...events].sort((a, b) => (recurring ? isPeriodEnd(a.type) - isPeriodEnd(b.type) : 0) || byEventOrder(a, b));
-  let old = { ...occurrence, 'completion-count': 0, status: 'ready', 'close-time': null };
+  let old = { ...fullOccurrence(occurrence), progress: 0, status: 'ready', 'close-time': null };
   const live = [];
   const converted = [];
   for (const event of ordered) {
     const next = applyEvent(old, event, rules);
-    const counted = next !== null && next['completion-count'] > old['completion-count'];
+    const counted = next !== null && next.progress > old.progress;
     if (event.type === 'complete') {
       converted.push({ ...event, type: 'log', checked: true });
     }
@@ -752,34 +763,35 @@ export function logForm(occurrence, events, rules) {
 }
 
 /**
- * Fold the events of an occurrence into its cache with the log fold: the count, progress, status, close time, and time spent,
+ * Fold the events of an occurrence into its cache with the log fold: the progress, status, close time, and time spent,
  * and the live `entries`. Events stored as `complete` or `uncomplete`, such as an old import, count as the checks and undos
  * that the upgrade makes of them, so mixed histories rebuild time, entries, and undos too.
  * @param {object} occurrence the occurrence, whose goal snapshot and number the fold uses
  * @param {object[]} events the events of the task; only those naming this occurrence count
  * @param {object} rules the lifecycle rules
- * @returns {object} the occurrence with its refolded cache
+ * @returns {object} the occurrence with its refolded cache; `progress` is null for a reading goal without a reading
  */
 export function foldLogCache(occurrence, events, rules) {
-  const own = logForm(occurrence, events.filter((event) => event.occurrence === occurrence.occurrence), rules);
-  const goal = { direction: occurrence['goal-direction'] ?? 'at-least', measure: occurrence['goal-measure'] ?? 'checks', target: occurrence['goal-target'] ?? occurrence['target-count'] };
+  const full = fullOccurrence(occurrence);
+  const own = logForm(full, events.filter((event) => event.occurrence === full.occurrence), rules);
+  const goal = { direction: full['goal-direction'], measure: full['goal-measure'], target: full['goal-target'] };
   const folded = foldLog({ goal, recurring: isRecurring(rules), events: own });
   const byId = new Map(own.map((event) => [event.id, event]));
-  return mirrorOccurrence({
-    ...occurrence,
-    'completion-count': folded.progress ?? 0,
+  return {
+    ...full,
+    progress: folded.progress,
     status: folded.status,
     'close-time': folded['close-time'],
     'time-spent-seconds': folded['time-spent-seconds'],
     entries: folded.entries.map((id) => byId.get(id)),
-  });
+  };
 }
 
 /**
  * Fold the events of an occurrence in place: `complete` and `uncomplete`, or a checked `log` and an `undo-log` at its own place, count,
  * and the verdicts follow the ADR-0006 fold, so `expire`, or a period end below target, gives `failed`.
  * @param {object} input the occurrence to fold
- * @param {number} input.target the target count
+ * @param {number} input.target the goal target
  * @param {boolean} [input.recurring] whether the occurrence recurs
  * @param {object[]} [input.events] the stored events, in any order
  * @returns {{progress: number, status: string, 'close-time': string|null}} the folded count, status, and close time
@@ -881,7 +893,7 @@ function nextEventTowards(occurrence, status) {
   if (status === 'in-progress') {
     return current === 'ready' ? 'start' : 'uncomplete';
   }
-  return occurrence['completion-count'] > 0 ? 'uncomplete' : 'unstart';
+  return (occurrence.progress ?? 0) > 0 ? 'uncomplete' : 'unstart';
 }
 
 /**
@@ -895,8 +907,8 @@ function nextEventTowards(occurrence, status) {
  */
 export function eventsTowardsStatus(occurrence, status, rules = DEFAULT_RULES) {
   const types = [];
-  let current = occurrence;
-  const limit = 2 * Math.max(occurrence['target-count'], occurrence['completion-count']) + 4;
+  let current = fullOccurrence(occurrence);
+  const limit = 2 * Math.max(current['goal-target'], current.progress ?? 0) + 4;
   for (let type = nextEventTowards(current, status); type && types.length < limit; type = nextEventTowards(current, status)) {
     const next = applyEvent(current, { type, 'creation-time': current['start-time'] }, rules);
     if (!next) {
@@ -921,21 +933,9 @@ export function eventsTowardsStatus(occurrence, status, rules = DEFAULT_RULES) {
  *   a new occurrence when its number differs from the old one
  */
 export function applyRuleEdit(task, edit, time) {
-  const edited = editRulesOfTask(task, edit, time);
-  return { 'lifecycle-rules': mirrorRules(edited['lifecycle-rules']), 'current-occurrence': mirrorOccurrence(edited['current-occurrence']) };
-}
-
-/**
- * Apply a rule edit to the rules and the current occurrence; `applyRuleEdit` then mirrors the goal fields.
- * @param {object} task a task with `lifecycle-rules` and `current-occurrence`
- * @param {object} edit rule fields; `null` clears a field
- * @param {string} time the edit time
- * @returns {{'lifecycle-rules': object, 'current-occurrence': object}} the new rules and current occurrence
- */
-function editRulesOfTask(task, edit, time) {
-  const before = { ...DEFAULT_RULES, ...task['lifecycle-rules'] };
-  const { rules } = editedRules(before, edit);
-  const current = task['current-occurrence'];
+  const before = fullRules(task['lifecycle-rules']);
+  const { rules } = editedRules(before, withGoalTarget(edit));
+  const current = fullOccurrence(task['current-occurrence']);
   const open = current['close-time'] === null;
   const occurrence = { ...current };
   if (isRecurring(rules) && !isRecurring(before)) {
@@ -962,9 +962,9 @@ function editRulesOfTask(task, edit, time) {
         occurrence[field] = rules[field];
       }
     }
-    occurrence['target-count'] = rules['target-count'];
-    if (occurrence.status !== 'cancelled' && occurrence['completion-count'] > 0) {
-      occurrence.status = statusFromCount(occurrence['completion-count'], occurrence['target-count']);
+    occurrence['goal-target'] = rules['goal-target'];
+    if (occurrence.status !== 'cancelled' && occurrence.progress > 0) {
+      occurrence.status = statusFromCount(occurrence.progress, occurrence['goal-target']);
     }
     settleClosing(occurrence, rules, time);
   }
@@ -1044,10 +1044,10 @@ export function makeEvent({ id, 'task-id': taskId, type, 'creation-time': time, 
  * @returns {object} the full rules the task was created with
  */
 export function firstRules(rules, events, fields = RULE_FIELDS) {
-  const first = { ...DEFAULT_RULES, ...rules };
+  const first = fullRules(rules);
   const edits = events.filter((event) => event.type === 'edit-lifecycle-rules').sort(byEventOrder).reverse();
   for (const event of edits) {
-    for (const [field, change] of Object.entries(event.details ?? {})) {
+    for (const [field, change] of Object.entries(withGoalTarget(event.details ?? {}))) {
       if (fields.includes(field)) {
         first[field] = change?.old ?? null;
       }
@@ -1078,12 +1078,13 @@ export function replayableRuleEdits(rules, events, fields = RULE_FIELDS) {
 }
 
 /**
- * Return the rule fields that an `edit-lifecycle-rules` event set, with their new values.
+ * Return the rule fields that an `edit-lifecycle-rules` event set, with their new values;
+ * an event stored before version 6 names the target `target-count`.
  * @param {object} event the event
  * @returns {object} the edit
  */
 export function ruleEditOf(event, fields = RULE_FIELDS) {
-  return Object.fromEntries(Object.entries(event.details ?? {}).filter(([field]) => fields.includes(field))
+  return Object.fromEntries(Object.entries(withGoalTarget(event.details ?? {})).filter(([field]) => fields.includes(field))
     .map(([field, change]) => [field, change?.new ?? null]));
 }
 
@@ -1242,8 +1243,8 @@ export function replayEvents(task, rules, events, newId, { settleAt = null, fiel
 }
 
 /**
- * Return the user events that move an occurrence to the count and status of another, such as an exported one:
- * `reopen` out of `cancelled`, `complete` or `uncomplete` for each missing or extra completion,
+ * Return the user events that move an occurrence to the progress and status of another, such as an exported one:
+ * `reopen` out of `cancelled`, `complete` or `uncomplete` for each missing or extra check,
  * then `start`, `unstart`, or `cancel` for the status.
  * @param {object} occurrence the occurrence
  * @param {object} wanted the occurrence to match
@@ -1270,8 +1271,8 @@ export function eventsTowardsOccurrence(occurrence, wanted, rules = DEFAULT_RULE
   if (current.status === 'cancelled' && wanted.status !== 'cancelled') {
     step('reopen');
   }
-  const count = wanted['completion-count'];
-  while (current['completion-count'] !== count && step(current['completion-count'] < count ? 'complete' : 'uncomplete')) {
+  const count = wanted.progress ?? 0;
+  while ((current.progress ?? 0) !== count && step((current.progress ?? 0) < count ? 'complete' : 'uncomplete')) {
     // Each step moves the count by one.
   }
   if (wanted.status === 'cancelled' && current.status !== 'cancelled') {
@@ -1306,9 +1307,9 @@ export function fromLegacyTask(legacy, newId) {
     description: rest.description,
     'owner-id': rest['owner-id'] ?? null,
     'lifecycle-rules': rules,
-    'current-occurrence': mirrorOccurrence({
+    'current-occurrence': fullOccurrence({
       ...firstOccurrence(rules, legacy['creation-time']),
-      'completion-count': current === 'completed' ? 1 : 0,
+      progress: current === 'completed' ? 1 : 0,
       status: current,
       'close-time': closed ? statusTime : null,
     }),

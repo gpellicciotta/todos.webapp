@@ -15,7 +15,7 @@ const WEEK_END = START + 7 * DAY;
 function occurrence(fields = {}) {
   return {
     occurrence: 1, status: 'in-progress', 'close-time': null, 'start-time': new Date(START).toISOString(), 'due-time': new Date(WEEK_END).toISOString(),
-    'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'target-count': 3, 'goal-unit': null, progress: 0, 'completion-count': 0,
+    'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null, progress: 0,
     ...fields,
   };
 }
@@ -27,8 +27,8 @@ describe('progressOf', () => {
     expect(progressOf(occurrence({ progress: 1 }))).toEqual({ direction: 'at-least', measure: 'checks', target: 3, value: 1, unit: null, share: 1 / 3 });
   });
 
-  it('falls back to the counts of an occurrence without goal fields', () => {
-    const old = { status: 'in-progress', 'target-count': 4, 'completion-count': 1, 'close-time': null };
+  it('reads an occurrence without a goal direction or measure as an at-least checks goal', () => {
+    const old = { status: 'in-progress', 'goal-target': 4, progress: 1, 'close-time': null };
     expect(progressOf(old)).toMatchObject({ direction: 'at-least', measure: 'checks', target: 4, value: 1, share: 0.25 });
   });
 
@@ -79,10 +79,10 @@ describe('trackOf and isOnTrack', () => {
   const half = at(START + 3.5 * DAY);
 
   it('keeps a Check goal on track until it is overdue', () => {
-    const check = occurrence({ 'goal-target': 1, 'target-count': 1 });
+    const check = occurrence({ 'goal-target': 1 });
     expect(trackOf(check, half)).toBe('on-track');
     expect(trackOf(check, at(WEEK_END + 1))).toBe('overdue');
-    expect(trackOf(occurrence({ 'goal-target': 1, 'target-count': 1, 'due-time': null }), at(WEEK_END * 2))).toBe('on-track');
+    expect(trackOf(occurrence({ 'goal-target': 1, 'due-time': null }), at(WEEK_END * 2))).toBe('on-track');
   });
 
   it('puts an at-least goal behind pace when its progress share trails the share of the window gone', () => {

@@ -307,8 +307,8 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   }, id);
   await expect.poll(async () => (await read()).rules['due-time']).toBe(due);
   const stored = await read();
-  expect(stored.rules['target-count']).toBe(3);
-  expect(stored.occurrence).toMatchObject({ 'target-count': 3, 'completion-count': 3, status: 'completed', 'due-time': due });
+  expect(stored.rules['goal-target']).toBe(3);
+  expect(stored.occurrence).toMatchObject({ 'goal-target': 3, progress: 3, status: 'completed', 'due-time': due });
   // The local history keeps each rule edit as the service does: the target, then the deadline.
   expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'log', 'log', 'log', 'edit-lifecycle-rules']);
   await page.reload();
@@ -356,7 +356,7 @@ test('the stepper steps a target-3 task up to 2 and back to 0 with undos, and Ma
     store.close();
     return { occurrence: task['current-occurrence'], events: events.map((event) => event.type) };
   }, id);
-  expect(stored.occurrence).toMatchObject({ 'completion-count': 0, status: 'ready' });
+  expect(stored.occurrence).toMatchObject({ progress: 0, status: 'ready' });
   expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'log', 'log', 'undo-log', 'undo-log', 'start', 'unstart']);
   expect(problems).toEqual([]);
 });
@@ -563,7 +563,7 @@ test('a weekly at-most kcal goal with a start time saves as lifecycle rules and 
   }, id);
   await expect.poll(async () => (await read())['start-time']).toBe(new Date(2030, 4, 6, 9, 30).toISOString());
   expect(await read()).toMatchObject({
-    'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 1600.5, 'goal-unit': 'kcal', 'recurrence-unit': 'week',
+    'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 1600.5, 'goal-unit': 'kcal', 'recurrence-unit': 'week',
   });
   await page.reload();
   const reopened = page.locator('[data-editor-slot] .editor-panel');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mirrorOccurrence, mirrorRules } from '../../src/js/core/occurrences.js';
+import { fullOccurrence, fullRules } from '../../src/js/core/occurrences.js';
 import { planConflicts, planDisconnect, planPage, planReset } from '../../src/js/sync/merge.js';
 
 const T0 = '2026-11-04T09:00:00.000Z';
@@ -16,11 +16,11 @@ const task = (id, { status = 'ready', count = 0, target = 1, due = null, handlin
   description: `Task ${id}`,
   'owner-id': 7,
   'lifecycle-rules': {
-    'target-count': target, 'due-time': due, 'overdue-handling': handling, 'recurrence-unit': null,
+    'goal-target': target, 'due-time': due, 'overdue-handling': handling, 'recurrence-unit': null,
     'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
   },
   'current-occurrence': {
-    occurrence: 1, 'start-time': T0, 'due-time': due, 'target-count': target, 'completion-count': count, status,
+    occurrence: 1, 'start-time': T0, 'due-time': due, 'goal-target': target, progress: count, status,
     'close-time': status === 'completed' || status === 'cancelled' ? T0 : null,
   },
   'creation-time': T0, 'last-update-time': T0, 'deletion-time': null, revision: 10, ...extra,
@@ -98,8 +98,8 @@ describe('merging a pulled row', () => {
     // The service lists the live entries behind its progress.
     server['current-occurrence'].entries = [{ id: 'e0', 'task-id': 't1', occurrence: 1, 'creation-time': T0, type: 'log', checked: true }];
     const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
-    expect(merged['lifecycle-rules']).toEqual(mirrorRules(server['lifecycle-rules']));
-    expect(merged['current-occurrence']).toEqual(mirrorOccurrence({ ...server['current-occurrence'], entries: undefined, 'completion-count': 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' }));
+    expect(merged['lifecycle-rules']).toEqual(fullRules(server['lifecycle-rules']));
+    expect(merged['current-occurrence']).toEqual(fullOccurrence({ ...server['current-occurrence'], entries: undefined, progress: 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' }));
     expect(merged.revision).toBe(14);
   });
 
@@ -109,7 +109,7 @@ describe('merging a pulled row', () => {
     const server = task('t1', { revision: 14 });
     server['current-occurrence'] = { ...server['current-occurrence'], occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z' };
     const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
-    expect(merged['current-occurrence']).toMatchObject({ occurrence: 2, 'completion-count': 0, status: 'ready' });
+    expect(merged['current-occurrence']).toMatchObject({ occurrence: 2, progress: 0, status: 'ready' });
   });
 
   it('keeps a pending rule field over the server copy and moves the open occurrence with it', () => {
@@ -197,8 +197,7 @@ describe('merging a pulled row', () => {
 
 describe('ADR-0006 task fields and entries', () => {
   const wire = (id, extra = {}, entries = []) => {
-    const rules = { ...task(id)['lifecycle-rules'] };
-    delete rules['target-count'];
+    const rules = task(id)['lifecycle-rules'];
     return {
       ...task(id), 'lifecycle-rules': { ...rules, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null },
       'current-occurrence': {
@@ -215,8 +214,22 @@ describe('ADR-0006 task fields and entries', () => {
   it('reads the goal, progress, and time spent that the service sends instead of the former counts', () => {
     const { changes } = plan(empty(), feed({ tasks: [wire('t1')] }));
     const stored = changes.put.tasks[0];
-    expect(stored['lifecycle-rules']).toMatchObject({ 'goal-target': 3, 'target-count': 3 });
-    expect(stored['current-occurrence']).toMatchObject({ 'goal-target': 3, 'target-count': 3, progress: 2, 'completion-count': 2, 'time-spent-seconds': 600, status: 'in-progress' });
+    expect(stored['lifecycle-rules']).toMatchObject({ 'goal-target': 3 });
+    expect(stored['current-occurrence']).toMatchObject({ 'goal-target': 3, progress: 2, 'time-spent-seconds': 600, status: 'in-progress' });
+    expect(stored['lifecycle-rules']).not.toHaveProperty('target-count');
+    expect(stored['current-occurrence']).not.toHaveProperty('completion-count');
+  });
+
+  it('reads the former counts of a row from an older service into the goal fields', () => {
+    const old = task('t1', { target: 3, count: 2, status: 'in-progress' });
+    const { 'goal-target': target, ...rules } = old['lifecycle-rules'];
+    const { 'goal-target': goal, progress, ...occurrence } = old['current-occurrence'];
+    const row = { ...old, 'lifecycle-rules': { ...rules, 'target-count': target }, 'current-occurrence': { ...occurrence, 'target-count': goal, 'completion-count': progress } };
+    const stored = plan(empty(), feed({ tasks: [row] })).changes.put.tasks[0];
+    expect(stored['lifecycle-rules']).toMatchObject({ 'goal-target': 3 });
+    expect(stored['current-occurrence']).toMatchObject({ 'goal-target': 3, progress: 2, status: 'in-progress' });
+    expect(stored['lifecycle-rules']).not.toHaveProperty('target-count');
+    expect(stored['current-occurrence']).not.toHaveProperty('completion-count');
   });
 
   it('keeps the failed status of a pulled occurrence', () => {
@@ -404,10 +417,10 @@ describe('replayed changes that lost a field', () => {
 
   it('applies the kept value of a rule field to the rules and the open occurrence', () => {
     const local = { ...empty(), tasks: [task('t1', { target: 3 })] };
-    const conflicts = [{ field: 'target-count', sent: 3, kept: 2, 'kept-edit-time': T0 }];
-    const changes = planConflicts(local, entry('update-rules', { type: 'rules', id: 't1' }, { 'target-count': 3 }), conflicts, []);
+    const conflicts = [{ field: 'goal-target', sent: 3, kept: 2, 'kept-edit-time': T0 }];
+    const changes = planConflicts(local, entry('update-rules', { type: 'rules', id: 't1' }, { 'goal-target': 3 }), conflicts, []);
     const row = applied(local, changes).tasks.get('t1');
-    expect([row['lifecycle-rules']['target-count'], row['current-occurrence']['target-count']]).toEqual([2, 2]);
+    expect([row['lifecycle-rules']['goal-target'], row['current-occurrence']['goal-target']]).toEqual([2, 2]);
   });
 });
 
@@ -435,7 +448,7 @@ describe('rebuilding after a 410', () => {
     const local = { ...empty(), tasks: [task('t1'), task('t2')] };
     const pending = [
       entry('post-event', { type: 'event', id: 'e1', 'task-id': 't1' }, { id: 'e1', type: 'start', 'creation-time': T0, occurrence: 1 }),
-      entry('update-rules', { type: 'rules', id: 't2' }, { 'target-count': 2 }, { seq: 2 }),
+      entry('update-rules', { type: 'rules', id: 't2' }, { 'goal-target': 2 }, { seq: 2 }),
     ];
     const result = applied(local, planReset(local, pending)).tasks;
     expect([...result.keys()].sort()).toEqual(['t1', 't2']);

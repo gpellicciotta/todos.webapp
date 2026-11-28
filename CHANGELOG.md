@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.6.1-pre
+- Store: Removed `target-count` and `completion-count` from rules and occurrences, which now hold only `goal-target` and `progress`.
+- Store: Read `target-count` and `completion-count` only from version 5 data, format 2 backups, older service rows, stored rule edits, and changes queued before the upgrade.
+- Store: Kept a null `progress` for a reading goal without a reading, instead of 0.
 - Backup: Wrote backup format 3, with the goal, start time, `fail`, progress, and time-spent fields of ADR-0006, and logs in place of `complete` and `uncomplete`.
 - Backup: Converted format 2 files on import, with `target-count` as a checks goal, `cancel` as `fail`, `complete` as a checked log, and `uncomplete` as an undo.
 - Backup: Capped the checked logs that import adds for missing progress at 10,000 per occurrence, for formats 2 and 3, listing affected tasks as `unrebuiltProgress`, and added them in linear time.

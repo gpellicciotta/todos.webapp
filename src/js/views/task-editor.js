@@ -96,7 +96,7 @@ let instances = 0;
 const TARGET_MAX = 999_999_999_999;
 
 /** The rule changes of the Check goal: at least one check, with no other field. */
-const CHECK_GOAL = Object.freeze({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'target-count': 1, 'goal-unit': null });
+const CHECK_GOAL = Object.freeze({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null });
 
 /** Below 64rem the editor panel covers the main column, add field included. */
 const COMPACT = '(width < 64rem)';
@@ -645,7 +645,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
    * @returns {'check'|'at-least'|'at-most'} the mode
    */
   function modeOf(rules) {
-    const plain = rules['goal-direction'] !== 'at-most' && rules['goal-measure'] === 'checks' && rules['target-count'] === 1;
+    const plain = rules['goal-direction'] !== 'at-most' && rules['goal-measure'] === 'checks' && rules['goal-target'] === 1;
     pickedAtLeast &&= plain;
     return rules['goal-direction'] === 'at-most' ? 'at-most' : plain && !pickedAtLeast ? 'check' : 'at-least';
   }
@@ -661,7 +661,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     targetPart.hidden = !detailed || kind === 'time';
     timePart.hidden = !detailed || kind !== 'time';
     unitPart.hidden = !detailed || !['amount', 'reading'].includes(kind);
-    const amount = rules['target-count'];
+    const amount = rules['goal-target'];
     const unitName = rules['goal-unit'] ?? '';
     const words = kind === 'checks' ? STRINGS.checkWord(amount) : kind === 'time' ? durationWords(amount)
       : `${amount.toLocaleString(locale, { maximumFractionDigits: 3 })}${unitName ? ` ${unitName}` : ''}`;
@@ -699,8 +699,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   function saveMeasure() {
     const value = measure.control.value;
     saved.set(measure.control, value);
-    const current = task['lifecycle-rules']['target-count'];
-    save(targetFits(value, current) ? { 'goal-measure': value } : { 'goal-measure': value, 'target-count': 1 }, measure, 'updateRules');
+    const current = task['lifecycle-rules']['goal-target'];
+    save(targetFits(value, current) ? { 'goal-measure': value } : { 'goal-measure': value, 'goal-target': 1 }, measure, 'updateRules');
   }
   measure.control.addEventListener('change', saveMeasure);
 
@@ -714,7 +714,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     const error = targetFits(kind, value) ? null : decimal ? STRINGS.targetDecimal : STRINGS.targetWhole;
     target.setError(error);
     if (!error) {
-      save({ 'target-count': value }, target, 'updateRules');
+      save({ 'goal-target': value }, target, 'updateRules');
     }
   }
   target.control.addEventListener('change', saveTarget);
@@ -730,7 +730,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     minutes.setError(error);
     hours.setError(null);
     if (!error) {
-      save({ 'target-count': seconds }, minutes, 'updateRules');
+      save({ 'goal-target': seconds }, minutes, 'updateRules');
     }
   }
   hours.control.addEventListener('change', saveTime);
@@ -748,7 +748,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   }
   unit.control.addEventListener('change', saveUnit);
 
-  for (const [field, name] of [[target, 'target-count'], [unit, 'goal-unit']]) {
+  for (const [field, name] of [[target, 'goal-target'], [unit, 'goal-unit']]) {
     field.control.addEventListener('blur', () => {
       if (task && field.control.value === shown.get(field.control)) {
         put(field.control, String(task['lifecycle-rules'][name] ?? ''));
@@ -1499,7 +1499,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
    */
   function startEditable() {
     const current = task['current-occurrence'];
-    return current.occurrence === 1 && current['close-time'] === null && current['completion-count'] === 0 && userEvents.length === 0;
+    return current.occurrence === 1 && current['close-time'] === null && (current.progress ?? 0) === 0 && userEvents.length === 0;
   }
 
   /**
@@ -1510,7 +1510,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     if (!busy(measure.control)) {
       put(measure.control, rules['goal-measure'] ?? 'checks');
     }
-    const amount = rules['target-count'];
+    const amount = rules['goal-target'];
     if (!busy(target.control)) {
       put(target.control, String(amount));
     }

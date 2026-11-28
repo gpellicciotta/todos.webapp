@@ -253,7 +253,7 @@ test('a click ticks a completed target-3 task to 4 of 3, and one Undo sets it ba
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore({ broadcast: true });
     const gym = await store.createTask({ description: 'Gym' });
-    await store.updateRules(gym.id, { 'target-count': 3 });
+    await store.updateRules(gym.id, { 'goal-target': 3 });
     for (let step = 0; step < 3; step += 1) {
       await store.postEvent(gym.id, 'complete');
     }
@@ -276,7 +276,7 @@ test('a click ticks a completed target-3 task to 4 of 3, and one Undo sets it ba
     store.close();
     return task['current-occurrence'];
   }, id);
-  expect(occurrence).toMatchObject({ 'completion-count': 3, status: 'completed' });
+  expect(occurrence).toMatchObject({ progress: 3, status: 'completed' });
   expect(problems).toEqual([]);
 });
 
@@ -298,7 +298,7 @@ for (const width of [360, 1440]) {
       await store.createTask({ description: longer, 'due-time': hours(-2) }, { lists: [home.id, errands.id] });
       await store.createTask({ description: 'Buy paint', 'due-time': hours(30) });
       const gym = await store.createTask({ description: 'Gym' });
-      await store.updateRules(gym.id, { 'target-count': 3 });
+      await store.updateRules(gym.id, { 'goal-target': 3 });
       await store.postEvent(gym.id, 'complete');
       await store.createTask({ description: 'Book flights' });
       store.close();

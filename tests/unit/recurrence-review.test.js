@@ -72,7 +72,7 @@ describe('the display rule before filters and counts', () => {
 });
 
 describe('ended recurring series', () => {
-  const ended = (status) => completedWeekly({ status, 'completion-count': status === 'completed' ? 1 : 0, 'close-time': WEEK_ENDS[0] });
+  const ended = (status) => completedWeekly({ status, progress: status === 'completed' ? 1 : 0, 'close-time': WEEK_ENDS[0] });
 
   it('takes only reopen on a closed recurring occurrence, completed or cancelled', () => {
     for (const status of ['completed', 'cancelled']) {
@@ -121,7 +121,7 @@ describe('the period-end fold order', () => {
       { id: 'a', type: 'end-recurrence', 'creation-time': WEEK_ENDS[0] },
       { id: 'b', type: 'complete', 'creation-time': WEEK_ENDS[0] },
     ];
-    expect(foldEvents(open, events, rules)).toMatchObject({ 'completion-count': 1, status: 'completed', 'close-time': WEEK_ENDS[0] });
+    expect(foldEvents(open, events, rules)).toMatchObject({ progress: 1, status: 'completed', 'close-time': WEEK_ENDS[0] });
   });
 });
 
@@ -141,16 +141,16 @@ describe('undoing recurring events', () => {
   it('leaves the current occurrence alone when a grace event for the previous one is undone', async () => {
     const { store, clock, task } = await connected();
     // The service rolled the task over into week 2, where it holds one tick.
-    const rolled = { occurrence: 2, 'start-time': WEEK_ENDS[0], 'due-time': WEEK_ENDS[1], 'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': null };
+    const rolled = { occurrence: 2, 'start-time': WEEK_ENDS[0], 'due-time': WEEK_ENDS[1], 'goal-target': 1, progress: 0, status: 'ready', 'close-time': null };
     const put = (occurrence) => store.applyChanges((data) => ({
       changes: { put: { tasks: [{ ...data.tasks.find((candidate) => candidate.id === task.id), 'current-occurrence': occurrence }] } }, result: null,
     }));
     await put(rolled);
     clock.now = Date.parse(WEEK_ENDS[0]) + 3_600_000;
     const { event } = await store.postEvent(task.id, 'complete', { occurrence: 1 });
-    await put({ ...rolled, 'completion-count': 1, status: 'completed' });
+    await put({ ...rolled, progress: 1, status: 'completed' });
     await store.queue.undo(store, await entryOf(store, event.id));
-    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ occurrence: 2, 'completion-count': 1, status: 'completed' });
+    expect((await store.getTask(task.id))['current-occurrence']).toMatchObject({ occurrence: 2, progress: 1, status: 'completed' });
     expect((await store.eventsOfTask(task.id)).some((stored) => stored.id === event.id)).toBe(false);
     store.close();
   });

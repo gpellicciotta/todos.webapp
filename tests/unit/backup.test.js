@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   BackupError, backupFileName, exportBackup, importBackup, parseBackup, previewImport,
 } from '../../src/js/core/backup.js';
-import { editedRules, mirrorOccurrence, mirrorRules, rulesShapeProblem, toLegacyTask } from '../../src/js/core/occurrences.js';
+import { editedRules, fullOccurrence, fullRules, rulesShapeProblem, toLegacyTask, withGoalTarget } from '../../src/js/core/occurrences.js';
 import { freshStore } from './store-helpers.js';
 
 const FIXTURE_TEXT = readFileSync(new URL('../fixtures/backup-v1.json', import.meta.url), 'utf8');
@@ -140,7 +140,7 @@ describe('exportBackup', () => {
     clock.tick();
     const task = await store.createTask({ description: 'Paint', 'due-time': '2026-11-08T18:00:00Z', 'overdue-handling': 'cancel' });
     clock.tick();
-    await store.updateRules(task.id, { 'target-count': 3 });
+    await store.updateRules(task.id, { 'goal-target': 3 });
     clock.tick();
     await store.postEvent(task.id, 'complete');
     const note = await store.addNote(task.id, { text: 'Blue', 'owner-id': 7 });
@@ -167,9 +167,8 @@ describe('exportBackup', () => {
     ]);
     const base = ['id', 'task-id', 'occurrence', 'creation-time', 'owner-id', 'type', 'details'];
     expect(backup.events.map((event) => Object.keys(event))).toEqual([base, base, [...base, 'checked']]);
-    // The rule edit lists `goal-target` in the file, and `target-count` in the store.
-    const withoutDetails = (event) => Object.fromEntries(Object.entries(event).filter(([name]) => name !== 'details'));
-    expect(backup.events.map(withoutDetails)).toEqual((await store.eventsOfTask(task.id)).map(withoutDetails));
+    // The rule edit lists `goal-target` in the file and in the store.
+    expect(backup.events).toEqual(await store.eventsOfTask(task.id));
     expect(backup.notes).toEqual([{
       id: note.id, 'task-id': task.id, text: 'Blue', 'owner-id': 7, occurrence: null,
       'creation-time': '2026-11-04T09:00:03.000Z', 'last-update-time': '2026-11-04T09:00:03.000Z',
@@ -432,7 +431,7 @@ describe('format 1 merge import', () => {
     expect(task).toMatchObject({
       description: 'Almond milk\n\nunsweetened',
       'lifecycle-rules': { 'due-time': '2026-11-05T22:59:00.000Z', 'overdue-handling': 'keep' },
-      'current-occurrence': { status: 'completed', 'completion-count': 1, 'due-time': '2026-11-05T22:59:00.000Z' },
+      'current-occurrence': { status: 'completed', progress: 1, 'due-time': '2026-11-05T22:59:00.000Z' },
       'last-update-time': '2026-11-06T00:00:00.000Z',
     });
     expect(Object.keys(task)).not.toContain('status');
@@ -603,7 +602,7 @@ describe('round trip', () => {
     clock.tick();
     await store.moveInList(lamp.id, home.id, { before: door.id });
     await store.updateTask(door.id, { status: 'in-progress' });
-    await store.updateRules(lamp.id, { 'target-count': 3 });
+    await store.updateRules(lamp.id, { 'goal-target': 3 });
     await store.postEvent(lamp.id, 'complete');
     await store.postEvent(water.id, 'start');
     await store.postEvent(solo.id, 'cancel');
@@ -615,7 +614,7 @@ describe('round trip', () => {
     clock.tick(5 * 86_400_000 + 3_600_000);
     await store.postEvent(lamp.id, 'complete');
     await store.postEvent(water.id, 'complete', { occurrence: 1 });
-    await store.updateRules(water.id, { 'target-count': 2 });
+    await store.updateRules(water.id, { 'goal-target': 2 });
     await store.postEvent(water.id, 'complete');
     await store.deleteList(old.id);
     await store.deleteTask(solo.id);
@@ -665,18 +664,18 @@ function embedded(part) {
  * @returns {object} the store rules
  */
 function failing(rules) {
-  return mirrorRules({ ...embedded(rules), 'overdue-handling': rules['overdue-handling'] === 'cancel' ? 'fail' : rules['overdue-handling'] });
+  return fullRules({ ...embedded(rules), 'overdue-handling': rules['overdue-handling'] === 'cancel' ? 'fail' : rules['overdue-handling'] });
 }
 
 /**
- * Return a format 2 event as the import stores it: a `complete` is a checked `log`.
+ * Return a format 2 event as the import stores it: a `complete` is a checked `log`, and a rule edit names `goal-target`.
  * @param {object} event the format 2 event
  * @returns {object} the stored event
  */
 function logged(event) {
   if (event.type === 'edit-lifecycle-rules') {
     const fail = (value) => (value === 'cancel' ? 'fail' : value);
-    const details = Object.fromEntries(Object.entries(event.details).map(([field, change]) => [field,
+    const details = Object.fromEntries(Object.entries(withGoalTarget(event.details)).map(([field, change]) => [field,
       field === 'overdue-handling' ? { old: fail(change.old), new: fail(change.new) } : change]));
     return { ...event, details };
   }
@@ -727,11 +726,11 @@ describe('format 2 merge import', () => {
     const data = fixture2();
     expect(await store.getTask(T102)).toEqual({
       ...data.tasks[1], 'lifecycle-rules': failing(data['lifecycle-rules'][1]),
-      'current-occurrence': { ...mirrorOccurrence(embedded(data.occurrences[1])), entries: [logged(data.events.find((event) => event.id === eventId(304))), logged(data.events.find((event) => event.id === eventId(305)))] },
+      'current-occurrence': { ...fullOccurrence(embedded(data.occurrences[1])), entries: [logged(data.events.find((event) => event.id === eventId(304))), logged(data.events.find((event) => event.id === eventId(305)))] },
     });
     expect(await store.eventsOfTask(T102)).toEqual(data.events.filter((event) => event['task-id'] === T102).map(logged));
-    expect(await store.occurrencesOfTask(T102)).toEqual([mirrorOccurrence(data.occurrences[1])]);
-    expect((await store.getTask(T103))['current-occurrence']).toEqual(mirrorOccurrence(embedded(data.occurrences[2])));
+    expect(await store.occurrencesOfTask(T102)).toEqual([fullOccurrence(data.occurrences[1])]);
+    expect((await store.getTask(T103))['current-occurrence']).toEqual(fullOccurrence(embedded(data.occurrences[2])));
     expect((await store.getTask(T101)).description).toBe('Oat milk, newer');
     expect((await store.eventsOfTask(T101)).map((event) => event.id)).not.toContain(eventId(301));
     expect(await store.notesOfTask(T101)).toEqual([data.notes[0]]);
@@ -743,9 +742,9 @@ describe('format 2 merge import', () => {
     data.occurrences[2]['start-time'] = '2026-10-01T00:00:00.000Z';
     data.occurrences.push({ ...data.occurrences[2], occurrence: 2, 'completion-count': 1, status: 'completed', 'close-time': '2026-11-03T07:00:00.000Z' });
     await importBackup(store, data, 'merge');
-    expect(await store.occurrencesOfTask(T103)).toEqual([mirrorOccurrence({
+    expect(await store.occurrencesOfTask(T103)).toEqual([fullOccurrence({
       'task-id': T103, occurrence: 1, 'start-time': '2026-11-01T09:02:00.000Z', 'due-time': null,
-      'target-count': 1, 'completion-count': 0, status: 'in-progress', 'close-time': null,
+      'goal-target': 1, progress: 0, status: 'in-progress', 'close-time': null,
     })]);
     expect((await store.getTask(T103))['current-occurrence']).toMatchObject({ occurrence: 1, status: 'in-progress' });
   });
@@ -764,7 +763,7 @@ describe('format 2 merge import', () => {
     expect(first.tasks).toEqual(counts({ added: 2, updated: 1 }));
     expect((await store.eventsOfTask(T101)).map((event) => event.id).sort()).toEqual([...local.map((event) => event.id), eventId(301), eventId(308)].sort());
     expect((await store.getTask(T101))['current-occurrence']).toMatchObject({
-      'due-time': '2026-11-05T22:59:00.000Z', status: 'completed', 'completion-count': 1, 'close-time': '2026-11-04T09:00:00.000Z',
+      'due-time': '2026-11-05T22:59:00.000Z', status: 'completed', progress: 1, 'close-time': '2026-11-04T09:00:00.000Z',
     });
     const after = await store.snapshot();
     expect((await importBackup(store, data, 'merge')).tasks).toEqual(counts({ skipped: 3 }));
@@ -776,7 +775,7 @@ describe('format 2 merge import', () => {
     data.events = data.events.filter((event) => ![eventId(303), eventId(305)].includes(event.id));
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
-    expect((await store.getTask(T102))['current-occurrence']).toMatchObject({ 'target-count': 3, 'completion-count': 2, status: 'in-progress' });
+    expect((await store.getTask(T102))['current-occurrence']).toMatchObject({ 'goal-target': 3, progress: 2, status: 'in-progress' });
     expect((await store.eventsOfTask(T102)).map((event) => [event.type, event['creation-time']])).toEqual([
       ['create', '2026-11-01T09:01:00.000Z'], ['log', '2026-11-02T08:00:00.000Z'], ['log', '2026-11-06T10:00:00.000Z'],
     ]);
@@ -796,11 +795,11 @@ describe('format 2 merge import', () => {
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
     expect(await store.occurrencesOfTask(T103)).toEqual([
-      mirrorOccurrence({
+      fullOccurrence({
         'task-id': T103, occurrence: 1, 'start-time': '2026-10-26T00:00:00.000Z', 'due-time': '2026-11-02T00:00:00.000Z',
-        'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': '2026-11-02T00:00:00.000Z',
+        'goal-target': 1, progress: 0, status: 'ready', 'close-time': '2026-11-02T00:00:00.000Z',
       }),
-      mirrorOccurrence(data.occurrences[2]),
+      fullOccurrence(data.occurrences[2]),
     ]);
     expect((await store.eventsOfTask(T103)).map((event) => [event.type, event.occurrence, event['creation-time']])).toEqual([
       ['create', 1, '2026-10-27T09:00:00.000Z'], ['roll-over', 1, '2026-11-02T00:00:00.000Z'], ['log', 2, '2026-11-06T10:00:00.000Z'],
@@ -815,12 +814,12 @@ describe('format 2 merge import', () => {
     await importBackup(store, data, 'merge');
     const bread = await store.getTask(T102);
     expect(bread['lifecycle-rules']).toEqual(failing(data['lifecycle-rules'][1]));
-    expect(bread['current-occurrence']).toMatchObject(mirrorOccurrence(embedded(data.occurrences[1])));
+    expect(bread['current-occurrence']).toMatchObject(fullOccurrence(embedded(data.occurrences[1])));
     const events = await store.eventsOfTask(T102);
     expect(events.slice(0, -1)).toEqual(data.events.filter((event) => event['task-id'] === T102).map(logged));
     expect(events.at(-1)).toMatchObject({
       type: 'edit-lifecycle-rules', 'creation-time': '2026-11-02T09:00:00.000Z', occurrence: 1,
-      details: { 'target-count': { old: 3, new: 5 } },
+      details: { 'goal-target': { old: 3, new: 5 } },
     });
     // No event names the due time, so the task has the exported one from its first rules on.
     expect(events.filter((event) => event.type === 'edit-lifecycle-rules').every((event) => !('due-time' in event.details))).toBe(true);
@@ -834,25 +833,25 @@ describe('format 2 merge import', () => {
     await importBackup(store, data, 'merge');
     const edits = (await store.eventsOfTask(T102)).filter((event) => event.type === 'edit-lifecycle-rules');
     expect(edits.map((event) => [event['creation-time'], event.details])).toEqual([
-      ['2026-11-01T10:00:00.000Z', { 'target-count': { old: 1, new: 3 }, 'overdue-handling': { old: 'keep', new: 'fail' } }],
-      ['2026-11-01T10:00:00.001Z', { 'target-count': { old: 3, new: 5 } }],
+      ['2026-11-01T10:00:00.000Z', { 'goal-target': { old: 1, new: 3 }, 'overdue-handling': { old: 'keep', new: 'fail' } }],
+      ['2026-11-01T10:00:00.001Z', { 'goal-target': { old: 3, new: 5 } }],
     ]);
-    expect((await store.getTask(T102))['current-occurrence']).toMatchObject({ 'target-count': 5, 'completion-count': 2, status: 'in-progress' });
+    expect((await store.getTask(T102))['current-occurrence']).toMatchObject({ 'goal-target': 5, progress: 2, status: 'in-progress' });
   });
 
   it('never lets older local rule edits override the rules of a newer backup task', async () => {
     at('2026-11-04T10:00:00.000Z');
-    await store.updateRules(T101, { 'target-count': 2, 'overdue-handling': 'cancel' });
+    await store.updateRules(T101, { 'goal-target': 2, 'overdue-handling': 'cancel' });
     const data = fixture2();
     data.tasks[0]['last-update-time'] = '2026-11-05T00:00:00.000Z';
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
     const milk = await store.getTask(T101);
-    expect(milk['lifecycle-rules']).toEqual(mirrorRules(embedded(data['lifecycle-rules'][0])));
-    expect(milk['current-occurrence']).toMatchObject({ 'target-count': 1, 'due-time': '2026-11-05T22:59:00.000Z', status: 'ready' });
+    expect(milk['lifecycle-rules']).toEqual(fullRules(embedded(data['lifecycle-rules'][0])));
+    expect(milk['current-occurrence']).toMatchObject({ 'goal-target': 1, 'due-time': '2026-11-05T22:59:00.000Z', status: 'ready' });
     expect((await store.eventsOfTask(T101)).filter((event) => event.type === 'edit-lifecycle-rules').map((event) => [event['creation-time'], event.details])).toEqual([
-      ['2026-11-04T10:00:00.000Z', { 'target-count': { old: 1, new: 2 }, 'overdue-handling': { old: 'keep', new: 'cancel' } }],
-      ['2026-11-05T00:00:00.000Z', { 'target-count': { old: 2, new: 1 }, 'overdue-handling': { old: 'cancel', new: 'keep' } }],
+      ['2026-11-04T10:00:00.000Z', { 'goal-target': { old: 1, new: 2 }, 'overdue-handling': { old: 'keep', new: 'cancel' } }],
+      ['2026-11-05T00:00:00.000Z', { 'goal-target': { old: 2, new: 1 }, 'overdue-handling': { old: 'cancel', new: 'keep' } }],
     ]);
   });
 
@@ -863,7 +862,7 @@ describe('format 2 merge import', () => {
     const data = weeklyGap({ ...occurrence, 'close-time': '2026-11-02T00:00:00.000Z' }, { 'recurrence-end-count': 2 });
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge', { connected: true });
-    expect((await store.getTask(T103))['current-occurrence']).toMatchObject(mirrorOccurrence(embedded(data.occurrences[2])));
+    expect((await store.getTask(T103))['current-occurrence']).toMatchObject(fullOccurrence(embedded(data.occurrences[2])));
     expect((await store.eventsOfTask(T103)).map((event) => [event.type, event.occurrence, event['creation-time']])).toEqual([
       ['create', 1, '2026-10-20T09:00:00.000Z'], ['roll-over', 1, '2026-10-26T00:00:00.000Z'], ...user, ['end-recurrence', 2, '2026-11-02T00:00:00.000Z'],
     ]);
@@ -875,7 +874,7 @@ describe('format 2 merge import', () => {
     const data = weeklyGap({ status: 'cancelled', 'close-time': '2026-10-28T12:00:00.000Z' });
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
-    expect((await store.getTask(T103))['current-occurrence']).toEqual(mirrorOccurrence(embedded(data.occurrences[2])));
+    expect((await store.getTask(T103))['current-occurrence']).toEqual(fullOccurrence(embedded(data.occurrences[2])));
     expect((await store.eventsOfTask(T103)).map((event) => event.type)).toEqual(['create', 'roll-over', 'cancel']);
   });
 
@@ -899,8 +898,8 @@ describe('format 2 overwrite import', () => {
     expect(result.tasks).toEqual(counts({ added: 2, updated: 1 }));
     const data = fixture2();
     expect(await store.eventsOfTask(T102)).toEqual(data.events.filter((event) => event['task-id'] === T102).map(logged));
-    expect(await store.occurrencesOfTask(T102)).toEqual([mirrorOccurrence(data.occurrences[1])]);
-    expect((await store.getTask(T102))['current-occurrence']).toMatchObject(mirrorOccurrence(embedded(data.occurrences[1])));
+    expect(await store.occurrencesOfTask(T102)).toEqual([fullOccurrence(data.occurrences[1])]);
+    expect((await store.getTask(T102))['current-occurrence']).toMatchObject(fullOccurrence(embedded(data.occurrences[1])));
     const after = await store.snapshot();
     expect(await importBackup(store, fixture2(), 'overwrite')).toMatchObject(counts({ skipped: 10 }));
     expect(await store.snapshot()).toEqual(after);
@@ -920,7 +919,7 @@ describe('format 2 overwrite import', () => {
 
     expect(result.tasks).toEqual(counts({ updated: 2, skipped: 1 }));
     expect(await store.eventsOfTask(T102)).toEqual(data.events.filter((event) => event['task-id'] === T102).map(logged));
-    expect(await store.occurrencesOfTask(T103)).toEqual([mirrorOccurrence(data.occurrences[2])]);
+    expect(await store.occurrencesOfTask(T103)).toEqual([fullOccurrence(data.occurrences[2])]);
   });
 
   it('changes nothing when a backup whose import writes events anew is imported twice', async () => {
@@ -953,14 +952,14 @@ describe('format 2 import while connected', () => {
     const [create, rules, first, second] = bread;
     expect(create.fields).toEqual({
       id: T102, description: 'Bread', 'creation-time': '2026-11-01T09:01:00.000Z', lists: [], import: true, 'event-id': eventId(302),
-      'lifecycle-rules': { ...embedded(fixture2()['lifecycle-rules'][1]), 'target-count': 1, 'overdue-handling': 'keep' },
+      'lifecycle-rules': { ...withGoalTarget(embedded(fixture2()['lifecycle-rules'][1])), 'goal-target': 1, 'overdue-handling': 'keep' },
     });
     expect(rules).toMatchObject({
       target: { type: 'rules', id: T102 },
-      fields: { 'target-count': 3, 'overdue-handling': 'fail', import: true, 'event-id': eventId(303) },
-      'edit-times': { 'target-count': '2026-11-01T10:00:00.000Z', 'overdue-handling': '2026-11-01T10:00:00.000Z' },
+      fields: { 'goal-target': 3, 'overdue-handling': 'fail', import: true, 'event-id': eventId(303) },
+      'edit-times': { 'goal-target': '2026-11-01T10:00:00.000Z', 'overdue-handling': '2026-11-01T10:00:00.000Z' },
     });
-    expect(Object.keys(rules.fields)).toEqual(['target-count', 'overdue-handling', 'import', 'event-id']);
+    expect(Object.keys(rules.fields)).toEqual(['goal-target', 'overdue-handling', 'import', 'event-id']);
     expect(first.fields).toEqual({ id: eventId(304), type: 'log', checked: true, 'creation-time': '2026-11-02T08:00:00.000Z', occurrence: 1, import: true });
     expect(second.fields).toEqual({ id: eventId(305), type: 'log', checked: true, 'creation-time': '2026-11-02T09:00:00.000Z', occurrence: 1, import: true });
   });
@@ -973,11 +972,11 @@ describe('format 2 import while connected', () => {
     await importBackup(store, data, 'merge', { connected: true });
     const bread = (await store.queue.all()).filter((entry) => entry.target.type !== 'membership' && [entry.target.id, entry.target['task-id']].includes(T102));
     expect(bread.map((entry) => entry.operation)).toEqual(['create-task', 'update-rules', 'post-event', 'post-event', 'update-rules']);
-    expect(bread[0].fields['lifecycle-rules']).toMatchObject({ 'target-count': 1, 'overdue-handling': 'keep' });
+    expect(bread[0].fields['lifecycle-rules']).toMatchObject({ 'goal-target': 1, 'overdue-handling': 'keep' });
     const settled = (await store.eventsOfTask(T102)).at(-1);
     expect(bread[4]).toMatchObject({
-      fields: { 'target-count': 5, import: true, 'event-id': settled.id },
-      'edit-times': { 'target-count': '2026-11-02T09:00:00.000Z' },
+      fields: { 'goal-target': 5, import: true, 'event-id': settled.id },
+      'edit-times': { 'goal-target': '2026-11-02T09:00:00.000Z' },
     });
   });
 
@@ -1009,7 +1008,7 @@ describe('format 2 import while connected', () => {
     expect(bread['lifecycle-rules']).toEqual(failing(data['lifecycle-rules'][1]));
     expect((await store.eventsOfTask(T102)).map((event) => event.id)).toContain(eventId(303));
     for (const occurrence of await store.occurrencesOfTask(T102)) {
-      expect(occurrence['completion-count']).toBeLessThanOrEqual(2);
+      expect(occurrence.progress).toBeLessThanOrEqual(2);
     }
     // The service checks every replayed rule request: the create and each rule edit must keep a valid shape.
     const entries = (await store.queue.all()).filter((entry) => entry.target.type !== 'membership' && [entry.target.id, entry.target['task-id']].includes(T102));
@@ -1021,7 +1020,7 @@ describe('format 2 import while connected', () => {
       expect(problem).toBeNull();
       replayed = next;
     }
-    expect(mirrorRules(replayed)).toEqual(failing(data['lifecycle-rules'][1]));
+    expect(fullRules(replayed)).toEqual(failing(data['lifecycle-rules'][1]));
   });
 
   it('posts only the imported user events of an existing newer task, with import true', async () => {
@@ -1037,7 +1036,7 @@ describe('format 2 import while connected', () => {
     const entries = await store.queue.all();
     expect(entries.map((entry) => entry.operation)).toEqual(['update-task', 'update-rules', 'post-event']);
     expect(entries[2].fields).toEqual({ id: eventId(309), type: 'log', checked: true, 'creation-time': '2026-11-04T08:00:00.000Z', occurrence: 1, import: true });
-    expect((await store.getTask(T103))['current-occurrence']).toMatchObject({ status: 'completed', 'completion-count': 1 });
+    expect((await store.getTask(T103))['current-occurrence']).toMatchObject({ status: 'completed', progress: 1 });
   });
 });
 
@@ -1090,7 +1089,7 @@ describe('format 1 import while connected', () => {
     expect(updateTask).toMatchObject({ target: { type: 'task', id: T101 }, fields: { description: 'Almond milk\n\nunsweetened' }, 'edit-times': {} });
     expect(updateRules).toMatchObject({
       target: { type: 'rules', id: T101 },
-      fields: { 'target-count': 1, 'due-time': '2026-11-05T22:59:00.000Z', 'overdue-handling': 'keep' },
+      fields: { 'goal-target': 1, 'due-time': '2026-11-05T22:59:00.000Z', 'overdue-handling': 'keep' },
       'edit-times': {},
     });
     expect(unstart).toMatchObject({ target: { type: 'event', 'task-id': T101 }, fields: { type: 'unstart', 'creation-time': '2026-11-07T10:00:00.000Z', occurrence: 1 } });
@@ -1195,7 +1194,7 @@ describe('log entries in a backup', () => {
     const { store: source, clock } = await freshStore();
     const { store: target } = await freshStore();
     try {
-      const task = await source.createTask({ description: 'Run', 'lifecycle-rules': { 'target-count': 2 } });
+      const task = await source.createTask({ description: 'Run', 'lifecycle-rules': { 'goal-target': 2 } });
       clock.tick();
       await source.logEntry(task.id, { 'time-spent-seconds': 600, amount: 2.5, label: 'Park' });
       clock.tick();
@@ -1236,7 +1235,7 @@ describe('mixed legacy and log histories in a backup', () => {
     const { store: source, clock } = await freshStore();
     const { store: target } = await freshStore();
     try {
-      const task = await source.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+      const task = await source.createTask({ description: 'Mixed', 'lifecycle-rules': { 'goal-target': 3 } });
       clock.tick();
       await source.logEntry(task.id, { checked: true });
       clock.tick();
@@ -1261,7 +1260,7 @@ describe('legacy uncomplete events beside checked logs in a backup', () => {
     const { store: source, clock } = await freshStore();
     const { store: target } = await freshStore();
     try {
-      const task = await source.createTask({ description: 'Mixed', 'lifecycle-rules': { 'target-count': 3 } });
+      const task = await source.createTask({ description: 'Mixed', 'lifecycle-rules': { 'goal-target': 3 } });
       clock.tick();
       await source.logEntry(task.id, { checked: true });
       clock.tick();
@@ -1297,7 +1296,7 @@ describe('format 3 export', () => {
   const options = { now: new Date('2026-11-09T12:00:00.000Z'), appVersion: '0.1.0-pre' };
   const GOAL = {
     'start-time': '2026-11-01T00:00:00.000Z', 'due-time': '2026-11-20T18:00:00.000Z', 'overdue-handling': 'cancel',
-    'goal-measure': 'amount', 'goal-unit': 'km', 'target-count': 10,
+    'goal-measure': 'amount', 'goal-unit': 'km', 'goal-target': 10,
   };
 
   it('writes the goal, start time, and cache fields of ADR-0006, with fail for cancel, and no target-count', async () => {
@@ -1306,7 +1305,7 @@ describe('format 3 export', () => {
     clock.tick();
     await store.logEntry(task.id, { amount: 4, label: 'Park' });
     clock.tick();
-    await store.updateRules(task.id, { 'target-count': 12 });
+    await store.updateRules(task.id, { 'goal-target': 12 });
     const backup = await exportBackup(store, options);
 
     expect(backup['format-version']).toBe(3);
@@ -1329,7 +1328,7 @@ describe('format 3 export', () => {
 
   it('exports a legacy complete event stored by an earlier import as a checked log', async () => {
     clock.tick();
-    const task = await store.createTask({ description: 'Old', 'lifecycle-rules': { 'target-count': 2 } });
+    const task = await store.createTask({ description: 'Old', 'lifecycle-rules': { 'goal-target': 2 } });
     const { task: stored } = { task: await store.getTask(task.id) };
     const events = await store.eventsOfTask(task.id);
     const legacy = [
@@ -1373,7 +1372,7 @@ describe('format 3 export', () => {
 
   it('adds no missing checks for a huge valid progress, which a log per check could not reach', async () => {
     clock.tick();
-    const task = await store.createTask({ description: 'Tap', 'lifecycle-rules': { 'target-count': 999_999_999_999 } });
+    const task = await store.createTask({ description: 'Tap', 'lifecycle-rules': { 'goal-target': 999_999_999_999 } });
     const file = JSON.parse(JSON.stringify(await exportBackup(store, options)));
     file.occurrences[0].progress = 999_999_999_998;
     file.occurrences[0].status = 'in-progress';
@@ -1394,7 +1393,7 @@ describe('format 3 export', () => {
 
   it('rebuilds a gap of exactly 10000 checks, and reports the first gap above it', async () => {
     clock.tick();
-    const task = await store.createTask({ description: 'Tap', 'lifecycle-rules': { 'target-count': 100_000 } });
+    const task = await store.createTask({ description: 'Tap', 'lifecycle-rules': { 'goal-target': 100_000 } });
     const base = JSON.parse(JSON.stringify(await exportBackup(store, options)));
     for (const [gap, rebuilt] of [[10_000, true], [10_001, false]]) {
       const file = JSON.parse(JSON.stringify(base));
@@ -1581,7 +1580,7 @@ describe('format 2 conversion on import', () => {
     const result = await importBackup(store, parseBackup(JSON.stringify(file)), 'merge');
     expect(result.skippedEvents).toEqual([ev(6, 'uncomplete', '14').id]);
     const edit = (await store.eventsOfTask(task)).find((event) => event.type === 'edit-lifecycle-rules');
-    expect(edit.details).toMatchObject({ 'target-count': { old: 2, new: 3 } });
+    expect(edit.details).toMatchObject({ 'goal-target': { old: 2, new: 3 } });
     expect((await store.getTask(task))['lifecycle-rules']).toMatchObject({ 'goal-target': 3 });
     const preview = await previewImport(store, JSON.parse(JSON.stringify(file)), 'merge');
     expect(preview.skippedEvents).toEqual([ev(6, 'uncomplete', '14').id]);

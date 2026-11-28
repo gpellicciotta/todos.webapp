@@ -244,14 +244,14 @@ describe('the version 5 migration', () => {
       expect(Object.keys(task)).not.toContain('last-activity-time');
       expect(task['last-update-time']).toBe(T2);
       expect(task['current-occurrence']).toEqual({
-        occurrence: 1, 'start-time': T0, 'due-time': id === 'todo' ? DUE : null, 'target-count': 1,
-        'completion-count': count, status, 'close-time': closed,
+        occurrence: 1, 'start-time': T0, 'due-time': id === 'todo' ? DUE : null, status, 'close-time': closed,
         'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null, progress: count, 'time-spent-seconds': 0,
         entries: id === 'completed' ? [expect.objectContaining({ type: 'log', checked: true })] : [],
       });
       expect(task['lifecycle-rules']).toMatchObject({
-        'target-count': 1, 'due-time': id === 'todo' ? DUE : null, 'overdue-handling': id === 'todo' ? 'cancel' : 'keep',
+        'goal-target': 1, 'due-time': id === 'todo' ? DUE : null, 'overdue-handling': id === 'todo' ? 'cancel' : 'keep',
       });
+      expect(task['lifecycle-rules']).not.toHaveProperty('target-count');
       const occurrence = Object.fromEntries(Object.entries(task['current-occurrence']).filter(([name]) => name !== 'entries'));
       expect(await store.occurrencesOfTask(id)).toEqual([{ 'task-id': id, ...occurrence }]);
       const events = await store.eventsOfTask(id);
@@ -298,9 +298,9 @@ describe('the version 5 migration', () => {
     const entries = await store.queue.all();
     const [rules, event] = [entries[4], entries[5]];
     expect(rules.undo.fields).toEqual({ 'due-time': { from: DUE, to: null } });
-    expect(event.undo.before).toMatchObject({ status: 'ready', 'completion-count': 0 });
+    expect(event.undo.before).toMatchObject({ status: 'ready', progress: 0 });
     await store.queue.undo(store, event);
-    expect((await store.getTask('completed'))['current-occurrence']).toMatchObject({ status: 'ready', 'completion-count': 0, 'close-time': null });
+    expect((await store.getTask('completed'))['current-occurrence']).toMatchObject({ status: 'ready', progress: 0, 'close-time': null });
     await store.queue.undo(store, rules);
     expect(await store.getTask('completed')).toMatchObject({ 'lifecycle-rules': { 'due-time': DUE }, 'current-occurrence': { 'due-time': DUE } });
     store.close();
@@ -351,22 +351,24 @@ describe('the version 6 upgrade', () => {
     expect(DB_VERSION).toBe(6);
   });
 
-  it('fills the goal fields of rules and occurrences, mirrors equal to them, and keeps the counts and statuses', async () => {
+  it('turns the counts into the goal fields of rules and occurrences, and keeps the statuses', async () => {
     const factory = new IDBFactory();
     await version5Database(factory);
     const store = await open(factory);
     const task = await store.getTask('t1');
     expect(task['lifecycle-rules']).toMatchObject({
-      'target-count': 3, 'overdue-handling': 'cancel', 'start-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null,
+      'overdue-handling': 'cancel', 'start-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null,
     });
     expect(task['current-occurrence']).toMatchObject({
-      'target-count': 3, 'goal-target': 3, 'completion-count': 2, progress: 2, 'time-spent-seconds': 0, status: 'in-progress',
-      'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-unit': null,
+      'goal-target': 3, progress: 2, 'time-spent-seconds': 0, status: 'in-progress', 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-unit': null,
     });
+    expect(task['lifecycle-rules']).not.toHaveProperty('target-count');
+    expect(Object.keys(task['current-occurrence'])).not.toEqual(expect.arrayContaining(['target-count']));
+    expect(Object.keys(task['current-occurrence'])).not.toEqual(expect.arrayContaining(['completion-count']));
     const stored = await store.occurrencesOfTask('t1');
-    expect(stored.map((record) => [record.occurrence, record['goal-target'], record.progress, record['completion-count'], record.status, record['time-spent-seconds']]))
-      .toEqual([[0, 3, 3, 3, 'completed', 0], [1, 3, 2, 2, 'in-progress', 0]]);
-    expect((await store.listTasks()).map((listed) => listed['current-occurrence']['completion-count'])).toEqual([2]);
+    expect(stored.map((record) => [record.occurrence, record['goal-target'], record.progress, record.status, record['time-spent-seconds'], 'completion-count' in record]))
+      .toEqual([[0, 3, 3, 'completed', 0, false], [1, 3, 2, 'in-progress', 0, false]]);
+    expect((await store.listTasks()).map((listed) => listed['current-occurrence'].progress)).toEqual([2]);
     store.close();
   });
 });
@@ -384,7 +386,7 @@ describe('the version 6 event conversion', () => {
       for (const source of vector.occurrences) {
         const { expected } = source;
         const rules = { ...DEFAULT_RULES, 'recurrence-unit': source.recurring ? 'day' : null };
-        const occurrence = { ...firstOccurrence(rules, source.start), 'target-count': source.goal.target, 'goal-target': source.goal.target };
+        const occurrence = { ...firstOccurrence(rules, source.start), 'goal-target': source.goal.target };
         const events = source.events.map(({ time, ...rest }) => ({ occurrence: source.number, 'creation-time': time, ...rest }));
         const result = convertOccurrence({ occurrence, rules, events });
         const where = `${vector.name}, occurrence ${source.number}`;
@@ -488,12 +490,12 @@ describe('the version 6 event conversion', () => {
     expect(await types('d')).toEqual([['d0', 'create', undefined, undefined]]);
     const summary = async (id) => {
       const occurrence = (await store.getTask(id))['current-occurrence'];
-      return [occurrence.progress, occurrence['completion-count'], occurrence.status, occurrence['close-time'], occurrence.entries?.map((entry) => entry.id)];
+      return [occurrence.progress, 'completion-count' in occurrence, occurrence.status, occurrence['close-time'], occurrence.entries?.map((entry) => entry.id)];
     };
-    expect(await summary('a')).toEqual([1, 1, 'in-progress', null, ['a1']]);
-    expect(await summary('b')).toEqual([0, 0, 'ready', null, []]);
-    expect(await summary('c')).toEqual([0, 0, 'failed', DUE, []]);
-    expect(await summary('d')).toEqual([0, 0, 'ready', null, []]);
+    expect(await summary('a')).toEqual([1, false, 'in-progress', null, ['a1']]);
+    expect(await summary('b')).toEqual([0, false, 'ready', null, []]);
+    expect(await summary('c')).toEqual([0, false, 'failed', DUE, []]);
+    expect(await summary('d')).toEqual([0, false, 'ready', null, []]);
     const [stored] = await store.occurrencesOfTask('a');
     expect(stored).toMatchObject({ progress: 1, status: 'in-progress' });
     expect(stored).not.toHaveProperty('entries');

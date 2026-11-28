@@ -15,7 +15,8 @@
 
 import {
   applyEvent, applyRuleEdit, byEventOrder, eventsTowardsOccurrence, eventsTowardsStatus, fromLegacyTask, isPeriodEnd,
-  foldLogCache, isRecurring, logForm, makeEvent, mirrorOccurrence, normalizeRules, planRollOver, replayEvents, RULE_FIELDS, rulesShapeProblem, STATUSES, statusFromCount, statusOf, toLegacyTask,
+  foldLogCache, fullOccurrence, isRecurring, logForm, makeEvent, normalizeRules, planRollOver, replayEvents, RULE_FIELDS, rulesShapeProblem, STATUSES, statusFromCount,
+  statusOf, toLegacyTask, withGoalTarget,
 } from './occurrences.js';
 import { isValidTimezone, localDate } from './periods.js';
 import { NAME_MAX, DESCRIPTION_MAX as LIST_DESCRIPTION_MAX } from '../store/lists.js';
@@ -37,8 +38,8 @@ export const FILE_RULE_FIELDS = Object.freeze([
   'start-time', 'due-time', 'overdue-handling', 'goal-direction', 'goal-measure', 'goal-target', 'goal-unit',
   'recurrence-unit', 'recurrence-interval', 'recurrence-end-date', 'recurrence-end-count', 'timezone',
 ]);
-/** The rule fields as the store names them: `target-count` stands for `goal-target`. */
-const STORE_RULE_FIELDS = Object.freeze(FILE_RULE_FIELDS.map((field) => (field === 'goal-target' ? 'target-count' : field)));
+/** The rule fields of format 2, in file order, which name the target `target-count`. */
+const FORMAT_2_RULE_FIELDS = Object.freeze(RULE_FIELDS.map((field) => (field === 'goal-target' ? 'target-count' : field)));
 
 /** The fields of each record type of format 3, in file order. */
 export const FIELDS = {
@@ -144,22 +145,17 @@ function fileValue(field, value) {
 }
 
 /**
- * Rename the fields of the details of an `edit-lifecycle-rules` event, and map `cancel` to `fail` when writing the file.
+ * Return the details of an `edit-lifecycle-rules` event as format 3 writes them: `goal-target` for the `target-count`
+ * of an event stored or a file written before version 6, and `fail` for `cancel`.
  * @param {object|null} details the details
- * @param {boolean} toFile true to write file names (`goal-target`), false to read them into store names (`target-count`)
  * @returns {object|null} the details
  */
-function renamedDetails(details, toFile) {
+function fileDetails(details) {
   if (details === null || typeof details !== 'object') {
     return details ?? null;
   }
-  return Object.fromEntries(Object.entries(details).map(([field, change]) => {
-    const name = toFile ? (field === 'target-count' ? 'goal-target' : field) : (field === 'goal-target' ? 'target-count' : field);
-    const changed = toFile && change !== null && typeof change === 'object'
-      ? { ...change, old: fileValue(field, change.old), new: fileValue(field, change.new) }
-      : change;
-    return [name, changed];
-  }));
+  return Object.fromEntries(Object.entries(withGoalTarget(details)).map(([field, change]) => [field,
+    change !== null && typeof change === 'object' ? { ...change, old: fileValue(field, change.old), new: fileValue(field, change.new) } : change]));
 }
 
 /**
@@ -171,18 +167,9 @@ function renamedDetails(details, toFile) {
 function exportEvent(event) {
   const written = pick(event, FIELDS.events);
   if (event.type === 'edit-lifecycle-rules') {
-    written.details = renamedDetails(written.details, true);
+    written.details = fileDetails(written.details);
   }
   return { ...written, ...Object.fromEntries(LOG_FIELDS.filter((field) => event[field] !== undefined && event[field] !== null).map((field) => [field, event[field]])) };
-}
-
-/**
- * Return a file event as the store holds it, with the store's names in the rule edit details.
- * @param {object} event the event of a format 3 file
- * @returns {object} the event
- */
-function storeEvent(event) {
-  return event.type === 'edit-lifecycle-rules' ? { ...event, details: renamedDetails(event.details, false) } : event;
 }
 
 /**
@@ -270,23 +257,33 @@ function embedded(part) {
 }
 
 /**
- * Return full rules as format 3 holds them: every rule field in schema order, with `goal-target` for the store's `target-count`
- * and `fail` for `cancel`.
- * @param {object} rules the store rules, or format 3 rules
+ * Return full rules as format 3 holds them: every rule field in schema order, with `fail` for `cancel`;
+ * rules of format 2 give their `target-count` as `goal-target`.
+ * @param {object} rules the store rules, or format 2 or 3 rules
  * @returns {object} the rules
  */
 function rulesOf(rules) {
-  const full = normalizeRules('goal-target' in rules && !('target-count' in rules) ? { ...rules, 'target-count': rules['goal-target'] } : rules);
-  return Object.fromEntries(FILE_RULE_FIELDS.map((field, i) => [field, fileValue(field, full[STORE_RULE_FIELDS[i]])]));
+  const full = normalizeRules(rules);
+  return Object.fromEntries(FILE_RULE_FIELDS.map((field) => [field, fileValue(field, full[field])]));
 }
 
 /**
- * Return format 3 rules as the store holds them, with the `target-count` that mirrors `goal-target`.
+ * Return format 3 rules as the store holds them.
  * @param {object} rules the rules of a file, with or without `task-id`
  * @returns {object} the store rules
  */
 function storeRulesOf(rules) {
-  return normalizeRules({ ...embedded(rules), 'target-count': rules['goal-target'] });
+  return normalizeRules(embedded(rules));
+}
+
+/**
+ * Return full rules as format 2 holds them, with `target-count` for the target.
+ * @param {object} rules the rules, of format 2 or of the store
+ * @returns {object} the format 2 rules
+ */
+function format2RulesOf(rules) {
+  const full = normalizeRules(rules);
+  return Object.fromEntries(FORMAT_2_RULE_FIELDS.map((field, i) => [field, full[RULE_FIELDS[i]] ?? null]));
 }
 
 /**
@@ -590,7 +587,7 @@ function checkRules3(raw, path, checkTask) {
 function checkRules(raw, path, checkTask) {
   const rules = {
     'task-id': checkTask(raw['task-id'], `${path}.task-id`),
-    ...Object.fromEntries(RULE_FIELDS.map((field) => [field, checkRuleField(field, field === 'target-count' ? raw[field] ?? 1 : raw[field], `${path}.${field}`)])),
+    ...Object.fromEntries(FORMAT_2_RULE_FIELDS.map((field) => [field, checkRuleField(field, field === 'target-count' ? raw[field] ?? 1 : raw[field], `${path}.${field}`)])),
   };
   const problem = rulesShapeProblem(embedded(rules));
   if (problem) {
@@ -598,7 +595,7 @@ function checkRules(raw, path, checkTask) {
     fail(`${path}.${problem}`, recurring && ['recurrence-interval', 'timezone'].includes(problem) ? 'is required for a recurring task'
       : `must be null for a ${recurring ? 'recurring' : 'one-off'} task`);
   }
-  return { 'task-id': rules['task-id'], ...pick(normalizeRules(embedded(rules)), RULE_FIELDS) };
+  return { 'task-id': rules['task-id'], ...format2RulesOf(embedded(rules)) };
 }
 
 /**
@@ -617,7 +614,7 @@ function checkDetails(raw, path, three = false) {
   if (typeof details !== 'object' || details === null || Array.isArray(details) || Object.keys(details).length === 0) {
     fail(`${path}.details`, 'must list the old and new value of each changed rule field');
   }
-  const fields = three ? FILE_RULE_FIELDS : RULE_FIELDS;
+  const fields = three ? FILE_RULE_FIELDS : FORMAT_2_RULE_FIELDS;
   const check = three ? checkRuleField3 : checkRuleField;
   return Object.fromEntries(Object.entries(details).map(([field, change]) => {
     const at = `${path}.details.${field}`;
@@ -714,7 +711,7 @@ export function validateBackup(data) {
   if (!one) {
     const rules = checkRecords(data, 'lifecycle-rules', (raw, path) => (three ? checkRules3 : checkRules)(raw, path, checkTask), (r) => r['task-id'], 'task-id');
     const ruled = new Set(rules.map((r) => r['task-id']));
-    const defaultRules = three ? rulesOf({}) : pick(normalizeRules({}), RULE_FIELDS);
+    const defaultRules = three ? rulesOf({}) : format2RulesOf({});
     parts['lifecycle-rules'] = [...rules, ...tasks.filter((task) => !ruled.has(task.id)).map((task) => ({ 'task-id': task.id, ...defaultRules }))];
     parts.occurrences = checkRecords(data.occurrences === undefined ? { ...data, occurrences: [] } : data, 'occurrences', (raw, path) => ({
       'task-id': checkTask(raw['task-id'], `${path}.task-id`),
@@ -989,7 +986,7 @@ export async function exportBackup(store, { now = new Date(), appVersion }) {
     lists: data.lists.map((list) => pick(list, FIELDS.lists)).sort((a, b) => compare(a.id, b.id)),
     tasks: tasks.map((task) => pick(task, FIELDS.tasks)),
     'lifecycle-rules': tasks.map((task) => ({ 'task-id': task.id, ...rulesOf(task['lifecycle-rules']) })),
-    occurrences: [...occurrences.values()].map((occurrence) => pick(mirrorOccurrence(occurrence), FIELDS.occurrences))
+    occurrences: [...occurrences.values()].map((occurrence) => pick(fullOccurrence(occurrence), FIELDS.occurrences))
       .sort((a, b) => compare(a['task-id'], b['task-id']) || a.occurrence - b.occurrence),
     events: events.map(exportEvent).sort((a, b) => compare(a['task-id'], b['task-id']) || byEventOrder(a, b)),
     memberships: data.memberships.map((m) => pick(m, FIELDS.memberships)).sort((a, b) => compare(a['list-id'], b['list-id'])
@@ -1115,10 +1112,12 @@ function byTask(records) {
  *   and the completions beyond `MISSING_CHECKS_MAX` that it leaves out, 0 when none
  */
 function missingEvents(record, events, occurrences, time) {
-  const wanted = occurrences.reduce((last, occurrence) => (!last || occurrence.occurrence > last.occurrence ? occurrence : last), null);
-  if (!wanted) {
+  const latest = occurrences.reduce((last, occurrence) => (!last || occurrence.occurrence > last.occurrence ? occurrence : last), null);
+  if (!latest) {
     return { events: [], unrebuilt: 0 };
   }
+  // Format 2 names the progress and the target `completion-count` and `target-count`.
+  const wanted = fullOccurrence(latest);
   const replay = replayEvents(record, record['lifecycle-rules'], events, newEventId, { settleAt: record['last-update-time'] });
   const { rules } = replay;
   let current = replay.current;
@@ -1152,13 +1151,13 @@ function missingEvents(record, events, occurrences, time) {
   const at = new Date(Math.min(Date.parse(time), end)).toISOString();
   // A closed recurring occurrence gets its count inside its period; the end of the series, or a user cancel, then closes it.
   const closesSeries = recurring && wanted['close-time'] !== null && current['close-time'] === null;
-  let goal = closesSeries ? { ...wanted, status: statusFromCount(wanted['completion-count'], current['target-count']), 'close-time': null } : wanted;
-  const gap = goal['completion-count'] - current['completion-count'];
+  let goal = closesSeries ? { ...wanted, status: statusFromCount(wanted.progress, current['goal-target']), 'close-time': null } : wanted;
+  const gap = goal.progress - current.progress;
   let unrebuilt = 0;
   if (gap > MISSING_CHECKS_MAX) {
-    // Too many completions to write one event each: keep the count as the events give it, and report the rest.
+    // Too many completions to write one event each: keep the progress as the events give it, and report the rest.
     unrebuilt = gap;
-    goal = { ...goal, 'completion-count': current['completion-count'] };
+    goal = { ...goal, progress: current.progress };
   }
   for (const type of eventsTowardsOccurrence(current, goal, rules)) {
     add(type, at);
@@ -1184,7 +1183,7 @@ function missingEvents(record, events, occurrences, time) {
  * or the last moment of a recurring occurrence's period when that came earlier.
  * @param {object} record the backup task
  * @param {object} rules the store rules of the task
- * @param {object[]} events the backup events of the task, in the store's naming
+ * @param {object[]} events the backup events of the task
  * @param {object[]} occurrences the backup occurrences of the task
  * @param {string} time the ISO import time
  * @returns {object[]} the missing events, empty when the backup events explain its current occurrence
@@ -1337,10 +1336,9 @@ function convertFormat2(file, time) {
         continue;
       }
       const next = results.get(event.id) ?? event;
-      converted.push(next.type === 'edit-lifecycle-rules' ? { ...next, details: renamedDetails(next.details, true) } : next);
+      converted.push(next.type === 'edit-lifecycle-rules' ? { ...next, details: fileDetails(next.details) } : next);
     }
-    const { 'target-count': target, ...rest } = old;
-    rules.push({ 'task-id': task.id, ...rulesOf({ ...rest, 'target-count': target }) });
+    rules.push({ 'task-id': task.id, ...rulesOf(old) });
   }
   const data = {
     ...file,
@@ -1363,7 +1361,7 @@ function convertFormat2(file, time) {
  */
 function rebuildTask(record, stored, { overwrite, time, fileEvents, fileOccurrences, storeEvents, storeOccurrences }) {
   const fileRules = storeRulesOf(record['lifecycle-rules']);
-  const own = (fileEvents.get(record.id) ?? []).map(storeEvent);
+  const own = fileEvents.get(record.id) ?? [];
   const gap = missingLogEvents(record, fileRules, own, fileOccurrences.get(record.id) ?? [], time);
   const backupEvents = [...own, ...gap.events];
   const local = stored ? storeEvents.get(record.id) ?? [] : [];
@@ -1412,14 +1410,14 @@ function rebuildTask(record, stored, { overwrite, time, fileEvents, fileOccurren
 function rebuildMatches(record, stored, context) {
   const exportEventText = (event) => JSON.stringify(exportEvent(event));
   const rebuilt = rebuildTask(record, stored, context);
-  const text = (records, names) => records.map((item) => JSON.stringify(pick(mirrorOccurrence(item), names))).sort().join('\n');
+  const text = (records, names) => records.map((item) => JSON.stringify(pick(fullOccurrence(item), names))).sort().join('\n');
   const local = { events: context.storeEvents.get(record.id) ?? [], occurrences: context.storeOccurrences.get(record.id) ?? [] };
   const current = { 'task-id': record.id, ...rebuilt.task['current-occurrence'] };
   return rebuilt.remove.length === 0 && rebuilt.dropOccurrences.length === 0
     && rebuilt.put.map(exportEventText).sort().join('\n') === local.events.map(exportEventText).sort().join('\n')
     && text([...rebuilt.occurrences, current], FIELDS.occurrences) === text(local.occurrences, FIELDS.occurrences)
-    && JSON.stringify(pick(mirrorOccurrence(rebuilt.task['current-occurrence']), FIELDS.occurrences.slice(1)))
-      === JSON.stringify(pick(mirrorOccurrence(stored['current-occurrence']), FIELDS.occurrences.slice(1)));
+    && JSON.stringify(pick(fullOccurrence(rebuilt.task['current-occurrence']), FIELDS.occurrences.slice(1)))
+      === JSON.stringify(pick(fullOccurrence(stored['current-occurrence']), FIELDS.occurrences.slice(1)));
 }
 
 /**

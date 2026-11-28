@@ -79,7 +79,9 @@ test('upgrades a version 5 database and shows each task with its count kept', as
     return task;
   });
   expect(stored['lifecycle-rules']).toMatchObject({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'start-time': null });
-  expect(stored['current-occurrence']).toMatchObject({ 'target-count': 3, 'goal-target': 3, 'completion-count': 2, progress: 2, 'time-spent-seconds': 0 });
+  expect(stored['current-occurrence']).toMatchObject({ 'goal-target': 3, progress: 2, 'time-spent-seconds': 0 });
+  expect(Object.keys(stored['current-occurrence'])).not.toContain('completion-count');
+  expect(Object.keys(stored['lifecycle-rules'])).not.toContain('target-count');
   await gym.getByRole('button', { name: 'Tick Gym sessions, 2 of 3 done', exact: true }).click();
   await expect(gym.locator('.task-row__count')).toHaveText('3/3');
   expect(problems).toEqual([]);

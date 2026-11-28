@@ -36,8 +36,8 @@ describe('local roll-over', () => {
     await store.postEvent(task.id, 'complete');
     clock.tick(14 * DAY_MS);
     const rolled = await store.rollOverTask(task.id);
-    expect(rolled['current-occurrence']).toMatchObject({ occurrence: 3, status: 'ready', 'completion-count': 0, 'due-time': WEEK_ENDS[2] });
-    expect((await store.occurrencesOfTask(task.id)).map((o) => [o.occurrence, o.status, o['completion-count'], o['close-time']])).toEqual([
+    expect(rolled['current-occurrence']).toMatchObject({ occurrence: 3, status: 'ready', progress: 0, 'due-time': WEEK_ENDS[2] });
+    expect((await store.occurrencesOfTask(task.id)).map((o) => [o.occurrence, o.status, o.progress, o['close-time']])).toEqual([
       [1, 'completed', 1, WEEK_ENDS[0]], [2, 'ready', 0, WEEK_ENDS[1]], [3, 'ready', 0, null],
     ]);
     expect((await store.eventsOfTask(task.id)).map((e) => [e.type, e.occurrence])).toEqual([
@@ -69,8 +69,8 @@ describe('local roll-over', () => {
     clock.now = Date.parse(WEEK_ENDS[0]) + 3_600_000;
     const { task: after, event } = await store.postEvent(task.id, 'complete', { occurrence: 1 });
     expect(event).toMatchObject({ occurrence: 1, 'creation-time': '2026-11-08T22:59:59.999Z' });
-    expect(after['current-occurrence']).toMatchObject({ occurrence: 2, status: 'ready', 'completion-count': 0 });
-    expect((await store.occurrencesOfTask(task.id))[0]).toMatchObject({ occurrence: 1, status: 'completed', 'completion-count': 1, 'close-time': WEEK_ENDS[0] });
+    expect(after['current-occurrence']).toMatchObject({ occurrence: 2, status: 'ready', progress: 0 });
+    expect((await store.occurrencesOfTask(task.id))[0]).toMatchObject({ occurrence: 1, status: 'completed', progress: 1, 'close-time': WEEK_ENDS[0] });
     clock.now = Date.parse(WEEK_ENDS[0]) + DAY_MS + 1;
     await expect(store.postEvent(task.id, 'complete', { occurrence: 1 })).rejects.toMatchObject({ code: 'conflict' });
   });
@@ -123,7 +123,7 @@ describe('connected display rule', () => {
     const { task, clock } = await weeklyTask({ connected: true });
     clock.tick(7 * DAY_MS);
     const { task: after } = await store.postEvent(task.id, 'complete');
-    expect(after['current-occurrence']).toMatchObject({ occurrence: 2, status: 'completed', 'completion-count': 1, 'due-time': WEEK_ENDS[1] });
+    expect(after['current-occurrence']).toMatchObject({ occurrence: 2, status: 'completed', progress: 1, 'due-time': WEEK_ENDS[1] });
     const posted = (await store.queue.all()).filter((entry) => entry.operation === 'post-event');
     expect(posted.at(-1).fields).toEqual({ id: posted.at(-1).fields.id, type: 'log', checked: true, 'creation-time': '2026-11-11T09:00:00.000Z' });
   });
@@ -132,7 +132,7 @@ describe('connected display rule', () => {
     const { task, clock } = await weeklyTask({ connected: true });
     clock.now = Date.parse(WEEK_ENDS[0]) + 3_600_000;
     const { task: after } = await store.postEvent(task.id, 'complete', { occurrence: 1 });
-    expect(after['current-occurrence']).toMatchObject({ occurrence: 1, 'completion-count': 1 });
+    expect(after['current-occurrence']).toMatchObject({ occurrence: 1, progress: 1 });
     const posted = (await store.queue.all()).filter((entry) => entry.operation === 'post-event');
     expect(posted.at(-1).fields).toMatchObject({ type: 'log', checked: true, occurrence: 1 });
   });

@@ -206,7 +206,7 @@ describe('expiry by goal (OVD-4)', () => {
   });
 
   it('closes an at-most task at its due time with the verdict of its progress, whatever the handling', async () => {
-    const rules = { 'goal-direction': 'at-most', 'target-count': 2 };
+    const rules = { 'goal-direction': 'at-most', 'goal-target': 2 };
     const within = await store.createTask({ description: 'Within', 'due-time': due(), 'lifecycle-rules': rules });
     const over = await store.createTask({ description: 'Over', 'due-time': due(), 'lifecycle-rules': rules });
     const none = await store.createTask({ description: 'None', 'due-time': due(), 'lifecycle-rules': rules });
@@ -220,7 +220,7 @@ describe('expiry by goal (OVD-4)', () => {
   });
 
   it('cannot reopen an at-most occurrence, and an undo changes its verdict', async () => {
-    const task = await store.createTask({ description: 'Limit', 'due-time': due(), 'lifecycle-rules': { 'goal-direction': 'at-most', 'target-count': 1 } });
+    const task = await store.createTask({ description: 'Limit', 'due-time': due(), 'lifecycle-rules': { 'goal-direction': 'at-most', 'goal-target': 1 } });
     const entries = [];
     for (let i = 0; i < 2; i += 1) {
       entries.push((await store.logEntry(task.id, { checked: true })).event.id);

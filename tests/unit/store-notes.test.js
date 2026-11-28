@@ -252,8 +252,8 @@ describe('note links to occurrences', () => {
     const WEEKLY = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC' };
     const weekly = await store.createTask({ description: 'Mow', 'lifecycle-rules': WEEKLY });
     const first = {
-      occurrence: 1, 'start-time': '2026-11-02T00:00:00.000Z', 'due-time': '2026-11-09T00:00:00.000Z', 'target-count': 1,
-      'completion-count': 0, status: 'cancelled', 'close-time': '2026-11-04T09:00:00.000Z',
+      occurrence: 1, 'start-time': '2026-11-02T00:00:00.000Z', 'due-time': '2026-11-09T00:00:00.000Z', 'goal-target': 1,
+      progress: 0, status: 'cancelled', 'close-time': '2026-11-04T09:00:00.000Z',
     };
     // A reopen opened occurrence 2 in the same week; an end rule then closed it at noon.
     const second = { ...first, occurrence: 2, 'due-time': '2026-11-04T12:00:00.000Z', 'close-time': '2026-11-04T12:00:00.000Z' };

@@ -261,7 +261,7 @@ test('a target-3 task with two completions shows 2/3 after an export and an impo
     const store = await openStore({ broadcast: true });
     const home = await store.createList({ name: 'Home' });
     const paint = await store.createTask({ description: 'Buy paint' }, { lists: [home.id] });
-    await store.updateRules(paint.id, { 'target-count': 3 });
+    await store.updateRules(paint.id, { 'goal-target': 3 });
     await store.postEvent(paint.id, 'complete');
     await store.postEvent(paint.id, 'complete');
     store.close();
@@ -303,7 +303,7 @@ test('a goal task with entries exports in format 3 and imports into an empty app
     const store = await openStore({ broadcast: true });
     const rules = {
       'start-time': '2020-01-01T00:00:00.000Z', 'due-time': '2099-12-31T18:00:00.000Z', 'overdue-handling': 'fail',
-      'goal-measure': 'amount', 'goal-unit': 'km', 'target-count': 10,
+      'goal-measure': 'amount', 'goal-unit': 'km', 'goal-target': 10,
     };
     const run = await store.createTask({ description: 'Run 10 km', 'lifecycle-rules': rules });
     const { event } = await store.logEntry(run.id, { amount: 4, label: 'Park' });

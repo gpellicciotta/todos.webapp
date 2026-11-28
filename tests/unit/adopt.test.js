@@ -156,7 +156,7 @@ describe('adopting local data on first connect', () => {
 
   it('uploads a task with its rules, then replays its user events in order with import', async () => {
     const { store, service, api } = await setup();
-    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'goal-target': 3 } });
     await store.postEvent(task.id, 'complete');
     await store.postEvent(task.id, 'complete');
     const result = await adopt({ store, api, account: ACCOUNT });

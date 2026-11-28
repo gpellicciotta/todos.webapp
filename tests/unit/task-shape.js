@@ -8,8 +8,8 @@ import { DEFAULT_RULES } from '../../src/js/core/occurrences.js';
  * @returns {object} the task with `lifecycle-rules` and `current-occurrence`
  */
 export function shapeTask({
-  status = 'ready', 'due-time': dueTime = null, 'overdue-handling': handling = 'keep', 'target-count': target = 1,
-  'completion-count': count = status === 'completed' ? target : 0, ...fields
+  status = 'ready', 'due-time': dueTime = null, 'overdue-handling': handling = 'keep', 'goal-target': target = 1,
+  progress: count = status === 'completed' ? target : 0, ...fields
 } = {}) {
   const closed = ['completed', 'failed', 'cancelled'].includes(status);
   return {
@@ -18,13 +18,13 @@ export function shapeTask({
     'last-update-time': fields['creation-time'] ?? '2026-11-01T09:00:00.000Z',
     'deletion-time': null,
     ...fields,
-    'lifecycle-rules': { ...DEFAULT_RULES, 'target-count': target, 'due-time': dueTime, 'overdue-handling': handling },
+    'lifecycle-rules': { ...DEFAULT_RULES, 'goal-target': target, 'due-time': dueTime, 'overdue-handling': handling },
     'current-occurrence': {
       occurrence: 1,
       'start-time': fields['creation-time'] ?? '2026-11-01T09:00:00.000Z',
       'due-time': dueTime,
-      'target-count': target,
-      'completion-count': count,
+      'goal-target': target,
+      progress: count,
       status,
       'close-time': closed ? fields['last-update-time'] ?? '2026-11-01T09:00:00.000Z' : null,
     },

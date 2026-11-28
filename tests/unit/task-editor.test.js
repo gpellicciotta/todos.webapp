@@ -305,7 +305,7 @@ describe('mountTaskEditor', () => {
         expect(checked('goal-mode')).toBe('at-least');
         expect(control('goal-measure').closest('[data-part]').hidden).toBe(false);
         expect(store.updateRules).not.toHaveBeenCalled();
-        await refillWith({ 'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 1600.5, 'goal-unit': 'kcal', 'recurrence-unit': 'week',
+        await refillWith({ 'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 1600.5, 'goal-unit': 'kcal', 'recurrence-unit': 'week',
           'recurrence-interval': 1, timezone: 'Europe/Brussels' });
         expect([checked('goal-mode'), control('goal-measure').value, control('goal-target').value, control('goal-unit').value]).toEqual(['at-most', 'amount', '1600.5', 'kcal']);
         expect(part('goal-line').textContent).toBe(`Each week succeeds at ${(1600.5).toLocaleString(undefined, { maximumFractionDigits: 3 })} kcal or less.`);
@@ -317,21 +317,21 @@ describe('mountTaskEditor', () => {
         expect([...control('goal-measure').options].map((option) => [option.value, option.textContent])).toEqual([
           ['checks', 'Checks'], ['time', 'Time spent'], ['amount', 'Amount (sum)'], ['reading', 'Reading (latest)'],
         ]);
-        await refillWith({ 'goal-measure': 'time', 'target-count': 12000 });
+        await refillWith({ 'goal-measure': 'time', 'goal-target': 12000 });
         expect(control('goal-unit').closest('[data-part]').hidden).toBe(true);
-        await refillWith({ 'goal-measure': 'reading', 'target-count': 80 });
+        await refillWith({ 'goal-measure': 'reading', 'goal-target': 80 });
         expect(control('goal-unit').closest('[data-part]').hidden).toBe(false);
       });
 
       it('saves the goal fields through the lifecycle rules', async () => {
-        await refillWith({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'target-count': 3 });
+        await refillWith({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3 });
         change(control('goal-measure'), 'time');
         await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-measure': 'time' }));
         change(control('goal-measure'), 'amount');
         await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-measure': 'amount' }));
-        await refillWith({ 'goal-direction': 'at-least', 'goal-measure': 'amount', 'target-count': 3 });
+        await refillWith({ 'goal-direction': 'at-least', 'goal-measure': 'amount', 'goal-target': 3 });
         change(control('goal-target'), '1600.5');
-        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'target-count': 1600.5 }));
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-target': 1600.5 }));
         typeAndLeave(control('goal-unit'), ' kcal ');
         await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-unit': 'kcal' }));
         typeAndLeave(control('goal-unit'), '');
@@ -340,43 +340,43 @@ describe('mountTaskEditor', () => {
       });
 
       it('resets a target that the new measure cannot hold to 1', async () => {
-        await refillWith({ 'goal-measure': 'amount', 'target-count': 0.5 });
+        await refillWith({ 'goal-measure': 'amount', 'goal-target': 0.5 });
         change(control('goal-measure'), 'checks');
-        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'goal-measure': 'checks', 'target-count': 1 }));
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'goal-measure': 'checks', 'goal-target': 1 }));
       });
 
       it('takes a whole number for checks, and rejects 0, decimals, and numbers above 999,999,999,999', async () => {
-        await refillWith({ 'goal-measure': 'checks', 'target-count': 3 });
+        await refillWith({ 'goal-measure': 'checks', 'goal-target': 3 });
         for (const bad of ['0', '2.5', '1000000000000', '-1', 'abc']) {
           change(control('goal-target'), bad);
           expect(errorOf(control('goal-target'))).toBe('Enter a whole number from 1 to 999,999,999,999.');
         }
         expect(store.updateRules).not.toHaveBeenCalled();
         change(control('goal-target'), '999999999999');
-        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'target-count': 999999999999 }));
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'goal-target': 999999999999 }));
         expect(errorOf(control('goal-target'))).toBeNull();
       });
 
       it('takes up to 3 decimals from 0 for amounts and readings', async () => {
-        await refillWith({ 'goal-measure': 'reading', 'target-count': 80 });
+        await refillWith({ 'goal-measure': 'reading', 'goal-target': 80 });
         for (const bad of ['-0.5', '1.2345', '1000000000000']) {
           change(control('goal-target'), bad);
           expect(errorOf(control('goal-target'))).toBe('Enter a number from 0 to 999,999,999,999.999, with at most 3 decimals.');
         }
         expect(store.updateRules).not.toHaveBeenCalled();
         change(control('goal-target'), '0');
-        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'target-count': 0 }));
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'goal-target': 0 }));
         change(control('goal-target'), '79.875');
-        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'target-count': 79.875 }));
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-target': 79.875 }));
       });
 
       it('takes hours and minutes for time, saved as seconds, and shows them split', async () => {
-        await refillWith({ 'goal-measure': 'time', 'target-count': 12000 });
+        await refillWith({ 'goal-measure': 'time', 'goal-target': 12000 });
         expect([control('goal-hours').value, control('goal-minutes').value]).toEqual(['3', '20']);
         expect(control('goal-target').closest('[data-part]').hidden).toBe(true);
         expect(part('goal-line').textContent).toBe('The task succeeds at 3 h 20 min or more.');
         change(control('goal-hours'), '1');
-        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'target-count': 4800 }));
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-target': 4800 }));
         change(control('goal-minutes'), '60');
         expect(errorOf(control('goal-minutes'))).toBe('Enter whole hours and minutes from 0 to 59, at least 1 minute in all.');
         change(control('goal-hours'), '0');
@@ -386,18 +386,18 @@ describe('mountTaskEditor', () => {
       });
 
       it('rejects a unit of more than 20 characters', async () => {
-        await refillWith({ 'goal-measure': 'amount', 'target-count': 5 });
+        await refillWith({ 'goal-measure': 'amount', 'goal-target': 5 });
         typeAndLeave(control('goal-unit'), 'k'.repeat(21));
         expect(errorOf(control('goal-unit'))).toBe('A unit holds at most 20 characters.');
         expect(store.updateRules).not.toHaveBeenCalled();
       });
 
       it('turns back to a plain check with Check, clearing measure, target, and unit', async () => {
-        await refillWith({ 'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 5, 'goal-unit': 'kcal', 'recurrence-unit': 'day',
+        await refillWith({ 'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 5, 'goal-unit': 'kcal', 'recurrence-unit': 'day',
           'recurrence-interval': 1, timezone: 'UTC' });
         choose('goal-mode', 'check');
         await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', {
-          'goal-direction': 'at-least', 'goal-measure': 'checks', 'target-count': 1, 'goal-unit': null,
+          'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null,
         }));
       });
 
@@ -487,7 +487,7 @@ describe('mountTaskEditor', () => {
         await refillWith({ 'start-time': START }, { occurrence: 2 });
         expect([control('start-time').closest('[data-part]').hidden, part('start-text').hidden]).toEqual([true, false]);
         expect(part('start-text').textContent).toContain('Starts ');
-        await refillWith({ 'start-time': START }, { status: 'completed', 'completion-count': 1, 'close-time': '2026-11-05T09:00:00.000Z' });
+        await refillWith({ 'start-time': START }, { status: 'completed', progress: 1, 'close-time': '2026-11-05T09:00:00.000Z' });
         expect(part('start-text').hidden).toBe(false);
         store.eventsOfTask = vi.fn(async () => [{ id: 'e1', 'task-id': 't1', occurrence: 1, type: 'log', 'creation-time': START }]);
         await refillWith({ 'start-time': START });
@@ -584,7 +584,7 @@ describe('mountTaskEditor', () => {
         { id: 'e2', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T10:00:00.000Z', 'owner-id': null, type: 'complete', details: null },
         { id: 'e1', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T09:00:00.000Z', 'owner-id': null, type: 'create', details: null },
       ];
-      const OCCURRENCES = [{ 'task-id': 't1', ...TASK['current-occurrence'], 'completion-count': 1, status: 'completed' }];
+      const OCCURRENCES = [{ 'task-id': 't1', ...TASK['current-occurrence'], progress: 1, status: 'completed' }];
       const entries = (kind) => [...document.querySelectorAll(`[data-section="history"] [data-history="${kind}"] li`)].map((item) => item.textContent);
 
       it('lists the events and occurrences of the local stores in local mode, newest first', async () => {
@@ -642,10 +642,10 @@ describe('mountTaskEditor', () => {
 
   describe('note links', () => {
     const OCC1 = {
-      occurrence: 1, 'start-time': '2026-11-04T00:00:00.000Z', 'due-time': '2026-11-05T00:00:00.000Z', 'target-count': 1,
-      'completion-count': 1, status: 'completed', 'close-time': '2026-11-05T00:00:00.000Z',
+      occurrence: 1, 'start-time': '2026-11-04T00:00:00.000Z', 'due-time': '2026-11-05T00:00:00.000Z', 'goal-target': 1,
+      progress: 1, status: 'completed', 'close-time': '2026-11-05T00:00:00.000Z',
     };
-    const OCC2 = { ...OCC1, occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', 'completion-count': 0, status: 'ready', 'close-time': null };
+    const OCC2 = { ...OCC1, occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', progress: 0, status: 'ready', 'close-time': null };
     const DAILY = {
       ...TASK, 'lifecycle-rules': { ...TASK['lifecycle-rules'], 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null },
       'current-occurrence': OCC2,
@@ -1047,8 +1047,8 @@ describe('mountTaskEditor history while connected', () => {
         status: 200, ok: true, headers: { get: () => null },
         body: path.endsWith('/events')
           ? [{ id: 'e1', 'task-id': 't1', occurrence: 2, 'creation-time': '2026-11-09T00:00:00.000Z', 'owner-id': null, type: 'roll-over', details: null }]
-          : [{ 'task-id': 't1', occurrence: 2, 'start-time': '2026-11-08T23:00:00.000Z', 'due-time': '2026-11-15T23:00:00.000Z', 'target-count': 3,
-            'completion-count': 0, status: 'ready', 'close-time': null }],
+          : [{ 'task-id': 't1', occurrence: 2, 'start-time': '2026-11-08T23:00:00.000Z', 'due-time': '2026-11-15T23:00:00.000Z', 'goal-target': 3,
+            progress: 0, status: 'ready', 'close-time': null }],
       })),
     };
     const session = { state: () => 'connected' };
@@ -1145,8 +1145,8 @@ describe('mountTaskEditor note links while connected', () => {
   it('labels the earlier occurrences of the link choice from the server occurrences', async () => {
     resetBody('<div data-editor-slot hidden></div>');
     const store = fakeStore();
-    const current = { occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', 'target-count': 1,
-      'completion-count': 0, status: 'ready', 'close-time': null };
+    const current = { occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z', 'goal-target': 1,
+      progress: 0, status: 'ready', 'close-time': null };
     const first = { ...current, occurrence: 1, 'start-time': '2026-11-04T00:00:00.000Z', 'due-time': '2026-11-05T00:00:00.000Z', 'close-time': '2026-11-05T00:00:00.000Z' };
     store.getTask.mockImplementation(async () => ({
       ...TASK, 'lifecycle-rules': { ...TASK['lifecycle-rules'], 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC' }, 'current-occurrence': current,
@@ -1313,7 +1313,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
   });
 
   it('shows a viewer the status and progress, without actions, the Log form, or Undo', async () => {
-    const counted = shapeTask({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
+    const counted = shapeTask({ status: 'in-progress', 'goal-target': 3, progress: 1 });
     await open('viewer', { 'lifecycle-rules': counted['lifecycle-rules'], 'current-occurrence': counted['current-occurrence'] });
     const status = document.querySelector('[data-section="status"]');
     expect(status.querySelector('.task-editor__status').textContent).toContain('In progress');
@@ -1368,13 +1368,13 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
    */
   function goalTask({ direction = 'at-least', measure = 'checks', target = 1, unit = null } = {}, occurrence = {}, rules = {}) {
     const base = shapeTask({ ...TASK, id: 't1', description: 'Eat well' });
-    const goal = { 'goal-direction': direction, 'goal-measure': measure, 'goal-target': target, 'target-count': target, 'goal-unit': unit };
+    const goal = { 'goal-direction': direction, 'goal-measure': measure, 'goal-target': target, 'goal-unit': unit };
     return {
       ...base,
       'lifecycle-rules': { ...base['lifecycle-rules'], ...goal, 'due-time': '2026-11-30T00:00:00.000Z', ...rules },
       'current-occurrence': {
         occurrence: 1, 'start-time': '2026-11-23T00:00:00.000Z', 'due-time': '2026-11-30T00:00:00.000Z', 'close-time': null, status: 'ready',
-        ...goal, progress: 0, 'completion-count': 0, 'time-spent-seconds': 0, entries: [], ...occurrence,
+        ...goal, progress: 0, 'time-spent-seconds': 0, entries: [], ...occurrence,
       },
     };
   }
@@ -1444,11 +1444,11 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
   });
 
   it('shows the status line, naming a task that is behind pace as not on track', async () => {
-    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1, 'completion-count': 1 }));
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1 }));
     expect(q('.task-editor__status').textContent).toBe('In progress, not on track');
     expect(q('.task-editor__status').dataset.track).toBe('behind-pace');
     await panel.destroy();
-    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 2, 'completion-count': 2 }));
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 2 }));
     expect(q('.task-editor__status').textContent).toBe('In progress');
   });
 
@@ -1485,7 +1485,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
 
   it('marks the pace now of a checks goal on its meter, and says when it is behind pace', async () => {
     const weekly = { 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC' };
-    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1, 'completion-count': 1 }, weekly));
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1 }, weekly));
     expect(q('[data-part="pace"]').textContent).toBe('pace now: 1.5');
     expect(q('[data-part="next"]').textContent).toContain('Behind pace: half the week is gone, 1 of 3 done.');
   });
@@ -1500,7 +1500,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
   });
 
   it('disables Check off once the task finished or was cancelled', async () => {
-    await open(goalTask({}, { status: 'completed', progress: 1, 'completion-count': 1, 'close-time': '2026-11-24T00:00:00.000Z' }));
+    await open(goalTask({}, { status: 'completed', progress: 1, 'close-time': '2026-11-24T00:00:00.000Z' }));
     expect(action('check-off').disabled).toBe(true);
     await panel.destroy();
     await open(goalTask({}, { status: 'cancelled', 'close-time': '2026-11-24T00:00:00.000Z' }));
@@ -1509,7 +1509,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
 
   it('shows the stepper of a checks goal above 1, centered, logging a check with plus and undoing the latest with minus', async () => {
     const events = [logged('c1', { checked: true }, '2026-11-24T09:00:00.000Z'), logged('c2', { checked: true }, '2026-11-25T09:00:00.000Z')];
-    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 2, 'completion-count': 2, entries: ['c1', 'c2'] }), { events });
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 2, entries: ['c1', 'c2'] }), { events });
     const stepper = q('.task-editor__stepper');
     expect(visible(stepper)).toBe(true);
     expect(visible(action('check-off'))).toBe(false);
@@ -1526,7 +1526,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
     const step = (direction) => q(`.task-editor__stepper button[data-step="${direction}"]`);
     expect([step('down').disabled, step('up').disabled]).toEqual([true, false]);
     await panel.destroy();
-    await open(goalTask({ target: 3 }, { status: 'cancelled', progress: 1, 'completion-count': 1, 'close-time': '2026-11-24T00:00:00.000Z', entries: ['c1'] }),
+    await open(goalTask({ target: 3 }, { status: 'cancelled', progress: 1, 'close-time': '2026-11-24T00:00:00.000Z', entries: ['c1'] }),
       { events: [logged('c1', { checked: true }, '2026-11-24T09:00:00.000Z')] });
     expect([step('down').disabled, step('up').disabled]).toEqual([true, true]);
   });
@@ -1545,7 +1545,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
   });
 
   it('hides Unmark started once an entry or a carried reading counts as progress', async () => {
-    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1, 'completion-count': 1, entries: ['c1'] }), { events: [logged('c1', { checked: true }, '2026-11-24T09:00:00.000Z')] });
+    await open(goalTask({ target: 3 }, { status: 'in-progress', progress: 1, entries: ['c1'] }), { events: [logged('c1', { checked: true }, '2026-11-24T09:00:00.000Z')] });
     expect(visible(action('mark-started'))).toBe(false);
     await panel.destroy();
     await open(goalTask({ direction: 'at-most', measure: 'reading', target: 80, unit: 'kg' }, { status: 'in-progress', progress: 79.8 }));
@@ -1568,7 +1568,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
 
   it('offers Reopen on a closed recurring series, which opens a fresh period', async () => {
     const rules = { 'recurrence-unit': 'day', 'recurrence-interval': 1, 'recurrence-end-count': 1, timezone: 'UTC' };
-    await open(goalTask({}, { status: 'completed', progress: 1, 'completion-count': 1, 'close-time': '2026-11-24T00:00:00.000Z', 'start-time': '2026-11-23T00:00:00.000Z', 'due-time': '2026-11-24T00:00:00.000Z' }, rules));
+    await open(goalTask({}, { status: 'completed', progress: 1, 'close-time': '2026-11-24T00:00:00.000Z', 'start-time': '2026-11-23T00:00:00.000Z', 'due-time': '2026-11-24T00:00:00.000Z' }, rules));
     expect(action('check-off').disabled).toBe(true);
     await click(action('reopen'));
     expect(store.postEvent).toHaveBeenCalledWith('t1', 'reopen');
@@ -1766,7 +1766,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
       const task = goalTask({}, {});
       await open(task);
       action('check-off').focus();
-      task['current-occurrence'] = { ...task['current-occurrence'], status: 'completed', progress: 1, 'completion-count': 1, 'close-time': '2026-11-26T00:00:00.000Z' };
+      task['current-occurrence'] = { ...task['current-occurrence'], status: 'completed', progress: 1, 'close-time': '2026-11-26T00:00:00.000Z' };
       store.listeners.forEach((listener) => listener({ operation: 'logEntry' }));
       await vi.waitFor(() => expect(action('check-off').disabled).toBe(true));
       await tick();
@@ -1778,7 +1778,7 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
 describe('task history of log entries (TSK-17)', () => {
   const CURRENT = {
     occurrence: 2, 'start-time': '2026-11-27T00:00:00.000Z', 'due-time': '2026-11-28T00:00:00.000Z', 'close-time': null, status: 'in-progress',
-    'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 1600, 'target-count': 1600, 'goal-unit': 'kcal', progress: 320, 'completion-count': 320,
+    'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 1600, 'goal-unit': 'kcal', progress: 320,
   };
   const CLOSED = { ...CURRENT, occurrence: 1, 'start-time': '2026-11-26T00:00:00.000Z', 'due-time': '2026-11-27T00:00:00.000Z', 'close-time': '2026-11-27T00:00:00.000Z', status: 'failed', progress: 1910 };
   const EVENTS = [

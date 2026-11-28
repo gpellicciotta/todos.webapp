@@ -525,7 +525,7 @@ test('logs from a row past an at-most limit, shows the marks, and undoes the ent
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore({ broadcast: true });
     const task = await store.createTask({ description: 'Calories', 'due-time': new Date(Date.now() + 20 * 3_600_000).toISOString() }, { lists: [id] });
-    await store.updateRules(task.id, { 'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 100, 'goal-unit': 'kcal' });
+    await store.updateRules(task.id, { 'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 100, 'goal-unit': 'kcal' });
     store.close();
   }, listId);
   const row = page.locator('.list-view .task-row', { hasText: 'Calories' });

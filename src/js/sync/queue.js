@@ -10,7 +10,8 @@
  */
 
 import {
-  applyEvent, applyRuleEdit, byEventOrder, firstOccurrence, firstRules, foldLogCache, replayableRuleEdits, RULE_FIELDS, ruleEditOf, syncedRules, USER_EVENT_TYPES,
+  applyEvent, applyRuleEdit, byEventOrder, firstOccurrence, firstRules, foldLogCache, fullOccurrence, replayableRuleEdits, RULE_FIELDS, ruleEditOf, syncedRules,
+  USER_EVENT_TYPES, withGoalTarget,
 } from '../core/occurrences.js';
 import { request, STORES, transact } from '../store/idb.js';
 import { eventsOfWrite } from '../store/tasks.js';
@@ -300,12 +301,13 @@ function replayEntries(taskId, events) {
     const time = event['creation-time'];
     if (event.type === 'edit-lifecycle-rules') {
       const edit = ruleEditOf(event);
+      const details = withGoalTarget(event.details ?? {});
       return [{
         target: { type: 'rules', id: taskId },
         operation: 'update-rules',
         fields: { ...edit, import: true, 'event-id': event.id },
         'edit-times': Object.fromEntries(Object.keys(edit).map((name) => [name, time])),
-        undo: { kind: 'rules', id: taskId, fields: Object.fromEntries(Object.keys(edit).map((name) => [name, { from: event.details[name].old ?? null, to: edit[name] }])) },
+        undo: { kind: 'rules', id: taskId, fields: Object.fromEntries(Object.keys(edit).map((name) => [name, { from: details[name].old ?? null, to: edit[name] }])) },
       }];
     }
     if (!USER_EVENT_TYPES.includes(event.type)) {
@@ -768,7 +770,8 @@ function planUndo(data, undo, later = []) {
     case 'rules': {
       const task = data.tasks.find((candidate) => candidate.id === undo.id);
       const rules = task?.['lifecycle-rules'] ?? {};
-      const reverted = Object.entries(undo.fields).filter(([name, { to }]) => !differs(rules[name], to));
+      // A change queued before version 6 names the target `target-count` in its undo data.
+      const reverted = Object.entries(withGoalTarget(undo.fields)).filter(([name, { to }]) => !differs(rules[name], to));
       if (reverted.length > 0) {
         const edit = Object.fromEntries(reverted.map(([name, { from }]) => [name, from ?? null]));
         const settled = applyRuleEdit(task, edit, task['last-update-time']);
@@ -793,9 +796,11 @@ function planUndo(data, undo, later = []) {
         let occurrence;
         const known = data.events.some((event) => event['task-id'] === undo.taskId && event.id === undo.id);
         if (undo.mode === 'replace' || !known) {
-          // An entry converted by the upgrade has no stored event: the old count, status, and close time come back instead.
-          const base = undo.mode === 'replace' ? undo.before
-            : { ...current, 'completion-count': undo.before['completion-count'], status: undo.before.status, 'close-time': undo.before['close-time'] };
+          // An entry converted by the upgrade has no stored event: the old progress, status, and close time come back instead.
+          // Its occurrence before the event may still hold `completion-count`, which `fullOccurrence` reads as `progress`.
+          const before = fullOccurrence(undo.before);
+          const base = undo.mode === 'replace' ? before
+            : { ...current, progress: before.progress, status: before.status, 'close-time': before['close-time'] };
           occurrence = rechain(changes, laterEvents(later, undo.taskId), base, task['lifecycle-rules']);
         }
         else {
