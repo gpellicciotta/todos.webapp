@@ -67,3 +67,6 @@ Moved here from T0227.
 - [2026-11-28] **[Complete]**
   Task completed successfully.
 
+- [2026-11-28] **[Review]**
+  Codex review ran as background task bbfa97afr: plan agents review T0317 --agent codex --sandbox --complete --yes --timeout 15m.
+
