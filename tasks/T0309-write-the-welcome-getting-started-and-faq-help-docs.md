@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 107.4, input: 34, output: 9901, cache_read: 849772, cache_write: 46438}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T00:32:58Z"
 ---
 # T0309: Write the welcome, getting started, and FAQ help docs in docs/tutorial as Markdown
 
@@ -53,4 +58,7 @@ T0310 serves them, and T0311 renders them; the content contract is in [technical
 
 - [2026-11-28] **[Verify]**
   Checked headings, subset, and facts; see validation-proof.md.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
