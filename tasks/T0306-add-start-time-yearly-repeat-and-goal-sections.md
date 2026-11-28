@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1800.3, input: 2, output: 44}
+work_duration: 1808.9
 ---
 # T0306: Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 
