@@ -4,7 +4,7 @@ owner: ~
 needs: []
 branch: —
 worktree: —
-status: suspended
+status: ready
 started_at: —
 ended_at: —
 review: agent
@@ -30,7 +30,7 @@ Size estimate: 6 files, 300 lines.
 - [ ] **[Verify]**    Run the new tests and confirm they fail for the right reasons.
 - [ ] **[Implement]** Implement the subscription client, the worker push handler, and the Settings state.
 - [ ] **[Verify]**    Run the unit, e2e, and contract suites and confirm they pass.
-- [ ] **[Visual]**    Inspect a pushed reminder on desktop Chrome and on an installed PWA on Android.
+- [ ] **[Visual]**    Inspect the Settings reminder states in both themes and a pushed example reminder in desktop Chromium.
 - [ ] **[Doc]**       Update the requirements, the Settings design, and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
@@ -46,3 +46,7 @@ Size estimate: 6 files, 300 lines.
 
 - [2026-11-16] **[Doc]**
   Named todos.server T0260 and T0261 as the blocking service work, with their planned routes, payload, and tag.
+
+- [2026-11-28] **[Decided]**
+  Resumed after todos.server T0261. Moved the real device checks out: todos.server T0308 covers Chrome and Firefox pushes, and T0317 covers Android after the release.
+

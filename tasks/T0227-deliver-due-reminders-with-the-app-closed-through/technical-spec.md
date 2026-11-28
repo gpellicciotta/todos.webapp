@@ -13,7 +13,10 @@
 - These cross-project needs cannot go in `needs`.
   - T0260: `GET /api/push/vapid-public-key` and `GET`, `POST`, `PATCH`, `DELETE` on `/api/push-subscriptions`.
   - T0261 (needs T0260): the background job sends the pushes six times a day; there is no dispatch route.
-- Start this task once todos.server T0261 is completed; the release deploys both together.
+- todos.server T0261 is completed; the release deploys both together.
+- For contract tests, the loop manager builds the sibling todos.server checkout; do not build or edit it.
+  From a worktree, set `TODOS_SERVER_DIR=../../../../todos.server`.
+- todos.server T0308 checks a real push in Chrome and Firefox after this task; T0317 checks Android after the release.
 - Planned subscription body: `endpoint`, `keys.p256dh`, `keys.auth`, `lead-minutes` (0, 5, 15, 30, or 60), and `device-name`.
 - Planned payload: `type` `task-due` or `tasks-due`, `tag`, `task-id`, `occurrence`, `description`, `due-time`, `action-url`.
 - Planned tag: `task-due:{{task-id}}:{{due-time}}`; T0226 uses the same tag for local reminders.

@@ -2,17 +2,17 @@
 An overview of all tasks and their planning, possibly split by milestone.
 
 ## Next Milestone
-- [x] T0313 Add goals, start times, progress, and time spent to local records in database version 6.
-- [x] T0314 Convert local completions to log events in the upgrade, and store logs and undos.
 - [~] T0315 [owner: @claude] Place local events by start time, expire tasks by goal, and filter failed and upcoming tasks.
-- [x] T0301 Support the year recurrence unit in local periods, with the year cases of the shared recurrence vectors.
+- [ ] T0227 Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
 - [!] T0304 [reason: Waiting for the log and undo-log REST events of todos.server T0301.] [needs: T0315] Sync ADR-0006 logs, undos, entries, and statuses with the service, keeping queued legacy events replayable.
 - [ ] T0306 [needs: T0315] Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 - [ ] T0307 [needs: T0306] Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 - [ ] T0305 [needs: T0315] Export ADR-0006 fields in backup format 3, and convert older backups on import.
 - [ ] T0312 [needs: T0307] Show goal progress on task rows, with the quick log, Failed status, and upcoming tasks.
 - [ ] T0316 [needs: T0304, T0305, T0312] Remove the legacy target-count and completion-count fields once every reader uses goals and progress.
-- [!] T0227 [reason: Waiting for the push dispatch of todos.server T0261.] Deliver due reminders with the app closed through Web Push while connected, once the service sends them.
+- [x] T0313 Add goals, start times, progress, and time spent to local records in database version 6.
+- [x] T0314 Convert local completions to log events in the upgrade, and store logs and undos.
+- [x] T0301 Support the year recurrence unit in local periods, with the year cases of the shared recurrence vectors.
 - [x] T0310 Serve the help docs and the changelog under help/ locally and on Pages, cached for offline use.
 - [x] T0311 Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings.
 - [x] T0299 Specify ADR-0006 goals, logs, statuses, and backup format 3 in the local store and backup format specs.
@@ -24,4 +24,4 @@ An overview of all tasks and their planning, possibly split by milestone.
 - [x] T0300 Specify the ADR-0006 task editor sections, task row marks, and log form in the UI design and wireframes.
 
 ## Backlog
-*(Currently no tasks)*
+- [!] T0317 [reason: Needs the user's Android phone after the release is deployed.] Inspect a pushed reminder on an installed Android PWA after the release.
