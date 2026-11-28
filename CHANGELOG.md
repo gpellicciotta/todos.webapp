@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.7.1-pre
+## v0.7.1 [released: 2026-11-28]
 - Core: Kept the live entries on synced tasks, so the editor lists them again, the minus button works, and rows mark only carried readings.
 - Core: Downloaded everything again once after the update to database version 7, restoring task progress and entries that version 6 had rebuilt from partial history.
 - FrontEnd: Hid Check off previous period once that period is completed, and confirmed the check with a toast.
