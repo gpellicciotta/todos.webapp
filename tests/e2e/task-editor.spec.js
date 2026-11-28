@@ -156,7 +156,7 @@ for (const viewport of [COMPACT, WIDE]) {
     await target.press('Tab');
     await expect(row.locator('.task-row__count')).toHaveText('0/3');
 
-    // History: History, then Details; the history loads when its tab first shows.
+    // History: Details, then History; the history loads when its tab first shows.
     await page.keyboard.press('Escape');
     await expect(panel).toHaveCount(0);
     await row.locator('.task-row__open').click();
@@ -164,9 +164,9 @@ for (const viewport of [COMPACT, WIDE]) {
     await expect(reopened.getByLabel('Description')).toHaveValue('Buy blue paint');
     await expect(reopened.getByRole('tab', { name: 'Status' })).toHaveAttribute('aria-selected', 'true');
     await showTab(reopened, 'History');
-    await expect(reopened.locator('[data-history="events"] li').first()).toContainText('Changed the rules');
+    await expect(reopened.locator('[data-history="events"] tbody tr').first()).toContainText('Changed the rules');
     await reopened.getByRole('button', { name: 'Refresh history' }).click();
-    await expect(reopened.locator('[data-history="occurrences"] li').first()).toContainText('0 of 3');
+    await expect(reopened.locator('[data-history="occurrences"] tbody tr').first()).toContainText('0 of 3');
     await expect(reopened.locator('[data-section="details"] .editor-panel__details')).toContainText('Created');
 
     // Delete task sits in the Danger zone at the bottom of Configuration, closes the editor, and offers Undo.
@@ -313,6 +313,53 @@ for (const [width, viewport, panelRem] of [['compact', COMPACT, null], ['wide', 
 
     await showTab(panel, 'History');
     await expectColumns(panel, [], ['.task-history > .button']);
+    expect(problems).toEqual([]);
+  });
+}
+
+for (const [name, viewport] of [['narrow phone', { width: 360, height: 740 }], ['wide screen', WIDE]]) {
+  test(`the description stays above the tabs while a long history scrolls and loads more, on a ${name}`, async ({ page }) => {
+    const problems = watch(page);
+    await page.setViewportSize(viewport);
+    await page.goto('/#/tasks');
+    await expect(page.locator('html[data-shell="ready"]')).toHaveCount(1);
+    const description = 'Water the plants on the balcony and in the kitchen, and check whether the basil needs a bigger pot before the winter';
+    const id = await page.evaluate(async (text) => {
+      const { openStore } = await import('/js/store/db.js');
+      const store = await openStore({ broadcast: true });
+      const task = await store.createTask({ description: text, 'lifecycle-rules': { 'goal-target': 100 } });
+      for (let number = 1; number <= 45; number += 1) {
+        await store.logEntry(task.id, { checked: true, label: `Round ${number} with a label long enough to wrap in a narrow panel` });
+      }
+      store.close();
+      return task.id;
+    }, description);
+    await page.goto(`/#/tasks/${id}`);
+    const panel = page.locator('[data-editor-slot] .editor-panel');
+    const heading = panel.locator('[data-part="heading"]');
+    await expect(heading).toHaveText(description);
+    await showTab(panel, 'History');
+    const events = panel.locator('table[data-history="events"] tbody tr');
+    await expect(events).toHaveCount(20);
+    await expect(panel.locator('[data-tab="history"] h3')).toHaveText(['Details', 'History']);
+    await panel.getByRole('button', { name: 'Load more events' }).click();
+    await expect(events).toHaveCount(40);
+    await panel.getByRole('button', { name: 'Load more events' }).click();
+    // The 45 entries and the creation of the task.
+    await expect(events).toHaveCount(46);
+    await expect(panel.getByRole('button', { name: 'Load more events' })).toHaveCount(0);
+    await events.last().scrollIntoViewIfNeeded();
+    await expect(events.last()).toBeInViewport();
+    await expect(heading).toBeInViewport({ ratio: 1 });
+    // The heading keeps at most three lines.
+    const box = await heading.evaluate((element) => ({ height: element.clientHeight, line: parseFloat(getComputedStyle(element.firstElementChild ?? element).lineHeight) }));
+    expect(box.height).toBeLessThan(box.line * 4.5);
+    expect(await panel.locator('.editor-panel__body').evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
+    for (const table of ['occurrences', 'events']) {
+      const [right, room] = await panel.locator(`table[data-history="${table}"]`)
+        .evaluate((element) => [element.getBoundingClientRect().right, element.closest('.task-history').getBoundingClientRect().right]);
+      expect(right).toBeLessThanOrEqual(room + 0.5);
+    }
     expect(problems).toEqual([]);
   });
 }
@@ -518,8 +565,8 @@ test('logs kcal past an at-most limit, sees the orange box, undoes the entry, an
 
   await showTab(panel, 'History');
   await panel.getByRole('button', { name: /history$/i }).click();
-  await expect(panel.locator('[data-history="events"] li', { hasText: 'You logged Pizza · 220 kcal' })).toHaveClass(/is-undone/);
-  await expect(panel.locator('[data-history="events"] li', { hasText: 'You undid Pizza · 220 kcal' })).toBeVisible();
+  await expect(panel.locator('[data-history="events"] tr', { hasText: 'You logged Pizza · 220 kcal' })).toHaveClass(/is-undone/);
+  await expect(panel.locator('[data-history="events"] tr', { hasText: 'You undid Pizza · 220 kcal' })).toBeVisible();
   expect(problems).toEqual([]);
 });
 
@@ -736,9 +783,9 @@ test.describe('recurring tasks in local mode', () => {
     await expect(row).toHaveAttribute('data-status', 'ready');
     const reopened = await openEditor(page);
     await showTab(reopened, 'History');
-    await expect(reopened.locator('[data-history="events"] li').first()).toContainText('Period ended');
-    await expect(reopened.locator('[data-history="occurrences"] li')).toHaveCount(2);
-    await expect(reopened.locator('[data-history="occurrences"] li').nth(1)).toContainText('Completed');
+    await expect(reopened.locator('[data-history="events"] tbody tr').first()).toContainText('Period ended');
+    await expect(reopened.locator('[data-history="occurrences"] [data-occurrence]')).toHaveCount(2);
+    await expect(reopened.locator('[data-history="occurrences"] [data-occurrence]').nth(1)).toContainText('Completed');
     expect(problems).toEqual([]);
   });
 });

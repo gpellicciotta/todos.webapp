@@ -518,6 +518,28 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(history.map((event) => event.type)).toEqual(expect.arrayContaining(['log', 'undo-log']));
   });
 
+  it('pages the history routes newest first, ending with a null bookmark, as the task history reads them', async () => {
+    const phone = await device('code-ada');
+    const task = await phone.store.createTask({ description: 'Read', 'lifecycle-rules': { 'goal-target': 100 } });
+    for (let number = 0; number < 25; number += 1) {
+      phone.clock.tick(1000);
+      await phone.store.logEntry(task.id, { checked: true });
+    }
+    expect(await phone.engine.syncNow()).toBe('synced');
+    const read = async (path) => (await phone.raw('GET', `/api/tasks/${task.id}/${path}`, { Accept: 'application/json' })).json();
+
+    const all = await read('events');
+    const first = await read('events?page=first&page-size=20');
+    expect(first.elements).toEqual(all.slice(0, 20));
+    expect(first['end-bookmark']).toBeTruthy();
+    const second = await read(`events?page=next&page-size=20&page-bookmark=${encodeURIComponent(first['end-bookmark'])}`);
+    expect(second.elements).toEqual(all.slice(20));
+    expect(second['end-bookmark']).toBeNull();
+    expect(Date.parse(first.elements[0]['creation-time'])).toBeGreaterThan(Date.parse(second.elements.at(-1)['creation-time']));
+    const occurrences = await read('occurrences?page=first&page-size=20');
+    expect([occurrences.elements.length, occurrences['end-bookmark']]).toEqual([1, null]);
+  });
+
   it('replays complete and uncomplete changes queued before the upgrade through the service aliases', async () => {
     const ada = await device('code-ada');
     const task = await ada.store.createTask({ description: 'Legacy', 'lifecycle-rules': { 'goal-target': 3 } });

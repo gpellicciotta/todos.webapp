@@ -394,6 +394,8 @@ App states use attributes the app sets, such as `data-status` and `aria-current`
   It holds the progress box, the actions that apply, the Log form, and the entries with Undo.
   A checks goal puts a `.task-editor__stepper` under the progress, at the right, with a polite live count, such as "1 of 3".
   Each `.task-editor__panel` keeps labels in a left column, and fields, choices, and buttons in a right-hand column.
+  A `.task-editor__heading` above the scrolling body holds the description, clamped to three lines.
+  The history uses a `.task-history__table` per kind of record, with a `.task-history__more` button under a longer one.
   Check off previous period is a secondary button there, shown only during the grace period.
   Configuration ends with the Danger zone: Cancel task, which reads Uncancel once cancelled, and Delete task.
   The Danger zone drops its own border, after the last rule.

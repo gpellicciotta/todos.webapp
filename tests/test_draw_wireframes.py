@@ -465,6 +465,29 @@ def test_history_tab_lists_entries_undos_and_verdicts(output):
         assert "logged" in texts and "undid" in texts and "Failed" in texts
 
 
+def test_history_tab_shows_details_first_then_two_tables_with_load_more(output):
+    _, groups = frames(output / "task-editor-history.svg")
+    for wide, group in enumerate(groups):
+        ys = ys_of(group, wide)
+        assert ys["Details"] < ys["Occurrences"] < ys["Events"], wide
+        for heading in ["Period", "Status", "Progress"]:
+            assert ys["Occurrences"] < ys[heading] < ys["Events"], heading
+        assert ys["Events"] < ys["When"]
+        assert ys["Occurrences"] < ys["Load more occurrences"] < ys["Events"] < ys["Load more events"]
+
+
+@pytest.mark.parametrize(
+    ("name", "description"),
+    [("task-editor.svg", "Calories"), ("task-editor-configuration.svg", "Sport"), ("task-editor-history.svg", "Calories")],
+)
+def test_editor_wireframes_show_the_description_above_the_tabs(output, name, description):
+    _, groups = frames(output / name)
+    for wide, group in enumerate(groups):
+        headings = [t for t in group.iter(f"{SVG}text") if t.text == description and t.get("font-size") == "17"]
+        assert len(headings) == 1, (name, wide)
+        assert float(headings[0].get("y")) < float(tab_texts(group)["Status"].get("y")), (name, wide)
+
+
 def brace_of(group):
     """Return the tip (x, y) and the box of the one curly brace of a frame; the tip is its point with the largest x."""
     braces = [p for p in group.iter(f"{SVG}path") if "Q" in p.get("d", "") and p.get("class") == "icon-line-open"]

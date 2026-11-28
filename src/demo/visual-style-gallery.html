@@ -1389,6 +1389,7 @@
               <h3 class="editor-panel__title" id="pattern-editor-title">Task</h3>
               <button class="icon-button" type="button" aria-label="Close the task editor"><svg class="icon" aria-hidden="true" focusable="false"><use href="../img/icons.svg#close"/></svg></button>
             </div>
+            <p class="task-editor__heading" title="Call the plumber about the leak"><span class="task-editor__heading-text">Call the plumber about the leak</span></p>
             <div class="editor-panel__body">
               <div class="tabs task-editor__tabs" id="pattern-editor-tabs" data-tabs-root>
                 <div class="tabs__list" role="tablist" aria-label="Task sections" data-tabs-list>
@@ -1504,23 +1505,30 @@
                 </div>
                 <div class="tabs__panel task-editor__panel" id="pattern-panel-history" role="tabpanel" aria-labelledby="pattern-tab-history" data-tab="history" data-tabs-panel hidden>
                   <div class="editor-panel__section">
+                    <h4 class="editor-panel__section-title">Details</h4>
+                    <p class="editor-panel__details">Created 1 Nov · Last updated 3 Nov 09:12</p>
+                  </div>
+                  <div class="editor-panel__section">
                     <h4 class="editor-panel__section-title">History</h4>
                     <div class="task-history">
                       <button class="button button--secondary" type="button">Refresh history</button>
                       <div class="task-history__body">
-                        <h5 class="task-history__title">Occurrences</h5>
-                        <ul class="task-history__list"><li class="task-history__item">#1 · 1 Nov – 6 Nov · In progress · 1 of 3 done</li></ul>
-                        <h5 class="task-history__title">Events</h5>
-                        <ul class="task-history__list">
-                          <li class="task-history__item">3 Nov, 09:10 · Ticked · #1</li>
-                          <li class="task-history__item">1 Nov, 08:00 · Created · #1</li>
-                        </ul>
+                        <table class="task-history__table">
+                          <caption class="task-history__title">Occurrences</caption>
+                          <thead><tr><th class="task-history__number" scope="col">#</th><th scope="col">Period</th><th scope="col">Status</th><th scope="col">Progress</th></tr></thead>
+                          <tbody><tr><th class="task-history__number" scope="row">1</th><td>1 Nov – 6 Nov</td><td>In progress</td><td>1 of 3 done</td></tr></tbody>
+                        </table>
+                        <table class="task-history__table">
+                          <caption class="task-history__title">Events</caption>
+                          <thead><tr><th class="task-history__number" scope="col">When</th><th scope="col">Event</th><th class="task-history__number" scope="col">#</th></tr></thead>
+                          <tbody>
+                            <tr class="task-history__event"><td class="task-history__when">3 Nov, 09:10</td><td>Ticked</td><td class="task-history__number">1</td></tr>
+                            <tr class="task-history__event is-undone"><td class="task-history__when">2 Nov, 17:30</td><td>You logged Check</td><td class="task-history__number">1</td></tr>
+                          </tbody>
+                        </table>
+                        <button class="button button--secondary task-history__more" type="button">Load more events</button>
                       </div>
                     </div>
-                  </div>
-                  <div class="editor-panel__section">
-                    <h4 class="editor-panel__section-title">Details</h4>
-                    <p class="editor-panel__details">Created 1 Nov · Last updated 3 Nov 09:12</p>
                   </div>
                 </div>
               </div>

@@ -41,25 +41,27 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
     <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">Task</text>
-    <text x="16" y="104" font-size="14" class="muted">Status</text>
-    <text x="85.04" y="104" font-size="14" class="bold">Notes</text>
-    <rect x="81.04" y="117" width="47.2" height="3" rx="0" class="primary"/>
-    <text x="146.24" y="104" font-size="14" class="muted">Configuration</text>
-    <text x="270.16" y="104" font-size="14" class="muted">History</text>
-    <line x1="16" y1="120" x2="374" y2="120" class="rule"/>
-    <text x="16" y="159" font-size="13" class="muted">Add note</text>
-    <rect x="156" y="136" width="218" height="60" rx="6" class="control"/>
-    <text x="168" y="163" font-size="14" class="muted">Add or search notes</text>
-    <rect x="279.28" y="204" width="94.72" height="36" rx="6" class="control"/>
-    <text x="326.64" y="226.9" font-size="14" text-anchor="middle">Add note</text>
-    <rect x="16" y="256" width="358" height="60" rx="6" class="box"/>
-    <text x="28" y="278" font-size="12" class="muted">You · 3 Nov 09:12 · edited</text>
-    <text x="28" y="302" font-size="14">Hardware store closes at 18:00.</text>
-    <text x="354" y="278" font-size="14" text-anchor="middle">⋯</text>
-    <rect x="16" y="324" width="358" height="60" rx="6" class="box"/>
-    <text x="28" y="346" font-size="12" class="muted">Ann · 2 Nov 14:05</text>
-    <text x="28" y="370" font-size="14">Get the matte white, not the gloss.</text>
-    <text x="354" y="346" font-size="14" text-anchor="middle">⋯</text>
+    <text x="16" y="82" font-size="17" class="bold">Buy paint for the hallway</text>
+    <line x1="16" y1="92" x2="374" y2="92" class="rule"/>
+    <text x="16" y="122" font-size="14" class="muted">Status</text>
+    <text x="85.04" y="122" font-size="14" class="bold">Notes</text>
+    <rect x="81.04" y="135" width="47.2" height="3" rx="0" class="primary"/>
+    <text x="146.24" y="122" font-size="14" class="muted">Configuration</text>
+    <text x="270.16" y="122" font-size="14" class="muted">History</text>
+    <line x1="16" y1="138" x2="374" y2="138" class="rule"/>
+    <text x="16" y="177" font-size="13" class="muted">Add note</text>
+    <rect x="156" y="154" width="218" height="60" rx="6" class="control"/>
+    <text x="168" y="181" font-size="14" class="muted">Add or search notes</text>
+    <rect x="279.28" y="222" width="94.72" height="36" rx="6" class="control"/>
+    <text x="326.64" y="244.9" font-size="14" text-anchor="middle">Add note</text>
+    <rect x="16" y="274" width="358" height="60" rx="6" class="box"/>
+    <text x="28" y="296" font-size="12" class="muted">You · 3 Nov 09:12 · edited</text>
+    <text x="28" y="320" font-size="14">Hardware store closes at 18:00.</text>
+    <text x="354" y="296" font-size="14" text-anchor="middle">⋯</text>
+    <rect x="16" y="342" width="358" height="60" rx="6" class="box"/>
+    <text x="28" y="364" font-size="12" class="muted">Ann · 2 Nov 14:05</text>
+    <text x="28" y="388" font-size="14">Get the matte white, not the gloss.</text>
+    <text x="354" y="364" font-size="14" text-anchor="middle">⋯</text>
   </g>
   <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
     <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
@@ -165,24 +167,26 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1044" y="46" font-size="20" class="bold">Task</text>
     <rect x="1380" y="16" width="44" height="44" rx="6" class="control"/>
     <text x="1402" y="43" font-size="16" text-anchor="middle">×</text>
-    <text x="1044" y="104" font-size="14" class="muted">Status</text>
-    <text x="1113.04" y="104" font-size="14" class="bold">Notes</text>
-    <rect x="1109.04" y="117" width="47.2" height="3" rx="0" class="primary"/>
-    <text x="1174.24" y="104" font-size="14" class="muted">Configuration</text>
-    <text x="1298.16" y="104" font-size="14" class="muted">History</text>
-    <line x1="1044" y1="120" x2="1416" y2="120" class="rule"/>
-    <text x="1044" y="159" font-size="13" class="muted">Add note</text>
-    <rect x="1184" y="136" width="232" height="60" rx="6" class="control"/>
-    <text x="1196" y="163" font-size="14" class="muted">Add or search notes</text>
-    <rect x="1321.28" y="204" width="94.72" height="36" rx="6" class="control"/>
-    <text x="1368.64" y="226.9" font-size="14" text-anchor="middle">Add note</text>
-    <rect x="1044" y="256" width="372" height="60" rx="6" class="box"/>
-    <text x="1056" y="278" font-size="12" class="muted">You · 3 Nov 09:12 · edited</text>
-    <text x="1056" y="302" font-size="14">Hardware store closes at 18:00.</text>
-    <text x="1396" y="278" font-size="14" text-anchor="middle">⋯</text>
-    <rect x="1044" y="324" width="372" height="60" rx="6" class="box"/>
-    <text x="1056" y="346" font-size="12" class="muted">Ann · 2 Nov 14:05</text>
-    <text x="1056" y="370" font-size="14">Get the matte white, not the gloss.</text>
-    <text x="1396" y="346" font-size="14" text-anchor="middle">⋯</text>
+    <text x="1044" y="82" font-size="17" class="bold">Buy paint for the hallway</text>
+    <line x1="1044" y1="92" x2="1416" y2="92" class="rule"/>
+    <text x="1044" y="122" font-size="14" class="muted">Status</text>
+    <text x="1113.04" y="122" font-size="14" class="bold">Notes</text>
+    <rect x="1109.04" y="135" width="47.2" height="3" rx="0" class="primary"/>
+    <text x="1174.24" y="122" font-size="14" class="muted">Configuration</text>
+    <text x="1298.16" y="122" font-size="14" class="muted">History</text>
+    <line x1="1044" y1="138" x2="1416" y2="138" class="rule"/>
+    <text x="1044" y="177" font-size="13" class="muted">Add note</text>
+    <rect x="1184" y="154" width="232" height="60" rx="6" class="control"/>
+    <text x="1196" y="181" font-size="14" class="muted">Add or search notes</text>
+    <rect x="1321.28" y="222" width="94.72" height="36" rx="6" class="control"/>
+    <text x="1368.64" y="244.9" font-size="14" text-anchor="middle">Add note</text>
+    <rect x="1044" y="274" width="372" height="60" rx="6" class="box"/>
+    <text x="1056" y="296" font-size="12" class="muted">You · 3 Nov 09:12 · edited</text>
+    <text x="1056" y="320" font-size="14">Hardware store closes at 18:00.</text>
+    <text x="1396" y="296" font-size="14" text-anchor="middle">⋯</text>
+    <rect x="1044" y="342" width="372" height="60" rx="6" class="box"/>
+    <text x="1056" y="364" font-size="12" class="muted">Ann · 2 Nov 14:05</text>
+    <text x="1056" y="388" font-size="14">Get the matte white, not the gloss.</text>
+    <text x="1396" y="364" font-size="14" text-anchor="middle">⋯</text>
   </g>
 </svg>

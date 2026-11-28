@@ -29,7 +29,7 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
   </style>
   <rect x="0" y="0" width="1970" height="1050" fill="#ffffff"/>
   <text x="40" y="44" font-size="28" class="bold">Task editor · History</text>
-  <text x="40" y="72" font-size="16" class="muted">Entries, undos, and each period's verdict, newest first, then Details; read-only.</text>
+  <text x="40" y="72" font-size="16" class="muted">Details, then each period's verdict and the entries and undos, newest first, in two tables; read-only.</text>
   <text x="40" y="98" font-size="14" class="muted">Compact · 390 px</text>
   <text x="490" y="98" font-size="14" class="muted">Wide · 1440 px</text>
   <g class="frame" data-width="390" data-height="844" transform="translate(40 110)">
@@ -41,29 +41,64 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
     <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">Task</text>
-    <text x="16" y="104" font-size="14" class="muted">Status</text>
-    <text x="85.04" y="104" font-size="14" class="muted">Notes</text>
-    <text x="146.24" y="104" font-size="14" class="muted">Configuration</text>
-    <text x="270.16" y="104" font-size="14" class="bold">History</text>
-    <rect x="266.16" y="117" width="62.88" height="3" rx="0" class="primary"/>
-    <line x1="16" y1="120" x2="374" y2="120" class="rule"/>
-    <text x="16" y="150" font-size="13" class="muted">History</text>
-    <rect x="16" y="160" width="358" height="48" rx="6" class="box"/>
-    <text x="28" y="180" font-size="12" class="muted">Today · In progress</text>
-    <text x="28" y="199" font-size="14">Ann logged Pizza · 660 kcal</text>
-    <rect x="16" y="216" width="358" height="48" rx="6" class="box"/>
-    <text x="28" y="236" font-size="12" class="muted">Today · In progress</text>
-    <text x="28" y="255" font-size="14">You undid Cake · 300 kcal</text>
-    <rect x="16" y="272" width="358" height="48" rx="6" class="box"/>
-    <text x="28" y="292" font-size="12" class="muted">26 Nov · Failed, 1,910 / max 1,600</text>
-    <text x="28" y="311" font-size="14">The day ended above the limit</text>
-    <rect x="16" y="328" width="358" height="48" rx="6" class="box"/>
-    <text x="28" y="348" font-size="12" class="muted">26 Nov · Failed, 1,910 / max 1,600</text>
-    <text x="28" y="367" font-size="14">You logged Croissant · 320 kcal</text>
-    <text x="16" y="410" font-size="13" class="muted">Details</text>
-    <text x="16" y="436" font-size="14">Created 1 Nov 2026 10:00</text>
-    <text x="16" y="458" font-size="14">Last activity 27 Nov 2026 19:45</text>
-    <text x="16" y="480" font-size="14">Owner: you</text>
+    <text x="16" y="82" font-size="17" class="bold">Calories</text>
+    <line x1="16" y1="92" x2="374" y2="92" class="rule"/>
+    <text x="16" y="122" font-size="14" class="muted">Status</text>
+    <text x="85.04" y="122" font-size="14" class="muted">Notes</text>
+    <text x="146.24" y="122" font-size="14" class="muted">Configuration</text>
+    <text x="270.16" y="122" font-size="14" class="bold">History</text>
+    <rect x="266.16" y="135" width="62.88" height="3" rx="0" class="primary"/>
+    <line x1="16" y1="138" x2="374" y2="138" class="rule"/>
+    <text x="16" y="168" font-size="14" class="bold">Details</text>
+    <text x="16" y="192" font-size="13" class="muted">Created 1 Nov 10:00 · Last updated 27 Nov 19:45</text>
+    <line x1="16" y1="206" x2="374" y2="206" class="rule"/>
+    <text x="16" y="234" font-size="14" class="bold">History</text>
+    <rect x="232.8" y="214" width="141.2" height="32" rx="6" class="control"/>
+    <text x="303.4" y="234.55" font-size="13" text-anchor="middle">Refresh history</text>
+    <text x="16" y="270" font-size="13" class="bold">Occurrences</text>
+    <text x="16" y="292" font-size="12" class="muted bold">#</text>
+    <text x="44" y="292" font-size="12" class="muted bold">Period</text>
+    <text x="114" y="292" font-size="12" class="muted bold">Status</text>
+    <text x="262" y="292" font-size="12" class="muted bold">Progress</text>
+    <line x1="16" y1="300" x2="374" y2="300" class="rule"/>
+    <text x="16" y="318" font-size="12">3</text>
+    <text x="44" y="318" font-size="12">Today</text>
+    <text x="114" y="318" font-size="12">In progress</text>
+    <text x="262" y="318" font-size="12">780 / max 1,600</text>
+    <line x1="16" y1="326" x2="374" y2="326" class="rule"/>
+    <text x="16" y="344" font-size="12">2</text>
+    <text x="44" y="344" font-size="12">26 Nov</text>
+    <text x="114" y="344" font-size="12">Failed</text>
+    <text x="262" y="344" font-size="12">1,910 / max 1,600</text>
+    <line x1="16" y1="352" x2="374" y2="352" class="rule"/>
+    <text x="16" y="370" font-size="12">1</text>
+    <text x="44" y="370" font-size="12">25 Nov</text>
+    <text x="114" y="370" font-size="12">Completed</text>
+    <text x="262" y="370" font-size="12">1,500 / max 1,600</text>
+    <rect x="189.12" y="384" width="184.88" height="32" rx="6" class="control"/>
+    <text x="281.56" y="404.55" font-size="13" text-anchor="middle">Load more occurrences</text>
+    <text x="16" y="442" font-size="13" class="bold">Events</text>
+    <text x="16" y="464" font-size="12" class="muted bold">When</text>
+    <text x="112" y="464" font-size="12" class="muted bold">Event</text>
+    <text x="362" y="464" font-size="12" class="muted bold">#</text>
+    <line x1="16" y1="472" x2="374" y2="472" class="rule"/>
+    <text x="16" y="490" font-size="12">Today 13:10</text>
+    <text x="112" y="490" font-size="12">Ann logged Pizza · 660 kcal</text>
+    <text x="362" y="490" font-size="12">3</text>
+    <line x1="16" y1="498" x2="374" y2="498" class="rule"/>
+    <text x="16" y="516" font-size="12">Today 09:30</text>
+    <text x="112" y="516" font-size="12">You undid Cake · 300 kcal</text>
+    <text x="362" y="516" font-size="12">3</text>
+    <line x1="16" y1="524" x2="374" y2="524" class="rule"/>
+    <text x="16" y="542" font-size="12">26 Nov 18:00</text>
+    <text x="112" y="542" font-size="12">You logged Croissant · 320 kcal</text>
+    <text x="362" y="542" font-size="12">2</text>
+    <line x1="16" y1="550" x2="374" y2="550" class="rule"/>
+    <text x="16" y="568" font-size="12">26 Nov 00:00</text>
+    <text x="112" y="568" font-size="12">Period ended</text>
+    <text x="362" y="568" font-size="12">1</text>
+    <rect x="225.52" y="582" width="148.48" height="32" rx="6" class="control"/>
+    <text x="299.76" y="602.55" font-size="13" text-anchor="middle">Load more events</text>
   </g>
   <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
     <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
@@ -169,28 +204,63 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1044" y="46" font-size="20" class="bold">Task</text>
     <rect x="1380" y="16" width="44" height="44" rx="6" class="control"/>
     <text x="1402" y="43" font-size="16" text-anchor="middle">×</text>
-    <text x="1044" y="104" font-size="14" class="muted">Status</text>
-    <text x="1113.04" y="104" font-size="14" class="muted">Notes</text>
-    <text x="1174.24" y="104" font-size="14" class="muted">Configuration</text>
-    <text x="1298.16" y="104" font-size="14" class="bold">History</text>
-    <rect x="1294.16" y="117" width="62.88" height="3" rx="0" class="primary"/>
-    <line x1="1044" y1="120" x2="1416" y2="120" class="rule"/>
-    <text x="1044" y="150" font-size="13" class="muted">History</text>
-    <rect x="1044" y="160" width="372" height="48" rx="6" class="box"/>
-    <text x="1056" y="180" font-size="12" class="muted">Today · In progress</text>
-    <text x="1056" y="199" font-size="14">Ann logged Pizza · 660 kcal</text>
-    <rect x="1044" y="216" width="372" height="48" rx="6" class="box"/>
-    <text x="1056" y="236" font-size="12" class="muted">Today · In progress</text>
-    <text x="1056" y="255" font-size="14">You undid Cake · 300 kcal</text>
-    <rect x="1044" y="272" width="372" height="48" rx="6" class="box"/>
-    <text x="1056" y="292" font-size="12" class="muted">26 Nov · Failed, 1,910 / max 1,600</text>
-    <text x="1056" y="311" font-size="14">The day ended above the limit</text>
-    <rect x="1044" y="328" width="372" height="48" rx="6" class="box"/>
-    <text x="1056" y="348" font-size="12" class="muted">26 Nov · Failed, 1,910 / max 1,600</text>
-    <text x="1056" y="367" font-size="14">You logged Croissant · 320 kcal</text>
-    <text x="1044" y="410" font-size="13" class="muted">Details</text>
-    <text x="1044" y="436" font-size="14">Created 1 Nov 2026 10:00</text>
-    <text x="1044" y="458" font-size="14">Last activity 27 Nov 2026 19:45</text>
-    <text x="1044" y="480" font-size="14">Owner: you</text>
+    <text x="1044" y="82" font-size="17" class="bold">Calories</text>
+    <line x1="1044" y1="92" x2="1416" y2="92" class="rule"/>
+    <text x="1044" y="122" font-size="14" class="muted">Status</text>
+    <text x="1113.04" y="122" font-size="14" class="muted">Notes</text>
+    <text x="1174.24" y="122" font-size="14" class="muted">Configuration</text>
+    <text x="1298.16" y="122" font-size="14" class="bold">History</text>
+    <rect x="1294.16" y="135" width="62.88" height="3" rx="0" class="primary"/>
+    <line x1="1044" y1="138" x2="1416" y2="138" class="rule"/>
+    <text x="1044" y="168" font-size="14" class="bold">Details</text>
+    <text x="1044" y="192" font-size="13" class="muted">Created 1 Nov 10:00 · Last updated 27 Nov 19:45</text>
+    <line x1="1044" y1="206" x2="1416" y2="206" class="rule"/>
+    <text x="1044" y="234" font-size="14" class="bold">History</text>
+    <rect x="1274.8" y="214" width="141.2" height="32" rx="6" class="control"/>
+    <text x="1345.4" y="234.55" font-size="13" text-anchor="middle">Refresh history</text>
+    <text x="1044" y="270" font-size="13" class="bold">Occurrences</text>
+    <text x="1044" y="292" font-size="12" class="muted bold">#</text>
+    <text x="1072" y="292" font-size="12" class="muted bold">Period</text>
+    <text x="1142" y="292" font-size="12" class="muted bold">Status</text>
+    <text x="1304" y="292" font-size="12" class="muted bold">Progress</text>
+    <line x1="1044" y1="300" x2="1416" y2="300" class="rule"/>
+    <text x="1044" y="318" font-size="12">3</text>
+    <text x="1072" y="318" font-size="12">Today</text>
+    <text x="1142" y="318" font-size="12">In progress</text>
+    <text x="1304" y="318" font-size="12">780 / max 1,600</text>
+    <line x1="1044" y1="326" x2="1416" y2="326" class="rule"/>
+    <text x="1044" y="344" font-size="12">2</text>
+    <text x="1072" y="344" font-size="12">26 Nov</text>
+    <text x="1142" y="344" font-size="12">Failed</text>
+    <text x="1304" y="344" font-size="12">1,910 / max 1,600</text>
+    <line x1="1044" y1="352" x2="1416" y2="352" class="rule"/>
+    <text x="1044" y="370" font-size="12">1</text>
+    <text x="1072" y="370" font-size="12">25 Nov</text>
+    <text x="1142" y="370" font-size="12">Completed</text>
+    <text x="1304" y="370" font-size="12">1,500 / max 1,600</text>
+    <rect x="1231.12" y="384" width="184.88" height="32" rx="6" class="control"/>
+    <text x="1323.56" y="404.55" font-size="13" text-anchor="middle">Load more occurrences</text>
+    <text x="1044" y="442" font-size="13" class="bold">Events</text>
+    <text x="1044" y="464" font-size="12" class="muted bold">When</text>
+    <text x="1140" y="464" font-size="12" class="muted bold">Event</text>
+    <text x="1404" y="464" font-size="12" class="muted bold">#</text>
+    <line x1="1044" y1="472" x2="1416" y2="472" class="rule"/>
+    <text x="1044" y="490" font-size="12">Today 13:10</text>
+    <text x="1140" y="490" font-size="12">Ann logged Pizza · 660 kcal</text>
+    <text x="1404" y="490" font-size="12">3</text>
+    <line x1="1044" y1="498" x2="1416" y2="498" class="rule"/>
+    <text x="1044" y="516" font-size="12">Today 09:30</text>
+    <text x="1140" y="516" font-size="12">You undid Cake · 300 kcal</text>
+    <text x="1404" y="516" font-size="12">3</text>
+    <line x1="1044" y1="524" x2="1416" y2="524" class="rule"/>
+    <text x="1044" y="542" font-size="12">26 Nov 18:00</text>
+    <text x="1140" y="542" font-size="12">You logged Croissant · 320 kcal</text>
+    <text x="1404" y="542" font-size="12">2</text>
+    <line x1="1044" y1="550" x2="1416" y2="550" class="rule"/>
+    <text x="1044" y="568" font-size="12">26 Nov 00:00</text>
+    <text x="1140" y="568" font-size="12">Period ended</text>
+    <text x="1404" y="568" font-size="12">1</text>
+    <rect x="1267.52" y="582" width="148.48" height="32" rx="6" class="control"/>
+    <text x="1341.76" y="602.55" font-size="13" text-anchor="middle">Load more events</text>
   </g>
 </svg>

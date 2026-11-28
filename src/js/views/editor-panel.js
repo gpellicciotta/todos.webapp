@@ -1,7 +1,7 @@
 /**
  * Editor panel: the frame of the editors and the view options in the shell's `[data-editor-slot]` element.
  *
- * An editor route mounts its editor into a panel with a title, a close button, and a scrolling body.
+ * An editor route mounts its editor into a panel with a title, a close button, an optional heading, and a scrolling body.
  * Wide layouts show the panel at the right of the rows; compact layouts show it over the main column.
  * Escape closes the panel, also from a text field, after that field's change saves (`TSK-1`).
  * Closing returns focus to the control that opened the panel, or to the editor's own return target.
@@ -75,7 +75,7 @@ export function createEditorPanel({ slot, editors, close, context = {}, fallback
   /**
    * Build an empty panel for an editor.
    * @param {string} name the editor name
-   * @returns {{element: HTMLElement, body: HTMLElement, document: Document, setTitle: Function, close: Function}} the panel
+   * @returns {{element: HTMLElement, body: HTMLElement, document: Document, setTitle: Function, setHeading: Function, close: Function}} the panel
    */
   function buildPanel(name) {
     const id = `editor-panel-${(instances += 1)}`;
@@ -109,6 +109,10 @@ export function createEditorPanel({ slot, editors, close, context = {}, fallback
       element, body, document: doc,
       setTitle: (text) => {
         title.textContent = text;
+      },
+      // A heading sits between the header and the body, so it stays in view while the body scrolls.
+      setHeading: (node) => {
+        body.before(node);
       },
       close: () => close(),
     };

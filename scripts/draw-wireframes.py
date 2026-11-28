@@ -1315,26 +1315,47 @@ def danger_zone(f, x, y, width, label):
     return y + 84
 
 
+def table(f, x, y, width, columns, offsets, rows):
+    """Draw a history table: its column headings over a rule, then its rows under rules; return the bottom edge."""
+    for offset, name in zip(offsets, columns):
+        f.text(x + offset, y + 14, name, 12, "muted bold")
+    y += 22
+    for row in rows:
+        f.line(x, y, x + width, y)
+        for offset, value in zip(offsets, row):
+            f.text(x + offset, y + 18, value, 12)
+        y += 26
+    return y
+
+
 def history_tab(f, x, y, width):
-    """Draw the History tab of Calories: entries and undos under each day with its verdict, then Details."""
-    f.text(x, y + 14, "History", 13, "muted")
-    y += 24
-    entries = [
-        ("Today · In progress", "Ann logged Pizza · 660 kcal"),
-        ("Today · In progress", "You undid Cake · 300 kcal"),
-        ("26 Nov · Failed, 1,910 / max 1,600", "The day ended above the limit"),
-        ("26 Nov · Failed, 1,910 / max 1,600", "You logged Croissant · 320 kcal"),
+    """Draw the History tab of Calories: Details, then the occurrences and the events as tables, each with Load more."""
+    f.text(x, y + 14, "Details", 14, "bold")
+    f.text(x, y + 38, "Created 1 Nov 10:00 \u00b7 Last updated 27 Nov 19:45", 13, "muted")
+    y += 52
+    f.line(x, y, x + width, y)
+    f.text(x, y + 28, "History", 14, "bold")
+    button_right(f, x + width, y + 8, "Refresh history", size=13, height=32)
+    y += 50
+    f.text(x, y + 14, "Occurrences", 13, "bold")
+    occurrences = [
+        ("3", "Today", "In progress", "780 / max 1,600"),
+        ("2", "26 Nov", "Failed", "1,910 / max 1,600"),
+        ("1", "25 Nov", "Completed", "1,500 / max 1,600"),
     ]
-    for when, what in entries:
-        f.rect(x, y, width, 48, "box")
-        f.text(x + 12, y + 20, fit(when, width - 24, 12), 12, "muted")
-        f.text(x + 12, y + 39, fit(what, width - 24, 14), 14)
-        y += 56
-    y += 12
-    f.text(x, y + 14, "Details", 13, "muted")
-    for index, line in enumerate(["Created 1 Nov 2026 10:00", "Last activity 27 Nov 2026 19:45", "Owner: you"]):
-        f.text(x, y + 40 + index * 22, line, 14)
-    return y + 108
+    y = table(f, x, y + 22, width, ["#", "Period", "Status", "Progress"], [0, 28, 98, width - 112], occurrences) + 6
+    button_right(f, x + width, y, "Load more occurrences", size=13, height=32)
+    y += 44
+    f.text(x, y + 14, "Events", 13, "bold")
+    events = [
+        ("Today 13:10", "Ann logged Pizza \u00b7 660 kcal", "3"),
+        ("Today 09:30", "You undid Cake \u00b7 300 kcal", "3"),
+        ("26 Nov 18:00", "You logged Croissant \u00b7 320 kcal", "2"),
+        ("26 Nov 00:00", "Period ended", "1"),
+    ]
+    y = table(f, x, y + 22, width, ["When", "Event", "#"], [0, 96, width - 12], events) + 6
+    button_right(f, x + width, y, "Load more events", size=13, height=32)
+    return y + 32
 
 
 def editor_panel(f, title):
@@ -1345,15 +1366,24 @@ def editor_panel(f, title):
     return EDITOR_LEFT + 24, WIDE_WIDTH - EDITOR_LEFT - 48
 
 
-def tabbed_editor(tab, draw, caption, selected):
+def editor_heading(f, x, y, width, description):
+    """Draw the task's description above the tabs, with a rule under it; return where the tab strip starts."""
+    f.text(x, y + 14, fit(description, width, 17), 17, "bold")
+    f.line(x, y + 24, x + width, y + 24)
+    return y + 26
+
+
+def tabbed_editor(tab, draw, caption, selected, description):
     """Draw the task editor on one tab, as a full screen and as a right panel; return the screen tuple."""
     compact = Frame(COMPACT_WIDTH, COMPACT_HEIGHT)
     top_bar(compact, "Task", "connected", back=True)
-    draw(compact, 16, tab_strip(compact, 16, 76, compact.width - 32, tab), compact.width - 32)
+    top = editor_heading(compact, 16, 68, compact.width - 32, description)
+    draw(compact, 16, tab_strip(compact, 16, top, compact.width - 32, tab), compact.width - 32)
     wide = Frame(WIDE_WIDTH, WIDE_HEIGHT)
     wide_all_tasks(wide, "connected", selected=selected, right=EDITOR_LEFT - 20, more=False)
     left, width = editor_panel(wide, "Task")
-    draw(wide, left, tab_strip(wide, left, 76, width, tab), width)
+    top = editor_heading(wide, left, 68, width, description)
+    draw(wide, left, tab_strip(wide, left, top, width, tab), width)
     return ("Task editor · " + TAB_NAMES[tab], caption, compact, wide)
 
 
@@ -1364,12 +1394,13 @@ def task_editor():
         status_tab,
         "Opens on Status: the status as text, the progress, the Log form, and the entries with Undo.",
         TASKS.index(next(t for t in TASKS if t["text"] == "Calories")),
+        "Calories",
     )
 
 
 def task_editor_notes():
     """The task editor on its Notes tab."""
-    return tabbed_editor(1, notes_tab, "The note thread, newest first, with the add and search field.", 1)
+    return tabbed_editor(1, notes_tab, "The note thread, newest first, with the add and search field.", 1, TASKS[1]["text"])
 
 
 def task_editor_configuration():
@@ -1379,6 +1410,7 @@ def task_editor_configuration():
         configuration_tab,
         "Description, Lists, Goal, Recurrence, Time window, and the Danger zone; every field saves on change.",
         TASKS.index(next(t for t in TASKS if t["text"] == "Sport")),
+        "Sport",
     )
 
 
@@ -1387,8 +1419,9 @@ def task_editor_history():
     return tabbed_editor(
         3,
         history_tab,
-        "Entries, undos, and each period's verdict, newest first, then Details; read-only.",
+        "Details, then each period's verdict and the entries and undos, newest first, in two tables; read-only.",
         TASKS.index(next(t for t in TASKS if t["text"] == "Calories")),
+        "Calories",
     )
 
 

@@ -41,62 +41,64 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
     <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">Task</text>
-    <text x="16" y="104" font-size="14" class="bold">Status</text>
-    <rect x="12" y="117" width="55.04" height="3" rx="0" class="primary"/>
-    <text x="85.04" y="104" font-size="14" class="muted">Notes</text>
-    <text x="146.24" y="104" font-size="14" class="muted">Configuration</text>
-    <text x="270.16" y="104" font-size="14" class="muted">History</text>
-    <line x1="16" y1="120" x2="374" y2="120" class="rule"/>
-    <circle cx="26" cy="148" r="9" class="icon"/>
-    <path d="M17 148 A9 9 0 0 0 35 148 Z" class="icon-fill"/>
-    <text x="44" y="153" font-size="15" class="bold">In progress, not on track</text>
-    <text x="16" y="176" font-size="12" class="muted">Today, Thu 27 Nov</text>
-    <rect x="16" y="188" width="358" height="84" rx="6" class="box"/>
-    <text x="28" y="216" font-size="16" class="bold">1,720 of max 1,600 kcal</text>
-    <rect x="28" y="228" width="334" height="5" rx="2" class="meter"/>
-    <rect x="28" y="228" width="334" height="5" rx="2" class="meter-fill"/>
-    <text x="28" y="256" font-size="12">⚠ 120 kcal over the limit</text>
-    <line x1="16" y1="288" x2="374" y2="288" class="rule"/>
-    <text x="16" y="316" font-size="14" class="bold">Log</text>
-    <text x="16" y="351" font-size="13" class="muted">Amount</text>
-    <rect x="156" y="328" width="218" height="36" rx="6" class="control"/>
-    <text x="168" y="355" font-size="14" class="muted">0</text>
-    <text x="16" y="395" font-size="13" class="muted">Label (optional)</text>
-    <rect x="156" y="372" width="218" height="36" rx="6" class="control"/>
-    <text x="168" y="399" font-size="14" class="muted">Croissant</text>
-    <rect x="291.04" y="416" width="82.96" height="32" rx="6" class="control"/>
-    <text x="332.52" y="436.55" font-size="13" text-anchor="middle">+ Check</text>
-    <rect x="163.68" y="416" width="119.36" height="32" rx="6" class="control"/>
-    <text x="223.36" y="436.55" font-size="13" text-anchor="middle">+ Time spent</text>
-    <rect x="318.48" y="456" width="55.52" height="32" rx="6" class="primary"/>
-    <text x="346.24" y="476.9" font-size="14" class="on-primary" text-anchor="middle">Log</text>
-    <line x1="16" y1="500" x2="374" y2="500" class="rule"/>
-    <text x="16" y="528" font-size="14" class="bold">Today's entries · 4</text>
-    <text x="374" y="528" font-size="13" class="muted" text-anchor="end">Total 1,720 kcal</text>
-    <line x1="16" y1="540" x2="374" y2="540" class="rule"/>
-    <text x="16" y="565" font-size="12" class="muted">19:45</text>
-    <text x="64" y="565" font-size="14">Pizza · Ann</text>
-    <text x="306" y="565" font-size="13" class="bold" text-anchor="end">660 kcal</text>
-    <rect x="315.12" y="546" width="58.88" height="28" rx="6" class="control"/>
-    <text x="344.56" y="564.2" font-size="12" text-anchor="middle">Undo</text>
-    <line x1="16" y1="580" x2="374" y2="580" class="rule"/>
-    <text x="16" y="605" font-size="12" class="muted">16:00</text>
-    <text x="64" y="605" font-size="14">Apple · You</text>
-    <text x="306" y="605" font-size="13" class="bold" text-anchor="end">90 kcal</text>
-    <rect x="315.12" y="586" width="58.88" height="28" rx="6" class="control"/>
-    <text x="344.56" y="604.2" font-size="12" text-anchor="middle">Undo</text>
-    <line x1="16" y1="620" x2="374" y2="620" class="rule"/>
-    <text x="16" y="645" font-size="12" class="muted">12:30</text>
-    <text x="64" y="645" font-size="14">Pasta · You</text>
-    <text x="306" y="645" font-size="13" class="bold" text-anchor="end">650 kcal</text>
-    <rect x="315.12" y="626" width="58.88" height="28" rx="6" class="control"/>
-    <text x="344.56" y="644.2" font-size="12" text-anchor="middle">Undo</text>
-    <line x1="16" y1="660" x2="374" y2="660" class="rule"/>
-    <text x="16" y="685" font-size="12" class="muted">08:10</text>
-    <text x="64" y="685" font-size="14">Croissant · You</text>
-    <text x="306" y="685" font-size="13" class="bold" text-anchor="end">320 kcal</text>
-    <rect x="315.12" y="666" width="58.88" height="28" rx="6" class="control"/>
-    <text x="344.56" y="684.2" font-size="12" text-anchor="middle">Undo</text>
+    <text x="16" y="82" font-size="17" class="bold">Calories</text>
+    <line x1="16" y1="92" x2="374" y2="92" class="rule"/>
+    <text x="16" y="122" font-size="14" class="bold">Status</text>
+    <rect x="12" y="135" width="55.04" height="3" rx="0" class="primary"/>
+    <text x="85.04" y="122" font-size="14" class="muted">Notes</text>
+    <text x="146.24" y="122" font-size="14" class="muted">Configuration</text>
+    <text x="270.16" y="122" font-size="14" class="muted">History</text>
+    <line x1="16" y1="138" x2="374" y2="138" class="rule"/>
+    <circle cx="26" cy="166" r="9" class="icon"/>
+    <path d="M17 166 A9 9 0 0 0 35 166 Z" class="icon-fill"/>
+    <text x="44" y="171" font-size="15" class="bold">In progress, not on track</text>
+    <text x="16" y="194" font-size="12" class="muted">Today, Thu 27 Nov</text>
+    <rect x="16" y="206" width="358" height="84" rx="6" class="box"/>
+    <text x="28" y="234" font-size="16" class="bold">1,720 of max 1,600 kcal</text>
+    <rect x="28" y="246" width="334" height="5" rx="2" class="meter"/>
+    <rect x="28" y="246" width="334" height="5" rx="2" class="meter-fill"/>
+    <text x="28" y="274" font-size="12">⚠ 120 kcal over the limit</text>
+    <line x1="16" y1="306" x2="374" y2="306" class="rule"/>
+    <text x="16" y="334" font-size="14" class="bold">Log</text>
+    <text x="16" y="369" font-size="13" class="muted">Amount</text>
+    <rect x="156" y="346" width="218" height="36" rx="6" class="control"/>
+    <text x="168" y="373" font-size="14" class="muted">0</text>
+    <text x="16" y="413" font-size="13" class="muted">Label (optional)</text>
+    <rect x="156" y="390" width="218" height="36" rx="6" class="control"/>
+    <text x="168" y="417" font-size="14" class="muted">Croissant</text>
+    <rect x="291.04" y="434" width="82.96" height="32" rx="6" class="control"/>
+    <text x="332.52" y="454.55" font-size="13" text-anchor="middle">+ Check</text>
+    <rect x="163.68" y="434" width="119.36" height="32" rx="6" class="control"/>
+    <text x="223.36" y="454.55" font-size="13" text-anchor="middle">+ Time spent</text>
+    <rect x="318.48" y="474" width="55.52" height="32" rx="6" class="primary"/>
+    <text x="346.24" y="494.9" font-size="14" class="on-primary" text-anchor="middle">Log</text>
+    <line x1="16" y1="518" x2="374" y2="518" class="rule"/>
+    <text x="16" y="546" font-size="14" class="bold">Today's entries · 4</text>
+    <text x="374" y="546" font-size="13" class="muted" text-anchor="end">Total 1,720 kcal</text>
+    <line x1="16" y1="558" x2="374" y2="558" class="rule"/>
+    <text x="16" y="583" font-size="12" class="muted">19:45</text>
+    <text x="64" y="583" font-size="14">Pizza · Ann</text>
+    <text x="306" y="583" font-size="13" class="bold" text-anchor="end">660 kcal</text>
+    <rect x="315.12" y="564" width="58.88" height="28" rx="6" class="control"/>
+    <text x="344.56" y="582.2" font-size="12" text-anchor="middle">Undo</text>
+    <line x1="16" y1="598" x2="374" y2="598" class="rule"/>
+    <text x="16" y="623" font-size="12" class="muted">16:00</text>
+    <text x="64" y="623" font-size="14">Apple · You</text>
+    <text x="306" y="623" font-size="13" class="bold" text-anchor="end">90 kcal</text>
+    <rect x="315.12" y="604" width="58.88" height="28" rx="6" class="control"/>
+    <text x="344.56" y="622.2" font-size="12" text-anchor="middle">Undo</text>
+    <line x1="16" y1="638" x2="374" y2="638" class="rule"/>
+    <text x="16" y="663" font-size="12" class="muted">12:30</text>
+    <text x="64" y="663" font-size="14">Pasta · You</text>
+    <text x="306" y="663" font-size="13" class="bold" text-anchor="end">650 kcal</text>
+    <rect x="315.12" y="644" width="58.88" height="28" rx="6" class="control"/>
+    <text x="344.56" y="662.2" font-size="12" text-anchor="middle">Undo</text>
+    <line x1="16" y1="678" x2="374" y2="678" class="rule"/>
+    <text x="16" y="703" font-size="12" class="muted">08:10</text>
+    <text x="64" y="703" font-size="14">Croissant · You</text>
+    <text x="306" y="703" font-size="13" class="bold" text-anchor="end">320 kcal</text>
+    <rect x="315.12" y="684" width="58.88" height="28" rx="6" class="control"/>
+    <text x="344.56" y="702.2" font-size="12" text-anchor="middle">Undo</text>
   </g>
   <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
     <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
@@ -202,61 +204,63 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1044" y="46" font-size="20" class="bold">Task</text>
     <rect x="1380" y="16" width="44" height="44" rx="6" class="control"/>
     <text x="1402" y="43" font-size="16" text-anchor="middle">×</text>
-    <text x="1044" y="104" font-size="14" class="bold">Status</text>
-    <rect x="1040" y="117" width="55.04" height="3" rx="0" class="primary"/>
-    <text x="1113.04" y="104" font-size="14" class="muted">Notes</text>
-    <text x="1174.24" y="104" font-size="14" class="muted">Configuration</text>
-    <text x="1298.16" y="104" font-size="14" class="muted">History</text>
-    <line x1="1044" y1="120" x2="1416" y2="120" class="rule"/>
-    <circle cx="1054" cy="148" r="9" class="icon"/>
-    <path d="M1045 148 A9 9 0 0 0 1063 148 Z" class="icon-fill"/>
-    <text x="1072" y="153" font-size="15" class="bold">In progress, not on track</text>
-    <text x="1044" y="176" font-size="12" class="muted">Today, Thu 27 Nov</text>
-    <rect x="1044" y="188" width="372" height="84" rx="6" class="box"/>
-    <text x="1056" y="216" font-size="16" class="bold">1,720 of max 1,600 kcal</text>
-    <rect x="1056" y="228" width="348" height="5" rx="2" class="meter"/>
-    <rect x="1056" y="228" width="348" height="5" rx="2" class="meter-fill"/>
-    <text x="1056" y="256" font-size="12">⚠ 120 kcal over the limit</text>
-    <line x1="1044" y1="288" x2="1416" y2="288" class="rule"/>
-    <text x="1044" y="316" font-size="14" class="bold">Log</text>
-    <text x="1044" y="351" font-size="13" class="muted">Amount</text>
-    <rect x="1184" y="328" width="232" height="36" rx="6" class="control"/>
-    <text x="1196" y="355" font-size="14" class="muted">0</text>
-    <text x="1044" y="395" font-size="13" class="muted">Label (optional)</text>
-    <rect x="1184" y="372" width="232" height="36" rx="6" class="control"/>
-    <text x="1196" y="399" font-size="14" class="muted">Croissant</text>
-    <rect x="1333.04" y="416" width="82.96" height="32" rx="6" class="control"/>
-    <text x="1374.52" y="436.55" font-size="13" text-anchor="middle">+ Check</text>
-    <rect x="1205.68" y="416" width="119.36" height="32" rx="6" class="control"/>
-    <text x="1265.36" y="436.55" font-size="13" text-anchor="middle">+ Time spent</text>
-    <rect x="1360.48" y="456" width="55.52" height="32" rx="6" class="primary"/>
-    <text x="1388.24" y="476.9" font-size="14" class="on-primary" text-anchor="middle">Log</text>
-    <line x1="1044" y1="500" x2="1416" y2="500" class="rule"/>
-    <text x="1044" y="528" font-size="14" class="bold">Today's entries · 4</text>
-    <text x="1416" y="528" font-size="13" class="muted" text-anchor="end">Total 1,720 kcal</text>
-    <line x1="1044" y1="540" x2="1416" y2="540" class="rule"/>
-    <text x="1044" y="565" font-size="12" class="muted">19:45</text>
-    <text x="1092" y="565" font-size="14">Pizza · Ann</text>
-    <text x="1348" y="565" font-size="13" class="bold" text-anchor="end">660 kcal</text>
-    <rect x="1357.12" y="546" width="58.88" height="28" rx="6" class="control"/>
-    <text x="1386.56" y="564.2" font-size="12" text-anchor="middle">Undo</text>
-    <line x1="1044" y1="580" x2="1416" y2="580" class="rule"/>
-    <text x="1044" y="605" font-size="12" class="muted">16:00</text>
-    <text x="1092" y="605" font-size="14">Apple · You</text>
-    <text x="1348" y="605" font-size="13" class="bold" text-anchor="end">90 kcal</text>
-    <rect x="1357.12" y="586" width="58.88" height="28" rx="6" class="control"/>
-    <text x="1386.56" y="604.2" font-size="12" text-anchor="middle">Undo</text>
-    <line x1="1044" y1="620" x2="1416" y2="620" class="rule"/>
-    <text x="1044" y="645" font-size="12" class="muted">12:30</text>
-    <text x="1092" y="645" font-size="14">Pasta · You</text>
-    <text x="1348" y="645" font-size="13" class="bold" text-anchor="end">650 kcal</text>
-    <rect x="1357.12" y="626" width="58.88" height="28" rx="6" class="control"/>
-    <text x="1386.56" y="644.2" font-size="12" text-anchor="middle">Undo</text>
-    <line x1="1044" y1="660" x2="1416" y2="660" class="rule"/>
-    <text x="1044" y="685" font-size="12" class="muted">08:10</text>
-    <text x="1092" y="685" font-size="14">Croissant · You</text>
-    <text x="1348" y="685" font-size="13" class="bold" text-anchor="end">320 kcal</text>
-    <rect x="1357.12" y="666" width="58.88" height="28" rx="6" class="control"/>
-    <text x="1386.56" y="684.2" font-size="12" text-anchor="middle">Undo</text>
+    <text x="1044" y="82" font-size="17" class="bold">Calories</text>
+    <line x1="1044" y1="92" x2="1416" y2="92" class="rule"/>
+    <text x="1044" y="122" font-size="14" class="bold">Status</text>
+    <rect x="1040" y="135" width="55.04" height="3" rx="0" class="primary"/>
+    <text x="1113.04" y="122" font-size="14" class="muted">Notes</text>
+    <text x="1174.24" y="122" font-size="14" class="muted">Configuration</text>
+    <text x="1298.16" y="122" font-size="14" class="muted">History</text>
+    <line x1="1044" y1="138" x2="1416" y2="138" class="rule"/>
+    <circle cx="1054" cy="166" r="9" class="icon"/>
+    <path d="M1045 166 A9 9 0 0 0 1063 166 Z" class="icon-fill"/>
+    <text x="1072" y="171" font-size="15" class="bold">In progress, not on track</text>
+    <text x="1044" y="194" font-size="12" class="muted">Today, Thu 27 Nov</text>
+    <rect x="1044" y="206" width="372" height="84" rx="6" class="box"/>
+    <text x="1056" y="234" font-size="16" class="bold">1,720 of max 1,600 kcal</text>
+    <rect x="1056" y="246" width="348" height="5" rx="2" class="meter"/>
+    <rect x="1056" y="246" width="348" height="5" rx="2" class="meter-fill"/>
+    <text x="1056" y="274" font-size="12">⚠ 120 kcal over the limit</text>
+    <line x1="1044" y1="306" x2="1416" y2="306" class="rule"/>
+    <text x="1044" y="334" font-size="14" class="bold">Log</text>
+    <text x="1044" y="369" font-size="13" class="muted">Amount</text>
+    <rect x="1184" y="346" width="232" height="36" rx="6" class="control"/>
+    <text x="1196" y="373" font-size="14" class="muted">0</text>
+    <text x="1044" y="413" font-size="13" class="muted">Label (optional)</text>
+    <rect x="1184" y="390" width="232" height="36" rx="6" class="control"/>
+    <text x="1196" y="417" font-size="14" class="muted">Croissant</text>
+    <rect x="1333.04" y="434" width="82.96" height="32" rx="6" class="control"/>
+    <text x="1374.52" y="454.55" font-size="13" text-anchor="middle">+ Check</text>
+    <rect x="1205.68" y="434" width="119.36" height="32" rx="6" class="control"/>
+    <text x="1265.36" y="454.55" font-size="13" text-anchor="middle">+ Time spent</text>
+    <rect x="1360.48" y="474" width="55.52" height="32" rx="6" class="primary"/>
+    <text x="1388.24" y="494.9" font-size="14" class="on-primary" text-anchor="middle">Log</text>
+    <line x1="1044" y1="518" x2="1416" y2="518" class="rule"/>
+    <text x="1044" y="546" font-size="14" class="bold">Today's entries · 4</text>
+    <text x="1416" y="546" font-size="13" class="muted" text-anchor="end">Total 1,720 kcal</text>
+    <line x1="1044" y1="558" x2="1416" y2="558" class="rule"/>
+    <text x="1044" y="583" font-size="12" class="muted">19:45</text>
+    <text x="1092" y="583" font-size="14">Pizza · Ann</text>
+    <text x="1348" y="583" font-size="13" class="bold" text-anchor="end">660 kcal</text>
+    <rect x="1357.12" y="564" width="58.88" height="28" rx="6" class="control"/>
+    <text x="1386.56" y="582.2" font-size="12" text-anchor="middle">Undo</text>
+    <line x1="1044" y1="598" x2="1416" y2="598" class="rule"/>
+    <text x="1044" y="623" font-size="12" class="muted">16:00</text>
+    <text x="1092" y="623" font-size="14">Apple · You</text>
+    <text x="1348" y="623" font-size="13" class="bold" text-anchor="end">90 kcal</text>
+    <rect x="1357.12" y="604" width="58.88" height="28" rx="6" class="control"/>
+    <text x="1386.56" y="622.2" font-size="12" text-anchor="middle">Undo</text>
+    <line x1="1044" y1="638" x2="1416" y2="638" class="rule"/>
+    <text x="1044" y="663" font-size="12" class="muted">12:30</text>
+    <text x="1092" y="663" font-size="14">Pasta · You</text>
+    <text x="1348" y="663" font-size="13" class="bold" text-anchor="end">650 kcal</text>
+    <rect x="1357.12" y="644" width="58.88" height="28" rx="6" class="control"/>
+    <text x="1386.56" y="662.2" font-size="12" text-anchor="middle">Undo</text>
+    <line x1="1044" y1="678" x2="1416" y2="678" class="rule"/>
+    <text x="1044" y="703" font-size="12" class="muted">08:10</text>
+    <text x="1092" y="703" font-size="14">Croissant · You</text>
+    <text x="1348" y="703" font-size="13" class="bold" text-anchor="end">320 kcal</text>
+    <rect x="1357.12" y="684" width="58.88" height="28" rx="6" class="control"/>
+    <text x="1386.56" y="702.2" font-size="12" text-anchor="middle">Undo</text>
   </g>
 </svg>

@@ -107,6 +107,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
   Rows show the repeat text, such as "Weekly", on the meta line; past its period end a task shows as to do until it rolls over.
   For 24 hours after a period ends, users can still complete that period from the editor's Status tab.
 - TSK-18: The task editor groups its fields in four tabs: Status, Notes, Configuration, and History.
+- TSK-23: The task editor shows the task's description above its tabs, so every tab says which task it edits.
   Status holds the status, progress, Log form, and entries; Notes holds the notes.
   Configuration holds the description, lists, goal, recurrence, time window, and Danger zone.
   It opens on Status.
@@ -122,7 +123,7 @@ Connected mode costs anonymity: it requires a login, and the service admits invi
   "Approaching" starts at 80% of the target: yellow for "at least" goals, orange for "at most" goals.
   A reached "at least" target turns green; an "at most" overage shows in orange with an alert icon.
   Red marks Failed only; in progress shows orange when not on track, judged by the share of the window gone.
-- TSK-17: Users see a task's history: its occurrences and events, newest first.
+- TSK-17: Users see a task's history: its occurrences and events, newest first, each in a table of 20 that loads more on request.
   It reads the server while connected, and the local stores in local mode.
 
 ### Notes

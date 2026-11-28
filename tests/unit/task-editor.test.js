@@ -586,7 +586,7 @@ describe('mountTaskEditor', () => {
         { id: 'e1', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T09:00:00.000Z', 'owner-id': null, type: 'create', details: null },
       ];
       const OCCURRENCES = [{ 'task-id': 't1', ...TASK['current-occurrence'], progress: 1, status: 'completed' }];
-      const entries = (kind) => [...document.querySelectorAll(`[data-section="history"] [data-history="${kind}"] li`)].map((item) => item.textContent);
+      const entries = (kind) => [...document.querySelectorAll(`[data-section="history"] [data-history="${kind}"] tbody tr`)].map((row) => row.textContent);
 
       it('lists the events and occurrences of the local stores in local mode, newest first', async () => {
         store.eventsOfTask = vi.fn(async () => [...EVENTS].reverse());
@@ -595,7 +595,7 @@ describe('mountTaskEditor', () => {
         await vi.waitFor(() => expect(entries('events')).toHaveLength(2));
         expect(entries('events')[0]).toContain('Ticked');
         expect(entries('events')[1]).toContain('Created');
-        expect(entries('occurrences')[0]).toContain('#1');
+        expect(document.querySelector('[data-history="occurrences"] [data-occurrence="1"] th').textContent).toBe('1');
         expect(entries('occurrences')[0]).toContain('Completed');
       });
     });
@@ -885,15 +885,30 @@ describe('mountTaskEditor', () => {
       expect(selected()).toBe('Status');
       expect(tabs().map((item) => item.tabIndex)).toEqual([0, -1, -1, -1]);
       expect(['Status', 'Notes', 'Configuration', 'History'].map((name) => panelOf(name).hidden)).toEqual([false, true, true, true]);
-      expect(document.querySelector('.editor-panel__header').nextElementSibling.contains(list)).toBe(true);
+      expect(document.querySelector('.editor-panel__body').contains(list)).toBe(true);
       expect(document.querySelector('.editor-panel__header button[aria-label*="More"]')).toBeNull();
       expect(document.querySelector('.task-editor__tabs [role="tablist"] button:not([role="tab"])')).toBeNull();
     });
 
-    it('holds the status on Status, the notes on Notes, and History then Details on History', () => {
+    it('holds the status on Status, the notes on Notes, and Details then History on History', () => {
       expect(parts('Status')).toEqual(['status', 'rule', 'rule']);
       expect(parts('Notes')).toEqual(['notes']);
-      expect(parts('History')).toEqual(['history', 'details']);
+      expect(parts('History')).toEqual(['details', 'history']);
+    });
+
+    it('shows the description above the tabs, on every tab, and follows a change of it (TSK-23)', async () => {
+      const heading = () => document.querySelector('.editor-panel > [data-part="heading"]');
+      expect(heading().textContent).toBe('Buy paint');
+      expect(heading().title).toBe('Buy paint');
+      expect(heading().previousElementSibling.classList.contains('editor-panel__header')).toBe(true);
+      expect(heading().nextElementSibling.querySelector('.task-editor__tabs')).not.toBeNull();
+      for (const name of ['Notes', 'Configuration', 'History', 'Status']) {
+        tab(name).click();
+        expect(heading().closest('[hidden]'), name).toBeNull();
+      }
+      store.getTask.mockImplementation(async () => ({ ...TASK, description: 'Buy blue paint' }));
+      store.listeners.forEach((listener) => listener({ operation: 'updateTask', remote: true }));
+      await vi.waitFor(() => expect(heading().textContent).toBe('Buy blue paint'));
     });
 
     it('holds Description, Lists, Goal, Recurrence, Time window, and the Danger zone on Configuration, with a rule between each', () => {
@@ -1044,13 +1059,13 @@ describe('mountTaskEditor history while connected', () => {
     store.eventsOfTask = vi.fn(async () => []);
     store.occurrencesOfTask = vi.fn(async () => []);
     const api = {
-      send: vi.fn(async (method, path) => ({
-        status: 200, ok: true, headers: { get: () => null },
-        body: path.endsWith('/events')
+      send: vi.fn(async (method, path) => {
+        const elements = path.includes('/events')
           ? [{ id: 'e1', 'task-id': 't1', occurrence: 2, 'creation-time': '2026-11-09T00:00:00.000Z', 'owner-id': null, type: 'roll-over', details: null }]
           : [{ 'task-id': 't1', occurrence: 2, 'start-time': '2026-11-08T23:00:00.000Z', 'due-time': '2026-11-15T23:00:00.000Z', 'goal-target': 3,
-            progress: 0, status: 'ready', 'close-time': null }],
-      })),
+            progress: 0, status: 'ready', 'close-time': null }];
+        return { status: 200, ok: true, headers: { get: () => null }, body: path.includes('page=') ? { elements, 'page-size': 20, 'end-bookmark': null } : elements };
+      }),
     };
     const session = { state: () => 'connected' };
     panel = createEditorPanel({
@@ -1063,13 +1078,13 @@ describe('mountTaskEditor history while connected', () => {
     panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
     await editor.idle();
     document.querySelector('[data-section="history"] button[data-action="history"]').click();
-    const entries = (kind) => [...document.querySelectorAll(`[data-history="${kind}"] li`)].map((item) => item.textContent);
+    const entries = (kind) => [...document.querySelectorAll(`[data-history="${kind}"] tbody tr`)].map((row) => row.textContent);
     await vi.waitFor(() => expect(entries('events')).toHaveLength(1));
     const calls = api.send.mock.calls.map(([method, path]) => [method, path]);
-    expect(calls).toContainEqual(['GET', '/api/tasks/t1/events']);
-    expect(calls).toContainEqual(['GET', '/api/tasks/t1/occurrences']);
+    expect(calls).toContainEqual(['GET', '/api/tasks/t1/events?page=first&page-size=20']);
+    expect(calls).toContainEqual(['GET', '/api/tasks/t1/occurrences?page=first&page-size=20']);
     expect(entries('events')[0]).toContain('Period ended');
-    expect(entries('occurrences')[0]).toContain('#2');
+    expect(document.querySelector('[data-history="occurrences"] [data-occurrence="2"] th').textContent).toBe('2');
     expect(entries('occurrences')[0]).toContain('0 of 3 done');
   });
 
@@ -1807,10 +1822,13 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
 
 describe('task history of log entries (TSK-17)', () => {
   const CURRENT = {
-    occurrence: 2, 'start-time': '2026-11-27T00:00:00.000Z', 'due-time': '2026-11-28T00:00:00.000Z', 'close-time': null, status: 'in-progress',
+    occurrence: 2, 'start-time': new Date(2026, 10, 27).toISOString(), 'due-time': new Date(2026, 10, 28).toISOString(), 'close-time': null, status: 'in-progress',
     'goal-direction': 'at-most', 'goal-measure': 'amount', 'goal-target': 1600, 'goal-unit': 'kcal', progress: 320,
   };
-  const CLOSED = { ...CURRENT, occurrence: 1, 'start-time': '2026-11-26T00:00:00.000Z', 'due-time': '2026-11-27T00:00:00.000Z', 'close-time': '2026-11-27T00:00:00.000Z', status: 'failed', progress: 1910 };
+  const CLOSED = {
+    ...CURRENT, occurrence: 1, 'start-time': new Date(2026, 10, 26).toISOString(), 'due-time': new Date(2026, 10, 27).toISOString(),
+    'close-time': new Date(2026, 10, 27).toISOString(), status: 'failed', progress: 1910,
+  };
   const EVENTS = [
     { id: 'e1', 'task-id': 't1', type: 'log', occurrence: 1, 'creation-time': '2026-11-26T08:00:00.000Z', amount: 1610, label: 'Lunch', 'owner-id': null },
     { id: 'e2', 'task-id': 't1', type: 'log', occurrence: 1, 'creation-time': '2026-11-26T10:00:00.000Z', amount: 300, label: 'Cake', 'owner-id': 4 },
@@ -1827,19 +1845,161 @@ describe('task history of log entries (TSK-17)', () => {
     await history.load();
   });
 
-  it('shows an occurrence with its status and progress against the goal', () => {
-    const texts = [...document.querySelectorAll('[data-history="occurrences"] > li')].map((item) => item.textContent);
-    expect(texts[1]).toContain('Failed, 1,910 / max 1,600 kcal');
-    expect(texts[0]).toContain('In progress, 320 / max 1,600 kcal');
+  it('shows the occurrences in a table, each with its period, status, and progress against the goal', () => {
+    const table = document.querySelector('table[data-history="occurrences"]');
+    expect(table.querySelector('caption').textContent).toBe('Occurrences');
+    expect([...table.querySelectorAll('thead th')].map((cell) => [cell.textContent, cell.getAttribute('scope')])).toEqual(
+      [['#', 'col'], ['Period', 'col'], ['Status', 'col'], ['Progress', 'col']]);
+    const cells = [...table.querySelectorAll('tbody tr')].map((row) => [...row.children].map((cell) => cell.textContent));
+    expect(cells).toEqual([
+      ['2', 'Nov 27', 'In progress', '320 / max 1,600 kcal'],
+      ['1', 'Nov 26', 'Failed', '1,910 / max 1,600 kcal'],
+    ]);
+  });
+
+  it('shows the events in a table with their time, what happened, and their occurrence', () => {
+    const table = document.querySelector('table[data-history="events"]');
+    expect(table.querySelector('caption').textContent).toBe('Events');
+    expect([...table.querySelectorAll('thead th')].map((cell) => cell.textContent)).toEqual(['When', 'Event', '#']);
+    const first = [...table.querySelector('tbody tr').children].map((cell) => cell.textContent);
+    expect(first[0]).toMatch(/27/);
+    expect(first.slice(1)).toEqual(['You logged Croissant · 320 kcal', '2']);
   });
 
   it('shows what each entry logged, and an undo naming the undone entry, which stays listed struck through', () => {
-    const items = [...document.querySelectorAll('[data-history="events"] > li')];
+    const items = [...document.querySelectorAll('[data-history="events"] tbody tr')];
     const text = (id) => items.find((item) => item.dataset.event === id)?.textContent;
     expect(text('e3')).toContain('You logged Croissant · 320 kcal');
     expect(text('e1')).toContain('You logged Lunch · 1,610 kcal');
     expect(text('u2')).toContain('Collaborator undid Cake · 300 kcal');
     expect(items.find((item) => item.dataset.event === 'e2').classList.contains('is-undone')).toBe(true);
     expect(items.find((item) => item.dataset.event === 'e1').classList.contains('is-undone')).toBe(false);
+  });
+});
+
+describe('task history paging (TSK-17)', () => {
+  const at = (minutes) => new Date(Date.UTC(2026, 9, 1, 0, minutes)).toISOString();
+  /** @returns {object} a check entry, numbered from the oldest */
+  const logged = (number, extra = {}) => ({
+    id: `e${number}`, 'task-id': 't1', type: 'log', occurrence: 1, 'creation-time': at(number), checked: true, label: `Entry ${number}`, 'owner-id': null, ...extra,
+  });
+  /** @returns {object} a daily occurrence */
+  const period = (number) => ({
+    occurrence: number, 'start-time': new Date(Date.UTC(2026, 9, number, 12)).toISOString(), 'due-time': new Date(Date.UTC(2026, 9, number + 1, 12)).toISOString(),
+    'close-time': null, status: 'completed', 'goal-target': 1, progress: 1,
+  });
+  const range = (count) => Array.from({ length: count }, (_, index) => index + 1);
+  const rows = (kind) => [...document.querySelectorAll(`[data-history="${kind}"] tbody tr`)];
+  const more = (kind) => document.querySelector(`button[data-action="more-${kind}"]`);
+
+  /**
+   * Show the history of a store that holds a number of entries and occurrences.
+   * @param {object} options the contents, and an API with a session while connected
+   * @returns {Promise<object>} the history
+   */
+  async function show({ events = [], occurrences = [], api = null, session = null }) {
+    resetBody('<div></div>');
+    const store = { eventsOfTask: async () => events, occurrencesOfTask: async () => occurrences, notesOfTask: async () => [] };
+    const history = createTaskHistory({ document, store, taskId: 't1', locale: 'en', api, session, userId: () => null });
+    document.body.append(history.element);
+    await history.load();
+    return history;
+  }
+
+  /**
+   * Serve the history routes in pages, newest first, as the service does.
+   * @param {{events: object[], occurrences: object[]}} contents the records, newest first
+   * @returns {{send: import('vitest').Mock}} the API
+   */
+  function pagedApi(contents) {
+    return {
+      send: vi.fn(async (method, path) => {
+        const url = new URL(path, 'https://todos.example.com');
+        const records = contents[url.pathname.split('/').pop()];
+        const size = Number(url.searchParams.get('page-size'));
+        const start = Number(url.searchParams.get('page-bookmark') ?? 0);
+        const elements = records.slice(start, start + size);
+        const next = start + size < records.length ? String(start + size) : null;
+        return { status: 200, ok: true, body: { elements, 'page-size': size, 'end-bookmark': next } };
+      }),
+    };
+  }
+
+  it('shows the newest 20 of each, and Load more adds 20 until all show', async () => {
+    await show({ events: range(45).map((number) => logged(number)), occurrences: range(25).map(period) });
+    expect([rows('events').length, rows('occurrences').length]).toEqual([20, 20]);
+    expect(rows('events')[0].textContent).toContain('Entry 45');
+    expect(rows('occurrences')[0].querySelector('th').textContent).toBe('25');
+    expect(more('events').textContent).toBe('Load more events');
+    expect(more('occurrences').textContent).toBe('Load more occurrences');
+    more('events').click();
+    await vi.waitFor(() => expect(rows('events')).toHaveLength(40));
+    expect(rows('occurrences')).toHaveLength(20);
+    await vi.waitFor(() => expect(more('events').disabled).toBe(false));
+    more('events').click();
+    await vi.waitFor(() => expect(rows('events')).toHaveLength(45));
+    expect(more('events')).toBeNull();
+    more('occurrences').click();
+    await vi.waitFor(() => expect(rows('occurrences')).toHaveLength(25));
+    expect(more('occurrences')).toBeNull();
+  });
+
+  it('shows no Load more for 20 or fewer, and says Nothing yet for none', async () => {
+    await show({ events: range(20).map((number) => logged(number)) });
+    expect(rows('events')).toHaveLength(20);
+    expect(more('events')).toBeNull();
+    expect(document.querySelector('[data-history="occurrences"]').textContent).toContain('Nothing yet.');
+  });
+
+  it('keeps the number shown across Refresh history', async () => {
+    await show({ events: range(45).map((number) => logged(number)) });
+    more('events').click();
+    await vi.waitFor(() => expect(rows('events')).toHaveLength(40));
+    const refresh = document.querySelector('button[data-action="history"]');
+    await vi.waitFor(() => expect(refresh.disabled).toBe(false));
+    refresh.click();
+    await vi.waitFor(() => expect(refresh.disabled).toBe(false));
+    expect(rows('events')).toHaveLength(40);
+  });
+
+  it('reads one page of each route, and the next one only on Load more', async () => {
+    const api = pagedApi({ events: range(45).map((number) => logged(number)).reverse(), occurrences: [period(1)] });
+    await show({ api, session: { state: () => 'connected' } });
+    expect(api.send.mock.calls.map(([, path]) => path).sort()).toEqual([
+      '/api/tasks/t1/events?page=first&page-size=20', '/api/tasks/t1/occurrences?page=first&page-size=20',
+    ]);
+    expect(rows('events')).toHaveLength(20);
+    expect(more('occurrences')).toBeNull();
+    more('events').click();
+    await vi.waitFor(() => expect(rows('events')).toHaveLength(40));
+    expect(api.send.mock.calls.at(-1)[1]).toBe('/api/tasks/t1/events?page=next&page-size=20&page-bookmark=20');
+  });
+
+  it('reads on until it finds the entry that a shown undo names, and the goal of each shown entry', async () => {
+    const undo = { id: 'u', 'task-id': 't1', type: 'undo-log', occurrence: 1, 'creation-time': at(100), 'target-event-id': 'e1', 'owner-id': null };
+    const entries = range(25).map((number) => logged(number, { occurrence: number === 1 ? 1 : 30, amount: 5, checked: false })).reverse();
+    const occurrences = range(30).map((number) => ({ ...period(number), 'goal-measure': 'amount', 'goal-unit': 'kcal', 'goal-target': 100 })).reverse();
+    await show({ api: pagedApi({ events: [undo, ...entries], occurrences }), session: { state: () => 'connected' } });
+    expect(rows('events')).toHaveLength(20);
+    expect(rows('events')[0].textContent).toContain('You undid Entry 1 · 5 kcal');
+    expect(rows('occurrences')).toHaveLength(20);
+  });
+
+  it('says that more could not load, and keeps Load more for another try', async () => {
+    const api = pagedApi({ events: range(45).map((number) => logged(number)).reverse(), occurrences: [] });
+    await show({ api, session: { state: () => 'connected' } });
+    const serve = api.send.getMockImplementation();
+    api.send.mockImplementation(async () => ({ status: 500, ok: false, body: null }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    more('events').click();
+    const status = () => document.querySelector('.task-history__status').textContent;
+    await vi.waitFor(() => expect(status()).toBe('The history could not be loaded.'));
+    expect(rows('events')).toHaveLength(20);
+    api.send.mockImplementation(serve);
+    expect(more('events').disabled).toBe(false);
+    more('events').click();
+    await vi.waitFor(() => expect(rows('events')).toHaveLength(40));
+    expect(status()).toBe('');
+    vi.restoreAllMocks();
   });
 });

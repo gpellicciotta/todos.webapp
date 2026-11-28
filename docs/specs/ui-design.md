@@ -842,6 +842,9 @@ Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-n
 - **[Decided]** The editor always opens on Status, the most used tab.
   Arrow keys move between the tabs, and Home and End jump to the first and last.
 - A field error on a hidden tab, such as a late validation failure, selects that tab and focuses the field.
+- **[Decided]** The description heads the panel above the tabs, on every tab (`TSK-23`).
+  - It shows at most three lines, and its tooltip holds the whole text.
+  - It stays in place while a tab scrolls; Configuration edits it.
 - **[Decided]** Labels sit in a left column; fields, choices, and buttons sit in a right-hand column (`TSK-18`).
   - Fields fill that column, and buttons end at the panel's right edge.
   - The headings of Lists, Goal, and Recurrence label the control beside them.
@@ -933,17 +936,21 @@ Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-n
   A reading goal shows the carried reading instead, such as "79.8 kg (carried)".
 
 #### History Tab
-- History, then Details.
-- History loads when its tab first shows; Refresh history loads it again.
-  History lists the occurrences and the events, newest first (`TSK-17`).
-  An occurrence shows its number, period, status, and progress, such as "26 Nov · Failed, 1,910 / max 1,600".
-  An event shows its time and what happened, such as "You logged Croissant · 320 kcal" or "Period ended".
-  An undo reads "Ann undid Cake · 300 kcal"; the undone entry stays listed, struck through.
-  Under each occurrence come its notes, newest first, each with its time.
-  An open history shows note changes without a refresh.
-  While connected it reads the server routes; in local mode, or when they fail, it reads the local stores.
-  [task-history.js](../../src/js/views/task-history.js) builds it.
+- Details, then History.
 - Details: created, last updated, and owner when connected (`TSK-12`).
+- History loads when its tab first shows; Refresh history loads it again.
+- History shows two tables, newest first (`TSK-17`).
+  - Occurrences: number, period, status, and progress, such as "26 Nov", "Failed", "1,910 / max 1,600".
+    A period of one day names one date.
+  - Events: when, what happened, and the occurrence number, such as "You logged Croissant · 320 kcal" or "Period ended".
+    An undo reads "Ann undid Cake · 300 kcal"; the undone entry stays listed, struck through.
+  - Under each occurrence come its notes, newest first, each with its time.
+- **[Decided]** Each table shows its newest 20; Load more occurrences or Load more events adds 20.
+  The button ends its table, and Refresh history keeps the number shown.
+- An open history shows note changes without a refresh.
+- While connected it reads the server routes page by page; in local mode, or when they fail, it reads the local stores.
+  It reads further pages only for the rows shown, such as the entry an undo names.
+  [task-history.js](../../src/js/views/task-history.js) builds it.
 
 #### Shared Editor Rules
 - Each note shows its author when connected: You for own notes, Collaborator for others, Former member for a deleted account.

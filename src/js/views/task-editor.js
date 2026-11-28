@@ -9,7 +9,8 @@
  * Configuration, with a rule between each part: description (`TSK-1`), lists (`TSK-8`), Goal (`TSK-15`),
  * Recurrence (`TSK-16`), Time window with start, due, and overdue behavior (`TSK-5` to `TSK-7`, `TSK-20`),
  * and the Danger zone with Cancel task and Delete task (`TSK-11`).
- * History: history (`TSK-17`), which loads when its tab first shows, then details (`TSK-12`).
+ * History: details (`TSK-12`), then history (`TSK-17`), which loads when its tab first shows.
+ * Above the tabs, the description heads every tab (`TSK-23`).
  * A field error on a hidden tab, such as a late validation failure, selects that tab.
  * Goal, recurrence, start, due, and overdue behavior edit the lifecycle rules. The goal is a plain check, or at least or
  * at most a target of checks, time, an amount, or a reading; At most needs a due time or a recurrence.
@@ -197,7 +198,7 @@ async function readServerEvents(api, taskId) {
 
 /**
  * Mount the task editor of a task route into an editor panel.
- * @param {{body: HTMLElement, document: Document, setTitle: Function, close: Function}} panel the panel
+ * @param {{body: HTMLElement, document: Document, setTitle: Function, setHeading: Function, close: Function}} panel the panel
  * @param {{params: {taskId: string}}} route the editor route
  * @param {object} context the editor context
  * @param {object} context.store the store facade
@@ -1064,11 +1065,11 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   const loadOccurrences = () => (api && session?.state?.() === 'connected' ? readServerOccurrences(api, taskId) : Promise.resolve(null));
   const thread = createNoteThread({ document: doc, store, taskId, onError: fail, locale, loadOccurrences });
   section(noteFields, 'notes').append(thread.element);
-  // History and Details edit nothing, so they sit in no fieldset.
-  const history = createTaskHistory({ document: doc, store, taskId, api, session, locale, userId: () => userId });
-  section(panels.history, 'history', STRINGS.history).append(history.element);
+  // Details and History edit nothing, so they sit in no fieldset.
   const details = el(doc, 'p', 'editor-panel__details');
   section(panels.history, 'details', STRINGS.details).append(details);
+  const history = createTaskHistory({ document: doc, store, taskId, api, session, locale, userId: () => userId });
+  section(panels.history, 'history', STRINGS.history).append(history.element);
 
   // The Danger zone sits outside the fieldset, last on Configuration; only an owner sees it.
   const dangerRule = rule(panels.configuration);
@@ -1091,6 +1092,11 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   }, fail));
   danger.append(cancelTask, remove);
   dangerSection.append(danger);
+  // The description heads every tab, so the panel always says which task it edits (`TSK-23`).
+  const heading = el(doc, 'p', 'task-editor__heading');
+  heading.dataset.part = 'heading';
+  const headingText = heading.appendChild(el(doc, 'span', 'task-editor__heading-text'));
+  panel.setHeading(heading);
   panel.body.append(banner, lock, tabsRoot);
   const tabControl = attachTabs(tabsRoot);
   let historyShown = false;
@@ -1604,6 +1610,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     const current = task['current-occurrence'];
     const known = [...occurrences.filter((occurrence) => occurrence.occurrence !== current.occurrence), current];
     thread.render(notes, deleted || !can(role, 'add-note'), userId, { occurrences: known, current: current.occurrence });
+    headingText.textContent = task.description;
+    heading.title = task.description;
     details.textContent = [[STRINGS.created, 'creation-time'], [STRINGS.updated, 'last-update-time']]
       .map(([label, key]) => `${label}${format.format(new Date(task[key]))}`).join(' · ');
     if (wasDeleted && !deleted) {

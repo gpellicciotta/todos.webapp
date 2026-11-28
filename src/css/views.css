@@ -281,6 +281,25 @@
   padding-inline: var(--space-2);
 }
 
+/* The description heads every tab, in at most three lines, above the scrolling body of the panel. */
+.task-editor__heading {
+  flex: none;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.task-editor__heading-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
 /*
  * The task editor's tab panels leave the spacing to their sections.
  * Labels sit in a left column; fields, choices, and buttons sit in a right-hand column (`TSK-18`).
@@ -453,12 +472,12 @@
 }
 
 /* An undone log entry stays in the history, struck through. */
-.task-history__item.is-undone {
+.task-history__event.is-undone {
   color: var(--color-text-muted);
   text-decoration: line-through;
 }
 
-/* The history lists occurrences and events, newest first, in small text under Show history. */
+/* The history shows occurrences and events as tables, newest first, in small text under Show history. */
 .task-history {
   display: grid;
   justify-items: start;
@@ -485,26 +504,67 @@
   inline-size: 100%;
 }
 
-.task-history__title {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-sm);
+.task-history__more {
+  justify-self: end;
 }
 
-.task-history__list {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
+.task-history__table {
+  inline-size: 100%;
+  border-collapse: collapse;
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
-  list-style: none;
+}
+
+.task-history__title {
+  margin-block-start: var(--space-2);
+  padding-block-end: var(--space-1);
+  font-weight: var(--weight-semibold);
+  text-align: start;
+}
+
+.task-history__table th,
+.task-history__table td {
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  text-align: start;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.task-history__table tr > :last-child {
+  padding-inline-end: 0;
+}
+
+.task-history__table thead th {
+  border-block-end: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: normal;
+}
+
+.task-history__table tbody tr:not(.task-history__notes-row) {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.task-history__table tbody th {
+  font-weight: var(--weight-regular);
+}
+
+/* Numbers and times stay whole, and the other columns share the rest of the width. */
+.task-history__table .task-history__number {
+  inline-size: 1%;
+  white-space: nowrap;
+}
+
+.task-history__when {
+  inline-size: 1%;
+  white-space: nowrap;
 }
 
 /* The notes of an occurrence sit under it, indented behind a rule, keeping their line breaks. */
 .task-history__notes {
   display: grid;
   gap: var(--space-1);
-  margin: var(--space-1) 0 0;
+  margin: 0;
   padding-inline-start: var(--space-3);
   border-inline-start: var(--border-width) solid var(--color-border);
   list-style: none;

@@ -41,63 +41,65 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="360" y="35" font-size="14" class="on-primary bold" text-anchor="middle">JD</text>
     <path d="M 309 38 H 323 A 5 5 0 0 0 323 28 A 8 8 0 0 0 309 30 A 4 4 0 0 0 309 38 Z" class="icon-line-open"/>
     <text x="60" y="37" font-size="20" class="bold">Task</text>
-    <text x="16" y="104" font-size="14" class="muted">Status</text>
-    <text x="85.04" y="104" font-size="14" class="muted">Notes</text>
-    <text x="146.24" y="104" font-size="14" class="bold">Configuration</text>
-    <rect x="142.24" y="117" width="109.92" height="3" rx="0" class="primary"/>
-    <text x="270.16" y="104" font-size="14" class="muted">History</text>
-    <line x1="16" y1="120" x2="374" y2="120" class="rule"/>
-    <text x="16" y="159" font-size="13" class="muted">Description</text>
-    <rect x="156" y="136" width="218" height="40" rx="6" class="control"/>
-    <text x="168" y="163" font-size="14">Sport</text>
-    <line x1="16" y1="186" x2="374" y2="186" class="rule"/>
-    <text x="16" y="215" font-size="14" class="bold">Lists</text>
-    <rect x="307.04" y="198" width="66.96" height="24" rx="12" class="chip"/>
-    <text x="340.52" y="214" font-size="13" text-anchor="middle">Home  ×</text>
-    <rect x="156" y="230" width="218" height="36" rx="6" class="control"/>
-    <text x="168" y="257" font-size="14" class="muted">Add to list</text>
-    <line x1="16" y1="276" x2="374" y2="276" class="rule"/>
-    <text x="16" y="306" font-size="14" class="bold">Goal</text>
-    <rect x="156" y="286" width="218" height="30" rx="6" class="control"/>
-    <text x="210.5" y="305.2" font-size="12" text-anchor="middle">Check</text>
-    <rect x="267" y="288" width="105" height="26" rx="4" class="selected"/>
-    <text x="319.5" y="305.2" font-size="12" class="bold" text-anchor="middle">At least</text>
-    <rect x="156" y="316" width="109" height="30" rx="6" class="control"/>
-    <text x="210.5" y="335.2" font-size="12" text-anchor="middle">At most</text>
-    <text x="16" y="377" font-size="13" class="muted">Measure</text>
-    <rect x="156" y="354" width="218" height="36" rx="6" class="control"/>
-    <text x="168" y="381" font-size="14">Time spent ▾</text>
-    <text x="16" y="421" font-size="13" class="muted">Target</text>
-    <rect x="156" y="398" width="218" height="36" rx="6" class="control"/>
-    <text x="168" y="425" font-size="14">3 h 20 min</text>
-    <line x1="16" y1="446" x2="374" y2="446" class="rule"/>
-    <text x="16" y="476" font-size="14" class="bold">Recurrence</text>
-    <rect x="156" y="456" width="218" height="30" rx="6" class="control"/>
-    <text x="210.5" y="475.2" font-size="12" text-anchor="middle">Never</text>
-    <text x="319.5" y="475.2" font-size="12" text-anchor="middle">Day</text>
-    <rect x="156" y="486" width="218" height="30" rx="6" class="control"/>
-    <rect x="158" y="488" width="105" height="26" rx="4" class="selected"/>
-    <text x="210.5" y="505.2" font-size="12" class="bold" text-anchor="middle">Week</text>
-    <text x="319.5" y="505.2" font-size="12" text-anchor="middle">Month</text>
-    <rect x="156" y="516" width="109" height="30" rx="6" class="control"/>
-    <text x="210.5" y="535.2" font-size="12" text-anchor="middle">Year</text>
-    <text x="16" y="577" font-size="13" class="muted">Every</text>
-    <rect x="156" y="554" width="218" height="36" rx="6" class="control"/>
-    <text x="168" y="581" font-size="14">1</text>
-    <text x="16" y="621" font-size="13" class="muted">Timezone</text>
-    <rect x="156" y="598" width="218" height="36" rx="6" class="control"/>
-    <text x="168" y="625" font-size="14">Europe/Brussels</text>
-    <line x1="16" y1="646" x2="374" y2="646" class="rule"/>
-    <text x="16" y="670" font-size="14" class="bold">Time window</text>
-    <text x="156" y="692" font-size="14">Starts Mon 3 Nov 2026</text>
-    <text x="156" y="712" font-size="12" class="muted">Each week ends the window,</text>
-    <text x="156" y="728" font-size="12" class="muted">so Due hides.</text>
-    <line x1="16" y1="738" x2="374" y2="738" class="rule"/>
-    <text x="16" y="762" font-size="14" class="bold">Danger zone</text>
-    <rect x="255.76" y="772" width="118.24" height="40" rx="6" class="control"/>
-    <text x="314.88" y="796.9" font-size="14" text-anchor="middle">Delete task</text>
-    <rect x="125.52" y="772" width="118.24" height="40" rx="6" class="control"/>
-    <text x="184.64" y="796.9" font-size="14" text-anchor="middle">Cancel task</text>
+    <text x="16" y="82" font-size="17" class="bold">Sport</text>
+    <line x1="16" y1="92" x2="374" y2="92" class="rule"/>
+    <text x="16" y="122" font-size="14" class="muted">Status</text>
+    <text x="85.04" y="122" font-size="14" class="muted">Notes</text>
+    <text x="146.24" y="122" font-size="14" class="bold">Configuration</text>
+    <rect x="142.24" y="135" width="109.92" height="3" rx="0" class="primary"/>
+    <text x="270.16" y="122" font-size="14" class="muted">History</text>
+    <line x1="16" y1="138" x2="374" y2="138" class="rule"/>
+    <text x="16" y="177" font-size="13" class="muted">Description</text>
+    <rect x="156" y="154" width="218" height="40" rx="6" class="control"/>
+    <text x="168" y="181" font-size="14">Sport</text>
+    <line x1="16" y1="204" x2="374" y2="204" class="rule"/>
+    <text x="16" y="233" font-size="14" class="bold">Lists</text>
+    <rect x="307.04" y="216" width="66.96" height="24" rx="12" class="chip"/>
+    <text x="340.52" y="232" font-size="13" text-anchor="middle">Home  ×</text>
+    <rect x="156" y="248" width="218" height="36" rx="6" class="control"/>
+    <text x="168" y="275" font-size="14" class="muted">Add to list</text>
+    <line x1="16" y1="294" x2="374" y2="294" class="rule"/>
+    <text x="16" y="324" font-size="14" class="bold">Goal</text>
+    <rect x="156" y="304" width="218" height="30" rx="6" class="control"/>
+    <text x="210.5" y="323.2" font-size="12" text-anchor="middle">Check</text>
+    <rect x="267" y="306" width="105" height="26" rx="4" class="selected"/>
+    <text x="319.5" y="323.2" font-size="12" class="bold" text-anchor="middle">At least</text>
+    <rect x="156" y="334" width="109" height="30" rx="6" class="control"/>
+    <text x="210.5" y="353.2" font-size="12" text-anchor="middle">At most</text>
+    <text x="16" y="395" font-size="13" class="muted">Measure</text>
+    <rect x="156" y="372" width="218" height="36" rx="6" class="control"/>
+    <text x="168" y="399" font-size="14">Time spent ▾</text>
+    <text x="16" y="439" font-size="13" class="muted">Target</text>
+    <rect x="156" y="416" width="218" height="36" rx="6" class="control"/>
+    <text x="168" y="443" font-size="14">3 h 20 min</text>
+    <line x1="16" y1="464" x2="374" y2="464" class="rule"/>
+    <text x="16" y="494" font-size="14" class="bold">Recurrence</text>
+    <rect x="156" y="474" width="218" height="30" rx="6" class="control"/>
+    <text x="210.5" y="493.2" font-size="12" text-anchor="middle">Never</text>
+    <text x="319.5" y="493.2" font-size="12" text-anchor="middle">Day</text>
+    <rect x="156" y="504" width="218" height="30" rx="6" class="control"/>
+    <rect x="158" y="506" width="105" height="26" rx="4" class="selected"/>
+    <text x="210.5" y="523.2" font-size="12" class="bold" text-anchor="middle">Week</text>
+    <text x="319.5" y="523.2" font-size="12" text-anchor="middle">Month</text>
+    <rect x="156" y="534" width="109" height="30" rx="6" class="control"/>
+    <text x="210.5" y="553.2" font-size="12" text-anchor="middle">Year</text>
+    <text x="16" y="595" font-size="13" class="muted">Every</text>
+    <rect x="156" y="572" width="218" height="36" rx="6" class="control"/>
+    <text x="168" y="599" font-size="14">1</text>
+    <text x="16" y="639" font-size="13" class="muted">Timezone</text>
+    <rect x="156" y="616" width="218" height="36" rx="6" class="control"/>
+    <text x="168" y="643" font-size="14">Europe/Brussels</text>
+    <line x1="16" y1="664" x2="374" y2="664" class="rule"/>
+    <text x="16" y="688" font-size="14" class="bold">Time window</text>
+    <text x="156" y="710" font-size="14">Starts Mon 3 Nov 2026</text>
+    <text x="156" y="730" font-size="12" class="muted">Each week ends the window,</text>
+    <text x="156" y="746" font-size="12" class="muted">so Due hides.</text>
+    <line x1="16" y1="756" x2="374" y2="756" class="rule"/>
+    <text x="16" y="780" font-size="14" class="bold">Danger zone</text>
+    <rect x="255.76" y="790" width="118.24" height="40" rx="6" class="control"/>
+    <text x="314.88" y="814.9" font-size="14" text-anchor="middle">Delete task</text>
+    <rect x="125.52" y="790" width="118.24" height="40" rx="6" class="control"/>
+    <text x="184.64" y="814.9" font-size="14" text-anchor="middle">Cancel task</text>
   </g>
   <g class="frame" data-width="1440" data-height="900" transform="translate(490 110)">
     <rect x="0" y="0" width="1440" height="900" rx="0" class="frame"/>
@@ -203,62 +205,64 @@ rect.frame { fill: #ffffff; stroke: #444444; stroke-width: 2; }
     <text x="1044" y="46" font-size="20" class="bold">Task</text>
     <rect x="1380" y="16" width="44" height="44" rx="6" class="control"/>
     <text x="1402" y="43" font-size="16" text-anchor="middle">×</text>
-    <text x="1044" y="104" font-size="14" class="muted">Status</text>
-    <text x="1113.04" y="104" font-size="14" class="muted">Notes</text>
-    <text x="1174.24" y="104" font-size="14" class="bold">Configuration</text>
-    <rect x="1170.24" y="117" width="109.92" height="3" rx="0" class="primary"/>
-    <text x="1298.16" y="104" font-size="14" class="muted">History</text>
-    <line x1="1044" y1="120" x2="1416" y2="120" class="rule"/>
-    <text x="1044" y="159" font-size="13" class="muted">Description</text>
-    <rect x="1184" y="136" width="232" height="40" rx="6" class="control"/>
-    <text x="1196" y="163" font-size="14">Sport</text>
-    <line x1="1044" y1="186" x2="1416" y2="186" class="rule"/>
-    <text x="1044" y="215" font-size="14" class="bold">Lists</text>
-    <rect x="1349.04" y="198" width="66.96" height="24" rx="12" class="chip"/>
-    <text x="1382.52" y="214" font-size="13" text-anchor="middle">Home  ×</text>
-    <rect x="1184" y="230" width="232" height="36" rx="6" class="control"/>
-    <text x="1196" y="257" font-size="14" class="muted">Add to list</text>
-    <line x1="1044" y1="276" x2="1416" y2="276" class="rule"/>
-    <text x="1044" y="306" font-size="14" class="bold">Goal</text>
-    <rect x="1184" y="286" width="232" height="30" rx="6" class="control"/>
-    <text x="1242" y="305.2" font-size="12" text-anchor="middle">Check</text>
-    <rect x="1302" y="288" width="112" height="26" rx="4" class="selected"/>
-    <text x="1358" y="305.2" font-size="12" class="bold" text-anchor="middle">At least</text>
-    <rect x="1184" y="316" width="116" height="30" rx="6" class="control"/>
-    <text x="1242" y="335.2" font-size="12" text-anchor="middle">At most</text>
-    <text x="1044" y="377" font-size="13" class="muted">Measure</text>
-    <rect x="1184" y="354" width="232" height="36" rx="6" class="control"/>
-    <text x="1196" y="381" font-size="14">Time spent ▾</text>
-    <text x="1044" y="421" font-size="13" class="muted">Target</text>
-    <rect x="1184" y="398" width="232" height="36" rx="6" class="control"/>
-    <text x="1196" y="425" font-size="14">3 h 20 min</text>
-    <line x1="1044" y1="446" x2="1416" y2="446" class="rule"/>
-    <text x="1044" y="476" font-size="14" class="bold">Recurrence</text>
-    <rect x="1184" y="456" width="232" height="30" rx="6" class="control"/>
-    <text x="1242" y="475.2" font-size="12" text-anchor="middle">Never</text>
-    <text x="1358" y="475.2" font-size="12" text-anchor="middle">Day</text>
-    <rect x="1184" y="486" width="232" height="30" rx="6" class="control"/>
-    <rect x="1186" y="488" width="112" height="26" rx="4" class="selected"/>
-    <text x="1242" y="505.2" font-size="12" class="bold" text-anchor="middle">Week</text>
-    <text x="1358" y="505.2" font-size="12" text-anchor="middle">Month</text>
-    <rect x="1184" y="516" width="116" height="30" rx="6" class="control"/>
-    <text x="1242" y="535.2" font-size="12" text-anchor="middle">Year</text>
-    <text x="1044" y="577" font-size="13" class="muted">Every</text>
-    <rect x="1184" y="554" width="232" height="36" rx="6" class="control"/>
-    <text x="1196" y="581" font-size="14">1</text>
-    <text x="1044" y="621" font-size="13" class="muted">Timezone</text>
-    <rect x="1184" y="598" width="232" height="36" rx="6" class="control"/>
-    <text x="1196" y="625" font-size="14">Europe/Brussels</text>
-    <line x1="1044" y1="646" x2="1416" y2="646" class="rule"/>
-    <text x="1044" y="670" font-size="14" class="bold">Time window</text>
-    <text x="1184" y="692" font-size="14">Starts Mon 3 Nov 2026</text>
-    <text x="1184" y="712" font-size="12" class="muted">Each week ends the window,</text>
-    <text x="1184" y="728" font-size="12" class="muted">so Due hides.</text>
-    <line x1="1044" y1="738" x2="1416" y2="738" class="rule"/>
-    <text x="1044" y="762" font-size="14" class="bold">Danger zone</text>
-    <rect x="1297.76" y="772" width="118.24" height="40" rx="6" class="control"/>
-    <text x="1356.88" y="796.9" font-size="14" text-anchor="middle">Delete task</text>
-    <rect x="1167.52" y="772" width="118.24" height="40" rx="6" class="control"/>
-    <text x="1226.64" y="796.9" font-size="14" text-anchor="middle">Cancel task</text>
+    <text x="1044" y="82" font-size="17" class="bold">Sport</text>
+    <line x1="1044" y1="92" x2="1416" y2="92" class="rule"/>
+    <text x="1044" y="122" font-size="14" class="muted">Status</text>
+    <text x="1113.04" y="122" font-size="14" class="muted">Notes</text>
+    <text x="1174.24" y="122" font-size="14" class="bold">Configuration</text>
+    <rect x="1170.24" y="135" width="109.92" height="3" rx="0" class="primary"/>
+    <text x="1298.16" y="122" font-size="14" class="muted">History</text>
+    <line x1="1044" y1="138" x2="1416" y2="138" class="rule"/>
+    <text x="1044" y="177" font-size="13" class="muted">Description</text>
+    <rect x="1184" y="154" width="232" height="40" rx="6" class="control"/>
+    <text x="1196" y="181" font-size="14">Sport</text>
+    <line x1="1044" y1="204" x2="1416" y2="204" class="rule"/>
+    <text x="1044" y="233" font-size="14" class="bold">Lists</text>
+    <rect x="1349.04" y="216" width="66.96" height="24" rx="12" class="chip"/>
+    <text x="1382.52" y="232" font-size="13" text-anchor="middle">Home  ×</text>
+    <rect x="1184" y="248" width="232" height="36" rx="6" class="control"/>
+    <text x="1196" y="275" font-size="14" class="muted">Add to list</text>
+    <line x1="1044" y1="294" x2="1416" y2="294" class="rule"/>
+    <text x="1044" y="324" font-size="14" class="bold">Goal</text>
+    <rect x="1184" y="304" width="232" height="30" rx="6" class="control"/>
+    <text x="1242" y="323.2" font-size="12" text-anchor="middle">Check</text>
+    <rect x="1302" y="306" width="112" height="26" rx="4" class="selected"/>
+    <text x="1358" y="323.2" font-size="12" class="bold" text-anchor="middle">At least</text>
+    <rect x="1184" y="334" width="116" height="30" rx="6" class="control"/>
+    <text x="1242" y="353.2" font-size="12" text-anchor="middle">At most</text>
+    <text x="1044" y="395" font-size="13" class="muted">Measure</text>
+    <rect x="1184" y="372" width="232" height="36" rx="6" class="control"/>
+    <text x="1196" y="399" font-size="14">Time spent ▾</text>
+    <text x="1044" y="439" font-size="13" class="muted">Target</text>
+    <rect x="1184" y="416" width="232" height="36" rx="6" class="control"/>
+    <text x="1196" y="443" font-size="14">3 h 20 min</text>
+    <line x1="1044" y1="464" x2="1416" y2="464" class="rule"/>
+    <text x="1044" y="494" font-size="14" class="bold">Recurrence</text>
+    <rect x="1184" y="474" width="232" height="30" rx="6" class="control"/>
+    <text x="1242" y="493.2" font-size="12" text-anchor="middle">Never</text>
+    <text x="1358" y="493.2" font-size="12" text-anchor="middle">Day</text>
+    <rect x="1184" y="504" width="232" height="30" rx="6" class="control"/>
+    <rect x="1186" y="506" width="112" height="26" rx="4" class="selected"/>
+    <text x="1242" y="523.2" font-size="12" class="bold" text-anchor="middle">Week</text>
+    <text x="1358" y="523.2" font-size="12" text-anchor="middle">Month</text>
+    <rect x="1184" y="534" width="116" height="30" rx="6" class="control"/>
+    <text x="1242" y="553.2" font-size="12" text-anchor="middle">Year</text>
+    <text x="1044" y="595" font-size="13" class="muted">Every</text>
+    <rect x="1184" y="572" width="232" height="36" rx="6" class="control"/>
+    <text x="1196" y="599" font-size="14">1</text>
+    <text x="1044" y="639" font-size="13" class="muted">Timezone</text>
+    <rect x="1184" y="616" width="232" height="36" rx="6" class="control"/>
+    <text x="1196" y="643" font-size="14">Europe/Brussels</text>
+    <line x1="1044" y1="664" x2="1416" y2="664" class="rule"/>
+    <text x="1044" y="688" font-size="14" class="bold">Time window</text>
+    <text x="1184" y="710" font-size="14">Starts Mon 3 Nov 2026</text>
+    <text x="1184" y="730" font-size="12" class="muted">Each week ends the window,</text>
+    <text x="1184" y="746" font-size="12" class="muted">so Due hides.</text>
+    <line x1="1044" y1="756" x2="1416" y2="756" class="rule"/>
+    <text x="1044" y="780" font-size="14" class="bold">Danger zone</text>
+    <rect x="1297.76" y="790" width="118.24" height="40" rx="6" class="control"/>
+    <text x="1356.88" y="814.9" font-size="14" text-anchor="middle">Delete task</text>
+    <rect x="1167.52" y="790" width="118.24" height="40" rx="6" class="control"/>
+    <text x="1226.64" y="814.9" font-size="14" text-anchor="middle">Cancel task</text>
   </g>
 </svg>
