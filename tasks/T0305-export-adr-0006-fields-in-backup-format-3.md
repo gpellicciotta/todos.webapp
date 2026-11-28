@@ -1,7 +1,6 @@
 ---
 id: T0305
 owner: "@claude"
-session: claude-20261128-4879fa
 needs: []
 branch: task/T0305-export-adr-0006-fields-in-backup-format-3
 worktree: .plan/work/T0305-export-adr-0006-fields-in-backup-format-3
@@ -13,12 +12,13 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 4, duration_s: 1562.7, input: 252, output: 117252, cache_read: 27014822, cache_write: 309643}
-  review: {turns: 2, duration_s: 130.3, input: 52847, output: 3526, cache_read: 516480, cache_write: 0}
-review_status: pending
+  review: {turns: 3, duration_s: 200.9, input: 74262, output: 5297, cache_read: 830208, cache_write: 0}
+review_status: rejected
 review_round: 3
 review_requested_at: "2026-11-28T06:37:09Z"
-review_session: codex-20261128-ec60e4
-work_duration: 1517.6
+review_session: codex-20261128-21ef1a
+work_duration: 1763.6
+reviewed_by: "@codex"
 ---
 # T0305: Export ADR-0006 fields in backup format 3, and convert older backups on import
 
@@ -26,6 +26,8 @@ work_duration: 1517.6
 Write backup format 3 with the ADR-0006 fields of todos.server, per backup-format.md after T0299.
 Read formats 1, 2, and 3; convert `complete` and `uncomplete` in older files as the specs say.
 Keep merge imports per row, as `BAK-6` requires.
+The user decided on 2026-11-28: import rebuilds at most 10,000 missing checks per occurrence.
+A larger gap adds no check; import everything else, and the import dialog names each affected task and its missing count.
 
 ## Task Execution Steps
 - [x] **[Read]**      Read backup-format.md and backup.js.
@@ -100,4 +102,17 @@ Keep merge imports per row, as `BAK-6` requires.
 
 - [2026-11-28] **[Review]**
   Round 3 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 3 rejected by @codex: The revised import reports missing progress to its caller, but users still receive no warning and valid progress remains lost.
+  - Findings: [review-findings-3.md](T0305-export-adr-0006-fields-in-backup-format-3/review-findings-3.md).
+
+- [2026-11-28] **[Suspended]**
+  Suspended after 3 consecutive review rejections (blocking: 1, 1, 2). Inspect review findings before lifecycle resume.
+
+- [2026-11-28] **[Decided]**
+  The user decided on 2026-11-28: "A for T0305 and let's limit to 10,000 if you've used that limit elsewhere"; the server CSV import already uses 10,000.
+  - Option A: import the rest; the dialog names affected tasks and missing counts.
+  - Rebuild at most 10,000 checks per occurrence, for format 2 and 3 imports.
+  - State this in backup-format.md and cover the dialog report end to end.
 
