@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 > See [change management guidelines](https://github.com/gpellicciotta/dev-guidelines/blob/main/guidelines/change-management-guidelines.md)
 > for the versioning and changelog conventions used across projects.
 
-## v0.7.2-pre
+## v0.7.2 [released: 2026-11-28]
 - FrontEnd: Moved the three-dot actions button of All tasks and of a list into the top bar on phones too.
 - FrontEnd: Showed the task's description above the editor's tabs, with labels in a left column beside their fields.
 - FrontEnd: Started History with Details, and showed occurrences and events as tables, 20 at a time with Load more.
