@@ -12,8 +12,8 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1802.4, input: 2, output: 8}
-work_duration: 1811.6
+  worker: {turns: 2, duration_s: 1827.8, input: 12, output: 1381, cache_read: 1230251, cache_write: 7141}
+work_duration: 1860.3
 ---
 # T0307: Show progress, check off, a log form, and undoable entries on the task editor Status tab.
 
@@ -30,10 +30,10 @@ Capture before and after screenshots of the task editor in light and dark themes
 - [x] **[Read]**      Read the Task Editor and Key Flows sections of ui-design.md, the wireframes, and the views.
 - [x] **[Implement]** Author failing unit and end-to-end tests for pace, the Status tab, the Log form, and history.
 - [x] **[Verify]**    Run the new tests and confirm they fail for the right reason.
-- [ ] **[Implement]** Add the progress module, the Status tab, the Log form, entries with undo, and history lines.
-- [ ] **[Verify]**    Run the new and affected tests and confirm they pass.
-- [ ] **[Visual]**    Capture before and after screenshots of the task editor in both themes.
-- [ ] **[Doc]**       Update the affected docs and CHANGELOG.md.
+- [x] **[Implement]** Add the progress module, the Status tab, the Log form, entries with undo, and history lines.
+- [x] **[Verify]**    Run the new and affected tests and confirm they pass.
+- [x] **[Visual]**    Capture before and after screenshots of the task editor in both themes.
+- [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -45,4 +45,25 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Verify]**
   New unit and e2e tests fail for missing Status tab features: 28 unit, 2 e2e.
+
+- [2026-11-28] **[Implement]**
+  Added progress module, Status tab, Log form, entries with Undo, history lines, tokens, and icons.
+
+- [2026-11-28] **[Verify]**
+  Unit 2099 and e2e 300 pass; lint and SW check clean. See validation-proof.md.
+
+- [2026-11-28] **[Visual]**
+  Screenshots: [before light](T0307-show-progress-and-over-limit-marks-a-log/task-editor-status-before-light.png), [after light](T0307-show-progress-and-over-limit-marks-a-log/task-editor-status-after-light.png), dark pairs alongside.
+
+- [2026-11-28] **[Doc]**
+  Size note: 16 files, 1723 lines, past the estimate; status, log, entries, tokens, and tests form one flow.
+
+- [2026-11-28] **[Doc]**
+  Updated style guide and CHANGELOG; bumped service worker VERSION to 2026-11-28.11.
+
+- [2026-11-28] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 17.
+  - Lines touched: 1723.
+  - Reopenings: 0.
 
