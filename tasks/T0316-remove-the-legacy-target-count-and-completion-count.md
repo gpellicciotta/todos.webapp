@@ -5,17 +5,22 @@ session: claude-20261128-db5066
 needs: []
 branch: task/T0316-remove-the-legacy-target-count-and-completion-count
 worktree: .plan/work/T0316-remove-the-legacy-target-count-and-completion-count
-status: active
+status: completed
 started_at: "2026-11-28T09:01:32Z"
-ended_at: —
+ended_at: "2026-11-28T09:36:37Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 1599.7, input: 276, output: 97025, cache_read: 32012015, cache_write: 335987}
-review_status: pending
+  review: {turns: 1, duration_s: 489.0, input: 36, output: 8586, cache_read: 1249019, cache_write: 74758}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T09:28:21Z"
+reviewed_by: "@claude"
+review_session: claude-20261128-d49221
+work_duration: 2104.4
+completion-commit: ec811295d9cab857a1e1f07a5040b32cbe94d134
 ---
 # T0316: Remove the legacy target-count and completion-count fields once every reader uses goals and progress
 
@@ -31,7 +36,7 @@ Rules, files, and tests: [technical-spec.md](T0316-remove-the-legacy-target-coun
 - [x] **[Implement]** Change the remaining readers and tests, and remove the mirrors.
 - [x] **[Verify]**    Run `python scripts/devops.py check` and `npm run test:e2e` and confirm they pass.
 - [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-28] **[Doc]**
@@ -68,4 +73,11 @@ Rules, files, and tests: [technical-spec.md](T0316-remove-the-legacy-target-coun
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @claude: Approved: the work meets every goal, and the full check passes on the reviewed commit.
+  - Findings: [review-findings-1.md](T0316-remove-the-legacy-target-count-and-completion-count/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
