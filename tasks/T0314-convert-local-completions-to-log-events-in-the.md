@@ -12,14 +12,13 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 4, duration_s: 1460.6, input: 216, output: 133865, cache_read: 23338774, cache_write: 302794}
+  worker: {turns: 5, duration_s: 1654.1, input: 236, output: 136966, cache_read: 26236252, cache_write: 307638}
   review: {turns: 4, duration_s: 637.5, input: 94902, output: 6950, cache_read: 1219840, cache_write: 0}
-review_status: rejected
-review_round: 4
-review_requested_at: "2026-11-28T01:59:59Z"
+review_status: pending
+review_round: 5
+review_requested_at: "2026-11-28T03:00:16Z"
 review_session: codex-20261128-2432c5
 work_duration: 2097.9
-reviewed_by: "@codex"
 ---
 # T0314: Convert local completions to log events in the upgrade, and store logs and undos
 
@@ -121,4 +120,7 @@ Rules, files, and tests: [technical-spec.md](T0314-convert-local-completions-to-
 
 - [2026-11-28] **[Verify]**
   Could not reproduce the stage-site timeout in five runs; gave that spawn test an explicit 30 s timeout. Touched stage-site.test.js.
+
+- [2026-11-28] **[Review]**
+  Round 5 requested (mode: agent).
 
