@@ -12,8 +12,8 @@ review: agent
 preview: none
 protocol: standard
 usage:
-  worker: {turns: 1, duration_s: 1800.3, input: 2, output: 44}
-work_duration: 1808.9
+  worker: {turns: 2, duration_s: 1818.5, input: 10, output: 1478, cache_read: 934038, cache_write: 6174}
+work_duration: 1850.6
 ---
 # T0306: Rebuild the task editor as four tabs, with goals, recurrence, and start times on Configuration.
 
@@ -29,10 +29,10 @@ Capture before and after screenshots of the task editor in light and dark themes
 - [x] **[Read]**      Read the Task Editor section of ui-design.md, its wireframes, task-editor.js, and its tests.
 - [x] **[Implement]** Author failing unit and end-to-end tests for the tabs, goal, recurrence, time window, and Danger zone.
 - [x] **[Verify]**    Run the new tests and confirm they fail for the right reason.
-- [ ] **[Implement]** Add the tabs, the Configuration parts, validation, and rule edits.
-- [ ] **[Verify]**    Run the new and affected tests and confirm they pass.
-- [ ] **[Visual]**    Capture before and after screenshots of the task editor in both themes.
-- [ ] **[Doc]**       Update the affected docs and CHANGELOG.md.
+- [x] **[Implement]** Add the tabs, the Configuration parts, validation, and rule edits.
+- [x] **[Verify]**    Run the new and affected tests and confirm they pass.
+- [x] **[Visual]**    Capture before and after screenshots of the task editor in both themes.
+- [x] **[Doc]**       Update the affected docs and CHANGELOG.md.
 - [ ] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
@@ -44,4 +44,21 @@ Capture before and after screenshots of the task editor in light and dark themes
 
 - [2026-11-28] **[Verify]**
   New tests fail: editor lacks tabs and goal fields; store lacks year and decimal targets.
+
+- [2026-11-28] **[Implement]**
+  Added four tabs, Goal, Recurrence with year, Time window with start and Fail, and Danger zone.
+  - Size note: measured 9 files, 1473 lines; tab rebuild cannot merge apart.
+
+- [2026-11-28] **[Implement]**
+  Undeclared files touched: store tasks.js, store-tasks test, all-tasks, list, sharing e2e specs.
+  - Store needed year unit and decimal targets.
+
+- [2026-11-28] **[Verify]**
+  Six e2e tests fail on base a8a3668 too; two stale task-editor e2e expectations were updated.
+
+- [2026-11-28] **[Visual]**
+  Captured before and after editor screenshots in light and dark themes, linked in validation-proof.md.
+
+- [2026-11-28] **[Doc]**
+  Added three CHANGELOG bullets under v0.6.1-pre; ui-design.md already specifies this editor.
 
