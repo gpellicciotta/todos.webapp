@@ -5,17 +5,22 @@ session: claude-20261128-2ef460
 needs: []
 branch: task/T0299-specify-adr-0006-goals-logs-statuses-and-backup
 worktree: .plan/work/T0299-specify-adr-0006-goals-logs-statuses-and-backup
-status: active
+status: completed
 started_at: "2026-11-28T00:08:59Z"
-ended_at: —
+ended_at: "2026-11-28T00:13:43Z"
 review: agent
 preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 225.1, input: 50, output: 25422, cache_read: 2077237, cache_write: 117826}
-review_status: pending
+  review: {turns: 1, duration_s: 47.7, input: 91806, output: 3562, cache_read: 361915}
+review_status: approved
 review_round: 1
 review_requested_at: "2026-11-28T00:12:50Z"
+reviewed_by: "@gemini"
+review_session: antigravity-20261128-0d2ecc
+work_duration: 284.2
+completion-commit: 6220337a58676549525f76ffd2a74e32dd1f6f6a
 ---
 # T0299: Specify ADR-0006 goals, logs, statuses, and backup format 3 in the local store and backup format specs
 
@@ -32,7 +37,7 @@ Follow todos.server business-logic-spec.md once its task T0293 lands.
 - [x] **[Doc]**       Update backup-format.md for format 3 and the conversion of older formats.
 - [x] **[Verify]**    Lint both specs.
 - [x] **[Doc]**       Update CHANGELOG.md.
-- [ ] **[Review]**    Obtain review approval of the finished work before completion.
+- [x] **[Review]**    Obtain review approval of the finished work before completion.
 
 ## Execution Log
 - [2026-11-27] **[Doc]**
@@ -59,4 +64,11 @@ Follow todos.server business-logic-spec.md once its task T0293 lands.
 
 - [2026-11-28] **[Review]**
   Round 1 requested (mode: agent).
+
+- [2026-11-28] **[Review]**
+  Round 1 approved by @gemini: The change meets every goal of the task.
+  - Findings: [review-findings-1.md](T0299-specify-adr-0006-goals-logs-statuses-and-backup/review-findings-1.md).
+
+- [2026-11-28] **[Complete]**
+  Task completed successfully.
 
