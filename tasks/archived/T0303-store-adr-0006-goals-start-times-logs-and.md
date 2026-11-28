@@ -5,14 +5,17 @@ session: claude-20261128-9611c7
 needs: []
 branch: task/T0303-store-adr-0006-goals-start-times-logs-and
 worktree: .plan/work/T0303-store-adr-0006-goals-start-times-logs-and
-status: suspended
+status: cancelled
 started_at: "2026-11-28T00:18:53Z"
-ended_at: —
+ended_at: "2026-11-28T00:58:28Z"
 review: agent
 preview: none
 protocol: standard
 size_status: requested
 size_estimate: 25 files, 2500 lines
+usage:
+  worker: {turns: 1, duration_s: 110.8, input: 34, output: 6968, cache_read: 1352416, cache_write: 128097}
+work_duration: 117.8
 ---
 # T0303: Store ADR-0006 goals, start times, logs, and undos locally, migrating the database and local legacy events
 
@@ -48,4 +51,13 @@ Cover `failed` in the finished-today filter, and persist the Show upcoming view 
 
 - [2026-11-28] **[Size]**
   Size approval requested for 25 files, 2500 lines.
+
+- [2026-11-28] **[Verify]**
+  Recorded task outcomes.
+  - Files touched: 0.
+  - Lines touched: 0.
+  - Reopenings: 0.
+
+- [2026-11-28] **[Cancelled]**
+  Split into T0313, T0314, T0315, and T0316 to stay under the large size line.
 
