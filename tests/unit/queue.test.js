@@ -1,5 +1,6 @@
 import { IDBKeyRange } from 'fake-indexeddb';
 import { describe, expect, it } from 'vitest';
+import { syncedRules } from '../../src/js/core/occurrences.js';
 import { openStore } from '../../src/js/store/db.js';
 import { freshStore } from './store-helpers.js';
 
@@ -99,7 +100,7 @@ describe('queued events and rule edits', () => {
     expect(create.fields).toEqual({
       id: task.id,
       description: 'Paint',
-      'lifecycle-rules': task['lifecycle-rules'],
+      'lifecycle-rules': syncedRules(task['lifecycle-rules']),
       'creation-time': task['creation-time'],
       lists: [],
     });

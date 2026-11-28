@@ -9,7 +9,7 @@ import * as bin from './bin.js';
 import * as bulk from './bulk.js';
 import { StoreError, STORES } from './idb.js';
 import * as lists from './lists.js';
-import { migrateToLifecycle } from './migrate.js';
+import { migrateToGoals, migrateToLifecycle } from './migrate.js';
 import * as notes from './notes.js';
 import * as tasks from './tasks.js';
 import { createQueue, isTracked, trackChange } from '../sync/queue.js';
@@ -17,7 +17,7 @@ import { createQueue, isTracked, trackChange } from '../sync/queue.js';
 export { StoreError, ValidationError } from './idb.js';
 
 export const DB_NAME = 'todos';
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 /**
  * Create or upgrade the schema.
@@ -53,6 +53,11 @@ function upgrade(db, oldVersion, tx) {
     if (oldVersion >= 1) {
       migrateToLifecycle(tx);
     }
+  }
+  if (oldVersion === 5) {
+    // Rules and occurrences gain the goal fields, with the counts kept as mirrors (ADR-0006); events stay as they are.
+    // The version 5 conversion of older databases already writes them.
+    migrateToGoals(tx);
   }
 }
 

@@ -20,6 +20,9 @@ The IndexedDB schema that holds the app's data in the browser.
   - Queued task changes become `update-rules` and `post-event` entries, appended after the queue.
 - Version 6 adds goals, the log, and the `failed` status, as ADR-0006 of todos.server says; see Store Upgrade.
   It adds no store and no index; it rewrites the records of `tasks`, `occurrences`, `events`, and `sync-queue`.
+  - Implemented so far: the goal fields on rules and occurrences, as the first two Store Upgrade bullets say.
+    `target-count` and `completion-count` stay as mirrors of `goal-target` and `progress`; the store keeps them equal on every write.
+    Events, statuses, and queued changes stay as in version 5, and the goal fields stay out of sync payloads and backups until later tasks.
 - Records use the field names of the service's `List`, `Task`, `Note`, `Occurrence`, and `TaskEvent` schemas, in kebab-case.
 - Times are ISO-8601 strings in UTC with milliseconds, such as `2026-11-04T09:00:00.000Z`.
 - Identifiers are UUIDv7 strings from [uuid7.js](../../src/js/lib/uuid7.js), sorting by creation time (`TEC-9`).

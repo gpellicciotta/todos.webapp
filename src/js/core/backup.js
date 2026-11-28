@@ -363,7 +363,7 @@ function checkRules(raw, path, checkTask) {
     fail(`${path}.${problem}`, recurring && ['recurrence-interval', 'timezone'].includes(problem) ? 'is required for a recurring task'
       : `must be null for a ${recurring ? 'recurring' : 'one-off'} task`);
   }
-  return { 'task-id': rules['task-id'], ...normalizeRules(embedded(rules)) };
+  return { 'task-id': rules['task-id'], ...pick(normalizeRules(embedded(rules)), RULE_FIELDS) };
 }
 
 /**

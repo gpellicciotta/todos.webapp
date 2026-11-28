@@ -15,6 +15,7 @@ import {
   fromLegacyTask,
   graceOccurrence,
   isStale,
+  mirrorOccurrence,
   normalizeRules,
   overdueHandlingOf,
   planRollOver,
@@ -64,9 +65,9 @@ describe('statuses', () => {
 
 describe('folding events', () => {
   it('opens occurrence 1 ready, with the target and due time of the rules', () => {
-    expect(fresh({ 'target-count': 3, 'due-time': at(60) })).toEqual({
+    expect(fresh({ 'target-count': 3, 'due-time': at(60) })).toEqual(mirrorOccurrence({
       occurrence: 1, 'start-time': START, 'due-time': at(60), 'target-count': 3, 'completion-count': 0, status: 'ready', 'close-time': null,
-    });
+    }));
   });
 
   it('folds in creation-time order, then by identifier', () => {
@@ -193,9 +194,9 @@ describe('the former task shape', () => {
       expect(task).toEqual({
         id: 't1', description: 'Paint', 'owner-id': 7,
         'lifecycle-rules': { ...DEFAULT_RULES, 'due-time': at(60), 'overdue-handling': 'cancel' },
-        'current-occurrence': {
+        'current-occurrence': mirrorOccurrence({
           occurrence: 1, 'start-time': START, 'due-time': at(60), 'target-count': 1, 'completion-count': count, status: current, 'close-time': closed,
-        },
+        }),
         'creation-time': START, 'last-update-time': at(9), 'deletion-time': null,
       });
       expect(events.map((e) => [e.type, e['creation-time'], e['owner-id'], e.occurrence, e['task-id']])).toEqual(types.map((type) => [
@@ -234,9 +235,9 @@ describe('recurring tasks', () => {
   };
 
   it('opens occurrence 1 over the period containing the creation time', () => {
-    expect(firstOccurrence(WEEKLY, CREATED)).toEqual({
+    expect(firstOccurrence(WEEKLY, CREATED)).toEqual(mirrorOccurrence({
       occurrence: 1, 'start-time': WEEK_1.start, 'due-time': WEEK_1.end, 'target-count': 3, 'completion-count': 0, status: 'ready', 'close-time': null,
-    });
+    }));
   });
 
   it('rolls over missed periods: each closes with its status and its own roll-over event', () => {
@@ -305,9 +306,9 @@ describe('recurring tasks', () => {
   it('opens a fresh period containing now for a reopen, unless the end rules allow none', () => {
     const task = weekly();
     const cancelled = applyEvent(task['current-occurrence'], { type: 'cancel', 'creation-time': CREATED }, WEEKLY);
-    expect(freshOccurrence(WEEKLY, cancelled, '2026-07-08T10:00:00Z')).toEqual({
+    expect(freshOccurrence(WEEKLY, cancelled, '2026-07-08T10:00:00Z')).toEqual(mirrorOccurrence({
       occurrence: 2, 'start-time': WEEK_ENDS[2], 'due-time': WEEK_ENDS[3], 'target-count': 3, 'completion-count': 0, status: 'ready', 'close-time': null,
-    });
+    }));
     expect(freshOccurrence({ ...WEEKLY, 'recurrence-end-count': 1 }, cancelled, '2026-07-08T10:00:00Z')).toBeNull();
   });
 
@@ -444,5 +445,39 @@ describe('the log fold', () => {
       { id: 'x1', type: 'expire', 'creation-time': at(9) },
     ];
     expect(foldInPlace({ target: 2, recurring: false, events })).toEqual({ progress: 1, status: 'failed', 'close-time': at(9) });
+  });
+});
+
+describe('goal fields and their mirrors', () => {
+  const GOAL = { 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null };
+
+  it('gives the default rules the goal fields and a null start time', () => {
+    expect(DEFAULT_RULES).toMatchObject({ ...GOAL, 'start-time': null });
+    expect(normalizeRules({ 'target-count': 4 })['goal-target']).toBe(4);
+  });
+
+  it('opens an occurrence with the goal snapshot, progress 0, and no time spent', () => {
+    expect(fresh({ 'target-count': 3, 'goal-target': 3 })).toMatchObject({ ...GOAL, 'goal-target': 3, 'target-count': 3, progress: 0, 'time-spent-seconds': 0 });
+  });
+
+  it('keeps progress equal to the completion count through events', () => {
+    let occurrence = fresh({ 'target-count': 2, 'goal-target': 2 });
+    for (const type of ['complete', 'complete', 'uncomplete']) {
+      occurrence = applyEvent(occurrence, { type, 'creation-time': START });
+      expect(occurrence.progress).toBe(occurrence['completion-count']);
+    }
+    expect(occurrence.progress).toBe(1);
+  });
+
+  it('keeps goal-target equal to target-count through a rule edit', () => {
+    const task = { 'lifecycle-rules': normalizeRules({}), 'current-occurrence': fresh() };
+    const edited = applyRuleEdit(task, { 'target-count': 5 }, START);
+    expect(edited['lifecycle-rules']['goal-target']).toBe(5);
+    expect(edited['current-occurrence']).toMatchObject({ 'target-count': 5, 'goal-target': 5 });
+  });
+
+  it('resets progress with the count when a recurring period refolds or the display rule applies', () => {
+    const open = { ...fresh(), 'completion-count': 1, progress: 1, status: 'completed' };
+    expect(refoldOccurrence(open, [], DEFAULT_RULES)).toMatchObject({ 'completion-count': 0, progress: 0 });
   });
 });

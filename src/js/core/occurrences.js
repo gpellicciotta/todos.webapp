@@ -23,9 +23,14 @@ export const OPEN_STATUSES = Object.freeze(['ready', 'in-progress']);
 /** Event types that clients post; the service and the system write the others. */
 export const USER_EVENT_TYPES = Object.freeze(['complete', 'uncomplete', 'start', 'unstart', 'cancel', 'reopen']);
 
+/** The goal fields of rules and occurrence snapshots, with the defaults of today's simple task (ADR-0006). */
+export const GOAL_DEFAULTS = Object.freeze({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null });
+
 /** The rules of a new task: a one-off task with target 1, no deadline, and overdue handling `keep`. */
 export const DEFAULT_RULES = Object.freeze({
   'target-count': 1,
+  'start-time': null,
+  ...GOAL_DEFAULTS,
   'due-time': null,
   'overdue-handling': 'keep',
   'recurrence-unit': null,
@@ -35,8 +40,49 @@ export const DEFAULT_RULES = Object.freeze({
   timezone: null,
 });
 
-/** Rule field names, in schema order. */
-export const RULE_FIELDS = Object.freeze(Object.keys(DEFAULT_RULES));
+/**
+ * Rule field names that sync and backups carry, in schema order.
+ * The goal fields and `start-time` stay local until the sync and backup tasks of ADR-0006 add them.
+ */
+export const RULE_FIELDS = Object.freeze([
+  'target-count', 'due-time', 'overdue-handling', 'recurrence-unit', 'recurrence-interval', 'recurrence-end-date', 'recurrence-end-count', 'timezone',
+]);
+
+/**
+ * Return the rule fields that sync and backups carry, leaving out the local goal fields and `start-time`.
+ * @param {object} rules the rules
+ * @returns {object} the rules with only the `RULE_FIELDS` that they hold
+ */
+export function syncedRules(rules) {
+  return Object.fromEntries(RULE_FIELDS.filter((field) => field in rules).map((field) => [field, rules[field]]));
+}
+
+/**
+ * Return rules with `goal-target` equal to `target-count`, the mirror kept until `target-count` is removed.
+ * @param {object} rules the rules
+ * @returns {object} the rules with the goal fields filled and mirrored
+ */
+export function mirrorRules(rules) {
+  return { ...DEFAULT_RULES, ...rules, 'goal-target': rules['target-count'] ?? DEFAULT_RULES['target-count'] };
+}
+
+/**
+ * Return an occurrence with its goal snapshot filled, `goal-target` equal to `target-count`,
+ * `progress` equal to `completion-count`, and `time-spent-seconds` set; the mirrors last until the counts are removed.
+ * @param {object} occurrence the occurrence
+ * @returns {object} the occurrence with the goal fields
+ */
+export function mirrorOccurrence(occurrence) {
+  return {
+    ...occurrence,
+    'goal-direction': occurrence['goal-direction'] ?? GOAL_DEFAULTS['goal-direction'],
+    'goal-measure': occurrence['goal-measure'] ?? GOAL_DEFAULTS['goal-measure'],
+    'goal-target': occurrence['target-count'],
+    'goal-unit': occurrence['goal-unit'] ?? null,
+    progress: occurrence['completion-count'],
+    'time-spent-seconds': occurrence['time-spent-seconds'] ?? 0,
+  };
+}
 
 /** The grace period after a period end, during which a client may still name the previous occurrence. */
 export const GRACE_MS = 24 * 3_600_000;
@@ -100,7 +146,7 @@ export const RECURRENCE_FIELDS = Object.freeze(['recurrence-interval', 'recurren
  * @returns {object} the full rules
  */
 export function normalizeRules(rules) {
-  const full = { ...DEFAULT_RULES, ...rules };
+  const full = mirrorRules(rules);
   if (isRecurring(full)) {
     full['due-time'] = null;
     full['overdue-handling'] = null;
@@ -157,15 +203,18 @@ export function editedRules(before, edit) {
  * @returns {object} the occurrence, without `task-id`
  */
 function opened(rules, number, period) {
-  return {
+  return mirrorOccurrence({
     occurrence: number,
     'start-time': period.start,
     'due-time': period.end,
     'target-count': rules['target-count'] ?? 1,
     'completion-count': 0,
+    'goal-direction': rules['goal-direction'],
+    'goal-measure': rules['goal-measure'],
+    'goal-unit': rules['goal-unit'],
     status: 'ready',
     'close-time': null,
-  };
+  });
 }
 
 /**
@@ -221,6 +270,18 @@ function settleClosing(occurrence, rules, time) {
  * @returns {object|null} the new occurrence, or null when the event's precondition fails
  */
 export function applyEvent(occurrence, event, rules = DEFAULT_RULES) {
+  const next = applyEventToCount(occurrence, event, rules);
+  return next && mirrorOccurrence(next);
+}
+
+/**
+ * Apply one event to the counts of an occurrence; `applyEvent` then mirrors them.
+ * @param {object} occurrence the occurrence before the event
+ * @param {{type: string, 'creation-time': string}} event the event
+ * @param {object} rules the lifecycle rules
+ * @returns {object|null} the new occurrence, or null when the event's precondition fails
+ */
+function applyEventToCount(occurrence, event, rules) {
   const next = { ...occurrence };
   const time = event['creation-time'];
   const { status } = occurrence;
@@ -349,7 +410,7 @@ export function freshOccurrence(rules, closed, now) {
  * @returns {object} the folded occurrence
  */
 export function refoldOccurrence(occurrence, events, rules) {
-  return foldEvents({ ...occurrence, 'completion-count': 0, status: 'ready', 'close-time': null }, events, rules);
+  return mirrorOccurrence(foldEvents({ ...occurrence, 'completion-count': 0, status: 'ready', 'close-time': null }, events, rules));
 }
 
 /**
@@ -385,7 +446,7 @@ export function displayTask(task, now) {
   if (!isStale(task, now)) {
     return task;
   }
-  return { ...task, 'current-occurrence': { ...task['current-occurrence'], 'completion-count': 0, status: 'ready' } };
+  return { ...task, 'current-occurrence': mirrorOccurrence({ ...task['current-occurrence'], 'completion-count': 0, status: 'ready' }) };
 }
 
 /**
@@ -750,6 +811,18 @@ export function eventsTowardsStatus(occurrence, status, rules = DEFAULT_RULES) {
  *   a new occurrence when its number differs from the old one
  */
 export function applyRuleEdit(task, edit, time) {
+  const edited = editRulesOfTask(task, edit, time);
+  return { 'lifecycle-rules': mirrorRules(edited['lifecycle-rules']), 'current-occurrence': mirrorOccurrence(edited['current-occurrence']) };
+}
+
+/**
+ * Apply a rule edit to the rules and the current occurrence; `applyRuleEdit` then mirrors the goal fields.
+ * @param {object} task a task with `lifecycle-rules` and `current-occurrence`
+ * @param {object} edit rule fields; `null` clears a field
+ * @param {string} time the edit time
+ * @returns {{'lifecycle-rules': object, 'current-occurrence': object}} the new rules and current occurrence
+ */
+function editRulesOfTask(task, edit, time) {
   const before = { ...DEFAULT_RULES, ...task['lifecycle-rules'] };
   const { rules } = editedRules(before, edit);
   const current = task['current-occurrence'];
@@ -1113,12 +1186,12 @@ export function fromLegacyTask(legacy, newId) {
     description: rest.description,
     'owner-id': rest['owner-id'] ?? null,
     'lifecycle-rules': rules,
-    'current-occurrence': {
+    'current-occurrence': mirrorOccurrence({
       ...firstOccurrence(rules, legacy['creation-time']),
       'completion-count': current === 'completed' ? 1 : 0,
       status: current,
       'close-time': closed ? statusTime : null,
-    },
+    }),
     'creation-time': legacy['creation-time'],
     'last-update-time': laterTime(legacy['last-update-time'], activity) ?? legacy['creation-time'],
     'deletion-time': rest['deletion-time'] ?? null,

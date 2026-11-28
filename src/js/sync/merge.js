@@ -13,7 +13,7 @@
  */
 
 import {
-  applyEvent, applyRuleEdit, DEFAULT_RULES, firstOccurrence, foldEvents, makeEvent, RULE_FIELDS, shouldExpire, USER_EVENT_TYPES,
+  applyEvent, applyRuleEdit, firstOccurrence, foldEvents, makeEvent, mirrorOccurrence, mirrorRules, RULE_FIELDS, shouldExpire, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { uuid7 } from '../lib/uuid7.js';
 
@@ -137,8 +137,8 @@ const toTask = (task) => ({
   id: task.id,
   description: task.description,
   'owner-id': task['owner-id'] ?? null,
-  'lifecycle-rules': { ...DEFAULT_RULES, ...task['lifecycle-rules'] },
-  'current-occurrence': { ...task['current-occurrence'] },
+  'lifecycle-rules': mirrorRules(task['lifecycle-rules'] ?? {}),
+  'current-occurrence': mirrorOccurrence(task['current-occurrence']),
   'creation-time': task['creation-time'],
   'last-update-time': task['last-update-time'] ?? task['creation-time'],
   'deletion-time': task['deletion-time'] ?? null,

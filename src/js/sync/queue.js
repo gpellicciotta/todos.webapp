@@ -10,7 +10,7 @@
  */
 
 import {
-  applyEvent, applyRuleEdit, byEventOrder, firstOccurrence, firstRules, replayableRuleEdits, RULE_FIELDS, ruleEditOf, USER_EVENT_TYPES,
+  applyEvent, applyRuleEdit, byEventOrder, firstOccurrence, firstRules, replayableRuleEdits, RULE_FIELDS, ruleEditOf, syncedRules, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { request, STORES, transact } from '../store/idb.js';
 import { eventsOfWrite } from '../store/tasks.js';
@@ -399,7 +399,7 @@ async function describe(ctx, operation, args, before, result) {
         fields: {
           id: result.id,
           description: result.description,
-          'lifecycle-rules': result['lifecycle-rules'],
+          'lifecycle-rules': syncedRules(result['lifecycle-rules']),
           'creation-time': result['creation-time'],
           lists: args[1]?.lists ?? [],
         },
@@ -562,7 +562,7 @@ export function importEntries(data, changes, now) {
       const fields = {
         id: record.id,
         description: record.description,
-        'lifecycle-rules': record['lifecycle-rules'],
+        'lifecycle-rules': syncedRules(record['lifecycle-rules']),
         'creation-time': record['creation-time'],
         lists: [],
       };
@@ -571,7 +571,7 @@ export function importEntries(data, changes, now) {
       }
       const own = eventsOf(record.id);
       const create = own.find((event) => event.type === 'create');
-      return { ...fields, 'lifecycle-rules': firstRules(record['lifecycle-rules'], own), import: true, ...(create ? { 'event-id': create.id } : {}) };
+      return { ...fields, 'lifecycle-rules': syncedRules(firstRules(record['lifecycle-rules'], own)), import: true, ...(create ? { 'event-id': create.id } : {}) };
     }],
   ];
   const events = (changes.put.events ?? []).filter((event) => USER_EVENT_TYPES.includes(event.type));

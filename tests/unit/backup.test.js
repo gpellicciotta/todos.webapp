@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   BackupError, backupFileName, exportBackup, importBackup, parseBackup, previewImport,
 } from '../../src/js/core/backup.js';
-import { editedRules, rulesShapeProblem, toLegacyTask } from '../../src/js/core/occurrences.js';
+import { editedRules, mirrorOccurrence, mirrorRules, rulesShapeProblem, toLegacyTask } from '../../src/js/core/occurrences.js';
 import { freshStore } from './store-helpers.js';
 
 const FIXTURE_TEXT = readFileSync(new URL('../fixtures/backup-v1.json', import.meta.url), 'utf8');
@@ -678,11 +678,11 @@ describe('format 2 merge import', () => {
     expect(result.notes).toEqual(counts({ added: 1, updated: 1 }));
     const data = fixture2();
     expect(await store.getTask(T102)).toEqual({
-      ...data.tasks[1], 'lifecycle-rules': embedded(data['lifecycle-rules'][1]), 'current-occurrence': embedded(data.occurrences[1]),
+      ...data.tasks[1], 'lifecycle-rules': mirrorRules(embedded(data['lifecycle-rules'][1])), 'current-occurrence': mirrorOccurrence(embedded(data.occurrences[1])),
     });
     expect(await store.eventsOfTask(T102)).toEqual(data.events.filter((event) => event['task-id'] === T102));
-    expect(await store.occurrencesOfTask(T102)).toEqual([data.occurrences[1]]);
-    expect((await store.getTask(T103))['current-occurrence']).toEqual(embedded(data.occurrences[2]));
+    expect(await store.occurrencesOfTask(T102)).toEqual([mirrorOccurrence(data.occurrences[1])]);
+    expect((await store.getTask(T103))['current-occurrence']).toEqual(mirrorOccurrence(embedded(data.occurrences[2])));
     expect((await store.getTask(T101)).description).toBe('Oat milk, newer');
     expect((await store.eventsOfTask(T101)).map((event) => event.id)).not.toContain(eventId(301));
     expect(await store.notesOfTask(T101)).toEqual([data.notes[0]]);
@@ -694,10 +694,10 @@ describe('format 2 merge import', () => {
     data.occurrences[2]['start-time'] = '2026-10-01T00:00:00.000Z';
     data.occurrences.push({ ...data.occurrences[2], occurrence: 2, 'completion-count': 1, status: 'completed', 'close-time': '2026-11-03T07:00:00.000Z' });
     await importBackup(store, data, 'merge');
-    expect(await store.occurrencesOfTask(T103)).toEqual([{
+    expect(await store.occurrencesOfTask(T103)).toEqual([mirrorOccurrence({
       'task-id': T103, occurrence: 1, 'start-time': '2026-11-01T09:02:00.000Z', 'due-time': null,
       'target-count': 1, 'completion-count': 0, status: 'in-progress', 'close-time': null,
-    }]);
+    })]);
     expect((await store.getTask(T103))['current-occurrence']).toMatchObject({ occurrence: 1, status: 'in-progress' });
   });
 
@@ -747,11 +747,11 @@ describe('format 2 merge import', () => {
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
     expect(await store.occurrencesOfTask(T103)).toEqual([
-      {
+      mirrorOccurrence({
         'task-id': T103, occurrence: 1, 'start-time': '2026-10-26T00:00:00.000Z', 'due-time': '2026-11-02T00:00:00.000Z',
         'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': '2026-11-02T00:00:00.000Z',
-      },
-      data.occurrences[2],
+      }),
+      mirrorOccurrence(data.occurrences[2]),
     ]);
     expect((await store.eventsOfTask(T103)).map((event) => [event.type, event.occurrence, event['creation-time']])).toEqual([
       ['create', 1, '2026-10-27T09:00:00.000Z'], ['roll-over', 1, '2026-11-02T00:00:00.000Z'], ['complete', 2, '2026-11-06T10:00:00.000Z'],
@@ -765,8 +765,8 @@ describe('format 2 merge import', () => {
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
     const bread = await store.getTask(T102);
-    expect(bread['lifecycle-rules']).toEqual(embedded(data['lifecycle-rules'][1]));
-    expect(bread['current-occurrence']).toEqual(embedded(data.occurrences[1]));
+    expect(bread['lifecycle-rules']).toEqual(mirrorRules(embedded(data['lifecycle-rules'][1])));
+    expect(bread['current-occurrence']).toEqual(mirrorOccurrence(embedded(data.occurrences[1])));
     const events = await store.eventsOfTask(T102);
     expect(events.slice(0, -1)).toEqual(data.events.filter((event) => event['task-id'] === T102));
     expect(events.at(-1)).toMatchObject({
@@ -799,7 +799,7 @@ describe('format 2 merge import', () => {
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
     const milk = await store.getTask(T101);
-    expect(milk['lifecycle-rules']).toEqual(embedded(data['lifecycle-rules'][0]));
+    expect(milk['lifecycle-rules']).toEqual(mirrorRules(embedded(data['lifecycle-rules'][0])));
     expect(milk['current-occurrence']).toMatchObject({ 'target-count': 1, 'due-time': '2026-11-05T22:59:00.000Z', status: 'ready' });
     expect((await store.eventsOfTask(T101)).filter((event) => event.type === 'edit-lifecycle-rules').map((event) => [event['creation-time'], event.details])).toEqual([
       ['2026-11-04T10:00:00.000Z', { 'target-count': { old: 1, new: 2 }, 'overdue-handling': { old: 'keep', new: 'cancel' } }],
@@ -814,7 +814,7 @@ describe('format 2 merge import', () => {
     const data = weeklyGap({ ...occurrence, 'close-time': '2026-11-02T00:00:00.000Z' }, { 'recurrence-end-count': 2 });
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge', { connected: true });
-    expect((await store.getTask(T103))['current-occurrence']).toEqual(embedded(data.occurrences[2]));
+    expect((await store.getTask(T103))['current-occurrence']).toEqual(mirrorOccurrence(embedded(data.occurrences[2])));
     expect((await store.eventsOfTask(T103)).map((event) => [event.type, event.occurrence, event['creation-time']])).toEqual([
       ['create', 1, '2026-10-20T09:00:00.000Z'], ['roll-over', 1, '2026-10-26T00:00:00.000Z'], ...user, ['end-recurrence', 2, '2026-11-02T00:00:00.000Z'],
     ]);
@@ -826,7 +826,7 @@ describe('format 2 merge import', () => {
     const data = weeklyGap({ status: 'cancelled', 'close-time': '2026-10-28T12:00:00.000Z' });
     at('2026-11-06T10:00:00.000Z');
     await importBackup(store, data, 'merge');
-    expect((await store.getTask(T103))['current-occurrence']).toEqual(embedded(data.occurrences[2]));
+    expect((await store.getTask(T103))['current-occurrence']).toEqual(mirrorOccurrence(embedded(data.occurrences[2])));
     expect((await store.eventsOfTask(T103)).map((event) => event.type)).toEqual(['create', 'roll-over', 'cancel']);
   });
 
@@ -850,8 +850,8 @@ describe('format 2 overwrite import', () => {
     expect(result.tasks).toEqual(counts({ added: 2, updated: 1 }));
     const data = fixture2();
     expect(await store.eventsOfTask(T102)).toEqual(data.events.filter((event) => event['task-id'] === T102));
-    expect(await store.occurrencesOfTask(T102)).toEqual([data.occurrences[1]]);
-    expect((await store.getTask(T102))['current-occurrence']).toEqual(embedded(data.occurrences[1]));
+    expect(await store.occurrencesOfTask(T102)).toEqual([mirrorOccurrence(data.occurrences[1])]);
+    expect((await store.getTask(T102))['current-occurrence']).toEqual(mirrorOccurrence(embedded(data.occurrences[1])));
     const after = await store.snapshot();
     expect(await importBackup(store, fixture2(), 'overwrite')).toMatchObject(counts({ skipped: 10 }));
     expect(await store.snapshot()).toEqual(after);
@@ -871,7 +871,7 @@ describe('format 2 overwrite import', () => {
 
     expect(result.tasks).toEqual(counts({ updated: 2, skipped: 1 }));
     expect(await store.eventsOfTask(T102)).toEqual(data.events.filter((event) => event['task-id'] === T102));
-    expect(await store.occurrencesOfTask(T103)).toEqual([data.occurrences[2]]);
+    expect(await store.occurrencesOfTask(T103)).toEqual([mirrorOccurrence(data.occurrences[2])]);
   });
 
   it('changes nothing when a backup whose import writes events anew is imported twice', async () => {
@@ -957,7 +957,7 @@ describe('format 2 import while connected', () => {
     await importBackup(store, data, 'merge', { connected: true });
 
     const bread = await store.getTask(T102);
-    expect(bread['lifecycle-rules']).toEqual(embedded(data['lifecycle-rules'][1]));
+    expect(bread['lifecycle-rules']).toEqual(mirrorRules(embedded(data['lifecycle-rules'][1])));
     expect((await store.eventsOfTask(T102)).map((event) => event.id)).toContain(eventId(303));
     for (const occurrence of await store.occurrencesOfTask(T102)) {
       expect(occurrence['completion-count']).toBeLessThanOrEqual(2);
@@ -972,7 +972,7 @@ describe('format 2 import while connected', () => {
       expect(problem).toBeNull();
       replayed = next;
     }
-    expect(replayed).toEqual(embedded(data['lifecycle-rules'][1]));
+    expect(mirrorRules(replayed)).toEqual(mirrorRules(embedded(data['lifecycle-rules'][1])));
   });
 
   it('posts only the imported user events of an existing newer task, with import true', async () => {

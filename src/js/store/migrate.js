@@ -9,7 +9,9 @@
  * See docs/specs/local-store.md, Database.
  */
 
-import { applyEvent, DEFAULT_RULES, eventsTowardsStatus, firstOccurrence, fromLegacyTask, makeEvent } from '../core/occurrences.js';
+import {
+  applyEvent, DEFAULT_RULES, eventsTowardsStatus, firstOccurrence, fromLegacyTask, makeEvent, mirrorOccurrence, mirrorRules,
+} from '../core/occurrences.js';
 
 import { uuid7 } from '../lib/uuid7.js';
 import { STORES } from './idb.js';
@@ -129,6 +131,32 @@ export function upgradeEntry(entry) {
     return { entry: { ...entry, undo: { ...entry.undo, note: upgradeNote(entry.undo.note) } }, followers: [] };
   }
   return { entry, followers: [] };
+}
+
+/**
+ * Add the ADR-0006 goal fields to every stored task, rule set, and occurrence inside the version-change transaction.
+ * Rules gain `start-time` null and an `at-least` goal of `target-count` `checks`; occurrences get the same snapshot,
+ * `progress` equal to `completion-count`, and `time-spent-seconds` 0. Counts, statuses, events, and queued changes stay as they are.
+ * @param {IDBTransaction} tx the version-change transaction, after the version 5 stores exist
+ */
+export function migrateToGoals(tx) {
+  for (const name of [STORES.tasks, STORES.occurrences]) {
+    const cursor = tx.objectStore(name).openCursor();
+    cursor.onsuccess = () => {
+      const row = cursor.result;
+      if (!row) {
+        return;
+      }
+      const record = row.value;
+      if (name === STORES.tasks) {
+        row.update({ ...record, 'lifecycle-rules': mirrorRules(record['lifecycle-rules']), 'current-occurrence': mirrorOccurrence(record['current-occurrence']) });
+      }
+      else {
+        row.update(mirrorOccurrence(record));
+      }
+      row.continue();
+    };
+  }
 }
 
 /**

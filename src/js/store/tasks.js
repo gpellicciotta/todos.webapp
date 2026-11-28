@@ -16,7 +16,7 @@
 
 import {
   applyEvent, applyRuleEdit, eventsTowardsStatus, firstOccurrence, freshOccurrence, GRACE_MS, graceOccurrence, isRecurring,
-  isPeriodEnd, isStale, makeEvent, normalizeRules, planRollOver, refoldOccurrence, RULE_FIELDS, shouldExpire, STATUSES, USER_EVENT_TYPES,
+  isPeriodEnd, isStale, makeEvent, mirrorOccurrence, mirrorRules, normalizeRules, planRollOver, refoldOccurrence, RULE_FIELDS, shouldExpire, STATUSES, USER_EVENT_TYPES,
 } from '../core/occurrences.js';
 import { isValidTimezone } from '../core/periods.js';
 import { keyBetween, keysBetween, MAX_KEY_LENGTH } from '../lib/fractional-index.js';
@@ -207,8 +207,8 @@ function newEventId(ctx) {
  * @returns {Promise<void>}
  */
 export async function putTask(tx, task) {
-  await request(tx.objectStore(STORES.tasks).put(task));
-  const occurrence = task['current-occurrence'];
+  const occurrence = mirrorOccurrence(task['current-occurrence']);
+  await request(tx.objectStore(STORES.tasks).put({ ...task, 'lifecycle-rules': mirrorRules(task['lifecycle-rules']), 'current-occurrence': occurrence }));
   await request(tx.objectStore(STORES.occurrences).put({ 'task-id': task.id, ...occurrence }, [task.id, occurrence.occurrence]));
 }
 
@@ -220,7 +220,7 @@ export async function putTask(tx, task) {
  * @returns {Promise<void>}
  */
 async function putOccurrence(tx, taskId, occurrence) {
-  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': taskId, ...occurrence }, [taskId, occurrence.occurrence]));
+  await request(tx.objectStore(STORES.occurrences).put({ 'task-id': taskId, ...mirrorOccurrence(occurrence) }, [taskId, occurrence.occurrence]));
 }
 
 /**

@@ -165,7 +165,7 @@ async function runStep(api, { kind, record }) {
       break;
     case 'task': {
       const rules = record['lifecycle-rules'];
-      request = ['POST', '/api/tasks', { body: { id: record.id, description: record.description, 'lifecycle-rules': rules, 'creation-time': record['creation-time'] } }];
+      request = ['POST', '/api/tasks', { body: { id: record.id, description: record.description, 'lifecycle-rules': pick(rules, RULE_FIELDS), 'creation-time': record['creation-time'] } }];
       followUps = [
         ['PUT', `/api/tasks/${record.id}`, { body: { description: record.description, 'edit-times': times(['description']) } }],
         ['PATCH', `/api/tasks/${record.id}/lifecycle-rules`, { body: { ...pick(rules, RULE_FIELDS), 'edit-times': times(RULE_FIELDS) } }],

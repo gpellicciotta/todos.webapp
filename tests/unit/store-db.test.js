@@ -156,7 +156,7 @@ describe('the version 4 migration', () => {
     raw.close();
     const store = await open(factory);
     expect((await store.listLists()).map((list) => list.name)).toEqual(['Home']);
-    expect(DB_VERSION).toBe(5);
+    expect(DB_VERSION).toBe(6);
     store.close();
     const upgraded = await new Promise((resolve, reject) => {
       const req = factory.open('test');
@@ -243,6 +243,7 @@ describe('the version 5 migration', () => {
       expect(task['current-occurrence']).toEqual({
         occurrence: 1, 'start-time': T0, 'due-time': id === 'todo' ? DUE : null, 'target-count': 1,
         'completion-count': count, status, 'close-time': closed,
+        'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null, progress: count, 'time-spent-seconds': 0,
       });
       expect(task['lifecycle-rules']).toMatchObject({
         'target-count': 1, 'due-time': id === 'todo' ? DUE : null, 'overdue-handling': id === 'todo' ? 'cancel' : 'keep',
@@ -297,6 +298,70 @@ describe('the version 5 migration', () => {
     expect((await store.getTask('completed'))['current-occurrence']).toMatchObject({ status: 'ready', 'completion-count': 0, 'close-time': null });
     await store.queue.undo(store, rules);
     expect(await store.getTask('completed')).toMatchObject({ 'lifecycle-rules': { 'due-time': DUE }, 'current-occurrence': { 'due-time': DUE } });
+    store.close();
+  });
+});
+
+describe('the version 6 upgrade', () => {
+  const T0 = '2026-10-01T08:00:00.000Z';
+
+  /**
+   * Create a version 5 database holding a one-off task, a recurring task, queued changes, and their occurrences.
+   * @param {IDBFactory} factory the IndexedDB factory
+   * @returns {Promise<void>}
+   */
+  async function version5Database(factory) {
+    const raw = await new Promise((resolve, reject) => {
+      const req = factory.open('test', 5);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        db.createObjectStore('lists', { keyPath: 'id' });
+        const tasks = db.createObjectStore('tasks', { keyPath: 'id' });
+        db.createObjectStore('memberships');
+        db.createObjectStore('notes');
+        db.createObjectStore('sync-queue', { keyPath: 'seq', autoIncrement: true });
+        db.createObjectStore('sync-state', { keyPath: 'key' });
+        db.createObjectStore('sync-log', { keyPath: 'id' }).createIndex('time', 'time');
+        const occurrences = db.createObjectStore('occurrences');
+        db.createObjectStore('events');
+        const rules = {
+          'target-count': 3, 'due-time': null, 'overdue-handling': 'cancel', 'recurrence-unit': null,
+          'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
+        };
+        const occurrence = { occurrence: 1, 'start-time': T0, 'due-time': null, 'target-count': 3, 'completion-count': 2, status: 'in-progress', 'close-time': null };
+        tasks.put({
+          id: 't1', description: 'Water', 'owner-id': null, 'lifecycle-rules': rules, 'current-occurrence': occurrence,
+          'creation-time': T0, 'last-update-time': T0, 'deletion-time': null,
+        });
+        occurrences.put({ 'task-id': 't1', ...occurrence }, ['t1', 1]);
+        occurrences.put({ 'task-id': 't1', ...occurrence, occurrence: 0, status: 'completed', 'completion-count': 3, 'close-time': T0 }, ['t1', 0]);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    raw.close();
+  }
+
+  it('is version 6', () => {
+    expect(DB_VERSION).toBe(6);
+  });
+
+  it('fills the goal fields of rules and occurrences, mirrors equal to them, and keeps the counts and statuses', async () => {
+    const factory = new IDBFactory();
+    await version5Database(factory);
+    const store = await open(factory);
+    const task = await store.getTask('t1');
+    expect(task['lifecycle-rules']).toMatchObject({
+      'target-count': 3, 'overdue-handling': 'cancel', 'start-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null,
+    });
+    expect(task['current-occurrence']).toMatchObject({
+      'target-count': 3, 'goal-target': 3, 'completion-count': 2, progress: 2, 'time-spent-seconds': 0, status: 'in-progress',
+      'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-unit': null,
+    });
+    const stored = await store.occurrencesOfTask('t1');
+    expect(stored.map((record) => [record.occurrence, record['goal-target'], record.progress, record['completion-count'], record.status, record['time-spent-seconds']]))
+      .toEqual([[0, 3, 3, 3, 'completed', 0], [1, 3, 2, 2, 'in-progress', 0]]);
+    expect((await store.listTasks()).map((listed) => listed['current-occurrence']['completion-count'])).toEqual([2]);
     store.close();
   });
 });

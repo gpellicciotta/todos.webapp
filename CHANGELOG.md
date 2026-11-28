@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.6.1-pre
+- Store: Raised the local database to version 6, adding goal fields, a start time, progress, and time spent to rules and occurrences, with the old counts kept as mirrors.
 - Docs: Specified ADR-0006 in the local store and backup format specs: goals, the log, the fold, `failed`, store version 6, and backup format 3.
 - Docs: Specified the ADR-0006 interface: goal rows and marks, a four-tab task editor opening on Status, the quick log, and Show upcoming, with wireframes.
 - Core: Ported the ADR-0006 fold to occurrences.js as `foldLog` and `foldInPlace`, passing the shared fold test vectors.

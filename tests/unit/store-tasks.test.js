@@ -26,9 +26,11 @@ describe('createTask', () => {
       'lifecycle-rules': {
         'target-count': 1, 'due-time': null, 'overdue-handling': 'keep', 'recurrence-unit': null,
         'recurrence-interval': null, 'recurrence-end-date': null, 'recurrence-end-count': null, timezone: null,
+        'start-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null,
       },
       'current-occurrence': {
         occurrence: 1, 'start-time': time, 'due-time': null, 'target-count': 1, 'completion-count': 0, status: 'ready', 'close-time': null,
+        'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 1, 'goal-unit': null, progress: 0, 'time-spent-seconds': 0,
       },
       'creation-time': time,
       'last-update-time': time,
@@ -496,5 +498,21 @@ describe('schema upgrade to version 3', () => {
     expect(await positionsOf(upgraded, 'L1')).toEqual([['t2', 'a0'], ['t3', 'a1'], ['t1', 'a2']]);
     expect((await upgraded.tasksOfList('L1')).map((t) => t.id)).toEqual(['t2', 't3', 't1']);
     upgraded.close();
+  });
+});
+
+describe('goal fields', () => {
+  it('stores the goal rules and the occurrence snapshot, and keeps the mirrors through events and edits', async () => {
+    const task = await store.createTask({ description: 'Exercises', 'lifecycle-rules': { 'target-count': 3 } });
+    expect(task['lifecycle-rules']).toMatchObject({ 'start-time': null, 'goal-direction': 'at-least', 'goal-measure': 'checks', 'goal-target': 3, 'goal-unit': null });
+    expect(task['current-occurrence']).toMatchObject({ 'goal-target': 3, progress: 0, 'time-spent-seconds': 0 });
+    clock.tick();
+    const { task: ticked } = await store.postEvent(task.id, 'complete');
+    expect(ticked['current-occurrence']).toMatchObject({ 'completion-count': 1, progress: 1 });
+    clock.tick();
+    const edited = await store.updateRules(task.id, { 'target-count': 2 });
+    expect(edited['lifecycle-rules']['goal-target']).toBe(2);
+    const [stored] = await store.occurrencesOfTask(task.id);
+    expect(stored).toMatchObject({ 'target-count': 2, 'goal-target': 2, 'completion-count': 1, progress: 1, 'time-spent-seconds': 0 });
   });
 });

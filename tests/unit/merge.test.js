@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { mirrorOccurrence, mirrorRules } from '../../src/js/core/occurrences.js';
 import { planConflicts, planDisconnect, planPage, planReset } from '../../src/js/sync/merge.js';
 
 const T0 = '2026-11-04T09:00:00.000Z';
@@ -95,8 +96,8 @@ describe('merging a pulled row', () => {
     const pending = [event(1, 'complete', '2026-11-04T10:00:00.000Z'), event(2, 'complete', '2026-11-04T10:01:00.000Z')];
     const server = task('t1', { target: 3, count: 1, status: 'in-progress', due: '2026-11-20T10:00:00.000Z', revision: 14 });
     const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
-    expect(merged['lifecycle-rules']).toEqual(server['lifecycle-rules']);
-    expect(merged['current-occurrence']).toEqual({ ...server['current-occurrence'], 'completion-count': 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' });
+    expect(merged['lifecycle-rules']).toEqual(mirrorRules(server['lifecycle-rules']));
+    expect(merged['current-occurrence']).toEqual(mirrorOccurrence({ ...server['current-occurrence'], 'completion-count': 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' }));
     expect(merged.revision).toBe(14);
   });
 
