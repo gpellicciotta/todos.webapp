@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1092.9, input: 132, output: 57963, cache_read: 8398228, cache_write: 161477}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T03:35:38Z"
 ---
 # T0227: Deliver due reminders with the app closed through Web Push while connected, once the service sends them
 
@@ -59,4 +64,7 @@ Size estimate: 6 files, 300 lines.
 
 - [2026-11-28] **[Visual]**
   Inspected Settings reminders in light and dark: push on and service-unavailable lines render with the hint style; screenshots linked in validation-proof.md and below: [before](T0227-deliver-due-reminders-with-the-app-closed-through/before-light-local.png), [after light](T0227-deliver-due-reminders-with-the-app-closed-through/after-light-on.png), [after dark](T0227-deliver-due-reminders-with-the-app-closed-through/after-dark-on.png).
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
