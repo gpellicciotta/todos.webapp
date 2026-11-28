@@ -13,9 +13,11 @@ preview: none
 protocol: standard
 usage:
   worker: {turns: 1, duration_s: 647.3, input: 124, output: 46293, cache_read: 8603409, cache_write: 170585}
+  review: {turns: 1, duration_s: 3.1, input: 0, output: 0, cache_read: 0}
 review_status: pending
 review_round: 1
 review_requested_at: "2026-11-28T01:18:51Z"
+work_duration: 663.8
 ---
 # T0313: Add goals, start times, progress, and time spent to local records in database version 6
 
