@@ -1,11 +1,11 @@
 ---
 id: T0314
-owner: ~
-needs: [T0313]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0314-convert-local-completions-to-log-events-in-the
+worktree: .plan/work/T0314-convert-local-completions-to-log-events-in-the
+status: active
+started_at: "2026-11-28T01:27:30Z"
 ended_at: —
 review: agent
 preview: none
