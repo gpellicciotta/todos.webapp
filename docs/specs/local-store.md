@@ -6,7 +6,7 @@ The IndexedDB schema that holds the app's data in the browser.
 
 ## Database
 - Name: `todos`; one database per browser profile (`LOC-5`).
-- Version: 6; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
+- Version: 7; `upgrade()` in db.js creates or migrates the stores, one version step at a time.
 - Version 1 created `lists`, `tasks`, and `memberships`; version 2 adds `notes` and keeps existing data.
 - Version 3 gives existing memberships a `position`, per list in added-time order, then by task id.
 - Version 4 adds the sync stores `sync-queue`, `sync-state`, and `sync-log`; existing stores and data stay unchanged.
@@ -20,6 +20,7 @@ The IndexedDB schema that holds the app's data in the browser.
   - Queued task changes become `update-rules` and `post-event` entries, appended after the queue.
 - Version 6 adds goals, the log, and the `failed` status, as ADR-0006 of todos.server says; see Store Upgrade.
   It adds no store and no index; it rewrites the records of `tasks`, `occurrences`, `events`, and `sync-queue`.
+- Version 7 asks stores that synced before for a fresh download; see Download After the Upgrade.
   - Records hold no `target-count` or `completion-count`; readers use `goal-target` and `progress`.
     Queued changes, stored rule edits, and backups made before the upgrade may still name them; see Store Upgrade and Sync.
 - Records use the field names of the service's `List`, `Task`, `Note`, `Occurrence`, and `TaskEvent` schemas, in kebab-case.
@@ -406,6 +407,11 @@ Version 6 runs once, in the `upgrade()` transaction; [migrate.js](../../src/js/s
 - Stored `edit-lifecycle-rules` events keep a `target-count` detail, which rule replays and exports read as `goal-target`.
 - The upgrade writes no sync log record; the console shows the counts of refolded occurrences, converted events, dropped uncompletes, and occurrences refolded differently.
 - Older web apps cannot read version 6; the open fails with a `blocked` or version error, and the app asks to update.
+
+### Download After the Upgrade
+Version 6 refolds each occurrence from the events on the device, which a connected device holds only in part.
+So version 7 gives every store with a sync cursor the `resync` sync state; it changes no store or record.
+The next download starts a fresh snapshot, replaces the rows from the service as an expired cursor does, and clears `resync`.
 
 ---
 

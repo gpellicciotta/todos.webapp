@@ -109,6 +109,16 @@ export function createPull({ store, session, api, onLostAccess = () => {}, pageS
     await settleDropped(plan);
   }
 
+  /**
+   * Drop the rows that came from the service and forget the cursor, so the next page starts a snapshot.
+   * @returns {Promise<void>} resolves once dropped
+   */
+  async function restart() {
+    const pending = await queue.all();
+    await store.applyChanges((data) => ({ changes: planReset(data, pending), result: null }));
+    await queue.setState('cursor', null);
+  }
+
   return {
     /**
      * Pull every page after the stored cursor.
@@ -127,6 +137,13 @@ export function createPull({ store, session, api, onLostAccess = () => {}, pageS
       let user = await findUser();
       let pages = 0;
       let reset = false;
+      // An upgrade may ask for a fresh snapshot, which replaces the service rows as an expired cursor does.
+      const resync = await queue.getState('resync');
+      if (resync && cursor) {
+        await restart();
+        cursor = null;
+        reset = true;
+      }
       for (;;) {
         const query = new URLSearchParams({ 'page-size': String(pageSize) });
         if (cursor) {
@@ -134,9 +151,7 @@ export function createPull({ store, session, api, onLostAccess = () => {}, pageS
         }
         const response = await api.send('GET', `/api/changes?${query}`);
         if (cursor && (response.status === 410 || response.status === 400)) {
-          const pending = await queue.all();
-          await store.applyChanges((data) => ({ changes: planReset(data, pending), result: null }));
-          await queue.setState('cursor', null);
+          await restart();
           cursor = null;
           reset = true;
           continue;
@@ -159,6 +174,9 @@ export function createPull({ store, session, api, onLostAccess = () => {}, pageS
         cursor = feed.cursor;
         await queue.setState('cursor', { account, value: cursor });
         if (!feed['has-more']) {
+          if (resync) {
+            await queue.setState('resync', null);
+          }
           return { pages, reset };
         }
       }
@@ -177,7 +195,7 @@ export function createPull({ store, session, api, onLostAccess = () => {}, pageS
       const erase = (await queue.all()).findLast((entry) => entry.operation === 'erase');
       await store.applyChanges((data) => ({ changes: planDisconnect(data, user), result: null }));
       await queue.clear();
-      for (const key of ['cursor', 'user-id', 'account', 'adoption', 'list-map']) {
+      for (const key of ['cursor', 'resync', 'user-id', 'account', 'adoption', 'list-map']) {
         await queue.setState(key, null);
       }
       await queue.setState('last-account', last);

@@ -1396,16 +1396,18 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
    * @param {{now?: string, events?: object[]}} [options] the moment and the stored events
    * @returns {Promise<void>} resolves once loaded
    */
-  async function open(task, { now = NOW, events = [] } = {}) {
+  async function open(task, { now = NOW, events = [], occurrences = [], api = null, toaster = { show: vi.fn() } } = {}) {
     resetBody('<div data-editor-slot hidden></div>');
     store = fakeStore();
     store.getTask = vi.fn(async () => task);
     store.eventsOfTask = vi.fn(async () => events);
+    store.occurrencesOfTask = vi.fn(async () => occurrences);
+    const session = api ? { state: () => 'connected' } : null;
     let editor;
     panel = createEditorPanel({
       slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
       editors: { task: (view, route) => {
-        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, locale: 'en', now: () => new Date(now) });
+        editor = mountTaskEditor(view, route, { store, toaster, api, session, locale: 'en', now: () => new Date(now) });
         return editor;
       } },
     });
@@ -1585,6 +1587,33 @@ describe('mountTaskEditor status tab (TSK-21, TSK-22)', () => {
     await panel.destroy();
     await open(goalTask({}, second, daily), { now: '2026-11-07T10:00:00.000Z' });
     expect(visible(action('previous-period'))).toBe(false);
+  });
+
+  describe('a previous period that is already completed', () => {
+    const daily = { 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'due-time': null, 'overdue-handling': null };
+    const today = { occurrence: 2, 'start-time': '2026-11-05T00:00:00.000Z', 'due-time': '2026-11-06T00:00:00.000Z' };
+    const yesterday = { 'task-id': 't1', occurrence: 1, 'start-time': '2026-11-04T00:00:00.000Z', 'due-time': '2026-11-05T00:00:00.000Z', status: 'completed' };
+    const now = '2026-11-05T10:00:00.000Z';
+
+    it('hides the previous period button', async () => {
+      await open(goalTask({}, today, daily), { now, occurrences: [yesterday] });
+      expect(visible(action('previous-period'))).toBe(false);
+    });
+
+    it('asks the service while connected, as the local copy may be behind', async () => {
+      const api = {
+        send: vi.fn(async (method, path) => ({ status: 200, ok: true, headers: { get: () => null }, body: path.endsWith('/occurrences') ? [yesterday] : [] })),
+      };
+      await open(goalTask({}, today, daily), { now, occurrences: [{ ...yesterday, status: 'failed' }], api });
+      expect(visible(action('previous-period'))).toBe(false);
+    });
+
+    it('keeps the button for an unmet period, and confirms the check with a toast', async () => {
+      const toaster = { show: vi.fn() };
+      await open(goalTask({}, today, daily), { now, occurrences: [{ ...yesterday, status: 'failed' }], toaster });
+      await click(action('previous-period'));
+      expect(toaster.show).toHaveBeenCalledWith(`Checked off the period of ${day('2026-11-04T12:00:00.000Z')}.`);
+    });
   });
 
   it('disables the previous period button on a cancelled task, and posts nothing', async () => {

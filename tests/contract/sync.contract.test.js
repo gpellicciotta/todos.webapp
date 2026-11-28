@@ -355,6 +355,25 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(stored['current-occurrence']).toMatchObject({ 'goal-target': 5, progress: 0, status: 'ready' });
   });
 
+  it('restores a stale local task from the service when an upgrade asks for a fresh download', async () => {
+    const ada = await device('code-ada');
+    const task = await ada.store.createTask({ description: 'Stay social', 'lifecycle-rules': { 'goal-target': 4 } });
+    for (let n = 0; n < 4; n++) {
+      await ada.store.logEntry(task.id, { checked: true });
+    }
+    expect(await ada.engine.syncNow()).toBe('synced');
+    const local = await ada.store.getTask(task.id);
+    const stale = { ...local['current-occurrence'], progress: 1, status: 'in-progress', entries: [] };
+    await ada.store.applyChanges(() => ({ changes: { put: { tasks: [{ ...local, 'current-occurrence': stale }] } }, result: null }));
+    expect(await ada.engine.syncNow()).toBe('synced');
+    expect((await ada.store.getTask(task.id))['current-occurrence'].progress).toBe(1);
+    await ada.store.queue.setState('resync', true);
+    expect(await ada.engine.syncNow()).toBe('synced');
+    const restored = (await ada.store.getTask(task.id))['current-occurrence'];
+    expect(restored).toMatchObject({ progress: 4, status: 'completed' });
+    expect(restored.entries).toHaveLength(4);
+  });
+
   it('replays ended daily series without a user cancel, and the server closes them with end-recurrence', async () => {
     const day = 86_400_000;
     const midnight = Math.floor(Date.now() / day) * day;

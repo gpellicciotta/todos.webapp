@@ -160,6 +160,22 @@ export function migrateToGoals(tx, done = () => {}) {
   };
 }
 
+/**
+ * Ask the next download of a connected device for a fresh snapshot, through the `resync` sync state.
+ * Version 6 refolded each occurrence from the events on this device, which a connected device holds only in part,
+ * and the change feed never sends an unchanged task again.
+ * @param {IDBTransaction} tx the version-change transaction
+ */
+export function requestResync(tx) {
+  const state = tx.objectStore(STORES.state);
+  const cursor = state.get('cursor');
+  cursor.onsuccess = () => {
+    if (cursor.result?.value) {
+      state.put({ key: 'resync', value: true });
+    }
+  };
+}
+
 /** The old fold's events that end an occurrence. */
 const CLOSERS = Object.freeze(['cancel', 'expire', 'roll-over', 'end-recurrence']);
 

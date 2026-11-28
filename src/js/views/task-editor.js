@@ -45,6 +45,7 @@ const STRINGS = Object.freeze({
   description: 'Description', completions: 'Completions', stepDown: 'Undo a completion', stepUp: 'Add a completion',
   count: (done, target) => `${done} of ${target}`,
   previousPeriod: (day) => `Check off previous period (${day})`,
+  previousChecked: (day) => `Checked off the period of ${day}.`,
   uncancelHint: 'Uncancel in Configuration.',
   checkOff: 'Check off', markStarted: 'Mark started', unmarkStarted: 'Unmark started', reopen: 'Reopen', notOnTrack: ', not on track',
   progress: 'Progress', paceNow: (value) => `pace now: ${value}`,
@@ -539,6 +540,8 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   let shownOccurrence = null;
   let closedSeries = false;
   let graceNumber = null;
+  let graceDay = '';
+  let graceDone = false;
   let liveEntries = [];
   let posting = Promise.resolve();
   const revealed = { time: false, amount: false, check: false };
@@ -580,7 +583,11 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
   previousPeriod.addEventListener('click', () => {
     if (graceNumber !== null && !previousPeriod.disabled) {
       const named = graceNumber;
-      run(() => store.logEntry(taskId, { checked: true }, { occurrence: named }));
+      const day = graceDay;
+      run(async () => {
+        await store.logEntry(taskId, { checked: true }, { occurrence: named });
+        toaster.show(STRINGS.previousChecked(day));
+      });
     }
   });
   entriesList.addEventListener('click', (event) => {
@@ -1329,7 +1336,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
     markStarted.textContent = status === 'ready' ? STRINGS.markStarted : STRINGS.unmarkStarted;
     reopen.hidden = !(closedSeries || (status === 'failed' && !isRecurring(rules) && p.direction === 'at-least'));
     graceNumber = graceOccurrence(task, now());
-    previousPeriod.hidden = graceNumber === null || !countable;
+    previousPeriod.hidden = graceNumber === null || !countable || graceDone;
     previousPeriod.disabled = cancelled;
     if (graceNumber !== null) {
       // The previous period ends where the current one starts; a cached one past its end ends at its due time.
@@ -1337,6 +1344,7 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
       const end = Date.parse(graceNumber === current.occurrence ? current['due-time'] : current['start-time']);
       const zoneName = isValidTimezone(rules.timezone ?? '') ? rules.timezone : undefined;
       const day = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: zoneName }).format(new Date(end - 1));
+      graceDay = day;
       previousPeriod.textContent = STRINGS.previousPeriod(day);
     }
     cancelTask.textContent = cancelled ? STRINGS.uncancelTask : STRINGS.cancelTask;
@@ -1629,12 +1637,18 @@ export function mountTaskEditor(panel, route, { store, toaster, locale, api = nu
         const [remote, local] = await Promise.all([connected ? readServerEvents(api, taskId) : null, store.eventsOfTask ? store.eventsOfTask(taskId) : []]);
         return [...(remote ?? []), ...local];
       };
-      const [all, ids, notes, occurrences, user, events] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId),
-        store.occurrencesOfTask(taskId), store.queue?.getState?.('user-id'), firstOpen || next['current-occurrence'].entries?.length > 0 ? readEvents() : []]);
+      // Check off previous period offers only an unmet period. While connected, the service may know more than the device.
+      const grace = graceOccurrence(next, now());
+      const readGrace = async () => (connected && grace !== null && grace !== next['current-occurrence'].occurrence ? readServerOccurrences(api, taskId) : null);
+      const [all, ids, notes, occurrences, user, events, remote] = await Promise.all([store.listLists(), store.listsOfTask(taskId), store.notesOfTask(taskId),
+        store.occurrencesOfTask(taskId), store.queue?.getState?.('user-id'), firstOpen || next['current-occurrence'].entries?.length > 0 ? readEvents() : [],
+        readGrace()]);
       if (destroyed) {
         return;
       }
       task = next;
+      graceDone = [next['current-occurrence'], ...occurrences, ...(remote ?? [])]
+        .some((occurrence) => occurrence.occurrence === grace && occurrence.status === 'completed');
       userId = user ?? null;
       userEvents = events.filter((event) => USER_EVENT_TYPES.includes(event.type));
       loggedEvents = [...new Map(events.filter((event) => event.type === 'log' || event.type === 'undo-log').map((event) => [event.id, event])).values()];

@@ -95,6 +95,22 @@ describe('downloading the change feed', () => {
     expect((await store.eventsOfTask('t1')).filter((event) => event.type === 'log').map((event) => event.id)).toEqual(['e1']);
   });
 
+  it('embeds the live entries on the pulled current occurrence, also after folding a queued check onto it', async () => {
+    const { store, service, pull } = await setup();
+    service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'goal-target': 3 } }), []);
+    service.events.set('e1', { id: 'e1', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T10:00:00.000Z', 'owner-id': 7, type: 'log', checked: true });
+    Object.assign(service.tasks.get('t1')['current-occurrence'], { progress: 1, status: 'in-progress' });
+    service.tasks.get('t1').revision = ++service.revision;
+    await pull.pullOnce();
+    expect((await store.getTask('t1'))['current-occurrence'].entries.map((entry) => entry.id)).toEqual(['e1']);
+    await store.logEntry('t1', { checked: true });
+    service.tasks.get('t1').revision = ++service.revision;
+    await pull.pullOnce();
+    const current = (await store.getTask('t1'))['current-occurrence'];
+    expect(current.progress).toBe(2);
+    expect(current.entries.map((entry) => entry['task-id'])).toEqual(['t1', 't1']);
+  });
+
   it('takes the pulled fields and folds a pending event onto the pulled occurrence', async () => {
     const { store, service, pull } = await setup();
     service.seedTask(taskRow('t1', { 'lifecycle-rules': { 'goal-target': 2 } }), []);
@@ -268,5 +284,28 @@ describe('disconnecting', () => {
     await adopt({ store, api: createApi({ session: fakeSession(), fetch: upload.fetch }), account: ACCOUNT });
     const posted = upload.calls.filter((call) => call.path === '/api/tasks/t1/events').map((call) => call.body.type);
     expect(posted).toEqual(['log']);
+  });
+});
+
+describe('a fresh download after an upgrade', () => {
+  it('replaces a stale task with the service copy once, which a delta download never does', async () => {
+    const { store, service, pull } = await setup();
+    service.seedTask(taskRow('t1'), []);
+    await pull.pullOnce();
+    // The service completed the task before the cursor; the local copy lost that, as the version 6 upgrade did.
+    const row = service.tasks.get('t1');
+    row['current-occurrence'] = { ...row['current-occurrence'], progress: 1, status: 'completed' };
+    const draft = await store.createTask({ description: 'Draft' });
+    await pull.pullOnce();
+    expect((await store.getTask('t1'))['current-occurrence']).toMatchObject({ progress: 0, status: 'ready' });
+    await store.queue.setState('resync', true);
+    const result = await pull.pullOnce();
+    expect(result.reset).toBe(true);
+    expect((await store.getTask('t1'))['current-occurrence']).toMatchObject({ progress: 1, status: 'completed' });
+    expect((await store.listTasks()).map((task) => task.id).sort()).toEqual([draft.id, 't1'].sort());
+    expect(await store.queue.getState('resync') ?? null).toBeNull();
+    service.calls.length = 0;
+    expect((await pull.pullOnce()).reset).toBe(false);
+    expect(service.calls[0].path).toContain('cursor=');
   });
 });

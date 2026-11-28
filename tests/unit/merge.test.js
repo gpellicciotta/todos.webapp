@@ -99,7 +99,9 @@ describe('merging a pulled row', () => {
     server['current-occurrence'].entries = [{ id: 'e0', 'task-id': 't1', occurrence: 1, 'creation-time': T0, type: 'log', checked: true }];
     const merged = applied(local, plan(local, feed({ tasks: [server] }), { pending }).changes).tasks.get('t1');
     expect(merged['lifecycle-rules']).toEqual(fullRules(server['lifecycle-rules']));
-    expect(merged['current-occurrence']).toEqual(fullOccurrence({ ...server['current-occurrence'], entries: undefined, progress: 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' }));
+    const { entries, ...cache } = merged['current-occurrence'];
+    expect(cache).toEqual(fullOccurrence({ ...server['current-occurrence'], entries: undefined, progress: 3, status: 'completed', 'close-time': '2026-11-04T10:01:00.000Z' }));
+    expect(entries.map((live) => live.id)).toEqual(['e0', 'e1', 'e2']);
     expect(merged.revision).toBe(14);
   });
 

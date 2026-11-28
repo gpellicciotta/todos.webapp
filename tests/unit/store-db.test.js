@@ -159,7 +159,7 @@ describe('the version 4 migration', () => {
     raw.close();
     const store = await open(factory);
     expect((await store.listLists()).map((list) => list.name)).toEqual(['Home']);
-    expect(DB_VERSION).toBe(6);
+    expect(DB_VERSION).toBe(7);
     store.close();
     const upgraded = await new Promise((resolve, reject) => {
       const req = factory.open('test');
@@ -347,8 +347,8 @@ describe('the version 6 upgrade', () => {
     raw.close();
   }
 
-  it('is version 6', () => {
-    expect(DB_VERSION).toBe(6);
+  it('is version 7', () => {
+    expect(DB_VERSION).toBe(7);
   });
 
   it('turns the counts into the goal fields of rules and occurrences, and keeps the statuses', async () => {
@@ -587,6 +587,53 @@ describe('the version 6 event conversion', () => {
     expect((await store.eventsOfTask('done')).map((event) => [event.type, event.checked])).toEqual([['create', undefined], ['log', true]]);
     expect((await store.getTask('done'))['current-occurrence']).toMatchObject({ progress: 1, status: 'completed', entries: [expect.objectContaining({ type: 'log' })] });
     vi.restoreAllMocks();
+    store.close();
+  });
+});
+
+describe('the version 7 upgrade', () => {
+  /**
+   * Create a version 6 database, with a sync cursor when the device is connected.
+   * @param {IDBFactory} factory the IndexedDB factory
+   * @param {object|null} cursor the stored sync cursor
+   * @returns {Promise<void>}
+   */
+  async function version6(factory, cursor) {
+    const db = await new Promise((resolve, reject) => {
+      const req = factory.open('test', 6);
+      req.onupgradeneeded = () => {
+        for (const name of ['lists', 'tasks']) {
+          req.result.createObjectStore(name, { keyPath: 'id' });
+        }
+        for (const name of ['memberships', 'notes', 'occurrences', 'events']) {
+          req.result.createObjectStore(name);
+        }
+        req.result.createObjectStore('sync-queue', { keyPath: 'seq', autoIncrement: true });
+        req.result.createObjectStore('sync-log', { keyPath: 'id' }).createIndex('time', 'time');
+        const state = req.result.createObjectStore('sync-state', { keyPath: 'key' });
+        if (cursor) {
+          state.put({ key: 'cursor', value: cursor });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+  }
+
+  it('asks a connected device for a fresh download, since version 6 refolded partial histories', async () => {
+    const factory = new IDBFactory();
+    await version6(factory, { account: { email: 'ada@example.com', server: 'https://todos.example.com' }, value: 'c42' });
+    const store = await open(factory);
+    expect(await store.queue.getState('resync')).toBe(true);
+    store.close();
+  });
+
+  it('asks nothing of a device that never synced', async () => {
+    const factory = new IDBFactory();
+    await version6(factory, null);
+    const store = await open(factory);
+    expect(await store.queue.getState('resync') ?? null).toBeNull();
     store.close();
   });
 });

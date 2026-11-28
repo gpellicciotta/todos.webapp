@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.7.1-pre
+- Core: Kept the live entries on synced tasks, so the editor lists them again, the minus button works, and rows mark only carried readings.
+- Core: Downloaded everything again once after the update to database version 7, restoring task progress and entries that version 6 had rebuilt from partial history.
+- FrontEnd: Hid Check off previous period once that period is completed, and confirmed the check with a toast.
 
 ## v0.7.0 [released: 2026-11-28]
 - Store: Removed `target-count` and `completion-count` from rules and occurrences, which now hold only `goal-target` and `progress`.

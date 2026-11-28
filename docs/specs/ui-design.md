@@ -865,6 +865,7 @@ Wireframes: [Status](../img/ui/task-editor.svg), [Notes](../img/ui/task-editor-n
     A failed "at most" task offers no Reopen; undoing its entries changes its verdict instead.
   - For 24 hours after a period ends, a button checks off that period (`TSK-16`).
     Its label names the period's last day in the task's timezone, such as "Check off previous period (5 Nov)".
+    It hides once that period is completed, and a toast confirms the check, such as "Checked off the period of 5 Nov.".
 - The Log form follows, under a rule: the goal's own field, Label (optional), and Log (`TSK-21`).
   - "+ Time spent", "+ Amount", and "+ Check" reveal the fields the goal does not show first.
     One entry may hold any mix of them, as in the [Quick Log](#quick-log).

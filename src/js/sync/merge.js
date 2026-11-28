@@ -134,15 +134,16 @@ const toList = (list) => ({
 });
 
 /**
- * Read an occurrence of the wire format, without its `entries`, which are stored as events.
+ * Read the current occurrence of a wire task. It embeds its live `log` entries, which the Log form lists and undoes;
+ * the events store holds them too.
  * A row with only the former `target-count` and `completion-count`, such as one from an older service, gives them as the goal fields.
  * @param {object} wire the wire occurrence
+ * @param {string} taskId the task identifier
  * @returns {object} the occurrence with its goal fields
  */
-function occurrenceFromWire(wire) {
-  const occurrence = { ...wire };
-  delete occurrence.entries;
-  return fullOccurrence(occurrence);
+function occurrenceFromWire(wire, taskId) {
+  const entries = (wire.entries ?? []).filter((event) => event.type === 'log').map((event) => ({ ...event, 'task-id': taskId }));
+  return fullOccurrence({ ...wire, ...(wire.entries ? { entries } : {}) });
 }
 
 const toTask = (task) => ({
@@ -150,7 +151,7 @@ const toTask = (task) => ({
   description: task.description,
   'owner-id': task['owner-id'] ?? null,
   'lifecycle-rules': fullRules(task['lifecycle-rules'] ?? {}),
-  'current-occurrence': occurrenceFromWire(task['current-occurrence']),
+  'current-occurrence': occurrenceFromWire(task['current-occurrence'], task.id),
   'creation-time': task['creation-time'],
   'last-update-time': task['last-update-time'] ?? task['creation-time'],
   'deletion-time': task['deletion-time'] ?? null,
@@ -178,7 +179,7 @@ const LOG_KINDS = ['log', 'undo-log', 'complete', 'uncomplete'];
  * @param {object} task the pulled task, with its rules and occurrence
  * @param {object[]} logs the fields of the queued events, in queue order
  * @param {object[]} entries the live `log` entries of the pulled occurrence
- * @returns {object} the occurrence with its cache refolded and without `entries`
+ * @returns {object} the occurrence with its cache refolded, the queued entries included
  */
 function foldQueuedLogs(task, logs, entries) {
   const occurrence = task['current-occurrence'];
@@ -188,9 +189,7 @@ function foldQueuedLogs(task, logs, entries) {
     : [];
   // A pull can see an entry that the service accepted while its queue entry waits to be removed; the entry counts once.
   const byId = new Map([...entries, ...logs].map((event) => [event.id, own(event)]).reverse());
-  const folded = foldLogCache(occurrence, [...started, ...byId.values()], task['lifecycle-rules']);
-  delete folded.entries;
-  return folded;
+  return foldLogCache(occurrence, [...started, ...byId.values()], task['lifecycle-rules']);
 }
 
 /**

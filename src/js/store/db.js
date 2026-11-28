@@ -9,7 +9,7 @@ import * as bin from './bin.js';
 import * as bulk from './bulk.js';
 import { StoreError, STORES } from './idb.js';
 import * as lists from './lists.js';
-import { migrateToGoals, migrateToLifecycle, migrateToLog } from './migrate.js';
+import { migrateToGoals, migrateToLifecycle, migrateToLog, requestResync } from './migrate.js';
 import * as notes from './notes.js';
 import * as tasks from './tasks.js';
 import { createQueue, isTracked, trackChange } from '../sync/queue.js';
@@ -17,7 +17,7 @@ import { createQueue, isTracked, trackChange } from '../sync/queue.js';
 export { StoreError, ValidationError } from './idb.js';
 
 export const DB_NAME = 'todos';
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 /**
  * Create or upgrade the schema.
@@ -58,6 +58,10 @@ function upgrade(db, oldVersion, tx, fail) {
   if (oldVersion === 5) {
     // Rules and occurrences turn their counts into the goal fields (ADR-0006), then the events convert to logs.
     migrateToGoals(tx, () => migrateToLog(tx, fail));
+  }
+  if (oldVersion >= 4 && oldVersion < 7) {
+    // Stores that synced before version 7 download everything again; see `requestResync`.
+    requestResync(tx);
   }
 }
 
