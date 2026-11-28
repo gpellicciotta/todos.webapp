@@ -1,6 +1,6 @@
 {
   "name": "todos-webapp",
-  "version": "0.7.2",
+  "version": "0.7.3-pre",
   "description": "Offline-first web app for ToDo's lists and tasks.",
   "private": true,
   "type": "module",
