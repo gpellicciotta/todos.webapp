@@ -11,6 +11,11 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 225.1, input: 50, output: 25422, cache_read: 2077237, cache_write: 117826}
+review_status: pending
+review_round: 1
+review_requested_at: "2026-11-28T00:12:50Z"
 ---
 # T0299: Specify ADR-0006 goals, logs, statuses, and backup format 3 in the local store and backup format specs
 
@@ -51,4 +56,7 @@ Follow todos.server business-logic-spec.md once its task T0293 lands.
 
 - [2026-11-28] **[Doc]**
   Added the CHANGELOG bullet under v0.6.1-pre.
+
+- [2026-11-28] **[Review]**
+  Round 1 requested (mode: agent).
 
