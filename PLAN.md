@@ -5,4 +5,4 @@ An overview of all tasks and their planning, possibly split by milestone.
 *(Currently no tasks)*
 
 ## Backlog
-- [!] T0317 [reason: Needs the user's Android phone after the release is deployed.] Inspect a pushed reminder on an installed Android PWA after the release.
+- [!] T0317 [reason: Needs the phone's Android version and installed-app confirmation, then review.] Inspect a pushed reminder on an installed Android PWA after the release.

@@ -25,3 +25,10 @@ Moved here from T0227.
 ## Execution Log
 - [2026-11-28] **[Doc]**
   Companion task file scaffolded at task creation.
+
+- [2026-11-28] **[Verify]**
+  User confirmed on 2026-11-28 a pushed reminder from the live app on an Android device, with the app closed.
+  - Opening the notification showed the closed app on the right task.
+  - A repeated job run sent no further notification.
+  - Still missing: Android version, and whether the app was installed.
+
