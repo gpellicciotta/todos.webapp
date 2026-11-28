@@ -153,7 +153,7 @@ test('a viewer sees the list read-only, without edit, move, or delete controls (
   await row.locator('.task-row__open').click();
   const editor = page.locator('[data-editor-slot]');
   await expect(editor.locator('[data-banner="read-only"]')).toContainText('Sam Roe');
-  await expect(editor.getByRole('textbox', { name: 'Description' })).toBeDisabled();
+  await expect(editor.getByLabel('Description')).toBeDisabled();
   await expect(editor.getByRole('button', { name: 'Delete task' })).toBeHidden();
   await page.evaluate((target) => {
     location.hash = target;

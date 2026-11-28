@@ -85,14 +85,14 @@ function rows(page) {
 }
 
 /**
- * Delete a task from its editor: open the row, show the Status tab, and press Delete task at its bottom.
+ * Delete a task from its editor: open the row, show the Configuration tab, and press Delete task in its Danger zone.
  * @param {import('@playwright/test').Page} page the page
  * @param {import('@playwright/test').Locator} row the task row
  */
 async function deleteFromEditor(page, row) {
   await row.locator('.task-row__open').click();
   const panel = page.locator('[data-editor-slot] .editor-panel');
-  await panel.getByRole('tab', { name: 'Status' }).click();
+  await panel.getByRole('tab', { name: 'Configuration' }).click();
   await panel.getByRole('button', { name: 'Delete task' }).click();
   await expect(panel).toHaveCount(0);
 }
@@ -168,7 +168,7 @@ test('connected, deleting every task shows an empty state without the Connect li
   await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(1);
   // Add opens the editor of the new task.
   const panel = page.locator('[data-editor-slot] .editor-panel');
-  await panel.getByRole('tab', { name: 'Status' }).click();
+  await panel.getByRole('tab', { name: 'Configuration' }).click();
   await panel.getByRole('button', { name: 'Delete task' }).click();
   await expect(panel).toHaveCount(0);
   const empty = page.locator('[data-view="tasks"] .empty-state');
@@ -198,13 +198,13 @@ test('Enter or Add adds a task, opens it beside the add bar, keeps the focus the
   await expect(page.locator('.task-row__description')).toHaveText('Buy paint');
   await expect(page.locator('.empty-state')).toBeHidden();
   await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
-  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Buy paint');
+  await expect(page.getByLabel('Description')).toHaveValue('Buy paint');
   await expect(add).toBeFocused();
   await expect(add).toHaveValue('');
   await add.fill('Call the plumber');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.locator('.task-row')).toHaveCount(2);
-  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Call the plumber');
+  await expect(page.getByLabel('Description')).toHaveValue('Call the plumber');
   await expect(add).toBeFocused();
   expect(await page.evaluate(() => window.persistCalls)).toBe(1);
   await page.reload();
@@ -397,9 +397,9 @@ test('the status button opens no menu, and the task editor posts start and cance
   const paint = page.locator('.task-row', { hasText: 'Buy paint' });
   await paint.locator('.task-row__open').click();
   await expect(panel.getByLabel('Description')).toHaveValue('Buy paint');
-  // Another task opens on Content again.
-  await panel.getByRole('tab', { name: 'Status' }).click();
-  await panel.getByRole('button', { name: 'Cancelled', exact: true }).click();
+  // Another task opens on Status again; Cancel task sits in the Danger zone of Configuration.
+  await panel.getByRole('tab', { name: 'Configuration' }).click();
+  await panel.getByRole('button', { name: 'Cancel task' }).click();
   await expect(paint).toHaveCount(0);
   const statuses = await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
@@ -732,7 +732,7 @@ test('typing in the add field searches, Enter never adds once Make Enter add is 
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(field).toHaveValue('');
   await expect(page).toHaveURL(/#\/tasks\/[0-9a-f-]+$/);
-  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('paint');
+  await expect(page.getByLabel('Description')).toHaveValue('paint');
   await expect(field).toBeFocused();
   await expect(page.locator('.task-row')).toHaveCount(7);
   await expect(page.locator(INFO)).toHaveText('7 tasks');
@@ -753,7 +753,7 @@ test('a due day, a time, and a list tag typed in the add field set the new task,
   await page.getByRole('button', { name: 'Add anyway' }).click();
   await expect(field).toHaveValue('');
   await expect(preview).toBeHidden();
-  await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Buy paint');
+  await expect(page.getByLabel('Description')).toHaveValue('Buy paint');
   const added = await page.evaluate(async () => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore();
@@ -779,7 +779,7 @@ for (const shortcut of ['Shift+Enter', 'Alt+Enter']) {
     await openApp(page);
     await seed(page);
     const field = page.getByLabel('Search or add a task');
-    const description = page.getByRole('textbox', { name: 'Description' });
+    const description = page.getByLabel('Description');
     await field.fill('Paint the fence');
     await field.press(shortcut);
     await expect(field).toHaveValue('');

@@ -28,6 +28,10 @@ export const DESCRIPTION_MAX = 500;
 /** The overdue handlings of backup formats 1 and 2; the store reads `cancel` as `fail`. */
 export const OVERDUE_HANDLINGS = ['keep', 'cancel'];
 export const RECURRENCE_UNITS = ['day', 'week', 'month'];
+/** The units the local store takes; year stays local until the sync and backup tasks of ADR-0006 carry it. */
+const LOCAL_RECURRENCE_UNITS = Object.freeze([...RECURRENCE_UNITS, 'year']);
+/** The largest goal target, whole units for checks and seconds, and thousandths for amounts. */
+const TARGET_MAX = 999_999_999_999;
 /** The rule fields that stay local until the sync and backup tasks of ADR-0006 carry them. */
 const LOCAL_RULE_FIELDS = Object.freeze(['start-time', 'goal-direction', 'goal-measure', 'goal-unit']);
 const GOAL_DIRECTIONS = Object.freeze(['at-least', 'at-most']);
@@ -132,8 +136,9 @@ function checkRule(field, value) {
   };
   switch (field) {
     case 'target-count':
-      if (!Number.isInteger(value) || value < 1) {
-        fail('it is a whole number of at least 1');
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > TARGET_MAX + 0.999
+        || Math.abs(value * 1000 - Math.round(value * 1000)) > 1e-6) {
+        fail('it is a number from 0 to 999,999,999,999.999 with at most 3 decimals');
       }
       return value;
     case 'due-time':
@@ -156,8 +161,8 @@ function checkRule(field, value) {
     case 'overdue-handling':
       return optional ? null : checkField('overdue-handling', value);
     case 'recurrence-unit':
-      if (!optional && !RECURRENCE_UNITS.includes(value)) {
-        fail('it is day, week, or month');
+      if (!optional && !LOCAL_RECURRENCE_UNITS.includes(value)) {
+        fail('it is day, week, month, or year');
       }
       return value ?? null;
     case 'recurrence-interval':
@@ -211,6 +216,10 @@ function checkGoalRules(rules) {
   }
   if (start !== null && rules['recurrence-end-date'] && localDate(rules['start-time'], rules.timezone || 'UTC') > rules['recurrence-end-date']) {
     fail('start-time', 'it lies before the recurrence end date');
+  }
+  const target = rules['target-count'] ?? 1;
+  if (['checks', 'time'].includes(rules['goal-measure'] ?? 'checks') && (!Number.isInteger(target) || target < 1 || target > TARGET_MAX)) {
+    fail('target-count', 'it is a whole number from 1 to 999,999,999,999 for checks and time');
   }
   if (rules['goal-direction'] === 'at-most' && !rules['due-time'] && !isRecurring(rules)) {
     fail('goal-direction', 'an at-most goal needs a due time or a recurrence');

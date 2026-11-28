@@ -92,7 +92,7 @@ test.describe('List screen', () => {
     await field.press('Enter');
     await expect(field).toHaveValue('');
     await expect(page).toHaveURL(new RegExp('#/lists/[0-9a-f-]+/tasks/[0-9a-f-]+$'));
-    await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the door');
+    await expect(page.getByLabel('Description')).toHaveValue('Paint the door');
     await expect(field).toBeFocused();
     await expect(page.locator('.list-view .task-row')).toHaveCount(4);
     expect((await rows(page)).at(-1)).toBe('Paint the door');
@@ -128,11 +128,11 @@ test.describe('List screen', () => {
       await field.press(shortcut);
       await expect(field).toHaveValue('');
       await expect(page).toHaveURL(new RegExp('#/lists/[0-9a-f-]+/tasks/[0-9a-f-]+$'));
-      await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the door');
+      await expect(page.getByLabel('Description')).toHaveValue('Paint the door');
       await expect(field).toBeFocused();
       await page.keyboard.type('Paint the gate');
       await page.keyboard.press(shortcut);
-      await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue('Paint the gate');
+      await expect(page.getByLabel('Description')).toHaveValue('Paint the gate');
       await expect(field).toBeFocused();
       await expect(page.locator('.list-view .task-row')).toHaveCount(5);
       expect((await rows(page)).slice(-2)).toEqual(['Paint the door', 'Paint the gate']);
@@ -315,14 +315,14 @@ test.describe('List screen', () => {
     expect(problems).toEqual([]);
   });
 
-  test('the Lists section of the editor Status tab removes a task from the list, and its row leaves (TSK-8)', async ({ page }) => {
+  test('the Lists section of the editor Configuration tab removes a task from the list, and its row leaves (TSK-8)', async ({ page }) => {
     const problems = watch(page);
     const listId = await openList(page);
     const row = page.locator('.list-view .task-row', { hasText: 'Buy paint' });
     await row.locator('.task-row__open').click();
     const panel = page.locator('[data-editor-slot] .editor-panel');
     await expect(panel.getByLabel('Description')).toHaveValue('Buy paint');
-    await panel.getByRole('tab', { name: 'Status' }).click();
+    await panel.getByRole('tab', { name: 'Configuration' }).click();
     await panel.getByRole('button', { name: 'Remove from Home' }).click();
     await expect(row).toHaveCount(0);
     expect(await rows(page)).toEqual(['Clean the gutters', 'Fix the door']);
@@ -366,13 +366,13 @@ test.describe('List screen', () => {
     await expect(door).toHaveAttribute('data-status', 'in-progress');
     await expect(door).not.toHaveAttribute('title', /menu|actions/i);
 
-    // The task editor holds the other status actions, such as Cancelled.
+    // The task editor holds the other status actions, such as Cancel task.
     const gutters = page.locator('.list-view .task-row', { hasText: 'Clean the gutters' });
     await gutters.locator('.task-row__open').click();
     const panel = page.locator('[data-editor-slot] .editor-panel');
     await expect(panel.getByLabel('Description')).toHaveValue('Clean the gutters');
-    await panel.getByRole('tab', { name: 'Status' }).click();
-    await panel.getByRole('button', { name: 'Cancelled', exact: true }).click();
+    await panel.getByRole('tab', { name: 'Configuration' }).click();
+    await panel.getByRole('button', { name: 'Cancel task' }).click();
     await expect(gutters).toHaveCount(0);
 
     const statuses = await page.evaluate(async () => {

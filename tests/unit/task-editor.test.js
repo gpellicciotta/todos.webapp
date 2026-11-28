@@ -146,10 +146,11 @@ describe('mountTaskEditor', () => {
     panel.destroy();
   });
 
-  it('focuses the description once the task loaded, and has no Save button', () => {
+  it('focuses the Status tab once the task loaded, and has no Save button', () => {
     const description = document.querySelector('textarea[name="description"]');
     expect(description.value).toBe('Buy paint');
-    expect(document.activeElement).toBe(description);
+    expect(document.activeElement).toBe(document.querySelector('[role="tab"][aria-selected="true"]'));
+    expect(document.activeElement.textContent).toBe('Status');
     expect([...document.querySelectorAll('button')].some((button) => /save/i.test(button.textContent))).toBe(false);
   });
 
@@ -198,7 +199,7 @@ describe('mountTaskEditor', () => {
   });
 
   it('saves a date without a time as a date-only due time (TSK-6), and shows overdue behavior', async () => {
-    const overdue = document.querySelector('[data-section="overdue"]');
+    const overdue = document.querySelector('[data-part="overdue"]');
     expect(overdue.hidden).toBe(true);
     typeAndLeave(document.querySelector('input[name="due-date"]'), '2026-11-08');
     await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'due-time': '2026-11-08' }));
@@ -235,7 +236,7 @@ describe('mountTaskEditor', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    const STATES = ['ready', 'in-progress', 'completed', 'cancelled'];
+    const STATES = ['ready', 'in-progress', 'completed'];
     const ICONS = STATES.map((status) => `img/icons.svg#status-${status}`);
     /** @returns {HTMLButtonElement[]} the state buttons, in order */
     const states = () => [...document.querySelectorAll('[data-section="status"] .task-editor__states > button')];
@@ -269,14 +270,14 @@ describe('mountTaskEditor', () => {
       return store.postEvent.mock.calls;
     }
 
-    it('shows four state buttons, the current one pressed and each named by its status, and no event actions (TSK-4)', async () => {
+    it('shows three state buttons, the current one pressed and each named by its status, and no event actions (TSK-4)', async () => {
       expect(document.querySelector('input[name^="status-"]')).toBeNull();
       expect(document.querySelector('[data-section="status"] button[data-event]')).toBeNull();
       const group = document.querySelector('[data-section="status"] .task-editor__states');
       expect([group.getAttribute('role'), group.getAttribute('aria-label')]).toEqual(['group', 'Status']);
       expect(states().map((button) => [button.dataset.status, button.getAttribute('aria-label'), button.title, button.getAttribute('aria-pressed')])).toEqual([
         ['ready', 'To do', 'To do', 'true'], ['in-progress', 'In progress', 'In progress', 'false'],
-        ['completed', 'Completed', 'Completed', 'false'], ['cancelled', 'Cancelled', 'Cancelled', 'false'],
+        ['completed', 'Completed', 'Completed', 'false'],
       ]);
       expect(states().every((button) => button.type === 'button' && button.classList.contains('icon-button'))).toBe(true);
       expect(states().map((button) => button.querySelector('use').getAttribute('href'))).toEqual(ICONS);
@@ -284,7 +285,7 @@ describe('mountTaskEditor', () => {
       expect(document.querySelector('.task-editor__status').textContent).toBe('To do');
       await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
       expect(document.querySelector('.task-editor__status').textContent).toBe('In progress, 2 of 3 done');
-      expect(states().map((button) => button.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false', 'false']);
+      expect(states().map((button) => button.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false']);
       // No control previews the status it leads to: each icon names its own status, and the stepper shows none.
       expect(states().map((button) => button.querySelector('use').getAttribute('href'))).toEqual(ICONS);
       expect(stepper().querySelectorAll('use[href*="#status-"]')).toHaveLength(0);
@@ -293,7 +294,6 @@ describe('mountTaskEditor', () => {
     it('posts the events of eventsTowardsStatus in order, and never a status through updateTask', async () => {
       expect(await clickAndCollect(state('completed'))).toEqual([['t1', 'complete']]);
       expect(await clickAndCollect(state('in-progress'))).toEqual([['t1', 'start']]);
-      expect(await clickAndCollect(state('cancelled'))).toEqual([['t1', 'cancel']]);
       expect(await clickAndCollect(state('ready'))).toEqual([]);
       // Ready resets the count to 0, one uncomplete per completion.
       await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
@@ -312,22 +312,22 @@ describe('mountTaskEditor', () => {
 
     it('disables Completed below target and In progress at or above it, above target 1, with their tooltips', async () => {
       await refill({ status: 'ready', 'target-count': 3 });
-      expect(enabled()).toEqual(['ready', 'in-progress', 'cancelled']);
+      expect(enabled()).toEqual(['ready', 'in-progress']);
       expect(state('completed').title).toBe('Reach 3 of 3 to complete');
       expect(state('completed').getAttribute('aria-label')).toBe('Completed');
       await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
-      expect(enabled()).toEqual(['ready', 'in-progress', 'cancelled']);
+      expect(enabled()).toEqual(['ready', 'in-progress']);
       await refill({ status: 'completed', 'target-count': 3, 'completion-count': 3 });
-      expect(enabled()).toEqual(['ready', 'completed', 'cancelled']);
+      expect(enabled()).toEqual(['ready', 'completed']);
       expect(state('in-progress').title).toBe('Step below 3 of 3 to be in progress');
       expect(state('completed').title).toBe('Completed');
       await refill({ status: 'completed', 'target-count': 3, 'completion-count': 4 });
-      expect(enabled()).toEqual(['ready', 'completed', 'cancelled']);
+      expect(enabled()).toEqual(['ready', 'completed']);
       await refill({ status: 'cancelled', 'target-count': 3, 'completion-count': 3 });
-      expect(enabled()).toEqual(['ready', 'completed', 'cancelled']);
+      expect(enabled()).toEqual(['ready', 'completed']);
       expect(await clickAndCollect(state('completed'))).toEqual([['t1', 'reopen']]);
       await refill({ status: 'cancelled', 'target-count': 3, 'completion-count': 1 });
-      expect(enabled()).toEqual(['ready', 'in-progress', 'cancelled']);
+      expect(enabled()).toEqual(['ready', 'in-progress']);
     });
 
     it('shows the stepper above target 1 outside Ready, posting complete and uncomplete', async () => {
@@ -390,87 +390,281 @@ describe('mountTaskEditor', () => {
       expect(document.activeElement).toBe(state('completed'));
     });
 
-    it('saves the target count through the lifecycle rules, and rejects counts outside 1 to 999', async () => {
-      const target = document.querySelector('input[name="target-count"]');
-      expect(target.value).toBe('1');
-      change(target, '0');
-      expect(errorOf(target)).toBe('Enter a whole number from 1 to 999.');
-      change(target, '2.5');
-      expect(errorOf(target)).toBe('Enter a whole number from 1 to 999.');
-      change(target, '1000');
-      expect(store.updateRules).not.toHaveBeenCalled();
-      change(target, '3');
-      await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'target-count': 3 }));
-      expect(errorOf(target)).toBeNull();
-      expect(store.updateTask).not.toHaveBeenCalled();
-    });
-
-    it('fills the target count from the rules', async () => {
-      await refill({ status: 'in-progress', 'target-count': 3, 'completion-count': 2 });
-      expect(document.querySelector('input[name="target-count"]').value).toBe('3');
-    });
-
-    it('saves the overdue behavior through the lifecycle rules (TSK-7)', async () => {
-      await refill({ 'due-time': '2026-11-08T22:59:00.000Z' });
-      const overdue = document.querySelector('[data-section="overdue"]');
-      expect(overdue.hidden).toBe(false);
-      const cancel = overdue.querySelector('input[value="cancel"]');
-      cancel.checked = true;
-      cancel.dispatchEvent(new Event('change', { bubbles: true }));
-      await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'overdue-handling': 'cancel' }));
-      expect(store.updateTask).not.toHaveBeenCalled();
-    });
-
-    it('hides the deadline and overdue behavior of a recurring task, whose periods set its due times', async () => {
-      const recurring = shapeTask({ ...TASK, id: 't1', description: 'Buy paint' });
-      recurring['lifecycle-rules'] = { ...recurring['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 1,
-        timezone: 'Europe/Brussels', 'due-time': null, 'overdue-handling': null };
-      recurring['current-occurrence']['due-time'] = '2026-11-15T23:00:00.000Z';
-      store.getTask.mockImplementation(async () => recurring);
+    /**
+     * Fill the editor with a task whose rules and current occurrence differ from the defaults.
+     * @param {object} [rules] the lifecycle rule fields to set
+     * @param {object} [occurrence] the current occurrence fields to set
+     * @returns {Promise<void>} resolves once filled
+     */
+    async function refillWith(rules = {}, occurrence = {}) {
+      const next = shapeTask({ ...TASK, id: 't1', description: 'Buy paint' });
+      next['lifecycle-rules'] = { ...next['lifecycle-rules'], ...rules };
+      next['current-occurrence'] = { ...next['current-occurrence'], ...occurrence };
+      store.getTask.mockImplementation(async () => next);
       const reads = store.listsOfTask.mock.calls.length;
       store.listeners.forEach((listener) => listener({ operation: 'updateRules' }));
       await vi.waitFor(() => expect(store.listsOfTask.mock.calls.length).toBeGreaterThan(reads));
       await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(document.querySelector('[data-section="due"]').hidden).toBe(true);
-      expect(document.querySelector('[data-section="overdue"]').hidden).toBe(true);
-      expect(document.querySelector('[data-section="target"]').hidden).toBe(false);
+    }
+
+    const control = (name) => document.querySelector(`[name="${name}"]`);
+    const part = (name) => document.querySelector(`[data-part="${name}"]`);
+    /**
+     * Choose a radio of a segmented control and fire its change event.
+     * @param {string} group the radio name prefix
+     * @param {string} value the radio value
+     */
+    function choose(group, value) {
+      const radio = document.querySelector(`input[name^="${group}"][value="${value}"]`);
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    /**
+     * Name the checked radio of a segmented control.
+     * @param {string} group the radio name prefix
+     * @returns {string|undefined} the value
+     */
+    const checked = (group) => document.querySelector(`input[name^="${group}"]:checked`)?.value;
+    const goalError = () => part('goal-error');
+
+    describe('goal', () => {
+      it('offers Check, At least, and At most, opens on Check, and hides measure, target, and unit then', () => {
+        const legend = document.querySelector('[data-section="goal"] .segmented > legend');
+        expect(legend.textContent).toBe('Goal');
+        expect([...document.querySelectorAll('input[name^="goal-mode"]')].map((radio) => radio.value)).toEqual(['check', 'at-least', 'at-most']);
+        expect(checked('goal-mode')).toBe('check');
+        expect(['goal-measure', 'goal-target', 'goal-unit'].map((name) => control(name).closest('[data-part]').hidden)).toEqual([true, true, true]);
+        expect(part('goal-line').textContent).toBe('The task succeeds at 1 check or more.');
+      });
+
+      it('shows measure and target for At least without saving, and the goal fields of the rules', async () => {
+        choose('goal-mode', 'at-least');
+        expect(checked('goal-mode')).toBe('at-least');
+        expect(control('goal-measure').closest('[data-part]').hidden).toBe(false);
+        expect(store.updateRules).not.toHaveBeenCalled();
+        await refillWith({ 'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 1600.5, 'goal-unit': 'kcal', 'recurrence-unit': 'week',
+          'recurrence-interval': 1, timezone: 'Europe/Brussels' });
+        expect([checked('goal-mode'), control('goal-measure').value, control('goal-target').value, control('goal-unit').value]).toEqual(['at-most', 'amount', '1600.5', 'kcal']);
+        expect(part('goal-line').textContent).toBe(`Each week succeeds at ${(1600.5).toLocaleString(undefined, { maximumFractionDigits: 3 })} kcal or less.`);
+        expect(control('goal-unit').closest('[data-part]').hidden).toBe(false);
+      });
+
+      it('offers the four measures, and the unit only for Amount and Reading', async () => {
+        choose('goal-mode', 'at-least');
+        expect([...control('goal-measure').options].map((option) => [option.value, option.textContent])).toEqual([
+          ['checks', 'Checks'], ['time', 'Time spent'], ['amount', 'Amount (sum)'], ['reading', 'Reading (latest)'],
+        ]);
+        await refillWith({ 'goal-measure': 'time', 'target-count': 12000 });
+        expect(control('goal-unit').closest('[data-part]').hidden).toBe(true);
+        await refillWith({ 'goal-measure': 'reading', 'target-count': 80 });
+        expect(control('goal-unit').closest('[data-part]').hidden).toBe(false);
+      });
+
+      it('saves the goal fields through the lifecycle rules', async () => {
+        await refillWith({ 'goal-direction': 'at-least', 'goal-measure': 'checks', 'target-count': 3 });
+        change(control('goal-measure'), 'time');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-measure': 'time' }));
+        change(control('goal-measure'), 'amount');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-measure': 'amount' }));
+        await refillWith({ 'goal-direction': 'at-least', 'goal-measure': 'amount', 'target-count': 3 });
+        change(control('goal-target'), '1600.5');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'target-count': 1600.5 }));
+        typeAndLeave(control('goal-unit'), ' kcal ');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-unit': 'kcal' }));
+        typeAndLeave(control('goal-unit'), '');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'goal-unit': null }));
+        expect(store.updateTask).not.toHaveBeenCalled();
+      });
+
+      it('resets a target that the new measure cannot hold to 1', async () => {
+        await refillWith({ 'goal-measure': 'amount', 'target-count': 0.5 });
+        change(control('goal-measure'), 'checks');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'goal-measure': 'checks', 'target-count': 1 }));
+      });
+
+      it('takes a whole number for checks, and rejects 0, decimals, and numbers above 999,999,999,999', async () => {
+        await refillWith({ 'goal-measure': 'checks', 'target-count': 3 });
+        for (const bad of ['0', '2.5', '1000000000000', '-1', 'abc']) {
+          change(control('goal-target'), bad);
+          expect(errorOf(control('goal-target'))).toBe('Enter a whole number from 1 to 999,999,999,999.');
+        }
+        expect(store.updateRules).not.toHaveBeenCalled();
+        change(control('goal-target'), '999999999999');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'target-count': 999999999999 }));
+        expect(errorOf(control('goal-target'))).toBeNull();
+      });
+
+      it('takes up to 3 decimals from 0 for amounts and readings', async () => {
+        await refillWith({ 'goal-measure': 'reading', 'target-count': 80 });
+        for (const bad of ['-0.5', '1.2345', '1000000000000']) {
+          change(control('goal-target'), bad);
+          expect(errorOf(control('goal-target'))).toBe('Enter a number from 0 to 999,999,999,999.999, with at most 3 decimals.');
+        }
+        expect(store.updateRules).not.toHaveBeenCalled();
+        change(control('goal-target'), '0');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'target-count': 0 }));
+        change(control('goal-target'), '79.875');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'target-count': 79.875 }));
+      });
+
+      it('takes hours and minutes for time, saved as seconds, and shows them split', async () => {
+        await refillWith({ 'goal-measure': 'time', 'target-count': 12000 });
+        expect([control('goal-hours').value, control('goal-minutes').value]).toEqual(['3', '20']);
+        expect(control('goal-target').closest('[data-part]').hidden).toBe(true);
+        expect(part('goal-line').textContent).toBe('The task succeeds at 3 h 20 min or more.');
+        change(control('goal-hours'), '1');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'target-count': 4800 }));
+        change(control('goal-minutes'), '60');
+        expect(errorOf(control('goal-minutes'))).toBe('Enter whole hours and minutes from 0 to 59, at least 1 minute in all.');
+        change(control('goal-hours'), '0');
+        change(control('goal-minutes'), '0');
+        expect(errorOf(control('goal-minutes'))).toBe('Enter whole hours and minutes from 0 to 59, at least 1 minute in all.');
+        expect(store.updateRules).toHaveBeenCalledTimes(1);
+      });
+
+      it('rejects a unit of more than 20 characters', async () => {
+        await refillWith({ 'goal-measure': 'amount', 'target-count': 5 });
+        typeAndLeave(control('goal-unit'), 'k'.repeat(21));
+        expect(errorOf(control('goal-unit'))).toBe('A unit holds at most 20 characters.');
+        expect(store.updateRules).not.toHaveBeenCalled();
+      });
+
+      it('turns back to a plain check with Check, clearing measure, target, and unit', async () => {
+        await refillWith({ 'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 5, 'goal-unit': 'kcal', 'recurrence-unit': 'day',
+          'recurrence-interval': 1, timezone: 'UTC' });
+        choose('goal-mode', 'check');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', {
+          'goal-direction': 'at-least', 'goal-measure': 'checks', 'target-count': 1, 'goal-unit': null,
+        }));
+      });
+
+      it('saves At most only with a due time or a recurrence, and says so otherwise', async () => {
+        choose('goal-mode', 'at-most');
+        expect(goalError().textContent).toBe('At most needs a due time or a recurrence.');
+        expect(store.updateRules).not.toHaveBeenCalled();
+        await refillWith({ 'due-time': '2026-11-08T22:59:00.000Z' });
+        choose('goal-mode', 'at-most');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'goal-direction': 'at-most' }));
+        expect(goalError().textContent).toBe('');
+      });
+
+      it('refuses to clear the due time or the recurrence of an At most goal', async () => {
+        await refillWith({ 'goal-direction': 'at-most', 'due-time': '2026-11-08T22:59:00.000Z' });
+        const date = control('due-date');
+        typeAndLeave(date, '');
+        await vi.waitFor(() => expect(errorOf(date)).toBe('At most needs a due time or a recurrence.'));
+        await refillWith({ 'goal-direction': 'at-most', 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'UTC' });
+        choose('recurrence-unit', '');
+        expect(goalError().textContent).toBe('At most needs a due time or a recurrence.');
+        expect(store.updateRules).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('time window', () => {
+      const START = '2026-11-04T09:00:00.000Z';
+
+      it('shows Starts, Due, and When overdue under one heading, hiding When overdue until a due time is set', async () => {
+        expect(part('start')).not.toBeNull();
+        expect(document.querySelector('[data-section="window"] .editor-panel__section-title').textContent).toBe('Time window');
+        expect(control('start-time').type).toBe('datetime-local');
+        expect(part('overdue').hidden).toBe(true);
+        await refillWith({ 'due-time': '2026-11-08T22:59:00.000Z' });
+        expect(part('overdue').hidden).toBe(false);
+        expect([...part('overdue').querySelectorAll('input')].map((radio) => radio.value)).toEqual(['keep', 'fail']);
+        expect([...part('overdue').querySelectorAll('label')].map((label) => label.textContent.trim())).toEqual(['Keep open', 'Fail']);
+      });
+
+      it('saves When overdue as keep or fail, and reads a stored cancel as Fail', async () => {
+        await refillWith({ 'due-time': '2026-11-08T22:59:00.000Z' });
+        choose('overdue', 'fail');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'overdue-handling': 'fail' }));
+        await refillWith({ 'due-time': '2026-11-08T22:59:00.000Z', 'overdue-handling': 'cancel' });
+        expect(checked('overdue')).toBe('fail');
+        expect(store.updateTask).not.toHaveBeenCalled();
+      });
+
+      it('hides When overdue for an at most goal, which always gets a verdict at its due time', async () => {
+        await refillWith({ 'due-time': '2026-11-08T22:59:00.000Z', 'goal-direction': 'at-most' });
+        expect(part('due').hidden).toBe(false);
+        expect(part('overdue').hidden).toBe(true);
+      });
+
+      it('hides Due and When overdue of a recurring task, naming the period as its window', async () => {
+        await refillWith({ 'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: 'Europe/Brussels', 'due-time': null });
+        expect([part('due').hidden, part('overdue').hidden]).toEqual([true, true]);
+        expect(part('window-note').hidden).toBe(false);
+        expect(part('window-note').textContent).toBe('Each week ends the window, so Due hides.');
+      });
+
+      it('saves Starts as a time and clears it, and keeps it before the due time and the end date', async () => {
+        const start = control('start-time');
+        typeAndLeave(start, '2030-05-06T09:30');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'start-time': new Date(2030, 4, 6, 9, 30).toISOString() }));
+        await refillWith({ 'start-time': new Date(2030, 4, 6, 9, 30).toISOString() });
+        typeAndLeave(control('start-time'), '');
+        await vi.waitFor(() => expect(store.updateRules).toHaveBeenLastCalledWith('t1', { 'start-time': null }));
+        await refillWith({ 'due-time': '2030-05-05T09:00:00.000Z' });
+        typeAndLeave(control('start-time'), '2030-05-06T10:00');
+        expect(errorOf(control('start-time'))).toBe('Starts must be before the due time.');
+        await refillWith({ 'recurrence-unit': 'day', 'recurrence-interval': 1, timezone: 'UTC', 'recurrence-end-date': '2030-05-01' });
+        typeAndLeave(control('start-time'), '2030-05-06T11:00');
+        expect(errorOf(control('start-time'))).toBe('Starts must be before the recurrence end date.');
+        expect(store.updateRules).toHaveBeenCalledTimes(2);
+      });
+
+      it('fills Starts from the rules, shown as a local date and time', async () => {
+        await refillWith({ 'start-time': START });
+        const start = new Date(START);
+        const pad = (number) => String(number).padStart(2, '0');
+        expect(control('start-time').value).toBe(`${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}T${pad(start.getHours())}:${pad(start.getMinutes())}`);
+      });
+
+      it('shows Starts as text once period 1 ended, a later period runs, or a user event happened', async () => {
+        expect(control('start-time').closest('[data-part]').hidden).toBe(false);
+        await refillWith({ 'start-time': START }, { occurrence: 2 });
+        expect([control('start-time').closest('[data-part]').hidden, part('start-text').hidden]).toEqual([true, false]);
+        expect(part('start-text').textContent).toContain('Starts ');
+        await refillWith({ 'start-time': START }, { status: 'completed', 'completion-count': 1, 'close-time': '2026-11-05T09:00:00.000Z' });
+        expect(part('start-text').hidden).toBe(false);
+        store.eventsOfTask = vi.fn(async () => [{ id: 'e1', 'task-id': 't1', occurrence: 1, type: 'log', 'creation-time': START }]);
+        await refillWith({ 'start-time': START });
+        expect(part('start-text').hidden).toBe(false);
+        store.eventsOfTask = vi.fn(async () => [{ id: 'e0', 'task-id': 't1', occurrence: 1, type: 'create', 'creation-time': START }]);
+        await refillWith({ 'start-time': START });
+        expect(part('start-text').hidden).toBe(true);
+      });
     });
 
     describe('recurrence', () => {
-      const control = (name) => document.querySelector(`[name="${name}"]`);
-      const details = () => document.querySelector('[data-section="repeat"] .task-editor__recurrence');
+      const details = () => document.querySelector('[data-section="recurrence"] .task-editor__recurrence');
 
       /**
        * Fill the editor with a weekly task, every two weeks, ending after 10 occurrences.
        * @returns {Promise<void>} resolves once filled
        */
-      async function refillWeekly() {
-        const recurring = shapeTask({ ...TASK, id: 't1', description: 'Buy paint' });
-        recurring['lifecycle-rules'] = { ...recurring['lifecycle-rules'], 'recurrence-unit': 'week', 'recurrence-interval': 2,
-          'recurrence-end-count': 10, timezone: 'Europe/Brussels', 'due-time': null, 'overdue-handling': null };
-        store.getTask.mockImplementation(async () => recurring);
-        const reads = store.listsOfTask.mock.calls.length;
-        store.listeners.forEach((listener) => listener({ operation: 'updateRules' }));
-        await vi.waitFor(() => expect(store.listsOfTask.mock.calls.length).toBeGreaterThan(reads));
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
+      const refillWeekly = () => refillWith({ 'recurrence-unit': 'week', 'recurrence-interval': 2, 'recurrence-end-count': 10,
+        timezone: 'Europe/Brussels', 'due-time': null, 'overdue-handling': null });
 
-      it('makes a one-off task weekly in the browser timezone, and hides the recurrence details until then', async () => {
-        expect([...control('recurrence-unit').options].map((option) => [option.value, option.textContent])).toEqual([
-          ['', 'Never'], ['day', 'Daily'], ['week', 'Weekly'], ['month', 'Monthly'],
+      it('offers Never, Day, Week, Month, and Year, and hides the recurrence details until a unit is chosen', async () => {
+        expect(document.querySelector('[data-section="recurrence"] .segmented > legend').textContent).toBe('Recurrence');
+        expect([...document.querySelectorAll('input[name^="recurrence-unit"]')].map((radio) => [radio.value, radio.parentElement.textContent.trim()])).toEqual([
+          ['', 'Never'], ['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'],
         ]);
-        expect(control('recurrence-unit').value).toBe('');
+        expect(checked('recurrence-unit')).toBe('');
         expect(details().hidden).toBe(true);
-        change(control('recurrence-unit'), 'week');
+      });
+
+      it('makes a one-off task yearly in the browser timezone', async () => {
+        choose('recurrence-unit', 'year');
         await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', {
-          'recurrence-unit': 'week', 'recurrence-interval': 1, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          'recurrence-unit': 'year', 'recurrence-interval': 1, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }));
       });
 
       it('fills and saves the interval, end date, end count, and timezone of a recurring task', async () => {
         await refillWeekly();
         expect(details().hidden).toBe(false);
-        expect([control('recurrence-unit').value, control('recurrence-interval').value, control('recurrence-end-date').value,
+        expect([checked('recurrence-unit'), control('recurrence-interval').value, control('recurrence-end-date').value,
           control('recurrence-end-count').value, control('timezone').value]).toEqual(['week', '2', '', '10', 'Europe/Brussels']);
         typeAndLeave(control('recurrence-interval'), '3');
         typeAndLeave(control('recurrence-end-date'), '2026-12-31');
@@ -495,9 +689,38 @@ describe('mountTaskEditor', () => {
 
       it('stops the recurrence with Never', async () => {
         await refillWeekly();
-        change(control('recurrence-unit'), '');
+        choose('recurrence-unit', '');
         await vi.waitFor(() => expect(store.updateRules).toHaveBeenCalledWith('t1', { 'recurrence-unit': null }));
       });
+    });
+
+    describe('danger zone', () => {
+      const cancel = () => document.querySelector('.editor-panel__danger button[data-action="cancel-task"]');
+
+      it('holds Cancel task and Delete task, and Cancel task posts cancel', async () => {
+        expect([...document.querySelectorAll('.editor-panel__danger button')].map((button) => button.textContent)).toEqual(['Cancel task', 'Delete task']);
+        expect(document.querySelector('[data-section="danger"] .editor-panel__section-title').textContent).toBe('Danger zone');
+        expect(await clickAndCollect(cancel())).toEqual([['t1', 'cancel']]);
+      });
+
+      it('reads Uncancel on a cancelled task, which posts reopen', async () => {
+        await refill({ status: 'cancelled' });
+        expect(cancel().textContent).toBe('Uncancel');
+        expect(cancel().disabled).toBe(false);
+        expect(await clickAndCollect(cancel())).toEqual([['t1', 'reopen']]);
+      });
+
+      it('disables Cancel task on a finished task, with its tooltip', async () => {
+        await refill({ status: 'completed' });
+        expect([cancel().disabled, cancel().title]).toEqual([true, 'A finished task cannot be cancelled.']);
+      });
+    });
+
+    it('names the cancelled status with a pointer to Configuration', async () => {
+      await refill({ status: 'cancelled' });
+      expect(document.querySelector('.task-editor__status').textContent).toBe('Cancelled');
+      expect(document.querySelector('[data-part="uncancel-hint"]').hidden).toBe(false);
+      expect(document.querySelector('[data-part="uncancel-hint"]').textContent).toBe('Uncancel in Configuration.');
     });
 
     describe('history', () => {
@@ -781,12 +1004,12 @@ describe('mountTaskEditor', () => {
     /** @returns {string} the name of the selected tab */
     const selected = () => tabs().find((item) => item.getAttribute('aria-selected') === 'true').textContent;
     /**
-     * Name the parts of a panel in order: its sections, its rules, and Delete task.
+     * Name the parts of a panel in order: its sections and its rules.
      * @param {string} name the tab name
      * @returns {string[]} the parts
      */
-    const parts = (name) => [...panelOf(name).querySelectorAll('[data-section], hr, .editor-panel__danger')]
-      .map((part) => part.dataset.section ?? (part.tagName === 'HR' ? 'rule' : 'delete'));
+    const parts = (name) => [...panelOf(name).querySelectorAll('[data-section], hr')]
+      .map((part) => part.dataset.section ?? 'rule');
     /**
      * Press a key on a control.
      * @param {HTMLElement} control the control
@@ -794,61 +1017,67 @@ describe('mountTaskEditor', () => {
      */
     const press = (control, key) => control.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 
-    it('shows Content, Status, and History tabs under the header, each linked to its panel, opening on Content', () => {
+    it('shows Status, Notes, Configuration, and History tabs under the header, each linked to its panel, opening on Status (TSK-18)', () => {
       const list = document.querySelector('.task-editor__tabs [role="tablist"]');
       expect(list.getAttribute('aria-label')).toBe('Task sections');
-      expect(tabs().map((item) => item.textContent)).toEqual(['Content', 'Status', 'History']);
+      expect(tabs().map((item) => item.textContent)).toEqual(['Status', 'Notes', 'Configuration', 'History']);
       for (const item of tabs()) {
         const tabPanel = panelOf(item.textContent);
         expect([tabPanel.getAttribute('role'), tabPanel.getAttribute('aria-labelledby')]).toEqual(['tabpanel', item.id]);
       }
-      expect(selected()).toBe('Content');
-      expect(tabs().map((item) => item.tabIndex)).toEqual([0, -1, -1]);
-      expect(['Content', 'Status', 'History'].map((name) => panelOf(name).hidden)).toEqual([false, true, true]);
+      expect(selected()).toBe('Status');
+      expect(tabs().map((item) => item.tabIndex)).toEqual([0, -1, -1, -1]);
+      expect(['Status', 'Notes', 'Configuration', 'History'].map((name) => panelOf(name).hidden)).toEqual([false, true, true, true]);
       expect(document.querySelector('.editor-panel__header').nextElementSibling.contains(list)).toBe(true);
       expect(document.querySelector('.editor-panel__header button[aria-label*="More"]')).toBeNull();
       expect(document.querySelector('.task-editor__tabs [role="tablist"] button:not([role="tab"])')).toBeNull();
     });
 
-    it('holds the description and notes on Content, History then Details on History', () => {
-      expect(parts('Content')).toEqual(['description', 'notes']);
+    it('holds the status on Status, the notes on Notes, and History then Details on History', () => {
+      expect(parts('Status')).toEqual(['status']);
+      expect(parts('Notes')).toEqual(['notes']);
       expect(parts('History')).toEqual(['history', 'details']);
     });
 
-    it('holds the status, Lists, the configuration groups, and Delete task on Status, with a rule between each part', () => {
-      expect(parts('Status')).toEqual(['status', 'rule', 'lists', 'rule', 'target', 'due', 'overdue', 'repeat', 'rule', 'delete']);
-      expect(panelOf('Status').querySelector('[data-section="due"] .editor-panel__section-title').textContent).toBe('Due');
+    it('holds Description, Lists, Goal, Recurrence, Time window, and the Danger zone on Configuration, with a rule between each', () => {
+      expect(parts('Configuration')).toEqual(['description', 'rule', 'lists', 'rule', 'goal', 'rule', 'recurrence', 'rule', 'window', 'rule', 'danger']);
+      for (const [name, title] of [['lists', 'Lists'], ['goal', 'Goal'], ['recurrence', 'Recurrence'], ['window', 'Time window'], ['danger', 'Danger zone']]) {
+        const heading = panelOf('Configuration').querySelector(`[data-section="${name}"] .editor-panel__section-title`);
+        expect([heading.tagName, heading.textContent]).toEqual(['H3', title]);
+      }
+      expect(panelOf('Configuration').lastElementChild.dataset.section).toBe('danger');
+      expect(panelOf('Configuration').querySelector('[data-part="due"] label').textContent).toBe('Due date');
     });
 
     it('moves between the tabs with the arrow keys, Home, and End, following the WAI-ARIA tabs pattern', () => {
-      tab('Content').focus();
-      press(tab('Content'), 'ArrowRight');
-      expect([selected(), document.activeElement]).toEqual(['Status', tab('Status')]);
-      expect(panelOf('Status').hidden).toBe(false);
-      expect(panelOf('Content').hidden).toBe(true);
-      press(tab('Status'), 'End');
+      tab('Status').focus();
+      press(tab('Status'), 'ArrowRight');
+      expect([selected(), document.activeElement]).toEqual(['Notes', tab('Notes')]);
+      expect(panelOf('Notes').hidden).toBe(false);
+      expect(panelOf('Status').hidden).toBe(true);
+      press(tab('Notes'), 'End');
       expect([selected(), document.activeElement]).toEqual(['History', tab('History')]);
       press(tab('History'), 'ArrowRight');
-      expect(selected()).toBe('Content');
-      press(tab('Content'), 'ArrowLeft');
+      expect(selected()).toBe('Status');
+      press(tab('Status'), 'ArrowLeft');
       expect(selected()).toBe('History');
       press(tab('History'), 'Home');
-      expect([selected(), document.activeElement]).toEqual(['Content', tab('Content')]);
-      expect(tabs().map((item) => item.tabIndex)).toEqual([0, -1, -1]);
+      expect([selected(), document.activeElement]).toEqual(['Status', tab('Status')]);
+      expect(tabs().map((item) => item.tabIndex)).toEqual([0, -1, -1, -1]);
     });
 
-    it('opens on Content again for each task, focusing the description (TSK-13)', async () => {
-      tab('Status').click();
-      expect(selected()).toBe('Status');
+    it('opens on Status again for each task, focusing the selected tab', async () => {
+      tab('Configuration').click();
+      expect(selected()).toBe('Configuration');
       panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't2' } });
       await editor.idle();
-      expect(selected()).toBe('Content');
-      expect(document.activeElement).toBe(document.querySelector('textarea[name="description"]'));
+      expect(selected()).toBe('Status');
+      expect(document.activeElement).toBe(tab('Status'));
       tab('History').click();
       panel.update({ name: 'tasks', view: 'tasks', editor: null, params: {} });
       panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
       await editor.idle();
-      expect(selected()).toBe('Content');
+      expect(selected()).toBe('Status');
     });
 
     it('selects the hidden tab of a field error and focuses that field', async () => {
@@ -856,15 +1085,18 @@ describe('mountTaskEditor', () => {
       store.updateRules.mockImplementation(() => new Promise((_, fail) => {
         reject = fail;
       }));
-      tab('Status').click();
-      const target = document.querySelector('input[name="target-count"]');
+      tab('Configuration').click();
+      const radio = document.querySelector('input[name^="goal-mode"][value="at-least"]');
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+      const target = document.querySelector('input[name="goal-target"]');
       change(target, '5');
       await vi.waitFor(() => expect(reject).toBeTypeOf('function'));
-      tab('Content').click();
-      reject(Object.assign(new Error('The target count is too high.'), { name: 'ValidationError' }));
-      await vi.waitFor(() => expect(selected()).toBe('Status'));
+      tab('Status').click();
+      reject(Object.assign(new Error('The target is too high.'), { name: 'ValidationError' }));
+      await vi.waitFor(() => expect(selected()).toBe('Configuration'));
       expect(document.activeElement).toBe(target);
-      expect(errorOf(target)).toBe('The target count is too high.');
+      expect(errorOf(target)).toBe('The target is too high.');
     });
 
     it('loads the history once its tab first shows', async () => {
@@ -873,7 +1105,7 @@ describe('mountTaskEditor', () => {
       tab('History').click();
       await vi.waitFor(() => expect(store.eventsOfTask).toHaveBeenCalledTimes(1));
       await vi.waitFor(() => expect(document.querySelector('[data-section="history"] button[data-action="history"]').textContent).toBe('Refresh history'));
-      tab('Content').click();
+      tab('Status').click();
       tab('History').click();
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(store.eventsOfTask).toHaveBeenCalledTimes(1);
@@ -888,21 +1120,22 @@ describe('mountTaskEditor', () => {
       expect(close).toHaveBeenCalledTimes(2);
     });
 
-    it('deletes from the bottom of Status, closing with the Undo toast, and hides Delete task with its rule on a deleted task', async () => {
-      const danger = panelOf('Status').querySelector('.editor-panel__danger');
-      const rule = danger.previousElementSibling;
-      expect([rule.tagName, danger.hidden, rule.hidden]).toEqual(['HR', false, false]);
-      expect(panelOf('Status').lastElementChild).toBe(danger);
+    it('deletes from the Danger zone of Configuration, closing with the Undo toast, and hides the zone with its rule on a deleted task', async () => {
+      const zone = panelOf('Configuration').querySelector('[data-section="danger"]');
+      const rule = zone.previousElementSibling;
+      const remove = () => [...zone.querySelectorAll('button')].find((button) => button.textContent === 'Delete task');
+      expect([rule.tagName, zone.hidden, rule.hidden]).toEqual(['HR', false, false]);
+      expect(panelOf('Configuration').lastElementChild).toBe(zone);
       store.getTask.mockImplementation(async () => ({ ...TASK, 'deletion-time': '2026-11-05T09:00:00.000Z' }));
       store.listeners.forEach((listener) => listener({ operation: 'deleteTask', remote: true }));
-      await vi.waitFor(() => expect(danger.hidden).toBe(true));
+      await vi.waitFor(() => expect(zone.hidden).toBe(true));
       expect(rule.hidden).toBe(true);
       store.getTask.mockImplementation(async () => ({ ...TASK }));
       store.listeners.forEach((listener) => listener({ operation: 'restoreTask', remote: true }));
-      await vi.waitFor(() => expect(danger.hidden).toBe(false));
+      await vi.waitFor(() => expect(zone.hidden).toBe(false));
       store.deleteTask = vi.fn(async () => {});
-      tab('Status').click();
-      danger.querySelector('button').click();
+      tab('Configuration').click();
+      remove().click();
       await vi.waitFor(() => expect(close).toHaveBeenCalledTimes(1));
       expect(toaster.show).toHaveBeenCalledWith('Task moved to the recycle bin.', expect.objectContaining({ undo: true }));
     });
@@ -975,11 +1208,74 @@ describe('mountTaskEditor history while connected', () => {
     document.querySelector('[data-section="history"] button[data-action="history"]').click();
     const entries = (kind) => [...document.querySelectorAll(`[data-history="${kind}"] li`)].map((item) => item.textContent);
     await vi.waitFor(() => expect(entries('events')).toHaveLength(1));
-    expect(api.send.mock.calls.map(([method, path]) => [method, path])).toEqual([['GET', '/api/tasks/t1/events'], ['GET', '/api/tasks/t1/occurrences']]);
+    const calls = api.send.mock.calls.map(([method, path]) => [method, path]);
+    expect(calls).toContainEqual(['GET', '/api/tasks/t1/events']);
+    expect(calls).toContainEqual(['GET', '/api/tasks/t1/occurrences']);
     expect(entries('events')[0]).toContain('Period ended');
     expect(entries('occurrences')[0]).toContain('#2');
     expect(entries('occurrences')[0]).toContain('0 of 3 done');
-    expect(store.eventsOfTask).not.toHaveBeenCalled();
+  });
+
+  it('shows Starts as text once the server holds a user event of the first period, and as a field before', async () => {
+    resetBody('<div data-editor-slot hidden></div>');
+    const store = fakeStore();
+    store.eventsOfTask = vi.fn(async () => []);
+    let events = [{ id: 'e0', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-04T09:00:00.000Z', type: 'create' }];
+    const api = { send: vi.fn(async () => ({ status: 200, ok: true, headers: { get: () => null }, body: events })) };
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, api, session: { state: () => 'connected' } });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+    const text = () => document.querySelector('[data-part="start-text"]');
+    expect(text().hidden).toBe(true);
+    events = [...events, { id: 'e1', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-05T09:00:00.000Z', type: 'start' }];
+    const reads = api.send.mock.calls.length;
+    store.listeners.forEach((listener) => listener({ operation: 'postEvent', remote: true }));
+    await vi.waitFor(() => expect(api.send.mock.calls.length).toBeGreaterThan(reads));
+    await vi.waitFor(() => expect(text().hidden).toBe(false));
+    expect(document.querySelector('input[name="start-time"]').closest('[data-part]').hidden).toBe(true);
+  });
+
+  it('adds a locally queued user event to an empty server history, so Starts reads as text', async () => {
+    resetBody('<div data-editor-slot hidden></div>');
+    const store = fakeStore();
+    store.eventsOfTask = vi.fn(async () => [{ id: 'q1', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-05T09:00:00.000Z', type: 'start' }]);
+    const api = { send: vi.fn(async () => ({ status: 200, ok: true, headers: { get: () => null }, body: [] })) };
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, api, session: { state: () => 'connected' } });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+    expect(api.send).toHaveBeenCalledWith('GET', '/api/tasks/t1/events');
+    expect(document.querySelector('[data-part="start-text"]').hidden).toBe(false);
+  });
+
+  it('falls back to the local events when the server cannot answer', async () => {
+    resetBody('<div data-editor-slot hidden></div>');
+    const store = fakeStore();
+    store.eventsOfTask = vi.fn(async () => [{ id: 'e1', 'task-id': 't1', occurrence: 1, 'creation-time': '2026-11-05T09:00:00.000Z', type: 'log' }]);
+    const api = { send: vi.fn(async () => {
+      throw new Error('offline');
+    }) };
+    panel = createEditorPanel({
+      slot: document.querySelector('[data-editor-slot]'), close: vi.fn(),
+      editors: { task: (view, route) => {
+        editor = mountTaskEditor(view, route, { store, toaster: { show: vi.fn() }, api, session: { state: () => 'connected' } });
+        return editor;
+      } },
+    });
+    panel.update({ name: 'task', view: 'tasks', editor: 'task', params: { taskId: 't1' } });
+    await editor.idle();
+    expect(document.querySelector('[data-part="start-text"]').hidden).toBe(false);
   });
 });
 
@@ -1069,12 +1365,12 @@ describe('mountTaskEditor first focus after an add', () => {
 
   it('takes the focus from the add field in the compact layout, where the editor covers it', async () => {
     await open(field, true);
-    expect(document.activeElement).toBe(document.querySelector('textarea[name="description"]'));
+    expect(document.activeElement).toBe(document.querySelector('[role="tab"][aria-selected="true"]'));
   });
 
   it('takes the focus in the wide layout when opened from anything but the add field, such as a row', async () => {
     await open(link, false);
-    expect(document.activeElement).toBe(document.querySelector('textarea[name="description"]'));
+    expect(document.activeElement).toBe(document.querySelector('[role="tab"][aria-selected="true"]'));
   });
 });
 
@@ -1110,7 +1406,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
   }
 
   const banner = () => document.querySelector('.banner[data-banner="read-only"]');
-  const deleteButton = () => [...document.querySelectorAll('.editor-panel__danger button')][0];
+  const deleteButton = () => [...document.querySelectorAll('.editor-panel__danger button')].find((button) => button.textContent === 'Delete task');
 
   afterEach(() => {
     panel.destroy();
@@ -1156,7 +1452,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
     expect(banner().hidden).toBe(false);
     expect(banner().textContent).toContain('Sam Roe');
     expect(document.querySelector('.task-editor__fields').disabled).toBe(true);
-    expect(document.querySelector('.editor-panel__danger').hidden).toBe(true);
+    expect(document.querySelector('[data-section="danger"]').hidden).toBe(true);
     expect(document.querySelector('.note-thread__add').hidden).toBe(true);
   });
 
@@ -1164,7 +1460,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
     const counted = shapeTask({ status: 'in-progress', 'target-count': 3, 'completion-count': 1 });
     await open('viewer', { 'lifecycle-rules': counted['lifecycle-rules'], 'current-occurrence': counted['current-occurrence'] });
     const controls = [...document.querySelectorAll('[data-section="status"] :is(.task-editor__states, .task-editor__stepper) button')];
-    expect(controls).toHaveLength(6);
+    expect(controls).toHaveLength(5);
     expect(document.querySelector('[data-section="status"] .task-editor__stepper').hidden).toBe(false);
     expect(controls.filter((button) => !button.matches(':disabled'))).toEqual([]);
   });
@@ -1173,7 +1469,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
     await open('task-editor');
     expect(banner().hidden).toBe(true);
     expect(document.querySelector('.task-editor__fields').disabled).toBe(false);
-    expect(document.querySelector('.editor-panel__danger').hidden).toBe(true);
+    expect(document.querySelector('[data-section="danger"]').hidden).toBe(true);
   });
 
   it('offers only the lists the user may add the task to', async () => {
@@ -1186,7 +1482,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
 
   it('offers the owner of the list Delete task', async () => {
     await open('owner');
-    expect(document.querySelector('.editor-panel__danger').hidden).toBe(false);
+    expect(document.querySelector('[data-section="danger"]').hidden).toBe(false);
     expect(deleteButton().textContent).toBe('Delete task');
   });
 
@@ -1194,7 +1490,7 @@ describe('mountTaskEditor by role (SHR-4, SHR-5)', () => {
     await open('viewer', { 'owner-id': 3 });
     expect(banner().hidden).toBe(true);
     expect(document.querySelector('.task-editor__fields').disabled).toBe(false);
-    expect(document.querySelector('.editor-panel__danger').hidden).toBe(false);
+    expect(document.querySelector('[data-section="danger"]').hidden).toBe(false);
   });
 });
 

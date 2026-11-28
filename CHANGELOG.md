@@ -5,6 +5,9 @@ All notable changes to this project are documented here.
 > for the versioning and changelog conventions used across projects.
 
 ## v0.6.1-pre
+- FrontEnd: Rebuilt the task editor as the tabs Status, Notes, Configuration, and History, opening on Status, with Cancel task in a Danger zone.
+- FrontEnd: Added the Goal, Recurrence with a yearly unit, and Time window with a start time and Fail when overdue to Configuration (`TSK-15`, `TSK-16`, `TSK-20`).
+- Store: Took the year unit and decimal amount targets from 0 in local rule edits, and kept checks and time to whole numbers.
 - Reminders: Delivered due reminders with the app closed through Web Push while connected, subscribing with the service key, updating the lead time, and unsubscribing on turn-off, disconnect, and sign-out (`REM-11` to `REM-14`).
 - Settings: Showed under Reminders whether pushes to a closed app work, with the Home Screen note for iPhone and iPad.
 - Tests: Gave the contract server a throwaway VAPID key pair, and covered registering, updating, and deleting a push subscription against it.

@@ -63,7 +63,7 @@ async function openEditor(page) {
 /**
  * Select a tab of the open editor by a click.
  * @param {import('@playwright/test').Locator} panel the editor panel
- * @param {'Content'|'Status'|'History'} name the tab
+ * @param {'Status'|'Notes'|'Configuration'|'History'} name the tab
  */
 async function showTab(panel, name) {
   const tab = panel.getByRole('tablist', { name: 'Task sections' }).getByRole('tab', { name });
@@ -71,26 +71,53 @@ async function showTab(panel, name) {
   await expect(tab).toHaveAttribute('aria-selected', 'true');
 }
 
+/**
+ * Choose an option of a segmented control by a click on its label, since the radios themselves are visually hidden.
+ * @param {import('@playwright/test').Locator} panel the editor panel
+ * @param {string} name the option label
+ */
+async function pick(panel, name) {
+  await panel.locator('label.segmented__option', { hasText: new RegExp(`^\\s*${name}\\s*$`) }).click();
+}
+/**
+ * Set the goal to at least a number of checks on Configuration, which also shows the Target field.
+ * @param {import('@playwright/test').Locator} panel the editor panel
+ * @param {string} count the number of checks
+ * @returns {Promise<import('@playwright/test').Locator>} the Target field
+ */
+async function setTarget(panel, count) {
+  await showTab(panel, 'Configuration');
+  await pick(panel, 'At least');
+  const target = panel.getByLabel('Target', { exact: true });
+  await target.fill(count);
+  await target.press('Tab');
+  return target;
+}
+
 for (const viewport of [COMPACT, WIDE]) {
-  test(`the editor splits into Content, Status, and History tabs, edits a field on each, and deletes from Status at ${viewport.width} px`, async ({ page }) => {
+  test(`the editor splits into Status, Notes, Configuration, and History tabs, edits a field on each, and deletes from Configuration at ${viewport.width} px`, async ({ page }) => {
     const problems = watch(page);
     await page.setViewportSize(viewport);
     await seed(page);
     const panel = await openEditor(page);
     const tabs = panel.getByRole('tablist', { name: 'Task sections' });
     const tab = (name) => tabs.getByRole('tab', { name });
-    await expect(tabs.getByRole('tab')).toHaveText(['Content', 'Status', 'History']);
-    await expect(tab('Content')).toHaveAttribute('aria-selected', 'true');
-    await expect(panel.getByLabel('Description')).toBeFocused();
+    await expect(tabs.getByRole('tab')).toHaveText(['Status', 'Notes', 'Configuration', 'History']);
+    await expect(tab('Status')).toHaveAttribute('aria-selected', 'true');
+    await expect(tab('Status')).toBeFocused();
     expect(await tabs.evaluate((list) => list.scrollWidth <= list.clientWidth)).toBe(true);
 
-    // Content: only the description and the notes; the add field also searches the notes.
-    await expect(panel.getByLabel('Target count')).toBeHidden();
-    await expect(panel.getByRole('combobox', { name: 'Add to list' })).toBeHidden();
-    await panel.getByLabel('Description').fill('Buy blue paint');
-    await panel.getByLabel('Description').blur();
-    const row = page.locator('.task-row', { hasText: 'Buy blue paint' });
-    await expect(row).toHaveCount(1);
+    // Status: the status and its controls only, without Cancel.
+    await expect(panel.getByRole('group', { name: 'Status', exact: true })).toBeVisible();
+    await expect(panel.getByLabel('Description')).toBeHidden();
+    await expect(panel.getByRole('button', { name: 'Cancelled', exact: true })).toHaveCount(0);
+    await panel.getByRole('button', { name: 'In progress', exact: true }).click();
+
+    // Notes by keyboard: the arrow keys move between the tabs; the add field also searches the notes.
+    await tab('Status').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(tab('Notes')).toBeFocused();
+    await expect(tab('Notes')).toHaveAttribute('aria-selected', 'true');
     const field = panel.getByRole('textbox', { name: 'Add note' });
     await expect(field).toHaveAttribute('placeholder', 'Add or search notes');
     for (const text of ['Two coats.', 'Matte white.']) {
@@ -103,22 +130,25 @@ for (const viewport of [COMPACT, WIDE]) {
     await field.fill('');
     await expect(panel.locator('.note')).toHaveCount(2);
 
-    // Status by keyboard: the arrow keys move between the tabs; the status, Lists, the groups, then Delete task.
-    await tab('Content').focus();
+    // Configuration: Description, Lists, Goal, Recurrence, Time window, then the Danger zone, with rules between.
+    await tab('Notes').focus();
     await page.keyboard.press('ArrowRight');
-    await expect(tab('Status')).toBeFocused();
-    await expect(tab('Status')).toHaveAttribute('aria-selected', 'true');
-    await expect(panel.getByLabel('Description')).toBeHidden();
+    await expect(tab('Configuration')).toBeFocused();
+    await expect(panel.getByRole('group', { name: 'Status', exact: true })).toBeHidden();
     const tops = await Promise.all([
-      panel.getByRole('group', { name: 'Status', exact: true }), panel.getByRole('combobox', { name: 'Add to list' }),
-      panel.getByLabel('Target count'), panel.getByLabel('Due date', { exact: true }), panel.getByLabel('Repeat'),
+      panel.getByLabel('Description'), panel.getByRole('combobox', { name: 'Add to list' }), panel.getByRole('group', { name: 'Goal', exact: true }),
+      panel.getByRole('group', { name: 'Recurrence', exact: true }), panel.getByLabel('Due date', { exact: true }), panel.getByRole('button', { name: 'Cancel task' }),
       panel.getByRole('button', { name: 'Delete task' }),
     ].map(async (control) => (await control.boundingBox()).y));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
-    await expect(panel.locator('[role="tabpanel"]:not([hidden]) hr')).toHaveCount(3);
-    await panel.getByRole('button', { name: 'In progress', exact: true }).click();
+    await expect(panel.locator('[role="tabpanel"]:not([hidden]) hr')).toHaveCount(5);
+    await panel.getByLabel('Description').fill('Buy blue paint');
+    await panel.getByLabel('Description').blur();
+    const row = page.locator('.task-row', { hasText: 'Buy blue paint' });
+    await expect(row).toHaveCount(1);
     await expect(row).toHaveAttribute('data-status', 'in-progress');
-    const target = panel.getByLabel('Target count');
+    await pick(panel, 'At least');
+    const target = panel.getByLabel('Target', { exact: true });
     await target.fill('3');
     await target.press('Tab');
     await expect(row.locator('.task-row__count')).toHaveText('0/3');
@@ -129,15 +159,15 @@ for (const viewport of [COMPACT, WIDE]) {
     await row.locator('.task-row__open').click();
     const reopened = page.locator('[data-editor-slot] .editor-panel');
     await expect(reopened.getByLabel('Description')).toHaveValue('Buy blue paint');
-    await expect(reopened.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
+    await expect(reopened.getByRole('tab', { name: 'Status' })).toHaveAttribute('aria-selected', 'true');
     await showTab(reopened, 'History');
     await expect(reopened.locator('[data-history="events"] li').first()).toContainText('Changed the rules');
     await reopened.getByRole('button', { name: 'Refresh history' }).click();
     await expect(reopened.locator('[data-history="occurrences"] li').first()).toContainText('0 of 3');
-    await expect(reopened.locator('.editor-panel__details')).toContainText('Created');
+    await expect(reopened.locator('[data-section="details"] .editor-panel__details')).toContainText('Created');
 
-    // Delete task sits at the bottom of Status, closes the editor, and offers Undo.
-    await showTab(reopened, 'Status');
+    // Delete task sits in the Danger zone at the bottom of Configuration, closes the editor, and offers Undo.
+    await showTab(reopened, 'Configuration');
     await reopened.getByRole('button', { name: 'Delete task' }).click();
     await expect(reopened).toHaveCount(0);
     await expect(page.locator('.toast', { hasText: 'Task moved to the recycle bin.' })).toBeVisible();
@@ -149,12 +179,12 @@ for (const viewport of [COMPACT, WIDE]) {
 }
 
 for (const viewport of [COMPACT, WIDE]) {
-  test(`the editor opens from a row with focus on the description, and Escape returns to the row at ${viewport.width} px`, async ({ page }) => {
+  test(`the editor opens from a row on Status with focus on its tab, and Escape returns to the row at ${viewport.width} px`, async ({ page }) => {
     const problems = watch(page);
     await page.setViewportSize(viewport);
     await seed(page);
     const panel = await openEditor(page);
-    await expect(panel.getByLabel('Description')).toBeFocused();
+    await expect(panel.getByRole('tab', { name: 'Status' })).toBeFocused();
     const box = await panel.boundingBox();
     if (viewport === WIDE) {
       expect(box.x).toBeGreaterThan(viewport.width / 2);
@@ -191,6 +221,7 @@ test('every field saves on change without a Save button, and the changes survive
   const id = await seed(page);
   const panel = await openEditor(page);
   await expect(panel.getByRole('button', { name: /save/i })).toHaveCount(0);
+  await showTab(panel, 'Configuration');
   const description = panel.getByLabel('Description');
   await description.fill('');
   await description.blur();
@@ -202,12 +233,13 @@ test('every field saves on change without a Save button, and the changes survive
   await expect(page.locator('.task-row__description', { hasText: 'Buy blue paint' })).toHaveCount(1);
   await showTab(panel, 'Status');
   await panel.getByRole('button', { name: 'In progress', exact: true }).click();
-  await expect(panel.getByRole('group', { name: 'Overdue behavior' })).toBeHidden();
+  await showTab(panel, 'Configuration');
+  await expect(panel.getByRole('group', { name: 'When overdue' })).toBeHidden();
   await panel.getByLabel('Due date', { exact: true }).fill('2030-05-06');
   await panel.getByLabel('Due time', { exact: true }).fill('18:00');
   await panel.getByLabel('Due time', { exact: true }).blur();
-  await expect(panel.getByRole('group', { name: 'Overdue behavior' })).toBeVisible();
-  await panel.getByText('Cancel when overdue').click();
+  await expect(panel.getByRole('group', { name: 'When overdue' })).toBeVisible();
+  await panel.getByText('Fail', { exact: true }).click();
   await expect(page.locator('.task-row', { hasText: 'Buy blue paint' })).toHaveAttribute('data-status', 'in-progress');
   // The save is asynchronous, so wait until it is stored; reloading earlier can drop it.
   await expect.poll(() => page.evaluate(async (taskId) => {
@@ -216,18 +248,19 @@ test('every field saves on change without a Save button, and the changes survive
     const task = await store.getTask(taskId);
     store.close();
     return task['lifecycle-rules']['overdue-handling'];
-  }, id)).toBe('cancel');
+  }, id)).toBe('fail');
   await page.reload();
   await expect(panel.getByLabel('Description')).toHaveValue('Buy blue paint');
   await showTab(panel, 'Status');
   await expect(panel.locator('.task-editor__status')).toHaveText('In progress');
   await expect(panel.getByRole('button', { name: 'In progress', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await showTab(panel, 'Configuration');
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
   await expect(panel.getByLabel('Due time', { exact: true })).toHaveValue('18:00');
-  await expect(panel.getByLabel('Cancel when overdue')).toBeChecked();
+  await expect(panel.getByLabel('Fail', { exact: true })).toBeChecked();
   await panel.getByRole('button', { name: 'Clear the due date' }).click();
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('');
-  await expect(panel.getByRole('group', { name: 'Overdue behavior' })).toBeHidden();
+  await expect(panel.getByRole('group', { name: 'When overdue' })).toBeHidden();
   expect(problems).toEqual([]);
 });
 
@@ -236,11 +269,8 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   await page.setViewportSize(WIDE);
   const id = await seed(page);
   const panel = await openEditor(page);
+  await setTarget(panel, '3');
   await showTab(panel, 'Status');
-  const target = panel.getByLabel('Target count');
-  await expect(target).toHaveValue('1');
-  await target.fill('3');
-  await target.press('Tab');
   const row = page.locator('.task-row', { hasText: 'Buy paint' });
   await expect(row.locator('.task-row__count')).toHaveText('0/3');
   for (const done of [1, 2]) {
@@ -256,6 +286,7 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   await expect(panel.getByRole('button', { name: 'Completed', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(panel.getByRole('button', { name: 'In progress', exact: true })).toBeDisabled();
 
+  await showTab(panel, 'Configuration');
   await panel.getByLabel('Due date', { exact: true }).fill('2030-05-06');
   await panel.getByLabel('Due time', { exact: true }).fill('18:00');
   await panel.getByLabel('Due time', { exact: true }).blur();
@@ -275,11 +306,12 @@ test('ticks a target-3 task to 3/3 and edits its deadline through the lifecycle 
   expect(stored.rules['target-count']).toBe(3);
   expect(stored.occurrence).toMatchObject({ 'target-count': 3, 'completion-count': 3, status: 'completed', 'due-time': due });
   // The local history keeps each rule edit as the service does: the target, then the deadline.
-  expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'complete', 'complete', 'complete', 'edit-lifecycle-rules']);
+  expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'log', 'log', 'log', 'edit-lifecycle-rules']);
   await page.reload();
   await showTab(panel, 'Status');
   await expect(panel.locator('.task-editor__status')).toHaveText('Completed, 3 of 3 done');
-  await expect(panel.getByLabel('Target count')).toHaveValue('3');
+  await showTab(panel, 'Configuration');
+  await expect(panel.getByLabel('Target')).toHaveValue('3');
   await expect(panel.getByLabel('Due date', { exact: true })).toHaveValue('2030-05-06');
   expect(problems).toEqual([]);
 });
@@ -289,10 +321,8 @@ test('the stepper steps a target-3 task to 2 and back to 1, then Ready resets it
   await page.setViewportSize(WIDE);
   const id = await seed(page);
   const panel = await openEditor(page);
+  await setTarget(panel, '3');
   await showTab(panel, 'Status');
-  const target = panel.getByLabel('Target count');
-  await target.fill('3');
-  await target.press('Tab');
   const states = panel.getByRole('group', { name: 'Status', exact: true });
   const stepper = panel.getByRole('group', { name: 'Completions' });
   const line = panel.locator('.task-editor__status');
@@ -311,9 +341,9 @@ test('the stepper steps a target-3 task to 2 and back to 1, then Ready resets it
   await expect(stepper.locator('.task-editor__count')).toHaveText('1 of 3');
   await expect(states.getByRole('button', { name: 'In progress' })).toHaveAttribute('aria-pressed', 'true');
   await states.getByRole('button', { name: 'To do' }).click();
-  await expect(line).toHaveText('To do, 0 of 3 done');
-  await expect(stepper).toBeHidden();
-  await expect(states.getByRole('button', { name: 'To do' })).toHaveAttribute('aria-pressed', 'true');
+  // Completions are log events now, so Ready undoes the checks but keeps the started mark, until the log of T0307 replaces these controls.
+  await expect(line).toHaveText('In progress, 0 of 3 done');
+  await expect(states.getByRole('button', { name: 'In progress' })).toHaveAttribute('aria-pressed', 'true');
   const stored = await page.evaluate(async (taskId) => {
     const { openStore } = await import('/js/store/db.js');
     const store = await openStore();
@@ -322,8 +352,8 @@ test('the stepper steps a target-3 task to 2 and back to 1, then Ready resets it
     store.close();
     return { occurrence: task['current-occurrence'], events: events.map((event) => event.type) };
   }, id);
-  expect(stored.occurrence).toMatchObject({ 'completion-count': 0, status: 'ready' });
-  expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'start', 'complete', 'complete', 'uncomplete', 'uncomplete']);
+  expect(stored.occurrence).toMatchObject({ 'completion-count': 0, status: 'in-progress' });
+  expect(stored.events).toEqual(['create', 'edit-lifecycle-rules', 'start', 'log', 'log', 'undo-log', 'undo-log']);
   expect(problems).toEqual([]);
 });
 
@@ -339,7 +369,7 @@ test('typing a due date by keyboard saves nothing until focus leaves the due fie
     store.close();
     return task['lifecycle-rules']['due-time'];
   }, id);
-  await showTab(panel, 'Status');
+  await showTab(panel, 'Configuration');
   const date = panel.getByLabel('Due date', { exact: true });
   await date.focus();
   await page.keyboard.type('11052026');
@@ -349,7 +379,7 @@ test('typing a due date by keyboard saves nothing until focus leaves the due fie
   expect(await stored()).toBeNull();
   const [year, month, day] = (await date.inputValue()).split('-').map(Number);
   expect(year).toBe(2026);
-  await panel.getByLabel('Target count').focus();
+  await panel.getByLabel('Description').focus();
   const expected = await page.evaluate(([y, m, d]) => new Date(y, m - 1, d, 9, 30).toISOString(), [year, month, day]);
   await expect.poll(stored).toBe(expected);
   expect(problems).toEqual([]);
@@ -360,7 +390,7 @@ test('the Add to list box adds the task to an existing list or a new one, and ch
   await page.setViewportSize(WIDE);
   await seed(page);
   const panel = await openEditor(page);
-  await showTab(panel, 'Status');
+  await showTab(panel, 'Configuration');
   const box = panel.getByRole('combobox', { name: 'Add to list' });
   await box.fill('ho');
   await expect(panel.getByRole('option', { name: 'Home' })).toBeVisible();
@@ -376,7 +406,7 @@ test('the Add to list box adds the task to an existing list or a new one, and ch
   await panel.getByRole('button', { name: 'Remove from Home' }).click();
   await expect(chips).toHaveText(['Garden']);
   await page.reload();
-  await showTab(panel, 'Status');
+  await showTab(panel, 'Configuration');
   await expect(panel.locator('.chip-list .chip')).toHaveText(['Garden']);
   expect(problems).toEqual([]);
 });
@@ -386,6 +416,7 @@ test('a new note appears at the top, editing marks it edited, and deleting asks 
   await page.setViewportSize(WIDE);
   await seed(page);
   const panel = await openEditor(page);
+  await showTab(panel, 'Notes');
   const field = panel.getByRole('textbox', { name: 'Add note' });
   await field.fill('Two coats should be enough.');
   await panel.getByRole('button', { name: 'Add note' }).click();
@@ -409,6 +440,7 @@ test('a new note appears at the top, editing marks it edited, and deleting asks 
   await notes.nth(1).getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(notes).toHaveCount(1);
   await page.reload();
+  await showTab(panel, 'Notes');
   await expect(panel.locator('.note .note__text')).toHaveText(['Get the matte white, not the gloss.']);
   expect(problems).toEqual([]);
 });
@@ -418,29 +450,94 @@ test('Delete task moves it to the recycle bin with an Undo toast, and a deleted 
   await page.setViewportSize(WIDE);
   const id = await seed(page);
   const panel = await openEditor(page);
-  await showTab(panel, 'Status');
+  await showTab(panel, 'Configuration');
   await panel.getByRole('button', { name: 'Delete task' }).click();
   await expect(panel).toHaveCount(0);
   await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(0);
   await page.locator('.toast', { hasText: 'Task moved to the recycle bin.' }).getByRole('button', { name: 'Undo' }).click();
   const again = await openEditor(page);
-  await showTab(again, 'Status');
+  await showTab(again, 'Configuration');
   await again.getByRole('button', { name: 'Delete task' }).click();
   await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(0);
   await page.goto(`/#/tasks/${id}`);
   await expect(panel.getByText('This task is in the recycle bin.')).toBeVisible();
   await expect(panel.getByLabel('Description')).toBeDisabled();
-  await showTab(panel, 'Status');
-  await expect(panel.getByLabel('Target count')).toBeDisabled();
+  await showTab(panel, 'Configuration');
+  await expect(panel.getByLabel('Due date', { exact: true })).toBeDisabled();
   await expect(panel.getByRole('button', { name: 'Delete task' })).toHaveCount(0);
   await panel.getByRole('button', { name: 'Restore' }).click();
-  // Restoring returns to Content and focuses the description.
-  await expect(panel.getByLabel('Description')).toBeFocused();
+  // Restoring returns to Status and focuses its tab.
+  await expect(panel.getByRole('tab', { name: 'Status' })).toBeFocused();
   await expect(panel.getByLabel('Description')).toBeEnabled();
   await expect(page.locator('.task-row', { hasText: 'Buy paint' })).toHaveCount(1);
   await page.goto('/#/tasks/no-such-task');
   await expect(page.locator('.toast', { hasText: 'That task was not found.' })).toBeVisible();
   await expect(page).toHaveURL(/#\/tasks$/);
+  expect(problems).toEqual([]);
+});
+
+test('a weekly at-most kcal goal with a start time saves as lifecycle rules and survives a reload (TSK-15, TSK-16, TSK-20)', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  const id = await seed(page);
+  const panel = await openEditor(page);
+  await showTab(panel, 'Configuration');
+  await pick(panel, 'At most');
+  await expect(panel.getByText('At most needs a due time or a recurrence.')).toBeVisible();
+  await pick(panel, 'Year');
+  await pick(panel, 'Week');
+  await pick(panel, 'At most');
+  await panel.getByLabel('Measure').selectOption('amount');
+  const target = panel.getByLabel('Target', { exact: true });
+  await target.fill('1600.5');
+  await target.press('Tab');
+  const unit = panel.getByLabel('Unit', { exact: true });
+  await unit.fill('kcal');
+  await unit.press('Tab');
+  const start = panel.getByLabel('Starts', { exact: true });
+  await start.fill('2030-05-06T09:30');
+  await start.blur();
+  await expect(panel.locator('[data-part="goal-line"]')).toContainText('Each week succeeds at');
+  await expect(panel.locator('[data-part="goal-line"]')).toContainText('kcal or less.');
+  await expect(panel.getByLabel('Due date', { exact: true })).toBeHidden();
+  const read = () => page.evaluate(async (taskId) => {
+    const { openStore } = await import('/js/store/db.js');
+    const store = await openStore();
+    const task = await store.getTask(taskId);
+    store.close();
+    return task['lifecycle-rules'];
+  }, id);
+  await expect.poll(async () => (await read())['start-time']).toBe(new Date(2030, 4, 6, 9, 30).toISOString());
+  expect(await read()).toMatchObject({
+    'goal-direction': 'at-most', 'goal-measure': 'amount', 'target-count': 1600.5, 'goal-unit': 'kcal', 'recurrence-unit': 'week',
+  });
+  await page.reload();
+  const reopened = page.locator('[data-editor-slot] .editor-panel');
+  await showTab(reopened, 'Configuration');
+  await expect(reopened.getByLabel('At most', { exact: true })).toBeChecked();
+  await expect(reopened.getByLabel('Measure')).toHaveValue('amount');
+  await expect(reopened.getByLabel('Target', { exact: true })).toHaveValue('1600.5');
+  await expect(reopened.getByLabel('Unit', { exact: true })).toHaveValue('kcal');
+  await expect(reopened.getByLabel('Week', { exact: true })).toBeChecked();
+  await expect(reopened.getByLabel('Starts', { exact: true })).toHaveValue('2030-05-06T09:30');
+  expect(problems).toEqual([]);
+});
+
+test('Cancel task cancels the task and Uncancel reopens it, from the Danger zone of Configuration', async ({ page }) => {
+  const problems = watch(page);
+  await page.setViewportSize(WIDE);
+  await seed(page);
+  const panel = await openEditor(page);
+  const row = page.locator('.task-row', { hasText: 'Buy paint' });
+  await showTab(panel, 'Configuration');
+  await panel.getByRole('button', { name: 'Cancel task' }).click();
+  await expect(row).toHaveAttribute('data-status', 'cancelled');
+  await expect(panel.getByRole('button', { name: 'Uncancel' })).toBeEnabled();
+  await showTab(panel, 'Status');
+  await expect(panel.getByText('Uncancel in Configuration.')).toBeVisible();
+  await showTab(panel, 'Configuration');
+  await panel.getByRole('button', { name: 'Uncancel' }).click();
+  await expect(row).toHaveAttribute('data-status', 'ready');
   expect(problems).toEqual([]);
 });
 
@@ -454,10 +551,11 @@ test.describe('recurring tasks in local mode', () => {
     await page.clock.install({ time: new Date('2026-11-04T10:00:00Z') });
     await seed(page);
     const panel = await openEditor(page);
-    await showTab(panel, 'Status');
-    await panel.getByLabel('Repeat').selectOption('week');
+    await showTab(panel, 'Configuration');
+    await pick(panel, 'Week');
     await expect(panel.getByLabel('Timezone')).toHaveValue('Europe/Brussels');
     await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Weekly');
+    await showTab(panel, 'Status');
     await panel.getByRole('button', { name: 'Completed', exact: true }).click();
     await expect(panel.locator('.task-editor__status')).toHaveText('Completed');
     // Completed this week, the task stays completed until its next period.
@@ -488,10 +586,10 @@ test.describe('note links in local mode', () => {
     await page.clock.install({ time: new Date('2026-11-04T10:00:00Z') });
     await seed(page);
     const panel = await openEditor(page);
-    await showTab(panel, 'Status');
-    await panel.getByLabel('Repeat').selectOption('day');
+    await showTab(panel, 'Configuration');
+    await pick(panel, 'Day');
     await expect(page.locator('.task-row', { hasText: 'Buy paint' }).locator('.task-row__repeat')).toHaveText('Daily');
-    await showTab(panel, 'Content');
+    await showTab(panel, 'Notes');
     for (const text of ['Watered the roses.', 'Pruned the hedge.']) {
       await panel.getByRole('textbox', { name: 'Add note' }).fill(text);
       await panel.getByRole('button', { name: 'Add note' }).click();
@@ -500,7 +598,7 @@ test.describe('note links in local mode', () => {
     await showTab(panel, 'History');
     const firstOccurrence = panel.locator('[data-history="occurrences"] [data-occurrence="1"]');
     await expect(firstOccurrence.locator('.task-history__note')).toHaveText([/Pruned the hedge\./, /Watered the roses\./]);
-    await showTab(panel, 'Content');
+    await showTab(panel, 'Notes');
 
     // While the note is edited its text sits in a field, so find it by its identifier.
     const rosesId = await panel.locator('.note', { hasText: 'Watered the roses.' }).getAttribute('data-note-id');
@@ -524,6 +622,7 @@ test.describe('note links in local mode', () => {
     await page.clock.fastForward(24 * 3_600_000);
     await page.reload();
     const reopened = await openEditor(page);
+    await showTab(reopened, 'Notes');
     await expect(reopened.locator('.note .note__text')).toHaveText(['Watered the roses.', 'Pruned the hedge.']);
     const hedge = reopened.locator('.note', { hasText: 'Pruned the hedge.' });
     await expect(hedge.locator('.note__occurrence')).toContainText('#1');

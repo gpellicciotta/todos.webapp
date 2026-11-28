@@ -515,6 +515,26 @@ describe('goal fields', () => {
     const [stored] = await store.occurrencesOfTask(task.id);
     expect(stored).toMatchObject({ 'target-count': 2, 'goal-target': 2, 'completion-count': 1, progress: 1, 'time-spent-seconds': 0 });
   });
+
+  it('takes the year unit as a recurrence rule', async () => {
+    const task = await store.createTask({ description: 'Renew passport' });
+    const edited = await store.updateRules(task.id, { 'recurrence-unit': 'year', 'recurrence-interval': 1, timezone: 'UTC' });
+    expect(edited['lifecycle-rules']).toMatchObject({ 'recurrence-unit': 'year', 'recurrence-interval': 1 });
+    await expect(store.updateRules(task.id, { 'recurrence-unit': 'decade' })).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('takes a decimal target from 0 for amount and reading goals, and only a whole number for checks and time', async () => {
+    const task = await store.createTask({ description: 'Weigh in' });
+    const edited = await store.updateRules(task.id, { 'goal-measure': 'reading', 'target-count': 79.875, 'goal-unit': 'kg' });
+    expect(edited['lifecycle-rules']).toMatchObject({ 'goal-target': 79.875, 'goal-unit': 'kg' });
+    expect((await store.updateRules(task.id, { 'target-count': 0 }))['lifecycle-rules']['goal-target']).toBe(0);
+    await expect(store.updateRules(task.id, { 'target-count': 1.2345 })).rejects.toBeInstanceOf(ValidationError);
+    await expect(store.updateRules(task.id, { 'goal-measure': 'checks' })).rejects.toBeInstanceOf(ValidationError);
+    await expect(store.updateRules(task.id, { 'goal-measure': 'time', 'target-count': 1.5 })).rejects.toBeInstanceOf(ValidationError);
+    await expect(store.updateRules(task.id, { 'goal-measure': 'checks', 'target-count': 0 })).rejects.toBeInstanceOf(ValidationError);
+    const checks = await store.updateRules(task.id, { 'goal-measure': 'checks', 'target-count': 4 });
+    expect(checks['lifecycle-rules']).toMatchObject({ 'goal-measure': 'checks', 'goal-target': 4, 'goal-unit': null });
+  });
 });
 
 describe('log entries', () => {

@@ -276,6 +276,11 @@
   }
 }
 
+/* Four tabs, each as wide as its name, fit the 390 px panel without scrolling the tab strip (`TSK-18`). */
+.task-editor__tabs .tabs__tab {
+  padding-inline: var(--space-2);
+}
+
 /* The task editor's tab panels leave the spacing to their sections. */
 .task-editor__panel {
   padding: 0;
@@ -292,12 +297,15 @@
   border-block-start: var(--border-width) solid var(--color-border);
 }
 
-.task-editor__panel > .editor-panel__danger {
-  margin-block-start: 0;
-  border-block-start: 0;
+/* The Danger zone holds Cancel task and Delete task side by side, under its heading. */
+.task-editor__panel .editor-panel__danger {
+  justify-content: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
-/* The fields of Content and of Status sit in fieldsets, which disable them all for a deleted task or a viewer. */
+/* The fields of Status, Notes, and Configuration sit in fieldsets, which disable them all for a deleted task or a viewer. */
 .task-editor__fields {
   min-inline-size: 0;
   margin: 0;
@@ -324,8 +332,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The target count holds at most three digits, so its field stays as narrow as a chip. */
-.editor-panel__section[data-section='target'] .field__control {
+/* The goal parts hide as a whole, also the row of hours and minutes; the target fields stay as narrow as a chip. */
+.task-editor__part[hidden],
+.task-editor__part[data-part='goal-error']:empty {
+  display: none;
+}
+
+.task-editor__part :is([name='goal-target'], [name='goal-hours'], [name='goal-minutes']) {
   max-inline-size: var(--width-chip-max);
 }
 
