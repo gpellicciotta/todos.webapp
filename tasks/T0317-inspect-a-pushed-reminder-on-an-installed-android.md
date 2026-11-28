@@ -10,10 +10,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
-review_status: rejected
-review_round: 1
-review_requested_at: "2026-11-28T14:13:22Z"
-reviewed_by: "@codex"
+review_status: pending
+review_round: 2
+review_requested_at: "2026-11-28T16:39:54Z"
 review_session: codex-20261128-e3139c
 ---
 # T0317: Inspect a pushed reminder on an installed Android PWA after the release
@@ -55,4 +54,7 @@ Moved here from T0227.
 
 - [2026-11-28] **[Verify]**
   User confirmed on 2026-11-28 that ToDo's was closed in every browser tab on the phone.
+
+- [2026-11-28] **[Review]**
+  Round 2 requested (mode: agent).
 
