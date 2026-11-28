@@ -1,11 +1,11 @@
 ---
 id: T0316
-owner: ~
-needs: [T0304, T0305, T0312]
-branch: —
-worktree: —
-status: ready
-started_at: —
+owner: "@claude"
+needs: []
+branch: task/T0316-remove-the-legacy-target-count-and-completion-count
+worktree: .plan/work/T0316-remove-the-legacy-target-count-and-completion-count
+status: active
+started_at: "2026-11-28T09:01:32Z"
 ended_at: —
 review: agent
 preview: none
