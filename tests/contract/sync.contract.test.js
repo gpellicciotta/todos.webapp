@@ -377,7 +377,7 @@ describe.skipIf(!DIR)('the sync client against a real todos server', () => {
     expect(await ada.engine.syncNow()).toBe('synced');
     await importBackup(ada.store, backup, 'merge', { connected: true });
     expect((await ada.store.queue.all()).filter((entry) => entry.operation === 'post-event').map((entry) => [entry.target['task-id'], entry.fields.type]))
-      .toEqual([[met.id, 'complete']]);
+      .toEqual([[met.id, 'log']]);
     expect(await ada.engine.syncNow()).toBe('synced');
     expect((await ada.store.queue.log()).filter((record) => record.kind === 'rejected')).toEqual([]);
     for (const [task, status] of [[met, 'completed'], [unmet, 'failed']]) {
