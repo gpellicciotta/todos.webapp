@@ -11,6 +11,9 @@ ended_at: —
 review: agent
 preview: none
 protocol: standard
+usage:
+  worker: {turns: 1, duration_s: 1802.6, input: 2, output: 8}
+work_duration: 1812.6
 ---
 # T0311: Add a Help screen to the user menu from the help docs, and drop Keyboard shortcuts and About from Settings
 
