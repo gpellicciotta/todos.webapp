@@ -1,11 +1,11 @@
 ---
 id: T0227
-owner: ~
+owner: "@claude"
 needs: []
-branch: —
-worktree: —
-status: ready
-started_at: —
+branch: task/T0227-deliver-due-reminders-with-the-app-closed-through
+worktree: .plan/work/T0227-deliver-due-reminders-with-the-app-closed-through
+status: active
+started_at: "2026-11-28T03:17:18Z"
 ended_at: —
 review: agent
 preview: none
